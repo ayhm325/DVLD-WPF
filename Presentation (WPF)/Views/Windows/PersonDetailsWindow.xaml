@@ -1,0 +1,78 @@
+﻿<Window x:Class="Presentation.Views.Windows.PersonDetailsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Person Information Details" Height="400" Width="600"
+        Background="#F8FAFC" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Detailed Person Profile" FontSize="22" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,0,15"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="150"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,15,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Person ID: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblPersonId" FontSize="14" FontWeight="Bold" Foreground="#3182CE"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="National No: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblNationalNo" FontSize="14" Foreground="#0F172A"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Full Name: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblFullName" FontSize="14" FontWeight="Bold" Foreground="#3182CE"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Gender: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblGender" FontSize="14" Foreground="#0F172A"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Date Of Birth: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblDateOfBirth" FontSize="14" Foreground="#0F172A"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Phone: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblPhone" FontSize="14" Foreground="#0F172A"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Email: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblEmail" FontSize="14" Foreground="#0F172A"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Country: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblCountry" FontSize="14" Foreground="#0F172A"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Address: " FontWeight="Bold" Width="110" Foreground="#64748B"/>
+                        <TextBlock x:Name="LblAddress" FontSize="14" TextWrapping="Wrap" MaxWidth="300" Foreground="#0F172A"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Column="1" Width="130" Height="150" VerticalAlignment="Top" CornerRadius="8" BorderBrush="#CBD5E0" BorderThickness="1" Background="White">
+                <Image x:Name="ImgPerson" Stretch="UniformToFill" Margin="2"/>
+            </Border>
+        </Grid>
+
+        <Button Grid.Row="2" Content="Close" Width="100" Height="32" HorizontalAlignment="Right" Background="#64748B" Foreground="White" BorderThickness="0" Click="Close_Click" Cursor="Hand"/>
+    </Grid>
+</Window>

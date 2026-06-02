@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace DVLD_WPF
+namespace Presentation.Views.Controls
 {
     /// <summary>
-    /// Interaction logic for UserPage.xaml
+    /// Interaction logic for UserCard.xaml
     /// </summary>
-    public partial class UserPage : Page
+    public partial class UserCard : UserControl
     {
-        public UserPage()
+        public UserCard()
         {
             InitializeComponent();
         }

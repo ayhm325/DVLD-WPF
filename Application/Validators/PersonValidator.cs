@@ -1,69 +1,82 @@
 ﻿using DVLD.Domain.Entities;
 using DVLD.Domain.Enums;
+using Application.Common;
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Application.Validators
 {
     public static class PersonValidator
     {
-        public static bool Validate(Person person, out string error)
+        public static ValidationResult Validate(Person person)
         {
-            error = string.Empty;
+            var errors = new List<string>();
 
-            if (person is null)
+            if (person == null)
             {
-                error = "Person object cannot be null.";
-                return false;
+                errors.Add("Person cannot be null.");
+                return ValidationResult.Failure(errors);
             }
 
-            // National No
+            // ================= NATIONAL NO =================
             if (string.IsNullOrWhiteSpace(person.NationalNo))
-                return Fail("National number is required", out error);
+                errors.Add("National number is required.");
+            else if (!Regex.IsMatch(person.NationalNo, @"^\d{10}$"))
+                errors.Add("National number must be exactly 10 digits.");
 
-            if (person.NationalNo.Length < 5)
-                return Fail("National number is too short", out error);
-
-            // Names
+            // ================= FIRST NAME =================
             if (string.IsNullOrWhiteSpace(person.FirstName))
-                return Fail("First name is required", out error);
+                errors.Add("First name is required.");
 
+            // ================= SECOND NAME =================
             if (string.IsNullOrWhiteSpace(person.SecondName))
-                return Fail("Second name is required", out error);
+                errors.Add("Second name is required.");
 
+            // ================= LAST NAME =================
             if (string.IsNullOrWhiteSpace(person.LastName))
-                return Fail("Last name is required", out error);
+                errors.Add("Last name is required.");
 
-            // Date of Birth
-            if (person.DateOfBirth == default)
-                return Fail("Date of birth is required", out error);
+            // ================= EMAIL =================
+            if (!string.IsNullOrWhiteSpace(person.Email))
+            {
+                if (!Regex.IsMatch(person.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                    errors.Add("Invalid email format.");
+            }
 
-            if (person.DateOfBirth > DateTime.Now)
-                return Fail("Date of birth cannot be in the future", out error);
-
-            if (person.DateOfBirth < DateTime.Now.AddYears(-120))
-                return Fail("Date of birth is not realistic", out error);
-
-            // Gender
-            if (!Enum.IsDefined(typeof(Gender), person.Gender))
-                return Fail("Invalid gender value", out error);
-
-            // Address
-            if (string.IsNullOrWhiteSpace(person.Address))
-                return Fail("Address is required", out error);
-
-            // Phone
+            // ================= PHONE =================
             if (string.IsNullOrWhiteSpace(person.Phone))
-                return Fail("Phone is required", out error);
+                errors.Add("Phone is required.");
+            else if (!Regex.IsMatch(person.Phone, @"^(077|078|079)\d{7}$"))
+                errors.Add("Phone must start with 077 / 078 / 079 and be 10 digits.");
 
-            if (person.Phone.Length < 7)
-                return Fail("Phone number is too short", out error);
+            // ================= DATE OF BIRTH =================
+            if (person.DateOfBirth == default)
+                errors.Add("Date of birth is required.");
+            else
+            {
+                // حساب التاريخ الأقصى المسموح به (اليوم ناقص 18 سنة)
+                DateTime maxAllowedDate = DateTime.Now.AddYears(-18);
 
-            return true;
-        }
+                if (person.DateOfBirth > maxAllowedDate)
+                    errors.Add("The person must be at least 18 years old.");
 
-        private static bool Fail(string message, out string error)
-        {
-            error = message;
-            return false;
+                if (person.DateOfBirth < DateTime.Now.AddYears(-120))
+                    errors.Add("Date of birth is not realistic.");
+            }
+
+            // ================= ADDRESS =================
+            if (string.IsNullOrWhiteSpace(person.Address))
+                errors.Add("Address is required.");
+
+            // ================= GENDER =================
+            if (!Enum.IsDefined(typeof(Gender), person.Gender))
+                errors.Add("Invalid gender value.");
+
+            if (errors.Count > 0)
+                return ValidationResult.Failure(errors);
+
+            return ValidationResult.Success();
         }
     }
 }

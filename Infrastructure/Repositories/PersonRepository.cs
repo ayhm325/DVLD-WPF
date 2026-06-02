@@ -1,92 +1,86 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DVLD.Domain.Entities;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
 
 namespace Infrastructure.Repositories
 {
     public class PersonRepository
     {
-        private readonly DVLDDbContext _context;
+        private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 
-        public PersonRepository(DVLDDbContext context)
+        public PersonRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
-        public Person? GetPersonById(int id)
-        {            
-            return _context.People
+        public async Task<Person?> GetPersonByIdAsync(int id)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.People
                 .Include(p => p.Country)
-                .FirstOrDefault(p => p.PersonId == id);
+                .FirstOrDefaultAsync(p => p.PersonId == id);
         }
 
-        public Person? GetPersonByNationalNo(string nationalNo)
+        public async Task<Person?> GetPersonByNationalNoAsync(string nationalNo)
         {
-            return _context.People
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.People
                 .Include(p => p.Country)
-                .FirstOrDefault(p => p.NationalNo == nationalNo);
+                .FirstOrDefaultAsync(p => p.NationalNo == nationalNo);
         }
-    
 
-        public List<Person> GetAllPersons()
+        public async Task<List<Person>> GetAllPersonsAsync()
         {
-            return _context.People
-         .Include(p => p.Country)
-         .ToList();
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.People
+                .Include(p => p.Country)
+                .ToListAsync();
         }
-        
-        public int AddPerson(Person person)
+
+        public async Task<int> AddPersonAsync(Person person)
         {
-            _context.People.Add(person);
-            _context.SaveChanges();
+            using var context = await _contextFactory.CreateDbContextAsync();
+            context.People.Add(person);
+            await context.SaveChangesAsync();
             return person.PersonId;
         }
 
-        public bool UpdatePerson(Person person)
+        public async Task<bool> UpdatePersonAsync(Person person)
         {
-            var existing = _context.People.FirstOrDefault(p => p.PersonId == person.PersonId);
-            if (existing == null)
-                return false;
+            using var context = await _contextFactory.CreateDbContextAsync();
 
-            existing.NationalNo = person.NationalNo;
-            existing.FirstName = person.FirstName;
-            existing.SecondName = person.SecondName;
-            existing.ThirdName = person.ThirdName;
-            existing.LastName = person.LastName;
-            existing.DateOfBirth = person.DateOfBirth;
-            existing.Gender = person.Gender;
-            existing.Address = person.Address;
-            existing.Phone = person.Phone;
-            existing.Email = person.Email;
-            existing.NationalityCountryID = person.NationalityCountryID;
-            existing.ImagePath = person.ImagePath;
-          
-            return _context.SaveChanges() > 0;
+            var existingPerson = await context.People.FindAsync(person.PersonId);
+            if (existingPerson == null) return false;
 
+            // تحديث الخصائص
+            context.Entry(existingPerson).CurrentValues.SetValues(person);
+
+            return await context.SaveChangesAsync() > 0;
         }
 
-        public bool IsPersonExistsById(int id)
+        public async Task<bool> IsPersonExistsByIdAsync(int id)
         {
-            return _context.People.Any(p => p.PersonId == id);
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.People.AnyAsync(p => p.PersonId == id);
         }
 
-        public bool IsNationalNoDuplicated(string nationalNo, int id)
+        public async Task<bool> IsNationalNoDuplicatedAsync(string nationalNo, int id)
         {
-            return _context.People.Any(p =>
-                p.NationalNo == nationalNo && p.PersonId != id);
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.People.AnyAsync(p => p.NationalNo == nationalNo && p.PersonId != id);
         }
 
-
-        public bool DeletePerson(int id)
+        public async Task<bool> DeletePersonAsync(int id)
         {
-            var person = _context.People.Find(id);
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var person = await context.People.FindAsync(id);
+            if (person == null) return false;
 
-            if (person == null)
-                return false;
-
-            _context.People.Remove(person);
-            return _context.SaveChanges() > 0;
+            context.People.Remove(person);
+            return await context.SaveChangesAsync() > 0;
         }
-
-
     }
 }

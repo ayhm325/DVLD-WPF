@@ -1,17 +1,22 @@
 ﻿using Application.DTOs;
-using DVLD.Domain.Entities;
+
 
 namespace Application.Interfaces
 {
     public interface IPersonService
     {
-        List<PersonDto> GetAllPeople();
-        PersonDto? GetPersonById(int id);
-        PersonDto? GetPersonByNationalNo(string nationalNo);
+        Task<List<PersonDto>> GetAllPeopleAsync();
 
-        int AddPerson(Person person);
-        bool UpdatePerson(Person person);
-        bool DeletePerson(int id);
-        bool IsPersonExists(int id);
+        Task<PersonDto?> GetPersonByIdAsync(int id);
+
+        Task<PersonDto?> GetPersonByNationalNoAsync(string nationalNo);
+
+        Task<int> AddPersonAsync(PersonCreateUpdateDto personDto);
+
+        Task<bool> UpdatePersonAsync(int id, PersonCreateUpdateDto personDto);
+
+        Task<bool> DeletePersonAsync(int id);
+
+        Task<bool> IsPersonExistsAsync(int id);
     }
 }

@@ -4,8 +4,12 @@ using Application.Validators;
 using DVLD.Domain.Entities;
 using DVLD.Domain.Enums;
 using Infrastructure.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace DVLD.Application.Services
+namespace Application.Services
 {
     public class PersonService : IPersonService
     {
@@ -16,125 +20,111 @@ namespace DVLD.Application.Services
             _personRepository = personRepository;
         }
 
-        public List<PersonDto> GetAllPeople()
+        // ================= GET ALL =================
+        public async Task<List<PersonDto>> GetAllPeopleAsync()
         {
-            var people = _personRepository.GetAllPersons();
+            // استدعاء مباشر لـ Async - لا حاجة لـ Task.Run
+            var people = await _personRepository.GetAllPersonsAsync();
+            return people.Select(MapToDto).ToList();
+        }
 
-            return people.Select(p => new PersonDto
+        // ================= GET BY ID =================
+        public async Task<PersonDto?> GetPersonByIdAsync(int id)
+        {
+            var p = await _personRepository.GetPersonByIdAsync(id);
+            return p == null ? null : MapToDto(p);
+        }
+
+        // ================= GET BY NATIONAL NO =================
+        public async Task<PersonDto?> GetPersonByNationalNoAsync(string nationalNo)
+        {
+            var p = await _personRepository.GetPersonByNationalNoAsync(nationalNo);
+            return p == null ? null : MapToDto(p);
+        }
+
+        // ================= EXISTS =================
+        public async Task<bool> IsPersonExistsAsync(int id)
+        {
+            return await _personRepository.IsPersonExistsByIdAsync(id);
+        }
+
+        // ================= ADD =================
+        public async Task<int> AddPersonAsync(PersonCreateUpdateDto dto)
+        {
+            var person = MapToEntity(dto);
+
+            var validation = PersonValidator.Validate(person);
+            if (!validation.IsValid) return -1;
+
+            // التأكد من أن الفحص أيضاً Async
+            if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, 0))
+                return -1;
+
+            return await _personRepository.AddPersonAsync(person);
+        }
+
+        // ================= UPDATE =================
+        public async Task<bool> UpdatePersonAsync(int id, PersonCreateUpdateDto dto)
+        {
+            if (id <= 0) return false;
+
+            var person = MapToEntity(dto);
+            person.PersonId = id;
+
+            var validation = PersonValidator.Validate(person);
+            if (!validation.IsValid) return false;
+
+            if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, id))
+                return false;
+
+            return await _personRepository.UpdatePersonAsync(person);
+        }
+
+        // ================= DELETE =================
+        public async Task<bool> DeletePersonAsync(int id)
+        {
+            if (!await _personRepository.IsPersonExistsByIdAsync(id))
+                return false;
+
+            return await _personRepository.DeletePersonAsync(id);
+        }
+
+        // ================= MAPPING =================
+        private PersonDto MapToDto(Person p)
+        {
+            return new PersonDto
             {
                 PersonId = p.PersonId,
                 NationalNo = p.NationalNo,
-
-                FullName = string.Join(" ",
-                    new[] { p.FirstName, p.SecondName, p.ThirdName, p.LastName }
-                    .Where(x => !string.IsNullOrWhiteSpace(x))),
-
+                FullName = p.FullName,
                 DateOfBirth = p.DateOfBirth,
-
                 Gender = p.Gender == Gender.Male ? "Male" : "Female",
-
                 Address = p.Address,
                 Phone = p.Phone,
                 Email = p.Email,
                 CountryName = p.Country?.CountryName ?? "Unknown",
                 ImagePath = p.ImagePath
-            }).ToList();
-        }
-        //public List<PersonDto> GetAllPeople()
-        //{
-        //    var people = _personRepository.GetAllPersons();
-        //    return people.Select(p => new PersonDto
-        //    {
-        //        PersonId = p.PersonId,
-        //        NationalNo = p.NationalNo,
-        //        FullName = $"{p.FirstName} {p.SecondName} {p.ThirdName} {p.LastName}",
-        //        DateOfBirth = p.DateOfBirth,
-        //        Gender = p.Gender == Gender.Male ? "Male" : "Female",
-        //        Address = p.Address,
-        //        Phone = p.Phone,
-        //        CountryName = p.Country?.CountryName ?? string.Empty
-        //    }).ToList();
-
-        //}
-
-        public PersonDto? GetPersonById(int id)
-        {
-            var p = _personRepository.GetPersonById(id);
-
-            if (p == null) return null;
-
-            return new PersonDto
-            {
-                PersonId = p.PersonId,
-                NationalNo = p.NationalNo,
-                FullName = $"{p.FirstName} {p.SecondName} {p.ThirdName} {p.LastName}",
-                DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender == Gender.Male ? "Male" : "Female",
-                Address = p.Address,
-                Phone = p.Phone,
-                CountryName = p.Country?.CountryName ?? "",
-                ImagePath = p.ImagePath
             };
         }
 
-        public PersonDto? GetPersonByNationalNo(string nationalNo)
+        private Person MapToEntity(PersonCreateUpdateDto dto)
         {
-            var p = _personRepository.GetPersonByNationalNo(nationalNo);
-
-            if (p == null) return null;
-
-            return new PersonDto
+            return new Person
             {
-                PersonId = p.PersonId,
-                NationalNo = p.NationalNo,
-                FullName = $"{p.FirstName} {p.SecondName} {p.ThirdName} {p.LastName}",
-                DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender == Gender.Male ? "Male" : "Female",
-                Address = p.Address,
-                Phone = p.Phone,
-                CountryName = p.Country?.CountryName ?? "",
-                ImagePath = p.ImagePath
+                NationalNo = dto.NationalNo,
+                FirstName = dto.FirstName,
+                SecondName = dto.SecondName,
+                ThirdName = dto.ThirdName,
+                LastName = dto.LastName,
+                DateOfBirth = dto.DateOfBirth,
+                Gender = dto.Gender,
+                Address = dto.Address,
+                Phone = dto.Phone,
+                Email = dto.Email,
+                NationalityCountryID = dto.NationalityCountryID,
+                ImagePath = dto.ImagePath
             };
-        }
-
-        public List<Person> GetAllPersons()
-        {
-            return _personRepository.GetAllPersons();
-        }
-
-        public bool IsPersonExists(int id)
-        {
-            return _personRepository.IsPersonExistsById(id);
-        }
-
-        public int AddPerson(Person person)
-        {
-            if (!PersonValidator.Validate(person, out _))
-                return -1;
-
-            if (_personRepository.IsNationalNoDuplicated(person.NationalNo, 0))
-                return -1;
-
-            return _personRepository.AddPerson(person);
-        }
-
-        public bool UpdatePerson(Person person)
-        {
-            if (person.PersonId <= 0)
-                return false;
-
-            if (_personRepository.IsNationalNoDuplicated(person.NationalNo, person.PersonId))
-                return false;
-
-            return _personRepository.UpdatePerson(person);
-        }
-
-        public bool DeletePerson(int id)
-        {
-            if (!_personRepository.IsPersonExistsById(id))
-                return false;
-
-            return _personRepository.DeletePerson(id);
         }
     }
 }
+

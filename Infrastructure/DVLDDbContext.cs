@@ -7,18 +7,17 @@ namespace Infrastructure
     public class DVLDDbContext : DbContext
     {
 
+        public DVLDDbContext(DbContextOptions<DVLDDbContext> options) : base(options) { }
+
         public DbSet<Person> People { get; set; } = null!;
         public DbSet<Country> Countries { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer("Server=.;Database=DVLDf;Trusted_Connection=True;TrustServerCertificate=True");
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Fluent API configurations (if needed)
+
+            modelBuilder.Entity<Person>().HasKey(p => p.PersonId);
 
             // Configure one-to-many relationship between Country and Person
             modelBuilder.Entity<Person>()

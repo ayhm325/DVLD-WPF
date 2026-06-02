@@ -7,157 +7,141 @@
       Title="PeoplePage"
       Background="#F5F6FA">
 
-    <Grid Margin="15">
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Page.Resources>
 
+    <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 🔵 Header -->
-        <Border Background="White"
-                CornerRadius="8"
-                Padding="10"
-                Margin="0,0,0,10"
-                BorderBrush="#E0E0E0"
-                BorderThickness="1">
-
+        <!-- الجزء العلوي: العنوان وزر الإضافة -->
+        <Border Background="White" CornerRadius="8" Padding="10" Margin="0,0,0,10" BorderBrush="#E0E0E0" BorderThickness="1">
             <DockPanel>
-
-                <!-- Title + Count -->
-                <StackPanel Orientation="Horizontal"
-                VerticalAlignment="Center">
-
-                    <TextBlock Text="People Management"
-                   FontSize="20"
-                   FontWeight="Bold"
-                   Foreground="#2C3E50"
-                   VerticalAlignment="Center"/>
-
-                    <TextBlock Text="("
-                   FontSize="18"
-                   Margin="8,0,0,0"
-                   VerticalAlignment="Center"/>
-
-                    <TextBlock x:Name="txtPeopleCount"
-                   FontSize="18"
-                   FontWeight="Bold"
-                   Foreground="#3498DB"
-                   VerticalAlignment="Center"/>
-
-                    <TextBlock Text=")"
-                   FontSize="18"
-                   VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="People Management" FontSize="20" FontWeight="Bold" Foreground="#2C3E50" VerticalAlignment="Center"/>
+                    <TextBlock Text=" (" FontSize="18" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding PeopleCount}" FontSize="18" FontWeight="Bold" Foreground="#3498DB" VerticalAlignment="Center"/>
+                    <TextBlock Text=")" FontSize="18" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Button Content="+ Add Person"
-            Width="120"
-            Height="35"
-            HorizontalAlignment="Right"
-            Background="#3498DB"
-            Foreground="White"
-            BorderThickness="0"
-            Cursor="Hand"
-            Click="AddPerson_Click"/>
-
+                <Button Content="+ Add Person" Width="120" Height="35" HorizontalAlignment="Right" Background="#3498DB" Foreground="White" BorderThickness="0" Cursor="Hand" Click="AddPerson_Click"/>
             </DockPanel>
-
         </Border>
 
-        <!-- 🔴 Content -->
-        <Border Grid.Row="1"
-                Background="White"
-                CornerRadius="8"
-                Padding="10"
-                BorderBrush="#E0E0E0"
-                BorderThickness="1">
-
+        <!-- الجزء السفلي: الفلاتر والـ DataGrid -->
+        <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
             <Grid>
-
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- 🔍 Filter Section -->
-                <StackPanel Orientation="Horizontal"
-                            Margin="0,0,0,10">
+                <!-- شريط الفلاتر والبحث -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <ComboBox ItemsSource="{Binding FilterTypes}"
+                              SelectedItem="{Binding SelectedFilterType}"
+                              Width="150" Height="30" Margin="0,0,10,0"/>
 
-                    <!-- Filter Type -->
-                    <ComboBox x:Name="cbFilterType"
-                              Width="150"
-                              Height="30"
-                              Margin="0,0,10,0"
-                              SelectionChanged="cbFilterType_SelectionChanged">
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="{Binding SearchToolTip}"
+                             Visibility="{Binding IsSearchTextVisible, Converter={StaticResource BoolToVis}}"
+                             Width="200" Height="30" Margin="0,0,10,0" VerticalContentAlignment="Center"/>
 
-                        <ComboBoxItem Content="None" IsSelected="True"/>
-                        <ComboBoxItem Content="National No"/>
-                        <ComboBoxItem Content="Name"/>
-                        <ComboBoxItem Content="Gender"/>
-
-                    </ComboBox>
-
-                    <!-- Text Search -->
-                    <TextBox x:Name="txtSearch"
-                             Width="200"
-                             Height="30"
-                             Margin="0,0,10,0"
-                             VerticalContentAlignment="Center"
-                             Visibility="Collapsed"
-                             TextChanged="txtSearch_TextChanged">
-                        
-                    </TextBox>
-                             
-                    
-
-                    <!-- Gender Combo -->
-                    <ComboBox x:Name="cbGender"
-                              Width="120"
-                              Height="30"
-                              Visibility="Collapsed"
-                              SelectionChanged="cbGender_SelectionChanged">
-
-                        <ComboBoxItem Content="All" IsSelected="True"/>
-                        <ComboBoxItem Content="Male"/>
-                        <ComboBoxItem Content="Female"/>
-
-                    </ComboBox>
-
+                    <ComboBox ItemsSource="{Binding GenderOptions}"
+                              SelectedItem="{Binding SelectedGender}"
+                              Visibility="{Binding IsGenderComboVisible, Converter={StaticResource BoolToVis}}"
+                              Width="120" Height="30"/>
                 </StackPanel>
 
-                <!-- 📊 DataGrid -->
+                <!-- الـ DataGrid الكامل مع القائمة المنسدلة المرتبة بالأيقونات -->
                 <DataGrid x:Name="dgPeople"
-                          Grid.Row="1"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          CanUserAddRows="False"
-                          SelectionMode="Single"
-                          GridLinesVisibility="All"
-                          RowBackground="White"
-                          AlternatingRowBackground="#F9FAFB"
-                          BorderBrush="#D0D7DE"
-                          BorderThickness="1">
+                          ItemsSource="{Binding FilteredPeople}"
+                          Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single" GridLinesVisibility="All" RowBackground="White" AlternatingRowBackground="#F9FAFB" BorderBrush="#D0D7DE" BorderThickness="1">
 
+                    <!-- إضافة الـ ContextMenu لكل سطر في الجدول بربط صحيح -->
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+
+                            <Setter Property="ContextMenu">
+                                <Setter.Value>
+                                    <ContextMenu Background="White" BorderBrush="#CBD5E0" BorderThickness="1">
+
+                                        <MenuItem Header="Show Details" 
+                              Command="{Binding PlacementTarget.Tag.ShowDetailsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="👁️" VerticalAlignment="Center" FontSize="14"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <Separator BorderBrush="#E2E8F0" BorderThickness="0.5"/>
+
+                                        <MenuItem Header="Add New Person" 
+                              Command="{Binding PlacementTarget.Tag.AddNewPersonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="➕" VerticalAlignment="Center" FontSize="14"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <MenuItem Header="Edit" 
+                              Command="{Binding PlacementTarget.Tag.EditPersonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="✏️" VerticalAlignment="Center" FontSize="14"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <MenuItem Header="Delete" 
+                              Command="{Binding PlacementTarget.Tag.DeletePersonCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              Foreground="#E53E3E">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="🗑️" VerticalAlignment="Center" FontSize="14"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <Separator BorderBrush="#E2E8F0" BorderThickness="0.5"/>
+
+                                        <MenuItem Header="Send Email" 
+                              Command="{Binding PlacementTarget.Tag.SendEmailCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="📧" VerticalAlignment="Center" FontSize="14"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <MenuItem Header="Phone Call" 
+                              Command="{Binding PlacementTarget.Tag.PhoneCallCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="📞" VerticalAlignment="Center" FontSize="14"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                    </ContextMenu>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGrid.RowStyle>
+
+                    <!-- أعمدة الجدول -->
                     <DataGrid.Columns>
-
                         <DataGridTextColumn Header="ID" Binding="{Binding PersonId}" Width="60"/>
                         <DataGridTextColumn Header="National No" Binding="{Binding NationalNo}" Width="100"/>
                         <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
-                        <DataGridTextColumn Header="Date Of Birth" Binding="{Binding DateOfBirth}" Width="120"/>
+                        <DataGridTextColumn Header="Date Of Birth" Binding="{Binding DateOfBirth, StringFormat=\{0:dd/MM/yyyy\}}" Width="120"/>
                         <DataGridTextColumn Header="Gender" Binding="{Binding Gender}" Width="80"/>
                         <DataGridTextColumn Header="Address" Binding="{Binding Address}" Width="250"/>
                         <DataGridTextColumn Header="Phone" Binding="{Binding Phone}" Width="120"/>
                         <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="150"/>
-                        <DataGridTextColumn Header="Country" Binding="{Binding Country}" Width="120"/>
-
+                        <DataGridTextColumn Header="Country" Binding="{Binding CountryName}" Width="120"/>
                     </DataGrid.Columns>
-
                 </DataGrid>
-
             </Grid>
-
         </Border>
-
     </Grid>
-
 </Page>
