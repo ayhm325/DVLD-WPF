@@ -32,11 +32,18 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync(u => u.PersonId == id);
         }
 
+        public async Task<User?> GetUserByUsernameAsync(string username)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Users
+                .FirstOrDefaultAsync(u => u.UserName == username);
+        }
+
         public async Task<List<User>> GetAllUsersAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             return await context.Users
-                .Include(u => u.Person)
+                .Include(p => p.Person)
                 .ToListAsync();
         }
         // =========================
@@ -51,19 +58,19 @@ namespace Infrastructure.Repositories
         public async Task<bool> CheckUserCredentialsAsync(string username, string password)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.Username == username && u.Password == password);
+            return await context.Users.AnyAsync(u => u.UserName == username && u.Password == password);
         }
 
         public async Task<bool> IsUsernameTakenAsync(string username)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.Username == username);
+            return await context.Users.AnyAsync(u => u.UserName == username);
         }
 
         public async Task<bool> IsUsernameTakenForAnotherUserAsync(string username, int userId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.Username == username && u.UserId != userId);
+            return await context.Users.AnyAsync(u => u.UserName == username && u.UserId != userId);
         }
 
         public async Task<bool> IsUserExistsByIdAsync(int id)
@@ -81,7 +88,7 @@ namespace Infrastructure.Repositories
         public async Task<bool> CheckUserExistsAsync(string username, string password)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.Username == username && u.Password == password);
+            return await context.Users.AnyAsync(u => u.UserName == username && u.Password == password);
         }
 
         //// =========================

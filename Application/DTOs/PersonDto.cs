@@ -12,8 +12,8 @@ namespace Application.DTOs
         public string Address { get; set; } = null!;
         public string Phone { get; set; } = null!;
         public string? Email { get; set; }
-        public string CountryName { get; set; } = null!;
-        public string? ImagePath { get; set; }
+        public string CountryName { get; set; } = null!;       
         public int NationalityCountryID { get; set; }
+        public string? ImagePath { get; set; }
     }
 }

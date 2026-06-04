@@ -16,6 +16,9 @@ namespace Infrastructure.Repositories
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
+        // =========================
+        // GET OPERATIONS
+        // =========================
         public async Task<Person?> GetPersonByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -40,27 +43,9 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<int> AddPersonAsync(Person person)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-            context.People.Add(person);
-            await context.SaveChangesAsync();
-            return person.PersonId;
-        }
-
-        public async Task<bool> UpdatePersonAsync(Person person)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            var existingPerson = await context.People.FindAsync(person.PersonId);
-            if (existingPerson == null) return false;
-
-            // تحديث الخصائص
-            context.Entry(existingPerson).CurrentValues.SetValues(person);
-
-            return await context.SaveChangesAsync() > 0;
-        }
-
+        // =========================
+        // CHECK OPERATIONS
+        // =========================
         public async Task<bool> IsPersonExistsByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -73,6 +58,36 @@ namespace Infrastructure.Repositories
             return await context.People.AnyAsync(p => p.NationalNo == nationalNo && p.PersonId != id);
         }
 
+        //// =========================
+        //// CREATE
+        //// =========================
+        public async Task<int> AddPersonAsync(Person person)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            context.People.Add(person);
+            await context.SaveChangesAsync();
+            return person.PersonId;
+        }
+
+        //// =========================
+        //// UPDATE
+        //// =========================
+        public async Task<bool> UpdatePersonAsync(Person person)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var existingPerson = await context.People.FindAsync(person.PersonId);
+            if (existingPerson == null) return false;
+
+            // تحديث الخصائص
+            context.Entry(existingPerson).CurrentValues.SetValues(person);
+
+            return await context.SaveChangesAsync() > 0;
+        }       
+
+        //// =========================
+        //// DELETE
+        //// =========================
         public async Task<bool> DeletePersonAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();

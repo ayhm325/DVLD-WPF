@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.ViewModels;
 using Presentation.Views;
+using Presentation.Views.Pages;
+using Presentation.Views.Windows;
 using System;
 using System.Windows;
 
@@ -32,24 +34,38 @@ namespace DVLD_WPF
 
         private void ConfigureServices(IServiceCollection services)
         {
-            // DbContext Factory
+            // 1. DbContext Factory
             services.AddDbContextFactory<Infrastructure.DVLDDbContext>(options =>
                 options.UseSqlServer(ConnectionString));
 
-            // Repositories
+            // 2. Repositories
             services.AddScoped<PersonRepository>();
             services.AddScoped<CountryRepository>();
+            services.AddScoped<UserRepository>();
 
-            // Services
+            // 3. Services
             services.AddScoped<IPersonService, PersonService>();
             services.AddScoped<ICountryService, CountryService>();
+            services.AddScoped<IUserService, UserService>();
 
-            // ViewModels
+            // 4. ViewModels
             services.AddTransient<PeopleViewModel>();
             services.AddTransient<PersonViewModel>();
+            services.AddTransient<UsersViewModel>();
+            services.AddTransient<AddEditUserViewModel>(); // تأكد من إضافته هنا
 
-            // Views
+            // 5. Views (Pages & Windows)
             services.AddTransient<MainWindow>();
+            services.AddTransient<HomePage>();           // كان مفقوداً
+            services.AddTransient<UserPage>();
+            services.AddTransient<AddEditUserPage>();    // كان مفقوداً
+            services.AddTransient<SettingsPage>();       // إذا كنت تستخدمها
+            services.AddTransient<PeoplePage>();         // إذا كنت تستخدمها
+            services.AddTransient<UserDetailsWindow>();
+            services.AddTransient<ChangePasswordViewModel>();
+
         }
+
+
     }
 }

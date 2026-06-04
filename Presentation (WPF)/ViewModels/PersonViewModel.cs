@@ -23,7 +23,7 @@ namespace Presentation.ViewModels
         private readonly string _destinationFolder = @"C:\ImageDVLD\";
 
         [ObservableProperty] private int _personId;
-        [ObservableProperty] private PersonFormMode _mode;
+        [ObservableProperty] private OperationMode _mode;
         [ObservableProperty] private string _pageTitle = "Add Person";
         [ObservableProperty] private Country _selectedCountry = null!;
         [ObservableProperty]private string _imagePath = string.Empty;
@@ -32,6 +32,8 @@ namespace Presentation.ViewModels
             ? ImagePath
             : (IsMale ? "pack://application:,,,/Resources/Default_Male.png" : "pack://application:,,,/Resources/Default_Female.png");
 
+        public string FullName => $"{FirstName} {SecondName} {ThirdName} {LastName}".Replace("  ", " ").Trim();
+        public string CountryName => SelectedCountry?.CountryName ?? "Unknown";       
         public ObservableCollection<Country> Countries { get; } = new();
         public DateTime MaxBirthDate => DateTime.Now.AddYears(-18);
 
@@ -54,15 +56,15 @@ namespace Presentation.ViewModels
                 var person = await _personService.GetPersonByIdAsync(personId.Value);
                 if (person != null)
                 {
-                    _mode = PersonFormMode.Edit;
-                    _personId = personId.Value;
+                    Mode = OperationMode.Edit;
+                    PersonId = personId.Value;
                     PageTitle = "Edit Person";
                     LoadData(person);
                 }
             }
             else
             {
-                _mode = PersonFormMode.Add;
+                Mode = OperationMode.Add;
                 PageTitle = "Add Person";
                 SelectedCountry = Countries.FirstOrDefault(c => c.CountryName == "Jordan") ?? Countries.FirstOrDefault()!;
             }
@@ -102,6 +104,14 @@ namespace Presentation.ViewModels
 
             OnPropertyChanged(nameof(ImageDisplayPath));
         }
+
+
+        partial void OnFirstNameChanged(string value) => OnPropertyChanged(nameof(FullName));
+        partial void OnSecondNameChanged(string value) => OnPropertyChanged(nameof(FullName));
+        partial void OnThirdNameChanged(string value) => OnPropertyChanged(nameof(FullName));
+        partial void OnLastNameChanged(string value) => OnPropertyChanged(nameof(FullName));
+        partial void OnSelectedCountryChanged(Country value) => OnPropertyChanged(nameof(CountryName));
+
 
         private void LoadData(PersonDto p)
         {
@@ -144,7 +154,7 @@ namespace Presentation.ViewModels
 
             var dto = new PersonCreateUpdateDto
             {
-                PersonId = this._personId,
+                PersonId = this.PersonId,
                 FirstName = FirstName,
                 SecondName = SecondName,
                 ThirdName = ThirdName,
@@ -159,8 +169,8 @@ namespace Presentation.ViewModels
                 ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath
             };
 
-            bool result = _mode == PersonFormMode.Edit
-                ? await _personService.UpdatePersonAsync(_personId, dto)
+            bool result = Mode == OperationMode.Edit
+                ? await _personService.UpdatePersonAsync(PersonId, dto)
                 : await _personService.AddPersonAsync(dto) > 0;
 
             SaveCompleted?.Invoke(result);
@@ -234,5 +244,17 @@ namespace Presentation.ViewModels
 
             return err != null ? new ValidationResult(err) : ValidationResult.Success;
         }
+
+
+        [RelayCommand]
+        private void Cancel()
+        {
+            var mainWindow = System.Windows.Application.Current.MainWindow;
+            var mainFrame = mainWindow.FindName("MainFrame") as System.Windows.Controls.Frame;
+            mainFrame?.GoBack();
+        }
+
+
+
     }
 }

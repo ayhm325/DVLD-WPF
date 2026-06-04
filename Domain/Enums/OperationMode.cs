@@ -2,7 +2,7 @@
 
 namespace Domain.Enums
 {
-    public enum PersonFormMode
+    public enum OperationMode
     {
         Add,
         Edit

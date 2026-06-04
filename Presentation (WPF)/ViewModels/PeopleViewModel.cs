@@ -101,11 +101,11 @@ namespace Presentation.ViewModels
 
             if (SelectedFilterType == "National No" && !string.IsNullOrWhiteSpace(SearchText))
             {
-                query = query.Where(p => p.NationalNo != null && p.NationalNo.ToLower().Contains(SearchText.ToLower()));
+                query = query.Where(p => p.NationalNo != null && p.NationalNo.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase));
             }
             else if (SelectedFilterType == "Name" && !string.IsNullOrWhiteSpace(SearchText))
             {
-                query = query.Where(p => p.FullName != null && p.FullName.ToLower().Contains(SearchText.ToLower()));
+                query = query.Where(p => p.FullName != null && p.FullName.ToLower(System.Globalization.CultureInfo.CurrentCulture).Contains(SearchText.ToLower()));
             }
             else if (SelectedFilterType == "Gender")
             {
@@ -145,7 +145,7 @@ namespace Presentation.ViewModels
 
             // 🟢 4. الآن الكود سيتعرف على الـ _personService بنجاح تام وبدون أخطاء كومبايلر
             Presentation.Views.Windows.PersonDetailsWindow detailsWindow =
-                new Presentation.Views.Windows.PersonDetailsWindow(_personService, selectedPerson.PersonId);
+                new(_personService, selectedPerson.PersonId);
 
             detailsWindow.Owner = System.Windows.Application.Current.MainWindow;
             detailsWindow.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;

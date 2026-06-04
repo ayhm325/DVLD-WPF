@@ -8,9 +8,10 @@ namespace Application.DTOs
     {
         public int UserId { get; set; }
         public int PersonId { get; set; }
-        public string Username { get; set; } = null!;
+        public string UserName { get; set; } = null!;
         public string Password { get; set; } = null!;
-        public byte IsActive { get; set; }       
+        public bool IsActive { get; set; }
+        public string FullName { get; set; } = null!;
 
     }
 }

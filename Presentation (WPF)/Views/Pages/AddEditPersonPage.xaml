@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:controls="clr-namespace:Presentation.Views.Controls"
+      xmlns:controls="clr-namespace:Presentation.Views.Controls" xmlns:viewmodels="clr-namespace:Presentation.ViewModels" 
       mc:Ignorable="d"
       Title="Add/Edit Person"
       Background="#F5F6FA">
@@ -35,21 +35,10 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,15,0,0">
-
-            <Button Content="Cancel"
-                    Width="100"
-                    Height="35"
-                    Margin="0,0,10,0"
-                    Background="#E74C3C"
-                    Foreground="White"
-                    Click="Cancel_Click"/>
-
-            <Button Content="Save"
-                    Width="100"
-                    Height="35"
-                    Background="#2ECC71"
-                    Foreground="White"
-                    Command="{Binding SavePersonCommand}"/>
+            
+            
+            <Button Content="Cancel" Style="{StaticResource PrimaryButtonStyle}" Background="#94A3B8" Width="100" Margin="0,0,10,0" Command="{Binding CancelCommand}"/>
+            <Button Content="Save" Style="{StaticResource PrimaryButtonStyle}" Background="OliveDrab" Width="100" Command="{Binding SavePersonCommand}"/>
 
         </StackPanel>
 

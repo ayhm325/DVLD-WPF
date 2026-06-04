@@ -1,5 +1,5 @@
 ﻿using Presentation.Views;
-using System.Configuration;
+using Microsoft.Extensions.DependencyInjection; // تأكد من استيراد هذا
 using System.Windows;
 
 namespace DVLD_WPF
@@ -9,30 +9,30 @@ namespace DVLD_WPF
         public MainWindow()
         {
             InitializeComponent();
-
             this.WindowState = WindowState.Maximized;
-            // أول صفحة عند التشغيل
-            MainFrame.Navigate(new HomePage());
+
+            // استدعاء الصفحة من الـ ServiceProvider
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
         }
 
         private void Home_Click(object sender, RoutedEventArgs e)
         {
-            MainFrame.Navigate(new HomePage());
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
         }
 
         private void Users_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(new UserPage());
+        {           
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<UserPage>());
         }
 
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
-            MainFrame.Navigate(new SettingsPage());
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<SettingsPage>());
         }
 
         private void ManagePeople_Click(object sender, RoutedEventArgs e)
         {
-            MainFrame.Navigate(new PeoplePage());
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<PeoplePage>());
         }
     }
 }

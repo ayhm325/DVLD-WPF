@@ -4,14 +4,14 @@
     {
         public bool IsValid { get; set; }
 
-        public List<string> Errors { get; set; } = new();
+        public List<string> Errors { get; set; } = [];
 
         public static ValidationResult Success()
         {
             return new ValidationResult
             {
                 IsValid = true,
-                Errors = new List<string>()
+                Errors = []
             };
         }
 

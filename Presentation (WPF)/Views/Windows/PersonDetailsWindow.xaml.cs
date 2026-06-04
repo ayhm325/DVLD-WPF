@@ -29,7 +29,7 @@ namespace Presentation.Views.Windows
             {
                 var fullPersonDto = await _personService.GetPersonByIdAsync(_personId);
 
-                LoadPersonData(fullPersonDto);
+                LoadPersonData(fullPersonDto!);
             }
             catch (Exception ex)
             {
@@ -68,7 +68,7 @@ namespace Presentation.Views.Windows
         // ================= IMAGE HANDLING =================
         private void LoadImage(PersonDto person)
         {
-            string path = person.ImagePath?.Trim();
+            string? path = person.ImagePath?.Trim();
 
             try
             {

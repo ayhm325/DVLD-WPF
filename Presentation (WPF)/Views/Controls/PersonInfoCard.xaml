@@ -192,12 +192,19 @@
                             <Image Source="{Binding ImageDisplayPath}" Stretch="UniformToFill" Margin="2" ToolTip="User Image"/>
                         </Border>
                         <StackPanel Grid.Column="1" Margin="15,0,0,0" VerticalAlignment="Center">
-                            <Button Content="Choose Image" Height="32" Width="130" HorizontalAlignment="Left" 
-                                    Command="{Binding ChooseImageCommand}" Background="#3182CE" Foreground="White" BorderThickness="0" Cursor="Hand" 
-                                    Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
-                            <Button Content="Remove" Height="32" Width="130" HorizontalAlignment="Left" 
-                                    Command="{Binding RemoveImageCommand}" Margin="0,8,0,0" Background="#E53E3E" Foreground="White" BorderThickness="0" Cursor="Hand" 
-                                    Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                            <Button Content="Choose Image" 
+            Height="32" Width="130" 
+            HorizontalAlignment="Left" 
+            Command="{Binding ChooseImageCommand}" 
+            Background="#3182CE" Foreground="White" BorderThickness="0" Cursor="Hand" 
+            Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
+
+                            <Button Content="Remove" 
+            Height="32" Width="130" 
+            HorizontalAlignment="Left" 
+            Command="{Binding RemoveImageCommand}" 
+            Margin="0,8,0,0" Background="#E53E3E" Foreground="White" BorderThickness="0" Cursor="Hand" 
+            Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
