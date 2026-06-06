@@ -1,21 +1,19 @@
-﻿using Presentation.ViewModels;
+﻿
+using Presentation.ViewModels;
 using System.Windows;
 
-namespace Presentation.Views.Windows.Applications
+namespace Presentation.Views.Windows.Tests
 {
     /// <summary>
-    /// Interaction logic for EditApplicationTypeWindow.xaml
+    /// Interaction logic for EditTestTypeWindow.xaml
     /// </summary>
-    public partial class EditApplicationTypeWindow : Window
+    public partial class EditTestTypeWindow : Window
     {
-        
-
-        public EditApplicationTypeWindow( UpdateApplicationTypeViewModel viewModel)
+        public EditTestTypeWindow(UpdateTestTypeViewModel vm)
         {
             InitializeComponent();
-            DataContext = viewModel;
+            DataContext = vm;
         }
-
 
         protected override  void OnSourceInitialized(EventArgs e)
         {
@@ -23,6 +21,5 @@ namespace Presentation.Views.Windows.Applications
             // افترضنا أنك تمرر الـ ID بطريقة ما، يمكنك استبداله بالـ ID الفعلي
             // await _viewModel.InitializeAsync(id_المطلوب); 
         }
-
     }
 }

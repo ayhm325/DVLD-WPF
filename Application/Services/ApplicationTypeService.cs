@@ -2,22 +2,16 @@
 using Application.Interfaces;
 using Application.Validators;
 using Domain.Entities;
-using DVLD.Domain.Entities;
-using DVLD.Domain.Enums;
 using Infrastructure.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Application.Services
 {
     public class ApplicationTypeService : IApplicationTypeService
     {
-        private readonly ApplicationTypeRespository _applicationTypeRespository;
+        private readonly ApplicationTypeRepository _applicationTypeRespository;
 
-        public ApplicationTypeService(ApplicationTypeRespository applicationTypeRespository)
+        public ApplicationTypeService(ApplicationTypeRepository applicationTypeRespository)
         {
             _applicationTypeRespository = applicationTypeRespository;
         }
@@ -32,20 +26,20 @@ namespace Application.Services
         // ================= GET BY ID =================
         public async Task<ApplicationTypeDto?> GetApplicationTypeByIdAsync(int id)
         {
-            var appTypes = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
-            return appTypes == null ? null : MapToDto(appTypes);
+            var appType = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
+            return appType == null ? null : MapToDto(appType);
         }
 
         // ================= UPDATE =================
         public async Task<bool> UpdateApplicationTypeAsync(int id, ApplicationTypeDto dto)
         {
-            var appTypes = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
-            if (appTypes is null) return false;
+            var appType = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
+            if (appType is null) return false;
 
-            appTypes.ApplicationTypeTitle = dto.ApplicationTypeTitle;
-            appTypes.ApplicationFees = dto.ApplicationTypeFees;
+            appType.ApplicationTypeTitle = dto.ApplicationTypeTitle;
+            appType.ApplicationFees = dto.ApplicationTypeFees;
 
-            return await _applicationTypeRespository.UpdateApplicationTypeAsync(appTypes);
+            return await _applicationTypeRespository.UpdateApplicationTypeAsync(appType);
 
         }
 

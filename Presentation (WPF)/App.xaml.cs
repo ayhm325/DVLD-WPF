@@ -9,6 +9,8 @@ using Presentation.Views.Pages;
 using Presentation.Views.Pages.Applications;
 using Presentation.Views.Windows;
 using Presentation.Views.Windows.Applications;
+using Presentation.Views.Windows.Tests;
+using Presentation.Views.Pages.Tests;
 using System;
 using System.Windows;
 
@@ -44,13 +46,15 @@ namespace DVLD_WPF
             services.AddScoped<PersonRepository>();
             services.AddScoped<CountryRepository>();
             services.AddScoped<UserRepository>();
-            services.AddScoped<ApplicationTypeRespository>();
+            services.AddScoped<ApplicationTypeRepository>();
+            services.AddScoped<TestTypeRepository>();
 
             // 3. Services
             services.AddScoped<IPersonService, PersonService>();
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
+            services.AddScoped<ITestTypeService, TestTypeService>();
 
             // 4. ViewModels
             services.AddTransient<PeopleViewModel>();
@@ -59,6 +63,9 @@ namespace DVLD_WPF
             services.AddTransient<AddEditUserViewModel>();
             services.AddTransient<ApplicationTypeViewModel>();
             services.AddTransient<UpdateApplicationTypeViewModel>();
+            services.AddTransient<TestTypeViewModel>();
+            services.AddTransient<UpdateTestTypeViewModel>();
+
 
             // 5. Views (Pages & Windows)
             services.AddTransient<MainWindow>();
@@ -71,6 +78,9 @@ namespace DVLD_WPF
             services.AddTransient<ChangePasswordViewModel>();
             services.AddTransient<ManageApplicationTypePage>();
             services.AddTransient<EditApplicationTypeWindow>();
+            services.AddTransient<ManageTestTypePage>();
+            services.AddTransient<EditTestTypeWindow>();
+
 
 
         }

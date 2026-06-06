@@ -23,6 +23,7 @@
             <Button Content="Manage People" Margin="10" Click="ManagePeople_Click" Style="{StaticResource PrimaryButtonStyle}"/>
             <Button Content="Manage Users" Margin="10" Click="Users_Click" Style="{StaticResource PrimaryButtonStyle}"/>
             <Button Content="Application Type" Margin="10" Click="ApplicationType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+            <Button Content="Test Type" Margin="10" Click="TestType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
             <Button Content="Settings" Margin="10" Click="Settings_Click" Style="{StaticResource PrimaryButtonStyle}"/>
 
         </StackPanel>

@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection; // تأكد من استيراد هذا
+﻿using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views;
 using Presentation.Views.Pages.Applications;
+using Presentation.Views.Pages.Tests;
 using System.Windows;
 
 namespace DVLD_WPF
@@ -40,6 +41,11 @@ namespace DVLD_WPF
         {
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ManageApplicationTypePage>());
 
+        }
+
+        private void TestType_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ManageTestTypePage>());
         }
     }
 }

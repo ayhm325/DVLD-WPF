@@ -14,6 +14,7 @@ namespace Infrastructure
         public DbSet<Country> Countries { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<ApplicationType> ApplicationTypes { get; set; } = null!;
+        public DbSet<TestType> TestTypes { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

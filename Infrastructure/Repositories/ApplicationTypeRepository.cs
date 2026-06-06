@@ -1,15 +1,14 @@
 ﻿using Domain.Entities;
-using DVLD.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories
 {
-    public class ApplicationTypeRespository
+    public class ApplicationTypeRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 
-        public ApplicationTypeRespository(IDbContextFactory<DVLDDbContext> contextFactory)
+        public ApplicationTypeRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         }
