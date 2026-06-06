@@ -1,5 +1,6 @@
-﻿using Presentation.Views;
-using Microsoft.Extensions.DependencyInjection; // تأكد من استيراد هذا
+﻿using Microsoft.Extensions.DependencyInjection; // تأكد من استيراد هذا
+using Presentation.Views;
+using Presentation.Views.Pages.Applications;
 using System.Windows;
 
 namespace DVLD_WPF
@@ -33,6 +34,12 @@ namespace DVLD_WPF
         private void ManagePeople_Click(object sender, RoutedEventArgs e)
         {
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<PeoplePage>());
+        }
+
+        private void ApplicationType_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ManageApplicationTypePage>());
+
         }
     }
 }

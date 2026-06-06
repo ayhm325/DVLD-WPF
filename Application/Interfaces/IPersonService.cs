@@ -18,5 +18,6 @@ namespace Application.Interfaces
         Task<bool> DeletePersonAsync(int id);
 
         Task<bool> IsPersonExistsAsync(int id);
+       
     }
 }

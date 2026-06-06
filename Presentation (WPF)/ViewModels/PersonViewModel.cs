@@ -13,6 +13,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Presentation.ViewModels
 {
@@ -172,6 +173,24 @@ namespace Presentation.ViewModels
             bool result = Mode == OperationMode.Edit
                 ? await _personService.UpdatePersonAsync(PersonId, dto)
                 : await _personService.AddPersonAsync(dto) > 0;
+
+            if (result)
+            {
+                MessageBox.Show(
+                    "Data has been saved successfully.",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show(
+                    "An error occurred while saving the data. Please try again.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+
 
             SaveCompleted?.Invoke(result);
         }

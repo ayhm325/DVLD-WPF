@@ -66,13 +66,13 @@
                                    TextWrapping="Wrap" />
 
                         <Label Grid.Row="3" Content="Password:" VerticalAlignment="Center" Visibility="{Binding PasswordVisibility}" />
-                        <PasswordBox Grid.Row="3" Grid.Column="1" Margin="0,5" Width="300" Height="30" HorizontalAlignment="Left" Padding="5,0,0,0"
+                        <PasswordBox Grid.Row="3" Grid.Column="1" Margin="0,5" Width="300" Height="30" HorizontalAlignment="Left" Padding="5,0,30,0"
                                      helpers:PasswordBoxHelper.Attach="True"
                                      helpers:PasswordBoxHelper.Password="{Binding Password, Mode=TwoWay}"
                                      Visibility="{Binding PasswordVisibility}" />
 
                         <Label Grid.Row="4" Content="Confirm Password:" VerticalAlignment="Center" Visibility="{Binding ConfirmPasswordVisibility}" />
-                        <PasswordBox Grid.Row="4" Grid.Column="1" Margin="0,5" Width="300" Height="30" HorizontalAlignment="Left" Padding="5,0,0,0"
+                        <PasswordBox Grid.Row="4" Grid.Column="1" Margin="0,5" Width="300" Height="30" HorizontalAlignment="Left" Padding="5,0,30,0"
                                      helpers:PasswordBoxHelper.Attach="True"
                                      helpers:PasswordBoxHelper.Password="{Binding ConfirmPassword, Mode=TwoWay}"
                                      Visibility="{Binding ConfirmPasswordVisibility}" />
@@ -128,8 +128,8 @@
                 <!-- PasswordBox (Hidden when Eye is Active) -->
                 <PasswordBox helpers:PasswordBoxHelper.Attach="True"
                              helpers:PasswordBoxHelper.Password="{Binding Password, Mode=TwoWay}"
-                             Padding="5,0,30,0" 
-                             VerticalAlignment="Center">
+                             Padding="5,0,30,0"  Height="30"
+                             VerticalAlignment="Stretch">
                     <PasswordBox.Style>
                         <Style TargetType="PasswordBox">
                             <Style.Triggers>
@@ -144,8 +144,8 @@
                 <!-- TextBox (Visible when Eye is Active) -->
                 <TextBox Text="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          Padding="5,0,30,0" 
-                         VerticalContentAlignment="Center"
-                         VerticalAlignment="Center">
+                         VerticalContentAlignment="Center" Height="30"
+                         VerticalAlignment="Stretch"> 
                     <TextBox.Style>
                         <Style TargetType="TextBox">
                             <Style.Triggers>
@@ -175,8 +175,8 @@
                 <!-- PasswordBox -->
                 <PasswordBox helpers:PasswordBoxHelper.Attach="True"
                              helpers:PasswordBoxHelper.Password="{Binding ConfirmPassword, Mode=TwoWay}"
-                             Padding="5,0,30,0" 
-                             VerticalAlignment="Center">
+                             Padding="5,0,30,0" Height="30"
+                             VerticalAlignment="Stretch">
                     <PasswordBox.Style>
                         <Style TargetType="PasswordBox">
                             <Style.Triggers>
@@ -191,7 +191,7 @@
                 <!-- TextBox -->
                 <TextBox Text="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          Padding="5,0,30,0" 
-                         VerticalContentAlignment="Center"
+                         VerticalContentAlignment="Center" Height="30"
                          VerticalAlignment="Center">
                     <TextBox.Style>
                         <Style TargetType="TextBox">
@@ -209,7 +209,7 @@
                         Background="Transparent" BorderThickness="0" Cursor="Hand"
                         Command="{Binding ToggleConfirmPasswordVisibilityCommand}">
                     <TextBlock Text="👁️" FontSize="14" Foreground="Gray" 
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Button>
             </Grid>
 

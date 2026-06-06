@@ -1,115 +1,97 @@
 ﻿using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Domain.Entities;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using Presentation.Models;
+
 
 namespace Presentation.ViewModels
 {
     public partial class ChangePasswordViewModel : ObservableObject
     {
-        
-
-        // خدمة المستخدم (تأكد من تمريرها عبر الـ Constructor)
         private readonly IUserService _userService;
 
-        public int UserId { get; set; }
-        public string? UserName { get; set; }
+        // خصائص المستخدم (تم تحويلها لـ ObservableProperty لضمان العمل مع الـ Binding)
+        [ObservableProperty] private int _userId;
+        [ObservableProperty] private string _userName = string.Empty;
 
-        // دالة لجلب القيم من الـ PasswordBox في الـ View
-        public Func<PasswordData> GetPasswordValues { get; set; } = () => new PasswordData();
+        // === 1. خصائص كلمات المرور (الخاصة) ===
+        // ملاحظة: [ObservableProperty] سيقوم بإنشاء CurrentPassword, NewPassword, ConfirmNewPassword تلقائياً
+        [ObservableProperty] private string _currentPassword = string.Empty;
+        [ObservableProperty] private string _newPassword = string.Empty;
+        [ObservableProperty] private string _confirmNewPassword = string.Empty;
+
+        // === 2. خصائص العين (الظهور/الإخفاء) ===
+        [ObservableProperty] private bool _isCurrentPasswordVisible;
+        [ObservableProperty] private bool _isNewPasswordVisible;
+        [ObservableProperty] private bool _isConfirmNewPasswordVisible;
 
         public ChangePasswordViewModel(IUserService userService)
         {
             _userService = userService;
         }
 
+        // === 3. أوامر العين ===
+        [RelayCommand]
+        private void ToggleCurrentPassword() => IsCurrentPasswordVisible = !IsCurrentPasswordVisible;
+
+        [RelayCommand]
+        private void ToggleNewPassword() => IsNewPasswordVisible = !IsNewPasswordVisible;
+
+        [RelayCommand]
+        private void ToggleConfirmPassword() => IsConfirmNewPasswordVisible = !IsConfirmNewPasswordVisible;
+
+        // === 4. أمر تغيير كلمة المرور ===
         [RelayCommand]
         private async Task ChangePassword()
         {
-            if (GetPasswordValues == null) return;
-
-            // جلب القيم من الـ PasswordBox عبر الـ Delegate
-            var passwords = GetPasswordValues();
-
-            // 1. التحقق من ملء الحقول الأساسية
-            if (string.IsNullOrWhiteSpace(passwords.Current) ||
-                string.IsNullOrWhiteSpace(passwords.New) ||
-                string.IsNullOrWhiteSpace(passwords.Confirm))
+            // التحقق من الحقول
+            if (string.IsNullOrWhiteSpace(CurrentPassword) ||
+                string.IsNullOrWhiteSpace(NewPassword) ||
+                string.IsNullOrWhiteSpace(ConfirmNewPassword))
             {
-                MessageBox.Show(
-                    "Please fill in all required fields before continuing.",
-                    "Validation Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                MessageBox.Show("Please fill in all fields.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // 2. التأكد من تطابق كلمة السر الجديدة مع التأكيد
-            if (passwords.New != passwords.Confirm)
+            if (NewPassword != ConfirmNewPassword)
             {
-                MessageBox.Show(
-                    "The new password and confirmation password do not match.",
-                    "Password Validation Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                MessageBox.Show("Passwords do not match.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // 3. التحقق من أن كلمة السر الجديدة ليست هي نفسها القديمة (اختياري)
-            if (passwords.Current == passwords.New)
+            if (CurrentPassword == NewPassword)
             {
-                MessageBox.Show(
-                    "The new password must be different from the current password.",
-                    "Password Validation",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                MessageBox.Show("New password must be different from current.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // 4. تنفيذ العملية عبر الـ Service
             try
             {
-                // ستقوم الخدمة بالتحقق من صحة (CurrentPassword) مقابل قاعدة البيانات
-                bool result = await _userService.ChangePasswordAsync(UserId, passwords.Current, passwords.New);
+                // تنفيذ التغيير
+                bool result = await _userService.ChangePasswordAsync(UserId, CurrentPassword, NewPassword);
 
                 if (result)
                 {
-                    MessageBox.Show(
-                        "Your password has been changed successfully.",
-                        "Password Updated",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    MessageBox.Show("Password changed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                    // إغلاق النافذة بعد النجاح
+                    // === إصلاح خطأ Application.Current ===
+                    // نستخدم System.Windows.Application.Current بشكل كامل لتجنب تضارب الأسماء مع مشروعك
                     var window = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
                     window?.Close();
                 }
                 else
                 {
-                    // هذا الجزء يظهر إذا كانت كلمة السر القديمة خاطئة
-                    MessageBox.Show(
-                        "The current password you entered is incorrect. Please try again.",
-                        "Authentication Failed",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    MessageBox.Show("Current password is incorrect.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error occurred: {ex.Message}");
-
-                MessageBox.Show(
-                    "An unexpected error occurred while updating the password. Please try again.",
-                    "Password Update Failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
-
     }
 }

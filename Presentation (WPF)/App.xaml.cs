@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Presentation.ViewModels;
 using Presentation.Views;
 using Presentation.Views.Pages;
+using Presentation.Views.Pages.Applications;
 using Presentation.Views.Windows;
+using Presentation.Views.Windows.Applications;
 using System;
 using System.Windows;
 
@@ -42,27 +44,34 @@ namespace DVLD_WPF
             services.AddScoped<PersonRepository>();
             services.AddScoped<CountryRepository>();
             services.AddScoped<UserRepository>();
+            services.AddScoped<ApplicationTypeRespository>();
 
             // 3. Services
             services.AddScoped<IPersonService, PersonService>();
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
 
             // 4. ViewModels
             services.AddTransient<PeopleViewModel>();
             services.AddTransient<PersonViewModel>();
             services.AddTransient<UsersViewModel>();
-            services.AddTransient<AddEditUserViewModel>(); // تأكد من إضافته هنا
+            services.AddTransient<AddEditUserViewModel>();
+            services.AddTransient<ApplicationTypeViewModel>();
+            services.AddTransient<UpdateApplicationTypeViewModel>();
 
             // 5. Views (Pages & Windows)
             services.AddTransient<MainWindow>();
-            services.AddTransient<HomePage>();           // كان مفقوداً
+            services.AddTransient<HomePage>();           
             services.AddTransient<UserPage>();
-            services.AddTransient<AddEditUserPage>();    // كان مفقوداً
-            services.AddTransient<SettingsPage>();       // إذا كنت تستخدمها
-            services.AddTransient<PeoplePage>();         // إذا كنت تستخدمها
+            services.AddTransient<AddEditUserPage>();    
+            services.AddTransient<SettingsPage>();       
+            services.AddTransient<PeoplePage>();         
             services.AddTransient<UserDetailsWindow>();
             services.AddTransient<ChangePasswordViewModel>();
+            services.AddTransient<ManageApplicationTypePage>();
+            services.AddTransient<EditApplicationTypeWindow>();
+
 
         }
 

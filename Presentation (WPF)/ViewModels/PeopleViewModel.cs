@@ -12,6 +12,7 @@ using Presentation.Views;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace Presentation.ViewModels
 {
@@ -182,7 +183,37 @@ namespace Presentation.ViewModels
             NavigationHelper.Navigate(new AddEditPersonPage(addEditVm));
         }
 
-        [RelayCommand] private async Task DeletePersonAsync(PersonDto selectedPerson) { }
+        [RelayCommand]
+        private async Task DeletePersonAsync(PersonDto selectedPerson) 
+        {
+            // 1. التحقق من أن العنصر المحدد ليس فارغاً
+            if (selectedPerson == null) return;
+
+            // 2. طلب تأكيد من المستخدم
+            var result = MessageBox.Show($"Are you sure you want to delete {selectedPerson.FullName}?",
+                                         "Confirm Delete",
+                                         MessageBoxButton.YesNo,
+                                         MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    // 3. استدعاء خدمة الحذف (يجب أن تكون معرفة في الـ Constructor)
+                    object value = await _personService.DeletePersonAsync(selectedPerson.PersonId);
+
+                    // 4. تحديث القائمة في الواجهة (بافتراض أن لديك قائمة من نوع ObservableCollection)
+                    FilteredPeople.Remove(selectedPerson);
+
+                    MessageBox.Show("Person deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error: {ex.Message}", "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         [RelayCommand] private void SendEmail(PersonDto selectedPerson) { }
         [RelayCommand] private void PhoneCall(PersonDto selectedPerson) { }
     }

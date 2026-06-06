@@ -74,7 +74,7 @@ namespace Application.Services
         public async Task<bool> UpdateUserAsync(int id, CreateUserDto dto)
         {
             var user = await _userRepository.GetUserByUserIdAsync(id); // جلبنا الكائن
-            if (user == null) return false;
+            if (user is null) return false;
 
             // تعديل الخصائص على نفس الكائن
             user.UserName = dto.UserName;

@@ -11,17 +11,19 @@
         </Grid.ColumnDefinitions>
 
         <!-- 🔵 Sidebar -->
-        <StackPanel Background="#2C3E50">
+        <StackPanel Background="BurlyWood">
 
             <TextBlock Text="MENU"
                        Foreground="White"
-                       FontSize="20"
+                       FontSize="30"
+                       FontFamily="Algerian"
                        Margin="10"/>
 
-            <Button Content="Home" Margin="10" Click="Home_Click"/>
-            <Button Content="Users" Margin="10" Click="Users_Click"/>
-            <Button Content="Settings" Margin="10" Click="Settings_Click"/>
-            <Button Content="Manage People" Margin="10" Click="ManagePeople_Click"/>
+            <Button Content="Home" Margin="10" Click="Home_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+            <Button Content="Manage People" Margin="10" Click="ManagePeople_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+            <Button Content="Manage Users" Margin="10" Click="Users_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+            <Button Content="Application Type" Margin="10" Click="ApplicationType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+            <Button Content="Settings" Margin="10" Click="Settings_Click" Style="{StaticResource PrimaryButtonStyle}"/>
 
         </StackPanel>
 

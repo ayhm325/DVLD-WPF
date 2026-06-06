@@ -13,7 +13,8 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Style="{StaticResource CardStyle}" Margin="0,0,0,10">
+        <!-- الجزء العلوي: العنوان وزر الإضافة -->
+        <Border Background="White" CornerRadius="8" Padding="10" Margin="0,0,0,10" BorderBrush="#E0E0E0" BorderThickness="1">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Users Management" FontSize="20" FontWeight="Bold" Foreground="#2C3E50" VerticalAlignment="Center"/>
@@ -31,19 +32,33 @@
             </DockPanel>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}">
+        <!-- الجزء السفلي: الفلاتر والـ DataGrid -->
+        <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="10" BorderBrush="#E0E0E0" BorderThickness="1">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
+                <!-- شريط الفلاتر والبحث -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Width="250" Height="30" VerticalContentAlignment="Center" 
-                             Margin="0,0,10,0" Padding="5,0"/>
+                    <ComboBox ItemsSource="{Binding FilterOptions}" 
+                        SelectedItem="{Binding SelectedFilterType}" 
+                        Width="120" Height="30" Margin="0,0,10,0"/>
+
+                    <Grid Width="200" Margin="0,0,10,0">
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                            Height="30" Padding="5,0"
+                            Visibility="{Binding IsSearchVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                        <ComboBox ItemsSource="{Binding StatusOptions}" 
+                            SelectedItem="{Binding SelectedStatus}" 
+                            Height="30"
+                            Visibility="{Binding IsStatusVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    </Grid>
                 </StackPanel>
 
+                <!-- الـ DataGrid الكامل مع القائمة المنسدلة المرتبة بالأيقونات -->
                 <DataGrid x:Name="dgUsers"
                           Grid.Row="1"
                           ItemsSource="{Binding Users}" 
