@@ -3,7 +3,7 @@ using Application.Interfaces;
 using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using DVLD.Domain.Entities;
+using Domain.Entities;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;

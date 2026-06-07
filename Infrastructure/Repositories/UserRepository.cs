@@ -1,4 +1,4 @@
-﻿using DVLD.Domain.Entities;
+﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -97,7 +97,7 @@ namespace Infrastructure.Repositories
         public async Task<int> AddUserAsync(User user)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            context.Users.Add(user);
+            await context.Users.AddAsync(user);
             await context.SaveChangesAsync();
             return user.UserId;
         }

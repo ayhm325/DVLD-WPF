@@ -1,14 +1,17 @@
 ﻿
 
-namespace DVLD.Domain.Entities
+using System.ComponentModel.DataAnnotations;
+
+namespace Domain.Entities
 {
     public  class Country
     {
-
+        [Key]
         public int CountryId { get; set; }
-        public string CountryName { get; set; } = null!;
+        public string? CountryName { get; set; } 
+
         // Navigation Property (One Country -> Many People)
-        public List<Person>? People { get; set; }
+        public virtual List<Person>? People { get; set; }
 
        
     }

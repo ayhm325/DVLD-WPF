@@ -28,8 +28,16 @@ namespace Presentation.ViewModels
         {
             var data = await _applicationTypeService.GetAllApplicationTypesAsync();
 
-            System.Diagnostics.Debug.WriteLine($"DEBUG: Loaded {data?.Count} items.");
+            // 1. التحقق من أن البيانات ليست null
+            if (data == null)
+            {
+                System.Diagnostics.Debug.WriteLine("DEBUG: Failed to load application types (data is null).");
+                return;
+            }
 
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Loaded {data.Count} items.");
+
+            // 2. تحديث الـ ObservableCollection (أو المجموعة التي تستخدمها)
             ApplicationTypes.Clear();
             foreach (var item in data)
             {

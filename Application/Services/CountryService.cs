@@ -1,5 +1,5 @@
 ﻿using Application.Interfaces;
-using DVLD.Domain.Entities;
+using Domain.Entities;
 using Infrastructure.Repositories;
 using System.Collections.Generic;
 using System.Threading.Tasks;

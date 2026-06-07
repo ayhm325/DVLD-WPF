@@ -27,7 +27,16 @@ namespace Presentation.ViewModels
         public async void LoadTestTyepsAsync()
         {
             var data = await _testTypeService.GetAllTestTypesAsync();
-            System.Diagnostics.Debug.WriteLine($"DEBUG: Loaded {data?.Count} items.");
+
+            // التحقق من أن data ليست null قبل الاستخدام
+            if (data == null)
+            {
+                System.Diagnostics.Debug.WriteLine("DEBUG: Data returned is null.");
+                return; // الخروج إذا لم توجد بيانات
+            }
+
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Loaded {data.Count} items.");
+
             TestTypes.Clear();
             foreach (var item in data)
             {

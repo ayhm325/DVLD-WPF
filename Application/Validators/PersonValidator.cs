@@ -1,5 +1,5 @@
-﻿using DVLD.Domain.Entities;
-using DVLD.Domain.Enums;
+﻿using Domain.Entities;
+using Domain.Enums;
 using Application.Common;
 using System;
 using System.Collections.Generic;

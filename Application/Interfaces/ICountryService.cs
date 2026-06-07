@@ -1,7 +1,6 @@
 ﻿
 
-using DVLD.Domain.Entities; // أو مسار كائن الـ Country عندك
-
+using Domain.Entities; 
 namespace Application.Interfaces
 {
     public interface ICountryService

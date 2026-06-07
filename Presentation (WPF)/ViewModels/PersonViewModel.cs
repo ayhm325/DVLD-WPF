@@ -4,8 +4,7 @@ using Application.Validators;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Enums;
-using DVLD.Domain.Entities;
-using DVLD.Domain.Enums;
+using Domain.Entities;
 using Microsoft.Win32;
 using System;
 using System.Collections.ObjectModel;
@@ -19,6 +18,8 @@ namespace Presentation.ViewModels
 {
     public partial class PersonViewModel : ObservableValidator
     {
+        public event Action<bool>? SaveCompleted;
+
         private readonly IPersonService _personService;
         private readonly ICountryService _countryService;
         private readonly string _destinationFolder = @"C:\ImageDVLD\";
@@ -38,7 +39,6 @@ namespace Presentation.ViewModels
         public ObservableCollection<Country> Countries { get; } = new();
         public DateTime MaxBirthDate => DateTime.Now.AddYears(-18);
 
-        public event Action<bool>? SaveCompleted;
 
         public PersonViewModel(IPersonService personService, ICountryService countryService)
         {

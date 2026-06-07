@@ -3,23 +3,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800">
 
     <Border Style="{StaticResource CardStyle}" Margin="10" Padding="25">
         <StackPanel>
-            <TextBlock Text="Personal Information" 
-                       FontSize="18" FontWeight="Bold" 
-                       Foreground="{StaticResource PrimaryColor}" 
-                       Margin="0,0,0,15"/>
+            <TextBlock Text="Personal Information" FontSize="18" FontWeight="Bold" 
+                       Foreground="{StaticResource PrimaryColor}" Margin="0,0,0,15"/>
 
             <DockPanel LastChildFill="True">
                 <Border DockPanel.Dock="Right" Width="185" Height="180" CornerRadius="12" 
-                        Margin="30,0,0,0" Background="#F1F5F9"
-                        BorderBrush="#E2E8F0" BorderThickness="1">
-                    <Image Source="{Binding ImagePath, TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}" 
-                         Stretch="UniformToFill" 
-                         ClipToBounds="True"/>
+                        Margin="30,0,0,0" Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1">
+                    <Image Source="{Binding SelectedPerson.ImagePath, TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}" 
+                           Stretch="UniformToFill" ClipToBounds="True"/>
                 </Border>
 
                 <Grid>
@@ -52,28 +47,31 @@
                     </Grid.Resources>
 
                     <TextBlock Text="Person ID:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Column="1" Text="{Binding PersonId}" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedPerson.PersonId}" Style="{StaticResource ValueStyle}"/>
+
                     <TextBlock Grid.Column="2" Text="Gender:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Column="3" Text="{Binding Gender}" Style="{StaticResource ValueStyle}"/>
-                    
+                    <TextBlock Grid.Column="3" Text="{Binding SelectedPerson.Gender}" Style="{StaticResource ValueStyle}"/>
+
                     <TextBlock Grid.Row="1" Text="Full Name:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding FullName}" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SelectedPerson.FullName}" Style="{StaticResource ValueStyle}"/>
 
                     <TextBlock Grid.Row="2" Text="National No:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding NationalNo}" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedPerson.NationalNo}" Style="{StaticResource ValueStyle}"/>
+
                     <TextBlock Grid.Row="2" Grid.Column="2" Text="DOB:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding DateOfBirth, StringFormat=dd/MM/yyyy}" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding SelectedPerson.DateOfBirth, StringFormat=dd/MM/yyyy}" Style="{StaticResource ValueStyle}"/>
 
                     <TextBlock Grid.Row="3" Text="Email:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Email}" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SelectedPerson.Email}" Style="{StaticResource ValueStyle}"/>
 
                     <TextBlock Grid.Row="4" Text="Address:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Address}" Style="{StaticResource ValueStyle}" TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding SelectedPerson.Address}" Style="{StaticResource ValueStyle}" TextWrapping="Wrap"/>
 
                     <TextBlock Grid.Row="5" Text="Phone:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Phone}" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedPerson.Phone}" Style="{StaticResource ValueStyle}"/>
+
                     <TextBlock Grid.Row="5" Grid.Column="2" Text="Country:" Style="{StaticResource LabelStyle}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="3" Text="{Binding CountryName}" Style="{StaticResource ValueStyle}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="3" Text="{Binding SelectedPerson.CountryName}" Style="{StaticResource ValueStyle}"/>
                 </Grid>
             </DockPanel>
         </StackPanel>

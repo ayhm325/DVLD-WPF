@@ -4,7 +4,7 @@ using Application.Validators;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Enums;
-using DVLD.Domain.Entities;
+using Domain.Entities;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;

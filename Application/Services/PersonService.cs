@@ -1,8 +1,8 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Application.Validators;
-using DVLD.Domain.Entities;
-using DVLD.Domain.Enums;
+using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories;
 using System;
 using System.Collections.Generic;

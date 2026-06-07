@@ -2,11 +2,11 @@
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using DVLD.Domain.Entities;
-using DVLD.Domain.Enums;
+using Domain.Entities;
+using Domain.Enums;
 using DVLD_WPF;
 using Infrastructure.Repositories;
-using Microsoft.Extensions.DependencyInjection; // 👈 تأكد من وجود هذا السطر لاستدعاء الـ GetRequiredService
+using Microsoft.Extensions.DependencyInjection; 
 using Presentation.Helpers;
 using Presentation.Views;
 using System;
@@ -64,7 +64,7 @@ namespace Presentation.ViewModels
         public PeopleViewModel(PersonRepository personRepository, IPersonService personService)
         {
             _personRepository = personRepository;
-            _personService = personService; // تثبيت الحقن هنا لمنع خطأ الـ Context
+            _personService = personService; 
         }
 
         [RelayCommand]

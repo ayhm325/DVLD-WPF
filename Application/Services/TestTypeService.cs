@@ -1,6 +1,5 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
-using Application.Validators;
 using Domain.Entities;
 using Infrastructure.Repositories;
 

@@ -3,14 +3,15 @@ using Application.Services;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Contexts;
 using Presentation.ViewModels;
 using Presentation.Views;
 using Presentation.Views.Pages;
 using Presentation.Views.Pages.Applications;
+using Presentation.Views.Pages.Tests;
 using Presentation.Views.Windows;
 using Presentation.Views.Windows.Applications;
 using Presentation.Views.Windows.Tests;
-using Presentation.Views.Pages.Tests;
 using System;
 using System.Windows;
 
@@ -48,6 +49,9 @@ namespace DVLD_WPF
             services.AddScoped<UserRepository>();
             services.AddScoped<ApplicationTypeRepository>();
             services.AddScoped<TestTypeRepository>();
+            services.AddScoped<LicenseClassRepository>();
+            services.AddScoped<ApplicationRepository>();
+            services.AddTransient<LocalDrivingLicenseApplicationRepository>();
 
             // 3. Services
             services.AddScoped<IPersonService, PersonService>();
@@ -55,31 +59,40 @@ namespace DVLD_WPF
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
             services.AddScoped<ITestTypeService, TestTypeService>();
+            services.AddScoped<ILicenseClassService, LicenseClassService>();
+            services.AddTransient<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
+            services.AddScoped<IApplicationService, ApplicationService>();
 
             // 4. ViewModels
-            services.AddTransient<PeopleViewModel>();
-            services.AddTransient<PersonViewModel>();
-            services.AddTransient<UsersViewModel>();
+            services.AddTransient<PersonSearchContext>();
+            services.AddTransient<AddEditLDLAppViewModel>();
             services.AddTransient<AddEditUserViewModel>();
             services.AddTransient<ApplicationTypeViewModel>();
-            services.AddTransient<UpdateApplicationTypeViewModel>();
+            services.AddTransient<ChangePasswordViewModel>();
+            services.AddTransient<LDLAppViewModel>();
+            services.AddTransient<PeopleViewModel>();
+            services.AddTransient<PersonViewModel>();
             services.AddTransient<TestTypeViewModel>();
+            services.AddTransient<UpdateApplicationTypeViewModel>();
             services.AddTransient<UpdateTestTypeViewModel>();
-
+            services.AddTransient<UsersViewModel>();
 
             // 5. Views (Pages & Windows)
             services.AddTransient<MainWindow>();
             services.AddTransient<HomePage>();           
             services.AddTransient<UserPage>();
-            services.AddTransient<AddEditUserPage>();    
-            services.AddTransient<SettingsPage>();       
+            services.AddTransient<AddEditUserPage>();
+            services.AddTransient<AddEditPersonPage>();
+            services.AddTransient<ChangePasswordWindow>();
             services.AddTransient<PeoplePage>();         
             services.AddTransient<UserDetailsWindow>();
-            services.AddTransient<ChangePasswordViewModel>();
             services.AddTransient<ManageApplicationTypePage>();
             services.AddTransient<EditApplicationTypeWindow>();
             services.AddTransient<ManageTestTypePage>();
             services.AddTransient<EditTestTypeWindow>();
+            services.AddTransient<NewLocalLicnnse>();
+            services.AddTransient<LDLAppPage>();
+
 
 
 

@@ -1,4 +1,4 @@
-﻿using DVLD.Domain.Enums;
+﻿using Domain.Enums;
 
 
 namespace Application.DTOs

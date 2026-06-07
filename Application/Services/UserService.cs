@@ -1,7 +1,7 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
-using DVLD.Domain.Entities;
-using DVLD.Domain.Enums;
+using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -133,6 +133,7 @@ namespace Application.Services
             };
         }
 
+        // ================= CHANGE PASSWORD =================
         public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
         {
             // 1. جلب المستخدم (تأكد أن الـ Repository يوفر GetUserByUserIdAsync)

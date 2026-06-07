@@ -4,13 +4,15 @@
 
 
 
-using DVLD.Domain.Enums;
+using Domain.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace DVLD.Domain.Entities
+namespace Domain.Entities
 {
     public class Person
     {
-
+        [Key]
         public int PersonId { get; set; }
         public string NationalNo { get; set; } = null!;
         public string FirstName { get; set; } = null!;
@@ -27,7 +29,11 @@ namespace DVLD.Domain.Entities
         public string? ImagePath { get; set; }
 
         // Navigation Property
-        public Country? Country { get; set; }
+        [ForeignKey("NationalityCountryID")]
+        public virtual Country? Country { get; set; }
+
+        // Navigation Property (One Person -> Many Applications)
+        public virtual ICollection<ApplicationD> Applications { get; set; } = new List<ApplicationD>();
 
         public string FullName =>
                     string.Join(" ",

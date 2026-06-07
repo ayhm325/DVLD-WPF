@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using DVLD.Domain.Entities;
+using Domain.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -64,7 +64,7 @@ namespace Infrastructure.Repositories
         public async Task<int> AddPersonAsync(Person person)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            context.People.Add(person);
+            await context.People.AddAsync(person);
             await context.SaveChangesAsync();
             return person.PersonId;
         }
@@ -76,11 +76,11 @@ namespace Infrastructure.Repositories
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            var existingPerson = await context.People.FindAsync(person.PersonId);
-            if (existingPerson == null) return false;
+            var existing = await context.People.FindAsync(person.PersonId);
+            if (existing is null) return false;
 
             // تحديث الخصائص
-            context.Entry(existingPerson).CurrentValues.SetValues(person);
+            context.Entry(existing).CurrentValues.SetValues(person);
 
             return await context.SaveChangesAsync() > 0;
         }       
@@ -92,7 +92,7 @@ namespace Infrastructure.Repositories
         {
             using var context = await _contextFactory.CreateDbContextAsync();
             var person = await context.People.FindAsync(id);
-            if (person == null) return false;
+            if (person is null) return false;
 
             context.People.Remove(person);
             return await context.SaveChangesAsync() > 0;

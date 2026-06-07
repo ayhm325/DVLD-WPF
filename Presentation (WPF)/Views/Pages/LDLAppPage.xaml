@@ -1,0 +1,30 @@
+﻿<Page x:Class="Presentation.Views.Pages.LDLAppPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:controls="clr-namespace:Presentation.Views.Controls"
+      Title="Driving License Applications">
+
+    <Grid Margin="25">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <RowDefinition Height="Auto"/> <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>    </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+            <TextBlock Text="Local Driving License Applications " FontSize="26" FontWeight="SemiBold" Foreground="#333"/>
+            <TextBlock Text="{Binding Applications.Count, StringFormat='({0})'}" FontSize="26" FontWeight="SemiBold" Foreground="#888"/>
+        </StackPanel>
+       
+
+        <DataGrid Grid.Row="3" ItemsSource="{Binding Applications}" AutoGenerateColumns="False" 
+                  IsReadOnly="True" GridLinesVisibility="All">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding ApplicationID}" Width="50"/>
+                <DataGridTextColumn Header="Driving Class" Binding="{Binding DrivingClass}" Width="*"/>
+                <DataGridTextColumn Header="National No." Binding="{Binding NationalNo}" Width="100"/>
+                <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="300"/>
+                <DataGridTextColumn Header="Date" Binding="{Binding ApplicationDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                <DataGridTextColumn Header="Passed Test" Binding="{Binding PassedTest}" Width="100"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Page>
