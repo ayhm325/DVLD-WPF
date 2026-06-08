@@ -49,7 +49,7 @@ namespace Presentation.ViewModels
             }
         }
 
-        
+
 
         [RelayCommand]
         private void Close(Window window)

@@ -1,7 +1,7 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-using Domain.Enums;
+using System.Windows;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -107,6 +107,24 @@ namespace Application.Services
             // استخدام BCrypt للتحقق من أن كلمة المرور المدخلة تطابق الـ Hash المخزن
             return BCrypt.Net.BCrypt.Verify(password, user.Password);
         }
+        //public async Task<bool> AuthenticateUserAsync(string username, string password)
+        //{
+        //    var user = await _userRepository.GetUserByUsernameAsync(username);
+
+        //    // إضافة سجل للمراقبة (Debug)
+        //    if (user == null) return false;
+
+        //    bool isMatch = BCrypt.Net.BCrypt.Verify(password, user.Password);
+
+        //    // إذا كانت النتيجة false، اطبع القيم للتأكد
+        //    if (!isMatch)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine($"Login failed for user: {username}");
+        //        System.Diagnostics.Debug.WriteLine($"Stored Hash: {user.Password}");
+        //    }
+
+        //    return isMatch;
+        //}
 
         // ================= MAPPING =================
         private UserDto MapToDto(User u)
@@ -152,6 +170,24 @@ namespace Application.Services
             // 4. حفظ التغييرات (تأكد أن Repository يدعم Update أو SaveChanges)
             return await _userRepository.UpdateUserAsync(user);
         }
+
+        // ================= LOGIN =================
+        public async Task<UserDto?> LoginAsync(string username, string password)
+        {
+            var test = await AuthenticateUserAsync(username, password);
+
+            
+
+            if (!test)
+                return null;
+
+            var user = await GetUserByUsernameAsync(username);
+
+            
+
+            return user;
+        }
+
 
 
     }

@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.openxmlformats.org/blend/2008"
-        xmlns:controls="clr-namespace:Presentation.Views.Controls" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:controls="clr-namespace:Presentation.Views.Controls"
         mc:Ignorable="d"
         Title="User Details" 
         SizeToContent="WidthAndHeight" 
@@ -20,17 +20,20 @@
         <controls:InformationPerson
             x:Name="InformationPerson"
             Grid.Row="0"
-             Margin="0,0,0,15" />
-        
-        <controls:UserCard Grid.Row="1" Margin="0,0,0,20" />
+            Margin="0,0,0,15"
+            Person="{Binding Person}" />
+
+        <controls:UserCard 
+            Grid.Row="1" 
+            Margin="0,0,0,20" 
+            DataContext="{Binding}" />
 
         <Button Grid.Row="2" 
-        Content="Close" 
-        Width="100" 
-        Height="35" 
-        HorizontalAlignment="Right" 
-        Click="CloseButton_Click"
-        Style="{DynamicResource PrimaryButtonStyle}"/>
-
+                Content="Close" 
+                Width="100" 
+                Height="35" 
+                HorizontalAlignment="Right" 
+                Click="CloseButton_Click"
+                Style="{DynamicResource PrimaryButtonStyle}"/>
     </Grid>
 </Window>

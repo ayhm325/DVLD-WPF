@@ -5,18 +5,27 @@ using Presentation.Views.Pages.Applications;
 using Presentation.Views.Pages.Tests;
 using Presentation.Views.Windows;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace DVLD_WPF
 {
     public partial class MainWindow : Window
     {
+        public static MainWindow Instance { get; private set; }
+
         public MainWindow()
         {
             InitializeComponent();
             this.WindowState = WindowState.Maximized;
-
+            Instance = this;
             // استدعاء الصفحة من الـ ServiceProvider
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
+        }
+
+        public void NavigateTo<TPage>() where TPage : Page
+        {
+            var page = App.ServiceProvider.GetRequiredService<TPage>();
+            MainFrame.Navigate(page);
         }
 
         private void Home_Click(object sender, RoutedEventArgs e)

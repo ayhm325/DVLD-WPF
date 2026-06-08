@@ -50,7 +50,7 @@ namespace Presentation.ViewModels
         {
             if (selectedType == null) return;
 
-          
+
             var updateVm = App.ServiceProvider.GetRequiredService<UpdateApplicationTypeViewModel>();
             await updateVm.InitializeAsync(selectedType.ApplicationTypeId);
 

@@ -13,9 +13,7 @@ namespace Presentation.Views.Windows
         public UserDetailsWindow(AddEditUserViewModel userViewModel)
         {
             InitializeComponent();
-            DataContext = userViewModel;
-
-            InformationPerson.DataContext = userViewModel.Person;
+            this.DataContext = userViewModel;           
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

@@ -29,7 +29,6 @@ public partial class AddEditUserViewModel : ObservableObject
     [ObservableProperty] private OperationMode _mode;
     [ObservableProperty] private string _filterText = string.Empty;
     [ObservableProperty] private int _selectedFilterIndex = 0;
-    [ObservableProperty] private PersonDto? _selectedPerson;
     [ObservableProperty] private int _userId;
     [ObservableProperty] private string _userName = string.Empty;
     [ObservableProperty] private bool _isActive = true;
@@ -55,7 +54,7 @@ public partial class AddEditUserViewModel : ObservableObject
     public event Action<bool>? SaveCompleted;
 
 
-   
+
 
     // هذا الميثود يتم استدعاؤه من الصفحة عند تحميلها، ويحدد إذا كنا في وضع الإضافة أو التعديل بناءً على وجود UserId
     public async Task InitializeAsync(int? userId)
@@ -73,19 +72,14 @@ public partial class AddEditUserViewModel : ObservableObject
                 UserName = user.UserName;
                 IsActive = user.IsActive;
 
-                var person = await _personService.GetPersonByIdAsync(user.PersonId);
-                if (person != null)
-                {
-                    SelectedPerson = person;
-                    Person = person;
-                }
+                Person = await _personService.GetPersonByIdAsync(user.PersonId);                
             }
         }
         else
-        {           
+        {
             Mode = OperationMode.Add;
             UserIdDisplay = null;
-            SelectedPerson = null;
+            Person = null;
             UserName = string.Empty;
             Password = string.Empty;
             ConfirmPassword = string.Empty;
@@ -138,14 +132,14 @@ public partial class AddEditUserViewModel : ObservableObject
                 }
 
                 // إذا كان هو الشخص نفسه (في حالة Edit)
-                SelectedPerson = person;
+                Person = person;
                 UserName = existingUser.UserName;
                 IsActive = existingUser.IsActive;
             }
             else
             {
                 // الشخص متاح (غير مرتبط بيوزر)
-                SelectedPerson = person;
+              Person = person;
 
                 // هنا فقط نقوم بتحديث البيانات إذا كنا في حالة Add
                 // في حالة Edit، نترك الـ UserName كما هو (أو نعدله ليناسب الشخص الجديد)
@@ -167,17 +161,12 @@ public partial class AddEditUserViewModel : ObservableObject
 
     [RelayCommand]
     private void AddPerson()
-    {
-        
-        var addEditPersonVm = App.ServiceProvider.GetRequiredService<PersonViewModel>();
-        NavigationHelper.Navigate(new AddEditPersonPage(addEditPersonVm));
+    {        
+        var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
 
-       
-        if (SelectedPerson == null)
-        {
-            // عرض رسالة: الرجاء البحث عن شخص أولاً
-            return;
-        }
+        MainWindow.Instance.MainFrame.Navigate(
+            new AddEditPersonPage(vm)
+        );
     }
 
     [RelayCommand]
@@ -193,7 +182,7 @@ public partial class AddEditUserViewModel : ObservableObject
             ConfirmPassword,
             isEdit,
             userExists,
-            SelectedPerson );
+            Person);
 
         if (!validationResult.IsValid)
         {
@@ -209,7 +198,7 @@ public partial class AddEditUserViewModel : ObservableObject
         }
 
         // 3. التحقق من الشخص المحدد
-        if (SelectedPerson == null) return;
+        if (Person == null) return;
 
 
 
@@ -217,7 +206,7 @@ public partial class AddEditUserViewModel : ObservableObject
         var userDto = new CreateUserDto
         {
             UserId = this.UserId,
-            PersonId = SelectedPerson.PersonId,
+            PersonId = Person.PersonId,
             UserName = UserName,
             Password = Password,
             IsActive = IsActive
@@ -256,9 +245,12 @@ public partial class AddEditUserViewModel : ObservableObject
     [RelayCommand]
     private void Cancel()
     {
-        var mainWindow = System.Windows.Application.Current.MainWindow;
-        var mainFrame = mainWindow.FindName("MainFrame") as System.Windows.Controls.Frame;
-        mainFrame?.GoBack();
+        var frame = MainWindow.Instance.MainFrame;
+
+        if (frame.CanGoBack)
+        {
+            frame.GoBack();
+        }
     }
 
 

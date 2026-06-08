@@ -8,6 +8,6 @@ namespace Presentation.Views.Controls
         public PersonInfoCard()
         {
             InitializeComponent();
-        }        
+        }
     }
 }

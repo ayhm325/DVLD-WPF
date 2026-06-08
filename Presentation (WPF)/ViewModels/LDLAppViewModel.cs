@@ -2,10 +2,11 @@
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD_WPF;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace Presentation.ViewModels
 {
@@ -56,5 +57,9 @@ namespace Presentation.ViewModels
             Applications.Clear();
             foreach (var item in filtered) Applications.Add(item);
         }
+
+
+        
+
     }
 }

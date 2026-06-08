@@ -10,6 +10,6 @@ namespace Presentation.Views.Pages
             InitializeComponent();
             DataContext = viewModel;
         }
-        
+
     }
 }

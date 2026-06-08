@@ -1,8 +1,7 @@
-﻿using System.Windows;
+﻿
+
+
 using System.Windows.Controls;
-using Presentation.Helpers;
-using Presentation.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Presentation.Views
 {

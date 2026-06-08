@@ -30,7 +30,6 @@ namespace Application.Interfaces
 
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
 
-
-
+        Task<UserDto?> LoginAsync(string username, string password);
     }
 }

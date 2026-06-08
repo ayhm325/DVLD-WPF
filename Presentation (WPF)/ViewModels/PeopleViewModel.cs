@@ -6,7 +6,7 @@ using Domain.Entities;
 using Domain.Enums;
 using DVLD_WPF;
 using Infrastructure.Repositories;
-using Microsoft.Extensions.DependencyInjection; 
+using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;
 using Presentation.Views;
 using System;
@@ -64,7 +64,7 @@ namespace Presentation.ViewModels
         public PeopleViewModel(PersonRepository personRepository, IPersonService personService)
         {
             _personRepository = personRepository;
-            _personService = personService; 
+            _personService = personService;
         }
 
         [RelayCommand]
@@ -140,13 +140,13 @@ namespace Presentation.ViewModels
         }
 
         [RelayCommand]
-        private void ShowDetails(PersonDto selectedPerson)
+        private void ShowDetails(PersonDto Person)
         {
-            if (selectedPerson == null) return;
+            if (Person == null) return;
 
             // 🟢 4. الآن الكود سيتعرف على الـ _personService بنجاح تام وبدون أخطاء كومبايلر
             Presentation.Views.Windows.PersonDetailsWindow detailsWindow =
-                new(_personService, selectedPerson.PersonId);
+                new(_personService, Person.PersonId);
 
             detailsWindow.Owner = System.Windows.Application.Current.MainWindow;
             detailsWindow.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
@@ -159,38 +159,38 @@ namespace Presentation.ViewModels
         {
             if (App.ServiceProvider != null)
             {
-                var addEditVm = App.ServiceProvider.GetRequiredService<PersonViewModel>();
+                var addEditVm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
 
                 // 🟢 الإضافة هنا: استدعِ التهيئة حتى عند الإضافة (null تعني Add Mode)
                 await addEditVm.InitializeAsync(null);
 
-                NavigationHelper.Navigate(new AddEditPersonPage(addEditVm));
+                MainWindow.Instance.MainFrame.Navigate(new AddEditPersonPage(addEditVm));
             }
         }
 
         [RelayCommand]
-        private async Task EditPerson(PersonDto selectedPerson) // 👈 أضفنا async و Task
+        private async Task EditPerson(PersonDto Person) 
         {
-            if (selectedPerson == null) return;
+            if (Person == null) return;
 
             // 1. طلب الـ ViewModel من الحاوية
-            var addEditVm = DVLD_WPF.App.ServiceProvider.GetRequiredService<PersonViewModel>();
+            var addEditVm = DVLD_WPF.App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
 
             // 2. تحميل البيانات في هذه النسخة تحديداً
-            await addEditVm.InitializeAsync(selectedPerson.PersonId);
+            await addEditVm.InitializeAsync(Person.PersonId);
 
             // 3. الانتقال بالنسخة التي تحمل البيانات
-            NavigationHelper.Navigate(new AddEditPersonPage(addEditVm));
+            MainWindow.Instance.MainFrame.Navigate(new AddEditPersonPage(addEditVm));
         }
 
         [RelayCommand]
-        private async Task DeletePersonAsync(PersonDto selectedPerson) 
+        private async Task DeletePersonAsync(PersonDto Person)
         {
             // 1. التحقق من أن العنصر المحدد ليس فارغاً
-            if (selectedPerson == null) return;
+            if (Person == null) return;
 
             // 2. طلب تأكيد من المستخدم
-            var result = MessageBox.Show($"Are you sure you want to delete {selectedPerson.FullName}?",
+            var result = MessageBox.Show($"Are you sure you want to delete {Person.FullName}?",
                                          "Confirm Delete",
                                          MessageBoxButton.YesNo,
                                          MessageBoxImage.Question);
@@ -200,10 +200,10 @@ namespace Presentation.ViewModels
                 try
                 {
                     // 3. استدعاء خدمة الحذف (يجب أن تكون معرفة في الـ Constructor)
-                    object value = await _personService.DeletePersonAsync(selectedPerson.PersonId);
+                    object value = await _personService.DeletePersonAsync(Person.PersonId);
 
                     // 4. تحديث القائمة في الواجهة (بافتراض أن لديك قائمة من نوع ObservableCollection)
-                    FilteredPeople.Remove(selectedPerson);
+                    FilteredPeople.Remove(Person);
 
                     MessageBox.Show("Person deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
@@ -214,7 +214,7 @@ namespace Presentation.ViewModels
             }
         }
 
-        [RelayCommand] private void SendEmail(PersonDto selectedPerson) { }
-        [RelayCommand] private void PhoneCall(PersonDto selectedPerson) { }
+        [RelayCommand] private void SendEmail(PersonDto Person) { }
+        [RelayCommand] private void PhoneCall(PersonDto Person) { }
     }
 }

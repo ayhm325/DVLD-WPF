@@ -23,6 +23,7 @@ public partial class UsersViewModel : ObservableObject
 
     [ObservableProperty] private ObservableCollection<UserDto> _users = new();
     [ObservableProperty] private UserDto? _selectedUser;
+    [ObservableProperty] private PersonDto? _person;
     [ObservableProperty] private int _usersCount;
 
     [ObservableProperty] private string _searchText = string.Empty;
@@ -102,7 +103,7 @@ public partial class UsersViewModel : ObservableObject
 
         // 2. تحديث الواجهة
         ApplyFilter();
-       // UsersCount = _allUsers.Count;
+        // UsersCount = _allUsers.Count;
     }
 
     [RelayCommand]
@@ -110,12 +111,12 @@ public partial class UsersViewModel : ObservableObject
     {
         var addEditVm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
         _ = addEditVm.InitializeAsync(null); // تهيئة للإضافة
-        NavigationHelper.Navigate(new AddEditUserPage(addEditVm));
+        MainWindow.Instance.MainFrame.Navigate(new AddEditUserPage(addEditVm));
     }
 
 
-    [RelayCommand] 
-    private async Task ShowDetails() 
+    [RelayCommand]
+    private async Task ShowDetails()
     {
         if (SelectedUser == null) return;
 
@@ -144,11 +145,11 @@ public partial class UsersViewModel : ObservableObject
         await addEditUserVm.InitializeAsync(null);
 
         // 3. التنقل لصفحة الإضافة باستخدام الـ Helper الخاص بك
-        NavigationHelper.Navigate(new AddEditUserPage(addEditUserVm));
+        MainWindow.Instance.MainFrame.Navigate(new AddEditUserPage(addEditUserVm));
     }
 
-    [RelayCommand] 
-    private async Task EditUser() 
+    [RelayCommand]
+    private async Task EditUser()
     {
         // 1. استخدام الخاصية المولدة (بدون الشرطة السفلية)
         if (SelectedUser == null) return;
@@ -160,8 +161,8 @@ public partial class UsersViewModel : ObservableObject
         await vm.InitializeAsync(SelectedUser.UserId);
 
         // 4. الانتقال للصفحة بعد أن أصبحت البيانات جاهزة
-        NavigationHelper.Navigate(new AddEditUserPage(vm));
-    }       
+        MainWindow.Instance.MainFrame.Navigate(new AddEditUserPage(vm));
+    }
 
     [RelayCommand]
     private async Task DeleteUser()
@@ -188,7 +189,7 @@ public partial class UsersViewModel : ObservableObject
                 MessageBox.Show($"Error: {ex.Message}", "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+
     }
 
     [RelayCommand]
@@ -207,10 +208,10 @@ public partial class UsersViewModel : ObservableObject
         win.ShowDialog();
     }
 
-    [RelayCommand] 
+    [RelayCommand]
     private void SendEmail() { /* ... */ }
-    
-    [RelayCommand] 
+
+    [RelayCommand]
     private void PhoneCall() { /* ... */ }
 
 }

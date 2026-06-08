@@ -1,8 +1,9 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using DVLD_WPF;
+using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;
 using Presentation.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace Presentation.Views
 {
@@ -37,12 +38,12 @@ namespace Presentation.Views
         {
             if (DVLD_WPF.App.ServiceProvider != null)
             {
-                var addEditVm = DVLD_WPF.App.ServiceProvider.GetRequiredService<PersonViewModel>();
+                var addEditVm = DVLD_WPF.App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
 
                 // 🔴 هذا السطر مفقود في كود الـ Click الخاص بك!
                 await addEditVm.InitializeAsync(null);
 
-                NavigationHelper.Navigate(new AddEditPersonPage(addEditVm));
+                MainWindow.Instance.MainFrame.Navigate(new AddEditPersonPage(addEditVm));
             }
         }
     }

@@ -6,13 +6,17 @@
 
     <Grid Margin="25">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <RowDefinition Height="Auto"/> <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>    </Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
             <TextBlock Text="Local Driving License Applications " FontSize="26" FontWeight="SemiBold" Foreground="#333"/>
             <TextBlock Text="{Binding Applications.Count, StringFormat='({0})'}" FontSize="26" FontWeight="SemiBold" Foreground="#888"/>
         </StackPanel>
-       
+
 
         <DataGrid Grid.Row="3" ItemsSource="{Binding Applications}" AutoGenerateColumns="False" 
                   IsReadOnly="True" GridLinesVisibility="All">

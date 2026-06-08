@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="New Local Driving License Application" Height="650" Width="850"
+        Title="New Local Driving License Application"
+        Height="650" Width="850"
         WindowStartupLocation="CenterScreen">
 
     <Grid Margin="15">
@@ -13,20 +14,31 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="New Local Driving License Application" FontSize="22" FontWeight="Bold" 
-                   HorizontalAlignment="Center" Margin="0,0,0,15" Foreground="#2C3E50"/>
+        <TextBlock Text="New Local Driving License Application"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,15"
+                   Foreground="#2C3E50"/>
 
         <TabControl x:Name="MainTabControl" Grid.Row="1">
+
             <TabItem Header="Personal Info">
                 <DockPanel Margin="10" LastChildFill="True">
-                    <controls:Filter DockPanel.Dock="Top" Margin="0,0,0,10" 
-                                     DataContext="{Binding PersonContext}"/>
 
-                    <Button DockPanel.Dock="Bottom" Content="Next" Width="100" HorizontalAlignment="Right" 
-                            Margin="0,10,0,0" Click="NextButton_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+                    <controls:Filter DockPanel.Dock="Top" Margin="0,0,0,10" />
+
+                    <Button DockPanel.Dock="Bottom"
+                            Content="Next"
+                            Width="100"
+                            HorizontalAlignment="Right"
+                            Margin="0,10,0,0"
+                            Click="NextButton_Click"
+                            Style="{StaticResource PrimaryButtonStyle}"/>
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <controls:InformationPerson Margin="0,5"  DataContext="{Binding PersonContext}"/>
+                        <controls:InformationPerson Grid.Row="2"
+                            Person="{Binding Person}" />
                     </ScrollViewer>
                 </DockPanel>
             </TabItem>
@@ -49,29 +61,24 @@
 
                         <materialDesign:PackIcon Kind="Identifier" Foreground="Green" Width="25" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="D.L. Application ID:" Grid.Column="1" FontSize="16" VerticalAlignment="Center" FontWeight="Bold" Margin="0,15"/>
-                        <TextBlock Text="[???]" Grid.Column="2" FontSize="16" VerticalAlignment="Center" Margin="0,15"/>
+                        <TextBlock Text="{Binding ApplicationId}" Grid.Column="2" FontSize="16" VerticalAlignment="Center" Margin="0,15"/>
 
                         <materialDesign:PackIcon Kind="Calendar" Foreground="Green" Grid.Row="1" Width="25" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Application Date:" Grid.Row="1" Grid.Column="1" FontSize="16" VerticalAlignment="Center" FontWeight="Bold" Margin="0,15"/>
-                        <TextBlock Text="{Binding ApplicationDate, StringFormat='dd/MM/yyyy'}" Grid.Row="1" Grid.Column="2" FontSize="16" VerticalAlignment="Center" Margin="0,15"/>
+                        <TextBlock Text="{Binding ApplicationDate, StringFormat=dd/MM/yyyy}" Grid.Row="1" Grid.Column="2" FontSize="16" VerticalAlignment="Center" Margin="0,15"/>
 
                         <materialDesign:PackIcon Kind="Car" Foreground="Green" Grid.Row="2" Width="25" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="License Class:" Grid.Row="2" Grid.Column="1" FontSize="16" VerticalAlignment="Center" FontWeight="Bold" Margin="0,15"/>
-                        <ComboBox Grid.Row="2" Grid.Column="2" 
-                      ItemsSource="{Binding LicenseClasses}" 
-                      SelectedItem="{Binding SelectedLicenseClass}"
-                      DisplayMemberPath="LicenseClassName"
-                      Width="250" Height="40" FontSize="16" HorizontalAlignment="Left" Margin="0,10"/>
+                        <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding LicenseClasses}" SelectedItem="{Binding SelectedLicenseClass}" 
+                                  DisplayMemberPath="LicenseClassName" Width="250" Height="40" FontSize="16" HorizontalAlignment="Left" Margin="0,10"/>
 
                         <materialDesign:PackIcon Kind="Cash" Foreground="Green" Grid.Row="3" Width="25" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Application Fees:" Grid.Row="3" Grid.Column="1" FontSize="16" VerticalAlignment="Center" FontWeight="Bold" Margin="0,15"/>
-                        <Label Grid.Row="3" Grid.Column="2" FontSize="16" 
-                   Content="{Binding SelectedLicenseClass.LicenseClassFees, StringFormat={}{0:F2}}" 
-                   Margin="0,15"/>
+                        <TextBlock Grid.Row="3" Grid.Column="2" FontSize="16" Text="{Binding SelectedLicenseClass.LicenseClassFees, StringFormat={}{0:F2}}" Margin="0,15"/>
 
                         <materialDesign:PackIcon Kind="Account" Foreground="Green" Grid.Row="4" Width="25" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Created By:" Grid.Row="4" Grid.Column="1" FontSize="16" VerticalAlignment="Center" FontWeight="Bold" Margin="0,15"/>
-                        <TextBlock Text="{Binding CreatedByUserID}" Grid.Row="4" Grid.Column="2" FontSize="16" VerticalAlignment="Center" Margin="0,15"/>
+                        <TextBlock Text="{Binding CreatedBy}" Grid.Row="4" Grid.Column="2" FontSize="16" VerticalAlignment="Center" Margin="0,15"/>
                     </Grid>
                 </StackPanel>
             </TabItem>
@@ -79,7 +86,7 @@
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
             <Button Content="Save" Width="90" Margin="0,0,10,0" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
-            <Button Content="Close" Width="90" Click="CloseButton_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+            <Button Content="Close" Style="{StaticResource SecondaryButtonStyle}" Click="CloseButton_Click" Width="100" Height="35"/>
         </StackPanel>
     </Grid>
 </Window>

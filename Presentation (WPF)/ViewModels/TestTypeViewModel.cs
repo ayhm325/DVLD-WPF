@@ -16,14 +16,14 @@ namespace Presentation.ViewModels
     {
         private readonly ITestTypeService _testTypeService;
 
-        public ObservableCollection<TestTypeDto> TestTypes { get; } = new ();
+        public ObservableCollection<TestTypeDto> TestTypes { get; } = new();
 
         public TestTypeViewModel(ITestTypeService testTypeService)
         {
             _testTypeService = testTypeService;
             LoadTestTyepsAsync();
         }
-    
+
         public async void LoadTestTyepsAsync()
         {
             var data = await _testTypeService.GetAllTestTypesAsync();
@@ -59,5 +59,5 @@ namespace Presentation.ViewModels
         }
 
 
-        }
+    }
 }

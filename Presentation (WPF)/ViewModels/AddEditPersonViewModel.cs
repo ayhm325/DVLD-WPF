@@ -3,20 +3,22 @@ using Application.Interfaces;
 using Application.Validators;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Enums;
 using Domain.Entities;
+using Domain.Enums;
+using DVLD_WPF;
 using Microsoft.Win32;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace Presentation.ViewModels
 {
-    public partial class PersonViewModel : ObservableValidator
+    public partial class AddEditPersonViewModel : ObservableValidator
     {
         public event Action<bool>? SaveCompleted;
 
@@ -28,19 +30,19 @@ namespace Presentation.ViewModels
         [ObservableProperty] private OperationMode _mode;
         [ObservableProperty] private string _pageTitle = "Add Person";
         [ObservableProperty] private Country _selectedCountry = null!;
-        [ObservableProperty]private string _imagePath = string.Empty;
+        [ObservableProperty] private string _imagePath = string.Empty;
 
         public string ImageDisplayPath => !string.IsNullOrEmpty(ImagePath)
             ? ImagePath
             : (IsMale ? "pack://application:,,,/Resources/Default_Male.png" : "pack://application:,,,/Resources/Default_Female.png");
 
         public string FullName => $"{FirstName} {SecondName} {ThirdName} {LastName}".Replace("  ", " ").Trim();
-        public string CountryName => SelectedCountry?.CountryName ?? "Unknown";       
+        public string CountryName => SelectedCountry?.CountryName ?? "Unknown";
         public ObservableCollection<Country> Countries { get; } = new();
         public DateTime MaxBirthDate => DateTime.Now.AddYears(-18);
 
 
-        public PersonViewModel(IPersonService personService, ICountryService countryService)
+        public AddEditPersonViewModel(IPersonService personService, ICountryService countryService)
         {
             _personService = personService;
             _countryService = countryService;
@@ -48,7 +50,9 @@ namespace Presentation.ViewModels
 
         public async Task InitializeAsync(int? personId)
         {
-            var countries = await _countryService.GetAllCountriesAsync();
+            try
+            {
+                var countries = await _countryService.GetAllCountriesAsync();
             Countries.Clear();
             foreach (var country in countries) Countries.Add(country);
 
@@ -69,19 +73,25 @@ namespace Presentation.ViewModels
                 PageTitle = "Add Person";
                 SelectedCountry = Countries.FirstOrDefault(c => c.CountryName == "Jordan") ?? Countries.FirstOrDefault()!;
             }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), "InitializeAsync Error");
+            }
+        
         }
 
-        [ObservableProperty][CustomValidation(typeof(PersonViewModel), nameof(ValidateFirstNameField))] private string _firstName = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(PersonViewModel), nameof(ValidateSecondNameField))] private string _secondName = string.Empty;
+        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateFirstNameField))] private string _firstName = string.Empty;
+        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateSecondNameField))] private string _secondName = string.Empty;
         [ObservableProperty] private string _thirdName = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(PersonViewModel), nameof(ValidateLastNameField))] private string _lastName = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(PersonViewModel), nameof(ValidateNationalNoField))] private string _nationalNo = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(PersonViewModel), nameof(ValidatePhoneField))] private string _phone = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(PersonViewModel), nameof(ValidateEmailField))] private string _email = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(PersonViewModel), nameof(ValidateAddressField))] private string _address = string.Empty;
+        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateLastNameField))] private string _lastName = string.Empty;
+        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateNationalNoField))] private string _nationalNo = string.Empty;
+        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidatePhoneField))] private string _phone = string.Empty;
+        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateEmailField))] private string _email = string.Empty;
+        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateAddressField))] private string _address = string.Empty;
 
         [ObservableProperty]
-        [CustomValidation(typeof(PersonViewModel), nameof(ValidateAge))]
+        [CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateAge))]
         private DateTime _dateOfBirth = DateTime.Now.AddYears(-18);
 
         [ObservableProperty]
@@ -120,18 +130,18 @@ namespace Presentation.ViewModels
             FirstName = nameParts.ElementAtOrDefault(0) ?? "";
             SecondName = nameParts.ElementAtOrDefault(1) ?? "";
             if (nameParts.Length == 3)
-             {
-                 // إذا كان الاسم 3 أجزاء فقط (أول، ثانٍ، أخير)
-                 ThirdName = ""; // نترك الثالث فارغاً
-                 LastName = nameParts.ElementAtOrDefault(2) ?? "";
-             }
-             else if (nameParts.Length >= 4)
-             {
-                 // إذا كان الاسم 4 أجزاء أو أكثر
-                 ThirdName = nameParts.ElementAtOrDefault(2) ?? "";
-                 LastName = nameParts.ElementAtOrDefault(3) ?? "";
-             }
-            
+            {
+                // إذا كان الاسم 3 أجزاء فقط (أول، ثانٍ، أخير)
+                ThirdName = ""; // نترك الثالث فارغاً
+                LastName = nameParts.ElementAtOrDefault(2) ?? "";
+            }
+            else if (nameParts.Length >= 4)
+            {
+                // إذا كان الاسم 4 أجزاء أو أكثر
+                ThirdName = nameParts.ElementAtOrDefault(2) ?? "";
+                LastName = nameParts.ElementAtOrDefault(3) ?? "";
+            }
+
 
             NationalNo = p.NationalNo ?? "";
             Phone = p.Phone ?? "";
@@ -239,7 +249,7 @@ namespace Presentation.ViewModels
         private static ValidationResult? ValidateField(string value, string fieldName, ValidationContext context)
         {
             // الحصول على الـ ViewModel الحالي
-            var vm = (PersonViewModel)context.ObjectInstance;
+            var vm = (AddEditPersonViewModel)context.ObjectInstance;
 
             // إنشاء كائن Person يحتوي على البيانات الحالية التي أدخلها المستخدم في الـ UI
             var personToValidate = new Person
@@ -268,9 +278,12 @@ namespace Presentation.ViewModels
         [RelayCommand]
         private void Cancel()
         {
-            var mainWindow = System.Windows.Application.Current.MainWindow;
-            var mainFrame = mainWindow.FindName("MainFrame") as System.Windows.Controls.Frame;
-            mainFrame?.GoBack();
+            var frame = MainWindow.Instance.MainFrame;
+
+            if (frame.CanGoBack)
+            {
+                frame.GoBack();
+            }
         }
 
 
