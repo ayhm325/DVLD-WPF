@@ -29,5 +29,9 @@ namespace Application.DTOs
             AppStatus.Completed => "Completed",
             _                   => "Unknown" 
         };
+
+
+        public string? ServiceType { get; set; }   // اسم الخدمة
+        public string? ApplicantName { get; set; } // اسم الشخص
     }
 }

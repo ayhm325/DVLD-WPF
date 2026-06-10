@@ -20,7 +20,8 @@ namespace Application.Interfaces
         Task<bool> UpdateLocalDrivingLicenseApplicationAsync(int id, LocalDrivingLicenseApplicationCreateUpdateDto dto);
         Task<bool> DeleteLocalDrivingLicenseApplicationAsync(int id);
 
-        
+        Task<int?> GetApplicationIdByLocalIdAsync(int localId);
+
         Task<bool> IsLocalDrivingLicenseApplicationExistsAsync(int id);
     }
 }

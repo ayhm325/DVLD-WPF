@@ -61,7 +61,13 @@ namespace Application.Services
             return new ApplicationDto
             {
                 ApplicationID = app.ApplicationID,
-                // ... (قم بتعبئة باقي الخصائص كما فعلنا في GetAll)
+                ApplicantPersonID = app.ApplicantPersonID,
+                ApplicationDate = app.ApplicationDate,
+                ApplicationTypeID = app.ApplicationTypeID,
+                ApplicationStatus = (AppStatus)app.ApplicationStatus,
+                LastStatusDate = app.LastStatusDate,
+                PaidFees = app.PaidFees,
+                CreatedByUserID = app.CreatedByUserID
             };
         }
 
@@ -73,13 +79,29 @@ namespace Application.Services
             // تحديث قيم الـ Entity من الـ DTO
             entity.ApplicationStatus = (byte)dto.ApplicationStatus;
             entity.PaidFees = dto.PaidFees;
-            // ... (تحديث باقي الحقول)
+            entity.LastStatusDate = dto.LastStatusDate;
+            entity.ApplicationTypeID = dto.ApplicationTypeID;
+            entity.ApplicantPersonID = dto.ApplicantPersonID;
+            entity.ApplicationDate = dto.ApplicationDate;
+            entity.CreatedByUserID = dto.CreatedByUserID;
 
             return await _repository.UpdateApplicationAsync(entity);
         }
 
         public async Task<bool> DeleteApplicationAsync(int id)
         {
+            // 1. جلب الكيان للتحقق من حالته
+            var app = await _repository.GetApplicationByIdAsync(id);
+            if (app == null) throw new Exception("Application not found.");
+
+            // 2. الفالديشن الحقيقي (Business Rule)
+            if (app.ApplicationStatus == (int)AppStatus.Completed )
+            {
+                throw new InvalidOperationException("Cannot delete a completed application.");
+            }
+
+            // 3. التنفيذ
+
             return await _repository.DeleteApplicationAsync(id);
         }
 
@@ -88,5 +110,26 @@ namespace Application.Services
             return await _repository.HasDuplicateApplicationAsync(personId, licenseClassId);
         }
 
+
+        public async Task<bool> CancelApplicationAsync(int applicationId)
+        {
+            // 1. جلب الكيان للتحقق من حالته
+            var app = await _repository.GetApplicationByIdAsync(applicationId);
+            if (app == null) throw new Exception("Application not found.");
+            // 2. الفالديشن الحقيقي (Business Rule)
+            if (app.ApplicationStatus == (int)AppStatus.Completed)
+            {
+                throw new InvalidOperationException("Cannot cancel a completed application.");
+            }
+            // 3. الفالديشن الحقيقي (Business Rule)
+            if (app.ApplicationStatus == (int)AppStatus.Cancelled)
+            {
+                throw new InvalidOperationException("Cannot cancel a cancelled application.");
+            }
+            // 4. التنفيذ
+            app.ApplicationStatus = (byte)AppStatus.Cancelled;
+            app.LastStatusDate = DateTime.UtcNow;
+            return await _repository.UpdateApplicationAsync(app);
+        }
     }
 }

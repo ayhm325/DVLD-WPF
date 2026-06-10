@@ -2,6 +2,7 @@
 using Application.Interfaces;
 using Infrastructure.Repositories;
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Application.Services
 {
@@ -35,8 +36,7 @@ namespace Application.Services
             int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
             return MapToDto(e, count);
         }
-
-        // 
+        
         public async Task<int> AddLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplicationCreateUpdateDto dto)
         {
             var entity = new LocalDrivingLicenseApplication
@@ -104,6 +104,11 @@ namespace Application.Services
                 ApplicationStatus = e.Application?.ApplicationStatus ?? 0,
                 PassedTest = passedTestCount
             };
+        }
+
+        public Task<int?> GetApplicationIdByLocalIdAsync(int localId)
+        {
+            return _repository.GetApplicationIdByLocalIdAsync(localId);
         }
     }
 }
