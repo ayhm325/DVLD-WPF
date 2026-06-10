@@ -10,130 +10,175 @@ namespace Infrastructure.Repositories
 
         public UserRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
-            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _contextFactory = contextFactory
+                ?? throw new ArgumentNullException(nameof(contextFactory));
+        }
+
+        // =========================
+        // BASE QUERY
+        // =========================
+        private IQueryable<User> Query(DVLDDbContext context)
+        {
+            return context.Users
+                .AsNoTracking()
+                .Include(u => u.Person);
         }
 
         // =========================
         // GET OPERATIONS
         // =========================
+
         public async Task<User?> GetUserByUserIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users
-                .Include(u => u.Person)
+
+            return await Query(context)
                 .FirstOrDefaultAsync(u => u.UserId == id);
         }
 
         public async Task<User?> GetUserByPersonIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users
-                .Include(u => u.Person)
+
+            return await Query(context)
                 .FirstOrDefaultAsync(u => u.PersonId == id);
         }
 
         public async Task<User?> GetUserByUsernameAsync(string username)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users
+
+            return await Query(context)
                 .FirstOrDefaultAsync(u => u.UserName == username);
         }
 
         public async Task<List<User>> GetAllUsersAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users
-                .Include(p => p.Person)
+
+            return await Query(context)
                 .ToListAsync();
         }
+
         // =========================
         // CHECK OPERATIONS
         // =========================
+
         public async Task<bool> IsUserExistsAsync(Expression<Func<User, bool>> predicate)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(predicate);
+
+            return await context.Users
+                .AsNoTracking()
+                .AnyAsync(predicate);
         }
 
         public async Task<bool> CheckUserCredentialsAsync(string username, string password)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.UserName == username && u.Password == password);
+
+            return await context.Users
+                .AnyAsync(u =>
+                    u.UserName == username &&
+                    u.Password == password);
         }
 
         public async Task<bool> IsUsernameTakenAsync(string username)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.UserName == username);
+
+            return await context.Users
+                .AnyAsync(u => u.UserName == username);
         }
 
         public async Task<bool> IsUsernameTakenForAnotherUserAsync(string username, int userId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.UserName == username && u.UserId != userId);
+
+            return await context.Users
+                .AnyAsync(u =>
+                    u.UserName == username &&
+                    u.UserId != userId);
         }
 
         public async Task<bool> IsUserExistsByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.UserId == id);
+
+            return await context.Users
+                .AnyAsync(u => u.UserId == id);
         }
 
         public async Task<bool> IsUserExistsByPersonIdAsync(int personId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.PersonId == personId);
+
+            return await context.Users
+                .AnyAsync(u => u.PersonId == personId);
         }
 
         public async Task<bool> CheckUserExistsAsync(string username, string password)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Users.AnyAsync(u => u.UserName == username && u.Password == password);
+
+            return await context.Users
+                .AnyAsync(u =>
+                    u.UserName == username &&
+                    u.Password == password);
         }
 
-        //// =========================
-        //// CREATE
-        //// =========================
+        // =========================
+        // CREATE
+        // =========================
+
         public async Task<int> AddUserAsync(User user)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
+
             await context.Users.AddAsync(user);
+
             await context.SaveChangesAsync();
+
             return user.UserId;
         }
 
-        //// =========================
-        //// UPDATE
-        //// =========================
+        // =========================
+        // UPDATE
+        // =========================
+
         public async Task<bool> UpdateUserAsync(User user)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            var existing = await context.Users.FindAsync(user.UserId);
-            if (existing is null) return false;
 
-            context.Entry(existing).CurrentValues.SetValues(user);
+            var existing = await context.Users
+                .FirstOrDefaultAsync(u => u.UserId == user.UserId);
+
+            if (existing is null)
+                return false;
+
+            context.Entry(existing)
+                .CurrentValues
+                .SetValues(user);
+
             return await context.SaveChangesAsync() > 0;
         }
 
+        // =========================
+        // DELETE
+        // =========================
 
-        //// =========================
-        //// DELETE
-        //// =========================
         public async Task<bool> DeleteUserAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
+
             var user = await context.Users.FindAsync(id);
 
-            if (user == null) return false;
+            if (user is null)
+                return false;
 
             context.Users.Remove(user);
+
             return await context.SaveChangesAsync() > 0;
         }
-
-
-
-
-
-
     }
 }

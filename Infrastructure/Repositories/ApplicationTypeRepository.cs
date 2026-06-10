@@ -1,6 +1,5 @@
 ﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories
 {
@@ -10,7 +9,8 @@ namespace Infrastructure.Repositories
 
         public ApplicationTypeRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
-            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _contextFactory = contextFactory
+                ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
         // =========================
@@ -19,30 +19,39 @@ namespace Infrastructure.Repositories
         public async Task<List<ApplicationType>> GetAllApplicationTypesAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
+
             return await context.ApplicationTypes
-                                .ToListAsync();
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<ApplicationType?> GetApplicationTypeByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
+
             return await context.ApplicationTypes
+                .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.ApplicationTypeId == id);
         }
-
 
         // =========================
         // UPDATE OPERATION
         // =========================
-        public async Task<bool> UpdateApplicationTypeAsync(ApplicationType apptype)
+        public async Task<bool> UpdateApplicationTypeAsync(ApplicationType appType)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            var existing = await context.ApplicationTypes.FindAsync(apptype.ApplicationTypeId);
-            if (existing is null) return false;
 
-            context.Entry(existing).CurrentValues.SetValues(apptype);
+            var existing = await context.ApplicationTypes
+                .FindAsync(appType.ApplicationTypeId);
+
+            if (existing is null)
+                return false;
+
+            context.Entry(existing)
+                .CurrentValues
+                .SetValues(appType);
+
             return await context.SaveChangesAsync() > 0;
         }
     }
-
 }

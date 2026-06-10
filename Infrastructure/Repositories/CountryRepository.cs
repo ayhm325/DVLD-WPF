@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System;
 
 namespace Infrastructure.Repositories
 {
@@ -12,18 +9,21 @@ namespace Infrastructure.Repositories
 
         public CountryRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
-            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _contextFactory = contextFactory
+                ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
+        // =========================
+        // GET OPERATIONS
+        // =========================
         public async Task<List<Country>> GetAllCountriesAsync()
         {
-            // استخدام الـ Factory لإنشاء Context متزامن مع الـ Async
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            // استدعاء EF Core Native Async
             return await context.Countries
-                                .OrderBy(c => c.CountryName) // اختيار اختياري للترتيب
-                                .ToListAsync();
+                .AsNoTracking()
+                .OrderBy(c => c.CountryName)
+                .ToListAsync();
         }
     }
 }

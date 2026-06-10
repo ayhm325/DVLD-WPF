@@ -9,9 +9,9 @@ namespace Infrastructure.Repositories
 
         public LicenseClassRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
-            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _contextFactory = contextFactory
+                ?? throw new ArgumentNullException(nameof(contextFactory));
         }
-
 
         // =========================
         // GET OPERATIONS
@@ -19,17 +19,19 @@ namespace Infrastructure.Repositories
         public async Task<List<LicenseClass>> GetAllLicenseClassAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.LicenseClasses.ToListAsync();
+
+            return await context.LicenseClasses
+                .AsNoTracking()
+                .ToListAsync();
         }
+
         public async Task<LicenseClass?> GetLicenseClassByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
+
             return await context.LicenseClasses
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.LicenseClassID == id);
         }
-
-
-
-
-     }
+    }
 }

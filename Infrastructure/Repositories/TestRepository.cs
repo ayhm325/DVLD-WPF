@@ -1,13 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Domain.Entities;
+﻿using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class PersonRepository
+    public class TestRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 
-        public PersonRepository(IDbContextFactory<DVLDDbContext> contextFactory)
+        public TestRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
             _contextFactory = contextFactory
                 ?? throw new ArgumentNullException(nameof(contextFactory));
@@ -16,33 +16,31 @@ namespace Infrastructure.Repositories
         // =========================
         // BASE QUERY
         // =========================
-        private IQueryable<Person> Query(DVLDDbContext context)
+        private IQueryable<Test> Query(DVLDDbContext context)
         {
-            return context.People
+
+            return context.Tests
                 .AsNoTracking()
-                .Include(p => p.Country);
+                .Include(t => t.TestAppointment)
+                    .ThenInclude(a => a.TestType)
+                .Include(t => t.TestAppointment)
+                    .ThenInclude(a => a.LocalDrivingLicenseApplication)
+                .Include(t => t.User);
         }
 
         // =========================
-        // GET OPERATIONS
+        // GET
         // =========================
-        public async Task<Person?> GetPersonByIdAsync(int id)
+
+        public async Task<Test?> GetByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
-                .FirstOrDefaultAsync(p => p.PersonId == id);
+                .FirstOrDefaultAsync(t => t.TestID == id);
         }
 
-        public async Task<Person?> GetPersonByNationalNoAsync(string nationalNo)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            return await Query(context)
-                .FirstOrDefaultAsync(p => p.NationalNo == nationalNo);
-        }
-
-        public async Task<List<Person>> GetAllPersonsAsync()
+        public async Task<List<Test>> GetAllAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -50,59 +48,75 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        // =========================
-        // CHECK OPERATIONS
-        // =========================
-        public async Task<bool> IsPersonExistsByIdAsync(int id)
+        public async Task<List<Test>> GetByTestAppointmentIdAsync(int appointmentId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            return await context.People
-                .AsNoTracking()
-                .AnyAsync(p => p.PersonId == id);
+            return await Query(context)
+                .Where(t => t.TestAppointmentID == appointmentId)
+                .ToListAsync();
         }
 
-        public async Task<bool> IsNationalNoDuplicatedAsync(string nationalNo, int id)
+        public async Task<List<Test>> GetByUserIdAsync(int userId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            return await context.People
-                .AsNoTracking()
-                .AnyAsync(p =>
-                    p.NationalNo == nationalNo &&
-                    p.PersonId != id);
+            return await Query(context)
+                .Where(t => t.CreatedByUserID == userId)
+                .ToListAsync();
+        }
+
+        // =========================
+        // CHECKS
+        // =========================
+
+        public async Task<bool> IsTestExistsAsync(int id)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.Tests
+                .AnyAsync(t => t.TestID == id);
+        }
+
+        public async Task<bool> IsTestAlreadyTakenAsync(int appointmentId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.Tests
+                .AnyAsync(t => t.TestAppointmentID == appointmentId);
         }
 
         // =========================
         // CREATE
         // =========================
-        public async Task<int> AddPersonAsync(Person person)
+
+        public async Task<int> AddAsync(Test test)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            await context.People.AddAsync(person);
-
+            await context.Tests.AddAsync(test);
             await context.SaveChangesAsync();
 
-            return person.PersonId;
+            return test.TestID;
         }
 
         // =========================
         // UPDATE
         // =========================
-        public async Task<bool> UpdatePersonAsync(Person person)
+
+        public async Task<bool> UpdateAsync(Test test)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            var existing = await context.People
-                .FirstOrDefaultAsync(p => p.PersonId == person.PersonId);
+            var existing = await context.Tests
+                .FirstOrDefaultAsync(t => t.TestID == test.TestID);
 
             if (existing is null)
                 return false;
 
             context.Entry(existing)
-                   .CurrentValues
-                   .SetValues(person);
+                .CurrentValues
+                .SetValues(test);
 
             return await context.SaveChangesAsync() > 0;
         }
@@ -110,16 +124,17 @@ namespace Infrastructure.Repositories
         // =========================
         // DELETE
         // =========================
-        public async Task<bool> DeletePersonAsync(int id)
+
+        public async Task<bool> DeleteAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            var person = await context.People.FindAsync(id);
+            var entity = await context.Tests.FindAsync(id);
 
-            if (person is null)
+            if (entity is null)
                 return false;
 
-            context.People.Remove(person);
+            context.Tests.Remove(entity);
 
             return await context.SaveChangesAsync() > 0;
         }
