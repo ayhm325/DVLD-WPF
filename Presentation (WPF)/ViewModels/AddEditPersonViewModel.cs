@@ -278,12 +278,7 @@ namespace Presentation.ViewModels
         [RelayCommand]
         private void Cancel()
         {
-            var frame = MainWindow.Instance.MainFrame;
-
-            if (frame.CanGoBack)
-            {
-                frame.GoBack();
-            }
+            MainWindow.Navigation.GoBack();
         }
 
 

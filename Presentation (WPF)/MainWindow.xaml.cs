@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services;
 using Presentation.Views;
 using Presentation.Views.Pages;
 using Presentation.Views.Pages.Applications;
@@ -10,14 +11,17 @@ using System.Windows.Controls;
 namespace DVLD_WPF
 {
     public partial class MainWindow : Window
-    {
-        public static MainWindow Instance { get; private set; }
+    {       
+        public static INavigationService Navigation { get; private set; } = null!;
 
         public MainWindow()
         {
             InitializeComponent();
             this.WindowState = WindowState.Maximized;
-            Instance = this;
+          
+
+            Navigation = new NavigationService(MainFrame);
+
             // استدعاء الصفحة من الـ ServiceProvider
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
         }
@@ -42,7 +46,6 @@ namespace DVLD_WPF
         {
             // الحصول على النافذة من الـ ServiceProvider
             var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewLocalLicnnse>();
-
             // إظهارها كنافذة مستقلة
             newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow; // لربطها بالنافذة الرئيسية
             newLicenseWindow.ShowDialog();

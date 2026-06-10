@@ -7,23 +7,25 @@
              d:DesignHeight="450"
              d:DesignWidth="800">
 
+    <!-- تطبيق نمط الكارت الخارجي -->
     <Border Style="{StaticResource CardStyle}" Margin="10" Padding="25">
         <StackPanel>
+            <!-- العنوان: استخدام HeaderStyle مع فرض لون PrimaryColor -->
             <TextBlock Text="Personal Information"
-                       FontSize="18"
-                       FontWeight="Bold"
+                       Style="{StaticResource HeaderStyle}"
                        Foreground="{StaticResource PrimaryColor}"
                        Margin="0,0,0,15"/>
 
             <DockPanel LastChildFill="True">
 
+                <!-- حاوية الصورة: استخدام ألوان النظام للحدود والخلفية -->
                 <Border DockPanel.Dock="Right"
                         Width="185"
                         Height="180"
                         CornerRadius="12"
                         Margin="30,0,0,0"
-                        Background="#F1F5F9"
-                        BorderBrush="#E2E8F0"
+                        Background="{StaticResource BackgroundColor}"
+                        BorderBrush="{StaticResource BorderColor}"
                         BorderThickness="1">
 
                     <Image Stretch="UniformToFill"
@@ -51,113 +53,77 @@
                     </Grid.RowDefinitions>
 
                     <Grid.Resources>
-
+                        <!-- تخصيص أنماط النصوص الداخلية بناءً على ألوان النظام -->
                         <Style TargetType="TextBlock" x:Key="LabelStyle">
-                            <Setter Property="Foreground" Value="#64748B"/>
+                            <!-- استخدام SecondaryColor (BlueViolet) للعناوين الصغيرة -->
+                            <Setter Property="Foreground" Value="{StaticResource SecondaryColor}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
                             <Setter Property="Margin" Value="0,0,10,12"/>
                         </Style>
 
                         <Style TargetType="TextBlock" x:Key="ValueStyle">
-                            <Setter Property="Foreground" Value="#1E293B"/>
+                            <!-- استخدام TextColor للقيم -->
+                            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
                             <Setter Property="FontWeight" Value="Bold"/>
                             <Setter Property="Margin" Value="0,0,20,12"/>
                         </Style>
-
                     </Grid.Resources>
 
-                    <TextBlock Text="Person ID:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Person ID:" Style="{StaticResource LabelStyle}"/>
 
                     <TextBlock Grid.Column="1"
-                               Text="{Binding Person.PersonId,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               Text="{Binding Person.PersonId, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"/>
 
-                    <TextBlock Grid.Column="2"
-                               Text="Gender:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Column="2" Text="Gender:" Style="{StaticResource LabelStyle}"/>
 
                     <TextBlock Grid.Column="3"
-                               Text="{Binding Person.Gender,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               Text="{Binding Person.Gender, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"/>
 
-                    <TextBlock Grid.Row="1"
-                               Text="Full Name:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Row="1" Text="Full Name:" Style="{StaticResource LabelStyle}"/>
 
-                    <TextBlock Grid.Row="1"
-                               Grid.Column="1"
-                               Grid.ColumnSpan="3"
-                               Text="{Binding Person.FullName,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"
+                               Text="{Binding Person.FullName, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"/>
 
-                    <TextBlock Grid.Row="2"
-                               Text="National No:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Row="2" Text="National No:" Style="{StaticResource LabelStyle}"/>
 
-                    <TextBlock Grid.Row="2"
-                               Grid.Column="1"
-                               Text="{Binding Person.NationalNo,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    <TextBlock Grid.Row="2" Grid.Column="1"
+                               Text="{Binding Person.NationalNo, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"/>
 
-                    <TextBlock Grid.Row="2"
-                               Grid.Column="2"
-                               Text="DOB:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="DOB:" Style="{StaticResource LabelStyle}"/>
 
-                    <TextBlock Grid.Row="2"
-                               Grid.Column="3"
-                               Text="{Binding Person.DateOfBirth,
-                                              RelativeSource={RelativeSource AncestorType=UserControl},
-                                              StringFormat=dd/MM/yyyy}"
+                    <TextBlock Grid.Row="2" Grid.Column="3"
+                               Text="{Binding Person.DateOfBirth, 
+                                             RelativeSource={RelativeSource AncestorType=UserControl},
+                                             StringFormat=dd/MM/yyyy}"
                                Style="{StaticResource ValueStyle}"/>
 
-                    <TextBlock Grid.Row="3"
-                               Text="Email:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Row="3" Text="Email:" Style="{StaticResource LabelStyle}"/>
 
-                    <TextBlock Grid.Row="3"
-                               Grid.Column="1"
-                               Grid.ColumnSpan="3"
-                               Text="{Binding Person.Email,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3"
+                               Text="{Binding Person.Email, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"/>
 
-                    <TextBlock Grid.Row="4"
-                               Text="Address:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Row="4" Text="Address:" Style="{StaticResource LabelStyle}"/>
 
-                    <TextBlock Grid.Row="4"
-                               Grid.Column="1"
-                               Grid.ColumnSpan="3"
-                               Text="{Binding Person.Address,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3"
+                               Text="{Binding Person.Address, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"
                                TextWrapping="Wrap"/>
 
-                    <TextBlock Grid.Row="5"
-                               Text="Phone:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Row="5" Text="Phone:" Style="{StaticResource LabelStyle}"/>
 
-                    <TextBlock Grid.Row="5"
-                               Grid.Column="1"
-                               Text="{Binding Person.Phone,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    <TextBlock Grid.Row="5" Grid.Column="1"
+                               Text="{Binding Person.Phone, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"/>
 
-                    <TextBlock Grid.Row="5"
-                               Grid.Column="2"
-                               Text="Country:"
-                               Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="2" Text="Country:" Style="{StaticResource LabelStyle}"/>
 
-                    <TextBlock Grid.Row="5"
-                               Grid.Column="3"
-                               Text="{Binding Person.CountryName,
-                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    <TextBlock Grid.Row="5" Grid.Column="3"
+                               Text="{Binding Person.CountryName, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Style="{StaticResource ValueStyle}"/>
 
                 </Grid>

@@ -3,6 +3,8 @@ using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD_WPF;
+using Microsoft.Extensions.DependencyInjection;
+using Presentation.Views.Windows;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -22,7 +24,7 @@ namespace Presentation.ViewModels
         private string _searchText = string.Empty;
 
         [ObservableProperty]
-        private string _selectedFilter = "ID";
+        private string _selectedFilter = "Full Name";
 
         // تعريف partial method للتعامل مع التغيير
         partial void OnSearchTextChanged(string value)
@@ -58,8 +60,18 @@ namespace Presentation.ViewModels
             foreach (var item in filtered) Applications.Add(item);
         }
 
+        [RelayCommand]
+        private void AddNew()
+        {
+            var addEditVm = App.ServiceProvider.GetRequiredService<AddEditLDLAppViewModel>();           
+            
+            var win = new NewLocalLicnnse(addEditVm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            win.ShowDialog();
+        }
 
-        
 
     }
 }

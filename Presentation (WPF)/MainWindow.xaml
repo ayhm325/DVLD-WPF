@@ -48,7 +48,6 @@
                 <Button Content="Manage Users" Margin="10" Click="Users_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Content="Application Type" Margin="10" Click="ApplicationType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Content="Test Type" Margin="10" Click="TestType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
-                <Button Content="New Local License" Margin="10" Click="NewLocalLicnnse_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Content="L.D.L.App" Margin="10" Click="LDLApp_Click" Style="{StaticResource PrimaryButtonStyle}"/>
             </StackPanel>
 

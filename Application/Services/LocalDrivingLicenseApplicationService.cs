@@ -16,7 +16,7 @@ namespace Application.Services
 
         public async Task<List<LocalDrivingLicenseApplicationDto>> GetAllLocalDrivingLicenseApplicationsAsync()
         {
-            var entities = await _repository.GetAllAsync();
+            var entities = await _repository.GetLocalApplicationsOnlyAsync();
             var dtoList = new List<LocalDrivingLicenseApplicationDto>();
 
             foreach (var e in entities)
@@ -36,10 +36,16 @@ namespace Application.Services
             return MapToDto(e, count);
         }
 
+        // 
         public async Task<int> AddLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplicationCreateUpdateDto dto)
         {
-            var result = await _repository.AddFullApplicationAsync(dto.PersonId, dto.LicenseClassId, dto.CreatedByUserId);
-            return result.ApplicationID;
+            var entity = new LocalDrivingLicenseApplication
+            {
+                ApplicationID = dto.ApplicatonId,
+                LicenseClassID = dto.LicenseClassId,                              
+            };
+
+            return await _repository.CreatLocalDrivingLicenseApplicationAsync(entity);
         }
 
         public async Task<bool> UpdateLocalDrivingLicenseApplicationAsync(int id, LocalDrivingLicenseApplicationCreateUpdateDto dto)

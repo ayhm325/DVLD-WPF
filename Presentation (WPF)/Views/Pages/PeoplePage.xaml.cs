@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;
 using Presentation.ViewModels;
+using Presentation.Views.Windows;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -43,7 +44,12 @@ namespace Presentation.Views
                 // 🔴 هذا السطر مفقود في كود الـ Click الخاص بك!
                 await addEditVm.InitializeAsync(null);
 
-                MainWindow.Instance.MainFrame.Navigate(new AddEditPersonPage(addEditVm));
+                var win = new AddEditPersonWin(addEditVm)
+                {
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
+
+                win.ShowDialog();
             }
         }
     }

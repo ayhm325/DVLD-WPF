@@ -5,7 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" d:DesignWidth="800">
 
-    <Border Style="{StaticResource CardStyle}" Padding="15" CornerRadius="12">
+    <!-- تم تطبيق CardStyle. تم إزالة CornerRadius لأنه موجود داخل الستايل -->
+    <Border Style="{StaticResource CardStyle}" Padding="15">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -16,28 +17,49 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="Filter:" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,15,0"/>
-            <TextBlock Grid.Column="1" Text="Find By:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <!-- استخدام TextColor بدلاً من اللون الافتراضي -->
+            <TextBlock Grid.Column="0" Text="Filter:" 
+                       FontWeight="SemiBold" 
+                       Foreground="{StaticResource TextColor}"
+                       VerticalAlignment="Center" Margin="0,0,15,0"/>
 
-            <Border Grid.Column="2" CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" 
-                    Background="White" Margin="0,0,10,0" Height="38" Width="140">
-                <ComboBox SelectedIndex="{Binding SelectedFilterIndex}" Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" Padding="10,0">
-                    <ComboBoxItem Content="Person ID"/>
-                    <ComboBoxItem Content="National No"/>
-                </ComboBox>
-            </Border>
+            <TextBlock Grid.Column="1" Text="Find By:" 
+                       Foreground="{StaticResource TextColor}"
+                       VerticalAlignment="Center" Margin="0,0,10,0"/>
 
-            <Border Grid.Column="3" CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" 
-                    Background="White" Margin="0,0,10,0" Height="38">
-                <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" 
-                         Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" Padding="10,0"/>
-            </Border>
+            <!-- ComboBox: الستايل المضمن يهتم بالخلفية والحدود -->
+            <ComboBox Grid.Column="2" 
+                      SelectedIndex="{Binding SelectedFilterIndex}" 
+                      Width="140" 
+                      Margin="0,0,10,0"
+                      VerticalAlignment="Center">
+                <ComboBoxItem Content="Person ID"/>
+                <ComboBoxItem Content="National No"/>
+            </ComboBox>
 
-            <Button Grid.Column="4" Content="Search" Style="{StaticResource PrimaryButtonStyle}" 
-                    Width="90" Height="38" Margin="0,0,5,0" Command="{Binding SearchCommand}"/>
+            <!-- TextBox: الستايل المضمن يهتم بالخلفية والحدود والارتفاع -->
+            <TextBox Grid.Column="3" 
+                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" 
+                     Margin="0,0,10,0" 
+                     VerticalAlignment="Center"/>
 
-            <Button Grid.Column="5" Content="+ Add Person" Style="{StaticResource PrimaryButtonStyle}" 
-                    Width="110" Height="38" Background="OliveDrab" Command="{Binding AddPersonCommand}"/>
+            <!-- PrimaryButtonStyle يحدد الارتفاع تلقائياً (40) -->
+            <Button Grid.Column="4" 
+                    Content="Search" 
+                    Style="{StaticResource PrimaryButtonStyle}" 
+                    Width="90" 
+                    Margin="0,0,5,0" 
+                    Command="{Binding SearchCommand}"
+                    VerticalAlignment="Center"/>
+
+            <!-- الزر هنا يستخدم PrimaryButtonStyle مع تغيير اللون محلياً إلى OliveDrab -->
+            <Button Grid.Column="5" 
+                    Content="+ Add Person" 
+                    Style="{StaticResource PrimaryButtonStyle}" 
+                    Width="110" 
+                    Background="OliveDrab" 
+                    Command="{Binding AddPersonCommand}"
+                    VerticalAlignment="Center"/>
         </Grid>
     </Border>
 </UserControl>

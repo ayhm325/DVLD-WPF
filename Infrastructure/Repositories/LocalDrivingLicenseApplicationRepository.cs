@@ -23,6 +23,19 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        // 
+        public async Task<List<LocalDrivingLicenseApplication>> GetLocalApplicationsOnlyAsync()
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.LocalDrivingLicenseApplications
+                .Include(a => a.Application)
+                    .ThenInclude(app => app.Person)
+                .Include(a => a.LicenseClass)
+                .Where(a => a.Application.ApplicationTypeID == 1) // Local License فقط
+                .ToListAsync();
+        }
+
         public async Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -72,40 +85,32 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<LocalDrivingLicenseApplication> AddFullApplicationAsync(int personId, int licenseClassId, int createdByUserId)
+        // =========================
+        // CREATE
+        // =========================
+        public async Task<int> CreatLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplication LDLApp)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
-            // Create the parent application.
-            var newApplication = new ApplicationD
-            {
-                ApplicantPersonID = personId,
-                ApplicationDate = DateTime.Now,
-                ApplicationTypeID = 1,
-                ApplicationStatus = 1,
-                LastStatusDate = DateTime.Now,
-                CreatedByUserID = createdByUserId
-            };
-            context.Applications.Add(newApplication);
-            // Save to generate ApplicationID.
+            using var context = await _contextFactory.CreateDbContextAsync();            
+            await context.LocalDrivingLicenseApplications.AddAsync(LDLApp);
             await context.SaveChangesAsync();
-            // Create the local license application.
-            var localApp = new LocalDrivingLicenseApplication
-            {
-                ApplicationID = newApplication.ApplicationID,
-                LicenseClassID = licenseClassId
-            };
-            context.LocalDrivingLicenseApplications.Add(localApp);
-            await context.SaveChangesAsync();
-            return localApp;
+            return LDLApp.LocalDrivingLicenseApplicationID;
         }
-
+        //// =========================
+        //// UPDATE
+        //// =========================
         public async Task<bool> UpdateAsync(LocalDrivingLicenseApplication entity)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            context.LocalDrivingLicenseApplications.Update(entity);
+            var existing = await context.LocalDrivingLicenseApplications.FindAsync(entity.LocalDrivingLicenseApplicationID);
+            if (existing == null) return false;
+            context.Entry(existing).CurrentValues.SetValues(entity);
             return await context.SaveChangesAsync() > 0;
         }
 
+
+        // =========================
+        // DELETE
+        // =========================
         public async Task<bool> DeleteAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -115,6 +120,6 @@ namespace Infrastructure.Repositories
             return await context.SaveChangesAsync() > 0;
         }
     
-    
+        
     }
 }

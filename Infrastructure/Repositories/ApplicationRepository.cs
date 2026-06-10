@@ -8,6 +8,7 @@ namespace Infrastructure.Repositories
     public class ApplicationRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+
         public ApplicationRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
@@ -124,6 +125,24 @@ namespace Infrastructure.Repositories
             return status == (byte)AppStatus.New ||
                    status == (byte)AppStatus.Cancelled ||
                    status == (byte)AppStatus.Completed;             
+        }
+
+        public async Task<int?> HasDuplicateApplicationAsync(int personId, int licenseClassId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var app = await context.LocalDrivingLicenseApplications
+                .Where(ldla =>
+                        ldla.Application.ApplicantPersonID == personId &&
+                        ldla.LicenseClassID == licenseClassId &&
+                        (
+                            ldla.Application.ApplicationStatus == (byte)AppStatus.New ||
+                            ldla.Application.ApplicationStatus == (byte)AppStatus.Completed
+                         ))
+                .Select(ldla => ldla.ApplicationID)
+                .FirstOrDefaultAsync();
+
+            return app == 0 ? null : app;
         }
 
         // =========================

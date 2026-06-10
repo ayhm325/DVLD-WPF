@@ -111,7 +111,13 @@ public partial class UsersViewModel : ObservableObject
     {
         var addEditVm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
         _ = addEditVm.InitializeAsync(null); // تهيئة للإضافة
-        MainWindow.Instance.MainFrame.Navigate(new AddEditUserPage(addEditVm));
+
+        //MainWindow.Navigation.Navigate(new AddEditUserPage(addEditVm));
+        var win = new AddEditUserWin(addEditVm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        win.ShowDialog();
     }
 
 
@@ -145,7 +151,12 @@ public partial class UsersViewModel : ObservableObject
         await addEditUserVm.InitializeAsync(null);
 
         // 3. التنقل لصفحة الإضافة باستخدام الـ Helper الخاص بك
-        MainWindow.Instance.MainFrame.Navigate(new AddEditUserPage(addEditUserVm));
+        //MainWindow.Navigation.Navigate(new AddEditUserPage(addEditUserVm));
+        var win = new AddEditUserWin(addEditUserVm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        win.ShowDialog();
     }
 
     [RelayCommand]
@@ -161,7 +172,12 @@ public partial class UsersViewModel : ObservableObject
         await vm.InitializeAsync(SelectedUser.UserId);
 
         // 4. الانتقال للصفحة بعد أن أصبحت البيانات جاهزة
-        MainWindow.Instance.MainFrame.Navigate(new AddEditUserPage(vm));
+        //MainWindow.Navigation.Navigate(new AddEditUserPage(vm));
+        var win = new AddEditUserWin(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        win.ShowDialog();
     }
 
     [RelayCommand]

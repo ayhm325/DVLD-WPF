@@ -3,13 +3,15 @@ using Application.Interfaces;
 using Application.Validators;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Enums;
 using Domain.Entities;
+using Domain.Enums;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;
+using Presentation.Services;
 using Presentation.ViewModels;
 using Presentation.Views;
+using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -21,7 +23,7 @@ public partial class AddEditUserViewModel : ObservableObject
     public AddEditUserViewModel(IUserService userService, IPersonService personService)
     {
         _userService = userService;
-        _personService = personService;
+        _personService = personService;        
     }
 
 
@@ -163,10 +165,12 @@ public partial class AddEditUserViewModel : ObservableObject
     private void AddPerson()
     {        
         var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
-
-        MainWindow.Instance.MainFrame.Navigate(
-            new AddEditPersonPage(vm)
-        );
+        //MainWindow.Navigation.Navigate(new AddEditPersonWin(vm));
+        var win = new AddEditPersonWin(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+        win.ShowDialog();
     }
 
     [RelayCommand]
@@ -245,12 +249,7 @@ public partial class AddEditUserViewModel : ObservableObject
     [RelayCommand]
     private void Cancel()
     {
-        var frame = MainWindow.Instance.MainFrame;
-
-        if (frame.CanGoBack)
-        {
-            frame.GoBack();
-        }
+        MainWindow.Navigation.GoBack();
     }
 
 

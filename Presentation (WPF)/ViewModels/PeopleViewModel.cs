@@ -9,6 +9,7 @@ using Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;
 using Presentation.Views;
+using Presentation.Views.Windows;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -155,7 +156,7 @@ namespace Presentation.ViewModels
         }
 
         [RelayCommand]
-        private async Task AddNewPerson() // لاحظ تحويلها لـ async Task
+        private async Task AddNewPerson() 
         {
             if (App.ServiceProvider != null)
             {
@@ -163,8 +164,13 @@ namespace Presentation.ViewModels
 
                 // 🟢 الإضافة هنا: استدعِ التهيئة حتى عند الإضافة (null تعني Add Mode)
                 await addEditVm.InitializeAsync(null);
+                //MainWindow.Navigation.Navigate(new AddEditPersonPage(addEditVm));
+                var win = new AddEditPersonWin(addEditVm)
+                {
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
 
-                MainWindow.Instance.MainFrame.Navigate(new AddEditPersonPage(addEditVm));
+                win.ShowDialog();
             }
         }
 
@@ -180,7 +186,12 @@ namespace Presentation.ViewModels
             await addEditVm.InitializeAsync(Person.PersonId);
 
             // 3. الانتقال بالنسخة التي تحمل البيانات
-            MainWindow.Instance.MainFrame.Navigate(new AddEditPersonPage(addEditVm));
+            //MainWindow.Navigation.Navigate(new AddEditPersonPage(addEditVm));
+            var win = new AddEditPersonWin(addEditVm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            win.ShowDialog();
         }
 
         [RelayCommand]

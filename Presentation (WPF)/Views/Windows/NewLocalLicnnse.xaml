@@ -23,7 +23,7 @@
 
         <TabControl x:Name="MainTabControl" Grid.Row="1">
 
-            <TabItem Header="Personal Info">
+            <TabItem Header="Personal Info" Style="{StaticResource TabItemStyle}" FontSize="14">
                 <DockPanel Margin="10" LastChildFill="True">
 
                     <controls:Filter DockPanel.Dock="Top" Margin="0,0,0,10" />
@@ -43,7 +43,7 @@
                 </DockPanel>
             </TabItem>
 
-            <TabItem Header="Application Info">
+            <TabItem Header="Application Info" Style="{StaticResource TabItemStyle}" FontSize="14">
                 <StackPanel Margin="25">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -74,7 +74,7 @@
 
                         <materialDesign:PackIcon Kind="Cash" Foreground="Green" Grid.Row="3" Width="25" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Application Fees:" Grid.Row="3" Grid.Column="1" FontSize="16" VerticalAlignment="Center" FontWeight="Bold" Margin="0,15"/>
-                        <TextBlock Grid.Row="3" Grid.Column="2" FontSize="16" Text="{Binding SelectedLicenseClass.LicenseClassFees, StringFormat={}{0:F2}}" Margin="0,15"/>
+                        <TextBlock Grid.Row="3" Grid.Column="2" FontSize="16" Text="{Binding ApplicationTypeFees, StringFormat={}{0:F2}}" Margin="0,15"/>
 
                         <materialDesign:PackIcon Kind="Account" Foreground="Green" Grid.Row="4" Width="25" Height="25" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Created By:" Grid.Row="4" Grid.Column="1" FontSize="16" VerticalAlignment="Center" FontWeight="Bold" Margin="0,15"/>

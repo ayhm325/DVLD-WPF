@@ -1,27 +1,27 @@
-﻿ <UserControl x:Class="Presentation.Views.Controls.UserCard"
+﻿<UserControl x:Class="Presentation.Views.Controls.UserCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Border Background="#F1F5F9" 
-            BorderBrush="#CBD5E1" 
-            BorderThickness="1" 
-            CornerRadius="8" 
+    <!-- تم تطبيق CardStyle هنا: الخلفية البيضاء، الحدود الدائرية، والظل -->
+    <Border Style="{StaticResource CardStyle}" 
             Margin="10" 
             Padding="15">
 
         <StackPanel>
+            <!-- تم تطبيق HeaderStyle هنا مع الحفاظ على اللون الأساسي (PrimaryColor) -->
             <TextBlock Text="User Information" 
-                       FontSize="16" 
-                       FontWeight="Bold" 
+                       Style="{StaticResource HeaderStyle}"
                        Foreground="{StaticResource PrimaryColor}" 
                        Margin="0,0,0,10"/>
 
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="User: " FontWeight="Bold" Foreground="#475569"/>
-                <TextBlock Text="{Binding UserName}" Margin="0,0,20,0" Foreground="#1E293B"/>
+                <!-- استخدام TextColor بدلاً من اللون الرمادي الثابت ليتناسب مع الثيم -->
+                <TextBlock Text="User: " FontWeight="SemiBold" Foreground="{StaticResource TextColor}"/>
+                <TextBlock Text="{Binding UserName}" Margin="0,0,20,0" Foreground="{StaticResource TextColor}" VerticalAlignment="Center"/>
 
-                <TextBlock Text="Status: " FontWeight="Bold" Foreground="#475569"/>
-                <TextBlock Text="{Binding IsActive}" Foreground="#0F766E"/>
+                <TextBlock Text="Status: " FontWeight="SemiBold" Foreground="{StaticResource TextColor}"/>
+                <!-- تلوين حالة المستخدم باللون الأساسي لإبرازها -->
+                <TextBlock Text="{Binding IsActive}" Foreground="{StaticResource PrimaryColor}" FontWeight="Medium" VerticalAlignment="Center"/>
             </StackPanel>
         </StackPanel>
 

@@ -81,9 +81,7 @@ namespace DVLD_WPF
             services.AddTransient<LoginWindow>();
             services.AddTransient<MainWindow>();
             services.AddTransient<HomePage>();           
-            services.AddTransient<UserPage>();
-            services.AddTransient<AddEditUserPage>();
-            services.AddTransient<AddEditPersonPage>();
+            services.AddTransient<UserPage>();            
             services.AddTransient<ChangePasswordWindow>();
             services.AddTransient<PeoplePage>();         
             services.AddTransient<UserDetailsWindow>();
@@ -93,9 +91,14 @@ namespace DVLD_WPF
             services.AddTransient<EditTestTypeWindow>();
             services.AddTransient<NewLocalLicnnse>();
             services.AddTransient<LDLAppPage>();
+            services.AddTransient<AddEditPersonWin>();
+            services.AddTransient<AddEditUserWin>();
 
 
 
+            // 6. Navigation Service (⚠️ مهم)
+            services.AddSingleton<Presentation.Services.INavigationService,
+                                  Presentation.Services.NavigationService>();
 
         }
 

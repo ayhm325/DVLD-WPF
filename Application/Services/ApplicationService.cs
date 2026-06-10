@@ -33,6 +33,7 @@ namespace Application.Services
             }).ToList();
         }
 
+        
         public async Task<int> AddNewApplicationAsync(ApplicationDto dto)
         {
             // تحويل DTO إلى Entity
@@ -81,5 +82,11 @@ namespace Application.Services
         {
             return await _repository.DeleteApplicationAsync(id);
         }
+
+        public async Task<int?> HasDuplicateApplicationAsync(int personId,int licenseClassId)
+        {
+            return await _repository.HasDuplicateApplicationAsync(personId, licenseClassId);
+        }
+
     }
 }

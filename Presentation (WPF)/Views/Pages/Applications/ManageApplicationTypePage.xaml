@@ -5,41 +5,79 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       mc:Ignorable="d" 
       Title="Manage Application Types"
-      Background="#F8F9FA">
+      Background="{StaticResource BackgroundColor}">
 
-    <Grid Margin="20">
+    <Page.Resources>
+        <!-- Inline Styles for DataGrid to match the theme -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Height" Value="45"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F1F5F9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#E0E7FF"/>
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="25">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20" VerticalAlignment="Center">
+        <!-- Header Section -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
             <TextBlock Text="Manage Application Types" 
-                       FontSize="24" 
-                       FontWeight="Bold" 
-                       Foreground="#2C3E50"/>
+                       Style="{StaticResource HeaderStyle}"/>
 
-            <TextBlock FontSize="24" 
-                       FontWeight="Bold" 
-                       Foreground="#3498DB" 
-                       Margin="10,0,0,0">
-                <Run Text="("/>
-                <Run Text="{Binding ApplicationTypes.Count, Mode=OneWay}"/>
-                <Run Text=")"/>
-            </TextBlock>
+            <TextBlock Text="{Binding ApplicationTypes.Count, StringFormat='({0})'}" 
+                       Style="{StaticResource HeaderStyle}" 
+                       Foreground="#64748B" 
+                       Margin="8,0,0,0"/>
         </StackPanel>
 
-        <DataGrid Grid.Row="1"
+        
+
+        <!-- DataGrid Section -->
+        <DataGrid Grid.Row="2"
                   x:Name="dgAppType"
-                  ItemsSource="{Binding ApplicationTypes}" 
-                  AutoGenerateColumns="False" 
-                  IsReadOnly="True"
-                  CanUserAddRows="False"
-                  GridLinesVisibility="All"
-                  RowHeight="40"
-                  BorderBrush="#D0D7DE"
-                  BorderThickness="1"
-                  AlternatingRowBackground="#F9FAFB">
+                  ItemsSource="{Binding ApplicationTypes}">
 
             <DataGrid.ContextMenu>
                 <ContextMenu>
@@ -48,7 +86,7 @@
                               CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                         <MenuItem.Icon>
                             <Path Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" 
-                                  Fill="Blue" Stretch="Uniform" Width="16" Height="16"/>
+                                  Fill="{StaticResource PrimaryColor}" Stretch="Uniform" Width="16" Height="16"/>
                         </MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>

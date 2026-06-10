@@ -8,7 +8,9 @@ using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;
 using Presentation.Views;
+using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
+using System.Security.AccessControl;
 using System.Windows;
 
 namespace Presentation.ViewModels
@@ -20,37 +22,51 @@ namespace Presentation.ViewModels
         private readonly IApplicationService _applicationService;
         private readonly IPersonService _personService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IApplicationTypeService _applicationTypeService;
+        private readonly ILocalDrivingLicenseApplicationService _localDrivingLicenseApplicationService;
+
+        private readonly LDLAppViewModel _gridViewModel;
+
+        private ApplicationTypeDto? _ldlApplicationType;
 
         public AddEditLDLAppViewModel(ILicenseClassService licenseClassService, IApplicationService applicationService,
-           IPersonService personService, ICurrentUserService currentUserService)
-        {
+           IPersonService personService, ICurrentUserService currentUserService, IApplicationTypeService applicationType,
+           ILocalDrivingLicenseApplicationService localDrivingLicenseApplicationService, LDLAppViewModel gridViewModel)
+        { 
 
             _licenseClassService = licenseClassService;
             _applicationService = applicationService;
             _personService = personService;
-            
+            _applicationTypeService = applicationType;
             _currentUserService = currentUserService;
+            _localDrivingLicenseApplicationService = localDrivingLicenseApplicationService;
+            _gridViewModel = gridViewModel;
 
             CreatedByUserID = _currentUserService.UserId;
             CreatedBy = _currentUserService.Username;
-
+            
             LoadLicenseClasses();
+            LoadApplicationType();
         }
 
-        [ObservableProperty] private PersonDto? _person;
-        [ObservableProperty] private int _applicationId;
-        [ObservableProperty] private LicenseClassDto? _selectedLicenseClass;
-        [ObservableProperty] private DateTime _applicationDate = DateTime.Now;
-        [ObservableProperty] private string _createdBy;
-        [ObservableProperty] private int _createdByUserID;
+        // ===================== PROPERTIES =====================
 
+        [ObservableProperty] private PersonDto? person;
+        [ObservableProperty] private int applicationId;
+        [ObservableProperty] private LicenseClassDto? selectedLicenseClass;
+        [ObservableProperty] private DateTime applicationDate = DateTime.Now;
 
-        [ObservableProperty] private string _filterText = string.Empty;
-        [ObservableProperty] private int _selectedFilterIndex = 0;
+        [ObservableProperty] private string createdBy;
+        [ObservableProperty] private int createdByUserID;
+
+        [ObservableProperty] private string filterText = string.Empty;
+        [ObservableProperty] private int selectedFilterIndex = 0;
+
+        [ObservableProperty] private decimal applicationTypeFees;
 
         public ObservableCollection<LicenseClassDto> LicenseClasses { get; } = new();
 
-
+        // ===================== LOAD DATA =====================
         private async void LoadLicenseClasses()
         {
             var classes = await _licenseClassService.GetAllLicenseClassesAsync();
@@ -59,38 +75,94 @@ namespace Presentation.ViewModels
             SelectedLicenseClass = LicenseClasses.FirstOrDefault();
         }
 
+        private async void LoadApplicationType()
+        {
+            // LDL Application Type ثابت (مثلاً ID = 1)
+            _ldlApplicationType =
+                await _applicationTypeService.GetApplicationTypeByIdAsync(1);
+
+            if (_ldlApplicationType != null)
+            {
+                ApplicationTypeFees = _ldlApplicationType.ApplicationTypeFees;
+            }
+        }
 
 
-
+        // ===================== SAVE =====================
         [RelayCommand]
         private async Task Save()
         {
+            if (Person == null)
+            {
+                MessageBox.Show("Please select a person first.");
+                return;
+            }
+
+            if (SelectedLicenseClass == null)
+            {
+                MessageBox.Show("Please select a license class.");
+                return;
+            }
+
+            if (_ldlApplicationType == null)
+            {
+                MessageBox.Show("Application type not loaded.");
+                return;
+            }
+
+            // التحقق من وجود طلب سابق لنفس الرخصة
+            int? exists = await _applicationService.HasDuplicateApplicationAsync(Person.PersonId,SelectedLicenseClass.LicenseClassId);
+
+            if (exists>0)
+            {
+                MessageBox.Show(
+                        $"An active application already exists for this person.\n\n" +
+                        $"Application ID: {exists.Value}\n" +
+                        $"Status: New or Completed\n\n" +
+                        $"You cannot create a duplicate application for the same license class.",
+                        "Duplicate Application Detected",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                return;
+            }
+
             var newApp = new ApplicationDto
             {
                 ApplicantPersonID = Person.PersonId, 
                 ApplicationDate = ApplicationDate,
-                ApplicationTypeID = SelectedLicenseClass?.LicenseClassId ?? 0,
+                ApplicationTypeID = _ldlApplicationType.ApplicationTypeId,
                 ApplicationStatus = Domain.Enums.AppStatus.New,
-                PaidFees = SelectedLicenseClass?.LicenseClassFees ?? 0,
+                PaidFees = _ldlApplicationType.ApplicationTypeFees,
                 CreatedByUserID = CreatedByUserID,
                 LastStatusDate = DateTime.Now
             };
 
-
-            int newId = await _applicationService.AddNewApplicationAsync(newApp);
-
-            if (newId > 0)
+            int newAppId = await _applicationService.AddNewApplicationAsync(newApp);
+            
+            if (newAppId > 0)
             {
-                ApplicationId = newId;
+                ApplicationId = newAppId;
             }
 
+            var newLDLApp = new LocalDrivingLicenseApplicationCreateUpdateDto
+            {
+                ApplicatonId = ApplicationId,
+                LicenseClassId = SelectedLicenseClass?.LicenseClassId ?? 0
+            };
+
+            int newLappId = await _localDrivingLicenseApplicationService.AddLocalDrivingLicenseApplicationAsync(newLDLApp);
+
             System.Windows.MessageBox.Show(
-                $"The application has been successfully created and saved to the system.\n\nID: {newId}",
+                $"The application has been successfully created and saved to the system.\n\nID: {newAppId}",
                 "Success",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
+            await _gridViewModel.LoadApplicationsAsync();
         }
 
+        // ===================== SEARCH =====================
         [RelayCommand]
         private async Task Search()
         {
@@ -134,11 +206,17 @@ namespace Presentation.ViewModels
             }
         }
 
+        // ===================== ADD PERSON =====================
         [RelayCommand]
         private void AddPerson()
         {
             var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
-            NavigationHelper.Navigate(new AddEditPersonPage(vm));
+            //MainWindow.Navigation.Navigate(new AddEditPersonWin(vm));            
+            var win = new AddEditPersonWin(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            win.ShowDialog();
         }
 
         
