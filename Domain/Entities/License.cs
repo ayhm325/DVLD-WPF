@@ -26,7 +26,7 @@ namespace Domain.Entities
         [ForeignKey(nameof(DriverID))]
         public virtual Person? Driver { get; set; }
 
-        [ForeignKey(nameof(LicenseID))]
+        [ForeignKey(nameof(LicenseClassId))]
         public virtual LicenseClass? LicenseClass { get; set; }
 
         [ForeignKey(nameof(CreatedByUserID))]
