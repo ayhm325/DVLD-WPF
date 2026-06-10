@@ -350,60 +350,104 @@
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="Margin" Value="4,2"/>
         <Setter Property="Background" Value="Transparent"/>
-
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="Border"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="6"
-                            Padding="{TemplateBinding Padding}">
+                    <Grid>
+                        <!-- 1. هذا البوردر يمثل شكل العنصر نفسه -->
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="30"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <!-- للأيقونة -->
+                                    <ColumnDefinition Width="*"/>
+                                    <!-- للنص -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- للاختصار (Shortcut) -->
+                                    <ColumnDefinition Width="25"/>
+                                    <!-- جديد: مسافة للسهم -->
+                                </Grid.ColumnDefinitions>
 
-                            <!-- Icon -->
-                            <ContentPresenter Grid.Column="0"
-                                        ContentSource="Icon"
-                                        VerticalAlignment="Center"
-                                        HorizontalAlignment="Center"/>
+                                <!-- Icon -->
+                                <ContentPresenter Grid.Column="0"
+                                            ContentSource="Icon"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"/>
 
-                            <!-- Header -->
-                            <ContentPresenter Grid.Column="1"
-                                        ContentSource="Header"
-                                        VerticalAlignment="Center"
-                                        Margin="8,0,0,0"/>
+                                <!-- Header -->
+                                <ContentPresenter Grid.Column="1"
+                                            ContentSource="Header"
+                                            VerticalAlignment="Center"
+                                            Margin="8,0,0,0"
+                                            RecognizesAccessKey="True"/>
 
-                            <!-- Shortcut -->
-                            <ContentPresenter Grid.Column="2"
-                                        ContentSource="InputGestureText"
-                                        Margin="20,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Opacity="0.7"/>
-                        </Grid>
+                                <!-- Shortcut -->
+                                <ContentPresenter Grid.Column="2"
+                                            ContentSource="InputGestureText"
+                                            Margin="20,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Opacity="0.7"/>
 
-                    </Border>
+                                <!-- Submenu Arrow (سهم القائمة الفرعية) -->
+                                <!-- لن يظهر إلا إذا كان للعنصر أبناء (HasItems) -->
+                                <Path x:Name="SubmenuArrow" 
+                                      Grid.Column="3"
+                                      Data="M 0 0 L 6 6 L 0 12 Z" 
+                                      Fill="{StaticResource TextColor}"
+                                      HorizontalAlignment="Right" 
+                                      VerticalAlignment="Center" 
+                                      Width="8" 
+                                      Height="12" 
+                                      Margin="0,0,8,0"
+                                      Visibility="Collapsed"
+                                      Stretch="Fill"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 2. الجزء الناقص: الـ Popup الذي يعرض القائمة الفرعية -->
+                        <Popup x:Name="PART_Popup"
+                               AllowsTransparency="True" 
+                               Placement="Right" 
+                               IsOpen="{Binding Path=IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                               PopupAnimation="Slide"
+                               Focusable="False">
+                            <Border Name="SubMenuBorder"
+                                    Background="{StaticResource CardBackground}"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="4">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1" Color="Black"/>
+                                </Border.Effect>
+                                <ScrollViewer Margin="0" VerticalScrollBarVisibility="Auto">
+                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+
+                    </Grid>
 
                     <ControlTemplate.Triggers>
-
+                        <!-- تفعيل الظل عند الوقوف عليه -->
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="Border"
-                                    Property="Background"
-                                    Value="#F1F5F9"/>
-
-                            <Setter Property="Foreground"
-                                    Value="{StaticResource PrimaryColor}"/>
+                            <Setter TargetName="Border" Property="Background" Value="#F1F5F9"/>
+                            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
                         </Trigger>
 
+                        <!-- إظهار السهم إذا كان هناك عناصر فرعية -->
+                        <Trigger Property="HasItems" Value="True">
+                            <Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+
+                        <!-- تعطيل العنصر -->
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity"
-                                    Value="0.5"/>
+                            <Setter Property="Opacity" Value="0.5"/>
                         </Trigger>
-
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

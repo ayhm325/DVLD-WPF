@@ -6,7 +6,7 @@
 
     <DockPanel>
         <Menu DockPanel.Dock="Top" FontSize="16" Padding="10" Background="#F0F0F0">
-            <MenuItem Header="_Applications">
+            <MenuItem Header="Applications">
                 <MenuItem Header="Driving Licenses Services">
                     <MenuItem Header="New Driving License">
                         <MenuItem Header="Local License" Click="NewLocalLicnnse_Click"/>
@@ -27,9 +27,9 @@
                 <MenuItem Header="Manage Test Types"  Click="TestType_Click"/>
             </MenuItem>
 
-            <MenuItem Header="_People" Click="ManagePeople_Click"/>
-            <MenuItem Header="_Drivers"/>
-            <MenuItem Header="_Users" Click="Users_Click"/>
+            <MenuItem Header="People" Click="ManagePeople_Click"/>
+            <MenuItem Header="Drivers"/>
+            <MenuItem Header="Users" Click="Users_Click"/>
             <MenuItem Header="Account Settings"/>
         </Menu>
 
@@ -49,6 +49,7 @@
                 <Button Content="Application Type" Margin="10" Click="ApplicationType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Content="Test Type" Margin="10" Click="TestType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Content="L.D.L.App" Margin="10" Click="LDLApp_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+                <Button Content="L.App.Details" Margin="10" Click="LAppDetails_Click" Style="{StaticResource PrimaryButtonStyle}"/>
             </StackPanel>
 
             <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden"/>

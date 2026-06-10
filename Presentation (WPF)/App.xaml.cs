@@ -93,6 +93,7 @@ namespace DVLD_WPF
             services.AddTransient<LDLAppPage>();
             services.AddTransient<AddEditPersonWin>();
             services.AddTransient<AddEditUserWin>();
+            services.AddTransient<LocalApplicationDetailsWin>();
 
 
 
