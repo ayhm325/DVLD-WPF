@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views.Windows;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -17,9 +18,13 @@ namespace Presentation.ViewModels
     {
         private readonly ILocalDrivingLicenseApplicationService _service;
         private readonly IApplicationService _appService;
-        private List<LocalDrivingLicenseApplicationDto> _allApplications = new();
+        private readonly IServiceProvider _serviceProvider;
+        private List<LocalDrivingLicenseApplicationListDto> _allApplications = new();
 
-        public ObservableCollection<LocalDrivingLicenseApplicationDto> Applications { get; set; } = new();
+        public ObservableCollection<LocalDrivingLicenseApplicationListDto> Applications { get; set; } = new();
+
+
+        
 
         [ObservableProperty]
         private string _searchText = string.Empty;
@@ -29,14 +34,17 @@ namespace Presentation.ViewModels
 
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(DeleteCommand), nameof(ShowDetailsCommand), nameof(ScheduleVisionCommand), nameof(CancelCommand))]
-        private LocalDrivingLicenseApplicationDto? _selectedApplication;
+        private LocalDrivingLicenseApplicationListDto? _selectedApplication;
+      
+
 
         partial void OnSearchTextChanged(string value) => FilterApplications();
 
-        public LDLAppViewModel(ILocalDrivingLicenseApplicationService service, IApplicationService appService)
+        public LDLAppViewModel(ILocalDrivingLicenseApplicationService service, IApplicationService appService, IServiceProvider serviceProvider)
         {
             _service = service;
             _appService = appService;
+            _serviceProvider = serviceProvider;
             _ = LoadApplicationsAsync();
         }
 
@@ -69,6 +77,7 @@ namespace Presentation.ViewModels
             win.ShowDialog();
             _ = LoadApplicationsAsync(); 
         }
+        
 
         // دالة التحقق لعملية الحذف
         private bool CanDelete() => SelectedApplication != null && SelectedApplication.StatusText != "Completed";
@@ -103,9 +112,24 @@ namespace Presentation.ViewModels
         }
 
         [RelayCommand]
-        private void ShowDetails()
+        private async Task ShowDetails()
         {
-            // منطق فتح نافذة التفاصيل
+            if (SelectedApplication == null)
+                return;
+
+            var localId = SelectedApplication.LocalDrivingLicenseApplicationID;
+
+            var vm = _serviceProvider.GetRequiredService<LocalApplicationDetailsViewModel>();
+            
+
+            await vm.LoadAsync(localId);
+
+            var window = new LocalApplicationDetailsWin(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
         }
 
         [RelayCommand]
@@ -176,5 +200,9 @@ namespace Presentation.ViewModels
         {
             // منطق عرض السجل
         }
+
+
+
+
     }
 }

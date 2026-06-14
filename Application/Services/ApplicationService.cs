@@ -33,7 +33,26 @@ namespace Application.Services
             }).ToList();
         }
 
-        
+        public async Task<ApplicationBasicInfoDto> GetBasicInfoAsync(int id)
+        {
+            var app = await _repository.GetApplicationByIdAsync(id);
+            if (app == null) throw new Exception("Application not found.");
+            return new ApplicationBasicInfoDto
+            {
+
+                ApplicationID = app.ApplicationID,
+                ApplicantPersonID = app.ApplicantPersonID,                
+                ApplicationStatus = (AppStatus)app.ApplicationStatus,
+                PaidFees = app.PaidFees,               
+                ApplicationTypeName = app.ApplicationType?.ApplicationTypeTitle,               
+                ApplicantFullName = app.Person != null ? $"{app.Person.FirstName} {app.Person.LastName}" : null,
+                ApplicationDate = app.ApplicationDate,
+                LastStatusDate = app.LastStatusDate,
+                CreatedByUserName = app.CreatedByUser != null ? $"{app.CreatedByUser.UserName} " : null
+            };
+        }
+
+
         public async Task<int> AddNewApplicationAsync(ApplicationDto dto)
         {
             // تحويل DTO إلى Entity
@@ -131,5 +150,7 @@ namespace Application.Services
             app.LastStatusDate = DateTime.UtcNow;
             return await _repository.UpdateApplicationAsync(app);
         }
+    
+    
     }
 }

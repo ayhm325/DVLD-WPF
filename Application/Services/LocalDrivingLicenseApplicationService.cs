@@ -15,10 +15,10 @@ namespace Application.Services
             _repository = repository;
         }
 
-        public async Task<List<LocalDrivingLicenseApplicationDto>> GetAllLocalDrivingLicenseApplicationsAsync()
+        public async Task<List<LocalDrivingLicenseApplicationListDto>> GetAllLocalDrivingLicenseApplicationsAsync()
         {
-            var entities = await _repository.GetLocalApplicationsOnlyAsync();
-            var dtoList = new List<LocalDrivingLicenseApplicationDto>();
+            var entities = await _repository.GetAllAsync();
+            var dtoList = new List<LocalDrivingLicenseApplicationListDto>();
 
             foreach (var e in entities)
             {
@@ -28,7 +28,7 @@ namespace Application.Services
             return dtoList;
         }
 
-        public async Task<LocalDrivingLicenseApplicationDto?> GetLocalDrivingLicenseApplicationByIdAsync(int id)
+        public async Task<LocalDrivingLicenseApplicationListDto?> GetLocalDrivingLicenseApplicationByIdAsync(int id)
         {
             var e = await _repository.GetByIdAsync(id);
             if (e == null) return null;
@@ -58,15 +58,15 @@ namespace Application.Services
 
         public async Task<bool> DeleteLocalDrivingLicenseApplicationAsync(int id) => await _repository.DeleteAsync(id);
 
-        public async Task<List<LocalDrivingLicenseApplicationDto>> GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId)
+        public async Task<List<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId)
         {
             var list = await _repository.GetByPersonIdAsync(applicantPersonId);
             return await MapListToDtoAsync(list);
         }
 
-        private async Task<List<LocalDrivingLicenseApplicationDto>> MapListToDtoAsync(List<LocalDrivingLicenseApplication> list)
+        private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(List<LocalDrivingLicenseApplication> list)
         {
-            var dtoList = new List<LocalDrivingLicenseApplicationDto>();
+            var dtoList = new List<LocalDrivingLicenseApplicationListDto>();
             foreach (var e in list)
             {
                 int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
@@ -75,13 +75,13 @@ namespace Application.Services
             return dtoList;
         }
 
-        public async Task<List<LocalDrivingLicenseApplicationDto>> GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId)
+        public async Task<List<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId)
         {
             var list = await _repository.GetByApplicationIdAsync(applicationId);
             return await MapListToDtoAsync(list);
         }
 
-        public async Task<List<LocalDrivingLicenseApplicationDto>> GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId)
+        public async Task<List<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId)
         {
             var list = await _repository.GetByLicenseClassIdAsync(licenseClassId);
             return await MapListToDtoAsync(list);
@@ -92,17 +92,24 @@ namespace Application.Services
             return await _repository.GetByIdAsync(id) != null;
         }
 
-        private LocalDrivingLicenseApplicationDto MapToDto(LocalDrivingLicenseApplication e, int passedTestCount)
+        private LocalDrivingLicenseApplicationListDto MapToDto(LocalDrivingLicenseApplication e, int passedTestCount)
         {
-            return new LocalDrivingLicenseApplicationDto
+            return new LocalDrivingLicenseApplicationListDto
             {
-                ApplicationID = e.LocalDrivingLicenseApplicationID,
-                FullName = $"{e.Application?.Person?.FirstName} {e.Application?.Person?.SecondName} {e.Application?.Person?.ThirdName} {e.Application?.Person?.LastName}".Trim(),
-                DrivingClass = e.LicenseClass?.ClassName ?? "N/A",
+                LocalDrivingLicenseApplicationID = e.LocalDrivingLicenseApplicationID,
+                LicenseClassName = e.LicenseClass?.ClassName ?? "N/A",
                 NationalNo = e.Application?.Person?.NationalNo ?? "N/A",
+                FullName =
+                    $"{e.Application?.Person?.FirstName} " +
+                    $"{e.Application?.Person?.SecondName} " +
+                    $"{e.Application?.Person?.ThirdName} " +
+                    $"{e.Application?.Person?.LastName}".Trim(),
                 ApplicationDate = e.Application?.ApplicationDate ?? DateTime.MinValue,
-                ApplicationStatus = e.Application?.ApplicationStatus ?? 0,
-                PassedTest = passedTestCount
+                PassedTest = passedTestCount,
+                ApplicationStatus = e.Application is not null && Enum.IsDefined(typeof(AppStatus), e.Application.ApplicationStatus)
+                ? (AppStatus)e.Application.ApplicationStatus
+                : AppStatus.Cancelled
+
             };
         }
 

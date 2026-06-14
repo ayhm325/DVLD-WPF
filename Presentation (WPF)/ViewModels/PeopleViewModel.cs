@@ -147,7 +147,7 @@ namespace Presentation.ViewModels
 
             // 🟢 4. الآن الكود سيتعرف على الـ _personService بنجاح تام وبدون أخطاء كومبايلر
             Presentation.Views.Windows.PersonDetailsWindow detailsWindow =
-                new(_personService, Person.PersonId);
+                new(Person.PersonId);
 
             detailsWindow.Owner = System.Windows.Application.Current.MainWindow;
             detailsWindow.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;

@@ -1,27 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Application.DTOs;
+using Application.Interfaces;
+using Application.Services;
+using Domain.Entities;
+using Presentation.ViewModels;
+using Presentation.Views.Controls;
+using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+
 
 namespace Presentation.Views.Windows
 {
-    /// <summary>
-    /// Interaction logic for LocalApplicationDetailsWin.xaml
-    /// </summary>
     public partial class LocalApplicationDetailsWin : Window
     {
-        public LocalApplicationDetailsWin()
+       
+        public LocalApplicationDetailsWin(LocalApplicationDetailsViewModel vm)
         {
             InitializeComponent();
+            DataContext = vm;
+           
+
+            Loaded += (s, e) =>
+            {
+                ApplicationBasicInfoControl.OpenPersonRequested -= OnOpenPersonRequested;
+                ApplicationBasicInfoControl.OpenPersonRequested += OnOpenPersonRequested;
+            };
         }
+
+        private void OnOpenPersonRequested(int personId)
+        {
+            var window = new PersonDetailsWindow(personId);
+            window.ShowDialog();
+        }
+
+
     }
 }

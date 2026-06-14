@@ -1,123 +1,54 @@
-﻿using System;
+﻿using Application.DTOs;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
+
 
 namespace Presentation.Views.Controls
 {
     public partial class ApplicationBasicInfo : UserControl
     {
+        public event Action<int> OpenPersonRequested;
+
         public ApplicationBasicInfo()
         {
             InitializeComponent();
         }
 
-        public int ApplicationId
+
+        public ApplicationBasicInfoDto Application
         {
-            get => (int)GetValue(ApplicationIdProperty);
-            set => SetValue(ApplicationIdProperty, value);
+            get => (ApplicationBasicInfoDto)GetValue(ApplicationProperty);
+            set => SetValue(ApplicationProperty, value);
         }
 
-        public static readonly DependencyProperty ApplicationIdProperty =
+        public static readonly DependencyProperty ApplicationProperty =
             DependencyProperty.Register(
-                nameof(ApplicationId),
-                typeof(int),
-                typeof(ApplicationBasicInfo));
+                nameof(Application),
+                typeof(ApplicationBasicInfoDto),
+                typeof(ApplicationBasicInfo),
+                new PropertyMetadata(null, OnApplicationChanged)); 
 
-        public string Status
+        private static void OnApplicationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            get => (string)GetValue(StatusProperty);
-            set => SetValue(StatusProperty, value);
+            // هذا الجزء اختياري: يُستخدم إذا كنت تريد تنفيذ منطق برمجي 
+            // إضافي عند وصول بيانات جديدة للـ UserControl
+            if (d is ApplicationBasicInfo control)
+            {
+                // يمكنك هنا عمل Refresh للبيانات إذا لزم الأمر
+            }
         }
 
-        public static readonly DependencyProperty StatusProperty =
-            DependencyProperty.Register(
-                nameof(Status),
-                typeof(string),
-                typeof(ApplicationBasicInfo));
-
-        public decimal Fees
+        private void PersonInfoButton_Click(object sender, RoutedEventArgs e)
         {
-            get => (decimal)GetValue(FeesProperty);
-            set => SetValue(FeesProperty, value);
+            if (Application == null)
+                return;
+
+            var personId = Application.ApplicantPersonID;
+
+            if (personId == 0)
+                return;
+
+            OpenPersonRequested?.Invoke(personId);
         }
-
-        public static readonly DependencyProperty FeesProperty =
-            DependencyProperty.Register(
-                nameof(Fees),
-                typeof(decimal),
-                typeof(ApplicationBasicInfo));
-
-        public string Type
-        {
-            get => (string)GetValue(TypeProperty);
-            set => SetValue(TypeProperty, value);
-        }
-
-        public static readonly DependencyProperty TypeProperty =
-            DependencyProperty.Register(
-                nameof(Type),
-                typeof(string),
-                typeof(ApplicationBasicInfo));
-
-        public string Applicant
-        {
-            get => (string)GetValue(ApplicantProperty);
-            set => SetValue(ApplicantProperty, value);
-        }
-
-        public static readonly DependencyProperty ApplicantProperty =
-            DependencyProperty.Register(
-                nameof(Applicant),
-                typeof(string),
-                typeof(ApplicationBasicInfo));
-
-        public DateTime ApplicationDate
-        {
-            get => (DateTime)GetValue(ApplicationDateProperty);
-            set => SetValue(ApplicationDateProperty, value);
-        }
-
-        public static readonly DependencyProperty ApplicationDateProperty =
-            DependencyProperty.Register(
-                nameof(ApplicationDate),
-                typeof(DateTime),
-                typeof(ApplicationBasicInfo));
-
-        public DateTime StatusDate
-        {
-            get => (DateTime)GetValue(StatusDateProperty);
-            set => SetValue(StatusDateProperty, value);
-        }
-
-        public static readonly DependencyProperty StatusDateProperty =
-            DependencyProperty.Register(
-                nameof(StatusDate),
-                typeof(DateTime),
-                typeof(ApplicationBasicInfo));
-
-        public string CreatedBy
-        {
-            get => (string)GetValue(CreatedByProperty);
-            set => SetValue(CreatedByProperty, value);
-        }
-
-        public static readonly DependencyProperty CreatedByProperty =
-            DependencyProperty.Register(
-                nameof(CreatedBy),
-                typeof(string),
-                typeof(ApplicationBasicInfo));
-
-        public ICommand ViewPersonInfoCommand
-        {
-            get => (ICommand)GetValue(ViewPersonInfoCommandProperty);
-            set => SetValue(ViewPersonInfoCommandProperty, value);
-        }
-
-        public static readonly DependencyProperty ViewPersonInfoCommandProperty =
-            DependencyProperty.Register(
-                nameof(ViewPersonInfoCommand),
-                typeof(ICommand),
-                typeof(ApplicationBasicInfo));
     }
 }

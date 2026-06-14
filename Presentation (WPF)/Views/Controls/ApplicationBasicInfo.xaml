@@ -3,260 +3,165 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              x:Name="Root"
-             HorizontalContentAlignment="Stretch">
+             HorizontalContentAlignment="Stretch"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="Auto">
 
     <UserControl.Resources>
-        <!-- تأثير الظل -->
-        <DropShadowEffect x:Key="CardShadow"
-                          Color="#000000"
-                          Direction="270"
-                          ShadowDepth="2"
-                          BlurRadius="15"
-                          Opacity="0.1"/>
+        <!-- ظل ناعم وعصري -->
+        <DropShadowEffect x:Key="CardShadow" Color="#000000" Direction="270" ShadowDepth="0" BlurRadius="20" Opacity="0.08"/>
 
-        <!-- لون أساسي -->
+        <!-- الألوان -->
         <SolidColorBrush x:Key="PrimaryBlue" Color="#0078D7"/>
-        <SolidColorBrush x:Key="TextGray" Color="#757575"/>
+        <SolidColorBrush x:Key="PrimaryBlueLight" Color="#E3F2FD"/>
+        <SolidColorBrush x:Key="TextDark" Color="#2C3E50"/>
+        <SolidColorBrush x:Key="TextGray" Color="#90A4AE"/>
+        <SolidColorBrush x:Key="DividerBrush" Color="#F0F2F5"/>
+
+        <!-- ستايل الزر المحسّن -->
+        <Style x:Key="SimpleBlueButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBlue}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}"
+                                BorderThickness="0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#005A9E"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#004578"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98" CenterX="0.5" CenterY="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <!-- الحدود الرئيسية: تم تعيين Stretch لتمتد بعرض الشاشة -->
-    <Border Background="White"
-            CornerRadius="8"
-            Padding="40"
-            Margin="20,10,20,20"
-            HorizontalAlignment="Stretch"
-            Effect="{StaticResource CardShadow}">
+    <!-- البطاقة الرئيسية -->
+    <Border Background="White" CornerRadius="12" Padding="25" Margin="20,10,20,20" 
+            HorizontalAlignment="Stretch" Effect="{StaticResource CardShadow}"
+            BorderBrush="#F5F5F5" BorderThickness="1">
 
         <Grid>
-
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Header Section -->
+            <!-- Header Row -->
             <Grid Grid.Row="0" Margin="0,0,0,25">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="InformationOutline" 
-                                            Foreground="{StaticResource PrimaryBlue}" 
-                                            Width="32" Height="32"
-                                            VerticalAlignment="Center"
-                                            Margin="0,0,15,0"/>
-                    <TextBlock Text="Application Basic Info"
-                               FontSize="24"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"
-                               Foreground="#333"/>
-                </StackPanel>
-
-                <!-- خط ملون تحت العنوان -->
-                <Border Height="3"
-                        Width="80"
-                        Margin="47,45,0,0"
-                        Background="{StaticResource PrimaryBlue}"
-                        HorizontalAlignment="Left"
-                        CornerRadius="2"/>
-            </Grid>
-
-            <!-- Row 1: ID, Status, Fees -->
-            <Grid Grid.Row="1" Margin="0,0,0,30">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- ID -->
-                <StackPanel Grid.Column="0">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="Fingerprint" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="ID" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding ApplicationId, ElementName=Root}"
-                               FontWeight="Bold"
-                               FontSize="16"
-                               Foreground="#222"/>
-                </StackPanel>
-
-                <!-- Status -->
-                <StackPanel Grid.Column="1">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="ShieldCheck" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="Status" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding Status, ElementName=Root}"
-                               FontWeight="Bold"
-                               FontSize="16"
-                               Foreground="#222"/>
-                </StackPanel>
-
-                <!-- Fees -->
-                <StackPanel Grid.Column="2">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="CurrencyUsd" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="Fees" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding Fees, ElementName=Root}"
-                               FontWeight="Bold"
-                               FontSize="16"
-                               Foreground="#222"/>
-                </StackPanel>
-            </Grid>
-
-            <!-- Separator Line -->
-            <Border Grid.Row="1" Height="1" Background="#E0E0E0" Margin="0,0,0,30" VerticalAlignment="Bottom"/>
-
-            <!-- Row 2: Type, Applicant -->
-            <Grid Grid.Row="2" Margin="0,0,0,30">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Type -->
-                <StackPanel Grid.Column="0" Margin="0,0,40,0">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="FileDocument" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="Type" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding Type, ElementName=Root}"
-                               FontWeight="Bold"
-                               TextWrapping="Wrap"
-                               FontSize="16"
-                               Foreground="#222"/>
-                </StackPanel>
-
-                <!-- Applicant -->
-                <StackPanel Grid.Column="1">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="Account" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="Applicant" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding Applicant, ElementName=Root}"
-                               FontWeight="Bold"
-                               TextWrapping="Wrap"
-                               FontSize="16"
-                               Foreground="#222"/>
-                </StackPanel>
-            </Grid>
-
-            <!-- Separator Line -->
-            <Border Grid.Row="2" Height="1" Background="#E0E0E0" Margin="0,0,0,30" VerticalAlignment="Bottom"/>
-
-            <!-- Row 3: Date, Status Date, Created By, Button -->
-            <Grid Grid.Row="2" Margin="0,35,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Date -->
-                <StackPanel Grid.Column="0">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="Calendar" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="Date" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="40" Height="40" CornerRadius="20" Background="{StaticResource PrimaryBlueLight}" 
+                            VerticalAlignment="Center" Margin="0,0,12,0">
+                        <materialDesign:PackIcon Kind="InformationOutline" Foreground="{StaticResource PrimaryBlue}" 
+                                                Width="22" Height="22" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Application Basic Info" FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextDark}" VerticalAlignment="Center"/>
+                        <Border Height="3" Width="40" Margin="0,6,0,0" Background="{StaticResource PrimaryBlue}" 
+                                CornerRadius="2" HorizontalAlignment="Left"/>
                     </StackPanel>
-                    <TextBlock Text="{Binding ApplicationDate, ElementName=Root, StringFormat='{}{0:dd/MM/yyyy}'}"
-                               FontWeight="Bold"
-                               FontSize="16"
-                               Foreground="#222"/>
                 </StackPanel>
 
-                <!-- Status Date -->
-                <StackPanel Grid.Column="1">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="CalendarClock" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="Status Date" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding StatusDate, ElementName=Root, StringFormat='{}{0:dd/MM/yyyy}'}"
-                               FontWeight="Bold"
-                               FontSize="16"
-                               Foreground="#222"/>
-                </StackPanel>
-
-                <!-- Created By -->
-                <StackPanel Grid.Column="2">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <materialDesign:PackIcon Kind="AccountEdit" 
-                                                Foreground="{StaticResource TextGray}" 
-                                                Width="16" Height="16"
-                                                VerticalAlignment="Center"
-                                                Margin="0,0,5,0"/>
-                        <TextBlock Text="Created By" Foreground="{StaticResource TextGray}" FontSize="13" FontWeight="Medium"/>
-                    </StackPanel>
-                    <TextBlock Text="{Binding CreatedBy, ElementName=Root}"
-                               FontWeight="Bold"
-                               FontSize="16"
-                               Foreground="#222"/>
-                </StackPanel>
-
-                <!-- View Person Button -->
-                <Button Grid.Column="3"
-                        Margin="30,0,0,0"
-                        VerticalAlignment="Center"
-                        Height="40"
-                        Padding="20,0"
-                        Background="{StaticResource PrimaryBlue}"
-                        Foreground="White"
-                        BorderThickness="0"
-                        
-                        materialDesign:ButtonAssist.CornerRadius="4"
-                        Cursor="Hand"
-                        Command="{Binding ViewPersonInfoCommand, ElementName=Root}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="AccountSearch" 
-                                                VerticalAlignment="Center" 
-                                                Margin="0,0,8,0"/>
-                        <TextBlock Text="View Person Info" 
-                                   VerticalAlignment="Center"
-                                   FontWeight="Medium"/>
-                    </StackPanel>
-
-                    <!-- Hover Effect Style (Optional simple style) -->
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#005A9E"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-
+                <Button Grid.Column="1" VerticalAlignment="Center"
+                        Content="Person Info" 
+                        Style="{StaticResource SimpleBlueButton}"
+                        Click="PersonInfoButton_Click"
+                        Tag="{Binding Application, ElementName=Root}"/>
             </Grid>
 
+            <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Margin="0,0,0,20" Background="{StaticResource DividerBrush}"/>
+
+            <!-- Data Grid -->
+            <Grid Grid.Row="1">
+                <!-- نحافظ على 4 أعمدة للمحاذاة -->
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 3 صفوف فقط حسب الطلب -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: ID | Date | StatusDate | Fees -->
+                <StackPanel Grid.Column="0" Margin="0,0,0,15">
+                    <TextBlock Text="ID" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.ApplicationID, ElementName=Root}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="0,0,0,15">
+                    <TextBlock Text="DATE" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.ApplicationDate, ElementName=Root, StringFormat='{}{0:dd/MM/yyyy}'}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Margin="0,0,0,15">
+                    <TextBlock Text="STATUS DATE" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.LastStatusDate, ElementName=Root, StringFormat='{}{0:dd/MM/yyyy}'}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Margin="0,0,0,15">
+                    <TextBlock Text="FEES" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.PaidFees, ElementName=Root}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Row 1: Type | Status -->
+                <!-- Type يأخذ 3 أعمدة ليستوعب النص الطويل -->
+                <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Margin="0,5,0,15">
+                    <TextBlock Text="TYPE" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.ApplicationTypeName, ElementName=Root}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Status يأخذ العمود الأخير -->
+                <StackPanel Grid.Column="3" Grid.Row="1" Margin="0,5,0,15" HorizontalAlignment="Left">
+                    <TextBlock Text="STATUS" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.StatusText, ElementName=Root}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Row 2: Applicant | Created By -->
+                <!-- Applicant يأخذ 3 أعمدة ليستوعب النص الطويل -->
+                <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="2" Margin="0,5,0,0">
+                    <TextBlock Text="APPLICANT" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.ApplicantFullName, ElementName=Root}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Created By يأخذ العمود الأخير -->
+                <StackPanel Grid.Column="3" Grid.Row="2" Margin="0,5,0,0" HorizontalAlignment="Left">
+                    <TextBlock Text="CREATED BY" Foreground="{StaticResource TextGray}" FontSize="10" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding Application.CreatedByUserName, ElementName=Root}" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                </StackPanel>
+
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

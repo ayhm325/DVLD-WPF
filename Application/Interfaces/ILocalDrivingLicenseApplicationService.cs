@@ -7,13 +7,13 @@ namespace Application.Interfaces
     public interface ILocalDrivingLicenseApplicationService
     {
         
-        Task<List<LocalDrivingLicenseApplicationDto>> GetAllLocalDrivingLicenseApplicationsAsync();
-        Task<LocalDrivingLicenseApplicationDto?> GetLocalDrivingLicenseApplicationByIdAsync(int id);
+        Task<List<LocalDrivingLicenseApplicationListDto>> GetAllLocalDrivingLicenseApplicationsAsync();
+        Task<LocalDrivingLicenseApplicationListDto?> GetLocalDrivingLicenseApplicationByIdAsync(int id);
 
        
-        Task<List<LocalDrivingLicenseApplicationDto>> GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId);
-        Task<List<LocalDrivingLicenseApplicationDto>> GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId);
-        Task<List<LocalDrivingLicenseApplicationDto>> GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId);
+        Task<List<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId);
+        Task<List<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId);
+        Task<List<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId);
 
        
         Task<int> AddLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplicationCreateUpdateDto dto);

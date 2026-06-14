@@ -1,35 +1,49 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using DVLD_WPF;
 using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Presentation.Views.Windows
 {
     public partial class PersonDetailsWindow : Window
     {
-        private readonly IPersonService _personService;
         private readonly int _personId;
+        private readonly IPersonService _personService;
 
-        public PersonDetailsWindow(IPersonService personService, int personId)
+        public PersonDetailsWindow(int personId)
         {
             InitializeComponent();
 
-            _personService = personService;
             _personId = personId;
 
-            this.Loaded += PersonDetailsWindow_Loaded;
+            // الحصول على الخدمة من DI (بدون تمريرها من الخارج)
+            _personService = App.ServiceProvider.GetRequiredService<IPersonService>();
+
+            Loaded += PersonDetailsWindow_Loaded;
         }
 
-        // ================= LOAD EVENT =================
+        // ================= LOAD =================
         private async void PersonDetailsWindow_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                var fullPersonDto = await _personService.GetPersonByIdAsync(_personId);
+                var fullPersonDto =
+                    await _personService.GetPersonByIdAsync(_personId);
 
-                LoadPersonData(fullPersonDto!);
+                if (fullPersonDto == null)
+                {
+                    MessageBox.Show("Person not found",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
+                }
+
+                LoadPersonData(fullPersonDto);
             }
             catch (Exception ex)
             {
@@ -40,18 +54,9 @@ namespace Presentation.Views.Windows
             }
         }
 
-        // ================= LOAD UI DATA =================
+        // ================= UI =================
         private void LoadPersonData(PersonDto person)
         {
-            if (person == null)
-            {
-                MessageBox.Show("Person data could not be found.",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-                return;
-            }
-
             LblPersonId.Text = person.PersonId.ToString();
             LblNationalNo.Text = person.NationalNo;
             LblFullName.Text = person.FullName;
@@ -65,13 +70,13 @@ namespace Presentation.Views.Windows
             LoadImage(person);
         }
 
-        // ================= IMAGE HANDLING =================
+        // ================= IMAGE =================
         private void LoadImage(PersonDto person)
         {
-            string? path = person.ImagePath?.Trim();
-
             try
             {
+                string? path = person.ImagePath?.Trim();
+
                 if (!string.IsNullOrEmpty(path) && File.Exists(path))
                 {
                     var bitmap = new BitmapImage();
@@ -80,6 +85,7 @@ namespace Presentation.Views.Windows
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.EndInit();
                     bitmap.Freeze();
+
                     ImgPerson.Source = bitmap;
                 }
                 else
@@ -87,13 +93,11 @@ namespace Presentation.Views.Windows
                     LoadDefaultImage(person.Gender);
                 }
             }
-            catch (Exception)
+            catch
             {
-                // في حال حدوث أي خطأ غير متوقع في قراءة الملف
                 LoadDefaultImage(person.Gender);
             }
         }
-        
 
         // ================= DEFAULT IMAGE =================
         private void LoadDefaultImage(string gender)

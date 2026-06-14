@@ -31,7 +31,6 @@ namespace Application.DTOs
         };
 
 
-        public string? ServiceType { get; set; }   // اسم الخدمة
-        public string? ApplicantName { get; set; } // اسم الشخص
+        
     }
 }

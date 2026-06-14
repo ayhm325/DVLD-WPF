@@ -37,14 +37,19 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<LocalDrivingLicenseApplication>> GetLocalApplicationsOnlyAsync()
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
+        //public async Task<List<LocalDrivingLicenseApplication>> GetLocalApplicationsOnlyAsync()
+        //{
+        //    using var context = await _contextFactory.CreateDbContextAsync();
 
-            return await Query(context)
-                .Where(a => a.Application.ApplicationTypeID == 1)
-                .ToListAsync();
-        }
+        //    return await Query(context)
+        //        .Where(a => a.Application.ApplicationTypeID == 1)
+        //        .Include(a => a.Application)
+        //            .ThenInclude(app => app.ApplicationType)                             
+        //        .Include(a => a.Application)
+        //            .ThenInclude(app => app.Person)
+        //        .Include(a => a.LicenseClass)
+        //        .ToListAsync();
+        //}
 
         public async Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id)
         {
@@ -160,5 +165,11 @@ namespace Infrastructure.Repositories
 
             return await context.SaveChangesAsync() > 0;
         }
+
+
+        
+
+
+
     }
 }

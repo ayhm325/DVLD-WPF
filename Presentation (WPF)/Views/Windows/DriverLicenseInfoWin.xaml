@@ -1,0 +1,152 @@
+﻿<Window x:Class="Presentation.Views.Windows.DriverLicenseInfoWin"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        Title="Driver License Info" 
+        Height="620" Width="600"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundColor}">
+   
+
+    <!-- الحاوية الرئيسية -->
+    <Border Style="{StaticResource CardStyle}" Margin="20" Padding="30">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Content (12 Fields + Photo) -->
+                <RowDefinition Height="Auto"/>
+                <!-- Footer Button -->
+            </Grid.RowDefinitions>
+
+            <!-- 1. العنوان -->
+            <TextBlock Grid.Row="0" 
+                       Text="Driver License Info" 
+                       Style="{StaticResource HeaderStyle}" 
+                       Margin="0,0,0,20"/>
+
+            <!-- 2. المحتوى (البيانات + الصورة) -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- للصورة -->
+                </Grid.ColumnDefinitions>
+
+                <!-- العمود الأيسر: التفاصيل (12 بيانات) -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- تعريف 12 صفاً للبيانات -->
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 1. Class -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Class:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LicenseClass}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 2. Name -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Name:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FullName}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13" TextWrapping="Wrap"/>
+
+                        <!-- 3. License ID -->
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="License ID:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseId}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 4. National No -->
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="National No:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding NationalNo}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 5. Date of Birth (Added) -->
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Date of Birth:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding DateOfBirth, StringFormat='{}{0:dd/MMM/yyyy}'}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 6. Gender -->
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Gender:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Gender}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 7. Blood Type (Added) -->
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Blood Type:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding BloodType}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 8. Place of Issue (Added) -->
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Place of Issue:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding PlaceOfIssue}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 9. Issue Date -->
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Issue Date:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding IssueDate, StringFormat='{}{0:dd/MMM/yyyy}'}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 10. Expiration Date -->
+                        <TextBlock Grid.Row="9" Grid.Column="0" Text="Exp. Date:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding ExpirationDate, StringFormat='{}{0:dd/MMM/yyyy}'}" VerticalAlignment="Center" Foreground="{StaticResource TextColor}" FontSize="13"/>
+
+                        <!-- 11. Is Active -->
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="Is Active?:" Style="{StaticResource LabelStyle}" Margin="0,5,0,4"/>
+                        <TextBlock Grid.Row="10" Grid.Column="1" Text="{Binding IsActiveStatus}" VerticalAlignment="Center" Foreground="{StaticResource PrimaryColor}" FontSize="13" FontWeight="Bold" Margin="0,5,0,4"/>
+
+                        <!-- 12. Is Detained -->
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="Is Detained?:" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Row="11" Grid.Column="1" Text="{Binding IsDetainedStatus}" VerticalAlignment="Center" Foreground="#EF4444" FontSize="13" FontWeight="Bold"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- العمود الأيمن: الصورة الشخصية -->
+                <!-- تم جعل الصورة في منتصف المحتوى العمودي -->
+                <Border Grid.Column="1" 
+                        Width="140" Height="180" 
+                        CornerRadius="10" 
+                        Background="#F1F5F9" 
+                        Margin="30,0,0,0"
+                        BorderBrush="{StaticResource BorderColor}" 
+                        BorderThickness="1"
+                        VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="5" ShadowDepth="1" Opacity="0.1" Color="Black"/>
+                    </Border.Effect>
+                    <Image Source="{Binding DriverPhoto}" 
+                           Stretch="UniformToFill" 
+                           Margin="2"
+                           RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Style.Triggers>
+                                    <Trigger Property="Source" Value="{x:Null}">
+                                        
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </Border>
+            </Grid>
+
+            <!-- 3. زر الإغلاق -->
+            <Button Grid.Row="2" 
+                    Content="Close" 
+                    Style="{StaticResource PrimaryButtonStyle}" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,20,0,0"
+                    Command="{Binding CloseCommand}"
+                    Width="100"/>
+        </Grid>
+    </Border>
+</Window>

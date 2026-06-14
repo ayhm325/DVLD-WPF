@@ -18,5 +18,7 @@ namespace Application.Interfaces
         Task<int?> HasDuplicateApplicationAsync(int personId, int licenseClassId);
         
         Task<bool> CancelApplicationAsync(int id);
+
+        Task<ApplicationBasicInfoDto> GetBasicInfoAsync(int id);
     }
 }

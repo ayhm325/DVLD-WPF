@@ -49,7 +49,7 @@
                 <Button Content="Application Type" Margin="10" Click="ApplicationType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Content="Test Type" Margin="10" Click="TestType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Content="L.D.L.App" Margin="10" Click="LDLApp_Click" Style="{StaticResource PrimaryButtonStyle}"/>
-                <Button Content="L.App.Details" Margin="10" Click="LAppDetails_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+                
             </StackPanel>
 
             <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden"/>

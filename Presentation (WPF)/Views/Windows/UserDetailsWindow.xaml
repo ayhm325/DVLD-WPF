@@ -4,36 +4,77 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="User Details" 
-        SizeToContent="WidthAndHeight" 
+        Width="950"
+        SizeToContent="Height" 
         WindowStartupLocation="CenterScreen"
-        Background="#F8FAFC">
+        Background="#F0F2F5"
+        ResizeMode="CanMinimize">
 
-    <Grid Margin="20">
+    <Window.Resources>
+        <!-- تعريف نمط الزر ليكون متناسقاً مع التصميم الأزرق -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#0078D7"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#005A9E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- الحاوية الرئيسية مع هوامش مريحة -->
+    <Grid Margin="25,25,25,15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- Information Person -->
             <RowDefinition Height="Auto"/>
+            <!-- User Card -->
             <RowDefinition Height="Auto"/>
+            <!-- Spacer -->
+            <RowDefinition Height="Auto"/>
+            <!-- Button -->
         </Grid.RowDefinitions>
 
+        <!-- 1. بطاقة المعلومات التفصيلية -->
         <controls:InformationPerson
             x:Name="InformationPerson"
             Grid.Row="0"
-            Margin="0,0,0,15"
             Person="{Binding Person}" />
 
+        <!-- 2. بطاقة حالة المستخدم (مع مسافة للفصل البصري) -->
         <controls:UserCard 
             Grid.Row="1" 
-            Margin="0,0,0,20" 
+            Margin="0,25,0,0" 
             DataContext="{Binding}" />
 
-        <Button Grid.Row="2" 
-                Content="Close" 
-                Width="100" 
-                Height="35" 
-                HorizontalAlignment="Right" 
-                Click="CloseButton_Click"
-                Style="{DynamicResource PrimaryButtonStyle}"/>
+        <!-- 3. زر الإغلاق -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,25,0,0">
+            <Button Content="Close" 
+                    Width="120" 
+                    Height="40" 
+                    Click="CloseButton_Click"
+                    Style="{StaticResource PrimaryButtonStyle}"/>
+        </StackPanel>
+
     </Grid>
 </Window>

@@ -79,21 +79,12 @@ namespace Presentation.Views.Controls
 
         #endregion
 
-        #region ShowLicenseInfoCommand
 
-        public ICommand ShowLicenseInfoCommand
+        private void LicenseInfoButton_Click(object sender, RoutedEventArgs e)
         {
-            get => (ICommand)GetValue(ShowLicenseInfoCommandProperty);
-            set => SetValue(ShowLicenseInfoCommandProperty, value);
+            // مثال: فتح نافذة أو إرسال حدث
         }
 
-        public static readonly DependencyProperty ShowLicenseInfoCommandProperty =
-            DependencyProperty.Register(
-                nameof(ShowLicenseInfoCommand),
-                typeof(ICommand),
-                typeof(DrivingLicenseApplicationInfo),
-                new PropertyMetadata(null));
 
-        #endregion
     }
 }

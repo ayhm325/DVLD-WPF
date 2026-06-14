@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services;
+using Presentation.ViewModels;
 using Presentation.Views;
 using Presentation.Views.Pages;
 using Presentation.Views.Pages.Applications;
@@ -72,15 +73,8 @@ namespace DVLD_WPF
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
         }
 
-        
-        private void LAppDetails_Click(object sender, RoutedEventArgs e)
-        {
-            // الحصول على النافذة من الـ ServiceProvider
-            var newLicenseWindow = App.ServiceProvider.GetRequiredService<LocalApplicationDetailsWin>();
-            // إظهارها كنافذة مستقلة
-            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow; // لربطها بالنافذة الرئيسية
-            newLicenseWindow.ShowDialog();
-        }
+
+       
 
     }
 }
