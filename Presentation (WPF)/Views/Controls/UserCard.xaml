@@ -8,25 +8,15 @@
              d:DesignHeight="80" d:DesignWidth="400">
 
     <UserControl.Resources>
-        <!-- تعريف الموارد محلياً لضمان ظهور التصميم -->
-        <DropShadowEffect x:Key="CardShadow" Color="#000000" Direction="270" ShadowDepth="0" BlurRadius="15" Opacity="0.05"/>
-        <SolidColorBrush x:Key="PrimaryBlue" Color="#0078D7"/>
-        <SolidColorBrush x:Key="PrimaryBlueLight" Color="#E3F2FD"/>
-        <SolidColorBrush x:Key="TextDark" Color="#2C3E50"/>
-        <SolidColorBrush x:Key="TextGray" Color="#7F8C8D"/>
-        <SolidColorBrush x:Key="StatusGreenBg" Color="#E8F5E9"/>
-        <SolidColorBrush x:Key="StatusGreenText" Color="#2E7D32"/>
+        <!-- ألوان محلية لشارة الحالة (Success Theme) -->
+        <!-- خلفية خضراء داكنة جداً للتناسق مع الثيم -->
+        <SolidColorBrush x:Key="StatusGreenBg" Color="#064E3B"/>
+        <!-- نص أخضر زمردي ساطع للقراءة -->
+        <SolidColorBrush x:Key="StatusGreenText" Color="#34D399"/>
     </UserControl.Resources>
 
-    <!-- البطاقة الرئيسية -->
-    <Border Background="White" 
-            CornerRadius="10" 
-            Padding="20,15" 
-            Margin="5" 
-            Effect="{StaticResource CardShadow}"
-            BorderBrush="#F0F2F5" 
-            BorderThickness="1">
-
+    <!-- البطاقة الرئيسية باستخدام CardStyle -->
+    <Border Style="{StaticResource CardStyle}" Padding="20,15" Margin="5">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -38,9 +28,16 @@
             </Grid.ColumnDefinitions>
 
             <!-- عمود الأيقونة (Avatar) -->
-            <Border Grid.Column="0" Width="45" Height="45" CornerRadius="22" Background="{StaticResource PrimaryBlueLight}" VerticalAlignment="Center">
+            <!-- خلفية داكنة (InputBackground) لتقليل التباين القاسي -->
+            <Border Grid.Column="0" 
+                    Width="45" Height="45" 
+                    CornerRadius="22" 
+                    Background="{StaticResource InputBackground}" 
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="1"
+                    VerticalAlignment="Center">
                 <materialDesign:PackIcon Kind="Account" 
-                                        Foreground="{StaticResource PrimaryBlue}" 
+                                        Foreground="{StaticResource PrimaryColor}" 
                                         Width="24" Height="24" 
                                         VerticalAlignment="Center" 
                                         HorizontalAlignment="Center"/>
@@ -48,11 +45,15 @@
 
             <!-- عمود الاسم -->
             <StackPanel Grid.Column="1" Margin="15,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="User" FontSize="10" Foreground="{StaticResource TextGray}" FontWeight="Medium" Margin="0,0,0,2"/>
+                <TextBlock Text="User" 
+                           FontSize="10" 
+                           Foreground="{StaticResource SecondaryTextColor}" 
+                           FontWeight="Medium" 
+                           Margin="0,0,0,2"/>
                 <TextBlock Text="{Binding UserName}" 
                            FontSize="16" 
                            FontWeight="SemiBold" 
-                           Foreground="{StaticResource TextDark}" 
+                           Foreground="{StaticResource TextColor}" 
                            TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 

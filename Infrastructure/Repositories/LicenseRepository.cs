@@ -73,6 +73,7 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
+
         // =========================
         // CHECK OPERATIONS
         // =========================

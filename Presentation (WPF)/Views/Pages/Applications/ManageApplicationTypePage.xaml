@@ -8,47 +8,66 @@
       Background="{StaticResource BackgroundColor}">
 
     <Page.Resources>
-        <!-- Inline Styles for DataGrid to match the theme -->
+        <!-- تعريفات ألوان محلية للجدول لتناسب الوضع الليلي -->
+        <SolidColorBrush x:Key="AlternatingRowBrush" Color="#253248"/>
+        <!-- لون أغمق قليلاً من البطاقة -->
+        <SolidColorBrush x:Key="HoverBrush" Color="#334155"/>
+        <!-- لون عند التحويم (Slate 700) -->
+        <SolidColorBrush x:Key="SelectedBrush" Color="#6366F1"/>
+        <!-- لون الثيم الأساسي عند التحديد -->
+
+        <!-- ستايل الجدول -->
         <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <!-- شفاف ليظهر لون البطاقة -->
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="RowBackground" Value="White"/>
-            <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource AlternatingRowBrush}"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="SelectionMode" Value="Single"/>
         </Style>
 
+        <!-- ستايل عناوين الأعمدة -->
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Padding" Value="15,12"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
 
+        <!-- ستايل الصفوف (التفاعل) -->
         <Style TargetType="DataGridRow">
             <Setter Property="Height" Value="45"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F1F5F9"/>
+                    <Setter Property="Background" Value="{StaticResource HoverBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SelectedBrush}"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
+        <!-- ستايل الخلايا -->
         <Style TargetType="DataGridCell">
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Padding" Value="15,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#E0E7FF"/>
-                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+                    <Setter Property="Background" Value="{StaticResource SelectedBrush}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -56,7 +75,6 @@
 
     <Grid Margin="25">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -66,37 +84,39 @@
             <TextBlock Text="Manage Application Types" 
                        Style="{StaticResource HeaderStyle}"/>
 
+            <!-- استخدام اللون الثانوي للعدد -->
             <TextBlock Text="{Binding ApplicationTypes.Count, StringFormat='({0})'}" 
                        Style="{StaticResource HeaderStyle}" 
-                       Foreground="#64748B" 
+                       Foreground="{StaticResource SecondaryTextColor}" 
                        Margin="8,0,0,0"/>
         </StackPanel>
 
-        
+        <!-- DataGrid Card Container -->
+        <!-- استخدام CardStyle لإطار الجدول -->
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="0">
+            <DataGrid x:Name="dgAppType"
+                      ItemsSource="{Binding ApplicationTypes}">
 
-        <!-- DataGrid Section -->
-        <DataGrid Grid.Row="2"
-                  x:Name="dgAppType"
-                  ItemsSource="{Binding ApplicationTypes}">
+                <DataGrid.ContextMenu>
+                    <!-- سيتم تطبيق الستايل العام للقوائم تلقائياً -->
+                    <ContextMenu>
+                        <MenuItem Header="Edit Application Type" 
+                                  Command="{Binding EditApplicationTypeCommand}" 
+                                  CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.Icon>
+                                <Path Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" 
+                                      Fill="{StaticResource TextColor}" Stretch="Uniform" Width="16" Height="16"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
 
-            <DataGrid.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Edit Application Type" 
-                              Command="{Binding EditApplicationTypeCommand}" 
-                              CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
-                        <MenuItem.Icon>
-                            <Path Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" 
-                                  Fill="{StaticResource PrimaryColor}" Stretch="Uniform" Width="16" Height="16"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                </ContextMenu>
-            </DataGrid.ContextMenu>
-
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding ApplicationTypeId}" Width="80"/>
-                <DataGridTextColumn Header="Title" Binding="{Binding ApplicationTypeTitle}" Width="*"/>
-                <DataGridTextColumn Header="Fees" Binding="{Binding ApplicationTypeFees, StringFormat={}{0:C}}" Width="150"/>
-            </DataGrid.Columns>
-        </DataGrid>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding ApplicationTypeId}" Width="80"/>
+                    <DataGridTextColumn Header="Title" Binding="{Binding ApplicationTypeTitle}" Width="*"/>
+                    <DataGridTextColumn Header="Fees" Binding="{Binding ApplicationTypeFees, StringFormat={}{0:C}}" Width="150"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
     </Grid>
 </Page>

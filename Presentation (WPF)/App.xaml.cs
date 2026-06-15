@@ -51,6 +51,7 @@ namespace DVLD_WPF
             services.AddScoped<LicenseClassRepository>();
             services.AddScoped<ApplicationRepository>();
             services.AddTransient<LocalDrivingLicenseApplicationRepository>();
+            services.AddTransient<LicenseRepository>();
 
             // 3. Services
             services.AddSingleton<ICurrentUserService, CurrentUserService>();
@@ -63,6 +64,7 @@ namespace DVLD_WPF
             services.AddTransient<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddSingleton<IWindowService, WindowService>();
+            services.AddScoped<ILicenseService, LicenseService>();
 
             // 4. ViewModels
             services.AddTransient<LoginViewModel>();       

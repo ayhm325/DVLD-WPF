@@ -5,8 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" d:DesignWidth="800">
 
-    <!-- تم تطبيق CardStyle. تم إزالة CornerRadius لأنه موجود داخل الستايل -->
-    <Border Style="{StaticResource CardStyle}" Padding="15">
+    <UserControl.Resources>
+        <!-- تعريف لون إضافي محلي لزر الإضافة (Accent Color) -->
+        <SolidColorBrush x:Key="AccentGreen" Color="#10B981"/>
+    </UserControl.Resources>
+
+    <!-- استخدام CardStyle مع زيادة بسيطة في Padding -->
+    <Border Style="{StaticResource CardStyle}" Padding="20">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -17,47 +22,48 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- استخدام TextColor بدلاً من اللون الافتراضي -->
+            <!-- العنوان الرئيسي -->
             <TextBlock Grid.Column="0" Text="Filter:" 
                        FontWeight="SemiBold" 
                        Foreground="{StaticResource TextColor}"
-                       VerticalAlignment="Center" Margin="0,0,15,0"/>
+                       VerticalAlignment="Center" Margin="0,0,20,0"/>
 
+            <!-- تسمية الحقل (استخدمنا اللون الثانوي للتمييز) -->
             <TextBlock Grid.Column="1" Text="Find By:" 
-                       Foreground="{StaticResource TextColor}"
+                       Foreground="{StaticResource SecondaryTextColor}"
                        VerticalAlignment="Center" Margin="0,0,10,0"/>
 
-            <!-- ComboBox: الستايل المضمن يهتم بالخلفية والحدود -->
+            <!-- ComboBox: تم زيادة العرض قليلاً لضمان ظهور النصوص -->
             <ComboBox Grid.Column="2" 
                       SelectedIndex="{Binding SelectedFilterIndex}" 
-                      Width="140" 
-                      Margin="0,0,10,0"
+                      Width="150" 
+                      Margin="0,0,15,0"
                       VerticalAlignment="Center">
                 <ComboBoxItem Content="Person ID"/>
                 <ComboBoxItem Content="National No"/>
             </ComboBox>
 
-            <!-- TextBox: الستايل المضمن يهتم بالخلفية والحدود والارتفاع -->
+            <!-- TextBox: سيأخذ الستايل العام تلقائياً -->
             <TextBox Grid.Column="3" 
                      Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" 
-                     Margin="0,0,10,0" 
+                     Margin="0,0,15,0" 
                      VerticalAlignment="Center"/>
 
-            <!-- PrimaryButtonStyle يحدد الارتفاع تلقائياً (40) -->
+            <!-- زر البحث (Primary Style) -->
             <Button Grid.Column="4" 
                     Content="Search" 
                     Style="{StaticResource PrimaryButtonStyle}" 
-                    Width="90" 
-                    Margin="0,0,5,0" 
+                    Width="100" 
+                    Margin="0,0,10,0" 
                     Command="{Binding SearchCommand}"
                     VerticalAlignment="Center"/>
 
-            <!-- الزر هنا يستخدم PrimaryButtonStyle مع تغيير اللون محلياً إلى OliveDrab -->
+            <!-- زر الإضافة (باستخدام PrimaryButtonStyle مع تغيير اللون للأخضر الزمردي) -->
             <Button Grid.Column="5" 
                     Content="+ Add Person" 
                     Style="{StaticResource PrimaryButtonStyle}" 
-                    Width="110" 
-                    Background="OliveDrab" 
+                    Width="130" 
+                    Background="{StaticResource AccentGreen}" 
                     Command="{Binding AddPersonCommand}"
                     VerticalAlignment="Center"/>
         </Grid>

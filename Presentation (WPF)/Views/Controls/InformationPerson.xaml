@@ -11,34 +11,27 @@
              TextOptions.TextRenderingMode="Auto">
 
     <UserControl.Resources>
-        <!-- تعريف الألوان والفرش محلياً -->
-        <SolidColorBrush x:Key="PrimaryColor" Color="#0078D7"/>
-        <SolidColorBrush x:Key="PrimaryLight" Color="#E3F2FD"/>
-        <SolidColorBrush x:Key="TextColor" Color="#2C3E50"/>
-        <SolidColorBrush x:Key="LabelColor" Color="#90A4AE"/>
-        <SolidColorBrush x:Key="DividerColor" Color="#F0F2F5"/>
-
-        <DropShadowEffect x:Key="CardShadow" Color="#000000" Direction="270" ShadowDepth="0" BlurRadius="20" Opacity="0.08"/>
-
-        <!-- أنماط النصوص -->
-        <Style x:Key="LabelStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource LabelColor}"/>
+        <!-- تعريف ستايلات محلية تعتمد على ألوان الستايل العام -->
+        <Style x:Key="InfoLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
             <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
 
-        <Style x:Key="ValueStyle" TargetType="TextBlock">
+        <Style x:Key="InfoValueStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
     </UserControl.Resources>
 
-    <!-- البطاقة الرئيسية -->
-    <Border Background="White" CornerRadius="12" Padding="25" Margin="10" Effect="{StaticResource CardShadow}" BorderBrush="#F5F5F5" BorderThickness="1">
+    <!-- البطاقة الرئيسية باستخدام الستايل العام -->
+    <Border Style="{StaticResource CardStyle}" Padding="25" Margin="10">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -48,13 +41,27 @@
             <!-- Header -->
             <Grid Grid.Row="0" Margin="0,0,0,20">
                 <StackPanel Orientation="Horizontal">
-                    <Border Width="32" Height="32" CornerRadius="16" Background="{StaticResource PrimaryLight}" Margin="0,0,10,0" VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="CardAccountDetails" Foreground="{StaticResource PrimaryColor}" Width="18" Height="18" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    <!-- أيقونة بخلفية داكنة -->
+                    <Border Width="32" Height="32" CornerRadius="16" 
+                            Background="{StaticResource InputBackground}" 
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            Margin="0,0,10,0" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="CardAccountDetails" 
+                                                Foreground="{StaticResource PrimaryColor}" 
+                                                Width="18" Height="18" 
+                                                VerticalAlignment="Center" 
+                                                HorizontalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="Personal Information" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextColor}" VerticalAlignment="Center"/>
+                    <TextBlock Text="Personal Information" 
+                               FontSize="20" FontWeight="SemiBold" 
+                               Foreground="{StaticResource TextColor}" 
+                               VerticalAlignment="Center"/>
                 </StackPanel>
-                <!-- خط تزييني -->
-                <Border Height="3" Width="40" Margin="44,30,0,0" Background="{StaticResource PrimaryColor}" CornerRadius="2" HorizontalAlignment="Left"/>
+                <!-- خط تزييني بلون الثيم الأساسي -->
+                <Border Height="3" Width="40" Margin="44,30,0,0" 
+                        Background="{StaticResource PrimaryColor}" 
+                        CornerRadius="2" HorizontalAlignment="Left"/>
             </Grid>
 
             <!-- Content Grid -->
@@ -79,55 +86,64 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- التعديل الرئيسي: تعريف 4 أعمدة بدلاً من 2 -->
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="110"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="30"/>
-                        <!-- مسافة داخلية بين القيم -->
                         <ColumnDefinition Width="110"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Person ID & Gender -->
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Person ID" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Person.PersonId, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Person ID" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Person.PersonId, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
 
-                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Gender" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="0" Grid.Column="4" Text="{Binding Person.Gender, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Gender" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="0" Grid.Column="4" Text="{Binding Person.Gender, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
 
                     <!-- Full Name (Full Width) -->
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Full Name" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" Text="{Binding Person.FullName, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12" FontSize="16"/>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Full Name" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" 
+                               Text="{Binding Person.FullName, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                               Style="{StaticResource InfoValueStyle}" FontSize="16"/>
 
                     <!-- Separator Line -->
-                    <Border Grid.Row="2" Grid.ColumnSpan="5" Height="1" Background="{StaticResource DividerColor}" Margin="0,5,0,15" HorizontalAlignment="Stretch"/>
+                    <Border Grid.Row="2" Grid.ColumnSpan="5" Height="1" 
+                            Background="{StaticResource BorderColor}" 
+                            Margin="0,5,0,15" HorizontalAlignment="Stretch"/>
 
                     <!-- National No & DOB -->
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="National No" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Person.NationalNo, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="National No" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Person.NationalNo, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
 
-                    <TextBlock Grid.Row="3" Grid.Column="3" Text="Date Of Birth" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="3" Grid.Column="4" Text="{Binding Person.DateOfBirth, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat='{}{0:dd/MM/yyyy}'}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="3" Grid.Column="3" Text="Date Of Birth" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="4" 
+                               Text="{Binding Person.DateOfBirth, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat='{}{0:dd/MM/yyyy}'}" 
+                               Style="{StaticResource InfoValueStyle}"/>
 
                     <!-- Phone & Email -->
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Phone" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Person.Phone, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Phone" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Person.Phone, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
 
-                    <TextBlock Grid.Row="4" Grid.Column="3" Text="Email" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="4" Grid.Column="4" Text="{Binding Person.Email, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="4" Grid.Column="3" Text="Email" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="4" Grid.Column="4" Text="{Binding Person.Email, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
 
                     <!-- Country & Address -->
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Country" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Person.CountryName, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Country" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Person.CountryName, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
 
-                    <TextBlock Grid.Row="5" Grid.Column="3" Text="Address" Style="{StaticResource LabelStyle}" Margin="0,0,0,12"/>
-                    <TextBlock Grid.Row="5" Grid.Column="4" Text="{Binding Person.Address, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource ValueStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Grid.Row="5" Grid.Column="3" Text="Address" Style="{StaticResource InfoLabelStyle}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="4" Text="{Binding Person.Address, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
 
                 </Grid>
 
                 <!-- عمود الصورة (يمين) -->
-                <Border Grid.Column="2" Width="160" Height="160" CornerRadius="100" BorderThickness="3" BorderBrush="White" Effect="{StaticResource CardShadow}" VerticalAlignment="Top">
+                <Border Grid.Column="2" Width="160" Height="160" 
+                        CornerRadius="100" 
+                        BorderThickness="3" 
+                        BorderBrush="{StaticResource BorderColor}" 
+                        Effect="{StaticResource CardShadow}" 
+                        VerticalAlignment="Top">
                     <Border.Clip>
                         <EllipseGeometry Center="80,80" RadiusX="80" RadiusY="80"/>
                     </Border.Clip>
@@ -136,8 +152,6 @@
                         <!-- الصورة -->
                         <Image Stretch="UniformToFill" 
                                Source="{Binding Person.ImagePath, RelativeSource={RelativeSource AncestorType=UserControl}, TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}"/>
-
-                        <!-- Placeholder if No Image (Optional logic with Trigger, but keeping simple per request) -->
                     </Grid>
                 </Border>
 

@@ -11,67 +11,17 @@
              TextOptions.TextFormattingMode="Display"
              TextOptions.TextRenderingMode="Auto">
 
-    <UserControl.Resources>
-        <!-- ظل ناعم -->
-        <DropShadowEffect x:Key="CardShadow" Color="#000000" Direction="270" ShadowDepth="0" BlurRadius="20" Opacity="0.08"/>
+    <!-- تمت إزالة UserControl.Resources للاعتماد على الستايل العام -->
 
-        <!-- الألوان -->
-        <SolidColorBrush x:Key="AppBackground" Color="#F0F2F5"/>
-        <SolidColorBrush x:Key="PrimaryBlue" Color="#0078D7"/>
-        <SolidColorBrush x:Key="PrimaryBlueLight" Color="#E3F2FD"/>
-        <SolidColorBrush x:Key="TextDark" Color="#2C3E50"/>
-        <SolidColorBrush x:Key="TextGray" Color="#90A4AE"/>
-        <SolidColorBrush x:Key="DividerBrush" Color="#F0F2F5"/>
+    <!-- الخلفية الشفافة لترك الخلفية للنافذة الأم -->
+    <Grid Margin="0,0,0,29">
 
-        <!-- ستايل الزر -->
-        <Style x:Key="SimpleBlueButton" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource PrimaryBlue}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="20,8"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                CornerRadius="6" 
-                                Padding="{TemplateBinding Padding}"
-                                BorderThickness="0">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#005A9E"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#004578"/>
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98" CenterX="0.5" CenterY="0.5"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </UserControl.Resources>
+        <!-- البطاقة الرئيسية باستخدام CardStyle العام -->
+        <Border Style="{StaticResource CardStyle}" 
+                Padding="25" 
+                Margin="20,15,20,10">
 
-    <!-- الخلفية -->
-    <Grid Background="{StaticResource AppBackground}" Margin="0,0,0,29">
-
-        <!-- البطاقة الرئيسية -->
-        <Border Background="White"
-                CornerRadius="12"
-                Padding="25"
-                Margin="20,15,20,10"
-                Effect="{StaticResource CardShadow}"
-                BorderBrush="#F5F5F5" BorderThickness="1">
-
-            <!-- شبكة خارجية رئيسية لمنع التداخل -->
+            <!-- شبكة خارجية رئيسية -->
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -90,29 +40,39 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="40" Height="40" CornerRadius="20" Background="{StaticResource PrimaryBlueLight}" 
+                        <!-- دائرة الأيقونة (خلفية داكنة + حدود) -->
+                        <Border Width="40" Height="40" CornerRadius="20" 
+                                Background="{StaticResource InputBackground}" 
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1"
                                 VerticalAlignment="Center" Margin="0,0,12,0">
-                            <materialDesign:PackIcon Kind="CardAccountDetailsStar" Foreground="{StaticResource PrimaryBlue}" 
-                                                    Width="22" Height="22" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="CardAccountDetailsStar" 
+                                                    Foreground="{StaticResource PrimaryColor}" 
+                                                    Width="22" Height="22" 
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
                         </Border>
 
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="Driving License Application Info" FontSize="18" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextDark}" VerticalAlignment="Center"/>
-                            <Border Height="3" Width="40" Margin="0,6,0,0" Background="{StaticResource PrimaryBlue}" 
+                                       Foreground="{StaticResource TextColor}" VerticalAlignment="Center"/>
+                            <!-- الخط الملون -->
+                            <Border Height="3" Width="40" Margin="0,6,0,0" 
+                                    Background="{StaticResource PrimaryColor}" 
                                     CornerRadius="2" HorizontalAlignment="Left"/>
                         </StackPanel>
                     </StackPanel>
 
+                    <!-- الزر باستخدام الستايل العام -->
                     <Button Grid.Column="1" VerticalAlignment="Center"
                             Content="License Info" 
-                            Style="{StaticResource SimpleBlueButton}"
+                            Style="{StaticResource PrimaryButtonStyle}"
                             Click="LicenseInfoButton_Click"
                             Margin="10,0,0,0"/>
                 </Grid>
 
-                <!-- فاصل -->
-                <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Margin="0,0,0,20" Background="{StaticResource DividerBrush}"/>
+                <!-- الفاصل بلون الحدود العام -->
+                <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Margin="0,0,0,20" Background="{StaticResource BorderColor}"/>
 
                 <!-- 2. First Info Row: ID and Tests -->
                 <Grid Grid.Row="1" Margin="0,5,0,20">
@@ -123,45 +83,52 @@
 
                     <!-- D.L.App ID -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <Border Width="45" Height="45" Background="#E3F2FD" CornerRadius="22" Margin="0,0,15,0" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Numeric" Foreground="{StaticResource PrimaryBlue}" 
+                        <Border Width="45" Height="45" Background="{StaticResource InputBackground}" 
+                                CornerRadius="22" Margin="0,0,15,0" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Numeric" Foreground="{StaticResource PrimaryColor}" 
                                                     Width="24" Height="24" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="D.L.App ID" Foreground="{StaticResource TextGray}" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock Text="D.L.App ID" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
                             <TextBlock Text="{Binding DrivingLicenseApplicationId, ElementName=control}" 
-                                       FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource TextDark}" Margin="0,4,0,0"/>
+                                       FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource TextColor}" Margin="0,4,0,0"/>
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Passed Tests -->
+                    <!-- Passed Tests (تخصيص لون أخضر داكن للوضع الليلي) -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Border Width="45" Height="45" Background="#E8F5E9" CornerRadius="22" Margin="0,0,15,0" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="CheckCircle" Foreground="#2E7D32" 
+                        <!-- خلفية خضراء داكنة جداً -->
+                        <Border Width="45" Height="45" Background="#064E3B" CornerRadius="22" Margin="0,0,15,0" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="CheckCircle" Foreground="#34D399" 
                                                     Width="24" Height="24" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Passed Tests" Foreground="{StaticResource TextGray}" FontSize="11" FontWeight="Bold"/>
-                            <TextBlock FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource TextDark}" Margin="0,4,0,0">
-                                <Run Text="{Binding PassedTests, ElementName=control}"/>
-                                <Run Text="/" Foreground="#B0BEC5"/>
+                            <TextBlock Text="Passed Tests" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource TextColor}" Margin="0,4,0,0">
+                                <Run Text="{Binding PassedTests, ElementName=control}" Foreground="#34D399"/>
+                                <Run Text="/" Foreground="{StaticResource BorderColor}"/>
                                 <Run Text="{Binding TotalTests, ElementName=control}"/>
                             </TextBlock>
                         </StackPanel>
                     </StackPanel>
                 </Grid>
 
-                <!-- 3. Second Info Row: Applied For License (صف منفصل لضمان عدم التداخل) -->
-                <Border Grid.Row="2" Background="#FFF8F0" CornerRadius="8" Padding="15" BorderBrush="#FFE0B2" BorderThickness="1">
+                <!-- 3. Second Info Row: Applied For License (تخصيص لون برتقالي داكن للوضع الليلي) -->
+                <Border Grid.Row="2" 
+                        Background="#451A03" 
+                        CornerRadius="8" 
+                        Padding="15" 
+                        BorderBrush="#D97706" 
+                        BorderThickness="1">
                     <StackPanel Orientation="Horizontal">
-                        <Border Width="40" Height="40" Background="#FFE0B2" CornerRadius="20" Margin="0,0,15,0" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Car" Foreground="#EF6C00" 
+                        <Border Width="40" Height="40" Background="#78350F" CornerRadius="20" Margin="0,0,15,0" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Car" Foreground="#FBBF24" 
                                                     Width="22" Height="22" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Applied For License" Foreground="#BF360C" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock Text="Applied For License" Foreground="#FBBF24" FontSize="11" FontWeight="Bold"/>
                             <TextBlock Text="{Binding LicenseClassName, ElementName=control}" 
-                                       FontWeight="SemiBold" FontSize="17" Foreground="#BF360C" 
+                                       FontWeight="SemiBold" FontSize="17" Foreground="#FCD34D" 
                                        Margin="0,4,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </StackPanel>

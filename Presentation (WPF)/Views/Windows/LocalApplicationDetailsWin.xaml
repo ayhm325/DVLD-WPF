@@ -3,42 +3,44 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         Title="Local Driving License Application Details"
-        Height="797" Width="900"
+        Height="797" 
+        Width="900"
         WindowStartupLocation="CenterScreen"
-        Background="#F0F2F5">
-    <Grid Margin="20">
+        Background="{StaticResource BackgroundColor}">
 
+    <Grid Margin="25">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- ثابت -->
+        <!-- العنوان: استخدام الستايل العام -->
         <TextBlock Grid.Row="0"
-               Text="Local Driving License Application Details"
-               FontSize="26"
-               FontWeight="SemiBold"
-               HorizontalAlignment="Center"
-               Margin="0,0,0,20"/>
+                   Text="Local Driving License Application Details"
+                   Style="{StaticResource HeaderStyle}"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"/>
 
-        <!-- Scroll لكل المحتوى تحت العنوان -->
+        <!-- حاوية المحتوى مع التمرير -->
         <ScrollViewer Grid.Row="1"
                   VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
 
             <StackPanel>
+                <!-- البطاقة الأولى: تفاصيل رخصة القيادة -->
+                <!-- إضافة Margin سفلي لتفريغ المسافة عن البطاقة التالية -->
+                <controls:DrivingLicenseApplicationInfo 
+                    DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
+                    PassedTests="{Binding LdlAppInfo.PassedTest}"
+                    TotalTests="3"
+                    LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"
+                    Margin="0,0,0,20"/>
 
-                <controls:DrivingLicenseApplicationInfo
-                DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
-                PassedTests="{Binding LdlAppInfo.PassedTest}"
-                TotalTests="3"
-                LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"/>
-
+                <!-- البطاقة الثانية: المعلومات الأساسية -->
                 <controls:ApplicationBasicInfo 
                     x:Name="ApplicationBasicInfoControl"
                     Application="{Binding ApplicationInfo}" />
-                
-                
+
             </StackPanel>
 
         </ScrollViewer>

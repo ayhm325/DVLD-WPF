@@ -7,20 +7,20 @@
              d:DesignHeight="600" d:DesignWidth="800">
 
     <UserControl.Resources>
+        <!-- تعريف خلفية داكنة للأخطاء -->
+        <SolidColorBrush x:Key="ErrorBackground" Color="#2A0A0A"/>
 
-        <!-- تظبيط الأنماط لترث من القاموس العام ولكن مع إضافة منطق الأخطاء -->
-
-        <!-- Label Style: استخدام SecondaryColor من النظام -->
+        <!-- Label Style: استخدام اللون الرمادي الثانوي لسهولة القراءة في النماذج -->
         <Style TargetType="TextBlock" x:Key="LabelStyle">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
 
-        <!-- ErrorMessage Style -->
+        <!-- ErrorMessage Style: استخدام لون الخطأ العام -->
         <Style TargetType="TextBlock" x:Key="ErrorMessageStyle">
-            <Setter Property="Foreground" Value="#E53E3E"/>
+            <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Margin" Value="2,4,0,0"/>
             <Style.Triggers>
@@ -33,47 +33,50 @@
             </Style.Triggers>
         </Style>
 
-        <!-- TextBox Style: يرث النمط العام ويضيف تأثيرات التحقق -->
+        <!-- TextBox Style: يرث النمط العام مع خلفية خطأ داكنة -->
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Style.Triggers>
                 <Trigger Property="Validation.HasError" Value="True">
-                    <Setter Property="BorderBrush" Value="#E53E3E"/>
-                    <Setter Property="Background" Value="#FFF5F5"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
+                    <Setter Property="Background" Value="{StaticResource ErrorBackground}"/>
+                    <Setter Property="ToolTip" Value="{Binding (Validation.Errors)/ErrorContent, RelativeSource={RelativeSource Self}}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- ComboBox Style: يرث النمط العام ويضيف تأثيرات التحقق -->
+        <!-- ComboBox Style: يرث النمط العام -->
         <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Style.Triggers>
                 <Trigger Property="Validation.HasError" Value="True">
-                    <Setter Property="BorderBrush" Value="#E53E3E"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- DatePicker Style: تنسيق بسيط ليتماشى مع النظام -->
+        <!-- DatePicker Style: تخصيص للوضع المظلم -->
         <Style TargetType="DatePicker">
             <Setter Property="Height" Value="38"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Background" Value="{StaticResource InputBackground}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
-        <!-- Danger Button Style للحذف (محلي) -->
+        <!-- Danger Button Style: تخصيص لزر الحذف -->
         <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-            <Setter Property="Foreground" Value="#E53E3E"/>
-            <Setter Property="BorderBrush" Value="#E53E3E"/>
+            <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FEF2F2"/>
-                    <Setter Property="BorderBrush" Value="#C53030"/>
+                    <!-- خلفية حمراء داكنة جداً عند التحويم -->
+                    <Setter Property="Background" Value="#3D0F0F"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
-
     </UserControl.Resources>
 
     <!-- تطبيق CardStyle على الحاوية الرئيسية -->
@@ -84,7 +87,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- العنوان: استخدام HeaderStyle -->
+            <!-- العنوان -->
             <TextBlock Text="Person Details" 
                        Style="{StaticResource HeaderStyle}" 
                        Foreground="{StaticResource PrimaryColor}" 
@@ -212,25 +215,23 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- صورة العرض باستخدام ألوان النظام -->
+                        <!-- صورة العرض: خلفية داكنة -->
                         <Border Width="120" Height="120" 
                                 CornerRadius="8" 
                                 BorderBrush="{StaticResource BorderColor}" 
                                 BorderThickness="1" 
-                                Background="{StaticResource BackgroundColor}" 
+                                Background="{StaticResource InputBackground}" 
                                 Grid.Column="0">
                             <Image Source="{Binding ImageDisplayPath}" Stretch="UniformToFill" Margin="2" ToolTip="User Image"/>
                         </Border>
 
                         <StackPanel Grid.Column="1" Margin="15,0,0,0" VerticalAlignment="Center">
-                            <!-- زر اختيار الصورة باستخدام PrimaryButtonStyle -->
                             <Button Content="Choose Image" 
                                     Height="38" Width="130" 
                                     HorizontalAlignment="Left" 
                                     Command="{Binding ChooseImageCommand}" 
                                     Style="{StaticResource PrimaryButtonStyle}"/>
 
-                            <!-- زر الحذف باستخدام DangerButtonStyle -->
                             <Button Content="Remove" 
                                     Height="38" Width="130" 
                                     HorizontalAlignment="Left" 

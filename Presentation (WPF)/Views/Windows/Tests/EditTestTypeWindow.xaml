@@ -3,13 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Presentation.Views.Windows.Tests"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Edit Test Type" Height="550" Width="800"
-        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+        Title="Edit Test Type"
+        Height="600"
+        Width="800"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundColor}">
 
-    <Grid Margin="20">
+    <Grid Margin="25">
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -20,61 +24,150 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Update Test Type" FontSize="25" FontWeight="Bold" 
-                   Foreground="#2C3E50" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+        <!-- ================= TITLE ================= -->
+        <TextBlock Text="Update Test Type"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Foreground="{StaticResource TextColor}"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,25"/>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10">
-            <StackPanel Orientation="Horizontal" Width="80">
-                <materialDesign:PackIcon Kind="Identifier" Foreground="Green" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <TextBlock Text="ID:" FontWeight="Bold" FontSize="15"/>
+        <!-- ================= ID ================= -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,15">
+
+            <StackPanel Orientation="Horizontal" Width="80" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="Identifier"
+                                         Foreground="{StaticResource PrimaryColor}"
+                                         Width="20"
+                                         Height="20"
+                                         Margin="0,0,8,0"/>
+
+                <TextBlock Text="ID:"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextColor}"/>
             </StackPanel>
-            <TextBlock Text="{Binding CurrentTestType.TestTypeId}" 
-                       FontWeight="Bold" FontSize="15" Foreground="#333" VerticalAlignment="Center"/>
+
+            <TextBlock Text="{Binding CurrentTestType.TestTypeId}"
+                       FontSize="15"
+                       FontWeight="Bold"
+                       Foreground="{StaticResource SecondaryTextColor}"
+                       VerticalAlignment="Center"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Margin="0,10">
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <materialDesign:PackIcon Kind="TextBoxEditOutline" Foreground="Green" Margin="0,0,5,0"/>
-                <TextBlock Text="Title:" FontSize="15" FontWeight="Bold"/>
+        <!-- ================= TITLE ================= -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,15">
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <materialDesign:PackIcon Kind="TextBoxEditOutline"
+                                         Foreground="{StaticResource PrimaryColor}"
+                                         Width="20"
+                                         Height="20"
+                                         Margin="0,0,8,0"/>
+
+                <TextBlock Text="Title:"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextColor}"/>
             </StackPanel>
-            <TextBox Text="{Binding CurrentTestType.TestTypeTitle, UpdateSourceTrigger=PropertyChanged}" 
-                     Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+
+            <TextBox Text="{Binding CurrentTestType.TestTypeTitle, UpdateSourceTrigger=PropertyChanged}"
+                     MinHeight="80"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     VerticalContentAlignment="Top"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="3" Margin="0,10">
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <materialDesign:PackIcon Kind="StickyNoteTextOutline" Foreground="Green" Margin="0,0,5,0"/>
-                <TextBlock Text="Description:" FontSize="15" FontWeight="Bold"/>
+        <!-- ================= DESCRIPTION ================= -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,15">
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <materialDesign:PackIcon Kind="StickyNoteTextOutline"
+                                         Foreground="{StaticResource PrimaryColor}"
+                                         Width="20"
+                                         Height="20"
+                                         Margin="0,0,8,0"/>
+
+                <TextBlock Text="Description:"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextColor}"/>
             </StackPanel>
-            <TextBox Text="{Binding CurrentTestType.TestTypeDescription, UpdateSourceTrigger=PropertyChanged}" 
-             Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+
+            <TextBox Text="{Binding CurrentTestType.TestTypeDescription, UpdateSourceTrigger=PropertyChanged}"
+                     MinHeight="80"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     VerticalContentAlignment="Top"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="4" Margin="0,10">
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <materialDesign:PackIcon Kind="Cash100" Foreground="Green" Margin="0,0,5,0"/>
-                <TextBlock Text="Fees:" FontSize="15" FontWeight="Bold"/>
+        <!-- ================= FEES ================= -->
+        <StackPanel Grid.Row="4" Margin="0,0,0,15">
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <materialDesign:PackIcon Kind="Cash100"
+                                         Foreground="{StaticResource PrimaryColor}"
+                                         Width="20"
+                                         Height="20"
+                                         Margin="0,0,8,0"/>
+
+                <TextBlock Text="Fees:"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextColor}"/>
             </StackPanel>
-            <TextBox Text="{Binding CurrentTestType.TestTypeFees, StringFormat='{}{0:F2}', UpdateSourceTrigger=PropertyChanged}" 
-                     Height="30" VerticalAlignment="Center" Padding="5,0,0,0" AcceptsReturn="False" />
+
+            <TextBox Text="{Binding CurrentTestType.TestTypeFees,
+                            UpdateSourceTrigger=PropertyChanged,
+                            StringFormat={}{0:F2}}"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,20,0,0">
-            <Button Command="{Binding SaveCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                    Width="100" Height="35" Margin="0,0,10,0" Padding="5,0,0,0" Style="{StaticResource PrimaryButtonStyle}">
+        <!-- ================= BUTTONS ================= -->
+        <StackPanel Grid.Row="6"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+
+            <!-- SAVE -->
+            <Button Command="{Binding SaveCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                    Width="100"
+                    Margin="0,0,10,0"
+                    Style="{StaticResource PrimaryButtonStyle}">
+
                 <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="ContentSave" Margin="0,0,5,0"/>
-                    <TextBlock Text="Save"/>
+                    <materialDesign:PackIcon Kind="ContentSave"
+                                             Width="18"
+                                             Height="18"
+                                             Margin="0,0,8,0"
+                                             VerticalAlignment="Center"/>
+
+                    <TextBlock Text="Save"
+                               VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
 
-            <Button Command="{Binding CloseCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                    Width="100" Height="35" Style="{StaticResource PrimaryButtonStyle}">
+            <!-- CLOSE -->
+            <Button Command="{Binding CloseCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                    Width="100"
+                    Style="{StaticResource SecondaryButtonStyle}">
+
                 <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Close" Margin="0,0,5,0"/>
-                    <TextBlock Text="Close"/>
+                    <materialDesign:PackIcon Kind="Close"
+                                             Width="18"
+                                             Height="18"
+                                             Margin="0,0,8,0"
+                                             VerticalAlignment="Center"/>
+
+                    <TextBlock Text="Close"
+                               VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
+
         </StackPanel>
+
     </Grid>
 </Window>

@@ -13,7 +13,6 @@
         ResizeMode="CanResize">
 
     <Grid Margin="30">
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -23,15 +22,17 @@
         <!-- Title Section -->
         <TextBlock Text="{Binding PageTitle}"
                    Style="{StaticResource HeaderStyle}"
-                   Margin="0,0,0,20"/>
+                   Margin="0,0,0,20"
+                   VerticalAlignment="Center"/>
 
-        <!-- Content Section (Inside a Card) -->
+        <!-- Content Section (Inside a Card with ScrollViewer) -->
         <ScrollViewer Grid.Row="1" 
                       VerticalScrollBarVisibility="Auto" 
                       HorizontalScrollBarVisibility="Disabled"
                       Margin="0,0,0,20">
 
             <Border Style="{StaticResource CardStyle}" Padding="25">
+                <!-- استدعاء التحكم الذي صممناه سابقاً -->
                 <controls:PersonInfoCard />
             </Border>
 
@@ -40,7 +41,8 @@
         <!-- Buttons Section -->
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Right">
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom">
 
             <Button Content="Close" 
                     Style="{StaticResource SecondaryButtonStyle}" 
@@ -54,6 +56,5 @@
                     Command="{Binding SavePersonCommand}"/>
 
         </StackPanel>
-
     </Grid>
 </Window>

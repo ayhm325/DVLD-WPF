@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using Presentation.Views.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -6,6 +7,9 @@ namespace Presentation.Views.Controls
 {
     public partial class DrivingLicenseApplicationInfo : UserControl
     {
+
+
+
         public DrivingLicenseApplicationInfo()
         {
             InitializeComponent();
@@ -82,7 +86,8 @@ namespace Presentation.Views.Controls
 
         private void LicenseInfoButton_Click(object sender, RoutedEventArgs e)
         {
-            // مثال: فتح نافذة أو إرسال حدث
+            var window = new DriverLicenseInfoWin(DrivingLicenseApplicationId);
+            window.ShowDialog();
         }
 
 
