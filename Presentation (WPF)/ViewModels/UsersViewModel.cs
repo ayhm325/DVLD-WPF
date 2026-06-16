@@ -35,7 +35,7 @@ public partial class UsersViewModel : ObservableObject
     [ObservableProperty] private bool _isStatusVisible = false;
 
     // القوائم المنسدلة
-    public List<string> FilterOptions { get; } = new() { "None", "UserID", "UserName", "IsActive" };
+    public List<string> FilterOptions { get; } = new() { "None", "UserID", "UserName", "Status" };
     public List<string> StatusOptions { get; } = new() { "All", "Active", "Inactive" };
 
     public UsersViewModel(IUserService userService)
@@ -51,7 +51,7 @@ public partial class UsersViewModel : ObservableObject
         SelectedStatus = "All";
 
         IsSearchVisible = (value == "UserID" || value == "UserName");
-        IsStatusVisible = (value == "IsActive");
+        IsStatusVisible = (value == "Status");
 
         ApplyFilter();
     }
@@ -81,7 +81,7 @@ public partial class UsersViewModel : ObservableObject
         {
             filtered = filtered.Where(u => u.UserName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
         }
-        else if (SelectedFilterType == "IsActive")
+        else if (SelectedFilterType == "Status")
         {
             if (SelectedStatus == "Active") filtered = filtered.Where(u => u.IsActive);
             else if (SelectedStatus == "Inactive") filtered = filtered.Where(u => !u.IsActive);

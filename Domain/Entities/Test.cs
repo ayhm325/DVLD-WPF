@@ -10,7 +10,7 @@ namespace Domain.Entities
         [Key]
         public int TestID { get; set; }
         public int TestAppointmentID { get; set; }
-        public byte TestResult { get; set; }
+        public bool TestResult { get; set; }
         public string? Notes { get; set; }
         public int CreatedByUserID { get; set; }
 

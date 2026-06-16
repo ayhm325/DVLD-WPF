@@ -99,7 +99,7 @@ namespace Infrastructure.Repositories
                 .CountAsync(t =>
                     t.TestAppointment != null &&
                     t.TestAppointment.LocalDrivingLicenseApplicationID == localAppId &&
-                    t.TestResult == 1);
+                    t.TestResult == true);
         }
 
         public async Task<int?> GetApplicationIdByLocalIdAsync(int localId)

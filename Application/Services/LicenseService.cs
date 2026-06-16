@@ -9,9 +9,23 @@ namespace Application.Services
     {
         private readonly LicenseRepository _repository;
 
-        public LicenseService(LicenseRepository repository)
+        private readonly ILocalDrivingLicenseApplicationService _lDLAppService;
+        private readonly IApplicationService _applicationService;
+        private readonly IDriverService _driverService; 
+        private readonly IPersonService _personService;
+        private readonly IDetainedLicenseService _detainedLicenseService;
+
+
+        public LicenseService(LicenseRepository repository, ILocalDrivingLicenseApplicationService lDLAppService,
+            IApplicationService applicationService, IDriverService driverService, IPersonService personService,
+            IDetainedLicenseService detainedLicenseService)
         {
             _repository = repository;
+            _lDLAppService = lDLAppService;
+            _applicationService = applicationService;
+            _driverService = driverService;
+            _personService = personService;
+            _detainedLicenseService = detainedLicenseService;
         }
 
         // =========================
@@ -110,9 +124,9 @@ namespace Application.Services
                 Notes = l.Notes,
                 PaidFees = l.PaidFees,
 
-                IsActive = l.IsActive,
+                IsActive = l.IsActive ,
 
-                IssueReason = l.IssueReason,
+                IssueReason = l.IssueReason ,
                 IssueReasonText = l.IssueReason.ToString(),
 
                 CreatedByUserID = l.CreatedByUserID,
@@ -132,10 +146,74 @@ namespace Application.Services
                 ExpirationDate = d.ExpirationDate,
                 Notes = d.Notes,
                 PaidFees = d.PaidFees,
-                IsActive = d.IsActive,
-                IssueReason = d.IssueReason,
+                IsActive = d.IsActive ,
+                IssueReason = d.IssueReason ,
                 CreatedByUserID = d.CreatedByUserID
             };
         }
+
+        //===========================================
+
+        public async Task<DriverLicenseInfoDto?> GetDetails(int localAppId)
+        {
+            var localApp = await _lDLAppService.GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
+
+            var appId = await _lDLAppService.GetApplicationIdByLocalIdAsync(localAppId);
+            var app = await _applicationService.GetApplicationByIdAsync((int)appId);
+            if (app == null) return null;
+
+            var person = await _personService.GetPersonByIdAsync(app.ApplicantPersonID);
+            if (person == null) return null;
+          
+            var driver = await _driverService.GetByPersonIdAsync(person.PersonId);
+            if (driver == null) return null;
+           
+            var license = driver != null
+                ? await _repository.GetByDriverIdAsync(driver.DriverID)
+                : null;
+
+            if (license == null) return null;
+
+
+            return new DriverLicenseInfoDto
+            {
+                // License Info
+                LicenseId = license?.LicenseID ?? 0,
+
+                LicenseClass = localApp?.LicenseClassName ?? string.Empty,
+
+                IssueDate = license?.IssueDate ?? default,
+                ExpirationDate = license?.ExpirationDate ?? default,
+
+                IsActive = license?.IsActive ?? false,
+
+                IsDetained = license != null &&
+             await _detainedLicenseService.IsLicenseDetainedAsync(license.LicenseID),
+
+                IssueReason = license?.IssueReason.ToString() ?? string.Empty,
+
+                Notes = license?.Notes ?? string.Empty,
+
+                // Driver Info
+                DriverId = driver?.DriverID ?? 0,
+
+                // Person Info
+                FullName = person.FullName,
+                NationalNo = person.NationalNo,
+                DateOfBirth = person.DateOfBirth,
+                Gender = person.Gender,
+                ImagePath = person.ImagePath
+            };
+        }
+        
+
+
+
+
+
+
+
+
+
     }
 }

@@ -21,6 +21,7 @@ namespace Infrastructure
         public DbSet<TestAppointment> TestAppointments { get; set; } = null!;
         public DbSet<License> Licenses { get; set; } = null!;
         public DbSet<Driver> Drivers { get; set; } = null!;
+        public DbSet<DetainedLicense> DetainedLicenses { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -162,7 +163,33 @@ namespace Infrastructure
 
 
 
+            // Configure one-to-many relationship between DetainedLicense and License
+            modelBuilder.Entity<DetainedLicense>()
+                .HasOne(dl => dl.License)
+                .WithMany()
+                .HasForeignKey(dl => dl.LicenseID)
+                .OnDelete(DeleteBehavior.Restrict);
 
+            // Configure one-to-many relationship between DetainedLicense and User (CreatedByUser)
+             modelBuilder.Entity<DetainedLicense>()
+                .HasOne(dl => dl.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(dl => dl.CreatedByUserID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure one-to-many relationship between DetainedLicense and User (ReleasedByUser)
+                modelBuilder.Entity<DetainedLicense>()
+                    .HasOne(dl => dl.ReleasedByUser)
+                    .WithMany()
+                    .HasForeignKey(dl => dl.ReleasedByUserID)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure one-to-many relationship between DetainedLicense and Application (ReleaseApplication)
+            modelBuilder.Entity<DetainedLicense>()
+                .HasOne(dl => dl.ReleaseApplication)
+                .WithMany()
+                .HasForeignKey(dl => dl.ReleaseApplicationID)
+                .OnDelete(DeleteBehavior.Restrict);
 
 
 

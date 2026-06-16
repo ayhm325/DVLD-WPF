@@ -4,11 +4,9 @@ using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 
 namespace Presentation.Views.Windows
 {
@@ -16,120 +14,71 @@ namespace Presentation.Views.Windows
     {
         private readonly int _localDrivingLicenseApplicationId;
         private readonly ILicenseService _licenseService;
-        private readonly ILocalDrivingLicenseApplicationService _lDLAppService;
 
+        // الخاصية التي سترتبط بها الـ XAML
         private DriverLicenseInfoDto? _licenseData;
         public DriverLicenseInfoDto? LicenseData
         {
             get => _licenseData;
-            set
-            {
-                _licenseData = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsActiveStatus));
-                OnPropertyChanged(nameof(IsDetainedStatus));
-            }
+            set { _licenseData = value; OnPropertyChanged(); }
         }
-
-        private BitmapImage? _driverPhoto;
-        public BitmapImage? DriverPhoto
-        {
-            get => _driverPhoto;
-            set
-            {
-                _driverPhoto = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string IsActiveStatus =>
-            LicenseData?.IsActive == true ? "Yes" : "No";
-
-        public string IsDetainedStatus =>
-            LicenseData?.IsDetained == true ? "Yes" : "No";
 
         public ICommand CloseCommand { get; }
 
-        public DriverLicenseInfoWin(int localDrivingLicenseApplicationId)
+        public DriverLicenseInfoWin(int lDLAppId)
         {
             InitializeComponent();
-
-            _localDrivingLicenseApplicationId = localDrivingLicenseApplicationId;
-
+            _localDrivingLicenseApplicationId = lDLAppId;
             _licenseService = App.ServiceProvider.GetRequiredService<ILicenseService>();
-            _lDLAppService = App.ServiceProvider.GetRequiredService<ILocalDrivingLicenseApplicationService>();
 
-            CloseCommand = new RelayCommand(_ => Close());
+            // ضبط الـ DataContext لهذا الكود
+            this.DataContext = this;
+            CloseCommand = new RelayCommand(_ => this.Close());
 
-            DataContext = this;
-
-            Loaded += DriverLicenseInfoWin_Loaded;
+            this.Loaded += DriverLicenseInfoWin_Loaded;
         }
 
         private async void DriverLicenseInfoWin_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                var applicationId = await _lDLAppService.GetApplicationIdByLocalIdAsync(_localDrivingLicenseApplicationId);
-
-                if (applicationId == null)
-                    return;
-
-                //LicenseData = await _licenseService.GetByApplicationIdAsync((int)applicationId);
-
-                if (LicenseData == null)
-                    return;
-
-                if (!string.IsNullOrWhiteSpace(LicenseData.ImagePath) &&
-                    File.Exists(LicenseData.ImagePath))
+                var fullLicenseDto = await _licenseService.GetDetails(_localDrivingLicenseApplicationId);
+                if (fullLicenseDto != null)
                 {
-                    var bitmap = new BitmapImage();
-
-                    bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(
-                        LicenseData.ImagePath,
-                        UriKind.Absolute);
-
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
-
-                    bitmap.Freeze();
-
-                    DriverPhoto = bitmap;
+                    LicenseData = fullLicenseDto; // سيتم تحديث الـ UI تلقائياً
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    $"Error loading license information:\n{ex.Message}",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                MessageBox.Show($"Error: {ex.Message}");
             }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected void OnPropertyChanged(
-            [CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(
-                this,
-                new PropertyChangedEventArgs(propertyName));
-        }
+        protected void OnPropertyChanged([CallerMemberName] string? name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
-    public class RelayCommand(Action<object?> execute) : ICommand
+    public class RelayCommand : ICommand
     {
-        private readonly Action<object?> _execute = execute;
+        private readonly Action<object?> _execute;
+        private readonly Func<object?, bool>? _canExecute;
 
-        public bool CanExecute(object? parameter) => true;
-
-        public void Execute(object? parameter)
+        public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
         {
-            _execute(parameter);
+            _execute = execute;
+            _canExecute = canExecute;
         }
 
+        public bool CanExecute(object? parameter)
+            => _canExecute?.Invoke(parameter) ?? true;
+
+        public void Execute(object? parameter)
+            => _execute(parameter);
+
         public event EventHandler? CanExecuteChanged;
+
+        public void RaiseCanExecuteChanged()
+            => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }

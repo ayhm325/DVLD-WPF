@@ -7,7 +7,7 @@ namespace Presentation.Views.Controls
 {
     public partial class ApplicationBasicInfo : UserControl
     {
-        public event Action<int> OpenPersonRequested;
+        public event Action<int>? OpenPersonRequested;
 
         public ApplicationBasicInfo()
         {

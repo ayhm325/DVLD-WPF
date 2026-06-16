@@ -1,4 +1,7 @@
-﻿using Presentation.Views.Windows;
+﻿using Application.Interfaces;
+using Application.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Presentation.Views.Windows;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,11 +11,12 @@ namespace Presentation.Views.Controls
     public partial class DrivingLicenseApplicationInfo : UserControl
     {
 
-
+        private readonly ILicenseService _licenseService;
 
         public DrivingLicenseApplicationInfo()
         {
             InitializeComponent();
+            _licenseService = DVLD_WPF.App.ServiceProvider.GetRequiredService<ILicenseService>();
         }
 
         #region DrivingLicenseApplicationId
@@ -84,8 +88,22 @@ namespace Presentation.Views.Controls
         #endregion
 
 
-        private void LicenseInfoButton_Click(object sender, RoutedEventArgs e)
+        private async void LicenseInfoButton_Click(object sender, RoutedEventArgs e)
         {
+            var license = await _licenseService.GetDetails(DrivingLicenseApplicationId);
+
+            if (license == null)
+            {
+                MessageBox.Show(
+                    "No driving license was found for the selected application.",
+                    "License Not Found",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+
             var window = new DriverLicenseInfoWin(DrivingLicenseApplicationId);
             window.ShowDialog();
         }

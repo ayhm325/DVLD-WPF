@@ -50,21 +50,25 @@ namespace DVLD_WPF
             services.AddScoped<TestTypeRepository>();
             services.AddScoped<LicenseClassRepository>();
             services.AddScoped<ApplicationRepository>();
-            services.AddTransient<LocalDrivingLicenseApplicationRepository>();
-            services.AddTransient<LicenseRepository>();
+            services.AddScoped<LocalDrivingLicenseApplicationRepository>();
+            services.AddScoped<LicenseRepository>();
+            services.AddScoped<DriverRepository>();
+            services.AddScoped<DetainedLicenseRepository>();
 
             // 3. Services
             services.AddSingleton<ICurrentUserService, CurrentUserService>();
+            services.AddSingleton<IWindowService, WindowService>();
             services.AddScoped<IPersonService, PersonService>();
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
             services.AddScoped<ITestTypeService, TestTypeService>();
             services.AddScoped<ILicenseClassService, LicenseClassService>();
-            services.AddTransient<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
-            services.AddScoped<IApplicationService, ApplicationService>();
-            services.AddSingleton<IWindowService, WindowService>();
+            services.AddScoped<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
+            services.AddScoped<IApplicationService, ApplicationService>();            
             services.AddScoped<ILicenseService, LicenseService>();
+            services.AddScoped<IDriverService, DriverService>();
+            services.AddScoped<IDetainedLicenseService, DetainedLicenseService>();
 
             // 4. ViewModels
             services.AddTransient<LoginViewModel>();       

@@ -6,9 +6,9 @@
 
         public int TestAppointmentID { get; set; }
 
-        public byte TestResult { get; set; }
+        public bool TestResult { get; set; }
         public string TestResultText =>
-            TestResult == 1 ? "Passed" : "Failed";
+           TestResult ? "Passed" : "Failed";
 
         public string? Notes { get; set; }
 
@@ -21,6 +21,6 @@
         public string? TestTypeName { get; set; }
         public DateTime? AppointmentDate { get; set; }
 
-        public bool IsPassed => TestResult == 1;
+        public bool IsPassed => TestResult;
     }
 }

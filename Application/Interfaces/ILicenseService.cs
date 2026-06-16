@@ -17,6 +17,8 @@ namespace Application.Interfaces
 
         Task<List<LicenseDto>> GetByLicenseClassIdAsync(int licenseClassId);
 
+        Task<DriverLicenseInfoDto?> GetDetails(int localAppId);
+
         // =========================
         // CHECKS
         // =========================

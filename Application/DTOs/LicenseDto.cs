@@ -20,8 +20,8 @@
 
         public decimal PaidFees { get; set; }
 
-        public byte IsActive { get; set; }
-        public string Status => IsActive == 1 ? "Active" : "Inactive";
+        public bool IsActive { get; set; }
+        public string Status => IsActive ? "Active" : "Inactive";
 
         public byte IssueReason { get; set; }
         public string? IssueReasonText { get; set; }

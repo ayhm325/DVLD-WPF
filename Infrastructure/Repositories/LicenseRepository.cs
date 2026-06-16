@@ -38,6 +38,12 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync(l => l.LicenseID == id);
         }
 
+        public async Task<License?> GetByDriverIdAsync(int driverId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            return await context.Licenses.FirstOrDefaultAsync(l => l.DriverID == driverId);
+        }
+
         public async Task<List<License>> GetAllLicensesAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();

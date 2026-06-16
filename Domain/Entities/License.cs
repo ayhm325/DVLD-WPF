@@ -11,12 +11,13 @@ namespace Domain.Entities
         public int LicenseID { get; set; }
         public int ApplicationID { get; set; }
         public int DriverID { get; set; }
+        [Column("LicenseClass")]
         public int LicenseClassId { get; set; }
         public DateTime IssueDate { get; set; }
         public DateTime ExpirationDate { get; set; }
         public string? Notes { get; set; }
         public decimal PaidFees { get; set; }
-        public byte IsActive { get; set; }
+        public bool IsActive { get; set; }
         public byte IssueReason { get; set; }
         public int CreatedByUserID { get; set; }
 

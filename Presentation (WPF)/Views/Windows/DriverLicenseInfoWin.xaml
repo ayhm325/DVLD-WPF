@@ -71,7 +71,8 @@
                         Margin="10,0,0,0">
                     <TextBlock Foreground="{StaticResource PrimaryColor}" 
                                FontWeight="Bold" 
-                               FontSize="13">
+                               FontSize="13"
+                               x:Name="txtLicenseId">
                         <Run Text="ID: "/>
                         <Run Text="{Binding LicenseData.LicenseId}"/>
                     </TextBlock>
@@ -112,16 +113,16 @@
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Full Name:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LicenseData.FullName}" Style="{StaticResource ValueTextStyle}" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LicenseData.FullName}" Style="{StaticResource ValueTextStyle}" FontWeight="SemiBold" x:Name="txtFullName"/>
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="National No:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LicenseData.NationalNo}" Style="{StaticResource ValueTextStyle}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LicenseData.NationalNo}" Style="{StaticResource ValueTextStyle}" x:Name="txtNationalNo"/>
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Date Of Birth:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseData.DateOfBirth, StringFormat='{}{0:dd/MMM/yyyy}'}" Style="{StaticResource ValueTextStyle}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseData.DateOfBirth, StringFormat='{}{0:dd/MMM/yyyy}'}" Style="{StaticResource ValueTextStyle}" x:Name="txtDateOfBirth"/>
 
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Gender:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LicenseData.Gender}" Style="{StaticResource ValueTextStyle}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LicenseData.Gender}" Style="{StaticResource ValueTextStyle}" x:Name="txtGender"/>
                             </Grid>
                         </Border>
 
@@ -148,26 +149,29 @@
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="License Class:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <Border Grid.Row="0" Grid.Column="1" Width="40" Height="24" CornerRadius="4" Background="#334155" HorizontalAlignment="Left" Margin="0,4,0,10">
+
+                                <!-- تم التعديل هنا: MinWidth بدلاً من Width و Padding للمسافة -->
+                                <Border Grid.Row="0" Grid.Column="1" MinWidth="40" Height="24" CornerRadius="4" Background="#334155" HorizontalAlignment="Left" Margin="0,4,0,10" Padding="8,0">
                                     <TextBlock Text="{Binding LicenseData.LicenseClass}" 
                                                Foreground="White" 
                                                FontWeight="Bold" 
                                                FontSize="12" 
                                                HorizontalAlignment="Center" 
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center"
+                                               x:Name="txtLicenseClass"/>
                                 </Border>
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Issue Date:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LicenseData.IssueDate, StringFormat='{}{0:dd/MMM/yyyy}'}" Style="{StaticResource ValueTextStyle}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LicenseData.IssueDate, StringFormat='{}{0:dd/MMM/yyyy}'}" Style="{StaticResource ValueTextStyle}" x:Name="txtIssueDate"/>
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Issue Reason:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseData.IssueReason}" Style="{StaticResource ValueTextStyle}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseData.IssueReason}" Style="{StaticResource ValueTextStyle}" x:Name="txtIssueReason"/>
 
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Expiration Date:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LicenseData.ExpirationDate, StringFormat='{}{0:dd/MMM/yyyy}'}" Style="{StaticResource ValueTextStyle}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LicenseData.ExpirationDate, StringFormat='{}{0:dd/MMM/yyyy}'}" Style="{StaticResource ValueTextStyle}" x:Name="txtExpirationDate"/>
 
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Internal Driver ID:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LicenseData.DriverId}" Style="{StaticResource ValueTextStyle}" Foreground="{StaticResource SecondaryTextColor}" FontStyle="Italic"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Driver ID:" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding LicenseData.DriverId}" Style="{StaticResource ValueTextStyle}" Foreground="{StaticResource SecondaryTextColor}" FontStyle="Italic" x:Name="txtDriverId"/>
                             </Grid>
                         </Border>
 
@@ -202,7 +206,7 @@
                                                 </Style>
                                             </Ellipse.Style>
                                         </Ellipse>
-                                        <TextBlock Text="{Binding LicenseData.IsActive}" FontWeight="Bold" Foreground="{StaticResource TextColor}"/>
+                                        <TextBlock Text="{Binding LicenseData.IsActive}" FontWeight="Bold" Foreground="{StaticResource TextColor}" x:Name="txtIsActive"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -215,7 +219,7 @@
                                     <TextBlock Grid.Column="0" Text="Detained Status:" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="0,0,0,0"/>
 
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,4,0,8">
-                                        <TextBlock Text="{Binding LicenseData.IsDetained}" FontWeight="Bold" Foreground="{StaticResource DangerColor}"/>
+                                        <TextBlock Text="{Binding LicenseData.IsDetained}" FontWeight="Bold" Foreground="{StaticResource DangerColor}" x:Name="txtIsDetained"/>
                                         <TextBlock Text=" ✕" FontSize="16" Foreground="{StaticResource DangerColor}" Margin="5,0,0,0">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
@@ -251,7 +255,8 @@
                                        Foreground="#FCD34D" 
                                        FontSize="13" 
                                        TextWrapping="Wrap" 
-                                       FontStyle="Italic"/>
+                                       FontStyle="Italic"
+                                       x:Name="txtNotes"/>
                         </Border>
 
                     </StackPanel>
@@ -293,7 +298,8 @@
                         <!-- الصورة: تختفي إذا كان المسار Null -->
                         <Image Source="{Binding LicenseData.ImagePath}" 
                                Stretch="UniformToFill" 
-                               RenderOptions.BitmapScalingMode="HighQuality">
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               x:Name="imgPerson">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Setter Property="Visibility" Value="Visible"/>
