@@ -22,5 +22,7 @@ namespace Application.DTOs
 
         public string StatusText => ApplicationStatus.ToString();
 
+        public decimal Fees { get; set; }
+
     }
 }

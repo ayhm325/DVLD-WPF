@@ -191,8 +191,11 @@ namespace Infrastructure
                 .HasForeignKey(dl => dl.ReleaseApplicationID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-
-
+            // Configure one-to-one relationship between Test and TestAppointment
+            modelBuilder.Entity<Test>()
+                .HasOne(t => t.TestAppointment)
+                .WithOne(a => a.Test)
+                .HasForeignKey<Test>(t => t.TestAppointmentID);
 
 
 

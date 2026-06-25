@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Presentation.Helpers;
 using Presentation.Views;
 using Presentation.Views.Windows;
+using System;
 using System.Collections.ObjectModel;
 using System.Security.AccessControl;
 using System.Windows;
@@ -17,7 +18,7 @@ namespace Presentation.ViewModels
 {
     public partial class AddEditLDLAppViewModel : ObservableObject
     {
-
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILicenseClassService _licenseClassService;
         private readonly IApplicationService _applicationService;
         private readonly IPersonService _personService;
@@ -31,7 +32,8 @@ namespace Presentation.ViewModels
 
         public AddEditLDLAppViewModel(ILicenseClassService licenseClassService, IApplicationService applicationService,
            IPersonService personService, ICurrentUserService currentUserService, IApplicationTypeService applicationType,
-           ILocalDrivingLicenseApplicationService localDrivingLicenseApplicationService, LDLAppViewModel gridViewModel)
+           ILocalDrivingLicenseApplicationService localDrivingLicenseApplicationService, LDLAppViewModel gridViewModel,
+           IServiceProvider serviceProvider)
         { 
 
             _licenseClassService = licenseClassService;
@@ -41,6 +43,7 @@ namespace Presentation.ViewModels
             _currentUserService = currentUserService;
             _localDrivingLicenseApplicationService = localDrivingLicenseApplicationService;
             _gridViewModel = gridViewModel;
+            _serviceProvider = serviceProvider;
 
             CreatedByUserID = _currentUserService.UserId;
             CreatedBy = _currentUserService.Username;
@@ -210,12 +213,17 @@ namespace Presentation.ViewModels
         [RelayCommand]
         private void AddPerson()
         {
-            var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
-            //MainWindow.Navigation.Navigate(new AddEditPersonWin(vm));            
-            var win = new AddEditPersonWin(vm)
-            {
-                Owner = System.Windows.Application.Current.MainWindow
-            };
+            //var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
+            ////MainWindow.Navigation.Navigate(new AddEditPersonWin(vm));            
+            //var win = new AddEditPersonWin(vm)
+            //{
+            //    Owner = System.Windows.Application.Current.MainWindow
+            //};
+            //win.ShowDialog();
+
+            var win = _serviceProvider.GetRequiredService<AddEditPersonWin>();
+
+            win.Owner = App.Current.MainWindow;
             win.ShowDialog();
         }
 

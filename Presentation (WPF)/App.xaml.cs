@@ -43,47 +43,56 @@ namespace DVLD_WPF
                 options.UseSqlServer(ConnectionString));
 
             // 2. Repositories
-            services.AddScoped<PersonRepository>();
-            services.AddScoped<CountryRepository>();
-            services.AddScoped<UserRepository>();
-            services.AddScoped<ApplicationTypeRepository>();
-            services.AddScoped<TestTypeRepository>();
-            services.AddScoped<LicenseClassRepository>();
             services.AddScoped<ApplicationRepository>();
-            services.AddScoped<LocalDrivingLicenseApplicationRepository>();
-            services.AddScoped<LicenseRepository>();
-            services.AddScoped<DriverRepository>();
+            services.AddScoped<ApplicationTypeRepository>();
+            services.AddScoped<CountryRepository>();
             services.AddScoped<DetainedLicenseRepository>();
+            services.AddScoped<DriverRepository>();
+            services.AddScoped<LicenseClassRepository>();
+            services.AddScoped<LicenseRepository>();
+            services.AddScoped<LocalDrivingLicenseApplicationRepository>();
+            services.AddScoped<PersonRepository>();
+            services.AddScoped<TestAppointmentRepository>();
+            services.AddScoped<TestRepository>();
+            services.AddScoped<UserRepository>();           
+            services.AddScoped<TestTypeRepository>();
+
 
             // 3. Services
-            services.AddSingleton<ICurrentUserService, CurrentUserService>();
             services.AddSingleton<IWindowService, WindowService>();
-            services.AddScoped<IPersonService, PersonService>();
-            services.AddScoped<ICountryService, CountryService>();
-            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
-            services.AddScoped<ITestTypeService, TestTypeService>();
-            services.AddScoped<ILicenseClassService, LicenseClassService>();
-            services.AddScoped<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
-            services.AddScoped<IApplicationService, ApplicationService>();            
-            services.AddScoped<ILicenseService, LicenseService>();
-            services.AddScoped<IDriverService, DriverService>();
+            services.AddScoped<ICountryService, CountryService>();
+            services.AddSingleton<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IDetainedLicenseService, DetainedLicenseService>();
+            services.AddScoped<IDriverService, DriverService>();
+            services.AddScoped<ILicenseClassService, LicenseClassService>();
+            services.AddScoped<ILicenseService, LicenseService>();
+            services.AddScoped<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
+            services.AddScoped<IPersonService, PersonService>();
+            services.AddScoped<ITestAppointmentService, TestAppointmentService>();
+            services.AddScoped<ITestService, TestService>();
+            services.AddScoped<ITestTypeService, TestTypeService>();
+            services.AddScoped<IUserService, UserService>();
+
 
             // 4. ViewModels
-            services.AddTransient<LoginViewModel>();       
             services.AddTransient<AddEditLDLAppViewModel>();
+            services.AddTransient<AddEditPersonViewModel>();
             services.AddTransient<AddEditUserViewModel>();
             services.AddTransient<ApplicationTypeViewModel>();
             services.AddTransient<ChangePasswordViewModel>();
             services.AddTransient<LDLAppViewModel>();
+            services.AddTransient<LocalApplicationDetailsViewModel>();
+            services.AddTransient<LoginViewModel>();
             services.AddTransient<PeopleViewModel>();
-            services.AddTransient<AddEditPersonViewModel>();
+            services.AddTransient<ScheduleTestViewModel>();
+            services.AddTransient<TakeTestViewModel>();
+            services.AddTransient<TestAppointmentViewModel>();
             services.AddTransient<TestTypeViewModel>();
             services.AddTransient<UpdateApplicationTypeViewModel>();
             services.AddTransient<UpdateTestTypeViewModel>();
             services.AddTransient<UsersViewModel>();
-            services.AddTransient<LocalApplicationDetailsViewModel>();
 
             // 5. Views (Pages & Windows)
             services.AddTransient<LoginWindow>();
@@ -102,7 +111,9 @@ namespace DVLD_WPF
             services.AddTransient<AddEditPersonWin>();
             services.AddTransient<AddEditUserWin>();
             services.AddTransient<LocalApplicationDetailsWin>();
-
+            services.AddTransient<TestAppointmentWin>();
+            services.AddTransient<ScheduleTestWin>();
+            services.AddTransient<TakeTestWin>();
 
 
             // 6. Navigation Service (⚠️ مهم)

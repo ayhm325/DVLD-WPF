@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -23,6 +24,7 @@ namespace Infrastructure.Repositories
                 .Include(x => x.TestType)
                 .Include(x => x.LocalDrivingLicenseApplication)
                 .Include(x => x.User)
+                .Include(x => x.Test)
                 .Include(x => x.RetakeTestApplication);
         }
 
@@ -55,12 +57,12 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<TestAppointment>> GetByTestTypeIdAsync(int testTypeId)
+        public async Task<List<TestAppointment>> GetByTestTypeIdAsync(TestTypeEnum testType)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
-                .Where(x => x.TestTypeID == testTypeId)
+                .Where(x => x.TestTypeID == (int)testType)
                 .ToListAsync();
         }
 
@@ -71,6 +73,28 @@ namespace Infrastructure.Repositories
             return await Query(context)
                 .Where(x => x.CreatedByUserID == userId)
                 .ToListAsync();
+        }
+
+        public async Task<TestAppointment?> GetScheduleInfoAsync(int testAppointmentId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.TestAppointments
+                .Include(x => x.TestType)
+
+                .Include(x => x.LocalDrivingLicenseApplication)
+                    .ThenInclude(x => x.Application)
+                        .ThenInclude(a => a.Person)
+
+                .Include(x => x.LocalDrivingLicenseApplication)
+                    .ThenInclude(x => x.Application)
+                        .ThenInclude(a => a.ApplicationType)
+
+                .Include(x => x.LocalDrivingLicenseApplication)
+                    .ThenInclude(x => x.LicenseClass)
+
+                .FirstOrDefaultAsync(x =>
+                    x.TestAppointmentID == testAppointmentId);
         }
 
         // =========================
@@ -116,23 +140,46 @@ namespace Infrastructure.Repositories
                     x.AppointmentDate == dateTime);
         }
 
+
+        public async Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            // 1. التحقق من وجود موعد "مفتوح" (غير مقفل) لنفس التطبيق ونفس نوع الاختبار
+            bool hasPendingAppointment = await context.TestAppointments
+                .AnyAsync(a => a.LocalDrivingLicenseApplicationID == localAppId
+                            && a.TestTypeID == testTypeId
+                            && a.IsLocked == false); // الموعد المفتوح هو الذي لم يُختبر فيه بعد
+
+            if (hasPendingAppointment) return true;
+
+            // 2. التحقق من وجود "نجاح" سابق لنفس نوع الاختبار
+            // إذا وجد سجل ناجح (TestResult == true)، نمنع إنشاء موعد جديد
+            bool hasPassed = await context.Tests
+                .AnyAsync(t => t.TestAppointment.LocalDrivingLicenseApplicationID == localAppId
+                            && t.TestAppointment.TestTypeID == testTypeId
+                            && t.TestResult == true);
+
+            return hasPassed;
+        }
+
         // =========================
         // CREATE
         // =========================
 
-        public async Task AddAsync(TestAppointment appointment)
+        public async Task<bool> AddAsync(TestAppointment appointment)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             await context.TestAppointments.AddAsync(appointment);
-            await context.SaveChangesAsync();
+            return await context.SaveChangesAsync()>0;
         }
 
         // =========================
         // UPDATE
         // =========================
 
-        public async Task UpdateAsync(TestAppointment appointment)
+        public async Task<bool> UpdateAsync(TestAppointment appointment)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -140,11 +187,18 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.TestAppointmentID == appointment.TestAppointmentID);
 
             if (existing is null)
-                throw new InvalidOperationException("Test appointment not found.");
+                throw new InvalidOperationException($"Test appointment with ID {appointment.TestAppointmentID} was not found.");
 
-            context.Entry(existing).CurrentValues.SetValues(appointment);
+            existing.TestTypeID = appointment.TestTypeID;
+            existing.LocalDrivingLicenseApplicationID = appointment.LocalDrivingLicenseApplicationID;
+            existing.AppointmentDate = appointment.AppointmentDate;
+            existing.PaidFees = appointment.PaidFees;
+            existing.CreatedByUserID = appointment.CreatedByUserID;
+            existing.IsLocked = appointment.IsLocked;
+            existing.RetakeTestApplicationID = appointment.RetakeTestApplicationID;
 
             await context.SaveChangesAsync();
+            return true;
         }
 
         // =========================
@@ -163,5 +217,7 @@ namespace Infrastructure.Repositories
             context.TestAppointments.Remove(entity);
             await context.SaveChangesAsync();
         }
+
+       
     }
 }

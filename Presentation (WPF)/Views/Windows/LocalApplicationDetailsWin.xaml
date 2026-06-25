@@ -32,6 +32,7 @@
                 <!-- البطاقة الأولى: تفاصيل رخصة القيادة -->
                 <!-- إضافة Margin سفلي لتفريغ المسافة عن البطاقة التالية -->
                 <controls:DrivingLicenseApplicationInfo 
+                     x:Name="DrivingLicenseApplicationInfoControl"
                     DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
                     PassedTests="{Binding LdlAppInfo.PassedTest}"
                     TotalTests="3"

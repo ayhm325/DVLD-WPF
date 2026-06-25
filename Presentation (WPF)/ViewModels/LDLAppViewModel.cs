@@ -2,6 +2,7 @@
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Domain.Enums;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views.Windows;
@@ -19,6 +20,8 @@ namespace Presentation.ViewModels
         private readonly ILocalDrivingLicenseApplicationService _service;
         private readonly IApplicationService _appService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ITestAppointmentService _testAppointmentService;
+
         private List<LocalDrivingLicenseApplicationListDto> _allApplications = new();
 
         public ObservableCollection<LocalDrivingLicenseApplicationListDto> Applications { get; set; } = new();
@@ -40,12 +43,16 @@ namespace Presentation.ViewModels
 
         partial void OnSearchTextChanged(string value) => FilterApplications();
 
-        public LDLAppViewModel(ILocalDrivingLicenseApplicationService service, IApplicationService appService, IServiceProvider serviceProvider)
+        public LDLAppViewModel(ILocalDrivingLicenseApplicationService service, IApplicationService appService, IServiceProvider serviceProvider,
+            ITestAppointmentService testAppointmentService )
         {
             _service = service;
             _appService = appService;
             _serviceProvider = serviceProvider;
+            _testAppointmentService = testAppointmentService;
+
             _ = LoadApplicationsAsync();
+
         }
 
         [RelayCommand]
@@ -166,21 +173,63 @@ namespace Presentation.ViewModels
         }
 
         [RelayCommand]
-        private void ScheduleVision()
+        private async Task ScheduleVision()
         {
-            // منطق جدولة اختبار الرؤية
+            if (SelectedApplication == null)
+                return;
+
+            var localId = SelectedApplication.LocalDrivingLicenseApplicationID;
+
+            var vm = _serviceProvider.GetRequiredService<TestAppointmentViewModel>();
+
+            await vm.LoadAsync(localId, TestTypeEnum.Theory);
+
+            var window = new TestAppointmentWin(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
         }
 
         [RelayCommand]
-        private void ScheduleWritten()
+        private async Task ScheduleWritten()
         {
-            // منطق جدولة الاختبار الكتابي
+            if (SelectedApplication == null)
+                return;
+
+            var localId = SelectedApplication.LocalDrivingLicenseApplicationID;
+
+            var vm = _serviceProvider.GetRequiredService<TestAppointmentViewModel>();
+
+            await vm.LoadAsync(localId, TestTypeEnum.Written);
+
+            var window = new TestAppointmentWin(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
         }
 
         [RelayCommand]
-        private void ScheduleStreet()
+        private async Task ScheduleStreet()
         {
-            // منطق جدولة اختبار الشارع
+            if (SelectedApplication == null)
+                return;
+
+            var localId = SelectedApplication.LocalDrivingLicenseApplicationID;
+
+            var vm = _serviceProvider.GetRequiredService<TestAppointmentViewModel>();
+
+            await vm.LoadAsync(localId, TestTypeEnum.Practical);
+
+            var window = new TestAppointmentWin(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
         }
 
         [RelayCommand]

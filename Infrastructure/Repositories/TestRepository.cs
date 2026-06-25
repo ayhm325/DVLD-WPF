@@ -1,5 +1,6 @@
 ﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories
 {
@@ -65,6 +66,16 @@ namespace Infrastructure.Repositories
             return await Query(context)
                 .Where(t => t.CreatedByUserID == userId)
                 .ToListAsync();
+        }
+
+        public async Task<int> GetTrialCountByApplicationIdAsync(int ldlAppId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.Tests
+                .Where(t => t.TestAppointment != null &&
+                            t.TestAppointment.LocalDrivingLicenseApplicationID == ldlAppId)
+                .CountAsync();
         }
 
         // =========================
@@ -138,6 +149,16 @@ namespace Infrastructure.Repositories
             context.Tests.Remove(entity);
 
             return await context.SaveChangesAsync() > 0;
+        }
+
+        // =========================
+        // ADDITIONAL OPERATIONS
+        // =========================
+        public async Task<int> CountAsync(Expression<Func<Test, bool>> predicate)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.Tests.CountAsync(predicate);
         }
     }
 }

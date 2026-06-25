@@ -1,33 +1,64 @@
-﻿using System;
+﻿
+
+using CommunityToolkit.Mvvm.ComponentModel;
+using Domain.Enums;
+
 
 namespace Application.DTOs
 {
-    public class TestAppointmentDto
+    public partial class TestAppointmentDto : ObservableObject
     {
-        public int TestAppointmentID { get; set; }
+        [ObservableProperty]
+        private int _appointmentID;
 
-        public int TestTypeID { get; set; }
-        public string TestTypeName { get; set; } = string.Empty;
+        [ObservableProperty]
+        private int _testAppointmentID;
 
-        public int LocalDrivingLicenseApplicationID { get; set; }
+        [ObservableProperty]
+        private int _testTypeID;
 
-        public DateTime AppointmentDate { get; set; }
+        [ObservableProperty]
+        private TestResultType _testResult;
 
-        public decimal PaidFees { get; set; }
+        [ObservableProperty]
+        private string _createdByUserName = string.Empty;
 
-        public int CreatedByUserID { get; set; }
-        public string CreatedByUserName { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string _testTypeName = string.Empty;
 
-        public bool IsLocked { get; set; }
+        [ObservableProperty]
+        private int _localDrivingLicenseApplicationID;
 
-        public int? RetakeTestApplicationID { get; set; }
+        [ObservableProperty]
+        private DateTime _appointmentDate;
+
+        [ObservableProperty]
+        private decimal _paidFees;
+
+        [ObservableProperty]
+        private int _createdByUserID;       
+
+        [ObservableProperty]
+        private bool _isLocked;
+
+        [ObservableProperty]
+        private int? _retakeTestApplicationID;
 
         // =========================
-        // READ-ONLY UI PROPERTY
+        // READ-ONLY UI PROPERTIES
+        // يتم تحديثها تلقائياً عند تغيير الخصائص المرتبطة بها
         // =========================
         public string Status => IsLocked ? "Locked" : "Open";
 
-        public string AppointmentDateFormatted =>
-            AppointmentDate.ToString("yyyy-MM-dd HH:mm");
+        public string TestResultText => TestResult.ToString();
+
+        public string AppointmentDateFormatted => AppointmentDate.ToString("yyyy-MM-dd HH:mm");
+
+        // هذا الجزء اختياري: لإجبار الواجهة على تحديث الـ Status عند تغيير IsLocked
+        partial void OnIsLockedChanged(bool value) => OnPropertyChanged(nameof(Status));
+
+        // لإجبار الواجهة على تحديث التنسيق عند تغيير التاريخ
+        partial void OnAppointmentDateChanged(DateTime value) => OnPropertyChanged(nameof(AppointmentDateFormatted));
     }
 }
+

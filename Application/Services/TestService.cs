@@ -2,6 +2,9 @@
 using Application.Interfaces;
 using Domain.Entities;
 using Infrastructure.Repositories;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Application.Services
 {

@@ -99,6 +99,7 @@ namespace Application.Services
                 LocalDrivingLicenseApplicationID = e.LocalDrivingLicenseApplicationID,
                 LicenseClassName = e.LicenseClass?.ClassName ?? "N/A",
                 NationalNo = e.Application?.Person?.NationalNo ?? "N/A",
+                Fees = e.LicenseClass?.ClassFees ?? 0,
                 FullName =
                     $"{e.Application?.Person?.FirstName} " +
                     $"{e.Application?.Person?.SecondName} " +

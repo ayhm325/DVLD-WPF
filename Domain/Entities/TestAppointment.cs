@@ -10,7 +10,7 @@ namespace Domain.Entities
 
         [Key]
         public int TestAppointmentID { get; set; }
-       
+        public Test Test { get; set; }
         public int TestTypeID { get; set; }
        
         public int LocalDrivingLicenseApplicationID { get; set; }
@@ -38,6 +38,8 @@ namespace Domain.Entities
 
         [ForeignKey(nameof(RetakeTestApplicationID))]
         public virtual ApplicationD? RetakeTestApplication { get; set; }
+
+
 
     }
 }

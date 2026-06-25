@@ -3,6 +3,7 @@ using Application.Interfaces;
 using Application.Validators;
 using Domain.Entities;
 using Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore.Internal;
 
 
 namespace Application.Services
@@ -29,6 +30,8 @@ namespace Application.Services
             var appType = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
             return appType == null ? null : MapToDto(appType);
         }
+
+        
 
         // ================= UPDATE =================
         public async Task<bool> UpdateApplicationTypeAsync(int id, ApplicationTypeDto dto)

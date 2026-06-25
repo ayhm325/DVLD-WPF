@@ -7,11 +7,7 @@ using Domain.Enums;
 using DVLD_WPF;
 using Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
-using Presentation.Helpers;
-using Presentation.Views;
 using Presentation.Views.Windows;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
 

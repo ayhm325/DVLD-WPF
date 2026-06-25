@@ -1,24 +1,17 @@
-﻿using Application.DTOs;
-using Application.Interfaces;
-using Application.Services;
-using Domain.Entities;
+﻿using Domain.Entities;
+using Domain.Enums;
 using Presentation.ViewModels;
-using Presentation.Views.Controls;
-using System;
+using Presentation.Views.Windows;
 using System.Windows;
-using System.Windows.Controls;
-
 
 namespace Presentation.Views.Windows
 {
-    public partial class LocalApplicationDetailsWin : Window
+    public partial class TestAppointmentWin : Window
     {
-       
-        public LocalApplicationDetailsWin(LocalApplicationDetailsViewModel vm)
+        public TestAppointmentWin(TestAppointmentViewModel vm)
         {
             InitializeComponent();
             DataContext = vm;
-
 
             ApplicationBasicInfoControl.OpenPersonRequested += OnOpenPersonRequested;
             DrivingLicenseApplicationInfoControl.OpenLicenseRequested += OnOpenLicenseRequested;
@@ -38,9 +31,8 @@ namespace Presentation.Views.Windows
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
-
-
+        
     }
 }
