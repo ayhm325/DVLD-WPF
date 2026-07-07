@@ -94,9 +94,13 @@ namespace Application.Services
         public Task<bool> HasApplicationConflictAsync(int applicationId, DateTime dateTime)
             => _repository.HasApplicationConflictAsync(applicationId, dateTime);
 
+        public Task<bool> HasPassedAllTestsAsync(int appId)
+            => _repository.HasPassedAllTestsAsync(appId);
+
         public Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId)
             => _repository.IsAppointmentAlreadyScheduledAsync(localAppId, testTypeId);
 
+        
         // =========================
         // COMMANDS
         // =========================

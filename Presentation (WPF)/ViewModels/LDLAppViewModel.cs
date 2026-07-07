@@ -190,6 +190,7 @@ namespace Presentation.ViewModels
             };
 
             window.ShowDialog();
+            await LoadApplicationsAsync();
         }
 
         [RelayCommand]
@@ -210,6 +211,7 @@ namespace Presentation.ViewModels
             };
 
             window.ShowDialog();
+            await LoadApplicationsAsync();
         }
 
         [RelayCommand]
@@ -230,6 +232,7 @@ namespace Presentation.ViewModels
             };
 
             window.ShowDialog();
+            await LoadApplicationsAsync();
         }
 
         [RelayCommand]

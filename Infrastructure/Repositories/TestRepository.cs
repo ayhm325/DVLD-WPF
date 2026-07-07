@@ -147,7 +147,6 @@ namespace Infrastructure.Repositories
                 return false;
 
             context.Tests.Remove(entity);
-
             return await context.SaveChangesAsync() > 0;
         }
 

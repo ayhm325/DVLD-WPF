@@ -11,7 +11,7 @@ namespace Application.DTOs
     public partial class ScheduleTestDto : ObservableObject
     {
         [ObservableProperty] private int _appointmentID;
-        [ObservableProperty] private int _applicationID;
+        [ObservableProperty] private int _retakeTestApplicationID;
         [ObservableProperty] private int _localDrivingLicenseApplicationID;
         [ObservableProperty] private string? _licenseClassName;
         [ObservableProperty] private string? _fullName;

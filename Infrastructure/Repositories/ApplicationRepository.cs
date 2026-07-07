@@ -180,7 +180,7 @@ namespace Infrastructure.Repositories
         // =========================
         // CREATE
         // =========================
-        public async Task<int> CreateApplicationAsync(ApplicationD application)
+        public async Task<int> AddNewApplicationAsync(ApplicationD application)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -225,6 +225,23 @@ namespace Infrastructure.Repositories
                 return false;
 
             context.Applications.Remove(existing);
+
+            return await context.SaveChangesAsync() > 0;
+        }
+
+        // =========================
+        // COMPLETE
+        // =========================
+        public async Task<bool> CompleteApplicationAsync(int applicationId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var application = await context.Applications.FindAsync(applicationId);
+
+            if (application == null)
+                return false;
+
+            application.ApplicationStatus = (int)AppStatus.Completed;
 
             return await context.SaveChangesAsync() > 0;
         }

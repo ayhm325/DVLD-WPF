@@ -1,5 +1,6 @@
 ﻿using Application.DTOs;
 using Domain.Enums;
+using System.Data;
 
 public interface ITestAppointmentService
 {
@@ -17,6 +18,7 @@ public interface ITestAppointmentService
     Task<bool> HasConflictAsync(int testTypeId, DateTime dateTime);
     Task<bool> HasUserConflictAsync(int userId, DateTime dateTime);
     Task<bool> HasApplicationConflictAsync(int applicationId, DateTime dateTime);
+    Task<bool> HasPassedAllTestsAsync(int appId);
 
     Task<bool> AddAsync(TestAppointmentDto dto);
     Task<bool> UpdateAsync(TestAppointmentDto dto);

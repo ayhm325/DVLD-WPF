@@ -69,7 +69,7 @@ namespace Application.Services
                 CreatedByUserID = dto.CreatedByUserID
             };
 
-            return await _repository.CreateApplicationAsync(entity);
+            return await _repository.AddNewApplicationAsync(entity);
         }
 
         public async Task<ApplicationDto?> GetApplicationByIdAsync(int id)
@@ -150,7 +150,28 @@ namespace Application.Services
             app.LastStatusDate = DateTime.UtcNow;
             return await _repository.UpdateApplicationAsync(app);
         }
-    
-    
+
+        public async Task<bool> CompleteApplicationAsync(int applicationId)
+        {
+            // 1. جلب الكيان للتحقق من حالته
+            var app = await _repository.GetApplicationByIdAsync(applicationId);
+            if (app == null) throw new Exception("Application not found.");
+            // 2. الفالديشن الحقيقي (Business Rule)
+            if (app.ApplicationStatus == (int)AppStatus.Completed)
+            {
+                throw new InvalidOperationException("Cannot complete a completed application.");
+            }
+            // 3. الفالديشن الحقيقي (Business Rule)
+            if (app.ApplicationStatus == (int)AppStatus.Cancelled)
+            {
+                throw new InvalidOperationException("Cannot complete a cancelled application.");
+            }
+            // 4. التنفيذ
+            app.ApplicationStatus = (byte)AppStatus.Completed;
+            app.LastStatusDate = DateTime.UtcNow;
+            return await _repository.UpdateApplicationAsync(app);
+        }
+
+
     }
 }

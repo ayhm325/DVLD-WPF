@@ -18,25 +18,31 @@ namespace Presentation.ViewModels
         private readonly ITestTypeService _testTypeService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IApplicationTypeService _applicationTypeService;
+        private readonly IApplicationService _appService;
 
         public ScheduleTestViewModel(ITestAppointmentService service,
                                      ILocalDrivingLicenseApplicationService lDLAppService,
                                      ITestTypeService testTypeService,
                                      ICurrentUserService currentUserService,
-                                     IApplicationTypeService applicationTypeService)
+                                     IApplicationTypeService applicationTypeService,
+                                     IApplicationService appService)
         {
             _service = service;
             _lDLAppService = lDLAppService;
             _testTypeService = testTypeService;
             _currentUserService = currentUserService;
             _applicationTypeService = applicationTypeService;
+            _appService = appService;
         }
 
         [ObservableProperty]
         private ScheduleTestDto schedule = new();
+        [ObservableProperty]
+        private ApplicationDto appDto = new();
 
         private int _localAppId;
-      
+        private int _applicationId;
+
 
         [ObservableProperty]
         private bool _isRetake;
@@ -52,8 +58,11 @@ namespace Presentation.ViewModels
 
         public async Task LoadAsync(int localAppId, TestTypeEnum type)
         {
-            _localAppId = localAppId;
-           
+            _localAppId = localAppId;            
+
+            var appID = await _lDLAppService.GetApplicationIdByLocalIdAsync(localAppId);
+            if (appID == null) throw new Exception("Application not found");
+            _applicationId = appID.Value;
 
             var appInfo = await _lDLAppService.GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
             if (appInfo == null) throw new Exception("Application not found");
@@ -77,7 +86,7 @@ namespace Presentation.ViewModels
                 Trial = count + 1,
                 Date = MinDate,
                 Fees = testFees,
-                RetakerFees = shouldShowRetake ? retakeFees : 0,
+                RetakerFees = shouldShowRetake ? retakeFees : 0,               
                 TestTypeID = (int)type
             };
 
@@ -107,32 +116,52 @@ namespace Presentation.ViewModels
         private async Task SaveAsync()
         {
             if (Schedule == null) return;
-            
-
-            var appointmentToSave = MapScheduleToAppointment(Schedule);
 
             try
             {
+                // إذا كان Retake ولم يتم إنشاء طلب إعادة بعد
+                if (IsRetake && Schedule.AppointmentID == 0 && Schedule.RetakeTestApplicationID == 0)
+                {
+                    var originalApplication =
+    await _appService.GetApplicationByIdAsync(_applicationId);
+
+                    if (originalApplication == null)
+                        throw new Exception("Application not found.");
+
+                    AppDto = new ApplicationDto
+                    {
+                        ApplicantPersonID = originalApplication.ApplicantPersonID,
+                        ApplicationDate = DateTime.Now,
+                        ApplicationTypeID = 7, // Retake Test
+                        ApplicationStatus = AppStatus.New,
+                        LastStatusDate = DateTime.Now,
+                        PaidFees = Schedule.RetakerFees,
+                        CreatedByUserID = _currentUserService.UserId
+                    };
+
+                    Schedule.RetakeTestApplicationID =
+                        await _appService.AddNewApplicationAsync(AppDto);
+                }
+
+                var appointmentToSave = MapScheduleToAppointment(Schedule);
+
                 bool isSuccess = Schedule.AppointmentID > 0
                     ? await _service.UpdateAsync(appointmentToSave)
                     : await _service.AddAsync(appointmentToSave);
 
                 if (isSuccess)
                 {
-                    MessageBox.Show("Appointment saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    Close();
+                    MessageBox.Show("Appointment saved successfully.");
                 }
             }
             catch (Exception ex)
             {
-                string message = ex.InnerException?.Message ?? ex.Message;
-                MessageBox.Show($"Failed to save: {message}", "System Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(ex.ToString());
             }
         }
 
         private TestAppointmentDto MapScheduleToAppointment(ScheduleTestDto schedule)
         {
-           
             return new TestAppointmentDto
             {
                 TestAppointmentID = schedule.AppointmentID,
@@ -142,7 +171,8 @@ namespace Presentation.ViewModels
                 AppointmentDate = schedule.Date,
                 PaidFees = schedule.Fees,
                 CreatedByUserID = _currentUserService.UserId,
-                IsLocked = false
+                IsLocked = false,
+                RetakeTestApplicationID = schedule.RetakeTestApplicationID
             };
         }
 

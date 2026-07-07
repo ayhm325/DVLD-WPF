@@ -140,6 +140,20 @@ namespace Infrastructure.Repositories
                     x.AppointmentDate == dateTime);
         }
 
+        public async Task<bool> HasPassedAllTestsAsync(int appId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var passedTests = await context.Tests
+                .Where(t =>
+                t.TestAppointment.LocalDrivingLicenseApplication.ApplicationID== appId &&
+                t.TestResult)
+                .Select(t => t.TestAppointment.TestTypeID)
+                .Distinct()
+                .CountAsync();
+
+            return passedTests == Enum.GetValues<TestTypeEnum>().Length;
+        }
 
         public async Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId)
         {

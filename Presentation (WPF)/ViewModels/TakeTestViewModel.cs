@@ -14,13 +14,19 @@ namespace Presentation.ViewModels
     {
         private readonly ITestAppointmentService _service;
         private readonly ICurrentUserService _currentUser;
+        private readonly IApplicationService _applicationService;
+        private readonly ILocalDrivingLicenseApplicationService _localService;
 
         public TakeTestViewModel(
             ITestAppointmentService service,
-            ICurrentUserService currentUser)
+            ICurrentUserService currentUser,
+            IApplicationService applicationService,
+            ILocalDrivingLicenseApplicationService localService)
         {
             _service = service;
             _currentUser = currentUser;
+            _applicationService = applicationService;
+            _localService = localService;
         }
 
         // =========================
@@ -101,6 +107,7 @@ namespace Presentation.ViewModels
                 .Close();
         }
 
+
         [RelayCommand]
         private async Task SaveAsync()
         {
@@ -119,6 +126,22 @@ namespace Presentation.ViewModels
 
             if (isSaved)
             {
+                if (testDto.TestResult)
+                {
+                    int? applicationId = await _localService
+                        .GetApplicationIdByLocalIdAsync(Schedule.LocalDrivingLicenseApplicationID);
+
+                    if (applicationId.HasValue)
+                    {
+                        bool passedAll = await _service.HasPassedAllTestsAsync(applicationId.Value);
+
+                        if (passedAll)
+                        {
+                            await _applicationService.CompleteApplicationAsync(applicationId.Value);
+                        }
+                    }
+                }
+
                 MessageBox.Show("Result saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);               
                 Close();
             }
