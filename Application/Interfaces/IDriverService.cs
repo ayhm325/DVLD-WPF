@@ -28,7 +28,7 @@ namespace Application.Interfaces
         // COMMANDS
         // =========================
 
-        Task AddAsync(DriverDto dto);
+        Task<int> AddAsync(DriverDto dto);
 
         Task UpdateAsync(DriverDto dto);
 

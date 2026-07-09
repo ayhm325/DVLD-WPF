@@ -37,28 +37,27 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        //public async Task<List<LocalDrivingLicenseApplication>> GetLocalApplicationsOnlyAsync()
-        //{
-        //    using var context = await _contextFactory.CreateDbContextAsync();
-
-        //    return await Query(context)
-        //        .Where(a => a.Application.ApplicationTypeID == 1)
-        //        .Include(a => a.Application)
-        //            .ThenInclude(app => app.ApplicationType)                             
-        //        .Include(a => a.Application)
-        //            .ThenInclude(app => app.Person)
-        //        .Include(a => a.LicenseClass)
-        //        .ToListAsync();
-        //}
-
         public async Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            return await Query(context)
-                .FirstOrDefaultAsync(t =>
-                    t.LocalDrivingLicenseApplicationID == id);
+            // سنقوم بجلب الكائن مع التأكد من إدراج الخصائص المطلوبة
+            return await context.LocalDrivingLicenseApplications
+                .Include(a => a.Application)
+                    .ThenInclude(app => app.Person)
+                .Include(a => a.LicenseClass)
+                // إضافة هذه السطور لضمان عدم ضياع القيمة أثناء الـ Mapping
+                .AsTracking() // إزالة AsNoTracking في حال كنت تريد تعديل البيانات أو ضمان دقة القراءة
+                .FirstOrDefaultAsync(t => t.LocalDrivingLicenseApplicationID == id);
         }
+        //public async Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id)
+        //{
+        //    using var context = await _contextFactory.CreateDbContextAsync();
+
+        //    return await Query(context)
+        //        .FirstOrDefaultAsync(t =>
+        //            t.LocalDrivingLicenseApplicationID == id);
+        //}
 
         public async Task<List<LocalDrivingLicenseApplication>> GetByPersonIdAsync(int personId)
         {

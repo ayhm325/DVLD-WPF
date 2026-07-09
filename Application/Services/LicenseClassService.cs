@@ -34,7 +34,7 @@ namespace Application.Services
         {
             return new LicenseClassDto
             {
-                LicenseClassId = licenseClass.LicenseClassID,
+                LicenseClassID = licenseClass.LicenseClassID,
                 LicenseClassName = licenseClass.ClassName,
                 LicenseClassDescription = licenseClass.ClassDescription,
                 MinAllowedAge = licenseClass.MinimumAllowedAge,

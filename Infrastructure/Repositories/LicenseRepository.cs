@@ -22,7 +22,7 @@ namespace Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(l => l.Application)
                 .Include(l => l.Driver)
-                .Include(l => l.LicenseClass)
+                .Include(l => l.LicenseClassInfo)
                 .Include(l => l.CreatedByUser);
         }
 
@@ -41,7 +41,7 @@ namespace Infrastructure.Repositories
         public async Task<License?> GetByDriverIdAsync(int driverId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-            return await context.Licenses.FirstOrDefaultAsync(l => l.DriverID == driverId);
+            return await Query(context).FirstOrDefaultAsync(l => l.DriverID == driverId);
         }
 
         public async Task<List<License>> GetAllLicensesAsync()
@@ -52,11 +52,11 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<License>> GetLicensesByDriverIdAsync(int driverId)
+        public async Task<List<License>> GetLicensesByDriverIdAsync(int driverId) 
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            return await Query(context)
+            return await Query(context) 
                 .Where(l => l.DriverID == driverId)
                 .ToListAsync();
         }
@@ -75,7 +75,7 @@ namespace Infrastructure.Repositories
             using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
-                .Where(l => l.LicenseClassId == licenseClassId)
+                .Where(l => l.LicenseClass == licenseClassId)
                 .ToListAsync();
         }
 

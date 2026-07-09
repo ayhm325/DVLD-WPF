@@ -122,8 +122,7 @@ namespace Presentation.ViewModels
                 // إذا كان Retake ولم يتم إنشاء طلب إعادة بعد
                 if (IsRetake && Schedule.AppointmentID == 0 && Schedule.RetakeTestApplicationID == 0)
                 {
-                    var originalApplication =
-    await _appService.GetApplicationByIdAsync(_applicationId);
+                    var originalApplication = await _appService.GetApplicationByIdAsync(_applicationId);
 
                     if (originalApplication == null)
                         throw new Exception("Application not found.");
@@ -135,7 +134,7 @@ namespace Presentation.ViewModels
                         ApplicationTypeID = 7, // Retake Test
                         ApplicationStatus = AppStatus.New,
                         LastStatusDate = DateTime.Now,
-                        PaidFees = Schedule.RetakerFees,
+                        PaidFees = TotalFees,
                         CreatedByUserID = _currentUserService.UserId
                     };
 
@@ -172,7 +171,8 @@ namespace Presentation.ViewModels
                 PaidFees = schedule.Fees,
                 CreatedByUserID = _currentUserService.UserId,
                 IsLocked = false,
-                RetakeTestApplicationID = schedule.RetakeTestApplicationID
+                // التعديل هنا: إذا كان الـ ID هو 0، نرسل null ليتم التعامل معه كـ NULL في قاعدة البيانات
+                RetakeTestApplicationID = (schedule.RetakeTestApplicationID > 0) ? schedule.RetakeTestApplicationID : null
             };
         }
 

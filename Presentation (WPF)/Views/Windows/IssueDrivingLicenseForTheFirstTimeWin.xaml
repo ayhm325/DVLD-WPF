@@ -1,0 +1,131 @@
+﻿<Window x:Class="Presentation.Views.Windows.IssueDrivingLicenseForTheFirstTimeWin"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:Presentation.Views.Controls"
+        mc:Ignorable="d"
+        Title="Get Driver License For The First Time"
+        Width="800"
+        Height="600"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{DynamicResource BackgroundColor}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  Background="{DynamicResource BackgroundColor}">
+
+        <Grid Margin="15"
+              Background="{DynamicResource BackgroundColor}">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Title -->
+
+                <RowDefinition Height="Auto"/>
+                <!-- Driving License Application Info -->
+
+                <RowDefinition Height="Auto"/>
+                <!-- Application Basic Info -->
+
+                <RowDefinition Height="Auto"/>
+                <!-- Notes -->
+
+                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- ==================== TITLE ==================== -->
+            <Border Grid.Row="0"
+                    Style="{DynamicResource CardStyle}"
+                    Padding="15,12"
+                    Margin="0,0,0,10">
+
+                <TextBlock Text="Get Driver License For The First Time"
+                           Style="{DynamicResource HeaderStyle}"/>
+
+            </Border>
+
+            <!-- ==================== DRIVING LICENSE APPLICATION INFO ==================== -->
+            <Border Grid.Row="1"
+                    Style="{DynamicResource CardStyle}"
+                    Padding="15"
+                    Margin="0,0,0,10">
+
+                <controls:DrivingLicenseApplicationInfo
+                     x:Name="drivingLicenseInfo"
+                    DrivingLicenseApplicationId="{Binding DrivingLicenseApplicationId}"
+                    LicenseClassName="{Binding LicenseClassName}"
+                    PassedTests="{Binding PassedTests}"
+                    TotalTests="{Binding TotalTests}"/>
+
+            </Border>
+
+            <!-- ==================== APPLICATION BASIC INFO ==================== -->
+            <Border Grid.Row="2"
+                    Style="{DynamicResource CardStyle}"
+                    Padding="15"
+                    Margin="0,0,0,10">
+
+                <controls:ApplicationBasicInfo
+                    x:Name="applicationBasicInfo"
+                    Application="{Binding BasicApplicationInfo}"/>
+
+            </Border>
+
+            <!-- ==================== NOTES SECTION ==================== -->
+            <Border Grid.Row="3"
+                    Style="{DynamicResource CardStyle}"
+                    Padding="15"
+                    Margin="0,0,0,10">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Notes:"
+                               Style="{DynamicResource LabelStyle}"
+                               Margin="0,0,0,8"/>
+
+                    <TextBox Grid.Row="1"
+                             x:Name="txtNotes"
+                             Height="70"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"/>
+
+                </Grid>
+
+            </Border>
+
+            <!-- ==================== BUTTONS SECTION ==================== -->
+            <Border Grid.Row="4"
+                    Style="{DynamicResource CardStyle}"
+                    Padding="15,12">
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+
+                    <Button Content="Close"
+                            Style="{DynamicResource SecondaryButtonStyle}"
+                            Margin="0,0,10,0"
+                            Command="{Binding CloseCommand}"/>
+
+                    <Button Content="Issue"
+                            Style="{DynamicResource PrimaryButtonStyle}"
+                            Command="{Binding IssueCommand}"/>
+
+                </StackPanel>
+
+            </Border>
+
+        </Grid>
+
+    </ScrollViewer>
+
+</Window>

@@ -73,7 +73,7 @@ namespace Application.Services
         // COMMANDS
         // =========================
 
-        public async Task AddAsync(DriverDto dto)
+        public async Task<int> AddAsync(DriverDto dto)
         {
             if (dto is null)
                 throw new ArgumentNullException(nameof(dto));
@@ -85,6 +85,8 @@ namespace Application.Services
             var entity = MapToEntity(dto);
 
             await _repository.AddAsync(entity);
+
+            return entity.DriverID;
         }
 
         public async Task UpdateAsync(DriverDto dto)

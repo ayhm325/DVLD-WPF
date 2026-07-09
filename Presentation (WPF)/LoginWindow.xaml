@@ -161,6 +161,7 @@
                             Command="{Binding LoginCommand}"
                             Height="50"
                             Margin="0,25,0,0"
+                            IsDefault="True"
                             Style="{StaticResource RoundedButtonStyle}"/>
 
                 </StackPanel>

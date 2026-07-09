@@ -8,6 +8,8 @@ namespace Application.DTOs
     {
         public int LocalDrivingLicenseApplicationID { get; set; }
 
+        public int LicenseClassID { get; set; }
+
         public string? LicenseClassName { get; set; }       
 
         public string? NationalNo { get; set; }

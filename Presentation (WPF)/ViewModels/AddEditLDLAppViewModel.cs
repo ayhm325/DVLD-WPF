@@ -114,7 +114,7 @@ namespace Presentation.ViewModels
             }
 
             // التحقق من وجود طلب سابق لنفس الرخصة
-            int? exists = await _applicationService.HasDuplicateApplicationAsync(Person.PersonId,SelectedLicenseClass.LicenseClassId);
+            int? exists = await _applicationService.HasDuplicateApplicationAsync(Person.PersonId,SelectedLicenseClass.LicenseClassID);
 
             if (exists>0)
             {
@@ -151,7 +151,7 @@ namespace Presentation.ViewModels
             var newLDLApp = new LocalDrivingLicenseApplicationCreateUpdateDto
             {
                 ApplicatonId = ApplicationId,
-                LicenseClassId = SelectedLicenseClass?.LicenseClassId ?? 0
+                LicenseClassId = SelectedLicenseClass?.LicenseClassID ?? 0
             };
 
             int newLappId = await _localDrivingLicenseApplicationService.AddLocalDrivingLicenseApplicationAsync(newLDLApp);

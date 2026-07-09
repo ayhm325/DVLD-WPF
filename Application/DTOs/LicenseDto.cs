@@ -10,7 +10,7 @@
         public int DriverID { get; set; }
         public string? DriverName { get; set; }
 
-        public int LicenseClassId { get; set; }
+        public int LicenseClassID { get; set; }
         public string? LicenseClassName { get; set; }
 
         public DateTime IssueDate { get; set; }

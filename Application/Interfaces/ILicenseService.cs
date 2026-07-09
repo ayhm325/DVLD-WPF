@@ -19,6 +19,8 @@ namespace Application.Interfaces
 
         Task<DriverLicenseInfoDto?> GetDetails(int localAppId);
 
+        Task<int> IssueFirstLicenseAsync(int localAppId, string? notes);
+
         // =========================
         // CHECKS
         // =========================

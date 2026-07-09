@@ -97,6 +97,7 @@ namespace Application.Services
             return new LocalDrivingLicenseApplicationListDto
             {
                 LocalDrivingLicenseApplicationID = e.LocalDrivingLicenseApplicationID,
+                LicenseClassID = e.LicenseClassID,
                 LicenseClassName = e.LicenseClass?.ClassName ?? "N/A",
                 NationalNo = e.Application?.Person?.NationalNo ?? "N/A",
                 Fees = e.LicenseClass?.ClassFees ?? 0,

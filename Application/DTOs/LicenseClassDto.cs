@@ -6,7 +6,7 @@ namespace Application.DTOs
 {
     public class LicenseClassDto
     {
-        public int LicenseClassId { get; set; }
+        public int LicenseClassID { get; set; }
 
         public string LicenseClassName { get; set; } = null!;
 

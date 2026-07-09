@@ -238,7 +238,19 @@ namespace Presentation.ViewModels
         [RelayCommand]
         private void IssueLicense()
         {
-            // منطق إصدار الرخصة
+            if (SelectedApplication == null)
+                return;
+
+            var window = new IssueDrivingLicenseForTheFirstTimeWin(null!);
+
+            var vm = ActivatorUtilities.CreateInstance<IssueDrivingLicenseForTheFirstTimeViewModel>(
+                _serviceProvider,
+                SelectedApplication.LocalDrivingLicenseApplicationID,
+                window);
+
+            window.DataContext = vm;
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
         }
 
         [RelayCommand]
