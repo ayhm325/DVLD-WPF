@@ -9,10 +9,12 @@ namespace Application.Services
     public class LocalDrivingLicenseApplicationService : ILocalDrivingLicenseApplicationService
     {
         private readonly LocalDrivingLicenseApplicationRepository _repository;
+        private readonly LicenseRepository _licenseRepository;
 
-        public LocalDrivingLicenseApplicationService(LocalDrivingLicenseApplicationRepository repository)
+        public LocalDrivingLicenseApplicationService(LocalDrivingLicenseApplicationRepository repository, LicenseRepository licenseRepository)
         {
             _repository = repository;
+            _licenseRepository = licenseRepository;
         }
 
         public async Task<List<LocalDrivingLicenseApplicationListDto>> GetAllLocalDrivingLicenseApplicationsAsync()
@@ -23,7 +25,11 @@ namespace Application.Services
             foreach (var e in entities)
             {
                 int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
-                dtoList.Add(MapToDto(e, count));
+
+                bool hasLicense = await _licenseRepository
+                    .IsApplicationHasLicenseAsync(e.ApplicationID);
+
+                dtoList.Add(MapToDto(e, count, hasLicense));
             }
             return dtoList;
         }
@@ -31,12 +37,17 @@ namespace Application.Services
         public async Task<LocalDrivingLicenseApplicationListDto?> GetLocalDrivingLicenseApplicationByIdAsync(int id)
         {
             var e = await _repository.GetByIdAsync(id);
-            if (e == null) return null;
+            if (e == null)
+                return null;
 
             int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
-            return MapToDto(e, count);
+
+            bool hasLicense = await _licenseRepository
+                .IsApplicationHasLicenseAsync(e.ApplicationID);
+
+            return MapToDto(e, count, hasLicense);
         }
-        
+
         public async Task<int> AddLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplicationCreateUpdateDto dto)
         {
             var entity = new LocalDrivingLicenseApplication
@@ -64,14 +75,22 @@ namespace Application.Services
             return await MapListToDtoAsync(list);
         }
 
-        private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(List<LocalDrivingLicenseApplication> list)
+        private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(
+    List<LocalDrivingLicenseApplication> list)
         {
             var dtoList = new List<LocalDrivingLicenseApplicationListDto>();
+
             foreach (var e in list)
             {
-                int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
-                dtoList.Add(MapToDto(e, count));
+                int count = await _repository
+                    .GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
+
+                bool hasLicense = await _licenseRepository
+                    .IsApplicationHasLicenseAsync(e.ApplicationID);
+
+                dtoList.Add(MapToDto(e, count, hasLicense));
             }
+
             return dtoList;
         }
 
@@ -92,7 +111,7 @@ namespace Application.Services
             return await _repository.GetByIdAsync(id) != null;
         }
 
-        private LocalDrivingLicenseApplicationListDto MapToDto(LocalDrivingLicenseApplication e, int passedTestCount)
+        private LocalDrivingLicenseApplicationListDto MapToDto(LocalDrivingLicenseApplication e, int passedTestCount, bool hasLicense)
         {
             return new LocalDrivingLicenseApplicationListDto
             {
@@ -107,10 +126,12 @@ namespace Application.Services
                     $"{e.Application?.Person?.ThirdName} " +
                     $"{e.Application?.Person?.LastName}".Trim(),
                 ApplicationDate = e.Application?.ApplicationDate ?? DateTime.MinValue,
-                PassedTest = passedTestCount,
+                PassedTest = passedTestCount,                
                 ApplicationStatus = e.Application is not null && Enum.IsDefined(typeof(AppStatus), e.Application.ApplicationStatus)
                 ? (AppStatus)e.Application.ApplicationStatus
-                : AppStatus.Cancelled
+                : AppStatus.Cancelled,
+                HasLicense = hasLicense,
+                ApplicantPersonID = e.Application?.Person?.PersonId ?? 0
 
             };
         }

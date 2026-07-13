@@ -26,5 +26,10 @@ namespace Application.DTOs
 
         public decimal Fees { get; set; }
 
+        public bool HasLicense { get; set; }
+
+        public int ApplicantPersonID { get; set; }
+
+
     }
 }

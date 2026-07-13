@@ -1,7 +1,9 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 using Infrastructure.Repositories;
+using System.Collections.Generic;
 
 namespace Application.Services
 {
@@ -15,6 +17,7 @@ namespace Application.Services
         private readonly IPersonService _personService;
         private readonly IDetainedLicenseService _detainedLicenseService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ILicenseClassService _licenseClassService;
 
 
         public LicenseService(
@@ -24,7 +27,8 @@ namespace Application.Services
                 IDriverService driverService,
                 IPersonService personService,
                 IDetainedLicenseService detainedLicenseService,
-                ICurrentUserService currentUserService)
+                ICurrentUserService currentUserService,
+                ILicenseClassService licenseClassService)
         {
             _repository = repository;
             _lDLAppService = lDLAppService;
@@ -33,6 +37,7 @@ namespace Application.Services
             _personService = personService;
             _detainedLicenseService = detainedLicenseService;
             _currentUserService = currentUserService;
+            _licenseClassService = licenseClassService;
         }
 
         // =========================
@@ -67,6 +72,12 @@ namespace Application.Services
         {
             var list = await _repository.GetLicensesByLicenseClassIdAsync(licenseClassId);
             return list.Select(MapToDto).ToList();
+        }
+
+        public async Task<List<LicenseDto>> GetLicensesByPersonIdAsync(int personId)
+        {
+            var licenses = await _repository.GetLicensesByPersonIdAsync(personId);
+            return licenses.Select(MapToDto).ToList();
         }
 
         // =========================
@@ -116,14 +127,10 @@ namespace Application.Services
                     : null,
 
                 DriverID = l.DriverID,
-                DriverName = l.Driver != null
-                    ? $"{l.Driver.Person.FirstName ?? ""}"
-                    : null,
+                DriverName = l.Driver?.Person != null? l.Driver.Person.FullName: null,
 
                 LicenseClassID = l.LicenseClass,
-                LicenseClassName = l.LicenseClass != null
-                    ? l.LicenseClass.ToString()
-                    : null,
+                LicenseClassName = l.LicenseClassInfo?.ClassName,
 
                 IssueDate = l.IssueDate,
                 ExpirationDate = l.ExpirationDate,
@@ -204,21 +211,64 @@ namespace Application.Services
 
         public async Task<int> IssueFirstLicenseAsync(int localAppId, string? notes)
         {
-            // 1. جلب البيانات الأساسية للطلب المحلي
-            var localApp = await _lDLAppService.GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
-            if (localApp == null) throw new Exception("Local application not found.");
+            // 1) Get Local Driving License Application
+            var localApp = await _lDLAppService
+                .GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
 
-            // 2. جلب بيانات التطبيق المرتبط (Application)
-            var applicationId = await _lDLAppService.GetApplicationIdByLocalIdAsync(localAppId);
-            if (!applicationId.HasValue) throw new Exception("Application not found.");
+            if (localApp == null)
+                throw new Exception("Local application not found.");
 
-            var application = await _applicationService.GetApplicationByIdAsync(applicationId.Value);
-            var person = await _personService.GetPersonByIdAsync(application.ApplicantPersonID);
-            if (person == null) throw new Exception("Person not found.");
 
-            // 3. معالجة وجود السائق
-            var driver = await _driverService.GetByPersonIdAsync(person.PersonId);
+            // 2) Get Main Application ID
+            var applicationId = await _lDLAppService
+                .GetApplicationIdByLocalIdAsync(localAppId);
+
+            if (!applicationId.HasValue)
+                throw new Exception("Application not found.");
+
+
+            // 3) Get Application
+            var application = await _applicationService
+                .GetApplicationByIdAsync(applicationId.Value);
+
+            if (application == null)
+                throw new Exception("Application not found.");
+
+
+            // 4) Get Person
+            var person = await _personService
+                .GetPersonByIdAsync(application.ApplicantPersonID);
+
+            if (person == null)
+                throw new Exception("Person not found.");
+
+
+
+            // 5) Get License Class
+            int licenseClassId = localApp.LicenseClassID;
+
+            if (licenseClassId <= 0)
+                throw new Exception("Invalid License Class.");
+
+
+
+            var licenseClass = await _licenseClassService
+                .GetLicenseClassByIdAsync(licenseClassId);
+
+
+            if (licenseClass == null)
+                throw new Exception("License class not found.");
+
+
+
+
+            // 6) Create Driver if not exists
+            var driver = await _driverService
+                .GetByPersonIdAsync(person.PersonId);
+
+
             int driverId;
+
 
             if (driver == null)
             {
@@ -228,41 +278,64 @@ namespace Application.Services
                     CreatedByUserID = _currentUserService.UserId,
                     CreatedDate = DateTime.Now
                 };
-                driverId = await _driverService.AddAsync(newDriver);
+
+
+                driverId = await _driverService
+                    .AddAsync(newDriver);
             }
             else
             {
                 driverId = driver.DriverID;
             }
 
-            // 4. التصحيح الجوهري: الحصول على LicenseClassID بشكل مباشر وموثوق
-            // بما أننا نعلم أن localApp يحتوي على البيانات، سنقوم بالتحقق من القيمة قبل الاستخدام.
-            // إذا استمر الخطأ، تأكد من أن GetLocalDrivingLicenseApplicationByIdAsync يملأ هذا الحقل.
-            int licenseClassId = localApp.LicenseClassID;
 
-            if (licenseClassId <= 0)
-            {
-                // إذا وصلت القيمة هنا وهي 0، فهذا يعني أن الـ Mapper لا يقوم بجلبها من قاعدة البيانات
-                throw new Exception($"Invalid License Class. The application (ID: {localAppId}) does not have a valid LicenseClassID (Value: {licenseClassId}).");
-            }
 
-            // 5. إنشاء كائن الرخصة
-            var dto = new LicenseDto
+
+            // 7) Create License
+            var licenseDto = new LicenseDto
             {
                 ApplicationID = applicationId.Value,
+
                 DriverID = driverId,
-                LicenseClassID = licenseClassId, // استخدام المتغير الموثق
+
+                LicenseClassID = licenseClassId,
+
                 IssueDate = DateTime.Now,
-                ExpirationDate = DateTime.Now.AddYears(10),
+
+                ExpirationDate = DateTime.Now
+                    .AddYears(licenseClass.DefaultValidityLength),
+
                 Notes = notes,
-                PaidFees = 0,
+
+                PaidFees = licenseClass.LicenseClassFees,
+
                 IsActive = true,
+
                 IssueReason = 1, // First Time
+
                 CreatedByUserID = _currentUserService.UserId
             };
 
-            // 6. الحفظ
-            return await AddAsync(dto);
+
+
+            int licenseId = await AddAsync(licenseDto);
+
+
+
+
+
+            // 8) Update Application Status
+            application.ApplicationStatus = AppStatus.Completed;
+
+            application.PaidFees = licenseClass.LicenseClassFees;
+
+
+            await _applicationService
+                .UpdateApplicationAsync(application);
+
+
+
+            return licenseId;
         }
 
 

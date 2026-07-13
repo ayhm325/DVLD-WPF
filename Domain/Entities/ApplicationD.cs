@@ -33,5 +33,7 @@ namespace Domain.Entities
 
         [ForeignKey("CreatedByUserID")]
         public virtual User? CreatedByUser { get; set; }
+
+        public ICollection<License> Licenses { get; set; } = new List<License>();
     }
 }

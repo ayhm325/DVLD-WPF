@@ -94,12 +94,17 @@ namespace DVLD_WPF
             services.AddTransient<UpdateTestTypeViewModel>();
             services.AddTransient<UsersViewModel>();
             services.AddTransient<IssueDrivingLicenseForTheFirstTimeViewModel>();
+            services.AddTransient<LicenseHistoryViewModel>();
+            services.AddTransient<DriversViewModel>();
+
+
 
             // 5. Views (Pages & Windows)
             services.AddTransient<LoginWindow>();
             services.AddTransient<MainWindow>();
             services.AddTransient<HomePage>();           
-            services.AddTransient<UserPage>();            
+            services.AddTransient<UserPage>();
+            services.AddTransient<DriversPage>();
             services.AddTransient<ChangePasswordWindow>();
             services.AddTransient<PeoplePage>();         
             services.AddTransient<UserDetailsWindow>();
@@ -116,6 +121,7 @@ namespace DVLD_WPF
             services.AddTransient<ScheduleTestWin>();
             services.AddTransient<TakeTestWin>();
             services.AddTransient<IssueDrivingLicenseForTheFirstTimeWin>();
+            services.AddTransient<LicenseHistoryWin>();
 
 
             // 6. Navigation Service (⚠️ مهم)

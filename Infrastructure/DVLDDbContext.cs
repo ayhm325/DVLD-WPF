@@ -111,13 +111,13 @@ namespace Infrastructure
             // License Relationships
             modelBuilder.Entity<License>()
                 .HasOne(l => l.Application)
-                .WithMany()
+                .WithMany(a => a.Licenses)
                 .HasForeignKey(l => l.ApplicationID)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<License>()
                 .HasOne(l => l.Driver)
-                .WithMany()
+                .WithMany(d => d.Licenses)
                 .HasForeignKey(l => l.DriverID)
                 .OnDelete(DeleteBehavior.Restrict);
 

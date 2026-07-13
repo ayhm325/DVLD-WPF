@@ -35,7 +35,7 @@
             </MenuItem>
 
             <MenuItem Header="People" Click="ManagePeople_Click"/>
-            <MenuItem Header="Drivers"/>
+            <MenuItem Header="Drivers" Click="Drivers_Click"/>
             <MenuItem Header="Users" Click="Users_Click"/>
             <MenuItem Header="Account Settings"/>
         </Menu>
@@ -43,7 +43,9 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="220"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="215*"/>
+                <ColumnDefinition Width="18*"/>
+                <ColumnDefinition Width="547*"/>
             </Grid.ColumnDefinitions>
 
             <!-- الشريط الجانبي (Sidebar) -->
@@ -71,7 +73,7 @@
             <Border Grid.Column="1" Width="1" HorizontalAlignment="Left" Background="{StaticResource BorderColor}"/>
 
             <!-- المحتوى الرئيسي -->
-            <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden" Background="Transparent"/>
+            <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden" Background="Transparent" Grid.ColumnSpan="3"/>
         </Grid>
     </DockPanel>
 </Window>

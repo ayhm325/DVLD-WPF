@@ -22,7 +22,8 @@ namespace Infrastructure.Repositories
         {
             return context.Drivers
                 .Include(d => d.Person)
-                .Include(d => d.CreatedByUser);
+                .Include(d => d.CreatedByUser)
+                .Include(d => d.Licenses);
         }
 
         // =========================
@@ -61,6 +62,8 @@ namespace Infrastructure.Repositories
                 .Where(d => d.CreatedByUserID == userId)
                 .ToListAsync();
         }
+
+
 
         // =========================
         // CHECK OPERATIONS

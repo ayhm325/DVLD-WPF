@@ -21,6 +21,8 @@ namespace Application.Interfaces
 
         Task<int> IssueFirstLicenseAsync(int localAppId, string? notes);
 
+        Task<List<LicenseDto>> GetLicensesByPersonIdAsync(int personId);
+
         // =========================
         // CHECKS
         // =========================

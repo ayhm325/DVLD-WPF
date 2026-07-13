@@ -44,11 +44,9 @@ namespace DVLD_WPF
         }
 
         private void NewLocalLicnnse_Click(object sender, RoutedEventArgs e)
-        {
-            // الحصول على النافذة من الـ ServiceProvider
-            var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewLocalLicnnse>();
-            // إظهارها كنافذة مستقلة
-            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow; // لربطها بالنافذة الرئيسية
+        {            
+            var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewLocalLicnnse>();           
+            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow; 
             newLicenseWindow.ShowDialog();
         }
 
@@ -73,8 +71,11 @@ namespace DVLD_WPF
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
         }
 
+        private void Drivers_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<DriversPage>());
+        }
 
-       
 
     }
 }

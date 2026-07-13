@@ -79,6 +79,14 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<License>> GetLicensesByPersonIdAsync(int personId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await Query(context)
+                .Where(l => l.Driver.PersonID == personId)
+                .ToListAsync();
+        }
 
         // =========================
         // CHECK OPERATIONS

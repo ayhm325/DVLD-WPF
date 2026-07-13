@@ -83,16 +83,25 @@
 
             <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
                 <TextBlock Text="Filter by:" Foreground="{StaticResource SecondaryTextColor}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
-                <!-- ستأخذ الستايل العام تلقائياً -->
-                <ComboBox Width="150" Margin="0,0,10,0" SelectedIndex="0" SelectedItem="{Binding SelectedFilter, Mode=TwoWay}">
+
+                <!-- الفلتر النصي -->
+                <ComboBox Width="130" Margin="0,0,10,0" SelectedItem="{Binding SelectedFilter, Mode=TwoWay}">
                     <ComboBoxItem Content="Full Name"/>
                     <ComboBoxItem Content="National No."/>
                 </ComboBox>
-                <TextBox Width="220" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+
+                <TextBox Width="180" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+
+                <!-- الفلتر الجديد للحالة -->
+                <TextBlock Text="Status:" Foreground="{StaticResource SecondaryTextColor}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0,10,0" FontSize="14"/>
+                <ComboBox Width="130" 
+                  ItemsSource="{Binding StatusFilterOptions}" 
+                  SelectedItem="{Binding SelectedStatusFilter, UpdateSourceTrigger=PropertyChanged}"
+                  VerticalAlignment="Center"/>
             </StackPanel>
 
             <Button Grid.Column="2" Content="+ Add New" Style="{StaticResource PrimaryButtonStyle}" 
-                    Command="{Binding AddNewCommand}" Width="140" HorizontalAlignment="Right" />
+            Command="{Binding AddNewCommand}" Width="140" HorizontalAlignment="Right" />
         </Grid>
 
         <!-- DataGrid Card Container -->

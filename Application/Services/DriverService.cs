@@ -8,11 +8,13 @@ namespace Application.Services
     public class DriverService : IDriverService
     {
         private readonly DriverRepository _repository;
+        
 
         public DriverService(DriverRepository repository)
         {
             _repository = repository
                 ?? throw new ArgumentNullException(nameof(repository));
+           
         }
 
         // =========================
@@ -31,7 +33,7 @@ namespace Application.Services
         public async Task<List<DriverDto>> GetAllAsync()
         {
             var drivers = await _repository.GetAllAsync();
-
+          
             return drivers
                 .Select(MapToDto)
                 .ToList();
@@ -128,11 +130,15 @@ namespace Application.Services
 
                 NationalNo = entity.Person?.NationalNo ?? string.Empty,
 
+                DateOfBirth = entity.Person?.DateOfBirth ?? DateTime.MinValue,                
+
                 CreatedByUserID = entity.CreatedByUserID,
 
                 CreatedByUserName = entity.CreatedByUser?.UserName ?? string.Empty,
 
-                CreatedDate = entity.CreatedDate
+                CreatedDate = entity.CreatedDate,
+
+                ActiveLicenses = entity.Licenses?.Count(l => l.IsActive) ?? 0
             };
         }
 
