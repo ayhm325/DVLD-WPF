@@ -8,11 +8,12 @@
              d:DesignHeight="80" d:DesignWidth="400">
 
     <UserControl.Resources>
-        <!-- ألوان محلية لشارة الحالة (Success Theme) -->
-        <!-- خلفية خضراء داكنة جداً للتناسق مع الثيم -->
-        <SolidColorBrush x:Key="StatusGreenBg" Color="#064E3B"/>
-        <!-- نص أخضر زمردي ساطع للقراءة -->
-        <SolidColorBrush x:Key="StatusGreenText" Color="#34D399"/>
+        <!-- ألوان شارة الحالة (تطابق ألوان التفعيل في الستايل العام) -->
+        <SolidColorBrush x:Key="ActiveGreenBg" Color="#064E3B"/>
+        <SolidColorBrush x:Key="ActiveGreenText" Color="#34D399"/>
+
+        <!-- خلفية أيقونة المعلومات (تطابق النمط الموحد) -->
+        <SolidColorBrush x:Key="IconBgBrush" Color="#042F2E"/>
     </UserControl.Resources>
 
     <!-- البطاقة الرئيسية باستخدام CardStyle -->
@@ -27,15 +28,13 @@
                 <!-- الحالة -->
             </Grid.ColumnDefinitions>
 
-            <!-- عمود الأيقونة (Avatar) -->
-            <!-- خلفية داكنة (InputBackground) لتقليل التباين القاسي -->
+            <!-- عمود الأيقونة (مربّع مستدير – النمط الموحد) -->
             <Border Grid.Column="0" 
                     Width="45" Height="45" 
-                    CornerRadius="22" 
-                    Background="{StaticResource InputBackground}" 
-                    BorderBrush="{StaticResource BorderColor}"
-                    BorderThickness="1"
-                    VerticalAlignment="Center">
+                    CornerRadius="11" 
+                    Background="{StaticResource IconBgBrush}" 
+                    VerticalAlignment="Center"
+                    Padding="10">
                 <materialDesign:PackIcon Kind="Account" 
                                         Foreground="{StaticResource PrimaryColor}" 
                                         Width="24" Height="24" 
@@ -57,25 +56,24 @@
                            TextTrimming="CharacterEllipsis"/>
             </StackPanel>
 
-            <!-- عمود الحالة (Status Badge) -->
+            <!-- عمود الحالة (شارة مستطيلة – النمط الموحد) -->
             <Border Grid.Column="2" 
-                    Background="{StaticResource StatusGreenBg}" 
+                    Background="{StaticResource ActiveGreenBg}" 
                     Padding="12,6" 
-                    CornerRadius="20" 
+                    CornerRadius="6" 
                     Margin="15,0,0,0" 
                     VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
-                    <Ellipse Width="6" Height="6" Fill="{StaticResource StatusGreenText}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <Ellipse Width="6" Height="6" Fill="{StaticResource ActiveGreenText}" Margin="0,0,6,0" VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding IsActive}" 
                                FontSize="12" 
                                FontWeight="SemiBold" 
-                               Foreground="{StaticResource StatusGreenText}" 
+                               Foreground="{StaticResource ActiveGreenText}" 
                                VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
         </Grid>
-
     </Border>
 
 </UserControl>

@@ -7,20 +7,119 @@
       xmlns:helpers="clr-namespace:Presentation.Helpers"
       mc:Ignorable="d"
       Title="Add/Edit User"
-      Background="{StaticResource BackgroundColor}"
       WindowStartupLocation="CenterScreen"
-      ResizeMode="CanResize">
+      WindowStyle="None"
+      AllowsTransparency="True"
+      Background="Transparent"
+      ResizeMode="NoResize"
+      Height="750"
+      Width="950">
 
     <Window.Resources>
-        <!-- لون محلي لزر الحفظ (Success Green) -->
-        <SolidColorBrush x:Key="AccentGreen" Color="#10B981"/>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- لون أخضر زمردي للزر (Accent) مع متغيرات -->
+        <SolidColorBrush x:Key="AccentColor" Color="#10B981"/>
+        <SolidColorBrush x:Key="AccentHoverColor" Color="#34D399"/>
+
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ستايل زر الحفظ (Accent Emerald) بقالب مستقل -->
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10" Padding="20,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98" CenterX="0.5" CenterY="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ستايل زر إظهار/إخفاء كلمة المرور -->
+        <Style x:Key="EyeButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="0,8,8,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1A1A1E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
 
-        <Grid Margin="20">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
 
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <!-- Header -->
@@ -30,293 +129,248 @@
                 <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <!-- Header (Global) -->
-            <Border Grid.Row="0"
-                    Style="{StaticResource CardStyle}"
-                    Margin="0,0,0,15"
-                    Padding="20">
-
-                <StackPanel>
-                    <TextBlock Text="User Information Details"
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource TextColor}"/>
-
-                    <TextBlock Text="Review or update the user profile details below"
-                               FontSize="14"
-                               Foreground="{StaticResource SecondaryTextColor}"
-                               Margin="0,5,0,0"/>
-                </StackPanel>
-
-            </Border>
-
-            <!-- Tabs Container -->
-            <TabControl Grid.Row="1" 
-                        Background="Transparent" 
-                        BorderThickness="0">
-
-                <!-- Tab 1: Filter & Person Information -->
-                <TabItem Header="Personal &amp; Filter" 
-                         Style="{StaticResource TabItemStyle}" 
-                         FontSize="14">
-
-                    <StackPanel>
-                        <!-- Filter -->
-                        <controls:Filter Margin="0,0,0,15"/>
-
-                        <!-- Person Information -->
-                        <controls:InformationPerson Person="{Binding Person}" />
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="User Information Details"
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource TextColor}"/>
+                            <TextBlock Text="Review or update the user profile details below"
+                                       FontSize="12" Foreground="{StaticResource SecondaryTextColor}" Margin="0,3,0,0"/>
+                        </StackPanel>
                     </StackPanel>
 
-                </TabItem>
+                    
+                </Grid>
+            </Border>
 
-                <!-- Tab 2: Login Information -->
-                <TabItem Header="Login Information" 
-                         Style="{StaticResource TabItemStyle}" 
-                         FontSize="14">
+            <!-- ================= المحتوى (تبويبات) ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,20">
 
-                    <Border Style="{StaticResource CardStyle}"
-                            Padding="20">
+                <TabControl Background="Transparent" 
+                            BorderThickness="0">
+
+                    <!-- Tab 1: Personal & Filter -->
+                    <TabItem Header="Personal &amp; Filter" 
+                             Style="{StaticResource TabItemStyle}" 
+                             FontSize="14">
 
                         <StackPanel>
-
-                            <TextBlock Text="Login Information"
-                                       FontSize="18"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource PrimaryColor}"
-                                       Margin="0,0,0,15"/>
-
-                            <Grid>
-                                <Grid.Resources>
-                                    <!-- تنسيق بسيط للـ Labels داخل هذا الجدول -->
-                                    <Style TargetType="Label">
-                                        <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
-                                        <Setter Property="FontSize" Value="13"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                    </Style>
-                                </Grid.Resources>
-
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="150"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <!-- User ID -->
-                                <Label Content="User ID:"
-                                       VerticalAlignment="Center"/>
-
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding UserIdDisplay, TargetNullValue='???'}"
-                                           VerticalAlignment="Center"
-                                           Margin="10,0"
-                                           Foreground="{StaticResource SecondaryTextColor}"/>
-
-                                <!-- User Name -->
-                                <Label Grid.Row="1"
-                                       Content="User Name:"
-                                       VerticalAlignment="Center"/>
-
-                                <!-- سيأخذ الستايل العام تلقائياً -->
-                                <TextBox Grid.Row="1"
-                                         Grid.Column="1"
-                                         Width="300"
-                                         Margin="0,5"
-                                         HorizontalAlignment="Left"
-                                         Text="{Binding UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                                <!-- Validation -->
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="1"
-                                           Text="{Binding UserNameValidationMessage}"
-                                           Foreground="{Binding UserNameValidationColor}"
-                                           FontSize="11"
-                                           Margin="10,0,0,5"
-                                           HorizontalAlignment="Left"
-                                           VerticalAlignment="Top"
-                                           TextWrapping="Wrap"/>
-
-                                <!-- Password -->
-                                <Label Grid.Row="3"
-                                       Content="Password:"
-                                       VerticalAlignment="Center"
-                                       Visibility="{Binding PasswordVisibility}" />
-
-                                <Grid Grid.Row="3"
-                                      Grid.Column="1"
-                                      Width="300"
-                                      Margin="0,5"
-                                      HorizontalAlignment="Left"
-                                      Visibility="{Binding PasswordVisibility}">
-
-                                    <!-- PasswordBox with adjusted padding for the eye button -->
-                                    <PasswordBox helpers:PasswordBoxHelper.Attach="True"
-                                                 helpers:PasswordBoxHelper.Password="{Binding Password, Mode=TwoWay}"
-                                                 Padding="10,0,30,0">
-
-                                        <PasswordBox.Style>
-                                            <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsPasswordVisible}"
-                                                                 Value="True">
-                                                        <Setter Property="Visibility"
-                                                                Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </PasswordBox.Style>
-
-                                    </PasswordBox>
-
-                                    <TextBox Text="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="10,0,30,0"
-                                             VerticalContentAlignment="Center">
-
-                                        <TextBox.Style>
-                                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsPasswordVisible}"
-                                                                 Value="False">
-                                                        <Setter Property="Visibility"
-                                                                Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBox.Style>
-
-                                    </TextBox>
-
-                                    <Button Width="30"
-                                            Height="38" 
-                                            HorizontalAlignment="Right"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Cursor="Hand"
-                                            Command="{Binding TogglePasswordVisibilityCommand}">
-
-                                        <TextBlock Text="👁️"
-                                                   FontSize="14"
-                                                   Foreground="{StaticResource PrimaryColor}" 
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-
-                                    </Button>
-
-                                </Grid>
-
-                                <!-- Confirm Password -->
-                                <Label Grid.Row="4"
-                                       Content="Confirm Password:"
-                                       VerticalAlignment="Center"
-                                       Visibility="{Binding ConfirmPasswordVisibility}" />
-
-                                <Grid Grid.Row="4"
-                                      Grid.Column="1"
-                                      Width="300"
-                                      Margin="0,5"
-                                      HorizontalAlignment="Left"
-                                      Visibility="{Binding ConfirmPasswordVisibility}">
-
-                                    <PasswordBox helpers:PasswordBoxHelper.Attach="True"
-                                                 helpers:PasswordBoxHelper.Password="{Binding ConfirmPassword, Mode=TwoWay}"
-                                                 Padding="10,0,30,0">
-
-                                        <PasswordBox.Style>
-                                            <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsConfirmPasswordVisible}"
-                                                                 Value="True">
-                                                        <Setter Property="Visibility"
-                                                                Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </PasswordBox.Style>
-
-                                    </PasswordBox>
-
-                                    <TextBox Text="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Padding="10,0,30,0"
-                                             VerticalContentAlignment="Center">
-
-                                        <TextBox.Style>
-                                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsConfirmPasswordVisible}"
-                                                                 Value="False">
-                                                        <Setter Property="Visibility"
-                                                                Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBox.Style>
-
-                                    </TextBox>
-
-                                    <Button Width="30"
-                                            Height="38"
-                                            HorizontalAlignment="Right"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Cursor="Hand"
-                                            Command="{Binding ToggleConfirmPasswordVisibilityCommand}">
-
-                                        <TextBlock Text="👁️"
-                                                   FontSize="14"
-                                                   Foreground="{StaticResource PrimaryColor}"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-
-                                    </Button>
-
-                                </Grid>
-
-                                <!-- Active -->
-                                <CheckBox Grid.Row="5"
-                                          Grid.Column="1"
-                                          Content="Is Active"
-                                          IsChecked="{Binding IsActive}"
-                                          Margin="0,10,0,0"/>
-
-                            </Grid>
-
+                            <controls:Filter Margin="0,0,0,15"/>
+                            <controls:InformationPerson Person="{Binding Person}" />
                         </StackPanel>
 
-                    </Border>
+                    </TabItem>
 
-                </TabItem>
-            </TabControl>
+                    <!-- Tab 2: Login Information -->
+                    <TabItem Header="Login Information" 
+                             Style="{StaticResource TabItemStyle}" 
+                             FontSize="14">
 
-            <!-- Buttons (Global at bottom) -->
-            <StackPanel Grid.Row="2"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="0,15,0,0">
+                        <Border Style="{StaticResource CardStyle}" Padding="25">
+                            <StackPanel>
 
+                                <TextBlock Text="Login Information"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryColor}"
+                                           Margin="0,0,0,20"/>
 
-                <Button Content="Close" 
-                        Style="{StaticResource SecondaryButtonStyle}" 
-                        Click="CloseButton_Click" 
-                        Width="100"/>
+                                <Grid>
+                                    <Grid.Resources>
+                                        <!-- تنسيق التسميات -->
+                                        <Style TargetType="Label">
+                                            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+                                            <Setter Property="FontSize" Value="13"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </Grid.Resources>
 
-                <Button Content="Save"
-                        Width="100"
-                        Background="{StaticResource AccentGreen}" 
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Command="{Binding SaveUserCommand}" />
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
 
-            </StackPanel>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- User ID -->
+                                    <Label Content="User ID:" Grid.Row="0"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1"
+                                               Text="{Binding UserIdDisplay, TargetNullValue='???'}"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0"
+                                               Foreground="{StaticResource SecondaryTextColor}"/>
+
+                                    <!-- User Name -->
+                                    <Label Grid.Row="1" Content="User Name:"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1"
+                                             Width="300" Margin="0,5"
+                                             HorizontalAlignment="Left"
+                                             Text="{Binding UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    <!-- Validation Message -->
+                                    <TextBlock Grid.Row="2" Grid.Column="1"
+                                               Text="{Binding UserNameValidationMessage}"
+                                               Foreground="{Binding UserNameValidationColor}"
+                                               FontSize="11"
+                                               Margin="10,0,0,5"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Top"
+                                               TextWrapping="Wrap"/>
+
+                                    <!-- Password -->
+                                    <Label Grid.Row="3" Content="Password:"
+                                           Visibility="{Binding PasswordVisibility}" />
+
+                                    <Grid Grid.Row="3" Grid.Column="1"
+                                          Width="300" Margin="0,5"
+                                          HorizontalAlignment="Left"
+                                          Visibility="{Binding PasswordVisibility}">
+
+                                        <PasswordBox helpers:PasswordBoxHelper.Attach="True"
+                                                     helpers:PasswordBoxHelper.Password="{Binding Password, Mode=TwoWay}"
+                                                     Padding="10,0,30,0">
+                                            <PasswordBox.Style>
+                                                <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPasswordVisible}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </PasswordBox.Style>
+                                        </PasswordBox>
+
+                                        <TextBox Text="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="10,0,30,0" VerticalContentAlignment="Center">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsPasswordVisible}" Value="False">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+
+                                        <Button Style="{StaticResource EyeButtonStyle}"
+                                                HorizontalAlignment="Right"
+                                                Command="{Binding TogglePasswordVisibilityCommand}">
+                                            <TextBlock Text="👁️" FontSize="14" 
+                                                       Foreground="{StaticResource PrimaryColor}" 
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Button>
+
+                                    </Grid>
+
+                                    <!-- Confirm Password -->
+                                    <Label Grid.Row="4" Content="Confirm Password:"
+                                           Visibility="{Binding ConfirmPasswordVisibility}" />
+
+                                    <Grid Grid.Row="4" Grid.Column="1"
+                                          Width="300" Margin="0,5"
+                                          HorizontalAlignment="Left"
+                                          Visibility="{Binding ConfirmPasswordVisibility}">
+
+                                        <PasswordBox helpers:PasswordBoxHelper.Attach="True"
+                                                     helpers:PasswordBoxHelper.Password="{Binding ConfirmPassword, Mode=TwoWay}"
+                                                     Padding="10,0,30,0">
+                                            <PasswordBox.Style>
+                                                <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsConfirmPasswordVisible}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </PasswordBox.Style>
+                                        </PasswordBox>
+
+                                        <TextBox Text="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Padding="10,0,30,0" VerticalContentAlignment="Center">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsConfirmPasswordVisible}" Value="False">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+
+                                        <Button Style="{StaticResource EyeButtonStyle}"
+                                                HorizontalAlignment="Right"
+                                                Command="{Binding ToggleConfirmPasswordVisibilityCommand}">
+                                            <TextBlock Text="👁️" FontSize="14" 
+                                                       Foreground="{StaticResource PrimaryColor}" 
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Button>
+
+                                    </Grid>
+
+                                    <!-- Active -->
+                                    <CheckBox Grid.Row="5" Grid.Column="1"
+                                              Content="Is Active"
+                                              IsChecked="{Binding IsActive}"
+                                              Margin="0,10,0,0"/>
+
+                                </Grid>
+
+                            </StackPanel>
+                        </Border>
+
+                    </TabItem>
+                </TabControl>
+
+            </ScrollViewer>
+
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+                    <Button Content="Close" 
+                            Style="{StaticResource SecondaryButtonStyle}" 
+                            Click="CloseButton_Click" 
+                            Width="120"
+                            Margin="0,0,15,0"/>
+
+                    <Button Content="Save"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Width="120"
+                            Command="{Binding SaveUserCommand}" />
+
+                </StackPanel>
+            </Border>
 
         </Grid>
-
-    </ScrollViewer>
-
+    </Border>
 </Window>

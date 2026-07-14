@@ -57,6 +57,11 @@ namespace Presentation.Views.Windows
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
 
     public class RelayCommand : ICommand
@@ -80,5 +85,6 @@ namespace Presentation.Views.Windows
 
         public void RaiseCanExecuteChanged()
             => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+       
     }
 }

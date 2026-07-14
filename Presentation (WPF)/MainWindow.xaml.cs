@@ -83,7 +83,11 @@ namespace DVLD_WPF
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<DriversPage>());
         }
 
-       
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
 
     }
 }

@@ -3,11 +3,30 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              x:Name="Root"
-             HorizontalContentAlignment="Stretch"
-             TextOptions.TextFormattingMode="Display"
-             TextOptions.TextRenderingMode="Auto">
+             HorizontalContentAlignment="Stretch">
 
-    
+    <UserControl.Resources>
+        <!-- تدرج خفيف للهيدر يطابق النمط العام -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- نمط تسمية الحقل – يرث من الستايل العام مع تعديل الحجم -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource LabelStyle}">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+
+        <!-- نمط قيمة الحقل -->
+        <Style x:Key="FieldValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+    </UserControl.Resources>
 
     <!-- استخدام ستايل البطاقة العام (CardStyle) -->
     <Border Style="{StaticResource CardStyle}" Padding="25" Margin="20,10,20,20" HorizontalAlignment="Stretch">
@@ -18,54 +37,51 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Header Row -->
-            <Grid Grid.Row="0" Margin="0,0,0,25">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- ═══════════════ HEADER ═══════════════ -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="12" Padding="18,14,18,14" Margin="-25,-25,-25,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- أيقونة مع خلفية داكنة -->
-                    <Border Width="40" Height="40" CornerRadius="20" 
-                            Background="{StaticResource InputBackground}" 
-                            BorderBrush="{StaticResource BorderColor}"
-                            BorderThickness="1"
-                            VerticalAlignment="Center" Margin="0,0,12,0">
-                        <materialDesign:PackIcon Kind="InformationOutline" 
-                                                Foreground="{StaticResource PrimaryColor}" 
-                                                Width="22" Height="22" 
-                                                VerticalAlignment="Center" 
-                                                HorizontalAlignment="Center"/>
-                    </Border>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- أيقونة بنمط المربّع المستدير الموحد -->
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                VerticalAlignment="Center" Margin="0,0,14,0"
+                                Padding="8">
+                            <materialDesign:PackIcon Kind="InformationOutline" 
+                                                    Foreground="{StaticResource PrimaryColor}" 
+                                                    Width="22" Height="22" 
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
+                        </Border>
 
-                    <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Application Basic Info" 
                                    FontSize="18" 
                                    FontWeight="SemiBold" 
                                    Foreground="{StaticResource TextColor}" 
                                    VerticalAlignment="Center"/>
-                        <!-- خط ملون تحت العنوان -->
-                        <Border Height="3" Width="40" Margin="0,6,0,0" 
-                                Background="{StaticResource PrimaryColor}" 
-                                CornerRadius="2" HorizontalAlignment="Left"/>
                     </StackPanel>
-                </StackPanel>
 
-                <!-- استخدام الزر الأساسي من الستايل العام -->
-                <Button Grid.Column="1" 
-                        VerticalAlignment="Center"
-                        Content="Person Info" 
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Click="PersonInfoButton_Click"
-                        Tag="{Binding Application, ElementName=Root}"/>
-            </Grid>
+                    <!-- استخدام الزر الأساسي من الستايل العام -->
+                    <Button Grid.Column="1" 
+                            VerticalAlignment="Center"
+                            Content="Person Info" 
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Click="PersonInfoButton_Click"
+                            Tag="{Binding Application, ElementName=Root}"/>
+                </Grid>
+            </Border>
 
             <!-- فاصل بلون الحدود العام -->
             <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Margin="0,0,0,20" Background="{StaticResource BorderColor}"/>
 
-            <!-- Data Grid -->
-            <Grid Grid.Row="1">
+            <!-- ═══════════════ DATA GRID ═══════════════ -->
+            <Grid Grid.Row="1" Margin="0,4,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -79,64 +95,60 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Row 0: ID | Date | StatusDate | Fees -->
+                <!-- ═══ Row 0: ID | Date | StatusDate | Fees ═══ -->
                 <StackPanel Grid.Column="0" Margin="0,0,0,15">
-                    <TextBlock Text="ID" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Text="ID" Style="{StaticResource FieldLabel}"/>
                     <TextBlock Text="{Binding Application.ApplicationID, ElementName=Root}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource TextColor}" Margin="0,4,0,0"/>
+                               Style="{StaticResource FieldValue}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="0,0,0,15">
-                    <TextBlock Text="DATE" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Text="DATE" Style="{StaticResource FieldLabel}"/>
                     <TextBlock Text="{Binding Application.ApplicationDate, ElementName=Root, StringFormat='{}{0:dd/MM/yyyy}'}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource TextColor}" Margin="0,4,0,0"/>
+                               Style="{StaticResource FieldValue}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Margin="0,0,0,15">
-                    <TextBlock Text="STATUS DATE" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Text="STATUS DATE" Style="{StaticResource FieldLabel}"/>
                     <TextBlock Text="{Binding Application.LastStatusDate, ElementName=Root, StringFormat='{}{0:dd/MM/yyyy}'}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource TextColor}" Margin="0,4,0,0"/>
+                               Style="{StaticResource FieldValue}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Margin="0,0,0,15">
-                    <TextBlock Text="FEES" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Text="FEES" Style="{StaticResource FieldLabel}"/>
                     <TextBlock Text="{Binding Application.PaidFees, ElementName=Root}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource TextColor}" Margin="0,4,0,0"/>
+                               Style="{StaticResource FieldValue}"/>
                 </StackPanel>
 
-                <!-- Row 1: Type | Status -->
+                <!-- ═══ Row 1: Type | Status ═══ -->
                 <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1" Margin="0,5,0,15">
-                    <TextBlock Text="TYPE" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Text="TYPE" Style="{StaticResource FieldLabel}"/>
                     <TextBlock Text="{Binding Application.ApplicationTypeName, ElementName=Root}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource TextColor}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                               Style="{StaticResource FieldValue}"
+                               TextWrapping="Wrap"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Grid.Row="1" Margin="0,5,0,15" HorizontalAlignment="Left">
-                    <TextBlock Text="STATUS" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
-                    <TextBlock Text="{Binding Application.StatusText, ElementName=Root}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource PrimaryColor}" Margin="0,4,0,0"/>
-                    <!-- لون الحالة باللون الأساسي -->
+                    <TextBlock Text="STATUS" Style="{StaticResource FieldLabel}"/>
+                    <Border Background="#042F2E" CornerRadius="6" Padding="10,4" Margin="0,4,0,0" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding Application.StatusText, ElementName=Root}" 
+                                   FontWeight="SemiBold" FontSize="13" 
+                                   Foreground="{StaticResource PrimaryColor}"/>
+                    </Border>
                 </StackPanel>
 
-                <!-- Row 2: Applicant | Created By -->
+                <!-- ═══ Row 2: Applicant | Created By ═══ -->
                 <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="2" Margin="0,5,0,0">
-                    <TextBlock Text="APPLICANT" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Text="APPLICANT" Style="{StaticResource FieldLabel}"/>
                     <TextBlock Text="{Binding Application.ApplicantFullName, ElementName=Root}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource TextColor}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                               Style="{StaticResource FieldValue}"
+                               TextWrapping="Wrap"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3" Grid.Row="2" Margin="0,5,0,0" HorizontalAlignment="Left">
-                    <TextBlock Text="CREATED BY" Foreground="{StaticResource SecondaryTextColor}" FontSize="11" FontWeight="Bold"/>
+                    <TextBlock Text="CREATED BY" Style="{StaticResource FieldLabel}"/>
                     <TextBlock Text="{Binding Application.CreatedByUserName, ElementName=Root}" 
-                               FontWeight="SemiBold" FontSize="15" 
-                               Foreground="{StaticResource TextColor}" Margin="0,4,0,0"/>
+                               Style="{StaticResource FieldValue}"/>
                 </StackPanel>
 
             </Grid>

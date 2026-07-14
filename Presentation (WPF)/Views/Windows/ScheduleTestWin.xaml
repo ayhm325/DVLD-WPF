@@ -6,164 +6,220 @@
         xmlns:local="clr-namespace:Presentation.Views.Windows"        
         mc:Ignorable="d"
         Title="Schedule Test" 
-        Height="700" Width="500" 
-        WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
-        WindowStyle="SingleBorderWindow"
-        FontFamily="Segoe UI">
+        Height="700" Width="520" 
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- Retake Section Style (Dark Mode Adapted) -->
-        <Style x:Key="RetakeSectionStyle" TargetType="Border">
-            <Setter Property="Background" Value="#451A03"/>
-            <Setter Property="BorderBrush" Value="#B45309"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="16,14"/>
-            <Setter Property="Margin" Value="24,0,24,0"/>
-            <Setter Property="Effect">
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
                 <Setter.Value>
-                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="Black"/>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- ReadOnly Input Override (Dark Mode) -->
+        <!-- Retake Section Style (Teal Dark) -->
+        <Style x:Key="RetakeSectionStyle" TargetType="Border">
+            <Setter Property="Background" Value="#042F2E"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+        </Style>
+
+        <!-- ReadOnly Input Override (Teal Dark) -->
         <Style x:Key="ReadOnlyInput" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Background" Value="#020617"/>
-            <Setter Property="Foreground" Value="#64748B"/>
-            <Setter Property="BorderBrush" Value="#1E293B"/>
+            <Setter Property="Background" Value="#0E0E10"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="#1E293B"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Warning Text Style -->
-        <Style x:Key="WarningText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#FCD34D"/>
+        <!-- Retake Field Label -->
+        <Style x:Key="RetakeLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+
+        <!-- Retake Field TextBox -->
+        <Style x:Key="RetakeTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Background" Value="#0E0E10"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="IsReadOnly" Value="True"/>
         </Style>
     </Window.Resources>
 
-    <!-- Main Container using Global CardStyle -->
-    <Border Style="{StaticResource CardStyle}" Margin="10">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
+
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
+
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
                 <RowDefinition Height="*"/>
+                <!-- Scrollable Content -->
                 <RowDefinition Height="Auto"/>
+                <!-- Retake Section -->
                 <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <!-- 1. MAIN CONTENT (ScrollViewer) -->
-            <ScrollViewer Grid.Row="0" Padding="24,20" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-
-                    <!-- TITLE CARD -->
-                    <Border Background="{StaticResource CardBackground}" 
-                            BorderBrush="{StaticResource BorderColor}" 
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16,20"
-                            Margin="0,0,0,24">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Header Icon -->
-                            <Border Grid.Column="0" Width="42" Height="42" CornerRadius="21" Background="#FFFFFF" Opacity="0.15" VerticalAlignment="Center"/>
-
-                            <!-- Header Titles -->
-                            <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="Schedule Test" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextColor}"/>
-                                <TextBlock Text="Vision Test" FontSize="13" Foreground="{StaticResource SecondaryTextColor}" Margin="0,2,0,0"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- INPUTS GRID -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="16"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="20"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="20"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="20"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Row 0: D.L.App.ID & Trial -->
-                        <StackPanel Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="D.L.App.ID" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Style="{StaticResource ReadOnlyInput}" Text="{Binding Schedule.LocalDrivingLicenseApplicationID}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="2">
-                            <TextBlock Text="Trial" Style="{StaticResource LabelStyle}"/>
-                            <!-- ليبل (قراءة فقط) -->
-                            <TextBox Text="{Binding Schedule.Trial}" Style="{StaticResource ReadOnlyInput}"/>
-                        </StackPanel>
-
-                        <!-- Row 2: D. Class (Full Width) -->
-                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
-                            <TextBlock Text="D. Class" Style="{StaticResource LabelStyle}"/>
-                            <!-- تحويل الـ ComboBox إلى TextBox ليبدو كباقي الليبلز -->
-                            <TextBox Text="{Binding Schedule.LicenseClassName}" Style="{StaticResource ReadOnlyInput}"/>
-                        </StackPanel>
-
-                        <!-- Row 4: Name (Full Width) -->
-                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
-                            <TextBlock Text="Name" Style="{StaticResource LabelStyle}"/>
-                            <!-- ليبل (قراءة فقط) -->
-                            <TextBox Text="{Binding Schedule.FullName}" Style="{StaticResource ReadOnlyInput}"/>
-                        </StackPanel>
-
-                        <!-- Row 6: Date & Fees -->
-                        <StackPanel Grid.Row="6" Grid.Column="0">
-                            <TextBlock Text="Date" Style="{StaticResource LabelStyle}"/>
-                            <!-- التاريخ فقط هو المسموح بتعديله -->
-                            <DatePicker SelectedDate="{Binding Schedule.Date}" DisplayDateStart="{Binding MinDate, Mode=OneWay}" Background="{StaticResource InputBackground}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="6" Grid.Column="2">
-                            <TextBlock Text="Fees" Style="{StaticResource LabelStyle}"/>
-                            <!-- ليبل (قراءة فقط) -->
-                            <TextBox Text="{Binding Schedule.Fees}" Style="{StaticResource ReadOnlyInput}"/>
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- 2. RETAKE SECTION (Conditional) -->
-            <Border Grid.Row="1" Style="{StaticResource RetakeSectionStyle}" 
-                    Visibility="{Binding IsRetake,Converter={StaticResource BoolToVis}}">
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
                 <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Schedule Test" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource TextColor}"/>
+                            <TextBlock Text="Vision Test" 
+                                       FontSize="12" 
+                                       Foreground="{StaticResource SecondaryTextColor}" 
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    
+                </Grid>
+            </Border>
+
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          Margin="20,15,20,0">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="20"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header Warning -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal">
-                        <TextBlock Text="Retake Test Info" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Style="{StaticResource WarningText}"/>
+                    <!-- Row 0: D.L.App.ID & Trial -->
+                    <StackPanel Grid.Row="0" Grid.Column="0">
+                        <TextBlock Text="D.L.App.ID" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding Schedule.LocalDrivingLicenseApplicationID}" Style="{StaticResource ReadOnlyInput}"/>
                     </StackPanel>
 
-                    <!-- Retake Fields -->
-                    <Grid Grid.Row="2">
+                    <StackPanel Grid.Row="0" Grid.Column="2">
+                        <TextBlock Text="Trial" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding Schedule.Trial}" Style="{StaticResource ReadOnlyInput}"/>
+                    </StackPanel>
+
+                    <!-- Row 2: D. Class (Full Width) -->
+                    <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+                        <TextBlock Text="D. Class" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding Schedule.LicenseClassName}" Style="{StaticResource ReadOnlyInput}"/>
+                    </StackPanel>
+
+                    <!-- Row 4: Name (Full Width) -->
+                    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
+                        <TextBlock Text="Name" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding Schedule.FullName}" Style="{StaticResource ReadOnlyInput}"/>
+                    </StackPanel>
+
+                    <!-- Row 6: Date & Fees -->
+                    <StackPanel Grid.Row="6" Grid.Column="0">
+                        <TextBlock Text="Date" Style="{StaticResource LabelStyle}"/>
+                        <DatePicker SelectedDate="{Binding Schedule.Date}" 
+                                    DisplayDateStart="{Binding MinDate, Mode=OneWay}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="6" Grid.Column="2">
+                        <TextBlock Text="Fees" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding Schedule.Fees}" Style="{StaticResource ReadOnlyInput}"/>
+                    </StackPanel>
+                </Grid>
+
+            </ScrollViewer>
+
+            <!-- ================= قسم إعادة الاختبار ================= -->
+            <Border Grid.Row="2" 
+                    Style="{StaticResource RetakeSectionStyle}" 
+                    Visibility="{Binding IsRetake,Converter={StaticResource BoolToVis}}"
+                    Margin="20,15,20,0">
+                <StackPanel>
+                    <!-- Header -->
+                    <TextBlock Text="Retake Test Info" 
+                               FontSize="14" FontWeight="SemiBold" 
+                               Foreground="{StaticResource PrimaryColor}"
+                               Margin="0,0,0,12"/>
+
+                    <!-- Fields -->
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="12"/>
@@ -174,48 +230,49 @@
 
                         <!-- R.App.Fees -->
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="R.App.Fees" FontSize="11" FontWeight="SemiBold" Foreground="#D97706" Margin="0,0,0,4"/>
-                            <!-- جعله للقراءة فقط مع الحفاظ على ستايل التحذير -->
-                            <TextBox Height="32" FontSize="13" Background="#0F172A" 
-                                     BorderBrush="#B45309" Padding="8,4" Text="{Binding Schedule.RetakerFees}" IsReadOnly="True"
-                                     BorderThickness="1" Foreground="White"/>
+                            <TextBlock Text="R.App.Fees" Style="{StaticResource RetakeLabelStyle}"/>
+                            <TextBox Text="{Binding Schedule.RetakerFees}" Style="{StaticResource RetakeTextBoxStyle}"/>
                         </StackPanel>
 
                         <!-- Total Fees -->
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="Total Fees" FontSize="11" FontWeight="SemiBold" Foreground="#D97706" Margin="0,0,0,4"/>
-                            <TextBox Height="32" FontSize="13" Background="#1E293B" 
-                                     BorderBrush="#B45309" FontWeight="Bold" Padding="8,4" Text="{Binding TotalFees, Mode=OneWay}" 
-                                     IsReadOnly="True" BorderThickness="1" Foreground="#FCD34D"/>
+                            <TextBlock Text="Total Fees" Style="{StaticResource RetakeLabelStyle}"/>
+                            <TextBox Text="{Binding TotalFees, Mode=OneWay}" 
+                                     Style="{StaticResource RetakeTextBoxStyle}" 
+                                     FontWeight="Bold" 
+                                     Foreground="{StaticResource PrimaryColor}"/>
                         </StackPanel>
 
                         <!-- R.Test.App.ID -->
                         <StackPanel Grid.Column="4">
-                            <TextBlock Text="R.Test.App.ID" FontSize="11" FontWeight="SemiBold" Foreground="#D97706" Margin="0,0,0,4"/>
-                            <TextBox Height="32" FontSize="13" Background="#0F172A" 
-                                     BorderBrush="#B45309" Padding="8,4" Text="{Binding AppDto.ApplicationID}"
-                                     IsReadOnly="True" BorderThickness="1" Foreground="#94A3B8"/>
+                            <TextBlock Text="R.Test.App.ID" Style="{StaticResource RetakeLabelStyle}"/>
+                            <TextBox Text="{Binding AppDto.ApplicationID}" 
+                                     Style="{StaticResource RetakeTextBoxStyle}" 
+                                     Foreground="{StaticResource SecondaryTextColor}"/>
                         </StackPanel>
                     </Grid>
-                </Grid>
+                </StackPanel>
             </Border>
 
-            <!-- 3. FOOTER -->
-            <Border Grid.Row="2" Background="{StaticResource CardBackground}" CornerRadius="0,0,12,12" Padding="24,16">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="3" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 
-                    <!-- Status Text -->
+                    <Button Style="{StaticResource PrimaryButtonStyle}" 
+                            Command="{Binding SaveCommand}" 
+                            Content="Save"
+                            Width="120"
+                            Margin="0,0,15,0"/>
 
-                    <!-- Buttons using Commands -->
-                    <Button Grid.Column="1" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SaveCommand}" Content="Save"/>
-                    <Button Grid.Column="3" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding CloseCommand}" Content="Close"/>
-                </Grid>
+                    <Button Style="{StaticResource SecondaryButtonStyle}" 
+                            Command="{Binding CloseCommand}" 
+                            Content="Close"
+                            Width="120"
+                            Click="CloseButton_Click"/>
+                </StackPanel>
             </Border>
 
         </Grid>

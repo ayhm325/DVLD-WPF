@@ -24,5 +24,9 @@ namespace Presentation.Views.Windows.Applications
             // await _viewModel.InitializeAsync(id_المطلوب); 
         }
 
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
 }

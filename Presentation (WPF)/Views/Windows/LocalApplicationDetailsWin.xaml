@@ -4,58 +4,132 @@
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         Title="Local Driving License Application Details"
         Height="800" 
-        Width="900"
+        Width="920"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
-    <Grid Margin="25">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <!-- تم إضافة صف جديد للأزرار -->
-        </Grid.RowDefinitions>
+    <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
 
-        <!-- العنوان: استخدام الستايل العام -->
-        <TextBlock Grid.Row="0"
-                   Text="Local Driving License Application Details"
-                   Style="{StaticResource HeaderStyle}"
-                   HorizontalAlignment="Center"
-                   Margin="0,0,0,20"/>
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
-        <!-- حاوية المحتوى مع التمرير -->
-        <ScrollViewer Grid.Row="1"
-                  VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
 
-            <StackPanel>
-                <!-- البطاقة الأولى: تفاصيل رخصة القيادة -->
-                <!-- إضافة Margin سفلي لتفريغ المسافة عن البطاقة التالية -->
-                <controls:DrivingLicenseApplicationInfo 
-                     x:Name="DrivingLicenseApplicationInfoControl"
-                    DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
-                    PassedTests="{Binding LdlAppInfo.PassedTest}"
-                    TotalTests="3"
-                    LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"
-                    Margin="0,0,0,20"/>
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
 
-                <!-- البطاقة الثانية: المعلومات الأساسية -->
-                <controls:ApplicationBasicInfo 
-                    x:Name="ApplicationBasicInfoControl"
-                    Application="{Binding ApplicationInfo}" />
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Scrollable Content -->
+                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
+            </Grid.RowDefinitions>
 
-            </StackPanel>
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <TextBlock Text="Local Driving License Application Details" 
+                                   FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
-        </ScrollViewer>
+                   
+                </Grid>
+            </Border>
 
-        <!-- منطقة الأزرار (الإغلاق) -->
-        <StackPanel Grid.Row="2" HorizontalAlignment="Right" >
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,20">
 
-            <Button Content="Close" 
-                    Click="CloseButton_Click" 
-                    Style="{StaticResource SecondaryButtonStyle}" 
-                    Width="100"/>
-        </StackPanel>
+                <StackPanel>
 
-    </Grid>
+                    <!-- البطاقة الأولى: تفاصيل رخصة القيادة -->
+                    <controls:DrivingLicenseApplicationInfo 
+                        x:Name="DrivingLicenseApplicationInfoControl"
+                        DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
+                        PassedTests="{Binding LdlAppInfo.PassedTest}"
+                        TotalTests="3"
+                        LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"
+                        Margin="0,0,0,15"/>
+
+                    <!-- البطاقة الثانية: المعلومات الأساسية -->
+                    <controls:ApplicationBasicInfo 
+                        x:Name="ApplicationBasicInfoControl"
+                        Application="{Binding ApplicationInfo}" />
+
+                </StackPanel>
+
+            </ScrollViewer>
+
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <Button Content="Close" 
+                        Style="{StaticResource SecondaryButtonStyle}" 
+                        Width="120"
+                        HorizontalAlignment="Right"
+                        Click="CloseButton_Click"/>
+            </Border>
+
+        </Grid>
+    </Border>
 </Window>

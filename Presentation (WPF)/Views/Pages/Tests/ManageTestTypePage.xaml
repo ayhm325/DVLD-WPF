@@ -10,18 +10,17 @@
       Background="{StaticResource BackgroundColor}">
 
     <Page.Resources>
-        <!-- تعريفات ألوان محلية للجدول لتناسب الوضع الليلي -->
-        <SolidColorBrush x:Key="AlternatingRowBrush" Color="#253248"/>
-        <!-- لون أغمق قليلاً من البطاقة -->
-        <SolidColorBrush x:Key="HoverBrush" Color="#334155"/>
-        <!-- لون عند التحويم (Slate 700) -->
-        <SolidColorBrush x:Key="SelectedBrush" Color="#6366F1"/>
-        <!-- لون الثيم الأساسي عند التحديد -->
+        <!-- ألوان الجدول مطابقة للوحة الألوان العامة (Teal Dark) -->
+        <SolidColorBrush x:Key="AlternatingRowBrush" Color="#111114"/>
+        <!-- أغمق قليلاً من CardBackground -->
+        <SolidColorBrush x:Key="HoverBrush" Color="#1A1A1E"/>
+        <!-- مطابق لتحويلات التبويبات -->
+        <SolidColorBrush x:Key="SelectedRowBg" Color="#042F2E"/>
+        <!-- خلفية Teal داكنة عند التحديد -->
 
         <!-- ستايل الجدول -->
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
-            <!-- شفاف ليظهر لون البطاقة -->
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="RowBackground" Value="Transparent"/>
             <Setter Property="AlternatingRowBackground" Value="{StaticResource AlternatingRowBrush}"/>
@@ -44,7 +43,7 @@
             <Setter Property="FontSize" Value="13"/>
         </Style>
 
-        <!-- ستايل الصفوف (التفاعل) -->
+        <!-- ستايل الصفوف -->
         <Style TargetType="DataGridRow">
             <Setter Property="Height" Value="45"/>
             <Style.Triggers>
@@ -52,7 +51,7 @@
                     <Setter Property="Background" Value="{StaticResource HoverBrush}"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource SelectedBrush}"/>
+                    <Setter Property="Background" Value="{StaticResource SelectedRowBg}"/>
                     <Setter Property="BorderBrush" Value="Transparent"/>
                 </Trigger>
             </Style.Triggers>
@@ -67,8 +66,8 @@
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource SelectedBrush}"/>
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="{StaticResource SelectedRowBg}"/>
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
                     <Setter Property="BorderBrush" Value="Transparent"/>
                 </Trigger>
             </Style.Triggers>
@@ -86,7 +85,6 @@
             <TextBlock Text="Manage Test Types" 
                        Style="{StaticResource HeaderStyle}"/>
 
-            <!-- استخدام اللون الثانوي للعدد -->
             <TextBlock Text="{Binding TestTypes.Count, StringFormat='({0})'}" 
                        Style="{StaticResource HeaderStyle}" 
                        Foreground="{StaticResource SecondaryTextColor}" 
@@ -99,7 +97,6 @@
                       ItemsSource="{Binding TestTypes}">
 
                 <DataGrid.ContextMenu>
-                    <!-- سيتم تطبيق الستايل العام للقوائم تلقائياً -->
                     <ContextMenu>
                         <MenuItem Header="Edit Test Type" 
                                   Command="{Binding EditTestTypeCommand}" 

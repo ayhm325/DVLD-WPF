@@ -11,60 +11,58 @@
         Background="Transparent">
 
     <Window.Resources>
-
-        <!-- Rounded Button -->
-        <Style x:Key="RoundedButtonStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#3B82F6"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
-
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="12">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#2563EB"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
-
     </Window.Resources>
 
     <Grid>
 
-        <!-- Background -->
+        <!-- خلفية النافذة بتدرج داكن مع لمسة Teal خفيفة -->
         <Grid.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#0F172A" Offset="0"/>
-                <GradientStop Color="#1E293B" Offset="0.5"/>
-                <GradientStop Color="#312E81" Offset="1"/>
+                <GradientStop Color="#050505" Offset="0"/>
+                <GradientStop Color="#0A0A0B" Offset="0.5"/>
+                <GradientStop Color="#081414" Offset="1"/>
             </LinearGradientBrush>
         </Grid.Background>
 
-        <!-- Login Card -->
+        <!-- بطاقة تسجيل الدخول -->
         <Border Width="400"
                 Padding="35"
-                Background="#222831"
-                CornerRadius="25"
+                Background="{StaticResource CardBackground}"
+                CornerRadius="16"
+                BorderBrush="{StaticResource BorderColor}"
+                BorderThickness="1"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
 
             <Border.Effect>
-                <DropShadowEffect BlurRadius="30"
-                                  ShadowDepth="0"
-                                  Opacity="0.4"/>
+                <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
             </Border.Effect>
 
             <Grid>
@@ -74,27 +72,21 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Close Button -->
+                <!-- زر الإغلاق -->
                 <Button Content="✕"
                         Click="Close_Click"
-                        Width="30"
-                        Height="30"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
-                        Background="Transparent"
-                        Foreground="White"
-                        BorderThickness="0"
-                        FontSize="16"
-                        Cursor="Hand"/>
+                        Style="{StaticResource CloseButtonStyle}"/>
 
-                <!-- Content -->
+                <!-- المحتوى -->
                 <StackPanel Grid.Row="1">
 
-                    <!-- Logo -->
+                    <!-- الشعار -->
                     <Border Width="90"
                             Height="90"
-                            CornerRadius="45"
-                            Background="#3B82F6"
+                            CornerRadius="22"
+                            Background="{StaticResource PrimaryColor}"
                             HorizontalAlignment="Center"
                             Margin="0,10,0,20">
 
@@ -109,65 +101,40 @@
                     <TextBlock Text="Welcome Back"
                                FontSize="26"
                                FontWeight="Bold"
-                               Foreground="White"
+                               Foreground="{StaticResource TextColor}"
                                HorizontalAlignment="Center"/>
 
                     <TextBlock Text="Sign in to continue"
-                               Foreground="#BFC7D5"
+                               Foreground="{StaticResource SecondaryTextColor}"
                                FontSize="13"
                                HorizontalAlignment="Center"
                                Margin="0,5,0,30"/>
 
-                    <!-- Username -->
-                    <TextBlock Text="Username"
-                               Foreground="White"
-                               Margin="0,0,0,5"/>
+                    <!-- اسم المستخدم -->
+                    <TextBlock Text="Username" Style="{StaticResource LabelStyle}"/>
 
-                    <Border CornerRadius="10"
-                            Background="#393E46"
-                            Height="45"
-                            Margin="0,0,0,15">
+                    <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,0,0,15"/>
 
-                        <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="White"
-                                 Padding="12,0"
-                                 VerticalContentAlignment="Center"/>
-                    </Border>
+                    <!-- كلمة المرور -->
+                    <TextBlock Text="Password" Style="{StaticResource LabelStyle}"/>
 
-                    <!-- Password -->
-                    <TextBlock Text="Password"
-                               Foreground="White"
-                               Margin="0,0,0,5"/>
+                    <PasswordBox PasswordChanged="PasswordBox_PasswordChanged"/>
 
-                    <Border CornerRadius="10"
-                            Background="#393E46"
-                            Height="45">
-
-                        <PasswordBox Background="Transparent"
-                                     BorderThickness="0"
-                                     Foreground="White"
-                                     Padding="12,0"
-                                     PasswordChanged="PasswordBox_PasswordChanged"/>
-                    </Border>
-
+                    <!-- تذكرني (يرث ستايل CheckBox العام تلقائياً) -->
                     <CheckBox Content="Remember Me"
-                              Foreground="White"
                               Margin="0,15,0,0"/>
 
-                    <!-- Login Button -->
+                    <!-- زر تسجيل الدخول (يرث الستايل العام تلقائياً) -->
                     <Button Content="SIGN IN"
                             Command="{Binding LoginCommand}"
-                            Height="50"
+                            Style="{StaticResource PrimaryButtonStyle}"
                             Margin="0,25,0,0"
-                            IsDefault="True"
-                            Style="{StaticResource RoundedButtonStyle}"/>
+                            IsDefault="True"/>
 
                 </StackPanel>
 
             </Grid>
-
         </Border>
 
     </Grid>

@@ -7,13 +7,47 @@
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         mc:Ignorable="d"
         Title="New International License Application"
-        Height="620" Width="800"
-        MinHeight="500" MinWidth="750"
+        Height="680" Width="840"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResizeWithGrip">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- Ghost Button فقط – غير موجود في الستايل العام -->
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Ghost Button (مطابق للوحة Teal) -->
         <Style x:Key="GhostButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="20,0"/>
@@ -27,17 +61,17 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="btnBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="8"
+                                CornerRadius="10"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#1E1B4B"/>
+                                <Setter TargetName="btnBorder" Property="Background" Value="#042F2E"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#312E81"/>
+                                <Setter TargetName="btnBorder" Property="Background" Value="#1A1A1E"/>
                                 <Setter Property="Opacity" Value="0.8"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -47,70 +81,112 @@
         </Style>
     </Window.Resources>
 
-    <!-- ═══════════ ScrollViewer ═══════════ -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="24">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
+
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
+
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Scrollable Content -->
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <!-- ═══════════ Title ═══════════ -->
-            <TextBlock Grid.Row="0"
-                       Text="New International License Application"
-                       Style="{StaticResource HeaderStyle}"
-                       Margin="0,0,0,20"/>
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M19,12H21V14H19V12M19,8H21V10H19V8M3,20H17V4H3A2,2 0 0,0 1,6V18A2,2 0 0,0 3,20Z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <TextBlock Text="New International License Application" 
+                                   FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
-            <!-- ═══════════ Driver License Info Card ═══════════ -->
-            <Border Grid.Row="1"
-                    Style="{StaticResource CardStyle}"
-                    Padding="2"
-                    Margin="0,0,0,16">
-                <controls:DriverLicenseInfo/>
+                   
+                </Grid>
             </Border>
 
-            <!-- ═══════════ Application Basic Info Card ═══════════ -->
-            <Border Grid.Row="2"
-                    Style="{StaticResource CardStyle}"
-                    Padding="2">
-                <controls:ApplicationBasicInfo/>
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,20">
+
+                <StackPanel>
+
+                    <!-- Driver License Info Card -->
+                    <controls:DriverLicenseInfo Margin="0,0,0,15"/>
+
+                    <!-- Application Basic Info Card -->
+                    <controls:ApplicationBasicInfo/>
+
+                </StackPanel>
+
+            </ScrollViewer>
+
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Side -->
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Button Content="Show Licenses History"
+                                Style="{StaticResource GhostButtonStyle}"/>
+                        <Rectangle Width="1" Height="20"
+                                   Fill="{StaticResource BorderColor}"
+                                   Margin="12,0"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="Show Licenses Info"
+                                Style="{StaticResource GhostButtonStyle}"/>
+                    </StackPanel>
+
+                    <!-- Right Side -->
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Button Content="Issue"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Width="120"
+                                Margin="0,0,15,0"/>
+                        <Button Content="Close"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Width="120"
+                                Click="CloseButton_Click"/>
+                    </StackPanel>
+                </Grid>
             </Border>
 
-            <!-- ═══════════ Bottom Bar ═══════════ -->
-            <Grid Grid.Row="3" Margin="0,20,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Left Side -->
-                <StackPanel Grid.Column="0"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <Button Content="Show Licenses History"
-                            Style="{StaticResource GhostButtonStyle}"/>
-                    <Rectangle Width="1" Height="20"
-                               Fill="{StaticResource BorderColor}"
-                               Margin="12,0"
-                               VerticalAlignment="Center"/>
-                    <Button Content="Show Licenses Info"
-                            Style="{StaticResource GhostButtonStyle}"/>
-                </StackPanel>
-
-                <!-- Right Side -->
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <Button Content="Issue"
-                            Style="{StaticResource PrimaryButtonStyle}"
-                            Margin="0,0,10,0"/>
-                    <Button Content="Close"
-                            Style="{StaticResource SecondaryButtonStyle}"/>
-                </StackPanel>
-            </Grid>
         </Grid>
-    </ScrollViewer>
+    </Border>
 </Window>

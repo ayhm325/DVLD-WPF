@@ -8,18 +8,18 @@
 
     <UserControl.Resources>
 
-        <!-- ═══════════════ Local Brushes ═══════════════ -->
-        <SolidColorBrush x:Key="IconBgBrush" Color="#1E1B4B"/>
+        <!-- ═══════════════ Local Brushes (مطابقة للوحة الألوان العامة - Teal) ═══════════════ -->
+        <SolidColorBrush x:Key="IconBgBrush" Color="#042F2E"/>
 
         <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,0.6">
-            <GradientStop Color="#0B1220" Offset="0"/>
-            <GradientStop Color="#162032" Offset="0.5"/>
-            <GradientStop Color="#0F1D32" Offset="1"/>
+            <GradientStop Color="#081414" Offset="0"/>
+            <GradientStop Color="#0E201F" Offset="0.5"/>
+            <GradientStop Color="#0A1A19" Offset="1"/>
         </LinearGradientBrush>
 
         <LinearGradientBrush x:Key="SearchBtnGradient" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#6366F1" Offset="0"/>
-            <GradientStop Color="#4F46E5" Offset="1"/>
+            <GradientStop Color="#14B8A6" Offset="0"/>
+            <GradientStop Color="#0D9488" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- ألوان حالة التفعيل -->
@@ -45,7 +45,6 @@
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                    <!-- تم تصحيح اللون ليطابق لوحة الألوان العامة بدلاً من #111827 -->
                     <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
                 </Trigger>
             </Style.Triggers>
@@ -77,7 +76,7 @@
             <Setter Property="Margin" Value="10,3,0,0"/>
         </Style>
 
-        <!-- نص خانة البحث – يرث كل الألوان من الستايل العام -->
+        <!-- نص خانة البحث – مطابق للستايل العام -->
         <Style x:Key="SearchTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CaretBrush" Value="White"/>
@@ -127,7 +126,6 @@
             BorderBrush="{DynamicResource BorderColor}"
             BorderThickness="1">
 
-        <!-- تم إصلاح مشكلة مشاركة الـ Effect لمنع التجميد -->
         <Border.Effect>
             <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="20" Opacity="0.4"/>
         </Border.Effect>
@@ -153,7 +151,7 @@
                         <Border Background="{DynamicResource PrimaryColor}" Opacity="0.15"
                                 CornerRadius="10" Padding="10" Margin="0,0,16,0">
                             <Path Data="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                                  Stroke="White" StrokeThickness="1.6" Fill="Transparent" Stretch="Uniform" Height="22" Width="22"/>
+                                  Stroke="{DynamicResource PrimaryColor}" StrokeThickness="1.6" Fill="Transparent" Stretch="Uniform" Height="22" Width="22"/>
                         </Border>
                         <TextBlock Text="Driver License Info" FontSize="21" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextColor}" VerticalAlignment="Center"/>
@@ -170,16 +168,19 @@
                                       Fill="Transparent" Stretch="Uniform" Height="15" Width="15"/>
                             </Border>
                             <TextBox x:Name="TxtLicenseID"
-                                     VerticalAlignment="Center"
-                                     Margin="30,0,0,0"
-                                     Style="{StaticResource SearchTextBox}" TextChanged="TxtLicenseID_TextChanged"/>
+                                        VerticalAlignment="Center"
+                                        Margin="30,0,0,0"
+                                        Foreground="White"
+                                        CaretBrush="White"                                      
+                                        BorderThickness="0"
+                                        TextChanged="TxtLicenseID_TextChanged"/>
                         </Grid>
 
                         <Border Style="{StaticResource HeaderSearchBtn}"
                                 Margin="8,0,0,0"
                                 MouseLeftButtonUp="BtnSearch_Click">
                             <Border.Effect>
-                                <DropShadowEffect Color="#4F46E5" BlurRadius="8" Opacity="0.35" Direction="0"/>
+                                <DropShadowEffect Color="#14B8A6" BlurRadius="8" Opacity="0.35" Direction="0"/>
                             </Border.Effect>
                             <Path Data="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                                   Stroke="White" StrokeThickness="2" Fill="Transparent"

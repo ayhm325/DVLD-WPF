@@ -6,55 +6,123 @@
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         mc:Ignorable="d"
         Title="Add/Edit Person"
-        Height="650"
-        Width="900"
+        Height="700"
+        Width="950"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}"
-        ResizeMode="CanResize">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
-    <Grid Margin="30">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
 
-        <!-- Title Section -->
-        <TextBlock Text="{Binding PageTitle}"
-                   Style="{StaticResource HeaderStyle}"
-                   Margin="0,0,0,20"
-                   VerticalAlignment="Center"/>
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
-        <!-- Content Section (Inside a Card with ScrollViewer) -->
-        <ScrollViewer Grid.Row="1" 
-                      VerticalScrollBarVisibility="Auto" 
-                      HorizontalScrollBarVisibility="Disabled"
-                      Margin="0,0,0,20">
+    <!-- الحاوية الرئيسية: خلفية النافذة (أغمق من البطاقة الداخلية لتجنب تعارض البطاقات) -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
 
-            <Border Style="{StaticResource CardStyle}" Padding="25">
-                <!-- استدعاء التحكم الذي صممناه سابقاً -->
-                <controls:PersonInfoCard />
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <TextBlock Text="{Binding PageTitle}" 
+                                   FontSize="20" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                   
+                </Grid>
             </Border>
 
-        </ScrollViewer>
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto" 
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,20">
 
-        <!-- Buttons Section -->
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom">
+                <!-- استدعاء التحكم (سيأخذ ستايل CardStyle الخاص به ليظهر كبطاقة فاتحة داخل النافذة الداكنة) -->
+                <controls:PersonInfoCard />
+            </ScrollViewer>
 
-            <Button Content="Close" 
-                    Style="{StaticResource SecondaryButtonStyle}" 
-                    Click="CloseButton_Click" 
-                    Width="100"
-                    Margin="0,0,15,0"/>
+            <!-- ================= الأزرار ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 
-            <Button Content="Save"
-                    Style="{StaticResource PrimaryButtonStyle}"
-                    Width="100"
-                    Command="{Binding SavePersonCommand}"/>
+                    <Button Content="Close" 
+                            Style="{StaticResource SecondaryButtonStyle}" 
+                            Click="CloseButton_Click" 
+                            Width="120"
+                            Margin="0,0,15,0"/>
 
-        </StackPanel>
-    </Grid>
+                    <Button Content="Save"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Width="120"
+                            Command="{Binding SavePersonCommand}"/>
+
+                </StackPanel>
+            </Border>
+
+        </Grid>
+    </Border>
 </Window>

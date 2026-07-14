@@ -21,5 +21,11 @@ namespace Presentation.Views.Windows.Tests
             // افترضنا أنك تمرر الـ ID بطريقة ما، يمكنك استبداله بالـ ID الفعلي
             // await _viewModel.InitializeAsync(id_المطلوب); 
         }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
+
 }

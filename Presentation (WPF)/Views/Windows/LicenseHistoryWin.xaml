@@ -6,12 +6,45 @@
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         mc:Ignorable="d"
         Title="License History" 
-        Height="550" Width="850"
+        Height="600" Width="880"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResizeWithGrip"
-        Background="{StaticResource BackgroundColor}">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
     <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <!-- ===== DataGrid ===== -->
         <Style x:Key="DataGridStyle" TargetType="DataGrid">
@@ -22,14 +55,13 @@
             <Setter Property="SelectionUnit" Value="FullRow"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#334155"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="#172033"/>
+            <Setter Property="AlternatingRowBackground" Value="#111114"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="RowHeight" Value="36"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
@@ -38,14 +70,14 @@
 
         <!-- ===== Column Header ===== -->
         <Style x:Key="ColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#0B1120"/>
+            <Setter Property="Background" Value="#0E0E10"/>
             <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
         </Style>
 
         <!-- ===== Cell ===== -->
@@ -56,8 +88,8 @@
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="#042F2E"/>
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -70,7 +102,7 @@
                         <Condition Property="IsMouseOver" Value="True"/>
                         <Condition Property="IsSelected" Value="False"/>
                     </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="#1E293B"/>
+                    <Setter Property="Background" Value="#1A1A1E"/>
                 </MultiTrigger>
             </Style.Triggers>
         </Style>
@@ -94,187 +126,219 @@
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
         </Style>
 
-        <!-- ===== قالب عمود "هل نشط" ===== -->
+        <!-- ===== قالب عمود "هل نشط" (مطابق لألوان الحالة العامة) ===== -->
         <DataTemplate x:Key="IsActiveTemplate">
             <Border x:Name="PillBorder"
-                    Background="#14532D"
-                    CornerRadius="10"
-                    Padding="12,4"
+                    Background="#064E3B"
+                    CornerRadius="6"
+                    Padding="10,4"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Ellipse x:Name="Dot" 
                              Width="7" Height="7"
-                             Fill="#22C55E"
+                             Fill="#34D399"
                              Margin="0,0,6,0"/>
                     <TextBlock x:Name="StatusText" 
                                Text="Active" 
                                FontSize="11" 
                                FontWeight="SemiBold"
-                               Foreground="#4ADE80"
+                               Foreground="#34D399"
                                VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsActive}" Value="False">
-                    <Setter TargetName="PillBorder" Property="Background" Value="#450A0A"/>
-                    <Setter TargetName="Dot" Property="Fill" Value="#EF4444"/>
+                    <Setter TargetName="PillBorder" Property="Background" Value="#7F1D1D"/>
+                    <Setter TargetName="Dot" Property="Fill" Value="#F87171"/>
                     <Setter TargetName="StatusText" Property="Text" Value="Inactive"/>
-                    <Setter TargetName="StatusText" Property="Foreground" Value="#FCA5A5"/>
+                    <Setter TargetName="StatusText" Property="Foreground" Value="#F87171"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
 
     </Window.Resources>
 
-    <!-- ==================== سكرول للصفحة كاملة ==================== -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                  HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="16">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
 
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
+
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Scrollable Content -->
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <!-- ==================== العنوان ==================== -->
-            <TextBlock Grid.Row="0" 
-                       Text="License History" 
-                       Style="{StaticResource HeaderStyle}"
-                       Margin="0,0,0,14"/>
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M13,3A9,9 0 0,0 22,12A9,9 0 0,0 13,3M13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19M12,8V12L15.28,13.94L16.05,12.66L13,10.8V8H12Z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <TextBlock Text="License History" 
+                                   FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
-            <!-- ==================== اليوزر كنترول ==================== -->
-            <Border Grid.Row="1" 
-                    Style="{StaticResource CardStyle}"
-                    Padding="6"
-                    Margin="0,0,0,14">
-                <controls:InformationPerson x:Name="ucPersonInfo"/>
+                   
+                </Grid>
             </Border>
 
-            <!-- ==================== التابات + الداتا قريد ==================== -->
-            <Border Grid.Row="2" 
-                    Style="{StaticResource CardStyle}"
-                    Margin="0,0,0,14"
-                    Padding="0"
-                    ClipToBounds="True"
-                    MinHeight="280">
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto" 
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,20">
 
-                <TabControl Background="Transparent"
-                            BorderThickness="0">
+                <StackPanel>
 
-                    <!-- ===== تاب الرخص المحلية ===== -->
-                    <TabItem Header="Local Licenses History" 
-                             Style="{StaticResource TabItemStyle}">
+                    <!-- اليوزر كنترول (بدون بطاقة خارجية لتفادي تكرار البطاقات) -->
+                    <controls:InformationPerson x:Name="ucPersonInfo" Margin="0,0,0,15"/>
 
-                        <DataGrid x:Name="dgLocalLicenses"
-                                  Style="{StaticResource DataGridStyle}"
-                                  ColumnHeaderStyle="{StaticResource ColumnHeaderStyle}"
-                                  CellStyle="{StaticResource CellStyle}"
-                                  RowStyle="{StaticResource RowStyle}"
-                                  ItemsSource="{Binding LocalLicenses}"
-                                  Margin="8,8,8,12">
+                    <!-- التابات + الداتا قريد -->
+                    <Border Style="{StaticResource CardStyle}"
+                            Padding="0"
+                            ClipToBounds="True"
+                            MinHeight="280">
 
-                            <DataGrid.Columns>
+                        <TabControl Background="Transparent"
+                                    BorderThickness="0">
 
-                                <DataGridTextColumn Header="Lic.ID"
-                                                    Binding="{Binding LicenseID}"
-                                                    Width="70"
-                                                    ElementStyle="{StaticResource ColumnTextBoldStyle}"/>
+                            <!-- ===== تاب الرخص المحلية ===== -->
+                            <TabItem Header="Local Licenses History" 
+                                     Style="{StaticResource TabItemStyle}">
 
-                                <DataGridTextColumn Header="App.ID"
-                                                    Binding="{Binding ApplicationID}"
-                                                    Width="70"
-                                                    ElementStyle="{StaticResource ColumnTextStyle}"/>
+                                <DataGrid x:Name="dgLocalLicenses"
+                                          Style="{StaticResource DataGridStyle}"
+                                          ColumnHeaderStyle="{StaticResource ColumnHeaderStyle}"
+                                          CellStyle="{StaticResource CellStyle}"
+                                          RowStyle="{StaticResource RowStyle}"
+                                          ItemsSource="{Binding LocalLicenses}"
+                                          Margin="8,8,8,12">
 
-                                <DataGridTextColumn Header="Class Name"
-                                                    Binding="{Binding LicenseClassName}"
-                                                    Width="*"
-                                                    ElementStyle="{StaticResource ColumnTextLeftStyle}"/>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Lic.ID"
+                                                            Binding="{Binding LicenseID}"
+                                                            Width="70"
+                                                            ElementStyle="{StaticResource ColumnTextBoldStyle}"/>
 
-                                <DataGridTextColumn Header="Issue Date"
-                                                    Binding="{Binding IssueDate, StringFormat='yyyy/M/d'}"
-                                                    Width="115"
-                                                    ElementStyle="{StaticResource ColumnTextStyle}"/>
+                                        <DataGridTextColumn Header="App.ID"
+                                                            Binding="{Binding ApplicationID}"
+                                                            Width="70"
+                                                            ElementStyle="{StaticResource ColumnTextStyle}"/>
 
-                                <DataGridTextColumn Header="Expiration Date"
-                                                    Binding="{Binding ExpirationDate, StringFormat='yyyy/M/d'}"
-                                                    Width="115"
-                                                    ElementStyle="{StaticResource ColumnTextStyle}"/>
+                                        <DataGridTextColumn Header="Class Name"
+                                                            Binding="{Binding LicenseClassName}"
+                                                            Width="*"
+                                                            ElementStyle="{StaticResource ColumnTextLeftStyle}"/>
 
-                                <DataGridTemplateColumn Header="Status"
-                                                        Width="95"
-                                                        CellTemplate="{StaticResource IsActiveTemplate}"/>
+                                        <DataGridTextColumn Header="Issue Date"
+                                                            Binding="{Binding IssueDate, StringFormat='yyyy/M/d'}"
+                                                            Width="115"
+                                                            ElementStyle="{StaticResource ColumnTextStyle}"/>
 
-                            </DataGrid.Columns>
-                        </DataGrid>
+                                        <DataGridTextColumn Header="Expiration Date"
+                                                            Binding="{Binding ExpirationDate, StringFormat='yyyy/M/d'}"
+                                                            Width="115"
+                                                            ElementStyle="{StaticResource ColumnTextStyle}"/>
 
-                    </TabItem>
+                                        <DataGridTemplateColumn Header="Status"
+                                                                Width="95"
+                                                                CellTemplate="{StaticResource IsActiveTemplate}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                    <!-- ===== تاب الرخص الدولية ===== -->
-                    <TabItem Header="International Licenses History" 
-                             Style="{StaticResource TabItemStyle}">
+                            </TabItem>
 
-                        <DataGrid x:Name="dgInternationalLicenses"
-                                  Style="{StaticResource DataGridStyle}"
-                                  ColumnHeaderStyle="{StaticResource ColumnHeaderStyle}"
-                                  CellStyle="{StaticResource CellStyle}"
-                                  RowStyle="{StaticResource RowStyle}"
-                                  ItemsSource="{Binding InternationalLicenses}"
-                                  Margin="8,8,8,12">
+                            <!-- ===== تاب الرخص الدولية ===== -->
+                            <TabItem Header="International Licenses History" 
+                                     Style="{StaticResource TabItemStyle}">
 
-                            <DataGrid.Columns>
+                                <DataGrid x:Name="dgInternationalLicenses"
+                                          Style="{StaticResource DataGridStyle}"
+                                          ColumnHeaderStyle="{StaticResource ColumnHeaderStyle}"
+                                          CellStyle="{StaticResource CellStyle}"
+                                          RowStyle="{StaticResource RowStyle}"
+                                          ItemsSource="{Binding InternationalLicenses}"
+                                          Margin="8,8,8,12">
 
-                                <DataGridTextColumn Header="Int.Lic.ID"
-                                                    Binding="{Binding InternationalLicenseID}"
-                                                    Width="90"
-                                                    ElementStyle="{StaticResource ColumnTextBoldStyle}"/>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Int.Lic.ID"
+                                                            Binding="{Binding InternationalLicenseID}"
+                                                            Width="90"
+                                                            ElementStyle="{StaticResource ColumnTextBoldStyle}"/>
 
-                                <DataGridTextColumn Header="App.ID"
-                                                    Binding="{Binding ApplicationID}"
-                                                    Width="80"
-                                                    ElementStyle="{StaticResource ColumnTextStyle}"/>
+                                        <DataGridTextColumn Header="App.ID"
+                                                            Binding="{Binding ApplicationID}"
+                                                            Width="80"
+                                                            ElementStyle="{StaticResource ColumnTextStyle}"/>
 
-                                <DataGridTextColumn Header="L.Lic.ID"
-                                                    Binding="{Binding LicenseID}"
-                                                    Width="80"
-                                                    ElementStyle="{StaticResource ColumnTextStyle}"/>
+                                        <DataGridTextColumn Header="L.Lic.ID"
+                                                            Binding="{Binding LicenseID}"
+                                                            Width="80"
+                                                            ElementStyle="{StaticResource ColumnTextStyle}"/>
 
-                                <DataGridTextColumn Header="Issue Date"
-                                                    Binding="{Binding IssueDate, StringFormat='yyyy/M/d'}"
-                                                    Width="115"
-                                                    ElementStyle="{StaticResource ColumnTextStyle}"/>
+                                        <DataGridTextColumn Header="Issue Date"
+                                                            Binding="{Binding IssueDate, StringFormat='yyyy/M/d'}"
+                                                            Width="115"
+                                                            ElementStyle="{StaticResource ColumnTextStyle}"/>
 
-                                <DataGridTextColumn Header="Expiration Date"
-                                                    Binding="{Binding ExpirationDate, StringFormat='yyyy/M/d'}"
-                                                    Width="115"
-                                                    ElementStyle="{StaticResource ColumnTextStyle}"/>
+                                        <DataGridTextColumn Header="Expiration Date"
+                                                            Binding="{Binding ExpirationDate, StringFormat='yyyy/M/d'}"
+                                                            Width="115"
+                                                            ElementStyle="{StaticResource ColumnTextStyle}"/>
 
-                                <DataGridTemplateColumn Header="Status"
-                                                        Width="95"
-                                                        CellTemplate="{StaticResource IsActiveTemplate}"/>
+                                        <DataGridTemplateColumn Header="Status"
+                                                                Width="95"
+                                                                CellTemplate="{StaticResource IsActiveTemplate}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                            </DataGrid.Columns>
-                        </DataGrid>
+                            </TabItem>
 
-                    </TabItem>
+                        </TabControl>
 
-                </TabControl>
+                    </Border>
 
+                </StackPanel>
+
+            </ScrollViewer>
+
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <Button x:Name="btnClose"
+                        Content="Close" 
+                        Width="120" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        HorizontalAlignment="Right"
+                        Click="btnClose_Click"/>
             </Border>
-
-            <!-- ==================== زر الإغلاق ==================== -->
-            <Button Grid.Row="3" 
-                    x:Name="btnClose"
-                    Content="Close" 
-                    Width="110" 
-                    Style="{StaticResource SecondaryButtonStyle}"
-                    HorizontalAlignment="Right"
-                    Margin="0,4,0,8"
-                    Click="btnClose_Click"/>
 
         </Grid>
-    </ScrollViewer>
-
+    </Border>
 </Window>

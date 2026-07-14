@@ -6,11 +6,47 @@
              mc:Ignorable="d" d:DesignWidth="800">
 
     <UserControl.Resources>
-        <!-- تعريف لون إضافي محلي لزر الإضافة (Accent Color) -->
-        <SolidColorBrush x:Key="AccentGreen" Color="#10B981"/>
+        <!-- لون الإضافة (Emerald) مع متغير Hover خاص به -->
+        <SolidColorBrush x:Key="AccentColor" Color="#10B981"/>
+        <SolidColorBrush x:Key="AccentHoverColor" Color="#34D399"/>
+
+        <!-- ستايل زر الإضافة المستقل – يطابق هيكل PrimaryButtonStyle لكن بألوانه الخاصة -->
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10" 
+                                Padding="20,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98" CenterX="0.5" CenterY="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <!-- استخدام CardStyle مع زيادة بسيطة في Padding -->
+    <!-- استخدام CardStyle العام -->
     <Border Style="{StaticResource CardStyle}" Padding="20">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -25,15 +61,18 @@
             <!-- العنوان الرئيسي -->
             <TextBlock Grid.Column="0" Text="Filter:" 
                        FontWeight="SemiBold" 
+                       FontSize="15"
                        Foreground="{StaticResource TextColor}"
                        VerticalAlignment="Center" Margin="0,0,20,0"/>
 
-            <!-- تسمية الحقل (استخدمنا اللون الثانوي للتمييز) -->
+            <!-- تسمية الحقل -->
             <TextBlock Grid.Column="1" Text="Find By:" 
+                       FontSize="13"
+                       FontWeight="Medium"
                        Foreground="{StaticResource SecondaryTextColor}"
                        VerticalAlignment="Center" Margin="0,0,10,0"/>
 
-            <!-- ComboBox: تم زيادة العرض قليلاً لضمان ظهور النصوص -->
+            <!-- ComboBox -->
             <ComboBox Grid.Column="2" 
                       SelectedIndex="{Binding SelectedFilterIndex}" 
                       Width="150" 
@@ -43,13 +82,13 @@
                 <ComboBoxItem Content="National No"/>
             </ComboBox>
 
-            <!-- TextBox: سيأخذ الستايل العام تلقائياً -->
+            <!-- TextBox -->
             <TextBox Grid.Column="3" 
                      Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" 
                      Margin="0,0,15,0" 
                      VerticalAlignment="Center"/>
 
-            <!-- زر البحث (Primary Style) -->
+            <!-- زر البحث (Teal – Primary) -->
             <Button Grid.Column="4" 
                     Content="Search" 
                     Style="{StaticResource PrimaryButtonStyle}" 
@@ -58,12 +97,11 @@
                     Command="{Binding SearchCommand}"
                     VerticalAlignment="Center"/>
 
-            <!-- زر الإضافة (باستخدام PrimaryButtonStyle مع تغيير اللون للأخضر الزمردي) -->
+            <!-- زر الإضافة (Emerald – Accent) -->
             <Button Grid.Column="5" 
                     Content="+ Add Person" 
-                    Style="{StaticResource PrimaryButtonStyle}" 
+                    Style="{StaticResource AccentButtonStyle}" 
                     Width="130" 
-                    Background="{StaticResource AccentGreen}" 
                     Command="{Binding AddPersonCommand}"
                     VerticalAlignment="Center"/>
         </Grid>

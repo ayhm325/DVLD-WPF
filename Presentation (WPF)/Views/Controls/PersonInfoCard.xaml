@@ -7,18 +7,21 @@
              d:DesignHeight="600" d:DesignWidth="800">
 
     <UserControl.Resources>
-        <!-- تعريف خلفية داكنة للأخطاء -->
+        <!-- تدرج خفيف للهيدر -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- خلفية داكنة للأخطاء -->
         <SolidColorBrush x:Key="ErrorBackground" Color="#2A0A0A"/>
 
-        <!-- Label Style: استخدام اللون الرمادي الثانوي لسهولة القراءة في النماذج -->
-        <Style TargetType="TextBlock" x:Key="LabelStyle">
+        <!-- تسمية الحقل – يرث من العام مع تعديل الوزن -->
+        <Style TargetType="TextBlock" x:Key="FormLabelStyle" BasedOn="{StaticResource LabelStyle}">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
-            <Setter Property="FontSize" Value="13"/>
         </Style>
 
-        <!-- ErrorMessage Style: استخدام لون الخطأ العام -->
+        <!-- رسالة الخطأ -->
         <Style TargetType="TextBlock" x:Key="ErrorMessageStyle">
             <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
             <Setter Property="FontSize" Value="11"/>
@@ -33,7 +36,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- TextBox Style: يرث النمط العام مع خلفية خطأ داكنة -->
+        <!-- TextBox: يرث العام مع إضافة حالة الخطأ -->
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Style.Triggers>
                 <Trigger Property="Validation.HasError" Value="True">
@@ -44,7 +47,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ComboBox Style: يرث النمط العام -->
+        <!-- ComboBox: يرث العام مع إضافة حالة الخطأ -->
         <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Style.Triggers>
                 <Trigger Property="Validation.HasError" Value="True">
@@ -53,29 +56,89 @@
             </Style.Triggers>
         </Style>
 
-        <!-- DatePicker Style: تخصيص للوضع المظلم -->
-        <Style TargetType="DatePicker">
-            <Setter Property="Height" Value="38"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
-            <Setter Property="Background" Value="{StaticResource InputBackground}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <!-- Danger Button Style: تخصيص لزر الحذف -->
-        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-            <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+        <!-- DatePicker: يرث العام مع إضافة حالة الخطأ -->
+        <Style TargetType="DatePicker" BasedOn="{StaticResource {x:Type DatePicker}}">
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <!-- خلفية حمراء داكنة جداً عند التحويم -->
-                    <Setter Property="Background" Value="#3D0F0F"/>
+                <Trigger Property="Validation.HasError" Value="True">
                     <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <!-- RadioButton: نمط مخصص داكن يطابق أذرعة CheckBox العام -->
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <Border x:Name="RadioBorder" 
+                                    Width="20" Height="20" 
+                                    Background="{StaticResource InputBackground}" 
+                                    BorderBrush="{StaticResource BorderColor}" 
+                                    BorderThickness="1.5" 
+                                    CornerRadius="10" 
+                                    Margin="0,0,10,0">
+                                <Ellipse x:Name="RadioMark" 
+                                         Width="10" Height="10" 
+                                         Fill="{StaticResource PrimaryColor}" 
+                                         Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RadioBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="RadioMark" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="RadioBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                <Setter TargetName="RadioBorder" Property="Background" Value="#042F2E"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger Button: زر الحذف بقالب مستقل لتجنب تعارض الألوان -->
+        <Style x:Key="DangerButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="10" 
+                                Padding="20,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#3D0F0F"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -87,12 +150,31 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- العنوان -->
-            <TextBlock Text="Person Details" 
-                       Style="{StaticResource HeaderStyle}" 
-                       Foreground="{StaticResource PrimaryColor}" 
-                       Margin="0,0,0,20"/>
+            <!-- ═══════════════ HEADER ═══════════════ -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="12" Padding="18,14,18,14" Margin="-25,-25,-25,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="10" 
+                            Background="{StaticResource PrimaryColor}" 
+                            Opacity="0.15"
+                            Margin="0,0,14,0"
+                            Padding="7"
+                            VerticalAlignment="Center">
+                        <Path Data="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                              Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                    </Border>
+                    <TextBlock Text="Person Details" 
+                               FontSize="18" FontWeight="SemiBold" 
+                               Foreground="{StaticResource TextColor}" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
 
+            <!-- فاصل -->
+            <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Margin="0,0,0,20" Background="{StaticResource BorderColor}"/>
+
+            <!-- ═══════════════ FIELDS GRID ═══════════════ -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -111,62 +193,62 @@
 
                 <!-- First Name -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,15">
-                    <TextBlock Text="First Name *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="First Name *" Style="{StaticResource FormLabelStyle}"/>
                     <TextBox x:Name="TxtFirstName" Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" />
                     <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtFirstName}" Style="{StaticResource ErrorMessageStyle}"/>
                 </StackPanel>
 
                 <!-- Second Name -->
                 <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,15">
-                    <TextBlock Text="Second Name *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Second Name *" Style="{StaticResource FormLabelStyle}"/>
                     <TextBox x:Name="TxtSecondName" Text="{Binding SecondName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" />
                     <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtSecondName}" Style="{StaticResource ErrorMessageStyle}"/>
                 </StackPanel>
 
                 <!-- Third Name -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,15">
-                    <TextBlock Text="Third Name (Optional)" Style="{StaticResource LabelStyle}"/>
-                    <TextBox Text="{Binding ThirdName, UpdateSourceTrigger=PropertyChanged,TargetNullValue=''}" />
+                    <TextBlock Text="Third Name (Optional)" Style="{StaticResource FormLabelStyle}"/>
+                    <TextBox Text="{Binding ThirdName, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}" />
                 </StackPanel>
 
                 <!-- Last Name -->
                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,15">
-                    <TextBlock Text="Last Name *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Last Name *" Style="{StaticResource FormLabelStyle}"/>
                     <TextBox x:Name="TxtLastName" Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" />
                     <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtLastName}" Style="{StaticResource ErrorMessageStyle}"/>
                 </StackPanel>
 
                 <!-- National No -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,15">
-                    <TextBlock Text="National Number *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="National Number *" Style="{StaticResource FormLabelStyle}"/>
                     <TextBox x:Name="TxtNationalNo" Text="{Binding NationalNo, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" />
                     <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtNationalNo}" Style="{StaticResource ErrorMessageStyle}"/>
                 </StackPanel>
 
                 <!-- Phone -->
                 <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,15">
-                    <TextBlock Text="Phone Number *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Phone Number *" Style="{StaticResource FormLabelStyle}"/>
                     <TextBox x:Name="TxtPhone" Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" />
                     <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtPhone}" Style="{StaticResource ErrorMessageStyle}"/>
                 </StackPanel>
 
                 <!-- Email -->
                 <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,15">
-                    <TextBlock Text="Email Address (Optional)" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Email Address (Optional)" Style="{StaticResource FormLabelStyle}"/>
                     <TextBox x:Name="TxtEmail" Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" />
                     <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtEmail}" Style="{StaticResource ErrorMessageStyle}"/>
                 </StackPanel>
 
                 <!-- Address -->
                 <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,15">
-                    <TextBlock Text="Physical Address *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Physical Address *" Style="{StaticResource FormLabelStyle}"/>
                     <TextBox x:Name="TxtAddress" Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" />
                     <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtAddress}" Style="{StaticResource ErrorMessageStyle}"/>
                 </StackPanel>
 
                 <!-- Date Of Birth -->
                 <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,0,15">
-                    <TextBlock Text="Date Of Birth *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Date Of Birth *" Style="{StaticResource FormLabelStyle}"/>
                     <DatePicker x:Name="DtpDateOfBirth" 
                                 SelectedDate="{Binding DateOfBirth, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" 
                                 DisplayDateEnd="{Binding MaxBirthDate, Mode=OneWay}" />
@@ -175,30 +257,21 @@
 
                 <!-- Gender -->
                 <StackPanel Grid.Row="4" Grid.Column="2" Margin="0,0,0,15">
-                    <TextBlock Text="Gender *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Gender *" Style="{StaticResource FormLabelStyle}"/>
                     <StackPanel Orientation="Horizontal" Height="38" VerticalAlignment="Center">
                         <RadioButton Content="Male" 
                                      GroupName="GenderGroup"
                                      IsChecked="{Binding IsMale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                     Margin="0,0,25,0" 
-                                     FontSize="14" 
-                                     Foreground="{StaticResource TextColor}"
-                                     VerticalContentAlignment="Center" 
-                                     Cursor="Hand"/>
-
+                                     Margin="0,0,25,0"/>
                         <RadioButton Content="Female" 
                                      GroupName="GenderGroup"
-                                     IsChecked="{Binding IsFemale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                     FontSize="14" 
-                                     Foreground="{StaticResource TextColor}"
-                                     VerticalContentAlignment="Center" 
-                                     Cursor="Hand"/>
+                                     IsChecked="{Binding IsFemale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Country -->
                 <StackPanel Grid.Row="5" Grid.Column="0" Margin="0,0,0,15">
-                    <TextBlock Text="Country *" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Country *" Style="{StaticResource FormLabelStyle}"/>
                     <ComboBox x:Name="CboCountry" 
                               ItemsSource="{Binding Countries}" 
                               SelectedItem="{Binding SelectedCountry, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}" 
@@ -208,16 +281,16 @@
 
                 <!-- Profile Photo -->
                 <StackPanel Grid.Row="5" Grid.Column="2" Margin="0,0,0,15">
-                    <TextBlock Text="Profile Photo (Optional)" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="Profile Photo (Optional)" Style="{StaticResource FormLabelStyle}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- صورة العرض: خلفية داكنة -->
+                        <!-- صورة العرض -->
                         <Border Width="120" Height="120" 
-                                CornerRadius="8" 
+                                CornerRadius="12" 
                                 BorderBrush="{StaticResource BorderColor}" 
                                 BorderThickness="1" 
                                 Background="{StaticResource InputBackground}" 
@@ -227,13 +300,13 @@
 
                         <StackPanel Grid.Column="1" Margin="15,0,0,0" VerticalAlignment="Center">
                             <Button Content="Choose Image" 
-                                    Height="38" Width="130" 
+                                    Width="130" 
                                     HorizontalAlignment="Left" 
                                     Command="{Binding ChooseImageCommand}" 
                                     Style="{StaticResource PrimaryButtonStyle}"/>
 
                             <Button Content="Remove" 
-                                    Height="38" Width="130" 
+                                    Width="130" 
                                     HorizontalAlignment="Left" 
                                     Command="{Binding RemoveImageCommand}" 
                                     Margin="0,10,0,0" 
@@ -241,6 +314,7 @@
                         </StackPanel>
                     </Grid>
                 </StackPanel>
+
             </Grid>
         </Grid>
     </Border>

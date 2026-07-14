@@ -6,17 +6,51 @@
         mc:Ignorable="d"
         Title="Take Test" 
         Height="850" Width="520"
-        WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
-        WindowStyle="SingleBorderWindow"
-        FontFamily="Segoe UI">
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
     <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- حقول مقفل للقراءة فقط -->
         <Style x:Key="LockedInput" TargetType="TextBox">
             <Setter Property="Height" Value="38"/>
-            <Setter Property="Background" Value="#020617"/>
-            <Setter Property="Foreground" Value="#64748B"/>
-            <Setter Property="BorderBrush" Value="#1E293B"/>
+            <Setter Property="Background" Value="#0E0E10"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,0"/>
             <Setter Property="FontSize" Value="14"/>
@@ -31,7 +65,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
+                                CornerRadius="8"
                                 SnapsToDevicePixels="True">
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Focusable="False"
@@ -45,21 +79,24 @@
             </Setter>
         </Style>
 
+        <!-- مربع Test ID (Teal) -->
         <Style x:Key="TestIdBox" TargetType="Border">
-            <Setter Property="Background" Value="#172554"/>
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="#042F2E"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14,10"/>
             <Setter Property="Margin" Value="0,16,0,20"/>
         </Style>
 
+        <!-- زر التبديل الأساسي (State: Not Taken) -->
         <Style x:Key="OptionToggle" TargetType="ToggleButton">
             <Setter Property="Height" Value="40"/>
             <Setter Property="MinWidth" Value="110"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
@@ -67,7 +104,7 @@
                                 Background="{StaticResource InputBackground}"
                                 BorderBrush="{StaticResource BorderColor}"
                                 BorderThickness="1.5"
-                                CornerRadius="8"
+                                CornerRadius="10"
                                 Padding="16,0">
                             <ContentPresenter x:Name="Content"
                                               HorizontalAlignment="Center"
@@ -75,157 +112,184 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#3B82F6"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="Background" Value="#1E40AF"/>
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#3B82F6"/>
-                                <Setter TargetName="Content" Property="TextBlock.Foreground" Value="#FFFFFF"/>
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsChecked" Value="False">
-                    <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
-                </Trigger>
-                <Trigger Property="IsChecked" Value="True">
-                    <Setter Property="Foreground" Value="#FFFFFF"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
-        <Style x:Key="PassedToggle" TargetType="ToggleButton" BasedOn="{StaticResource OptionToggle}">
-            <Style.Triggers>
-                <Trigger Property="IsChecked" Value="True">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ToggleButton">
-                                <Border x:Name="ToggleBorder"
-                                        Background="#065F46"
-                                        BorderBrush="#10B981"
-                                        BorderThickness="1.5"
-                                        CornerRadius="8"
-                                        Padding="16,0">
-                                    <ContentPresenter x:Name="Content"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      TextBlock.Foreground="#FFFFFF"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#34D399"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Trigger>
-            </Style.Triggers>
+        <!-- زر Passed (أخضر) -->
+        <Style x:Key="PassedToggle" TargetType="ToggleButton">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#34D399"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ToggleBorder"
+                                Background="#064E3B"
+                                BorderBrush="#34D399"
+                                BorderThickness="1.5"
+                                CornerRadius="10"
+                                Padding="16,0">
+                            <ContentPresenter x:Name="Content"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#6EE7B7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <Style x:Key="FailedToggle" TargetType="ToggleButton" BasedOn="{StaticResource OptionToggle}">
-            <Style.Triggers>
-                <Trigger Property="IsChecked" Value="True">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ToggleButton">
-                                <Border x:Name="ToggleBorder"
-                                        Background="#7F1D1D"
-                                        BorderBrush="#EF4444"
-                                        BorderThickness="1.5"
-                                        CornerRadius="8"
-                                        Padding="16,0">
-                                    <ContentPresenter x:Name="Content"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      TextBlock.Foreground="#FFFFFF"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#F87171"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Trigger>
-            </Style.Triggers>
+        <!-- زر Failed (أحمر) -->
+        <Style x:Key="FailedToggle" TargetType="ToggleButton">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#F87171"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ToggleBorder"
+                                Background="#7F1D1D"
+                                BorderBrush="#F87171"
+                                BorderThickness="1.5"
+                                CornerRadius="10"
+                                Padding="16,0">
+                            <ContentPresenter x:Name="Content"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#FCA5A5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
-        <Style x:Key="NotTakenToggle" TargetType="ToggleButton" BasedOn="{StaticResource OptionToggle}">
-            <Style.Triggers>
-                <Trigger Property="IsChecked" Value="True">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ToggleButton">
-                                <Border x:Name="ToggleBorder"
-                                        Background="#78350F"
-                                        BorderBrush="#F59E0B"
-                                        BorderThickness="1.5"
-                                        CornerRadius="8"
-                                        Padding="16,0">
-                                    <ContentPresenter x:Name="Content"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      TextBlock.Foreground="#FFFFFF"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#FBBF24"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Trigger>
-            </Style.Triggers>
+        <!-- زر Not Taken (رمادي دائف) -->
+        <Style x:Key="NotTakenToggle" TargetType="ToggleButton">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="110"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#A8A29E"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ToggleBorder"
+                                Background="#1C1917"
+                                BorderBrush="#78716C"
+                                BorderThickness="1.5"
+                                CornerRadius="10"
+                                Padding="16,0">
+                            <ContentPresenter x:Name="Content"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#A8A29E"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
-    <Border Style="{StaticResource CardStyle}" Margin="10">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
+
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
+
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Content -->
+                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <ScrollViewer Grid.Row="0" Padding="24" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <Border Background="{StaticResource CardBackground}" 
-                            BorderBrush="{StaticResource BorderColor}" 
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="16,20"
-                            Margin="0,0,0,24">
-                        <StackPanel>
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="Vision Test" 
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="18" FontWeight="SemiBold" 
                                        Foreground="{StaticResource TextColor}"/>
                             <TextBlock Text="Scheduled Test" 
-                                       FontSize="13" FontWeight="Normal"
+                                       FontSize="12" 
                                        Foreground="{StaticResource SecondaryTextColor}" 
-                                       Margin="0,4,0,0"/>
+                                       Margin="0,2,0,0"/>
                         </StackPanel>
-                    </Border>
+                    </StackPanel>
 
-                    <Grid>
+                    
+                </Grid>
+            </Border>
+
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          Margin="20,15,20,0">
+
+                <StackPanel>
+
+                    <!-- الحقول -->
+                    <Grid Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="130"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="14"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="14"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="14"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="14"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="16"/>
+                            <RowDefinition Height="14"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
@@ -248,13 +312,18 @@
                         <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding Schedule.Fees}" Style="{StaticResource LockedInput}"/>
                     </Grid>
 
+                    <!-- مربع Test ID -->
                     <Border Style="{StaticResource TestIdBox}">
                         <Grid>
-                            <TextBlock Text="Test ID" FontSize="12" FontWeight="SemiBold" Foreground="#93C5FD"/>
-                            <TextBlock Text="{Binding Schedule.TestID, TargetNullValue='Not Taken Yet'}" FontSize="13" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Right"/>
+                            <TextBlock Text="Test ID" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource PrimaryHoverColor}"/>
+                            <TextBlock Text="{Binding Schedule.TestID, TargetNullValue='Not Taken Yet'}" 
+                                       FontSize="13" FontWeight="Bold" 
+                                       Foreground="{StaticResource PrimaryColor}" 
+                                       HorizontalAlignment="Right"/>
                         </Grid>
                     </Border>
 
+                    <!-- النتيجة -->
                     <TextBlock Text="Result" Style="{StaticResource LabelStyle}" Margin="0,0,0,8"/>
                     <UniformGrid Columns="3" Margin="0,0,0,24">
                         <ToggleButton Content="Passed" 
@@ -265,35 +334,62 @@
                                       Style="{StaticResource FailedToggle}" 
                                       Margin="4,0"
                                       IsChecked="{Binding IsFailed}"/>
-                        
                     </UniformGrid>
 
+                    <!-- الملاحظات -->
                     <TextBlock Text="Notes" Style="{StaticResource LabelStyle}" Margin="0,0,0,8"/>
                     <Grid Height="90" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="38"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="{StaticResource InputBackground}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1,1,0,1" CornerRadius="6,0,0,6">
-                            <TextBlock Text="📁" FontSize="18" Foreground="{StaticResource SecondaryTextColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Grid.Column="0" Background="{StaticResource InputBackground}" 
+                                BorderBrush="{StaticResource BorderColor}" 
+                                BorderThickness="1,1,0,1" 
+                                CornerRadius="8,0,0,8">
+                            <TextBlock Text="📝" FontSize="16" 
+                                       Foreground="{StaticResource SecondaryTextColor}" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center"/>
                         </Border>
-                        <TextBox Grid.Column="1" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Height="90" VerticalContentAlignment="Top" Padding="10,8" TextWrapping="Wrap" AcceptsReturn="True" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" Background="{StaticResource InputBackground}" Foreground="{StaticResource TextColor}" FontSize="14"/>
+                        <TextBox Grid.Column="1" 
+                                 Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="90" 
+                                 VerticalContentAlignment="Top" 
+                                 Padding="10,8" 
+                                 TextWrapping="Wrap" 
+                                 AcceptsReturn="True" 
+                                 BorderBrush="{StaticResource BorderColor}" 
+                                 BorderThickness="1" 
+                                 Background="{StaticResource InputBackground}" 
+                                 Foreground="{StaticResource TextColor}" 
+                                 FontSize="14"/>
                     </Grid>
+
                 </StackPanel>
             </ScrollViewer>
 
-            <Border Grid.Row="1" Background="Transparent" Padding="24,16" CornerRadius="0,0,12,12">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="1" Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
-                    <Button Grid.Column="3" Content="Close" Command="{Binding CloseCommand}" Style="{StaticResource SecondaryButtonStyle}"/>
-                </Grid>
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+                    <Button Content="Save" 
+                            Command="{Binding SaveCommand}" 
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Width="120"
+                            Margin="0,0,15,0"/>
+
+                    <Button Content="Close" 
+                            Command="{Binding CloseCommand}" 
+                            Style="{StaticResource SecondaryButtonStyle}" 
+                            Width="120"
+                            Click="CloseButton_Click"/>
+                </StackPanel>
             </Border>
+
         </Grid>
     </Border>
 </Window>

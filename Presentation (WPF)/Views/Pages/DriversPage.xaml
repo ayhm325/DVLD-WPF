@@ -20,14 +20,13 @@
             <Setter Property="SelectionUnit" Value="FullRow"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#334155"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="#172033"/>
+            <Setter Property="AlternatingRowBackground" Value="#111114"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="RowHeight" Value="36"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
@@ -36,14 +35,14 @@
 
         <!-- ===== Column Header ===== -->
         <Style x:Key="ColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#0B1120"/>
+            <Setter Property="Background" Value="#0E0E10"/>
             <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
         </Style>
 
         <!-- ===== Cell ===== -->
@@ -54,8 +53,8 @@
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="#042F2E"/>
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -68,7 +67,7 @@
                         <Condition Property="IsMouseOver" Value="True"/>
                         <Condition Property="IsSelected" Value="False"/>
                     </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="#1E293B"/>
+                    <Setter Property="Background" Value="#1A1A1E"/>
                 </MultiTrigger>
             </Style.Triggers>
         </Style>
@@ -152,8 +151,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#334155"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="#475569"/>
+                                <Setter TargetName="border" Property="Background" Value="#1A1A1E"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#374151"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Opacity" Value="0.8"/>
@@ -217,10 +216,8 @@
 
                 <TextBox x:Name="txtFilterValue">
                     <TextBox.Style>
-                        <!-- نستخدم BasedOn لوراثة الخصائص الأساسية من FilterTextBoxStyle -->
                         <Style TargetType="TextBox" BasedOn="{StaticResource FilterTextBoxStyle}">
                             <Style.Triggers>
-                                <!-- عندما يكون الـ ComboBox مختاراً عليه "None" نقوم بإخفاء التيكست بوكس -->
                                 <DataTrigger Binding="{Binding ElementName=cmbFilterBy, Path=Text}" Value="None">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                 </DataTrigger>
@@ -228,7 +225,6 @@
                         </Style>
                     </TextBox.Style>
                 </TextBox>
-
 
             </StackPanel>
         </Border>

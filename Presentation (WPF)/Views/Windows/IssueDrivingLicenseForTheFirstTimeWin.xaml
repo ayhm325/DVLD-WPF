@@ -6,126 +6,166 @@
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         mc:Ignorable="d"
         Title="Get Driver License For The First Time"
-        Width="800"
-        Height="600"
+        Width="820"
+        Height="650"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        Background="{DynamicResource BackgroundColor}">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled"
-                  Background="{DynamicResource BackgroundColor}">
+    <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
 
-        <Grid Margin="15"
-              Background="{DynamicResource BackgroundColor}">
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
+        <!-- تجاوز ارتفاع الـ TextBox للنصوص الطويلة -->
+        <Style x:Key="NotesTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Height" Value="Auto"/>
+            <Setter Property="MinHeight" Value="70"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
+
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
+
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- Title -->
-
-                <RowDefinition Height="Auto"/>
-                <!-- Driving License Application Info -->
-
-                <RowDefinition Height="Auto"/>
-                <!-- Application Basic Info -->
-
-                <RowDefinition Height="Auto"/>
-                <!-- Notes -->
-
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Scrollable Content -->
                 <RowDefinition Height="Auto"/>
                 <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <!-- ==================== TITLE ==================== -->
-            <Border Grid.Row="0"
-                    Style="{DynamicResource CardStyle}"
-                    Padding="15,12"
-                    Margin="0,0,0,10">
-
-                <TextBlock Text="Get Driver License For The First Time"
-                           Style="{DynamicResource HeaderStyle}"/>
-
-            </Border>
-
-            <!-- ==================== DRIVING LICENSE APPLICATION INFO ==================== -->
-            <Border Grid.Row="1"
-                    Style="{DynamicResource CardStyle}"
-                    Padding="15"
-                    Margin="0,0,0,10">
-
-                <controls:DrivingLicenseApplicationInfo
-                     x:Name="drivingLicenseInfo"
-                    DrivingLicenseApplicationId="{Binding DrivingLicenseApplicationId}"
-                    LicenseClassName="{Binding LicenseClassName}"
-                    PassedTests="{Binding PassedTests}"
-                    TotalTests="{Binding TotalTests}"/>
-
-            </Border>
-
-            <!-- ==================== APPLICATION BASIC INFO ==================== -->
-            <Border Grid.Row="2"
-                    Style="{DynamicResource CardStyle}"
-                    Padding="15"
-                    Margin="0,0,0,10">
-
-                <controls:ApplicationBasicInfo
-                    x:Name="applicationBasicInfo"
-                    Application="{Binding BasicApplicationInfo}"/>
-
-            </Border>
-
-            <!-- ==================== NOTES SECTION ==================== -->
-            <Border Grid.Row="3"
-                    Style="{DynamicResource CardStyle}"
-                    Padding="15"
-                    Margin="0,0,0,10">
-
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M4,16V12C4,9.79 5.79,8 8,8H14.5L12.5,6H8A2,2 0 0,0 6,8V16A2,2 0 0,0 8,18H19A2,2 0 0,0 21,16V12C21,9.79 19.21,8 17,8H15.5L17.5,10H19A2,2 0 0,1 21,12V16A2,2 0 0,1 19,18H8A2,2 0 0,1 6,16M12,4L15,7H9L12,4M18,14H6V12H18V14Z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <TextBlock Text="Get Driver License For The First Time" 
+                                   FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
-                    <TextBlock Grid.Row="0"
-                               Text="Notes:"
-                               Style="{DynamicResource LabelStyle}"
-                               Margin="0,0,0,8"/>
-
-                    <TextBox Grid.Row="1"
-                             x:Name="txtNotes"
-                             Height="70"
-                             TextWrapping="Wrap"
-                             AcceptsReturn="True"
-                             VerticalScrollBarVisibility="Auto"
-                             Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"/>
-
+                   
                 </Grid>
-
             </Border>
 
-            <!-- ==================== BUTTONS SECTION ==================== -->
-            <Border Grid.Row="4"
-                    Style="{DynamicResource CardStyle}"
-                    Padding="15,12">
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,20">
 
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right">
+                <StackPanel>
 
-                    <Button Content="Close"
-                            Style="{DynamicResource SecondaryButtonStyle}"
-                            Margin="0,0,10,0"
-                            Command="{Binding CloseCommand}"/>
+                    <!-- Driving License Application Info -->
+                    <controls:DrivingLicenseApplicationInfo
+                        x:Name="drivingLicenseInfo"
+                        DrivingLicenseApplicationId="{Binding DrivingLicenseApplicationId}"
+                        LicenseClassName="{Binding LicenseClassName}"
+                        PassedTests="{Binding PassedTests}"
+                        TotalTests="{Binding TotalTests}"
+                        Margin="0,0,0,15"/>
 
-                    <Button Content="Issue"
-                            Style="{DynamicResource PrimaryButtonStyle}"
-                            Command="{Binding IssueCommand}"/>
+                    <!-- Application Basic Info -->
+                    <controls:ApplicationBasicInfo
+                        x:Name="applicationBasicInfo"
+                        Application="{Binding BasicApplicationInfo}"
+                        Margin="0,0,0,15"/>
+
+                    <!-- Notes Section -->
+                    <Border Style="{StaticResource CardStyle}" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Notes" 
+                                       Style="{StaticResource LabelStyle}" 
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"/>
+                            <TextBox x:Name="txtNotes"
+                                     Style="{StaticResource NotesTextBoxStyle}"
+                                     Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Border>
 
                 </StackPanel>
 
+            </ScrollViewer>
+
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+                    <Button Content="Close"
+                            Style="{StaticResource SecondaryButtonStyle}" 
+                            Width="120"
+                            Margin="0,0,15,0"
+                            Command="{Binding CloseCommand}"/>
+
+                    <Button Content="Issue License"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Width="140"
+                            Command="{Binding IssueCommand}"/>
+
+                </StackPanel>
             </Border>
 
         </Grid>
-
-    </ScrollViewer>
-
+    </Border>
 </Window>

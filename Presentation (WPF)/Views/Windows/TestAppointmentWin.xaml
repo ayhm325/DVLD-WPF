@@ -5,18 +5,53 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="{Binding PageTitle}"
         Height="800"
-        Width="900"
+        Width="920"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
     <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
 
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== DataGrid ===== -->
         <Style x:Key="DataGridHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#0F172A"/>
+            <Setter Property="Background" Value="#0E0E10"/>
             <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -30,8 +65,8 @@
 
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="#042F2E"/>
+                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -40,168 +75,202 @@
             <Setter Property="Background" Value="Transparent"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#334155"/>
+                    <Setter Property="Background" Value="#1A1A1E"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="{StaticResource CardBackground}"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#334155"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="SelectionMode" Value="Single"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="#1E293B"/>
+            <Setter Property="AlternatingRowBackground" Value="#111114"/>
             <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
             <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridHeaderStyle}"/>
             <Setter Property="CellStyle" Value="{StaticResource DataGridCellStyle}"/>
             <Setter Property="RowStyle" Value="{StaticResource DataGridRowStyle}"/>
         </Style>
-
     </Window.Resources>
 
-    <Grid Margin="25">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
 
-        <Border Grid.Row="0"
-                Style="{StaticResource CardStyle}"
-                Padding="25"
-                Margin="0,0,0,20">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Content -->
+                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
+            </Grid.RowDefinitions>
 
-            <StackPanel>
-                <TextBlock Text="{Binding PageTitle}"
-                           Style="{StaticResource HeaderStyle}"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="{Binding PageDescription}"
-                           Foreground="{StaticResource SecondaryTextColor}"
-                           HorizontalAlignment="Center"
-                           Margin="0,5,0,0"/>
-            </StackPanel>
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <Path Data="M19,4H18L16,2H6L2,8L2,18L16,18H20A2,2 0 0,0 22,16A2,2 0 0,0 20,14H12M12,14V8H20M12,8V14M12,14H6A2,2 0 0,0 4,12A2,2 0 0,0 6,14A2,2 0 0,0 8,12H18L12,6H6A2,2 0 0,0 4,10V16A2,2 0 0,0 6,18Z" 
+                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
+                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding PageTitle}" 
+                                       FontSize="18" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource TextColor}"/>
+                            <TextBlock Text="{Binding PageDescription}" 
+                                       FontSize="12" 
+                                       Foreground="{StaticResource SecondaryTextColor}" 
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
 
-        </Border>
+                    
+                </Grid>
+            </Border>
 
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,0">
 
-            <StackPanel>
+                <StackPanel>
 
-                <controls:DrivingLicenseApplicationInfo
-                    x:Name="DrivingLicenseApplicationInfoControl"
-                    DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
-                    PassedTests="{Binding LdlAppInfo.PassedTest}"
-                    TotalTests="3"
-                    LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"
-                    Margin="0,0,0,20"/>
+                    <controls:DrivingLicenseApplicationInfo
+                        x:Name="DrivingLicenseApplicationInfoControl"
+                        DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
+                        PassedTests="{Binding LdlAppInfo.PassedTest}"
+                        TotalTests="3"
+                        LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"
+                        Margin="0,0,0,15"/>
 
-                <controls:ApplicationBasicInfo
-                     x:Name="ApplicationBasicInfoControl"
-                     Application="{Binding ApplicationInfo}"
-                     Margin="0,0,0,20"/>
+                    <controls:ApplicationBasicInfo
+                        x:Name="ApplicationBasicInfoControl"
+                        Application="{Binding ApplicationInfo}"
+                        Margin="0,0,0,15"/>
 
-                <Border Style="{StaticResource CardStyle}"
-                        Padding="20"
-                        Margin="0,0,0,20">
+                    <!-- قسم المواعيد -->
+                    <Border Style="{StaticResource CardStyle}" Padding="20">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="15"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="15"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                            <!-- Header -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Appointments"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextColor}"/>
+                                    <Border Background="{StaticResource PrimaryColor}"
+                                            CornerRadius="12"
+                                            Padding="8,3"
+                                            Margin="10,0,0,0">
+                                        <TextBlock Text="{Binding AppointmentsList.Count}"
+                                                   Foreground="White"
+                                                   FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
 
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Appointments"
-                                           FontSize="18"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextColor}"/>
-                                <Border Background="{StaticResource PrimaryColor}"
-                                        CornerRadius="12"
-                                        Padding="8,3"
-                                        Margin="10,0,0,0">
-                                    <TextBlock Text="{Binding AppointmentsList.Count}"
-                                               Foreground="White"
-                                               FontWeight="Bold"/>
-                                </Border>
-                            </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Add Appointment"
+                                        Command="{Binding AddAppointmentCommand}"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        MinWidth="160"/>
+                            </Grid>
 
-                            <Button Grid.Column="1"
-                                    Content="Add Appointment"
-                                    Command="{Binding AddAppointmentCommand}"
-                                    Style="{StaticResource PrimaryButtonStyle}"
-                                    MinWidth="160"/>
+                            <!-- DataGrid -->
+                            <DataGrid Grid.Row="2"
+                                      ItemsSource="{Binding AppointmentsList}"
+                                      SelectedItem="{Binding SelectedAppointment}"
+                                      MinHeight="250">
+
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Edit" Command="{Binding EditAppointmentCommand}"/>
+                                        <Separator/>
+                                        <MenuItem Header="Take Test" Command="{Binding TakeTestCommand}"/>
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Appointment ID"
+                                                        Binding="{Binding TestAppointmentID}"
+                                                        Width="150"/>
+                                    <DataGridTextColumn Header="Date"
+                                                        Binding="{Binding AppointmentDate, StringFormat=dd/MM/yyyy}"
+                                                        Width="200"/>
+                                    <DataGridTextColumn Header="Paid Fees"
+                                                        Binding="{Binding PaidFees, StringFormat=C}"
+                                                        Width="150"/>
+                                    <DataGridTextColumn Header="Result" Binding="{Binding TestResultText}" Width="100"/>
+                                    <DataGridTemplateColumn Header="Locked"
+                                                            Width="100">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsLocked}"
+                                                          IsEnabled="False"
+                                                          IsHitTestVisible="False"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
                         </Grid>
+                    </Border>
 
-                        <DataGrid Grid.Row="2"
-                                  ItemsSource="{Binding AppointmentsList}"
-                                  SelectedItem="{Binding SelectedAppointment}"
-                                  MinHeight="250">
+                </StackPanel>
 
-                            <DataGrid.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Edit" Command="{Binding EditAppointmentCommand}"/>
-                                    <MenuItem Header="Take Test" Command="{Binding TakeTestCommand}"/>
-                                </ContextMenu>
-                            </DataGrid.ContextMenu>
+            </ScrollViewer>
 
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Appointment ID"
-                                                    Binding="{Binding TestAppointmentID}"
-                                                    Width="150"/>
-                                <DataGridTextColumn Header="Date"
-                                                    Binding="{Binding AppointmentDate, StringFormat=dd/MM/yyyy}"
-                                                    Width="200"/>
-                                <DataGridTextColumn Header="Paid Fees"
-                                                    Binding="{Binding PaidFees, StringFormat=C}"
-                                                    Width="150"/>
-                                <DataGridTextColumn Header="Result" Binding="{Binding TestResultText}" Width="100"/>
-                                <DataGridTemplateColumn Header="Locked"
-                                                        Width="100">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <CheckBox IsChecked="{Binding IsLocked}"
-                                                      IsEnabled="False"
-                                                      IsHitTestVisible="False"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Close"
+                            Width="120"
+                            Click="CloseButton_Click"
+                            Style="{StaticResource SecondaryButtonStyle}"/>
+                </StackPanel>
+            </Border>
 
-                    </Grid>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
-
-        <Border Grid.Row="2"
-                Style="{StaticResource CardStyle}"
-                Padding="15">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Close"
-                        Width="120"
-                        Click="CloseButton_Click"
-                        Style="{StaticResource SecondaryButtonStyle}"/>
-            </StackPanel>
-        </Border>
-
-    </Grid>
+        </Grid>
+    </Border>
 </Window>

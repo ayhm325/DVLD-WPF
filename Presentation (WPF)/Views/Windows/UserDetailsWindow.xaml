@@ -7,37 +7,127 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="User Details" 
-        Width="950"
+        Width="970"
+        Height="750"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
-    <!-- تمت إزالة الستايل المحلي للأزرار لاستخدام الستايل العام -->
+    <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
     <!-- الحاوية الرئيسية -->
-    <Grid Margin="25">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
 
-        <!-- 1. بطاقة تفاصيل المستخدم (Personal Info) -->
-        <controls:InformationPerson Grid.Row="0" 
-                                Person="{Binding Person}"/>
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
 
-        <!-- 2. بطاقة حالة المستخدم (User Card) مع مسافة للفصل -->
-        <controls:UserCard Grid.Row="1" 
-                    DataContext="{Binding}" 
-                    Margin="0,25,0,0"/>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Content -->
+                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
+            </Grid.RowDefinitions>
 
-        <!-- 3. زر الإغلاق -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,25,0,0">
-            <Button Content="Close" 
-                    Width="120" 
-                    Height="40" 
-                    Click="CloseButton_Click"
-                    Style="{StaticResource PrimaryButtonStyle}"/>
-        </StackPanel>
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="AccountDetails" 
+                                                        Foreground="{StaticResource PrimaryColor}" 
+                                                        Width="20" Height="20" 
+                                                        VerticalAlignment="Center" 
+                                                        HorizontalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="User Details" 
+                                   FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
 
-    </Grid>
+                    
+                </Grid>
+            </Border>
+
+            <!-- ================= المحتوى ================= -->
+            <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="20,15,20,0">
+
+                <StackPanel>
+
+                    <!-- 1. بطاقة تفاصيل المستخدم -->
+                    <controls:InformationPerson Person="{Binding Person}" Margin="0,0,0,20"/>
+
+                    <!-- 2. بطاقة حالة المستخدم -->
+                    <controls:UserCard DataContext="{Binding}" Margin="0,0,0,0"/>
+
+                </StackPanel>
+
+            </ScrollViewer>
+
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="20,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <Button Content="Close" 
+                        Width="120" 
+                        HorizontalAlignment="Right"
+                        Click="CloseButton_Click"
+                        Style="{StaticResource SecondaryButtonStyle}"/>
+            </Border>
+
+        </Grid>
+    </Border>
 </Window>

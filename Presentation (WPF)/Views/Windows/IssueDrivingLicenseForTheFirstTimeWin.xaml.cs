@@ -45,5 +45,10 @@ namespace Presentation.Views.Windows
             var window = new DriverLicenseInfoWin(applicationId);
             window.ShowDialog();
         }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
 }

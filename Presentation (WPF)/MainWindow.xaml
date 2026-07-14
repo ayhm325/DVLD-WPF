@@ -3,77 +3,200 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="DVLD System" Height="600" Width="1000"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}">
+        Background="{StaticResource BackgroundColor}"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        AllowsTransparency="True">
 
-    <DockPanel>
-        <!-- القائمة العلوية: تطبيق CardBackground واستخدام الستايل العام للقوائم -->
-        <Menu DockPanel.Dock="Top" 
-              Background="{StaticResource CardBackground}" 
-              Foreground="{StaticResource TextColor}"
-              FontSize="14" 
-              Padding="10">
+    <Window.Resources>
+        <!-- ستايل أزرار الشريط الجانبي (شفافة مع تمييز عند التحويم) -->
+        <Style x:Key="SidebarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="12,2,12,2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="10" 
+                                Padding="14,0">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1A1A1E"/>
+                                <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-            <MenuItem Header="Applications">
-                <MenuItem Header="Driving Licenses Services">
-                    <MenuItem Header="New Driving License">
-                        <MenuItem Header="Local License" Click="NewLocalLicnnse_Click"/>
-                        <MenuItem Header="International License" Click="InternationalLicense_Click"/>
+        <!-- ستايل زر الإغلاق للنافذة -->
+        <Style x:Key="WindowCloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#7F1D1D"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- حاوية رئيسية مع حدود النافذة -->
+    <Border BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1"
+            CornerRadius="8"
+            ClipToBounds="True">
+
+        <DockPanel>
+
+            <!-- ═══════════════ شريط العنوان المخصص ═══════════════ -->
+            <Border DockPanel.Dock="Top" 
+                    Background="{StaticResource CardBackground}" 
+                    Height="40">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                        <Border Width="8" Height="8" 
+                                CornerRadius="4" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Margin="0,0,10,0" 
+                                VerticalAlignment="Center"/>
+                        <TextBlock Text="DVLD System" 
+                                   FontSize="13" 
+                                   FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="1" Content="✕" 
+                            Style="{StaticResource WindowCloseButtonStyle}" 
+                            Click="Close_Click"/>
+                </Grid>
+            </Border>
+
+            <!-- ═══════════════ القائمة العلوية ═══════════════ -->
+            <Menu DockPanel.Dock="Top" 
+                  Background="{StaticResource CardBackground}" 
+                  Padding="10,5">
+
+                <MenuItem Header="Applications">
+                    <MenuItem Header="Driving Licenses Services">
+                        <MenuItem Header="New Driving License">
+                            <MenuItem Header="Local License" Click="NewLocalLicnnse_Click"/>
+                            <MenuItem Header="International License" Click="InternationalLicense_Click"/>
+                        </MenuItem>
+                        <MenuItem Header="Renew Driving License"/>
+                        <Separator/>
+                        <MenuItem Header="Replacement for Lost or Damaged"/>
+                        <Separator/>
+                        <MenuItem Header="Release Detained Driving License"/>
+                        <MenuItem Header="Retake Test"/>
                     </MenuItem>
-                    <MenuItem Header="Renew Driving License"/>
                     <Separator/>
-                    <MenuItem Header="Replacement for Lost or Damaged"/>
+                    <MenuItem Header="Manage Applications"/>
                     <Separator/>
-                    <MenuItem Header="Release Detained Driving License"/>
-                    <MenuItem Header="Retake Test"/>
+                    <MenuItem Header="Detain Licenses"/>
+                    <MenuItem Header="Manage Application Types" Click="ApplicationType_Click"/>
+                    <MenuItem Header="Manage Test Types" Click="TestType_Click"/>
                 </MenuItem>
-                <Separator/>
-                <MenuItem Header="Manage Applications"/>
-                <Separator/>
-                <MenuItem Header="Detin  Licenses"/>
-                <MenuItem Header="Manage Application Types" Click="ApplicationType_Click"/>
-                <MenuItem Header="Manage Test Types"  Click="TestType_Click"/>
-            </MenuItem>
 
-            <MenuItem Header="People" Click="ManagePeople_Click"/>
-            <MenuItem Header="Drivers" Click="Drivers_Click"/>
-            <MenuItem Header="Users" Click="Users_Click"/>
-            <MenuItem Header="Account Settings"/>
-        </Menu>
+                <MenuItem Header="People" Click="ManagePeople_Click"/>
+                <MenuItem Header="Drivers" Click="Drivers_Click"/>
+                <MenuItem Header="Users" Click="Users_Click"/>
+                <MenuItem Header="Account Settings"/>
+            </Menu>
 
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220"/>
-                <ColumnDefinition Width="215*"/>
-                <ColumnDefinition Width="18*"/>
-                <ColumnDefinition Width="547*"/>
-            </Grid.ColumnDefinitions>
+            <!-- فاصل أسفل القائمة -->
+            <Border DockPanel.Dock="Top" Height="1" Background="{StaticResource BorderColor}"/>
 
-            <!-- الشريط الجانبي (Sidebar) -->
-            <StackPanel Grid.Column="0" Background="{StaticResource CardBackground}">
-                <!-- عنوان الشريط الجانبي بتصميم عصري -->
-                <TextBlock Text="MENU" 
-                           Foreground="{StaticResource PrimaryColor}" 
-                           FontSize="24" 
-                           FontWeight="Bold" 
-                           FontFamily="Segoe UI" 
-                           Margin="20" 
-                           HorizontalAlignment="Center"/>
+            <!-- ═══════════════ المحتوى ═══════════════ -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="220"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- أزرار التنقل -->
-                <Button Content="Home" Margin="15,5,15,5" Click="Home_Click" Style="{StaticResource PrimaryButtonStyle}"/>
-                <Button Content="Manage People" Margin="15,5,15,5" Click="ManagePeople_Click" Style="{StaticResource PrimaryButtonStyle}"/>
-                <Button Content="Manage Users" Margin="15,5,15,5" Click="Users_Click" Style="{StaticResource PrimaryButtonStyle}"/>
-                <Button Content="Application Type" Margin="15,5,15,5" Click="ApplicationType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
-                <Button Content="Test Type" Margin="15,5,15,5" Click="TestType_Click" Style="{StaticResource PrimaryButtonStyle}"/>
-                <Button Content="L.D.L.App" Margin="15,5,15,5" Click="LDLApp_Click" Style="{StaticResource PrimaryButtonStyle}"/>
+                <!-- الشريط الجانبي -->
+                <Border Grid.Column="0" Background="{StaticResource CardBackground}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-            </StackPanel>
+                        <!-- عنوان الشريط الجانبي -->
+                        <Border Grid.Row="0" Padding="0,20,0,15" Margin="0,0,0,10">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#042F2E" Offset="0"/>
+                                    <GradientStop Color="Transparent" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="MENU" 
+                                       Foreground="{StaticResource PrimaryColor}" 
+                                       FontSize="20" 
+                                       FontWeight="Bold" 
+                                       Margin="20,0,0,0"/>
+                        </Border>
 
-            <!-- فاصل بسيط بين الشريط والمحتوى -->
-            <Border Grid.Column="1" Width="1" HorizontalAlignment="Left" Background="{StaticResource BorderColor}"/>
+                        <!-- أزرار التنقل -->
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <Button Content="Home" Click="Home_Click" Style="{StaticResource SidebarButtonStyle}"/>
+                                <Button Content="Manage People" Click="ManagePeople_Click" Style="{StaticResource SidebarButtonStyle}"/>
+                                <Button Content="Manage Users" Click="Users_Click" Style="{StaticResource SidebarButtonStyle}"/>
+                                <Button Content="Application Type" Click="ApplicationType_Click" Style="{StaticResource SidebarButtonStyle}"/>
+                                <Button Content="Test Type" Click="TestType_Click" Style="{StaticResource SidebarButtonStyle}"/>
+                                <Button Content="L.D.L.App" Click="LDLApp_Click" Style="{StaticResource SidebarButtonStyle}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
 
-            <!-- المحتوى الرئيسي -->
-            <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden" Background="Transparent" Grid.ColumnSpan="3"/>
-        </Grid>
-    </DockPanel>
+                <!-- الفاصل بين الشريط الجانبي والمحتوى -->
+                <Border Grid.Column="1" Width="1" Background="{StaticResource BorderColor}"/>
+
+                <!-- المحتوى الرئيسي -->
+                <Frame x:Name="MainFrame" 
+                       Grid.Column="2" 
+                       NavigationUIVisibility="Hidden" 
+                       Background="Transparent"/>
+            </Grid>
+
+        </DockPanel>
+    </Border>
 </Window>

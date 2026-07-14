@@ -3,12 +3,48 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="Person Information Details"
-        Height="450"
-        Width="900"
+        Height="500"
+        Width="920"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}">
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
 
     <Window.Resources>
+        <!-- تدرج الهيدر الموحد -->
+        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#042F2E" Offset="0"/>
+            <GradientStop Color="#0A0A0B" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- ستايل زر الإغلاق -->
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- نمط قيمة الحقل -->
         <Style x:Key="ValueTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
@@ -16,230 +52,189 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="20">
+    <!-- الحاوية الرئيسية -->
+    <Border Background="{StaticResource BackgroundColor}" 
+            BorderBrush="{StaticResource BorderColor}" 
+            BorderThickness="1" 
+            CornerRadius="16" 
+            Margin="15">
 
-        <Border Style="{StaticResource CardStyle}" Padding="30">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+        </Border.Effect>
 
-            <!-- MAIN GRID -->
-            <Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="*"/>
+                <!-- Content -->
+                <RowDefinition Height="Auto"/>
+                <!-- Buttons -->
+            </Grid.RowDefinitions>
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <!-- ================= HEADER ================= -->
-                <StackPanel Grid.Row="0" Margin="0,0,0,25">
-
-                    <StackPanel Orientation="Horizontal">
-
-                        <Border Width="36" Height="36"
-                                CornerRadius="18"
-                                Background="{StaticResource InputBackground}"
-                                Margin="0,0,12,0">
-
-                            <materialDesign:PackIcon Kind="Account"
-                                                      Foreground="{StaticResource PrimaryColor}"
-                                                      Width="20"
-                                                      Height="20"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"/>
+            <!-- ================= الهيدر الموحد ================= -->
+            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="16,16,0,0" 
+                    Padding="25,18,25,18">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="38" Height="38" CornerRadius="10" 
+                                Background="{StaticResource PrimaryColor}" 
+                                Opacity="0.15"
+                                Margin="0,0,14,0"
+                                Padding="8"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="AccountDetails" 
+                                                    Foreground="{StaticResource PrimaryColor}" 
+                                                    Width="20" Height="20" 
+                                                    VerticalAlignment="Center" 
+                                                    HorizontalAlignment="Center"/>
                         </Border>
-
-                        <TextBlock Text="Detailed Person Profile"
-                                   Style="{StaticResource HeaderStyle}"
+                        <TextBlock Text="Detailed Person Profile" 
+                                   FontSize="18" FontWeight="SemiBold" 
+                                   Foreground="{StaticResource TextColor}" 
                                    VerticalAlignment="Center"/>
-
                     </StackPanel>
 
-                    <Border Height="3"
-                            Width="40"
-                            Margin="0,10,0,0"
-                            Background="{StaticResource PrimaryColor}"
-                            CornerRadius="2"/>
+                    
+                </Grid>
+            </Border>
+
+            <!-- ================= المحتوى ================= -->
+            <Grid Grid.Row="1" Margin="25,15,25,20">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ===== العمود الأيسر ===== -->
+                <StackPanel Grid.Column="0">
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Person ID" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblPersonId" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="National No" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblNationalNo" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Full Name" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblFullName" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Gender" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblGender" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Phone" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblPhone" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
+
                 </StackPanel>
 
-                <!-- ================= CONTENT ================= -->
-                <Grid Grid.Row="1">
+                <!-- ===== العمود الأيمن ===== -->
+                <StackPanel Grid.Column="2">
 
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="40"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="40"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Date Of Birth" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblDateOfBirth" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
 
-                    <!-- ===== LEFT COLUMN ===== -->
-                    <StackPanel Grid.Column="0">
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Email" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblEmail" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
+                    </Grid>
 
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Country" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblCountry" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
 
-                            <TextBlock Text="Person ID"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblPersonId"
-                                       Style="{StaticResource ValueTextStyle}"/>
-                        </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Address" Style="{StaticResource LabelStyle}" VerticalAlignment="Top"/>
+                        <TextBlock Grid.Column="1" x:Name="LblAddress" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
+                    </Grid>
 
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                </StackPanel>
 
-                            <TextBlock Text="National No"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblNationalNo"
-                                       Style="{StaticResource ValueTextStyle}"/>
-                        </Grid>
+                <!-- ===== الصورة ===== -->
+                <Border Grid.Column="4"
+                        Width="160"
+                        Height="160"
+                        CornerRadius="80"
+                        Background="{StaticResource InputBackground}"
+                        BorderBrush="{StaticResource PrimaryColor}"
+                        BorderThickness="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top">
 
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                    <Border.Clip>
+                        <EllipseGeometry Center="80,80" RadiusX="80" RadiusY="80"/>
+                    </Border.Clip>
 
-                            <TextBlock Text="Full Name"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblFullName"
-                                       Style="{StaticResource ValueTextStyle}"
-                                       TextWrapping="Wrap"/>
-                        </Grid>
-
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Gender"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblGender"
-                                       Style="{StaticResource ValueTextStyle}"/>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Phone"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblPhone"
-                                       Style="{StaticResource ValueTextStyle}"/>
-                        </Grid>
-
-                    </StackPanel>
-
-                    <!-- ===== RIGHT COLUMN ===== -->
-                    <StackPanel Grid.Column="2">
-
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Date Of Birth"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblDateOfBirth"
-                                       Style="{StaticResource ValueTextStyle}"/>
-                        </Grid>
-
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Email"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblEmail"
-                                       Style="{StaticResource ValueTextStyle}"
-                                       TextWrapping="Wrap"/>
-                        </Grid>
-
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Country"
-                                       Style="{StaticResource LabelStyle}"/>
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblCountry"
-                                       Style="{StaticResource ValueTextStyle}"/>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Address"
-                                       Style="{StaticResource LabelStyle}"
-                                       VerticalAlignment="Top"/>
-
-                            <TextBlock Grid.Column="1"
-                                       x:Name="LblAddress"
-                                       Style="{StaticResource ValueTextStyle}"
-                                       TextWrapping="Wrap"/>
-                        </Grid>
-
-                    </StackPanel>
-
-                    <!-- ===== IMAGE ===== -->
-                    <Border Grid.Column="4"
-                            Width="160"
-                            Height="160"
-                            CornerRadius="80"
-                            Background="{StaticResource InputBackground}"
-                            BorderBrush="{StaticResource BorderColor}"
-                            BorderThickness="2"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Top">
-
-                        <Border.Clip>
-                            <EllipseGeometry Center="80,80"
-                                             RadiusX="80"
-                                             RadiusY="80"/>
-                        </Border.Clip>
-
-                        <Image x:Name="ImgPerson"
-                               Stretch="UniformToFill"/>
-                    </Border>
-
-                </Grid>
-
-                <!-- ================= FOOTER ================= -->
-                <Grid Grid.Row="2" Margin="0,25,0,0">
-
-                    <Button Content="Close"
-                            Width="100"
-                            HorizontalAlignment="Right"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Click="Close_Click"/>
-                </Grid>
+                    <Image x:Name="ImgPerson" Stretch="UniformToFill"/>
+                </Border>
 
             </Grid>
 
-        </Border>
+            <!-- ================= شريط الأزرار السفلي ================= -->
+            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+                    Padding="25,15,25,20" 
+                    CornerRadius="0,0,16,16"
+                    Margin="-1,0,-1,-1">
+                <Button Content="Close"
+                        Width="120"
+                        HorizontalAlignment="Right"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="Close_Click"/>
+            </Border>
 
-    </Grid>
-
+        </Grid>
+    </Border>
 </Window>

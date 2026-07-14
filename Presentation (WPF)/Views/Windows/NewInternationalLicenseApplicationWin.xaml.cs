@@ -23,5 +23,10 @@ namespace Presentation.Views.Windows
         {
             InitializeComponent();
         }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
     }
 }
