@@ -122,6 +122,7 @@ namespace DVLD_WPF
             services.AddTransient<TakeTestWin>();
             services.AddTransient<IssueDrivingLicenseForTheFirstTimeWin>();
             services.AddTransient<LicenseHistoryWin>();
+            services.AddTransient<NewInternationalLicenseApplicationWin>();
 
 
             // 6. Navigation Service (⚠️ مهم)

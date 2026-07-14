@@ -50,6 +50,13 @@ namespace DVLD_WPF
             newLicenseWindow.ShowDialog();
         }
 
+        private void InternationalLicense_Click(object sender, RoutedEventArgs e)
+        {
+            var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewInternationalLicenseApplicationWin>();
+            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow;
+            newLicenseWindow.ShowDialog();
+        }
+
         private void ManagePeople_Click(object sender, RoutedEventArgs e)
         {
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<PeoplePage>());
@@ -76,6 +83,7 @@ namespace DVLD_WPF
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<DriversPage>());
         }
 
+       
 
     }
 }

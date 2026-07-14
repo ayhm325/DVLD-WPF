@@ -17,7 +17,7 @@
                 <MenuItem Header="Driving Licenses Services">
                     <MenuItem Header="New Driving License">
                         <MenuItem Header="Local License" Click="NewLocalLicnnse_Click"/>
-                        <MenuItem Header="International License"/>
+                        <MenuItem Header="International License" Click="InternationalLicense_Click"/>
                     </MenuItem>
                     <MenuItem Header="Renew Driving License"/>
                     <Separator/>

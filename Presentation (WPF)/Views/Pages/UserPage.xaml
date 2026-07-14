@@ -152,9 +152,10 @@
                           SelectedItem="{Binding SelectedUser}">
 
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="ID" Binding="{Binding UserId}" Width="60"/>
-                        <DataGridTextColumn Header="User Name" Binding="{Binding UserName}" Width="150"/>
+                        <DataGridTextColumn Header="User ID" Binding="{Binding UserId}" Width="90" />
+                        <DataGridTextColumn Header="Person ID" Binding="{Binding PersonId}" Width="90"/>
                         <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
+                        <DataGridTextColumn Header="User Name" Binding="{Binding UserName}" Width="150"/>
                         <DataGridTextColumn Header="Status" Binding="{Binding IsActive}" Width="100"/>
                     </DataGrid.Columns>
 
