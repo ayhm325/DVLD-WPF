@@ -1,25 +1,34 @@
-﻿
+﻿using Application.Interfaces;
 using Presentation.ViewModels;
 using System.Windows;
 
-
 namespace Presentation.Views.Windows
 {
-    /// <summary>
-    /// Interaction logic for UserDetailsWindow.xaml
-    /// </summary>
     public partial class UserDetailsWindow : Window
     {
-        public UserDetailsWindow(AddEditUserViewModel userViewModel)
+        private readonly ICurrentUserService _currentUser;
+
+        public UserDetailsWindow(
+            AddEditUserViewModel userViewModel,
+            ICurrentUserService currentUser)
         {
             InitializeComponent();
-            this.DataContext = userViewModel;           
+
+            DataContext = userViewModel;
+
+            _currentUser = currentUser;
+
+            Loaded += UserDetailsWindow_Loaded;
+        }
+
+        private void UserDetailsWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+           
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
-
     }
 }

@@ -7,10 +7,7 @@ using Domain.Entities;
 using Domain.Enums;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
-using Presentation.Helpers;
-using Presentation.Services;
 using Presentation.ViewModels;
-using Presentation.Views;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -19,14 +16,24 @@ public partial class AddEditUserViewModel : ObservableObject
 {
     private readonly IUserService _userService;
     private readonly IPersonService _personService;
-
-    public AddEditUserViewModel(IUserService userService, IPersonService personService)
+    private readonly ICurrentUserService _currentUserService;
+    public AddEditUserViewModel(
+     IUserService userService,
+     IPersonService personService,
+     ICurrentUserService currentUserService)
     {
         _userService = userService;
-        _personService = personService;        
+        _personService = personService;
+        _currentUserService = currentUserService;
+
+        CurrentUsername = _currentUserService.Username;
+        CurrentFullName = _currentUserService.FullName;
     }
 
-
+    [ObservableProperty]
+    private string currentUsername = string.Empty;
+    [ObservableProperty]
+    private string currentFullName = string.Empty;
     [ObservableProperty] private PersonDto? _person;
     [ObservableProperty] private OperationMode _mode;
     [ObservableProperty] private string _filterText = string.Empty;

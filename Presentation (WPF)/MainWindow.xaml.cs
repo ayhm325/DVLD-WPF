@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Presentation;
 using Presentation.Services;
 using Presentation.ViewModels;
 using Presentation.Views;
@@ -14,12 +15,16 @@ namespace DVLD_WPF
     public partial class MainWindow : Window
     {       
         public static INavigationService Navigation { get; private set; } = null!;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IServiceProvider _serviceProvider;
 
-        public MainWindow()
+        public MainWindow(ICurrentUserService currentUserService, IServiceProvider serviceProvider)
         {
             InitializeComponent();
+            _currentUserService = currentUserService;
+            _serviceProvider = serviceProvider;
             this.WindowState = WindowState.Maximized;
-          
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
 
             Navigation = new NavigationService(MainFrame);
 
@@ -83,9 +88,71 @@ namespace DVLD_WPF
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<DriversPage>());
         }
 
-        private void Close_Click(object sender, RoutedEventArgs e)
+        private async void CurrentUser_Click(object sender, RoutedEventArgs e)
         {
+            var userDetailsVm = App.ServiceProvider
+        .GetRequiredService<AddEditUserViewModel>();
+
+            var currentUser = App.ServiceProvider
+                .GetRequiredService<ICurrentUserService>();
+
+            await userDetailsVm.InitializeAsync(currentUser.UserId);
+
+            var window = App.ServiceProvider
+                .GetRequiredService<UserDetailsWindow>();
+
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.DataContext = userDetailsVm;
+
+            window.ShowDialog();
+        }
+
+        private void ChangePassword_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = App.ServiceProvider
+                .GetRequiredService<ChangePasswordViewModel>();
+
+            vm.UserId = _currentUserService.UserId;
+            vm.UserName = _currentUserService.Username;
+
+            var window = new ChangePasswordWindow(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
+        }
+
+        private void SignOut_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Are you sure you want to sign out?",
+                "Sign Out",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+                return;
+          
+            _currentUserService.Clear();
+          
+            var loginWindow = App.ServiceProvider
+                .GetRequiredService<LoginWindow>();
+
+            loginWindow.Show();
+           
             Close();
+        }
+
+        private void LocalDrivingLicenseApplications_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
+            
+        }
+
+        private void InternationalLicenseApplications_Click(object sender, RoutedEventArgs e)
+        {
+            // ضع هنا كود فتح صفحة International License Applications
         }
 
 

@@ -10,6 +10,8 @@ namespace Presentation
     /// </summary>
     public partial class LoginWindow : Window
     {
+
+
         public LoginWindow(LoginViewModel viewModel)
         {
             InitializeComponent();

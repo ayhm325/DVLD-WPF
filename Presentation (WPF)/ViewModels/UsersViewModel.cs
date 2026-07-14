@@ -125,18 +125,14 @@ public partial class UsersViewModel : ObservableObject
     private async Task ShowDetails()
     {
         if (SelectedUser == null) return;
-
-        // 1. جلب الـ ViewModel من الـ ServiceProvider
+        
         var userDetailsVm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
-
-        // 2. تجهيز الـ ViewModel بالبيانات (هذه الخطوة مهمة جداً)
-        // نستخدم الـ InitializeAsync لملء بيانات الشخص واليوزر بناءً على الـ ID
+      
         await userDetailsVm.InitializeAsync(SelectedUser.UserId);
+       
+        var detailsWindow = App.ServiceProvider.GetRequiredService<UserDetailsWindow>();
 
-        // 3. تمرير الـ ViewModel الجاهز للنافذة
-        var detailsWindow = new UserDetailsWindow(userDetailsVm);
-
-        // 4. إظهار النافذة
+        detailsWindow.DataContext = userDetailsVm;
         detailsWindow.ShowDialog();
     }
 
@@ -211,8 +207,7 @@ public partial class UsersViewModel : ObservableObject
     [RelayCommand]
     private void ChangePassword()
     {
-        // بما أنك تستخدم SelectedUser (بـ S كبيرة)، تأكد أنك تستخدم 
-        // الخاصية المولدة من [ObservableProperty] وليس الحقل _selectedUser
+       
         if (SelectedUser == null) return;
 
         var vm = App.ServiceProvider.GetRequiredService<ChangePasswordViewModel>();

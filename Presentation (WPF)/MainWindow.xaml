@@ -99,7 +99,7 @@
                                    VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    
+
                 </Grid>
             </Border>
 
@@ -122,7 +122,10 @@
                         <MenuItem Header="Retake Test"/>
                     </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Manage Applications"/>
+                    <MenuItem Header="Manage Applications">
+                        <MenuItem Header="Local Driving License Applications" Click="LocalDrivingLicenseApplications_Click"/>
+                        <MenuItem Header="International License Applications" Click="InternationalLicenseApplications_Click"/>
+                    </MenuItem>
                     <Separator/>
                     <MenuItem Header="Detain Licenses"/>
                     <MenuItem Header="Manage Application Types" Click="ApplicationType_Click"/>
@@ -132,7 +135,12 @@
                 <MenuItem Header="People" Click="ManagePeople_Click"/>
                 <MenuItem Header="Drivers" Click="Drivers_Click"/>
                 <MenuItem Header="Users" Click="Users_Click"/>
-                <MenuItem Header="Account Settings"/>
+                <MenuItem Header="Account Settings">
+                    <MenuItem Header="Current User Info" Click="CurrentUser_Click"/>
+                    <MenuItem Header="Change Password" Click="ChangePassword_Click"/>
+                    <Separator/>
+                    <MenuItem Header="Sign Out" Click="SignOut_Click"/>
+                </MenuItem>
             </Menu>
 
             <!-- فاصل أسفل القائمة -->
