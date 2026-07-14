@@ -3,10 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="DVLD System" Height="600" Width="1000"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}"
-        WindowStyle="None"
-        ResizeMode="CanResize"
-        AllowsTransparency="True">
+        Background="{StaticResource BackgroundColor}"       
+        ResizeMode="CanResize">
 
     <Window.Resources>
         <!-- ستايل أزرار الشريط الجانبي (شفافة مع تمييز عند التحويم) -->
@@ -101,9 +99,7 @@
                                    VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <Button Grid.Column="1" Content="✕" 
-                            Style="{StaticResource WindowCloseButtonStyle}" 
-                            Click="Close_Click"/>
+                    
                 </Grid>
             </Border>
 

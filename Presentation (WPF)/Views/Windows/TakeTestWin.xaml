@@ -6,9 +6,7 @@
         mc:Ignorable="d"
         Title="Take Test" 
         Height="850" Width="520"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"       
         Background="Transparent"
         ResizeMode="NoResize">
 

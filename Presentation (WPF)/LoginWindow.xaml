@@ -119,11 +119,12 @@
                     <!-- كلمة المرور -->
                     <TextBlock Text="Password" Style="{StaticResource LabelStyle}"/>
 
-                    <PasswordBox PasswordChanged="PasswordBox_PasswordChanged"/>
+                    <PasswordBox x:Name="PasswordBox" PasswordChanged="PasswordBox_PasswordChanged"/>
 
                     <!-- تذكرني (يرث ستايل CheckBox العام تلقائياً) -->
                     <CheckBox Content="Remember Me"
-                              Margin="0,15,0,0"/>
+                            Margin="0,15,0,0"
+                            IsChecked="{Binding RememberMe, Mode=TwoWay}"/>
 
                     <!-- زر تسجيل الدخول (يرث الستايل العام تلقائياً) -->
                     <Button Content="SIGN IN"

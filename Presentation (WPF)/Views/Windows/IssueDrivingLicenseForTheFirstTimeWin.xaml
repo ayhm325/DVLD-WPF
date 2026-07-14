@@ -8,9 +8,7 @@
         Title="Get Driver License For The First Time"
         Width="820"
         Height="650"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"       
         Background="Transparent"
         ResizeMode="NoResize">
 

@@ -4,9 +4,7 @@
         Title="Driver License Information"
         Height="700" 
         Width="800"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"       
         Background="Transparent"
         ResizeMode="NoResize">
 

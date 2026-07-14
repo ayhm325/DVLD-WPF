@@ -5,9 +5,7 @@
         Title="Person Information Details"
         Height="500"
         Width="920"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"       
         Background="Transparent"
         ResizeMode="NoResize">
 

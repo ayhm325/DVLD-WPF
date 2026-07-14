@@ -9,9 +9,7 @@
         Height="600"
         Width="800"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        WindowStyle="None"
-        AllowsTransparency="True"
+        ResizeMode="NoResize"        
         Background="Transparent">
 
     <Window.Resources>

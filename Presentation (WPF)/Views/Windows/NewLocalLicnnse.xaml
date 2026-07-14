@@ -6,9 +6,7 @@
         Title="New Local Driving License Application"
         Height="700" 
         Width="870"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"       
         Background="Transparent"
         ResizeMode="NoResize">
 

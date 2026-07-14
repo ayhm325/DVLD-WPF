@@ -6,9 +6,7 @@
         Title="{Binding PageTitle}"
         Height="800"
         Width="920"
-        WindowStartupLocation="CenterScreen"
-        WindowStyle="None"
-        AllowsTransparency="True"
+        WindowStartupLocation="CenterScreen"       
         Background="Transparent"
         ResizeMode="NoResize">
 

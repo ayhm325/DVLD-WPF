@@ -22,7 +22,18 @@ namespace Presentation.ViewModels
             _userService = userService;
             _currentUser = currentUser;
             _serviceProvider = serviceProvider;
+
+            RememberMe = Properties.Settings.Default.RememberMe;
+
+            if (RememberMe)
+            {
+                Username = Properties.Settings.Default.Username;
+                Password = Properties.Settings.Default.Password;
+            }
         }
+
+        [ObservableProperty]
+        private bool rememberMe;
 
         [ObservableProperty]
         private string username = string.Empty;
@@ -47,8 +58,22 @@ namespace Presentation.ViewModels
             _currentUser.Username = user.UserName;
             _currentUser.FullName = user.FullName;
 
-            var mainWindow =
-                _serviceProvider.GetRequiredService<MainWindow>();
+            if (RememberMe)
+            {
+                Properties.Settings.Default.Username = Username;
+                Properties.Settings.Default.Password = Password;
+                Properties.Settings.Default.RememberMe = true;
+            }
+            else
+            {
+                Properties.Settings.Default.Username = string.Empty;
+                Properties.Settings.Default.Password = string.Empty;
+                Properties.Settings.Default.RememberMe = false;
+            }
+
+            Properties.Settings.Default.Save();
+
+            var mainWindow =_serviceProvider.GetRequiredService<MainWindow>();
 
             mainWindow.Show();
 
