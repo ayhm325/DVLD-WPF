@@ -6,11 +6,7 @@ using Domain.Enums;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views.Windows;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Presentation.ViewModels

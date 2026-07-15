@@ -56,6 +56,7 @@ namespace DVLD_WPF
             services.AddScoped<TestRepository>();
             services.AddScoped<UserRepository>();           
             services.AddScoped<TestTypeRepository>();
+            services.AddScoped<InternationalRepository>();
 
 
             // 3. Services
@@ -74,6 +75,7 @@ namespace DVLD_WPF
             services.AddScoped<ITestService, TestService>();
             services.AddScoped<ITestTypeService, TestTypeService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IInternationalService, InternationalService>();
 
 
             // 4. ViewModels
@@ -96,6 +98,7 @@ namespace DVLD_WPF
             services.AddTransient<IssueDrivingLicenseForTheFirstTimeViewModel>();
             services.AddTransient<LicenseHistoryViewModel>();
             services.AddTransient<DriversViewModel>();
+            services.AddTransient<InternationalViewModel>();
 
 
 
@@ -123,6 +126,7 @@ namespace DVLD_WPF
             services.AddTransient<IssueDrivingLicenseForTheFirstTimeWin>();
             services.AddTransient<LicenseHistoryWin>();
             services.AddTransient<NewInternationalLicenseApplicationWin>();
+            services.AddTransient<InterLAppPage>();
 
 
             // 6. Navigation Service (⚠️ مهم)

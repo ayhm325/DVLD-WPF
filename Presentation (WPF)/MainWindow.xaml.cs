@@ -152,7 +152,7 @@ namespace DVLD_WPF
 
         private void InternationalLicenseApplications_Click(object sender, RoutedEventArgs e)
         {
-            // ضع هنا كود فتح صفحة International License Applications
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<InterLAppPage>());            
         }
 
 

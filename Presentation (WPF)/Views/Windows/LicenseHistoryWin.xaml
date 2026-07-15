@@ -294,7 +294,7 @@
                                                             ElementStyle="{StaticResource ColumnTextStyle}"/>
 
                                         <DataGridTextColumn Header="L.Lic.ID"
-                                                            Binding="{Binding LicenseID}"
+                                                            Binding="{Binding IssuedUsingLocalLicenseID}"
                                                             Width="80"
                                                             ElementStyle="{StaticResource ColumnTextStyle}"/>
 

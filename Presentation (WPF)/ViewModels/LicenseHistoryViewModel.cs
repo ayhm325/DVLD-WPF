@@ -7,6 +7,7 @@ using Infrastructure.Repositories;
 using System.Collections.ObjectModel;
 using System.Windows;
 
+
 namespace Presentation.ViewModels
 {
     public partial class LicenseHistoryViewModel : ObservableObject
@@ -14,7 +15,7 @@ namespace Presentation.ViewModels
         private readonly IPersonService _personService;
         private readonly IDriverService _driverService;
         private readonly ILicenseService _licenseService;
-        //private readonly IInternationalLicenseService _internationalService;
+        private readonly IInternationalService _internationalService;
 
         [ObservableProperty]
         private PersonDto? person;
@@ -22,20 +23,20 @@ namespace Presentation.ViewModels
         [ObservableProperty]
         private ObservableCollection<LicenseDto> localLicenses = [];
 
-        //[ObservableProperty]
-        //private ObservableCollection<InternationalLicenseHistoryDto> internationalLicenses = [];
+        [ObservableProperty]
+        private ObservableCollection<InternationalDto> internationalLicenses = [];
 
         public LicenseHistoryViewModel(
             IPersonService personService,
             IDriverService driverService,
-            ILicenseService licenseService
-            //IInternationalLicenseService internationalService
+            ILicenseService licenseService,
+            IInternationalService internationalService
             )
         {
             _personService = personService;
             _driverService = driverService;
             _licenseService = licenseService;
-            //_internationalService = internationalService;
+            _internationalService = internationalService;
         }
 
         public async Task LoadAsync(int personId)
@@ -54,12 +55,9 @@ namespace Presentation.ViewModels
 
             LocalLicenses = new ObservableCollection<LicenseDto>(licenses);
 
-            //var international =
-            //    await _internationalService.GetHistoryAsync(personId);
-
-            //InternationalLicenses =
-            //    new ObservableCollection<InternationalLicenseHistoryDto>(
-            //        international);
+            var international = await _internationalService.GetByDriverIdAsync(driver.DriverID);
+            
+            InternationalLicenses = new ObservableCollection<InternationalDto>(international);
         }
     }
 }

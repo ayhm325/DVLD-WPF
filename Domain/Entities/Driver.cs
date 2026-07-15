@@ -19,5 +19,7 @@ namespace Domain.Entities
 
         public virtual ICollection<License> Licenses { get; set; } = new List<License>();
 
+        public virtual ICollection<InternationalLicense> InternationalLicenses { get; set; } = new List<InternationalLicense>();
+
     }
 }

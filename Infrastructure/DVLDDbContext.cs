@@ -20,6 +20,7 @@ namespace Infrastructure
         public DbSet<License> Licenses { get; set; } = null!;
         public DbSet<Driver> Drivers { get; set; } = null!;
         public DbSet<DetainedLicense> DetainedLicenses { get; set; } = null!;
+        public DbSet<InternationalLicense> InternationalLicenses { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -170,6 +171,31 @@ namespace Infrastructure
                 .HasOne(dl => dl.ReleaseApplication)
                 .WithMany()
                 .HasForeignKey(dl => dl.ReleaseApplicationID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<InternationalLicense>()
+                .HasOne(i => i.Application)
+                .WithMany()
+                .HasForeignKey(i => i.ApplicationID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InternationalLicense>()
+                .HasOne(i => i.Driver)
+                .WithMany(d => d.InternationalLicenses)
+                .HasForeignKey(i => i.DriverID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InternationalLicense>()
+                .HasOne(i => i.IssuedUsingLocalLicense)
+                .WithMany()
+                .HasForeignKey(i => i.IssuedUsingLocalLicenseID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InternationalLicense>()
+                .HasOne(i => i.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(i => i.CreatedByUserID)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
