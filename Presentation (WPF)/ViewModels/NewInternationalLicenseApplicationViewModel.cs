@@ -1,9 +1,9 @@
 ﻿
 using Application.DTOs;
 using Application.Interfaces;
-using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Domain.Enums;
 using Presentation.Views.Windows;
 using System.Windows;
@@ -11,7 +11,8 @@ using System.Windows;
 namespace Presentation.ViewModels
 {
     public partial class NewInternationalLicenseApplicationViewModel : ObservableObject
-    {
+    {       
+
         private readonly IInternationalService _internationalService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IApplicationTypeService _applicationTypeService;
@@ -149,6 +150,7 @@ namespace Presentation.ViewModels
 
                 IsLicenseIssued = true;
                 MessageBox.Show("International License Issued Successfully");
+               
             }
         }
 

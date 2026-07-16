@@ -1,5 +1,6 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Enums;
@@ -17,6 +18,7 @@ namespace Presentation.ViewModels
         private readonly IApplicationService _appService;
         private readonly IServiceProvider _serviceProvider;
         private readonly ITestAppointmentService _testAppointmentService;
+        private readonly ILicenseService _licenseService;
 
         private List<LocalDrivingLicenseApplicationListDto> _allApplications = new();
         public ObservableCollection<LocalDrivingLicenseApplicationListDto> Applications { get; set; } = new();
@@ -67,13 +69,14 @@ namespace Presentation.ViewModels
         }
 
         public LDLAppViewModel(ILocalDrivingLicenseApplicationService service, IApplicationService appService,
-                               IServiceProvider serviceProvider, ITestAppointmentService testAppointmentService)
+                               IServiceProvider serviceProvider, ITestAppointmentService testAppointmentService, ILicenseService licenseService)
         {
             _service = service;
             _appService = appService;
             _serviceProvider = serviceProvider;
             _testAppointmentService = testAppointmentService;
             _ = LoadApplicationsAsync();
+            _licenseService = licenseService;
         }
 
         [RelayCommand]
@@ -238,9 +241,33 @@ namespace Presentation.ViewModels
 
         private bool CanShowLicense() => SelectedApplication != null && SelectedApplication.HasLicense;
         [RelayCommand(CanExecute = nameof(CanShowLicense))]
-        private void ShowLicense()
+        private async Task ShowLicense()
         {
-            var window = new DriverLicenseInfoWin(SelectedApplication!.LocalDrivingLicenseApplicationID);
+            if (SelectedApplication == null)
+                return;
+
+            var applicationId = await _service
+                .GetApplicationIdByLocalIdAsync(
+                    SelectedApplication.LocalDrivingLicenseApplicationID);
+
+            if (!applicationId.HasValue)
+            {
+                MessageBox.Show("Application not found");
+                return;
+            }
+
+            var licenses = await _licenseService
+                .GetByApplicationIdAsync(applicationId.Value);
+
+            var license = licenses.FirstOrDefault();
+
+            if (license == null)
+            {
+                MessageBox.Show("License not found");
+                return;
+            }
+
+            var window = new DriverLicenseInfoWin(license.LicenseID);
             window.ShowDialog();
         }
 

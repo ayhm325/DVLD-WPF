@@ -18,6 +18,7 @@ namespace Application.Services
         private readonly IDetainedLicenseService _detainedLicenseService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILicenseClassService _licenseClassService;
+        private readonly IApplicationTypeService _applicationTypeService;
 
 
         public LicenseService(
@@ -28,7 +29,8 @@ namespace Application.Services
                 IPersonService personService,
                 IDetainedLicenseService detainedLicenseService,
                 ICurrentUserService currentUserService,
-                ILicenseClassService licenseClassService)
+                ILicenseClassService licenseClassService,
+                IApplicationTypeService applicationTypeService)
         {
             _repository = repository;
             _lDLAppService = lDLAppService;
@@ -38,7 +40,83 @@ namespace Application.Services
             _detainedLicenseService = detainedLicenseService;
             _currentUserService = currentUserService;
             _licenseClassService = licenseClassService;
+            _applicationTypeService = applicationTypeService;
         }
+
+        public async Task<int> RenewLicenseAsync(int oldLicenseId, string? notes)
+        {
+            // 1) Get old license
+            var oldLicense = await _repository.GetLicenseByIdAsync(oldLicenseId);
+
+            if (oldLicense == null)
+                throw new Exception("Old license not found");
+
+            // ==========================
+            // Business Validation
+            // ==========================
+            if (!oldLicense.IsActive)
+                throw new Exception("Cannot renew an inactive license.");
+
+            if (oldLicense.ExpirationDate > DateTime.Now)
+                throw new Exception("Cannot renew license before expiration date.");
+
+            // 2) Get application type
+            var applicationType =
+                await _applicationTypeService.GetApplicationTypeByIdAsync(2);
+
+            if (applicationType == null)
+                throw new Exception("Application type not found");
+
+            var totalFees = applicationType.ApplicationTypeFees + oldLicense.LicenseClassInfo.ClassFees;
+
+            // 3) Create Application            
+            var application = new ApplicationDto
+            {
+                ApplicantPersonID = oldLicense.Driver.PersonID,
+                ApplicationTypeID = 2,
+                ApplicationDate = DateTime.Now,
+                ApplicationStatus = AppStatus.New,
+                LastStatusDate = DateTime.Now,
+                PaidFees = applicationType.ApplicationTypeFees,
+                CreatedByUserID = _currentUserService.UserId
+            };
+
+            int applicationId = await _applicationService.AddNewApplicationAsync(application);
+
+            // 4) Create new license
+            var newLicense = new LicenseDto
+            {
+                ApplicationID = applicationId,
+                DriverID = oldLicense.DriverID,
+                LicenseClassID = oldLicense.LicenseClass,
+                IssueDate = DateTime.Now,
+                ExpirationDate = DateTime.Now.AddYears(oldLicense.LicenseClassInfo.DefaultValidityLength),
+                PaidFees = oldLicense.LicenseClassInfo.ClassFees,
+                Notes = notes,
+                IsActive = true,
+                IssueReason = 2,
+                CreatedByUserID = _currentUserService.UserId
+            };
+
+            int newLicenseId = await AddAsync(newLicense);
+
+            // ==========================
+            // Deactivate old license
+            // ==========================
+            oldLicense.IsActive = false;
+
+            await _repository.UpdateLicenseAsync(oldLicense);
+
+            // 5) Complete application
+            application.ApplicationID = applicationId;
+
+            application.ApplicationStatus = AppStatus.Completed;
+
+            await _applicationService.UpdateApplicationAsync(application);
+
+            return newLicenseId;
+        }
+
 
         // =========================
         // GET
@@ -144,7 +222,7 @@ namespace Application.Services
                 IssueReasonText = l.IssueReason.ToString(),
 
                 CreatedByUserID = l.CreatedByUserID,
-                CreatedByUserName = l.CreatedByUser?.UserName
+                CreatedByUserName = l.CreatedByUser?.UserName ?? "Unknown"
             };
         }
 
@@ -207,7 +285,45 @@ namespace Application.Services
                 ImagePath = person.ImagePath
             };
         }
+        //===========================================
+        // Get License Details By License ID
+        //===========================================
+        public async Task<DriverLicenseInfoDto?> GetLicenseDetailsByIdAsync(int licenseId)
+        {
+            var license = await _repository.GetLicenseByIdAsync(licenseId);
 
+            if (license == null)
+                return null;
+
+
+            var person = license.Driver?.Person;
+
+            if (person == null)
+                return null;
+
+
+            return new DriverLicenseInfoDto
+            {
+                // License Info
+                LicenseId = license.LicenseID,
+                LicenseClass =license.LicenseClassInfo?.ClassName ?? "Unknown",
+                IssueDate = license.IssueDate,
+                ExpirationDate = license.ExpirationDate,
+                IsActive = license.IsActive,
+                IsDetained =await _detainedLicenseService.IsLicenseDetainedAsync(license.LicenseID),
+                IssueReason =license.IssueReason.ToString(),
+                Notes = license.Notes,
+                // Driver Info
+                DriverId = license.DriverID,
+                // Person Info
+                PersonID = person.PersonId,
+                FullName = person.FullName,
+                NationalNo = person.NationalNo,
+                DateOfBirth = person.DateOfBirth,
+                Gender = person.Gender.ToString(),
+                ImagePath = person.ImagePath
+            };
+        }
 
         public async Task<int> IssueFirstLicenseAsync(int localAppId, string? notes)
         {
@@ -242,15 +358,11 @@ namespace Application.Services
             if (person == null)
                 throw new Exception("Person not found.");
 
-
-
             // 5) Get License Class
             int licenseClassId = localApp.LicenseClassID;
 
             if (licenseClassId <= 0)
                 throw new Exception("Invalid License Class.");
-
-
 
             var licenseClass = await _licenseClassService
                 .GetLicenseClassByIdAsync(licenseClassId);
@@ -259,13 +371,8 @@ namespace Application.Services
             if (licenseClass == null)
                 throw new Exception("License class not found.");
 
-
-
-
             // 6) Create Driver if not exists
-            var driver = await _driverService
-                .GetByPersonIdAsync(person.PersonId);
-
+            var driver = await _driverService.GetByPersonIdAsync(person.PersonId);
 
             int driverId;
 
@@ -279,17 +386,12 @@ namespace Application.Services
                     CreatedDate = DateTime.Now
                 };
 
-
-                driverId = await _driverService
-                    .AddAsync(newDriver);
+                driverId = await _driverService.AddAsync(newDriver);
             }
             else
             {
                 driverId = driver.DriverID;
             }
-
-
-
 
             // 7) Create License
             var licenseDto = new LicenseDto
@@ -316,34 +418,17 @@ namespace Application.Services
                 CreatedByUserID = _currentUserService.UserId
             };
 
-
-
             int licenseId = await AddAsync(licenseDto);
-
-
-
-
 
             // 8) Update Application Status
             application.ApplicationStatus = AppStatus.Completed;
 
             application.PaidFees = licenseClass.LicenseClassFees;
 
-
-            await _applicationService
-                .UpdateApplicationAsync(application);
-
-
+            await _applicationService.UpdateApplicationAsync(application);
 
             return licenseId;
         }
-
-
-
-
-
-
-
 
 
     }

@@ -97,9 +97,14 @@ namespace Presentation.ViewModels
         }
 
         [RelayCommand]
-        private void IssueNew()
+        private async Task IssueNew() 
         {
-            // منطق فتح نافذة إصدار رخصة جديدة
+            var window = ActivatorUtilities.CreateInstance<NewInternationalLicenseApplicationWin>(
+                _serviceProvider);
+            
+            window.ShowDialog();
+          
+            await LoadApplications();
         }
 
         [RelayCommand]

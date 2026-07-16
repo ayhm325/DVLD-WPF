@@ -13,8 +13,8 @@ namespace Application.DTOs
         public bool IsActive { get; set; }
         public bool IsDetained { get; set; }
         public string IssueReason { get; set; } = string.Empty;
-        public string? Notes { get; set; } 
-
+        public string? Notes { get; set; }
+        public decimal LicenseClassFees { get; set; }
         // Driver Info
         public int DriverId { get; set; }
 

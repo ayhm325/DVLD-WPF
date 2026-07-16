@@ -1,5 +1,7 @@
 ﻿using Presentation.ViewModels;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace Presentation.Views.Windows
 {
@@ -7,9 +9,7 @@ namespace Presentation.Views.Windows
     {
         private readonly LicenseHistoryViewModel _vm;
 
-        public LicenseHistoryWin(
-            LicenseHistoryViewModel vm,
-            int personId)
+        public LicenseHistoryWin(LicenseHistoryViewModel vm,int personId)
         {
             InitializeComponent();
 
@@ -22,6 +22,14 @@ namespace Presentation.Views.Windows
 
                 ucPersonInfo.Person = _vm.Person;
             };
+        }
+
+        private void Row_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is DataGridRow row)
+            {
+                row.IsSelected = true;
+            }
         }
 
         private void btnClose_Click(object sender, RoutedEventArgs e)

@@ -1,26 +1,19 @@
-﻿
-
+﻿using Presentation.ViewModels;
 using System.Windows;
-
 
 namespace Presentation.Views.Windows
 {
-    /// <summary>
-    /// Interaction logic for AddEditUser.xaml
-    /// </summary>
-    public partial class AddEditUserWin : Window
+    public partial class RenewLicenseApplicationWin : Window
     {
-        public AddEditUserWin(AddEditUserViewModel vm)
+        public RenewLicenseApplicationWin(RenewLicenseViewModel vm)
         {
             InitializeComponent();
             DataContext = vm;
         }
 
-
-
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
     }
 }

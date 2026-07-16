@@ -155,6 +155,16 @@ namespace DVLD_WPF
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<InterLAppPage>());            
         }
 
+        private void RenewDrivingLicense_Click(object sender, RoutedEventArgs e)
+        {
+            var window =
+                App.ServiceProvider
+                .GetRequiredService<RenewLicenseApplicationWin>();
+
+            window.Owner = System.Windows.Application.Current.MainWindow;
+
+            window.ShowDialog();
+        }
 
     }
 }

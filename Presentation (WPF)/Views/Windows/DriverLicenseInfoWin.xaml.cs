@@ -12,7 +12,7 @@ namespace Presentation.Views.Windows
 {
     public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
     {
-        private readonly int _localDrivingLicenseApplicationId;
+        private readonly int _licenseId;
         private readonly ILicenseService _licenseService;
 
         // الخاصية التي سترتبط بها الـ XAML
@@ -25,27 +25,30 @@ namespace Presentation.Views.Windows
 
         public ICommand CloseCommand { get; }
 
-        public DriverLicenseInfoWin(int lDLAppId)
+        public DriverLicenseInfoWin(int licenseId)
         {
             InitializeComponent();
-            _localDrivingLicenseApplicationId = lDLAppId;
-            _licenseService = App.ServiceProvider.GetRequiredService<ILicenseService>();
 
-            // ضبط الـ DataContext لهذا الكود
-            this.DataContext = this;
-            CloseCommand = new RelayCommand(_ => this.Close());
+            _licenseId = licenseId;
 
-            this.Loaded += DriverLicenseInfoWin_Loaded;
+            _licenseService = App.ServiceProvider
+                .GetRequiredService<ILicenseService>();
+
+            DataContext = this;
+
+            CloseCommand = new RelayCommand(_ => Close());
+
+            Loaded += DriverLicenseInfoWin_Loaded;
         }
 
         private async void DriverLicenseInfoWin_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                var fullLicenseDto = await _licenseService.GetDetails(_localDrivingLicenseApplicationId);
+                var fullLicenseDto = await _licenseService.GetLicenseDetailsByIdAsync(_licenseId);
                 if (fullLicenseDto != null)
                 {
-                    LicenseData = fullLicenseDto; // سيتم تحديث الـ UI تلقائياً
+                    LicenseData = fullLicenseDto; 
                 }
             }
             catch (Exception ex)

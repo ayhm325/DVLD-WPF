@@ -104,6 +104,49 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- عدّل ستايل NextButtonStyle -->
+        <Style x:Key="NextButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                        Background="{TemplateBinding Background}" 
+                        CornerRadius="10" 
+                        Padding="18,0"
+                        Opacity="{TemplateBinding Opacity}">
+                            <StackPanel Orientation="Horizontal" 
+                                HorizontalAlignment="Center" 
+                                VerticalAlignment="Center">
+                                <!-- أضف Foreground="{TemplateBinding Foreground}" هنا -->
+                                <TextBlock Text="Next" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{TemplateBinding Foreground}"/>
+                                <TextBlock Text="&#x276F;" FontSize="16" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#374151"/>
+                                <Setter Property="Foreground" Value="#6B7280"/>
+                                <Setter Property="Opacity" Value="0.6"/>
+                                <Setter Property="Cursor" Value="No"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- الحاوية الرئيسية -->
@@ -152,7 +195,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    
+
                 </Grid>
             </Border>
 
@@ -162,8 +205,9 @@
                           HorizontalScrollBarVisibility="Disabled"
                           Margin="20,15,20,20">
 
-                <TabControl Background="Transparent" 
-                            BorderThickness="0">
+                <TabControl x:Name="MainTabControl" Background="Transparent" 
+                            BorderThickness="0"
+                            SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
                     <!-- Tab 1: Personal & Filter -->
                     <TabItem Header="Personal &amp; Filter" 
@@ -173,6 +217,13 @@
                         <StackPanel>
                             <controls:Filter Margin="0,0,0,15"/>
                             <controls:InformationPerson Person="{Binding Person}" />
+
+                            <!-- زر Next -->
+                            <Grid Margin="0,20,0,0">
+                                <Button Style="{StaticResource NextButtonStyle}"
+                                        HorizontalAlignment="Right"
+                                        Command="{Binding GoToNextTabCommand}"/>
+                            </Grid>
                         </StackPanel>
 
                     </TabItem>
@@ -180,7 +231,7 @@
                     <!-- Tab 2: Login Information -->
                     <TabItem Header="Login Information" 
                              Style="{StaticResource TabItemStyle}" 
-                             FontSize="14">
+                             FontSize="14" IsEnabled="{Binding CanGoToNextTab}">
 
                         <Border Style="{StaticResource CardStyle}" Padding="25">
                             <StackPanel>

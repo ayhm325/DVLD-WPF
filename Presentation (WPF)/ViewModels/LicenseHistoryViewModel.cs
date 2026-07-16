@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Entities;
 using Infrastructure.Repositories;
+using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -19,6 +20,12 @@ namespace Presentation.ViewModels
 
         [ObservableProperty]
         private PersonDto? person;
+
+        [ObservableProperty]
+        private LicenseDto? selectedLocalLicense;
+
+        [ObservableProperty]
+        private InternationalDto? selectedInternationalLicense;
 
         [ObservableProperty]
         private ObservableCollection<LicenseDto> localLicenses = [];
@@ -58,6 +65,32 @@ namespace Presentation.ViewModels
             var international = await _internationalService.GetByDriverIdAsync(driver.DriverID);
             
             InternationalLicenses = new ObservableCollection<InternationalDto>(international);
+        }
+
+        [RelayCommand]
+        private void ShowLicense()
+        {
+            if (SelectedLocalLicense == null)
+            {
+                MessageBox.Show("Please select a license first");
+                return;
+            }
+
+            var win = new DriverLicenseInfoWin(SelectedLocalLicense.LicenseID);
+            win.ShowDialog();
+        }
+
+        [RelayCommand]
+        private void ShowInternationalLicense()
+        {
+            if (SelectedInternationalLicense == null)
+            {
+                MessageBox.Show("Please select an international license first");
+                return;
+            }
+
+            var win = new DriverLicenseInfoWin(SelectedInternationalLicense.InternationalLicenseID);
+            win.ShowDialog();
         }
     }
 }

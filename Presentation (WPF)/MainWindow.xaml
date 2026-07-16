@@ -114,7 +114,7 @@
                             <MenuItem Header="Local License" Click="NewLocalLicnnse_Click"/>
                             <MenuItem Header="International License" Click="InternationalLicense_Click"/>
                         </MenuItem>
-                        <MenuItem Header="Renew Driving License"/>
+                        <MenuItem Header="Renew Driving License"  Click="RenewDrivingLicense_Click"/>
                         <Separator/>
                         <MenuItem Header="Replacement for Lost or Damaged"/>
                         <Separator/>

@@ -4,6 +4,8 @@ namespace Application.Interfaces
 {
     public interface ILicenseService
     {
+        Task<int> RenewLicenseAsync(int oldLicenseId, string? notes);
+
         // =========================
         // GET
         // =========================
@@ -18,6 +20,8 @@ namespace Application.Interfaces
         Task<List<LicenseDto>> GetByLicenseClassIdAsync(int licenseClassId);
 
         Task<DriverLicenseInfoDto?> GetDetails(int localAppId);
+
+        Task<DriverLicenseInfoDto?> GetLicenseDetailsByIdAsync(int licenseId);
 
         Task<int> IssueFirstLicenseAsync(int localAppId, string? notes);
 

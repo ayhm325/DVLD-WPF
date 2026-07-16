@@ -100,7 +100,7 @@ namespace DVLD_WPF
             services.AddTransient<DriversViewModel>();
             services.AddTransient<InternationalViewModel>();
             services.AddTransient<NewInternationalLicenseApplicationViewModel>();
-
+            services.AddTransient<RenewLicenseViewModel>();
 
 
             // 5. Views (Pages & Windows)
@@ -128,6 +128,7 @@ namespace DVLD_WPF
             services.AddTransient<LicenseHistoryWin>();
             services.AddTransient<NewInternationalLicenseApplicationWin>();
             services.AddTransient<InterLAppPage>();
+            services.AddTransient<RenewLicenseApplicationWin>();
 
 
             // 6. Navigation Service (⚠️ مهم)
