@@ -8,11 +8,8 @@ namespace Domain.Entities
     {
         [Key]
         public int CountryId { get; set; }
-        public string? CountryName { get; set; } 
-
+        public string CountryName { get; set; } = null!;
         // Navigation Property (One Country -> Many People)
         public virtual List<Person>? People { get; set; }
-
-       
     }
 }

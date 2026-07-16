@@ -17,7 +17,7 @@ namespace Domain.Entities
 
         public int ApplicationTypeID { get; set; }
 
-        public byte ApplicationStatus { get; set; } 
+        public byte ApplicationStatus { get; set; }
 
         public DateTime LastStatusDate { get; set; }
 
@@ -26,13 +26,13 @@ namespace Domain.Entities
         public int CreatedByUserID { get; set; }
 
         [ForeignKey("ApplicantPersonID")]
-        public virtual Person? Person { get; set; }
+        public virtual Person Person { get; set; } = null!;
 
         [ForeignKey("ApplicationTypeID")]
         public virtual ApplicationType? ApplicationType { get; set; }
 
         [ForeignKey("CreatedByUserID")]
-        public virtual User? CreatedByUser { get; set; }
+        public virtual User CreatedByUser { get; set; } = null!;
 
         public ICollection<License> Licenses { get; set; } = new List<License>();
     }

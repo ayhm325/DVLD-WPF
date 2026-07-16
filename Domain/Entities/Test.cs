@@ -1,7 +1,5 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Domain.Entities
 {
@@ -9,17 +7,21 @@ namespace Domain.Entities
     {
         [Key]
         public int TestID { get; set; }
+
         public int TestAppointmentID { get; set; }
+
         public bool TestResult { get; set; }
+
         public string? Notes { get; set; }
+
         public int CreatedByUserID { get; set; }
 
+
         [ForeignKey(nameof(CreatedByUserID))]
-        public virtual User? User { get; set; }
+        public virtual User User { get; set; } = null!;
+
 
         [ForeignKey(nameof(TestAppointmentID))]
-        public virtual TestAppointment? TestAppointment { get; set; }
-
-
+        public virtual TestAppointment TestAppointment { get; set; } = null!;
     }
 }

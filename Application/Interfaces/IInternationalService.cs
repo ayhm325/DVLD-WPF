@@ -21,5 +21,9 @@ namespace Application.Interfaces
         Task UpdateAsync(InternationalDto dto);
 
         Task DeleteAsync(int internationalLicenseId);
+
+        Task<bool> IssueInternationalLicenseAsync(int localLicenseId);
+
+        Task<DriverLicenseInfoDto?> GetLocalLicenseInfoAsync(int licenseId);
     }
 }

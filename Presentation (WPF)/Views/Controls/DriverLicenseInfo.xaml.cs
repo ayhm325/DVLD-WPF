@@ -12,6 +12,7 @@ namespace Presentation.Views.Controls
             InitializeComponent();
         }
 
+
         public DriverLicenseInfoDto? License
         {
             get => (DriverLicenseInfoDto?)GetValue(LicenseProperty);
@@ -23,24 +24,33 @@ namespace Presentation.Views.Controls
                 nameof(License),
                 typeof(DriverLicenseInfoDto),
                 typeof(DriverLicenseInfo),
-                new PropertyMetadata(null, OnLicenseChanged)); // أضفنا الـ Callback
+                new PropertyMetadata(null));
 
-        // هذه الدالة هي السحر الذي يربط الـ DTO بالـ XAML
-        private static void OnLicenseChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+
+        public string LicenseIdText
         {
-            var control = (DriverLicenseInfo)d;
-
-            // تحديث الـ DataContext كلما تم تغيير قيمة الـ License
-            control.DataContext = e.NewValue;
-        }
-        private void BtnSearch_Click(object sender, MouseButtonEventArgs e)
-        {
-
+            get => (string)GetValue(LicenseIdTextProperty);
+            set => SetValue(LicenseIdTextProperty, value);
         }
 
-        private void TxtLicenseID_TextChanged(object sender, TextChangedEventArgs e)
-        {
+        public static readonly DependencyProperty LicenseIdTextProperty =
+            DependencyProperty.Register(
+                nameof(LicenseIdText),
+                typeof(string),
+                typeof(DriverLicenseInfo));
 
+
+        public ICommand? SearchCommand
+        {
+            get => (ICommand?)GetValue(SearchCommandProperty);
+            set => SetValue(SearchCommandProperty, value);
         }
+
+        public static readonly DependencyProperty SearchCommandProperty =
+            DependencyProperty.Register(
+                nameof(SearchCommand),
+                typeof(ICommand),
+                typeof(DriverLicenseInfo),
+                new PropertyMetadata(null));
     }
 }

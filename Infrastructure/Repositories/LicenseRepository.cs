@@ -22,6 +22,7 @@ namespace Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(l => l.Application)
                 .Include(l => l.Driver)
+                    .ThenInclude(d => d.Person)
                 .Include(l => l.LicenseClassInfo)
                 .Include(l => l.CreatedByUser);
         }

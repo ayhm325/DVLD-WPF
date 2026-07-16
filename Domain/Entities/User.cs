@@ -18,6 +18,6 @@ namespace Domain.Entities
 
         // Navigation Property
         [ForeignKey("PersonId")]
-        public virtual Person? Person { get; set; } 
+        public virtual Person Person { get; set; } = null!;
     }
 }

@@ -12,10 +12,10 @@ namespace Domain.Entities
         public DateTime CreatedDate { get; set; }
 
         [ForeignKey(nameof(PersonID))]
-        public virtual Person? Person { get; set; }
+        public virtual Person Person { get; set; } = null!;
 
         [ForeignKey(nameof(CreatedByUserID))]
-        public virtual User? CreatedByUser { get; set; }
+        public virtual User CreatedByUser { get; set; } = null!;
 
         public virtual ICollection<License> Licenses { get; set; } = new List<License>();
 

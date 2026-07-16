@@ -45,7 +45,7 @@
             </Setter>
         </Style>
 
-        <!-- Ghost Button (مطابق للوحة Teal) -->
+        <!-- Ghost Button (مطابق للوحة Teal مع إضافة حالة التعطيل) -->
         <Style x:Key="GhostButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="20,0"/>
@@ -71,6 +71,12 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="btnBorder" Property="Background" Value="#1A1A1E"/>
                                 <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <!-- حالة التعطيل (الزر معطل) -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#6B7280"/>
+                                <Setter Property="Opacity" Value="0.5"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -122,7 +128,7 @@
                                    VerticalAlignment="Center"/>
                     </StackPanel>
 
-                   
+
                 </Grid>
             </Border>
 
@@ -135,11 +141,12 @@
                 <StackPanel>
 
                     <!-- Driver License Info Card -->
-                    <controls:DriverLicenseInfo Margin="0,0,0,15"/>
-
+                    <controls:DriverLicenseInfo
+                            LicenseIdText="{Binding LicenseIdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SearchCommand="{Binding SearchCommand}"
+                            License="{Binding LicenseInfo}"/>
                     <!-- Application Basic Info Card -->
-                    <controls:ApplicationBasicInfo/>
-
+                    <controls:ApplicationInfo Application="{Binding ApplicationInfo}"/>
                 </StackPanel>
 
             </ScrollViewer>
@@ -159,14 +166,22 @@
                     <StackPanel Grid.Column="0"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
+
                         <Button Content="Show Licenses History"
-                                Style="{StaticResource GhostButtonStyle}"/>
+                                Style="{StaticResource GhostButtonStyle}"
+                                Command="{Binding ShowLicensesHistoryCommand}"
+                                IsEnabled="{Binding IsLicenseIssued}"/>
+
                         <Rectangle Width="1" Height="20"
                                    Fill="{StaticResource BorderColor}"
                                    Margin="12,0"
                                    VerticalAlignment="Center"/>
+
                         <Button Content="Show Licenses Info"
-                                Style="{StaticResource GhostButtonStyle}"/>
+                                Style="{StaticResource GhostButtonStyle}"
+                                Command="{Binding ShowLicensesInfoCommand}"
+                                IsEnabled="{Binding IsLicenseIssued}"/>
+
                     </StackPanel>
 
                     <!-- Right Side -->
@@ -176,7 +191,8 @@
                         <Button Content="Issue"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Width="120"
-                                Margin="0,0,15,0"/>
+                                Margin="0,0,15,0"
+                                Command="{Binding IssueCommand}"/>
                         <Button Content="Close"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Width="120"

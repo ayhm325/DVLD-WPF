@@ -99,6 +99,7 @@ namespace DVLD_WPF
             services.AddTransient<LicenseHistoryViewModel>();
             services.AddTransient<DriversViewModel>();
             services.AddTransient<InternationalViewModel>();
+            services.AddTransient<NewInternationalLicenseApplicationViewModel>();
 
 
 

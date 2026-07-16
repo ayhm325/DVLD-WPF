@@ -37,26 +37,32 @@ namespace Application.Services
 
         public async Task<List<TestAppointmentDto>> GetAllAsync()
         {
-            var data = await _repository.GetAllAsync();
-            return data.Select(MapToDto).ToList();
+            return (await _repository.GetAllAsync())
+                .Select(MapToDto)
+                .ToList();
         }
 
         public async Task<List<TestAppointmentDto>> GetByApplicationIdAsync(int applicationId)
         {
-            var data = await _repository.GetByApplicationIdAsync(applicationId);
-            return data.Select(MapToDto).ToList();
+            return (await _repository.GetByApplicationIdAsync(applicationId))
+                .Select(MapToDto)
+                .ToList();
         }
+
 
         public async Task<List<TestAppointmentDto>> GetByTestTypeIdAsync(TestTypeEnum testType)
         {
-            var data = await _repository.GetByTestTypeIdAsync(testType);
-            return data.Select(MapToDto).ToList();
+            return (await _repository.GetByTestTypeIdAsync(testType))
+                .Select(MapToDto)
+                .ToList();
         }
+
 
         public async Task<List<TestAppointmentDto>> GetByCreatedUserIdAsync(int userId)
         {
-            var data = await _repository.GetByCreatedUserIdAsync(userId);
-            return data.Select(MapToDto).ToList();
+            return (await _repository.GetByCreatedUserIdAsync(userId))
+                .Select(MapToDto)
+                .ToList();
         }
 
         public async Task<ScheduleTestDto?> GetScheduleInfoAsync(int testAppointmentId)
@@ -100,32 +106,40 @@ namespace Application.Services
         public Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId)
             => _repository.IsAppointmentAlreadyScheduledAsync(localAppId, testTypeId);
 
-        
+
         // =========================
         // COMMANDS
         // =========================
 
         public async Task<bool> AddAsync(TestAppointmentDto dto)
         {
-            if (dto is null)
-                throw new ArgumentNullException(nameof(dto));
+            ArgumentNullException.ThrowIfNull(dto);
 
-            if (await _repository.IsAppointmentAlreadyScheduledAsync(dto.LocalDrivingLicenseApplicationID, dto.TestTypeID))
-                throw new InvalidOperationException("Appointment already exists or test already passed.");
+            if (await _repository.IsAppointmentAlreadyScheduledAsync(
+                    dto.LocalDrivingLicenseApplicationID,
+                    dto.TestTypeID))
+            {
+                throw new InvalidOperationException(
+                    "Appointment already exists or test already passed.");
+            }
 
             if (await HasConflictAsync(dto.TestTypeID, dto.AppointmentDate))
-                throw new InvalidOperationException("Date is already reserved.");
+            {
+                throw new InvalidOperationException(
+                    "Date is already reserved.");
+            }
 
             var entity = MapToEntity(dto);
+
             return await _repository.AddAsync(entity);
         }
 
         public async Task<bool> UpdateAsync(TestAppointmentDto dto)
         {
-            if (dto is null)
-                throw new ArgumentNullException(nameof(dto));
+            ArgumentNullException.ThrowIfNull(dto);
 
             var entity = MapToEntity(dto);
+
             return await _repository.UpdateAsync(entity);
         }
 

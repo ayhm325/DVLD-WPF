@@ -34,7 +34,7 @@ namespace Infrastructure.Repositories
 
         public async Task<TestAppointment?> GetByIdAsync(int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .FirstOrDefaultAsync(x => x.TestAppointmentID == id);
@@ -42,7 +42,7 @@ namespace Infrastructure.Repositories
 
         public async Task<List<TestAppointment>> GetAllAsync()
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await  using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .ToListAsync();
@@ -50,7 +50,7 @@ namespace Infrastructure.Repositories
 
         public async Task<List<TestAppointment>> GetByApplicationIdAsync(int applicationId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .Where(x => x.LocalDrivingLicenseApplicationID == applicationId)
@@ -59,7 +59,7 @@ namespace Infrastructure.Repositories
 
         public async Task<List<TestAppointment>> GetByTestTypeIdAsync(TestTypeEnum testType)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .Where(x => x.TestTypeID == (int)testType)
@@ -68,7 +68,7 @@ namespace Infrastructure.Repositories
 
         public async Task<List<TestAppointment>> GetByCreatedUserIdAsync(int userId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .Where(x => x.CreatedByUserID == userId)
@@ -77,7 +77,7 @@ namespace Infrastructure.Repositories
 
         public async Task<TestAppointment?> GetScheduleInfoAsync(int testAppointmentId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.TestAppointments
                 .Include(x => x.TestType)
@@ -103,7 +103,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> ExistsAsync(Expression<Func<TestAppointment, bool>> predicate)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.TestAppointments
                 .AsNoTracking()
@@ -112,7 +112,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> HasConflictAsync(int testTypeId, DateTime dateTime)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.TestAppointments
                 .AnyAsync(x =>
@@ -122,7 +122,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> HasUserConflictAsync(int userId, DateTime dateTime)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.TestAppointments
                 .AnyAsync(x =>
@@ -132,7 +132,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> HasApplicationConflictAsync(int applicationId, DateTime dateTime)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.TestAppointments
                 .AnyAsync(x =>
@@ -142,13 +142,15 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> HasPassedAllTestsAsync(int appId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await  using var context = await _contextFactory.CreateDbContextAsync();
 
             var passedTests = await context.Tests
                 .Where(t =>
-                t.TestAppointment.LocalDrivingLicenseApplication.ApplicationID== appId &&
-                t.TestResult)
-                .Select(t => t.TestAppointment.TestTypeID)
+                    t.TestAppointment != null &&
+                    t.TestAppointment.LocalDrivingLicenseApplication != null &&
+                    t.TestAppointment.LocalDrivingLicenseApplication.ApplicationID == appId &&
+                    t.TestResult)
+                .Select(t => t.TestAppointment!.TestTypeID)
                 .Distinct()
                 .CountAsync();
 
@@ -157,22 +159,24 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             // 1. التحقق من وجود موعد "مفتوح" (غير مقفل) لنفس التطبيق ونفس نوع الاختبار
             bool hasPendingAppointment = await context.TestAppointments
                 .AnyAsync(a => a.LocalDrivingLicenseApplicationID == localAppId
                             && a.TestTypeID == testTypeId
-                            && a.IsLocked == false); // الموعد المفتوح هو الذي لم يُختبر فيه بعد
+                            && a.IsLocked ); // == false 
 
             if (hasPendingAppointment) return true;
 
             // 2. التحقق من وجود "نجاح" سابق لنفس نوع الاختبار
             // إذا وجد سجل ناجح (TestResult == true)، نمنع إنشاء موعد جديد
             bool hasPassed = await context.Tests
-                .AnyAsync(t => t.TestAppointment.LocalDrivingLicenseApplicationID == localAppId
-                            && t.TestAppointment.TestTypeID == testTypeId
-                            && t.TestResult == true);
+                .AnyAsync(t =>
+                    t.TestAppointment != null &&
+                    t.TestAppointment.LocalDrivingLicenseApplicationID == localAppId &&
+                    t.TestAppointment.TestTypeID == testTypeId &&
+                    t.TestResult);
 
             return hasPassed;
         }
@@ -183,7 +187,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> AddAsync(TestAppointment appointment)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             await context.TestAppointments.AddAsync(appointment);
             return await context.SaveChangesAsync()>0;
@@ -195,7 +199,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> UpdateAsync(TestAppointment appointment)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             var existing = await context.TestAppointments
                 .FirstOrDefaultAsync(x => x.TestAppointmentID == appointment.TestAppointmentID);
@@ -221,7 +225,7 @@ namespace Infrastructure.Repositories
 
         public async Task DeleteAsync(int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             var entity = await context.TestAppointments.FindAsync(id);
 

@@ -1,6 +1,4 @@
-﻿
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Domain.Entities
@@ -32,19 +30,21 @@ namespace Domain.Entities
         public int CreatedByUserID { get; set; }
 
 
+        // Required Relationships
+
         [ForeignKey(nameof(ApplicationID))]
-        public virtual ApplicationD? Application { get; set; }
+        public virtual ApplicationD Application { get; set; } = null!;
 
 
         [ForeignKey(nameof(DriverID))]
-        public virtual Driver? Driver { get; set; }
+        public virtual Driver Driver { get; set; } = null!;
 
 
         [ForeignKey(nameof(LicenseClass))]
-        public virtual LicenseClass? LicenseClassInfo { get; set; }
+        public virtual LicenseClass LicenseClassInfo { get; set; } = null!;
 
 
         [ForeignKey(nameof(CreatedByUserID))]
-        public virtual User? CreatedByUser { get; set; }
+        public virtual User CreatedByUser { get; set; } = null!;
     }
 }

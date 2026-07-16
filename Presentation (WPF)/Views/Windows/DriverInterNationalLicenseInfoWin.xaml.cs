@@ -12,7 +12,7 @@ namespace Presentation.Views.Windows
 {
     public partial class DriverInterNationalLicenseInfoWin : Window, INotifyPropertyChanged
     {
-        private readonly int _internationalLicenseApplicationId;
+        private readonly int _internationalLicenseId;
         private readonly IInternationalService _internationalLicenseService;
 
         // الخاصية التي سترتبط بها الـ XAML
@@ -28,7 +28,7 @@ namespace Presentation.Views.Windows
         public DriverInterNationalLicenseInfoWin(int internationalLicenseApplicationId)
         {
             InitializeComponent();
-            _internationalLicenseApplicationId = internationalLicenseApplicationId;
+            _internationalLicenseId = internationalLicenseApplicationId;
             _internationalLicenseService = App.ServiceProvider.GetRequiredService<IInternationalService>();
 
             // ضبط الـ DataContext لهذا الكود
@@ -42,7 +42,7 @@ namespace Presentation.Views.Windows
         {
             try
             {
-                var fullLicenseDto = await _internationalLicenseService.GetByIdAsync(_internationalLicenseApplicationId);
+                var fullLicenseDto = await _internationalLicenseService.GetByIdAsync(_internationalLicenseId);
                 if (fullLicenseDto != null)
                 {
                     LicenseData = fullLicenseDto; // سيتم تحديث الـ UI تلقائياً

@@ -8,7 +8,7 @@
 
     <UserControl.Resources>
 
-        <!-- ═══════════════ Local Brushes (مطابقة للوحة الألوان العامة - Teal) ═══════════════ -->
+        <!-- ═══════════════ Local Brushes ═══════════════ -->
         <SolidColorBrush x:Key="IconBgBrush" Color="#042F2E"/>
 
         <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,0.6">
@@ -22,13 +22,11 @@
             <GradientStop Color="#0D9488" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- ألوان حالة التفعيل -->
         <SolidColorBrush x:Key="ActiveGreenBg" Color="#064E3B"/>
         <SolidColorBrush x:Key="ActiveGreenText" Color="#34D399"/>
         <SolidColorBrush x:Key="InactiveRedBg" Color="#7F1D1D"/>
         <SolidColorBrush x:Key="InactiveRedText" Color="#F87171"/>
 
-        <!-- ألوان حالة الاحتجاز -->
         <SolidColorBrush x:Key="DetainedRedBg" Color="#450A0A"/>
         <SolidColorBrush x:Key="DetainedRedText" Color="#DC2626"/>
         <SolidColorBrush x:Key="FreeGreenBg" Color="#064E3B"/>
@@ -76,7 +74,6 @@
             <Setter Property="Margin" Value="10,3,0,0"/>
         </Style>
 
-        <!-- نص خانة البحث – مطابق للستايل العام -->
         <Style x:Key="SearchTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="CaretBrush" Value="White"/>
@@ -109,11 +106,38 @@
             </Setter>
         </Style>
 
-        <Style x:Key="HeaderSearchBtn" TargetType="Border">
+        <Style x:Key="HeaderSearchBtnStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource SearchBtnGradient}"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="14,9,14,9"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                ClipToBounds="False">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#14B8A6" BlurRadius="8" Opacity="0.35" Direction="0"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
     </UserControl.Resources>
@@ -167,25 +191,24 @@
                                       Stroke="{DynamicResource SecondaryTextColor}" StrokeThickness="1.8"
                                       Fill="Transparent" Stretch="Uniform" Height="15" Width="15"/>
                             </Border>
-                            <TextBox x:Name="TxtLicenseID"
-                                        VerticalAlignment="Center"
-                                        Margin="30,0,0,0"
-                                        Foreground="White"
-                                        CaretBrush="White"                                      
-                                        BorderThickness="0"
-                                        TextChanged="TxtLicenseID_TextChanged"/>
+                            <TextBox VerticalAlignment="Center"
+                                     Margin="30,0,0,0"
+                                     Foreground="White"
+                                     CaretBrush="White"                                      
+                                     BorderThickness="0"
+                                     Text="{Binding LicenseIdText,
+                                             RelativeSource={RelativeSource AncestorType=UserControl},
+                                             UpdateSourceTrigger=PropertyChanged}"/>
                         </Grid>
 
-                        <Border Style="{StaticResource HeaderSearchBtn}"
+                        <Button Style="{StaticResource HeaderSearchBtnStyle}"
                                 Margin="8,0,0,0"
-                                MouseLeftButtonUp="BtnSearch_Click">
-                            <Border.Effect>
-                                <DropShadowEffect Color="#14B8A6" BlurRadius="8" Opacity="0.35" Direction="0"/>
-                            </Border.Effect>
+                                Command="{Binding SearchCommand,
+                                          RelativeSource={RelativeSource AncestorType=UserControl}}">
                             <Path Data="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                                   Stroke="White" StrokeThickness="2" Fill="Transparent"
                                   Stretch="Uniform" Height="16" Width="16"/>
-                        </Border>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -230,7 +253,8 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Class" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding Class, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <!-- ★ تم التصحيح: Class -> LicenseClass ★ -->
+                                <TextBlock Text="{Binding License.LicenseClass, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -245,7 +269,8 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Name" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding Name, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <!-- ★ تم التصحيح: Name -> FullName ★ -->
+                                <TextBlock Text="{Binding License.FullName, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -260,7 +285,8 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="License ID" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding LicenseID, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <!-- ★ تم التصحيح: LicenseID -> LicenseId ★ -->
+                                <TextBlock Text="{Binding License.LicenseId, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -275,7 +301,7 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="National No" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding NationalNo, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="{Binding License.NationalNo, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -290,7 +316,7 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Gender" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding Gender, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="{Binding License.Gender, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -305,7 +331,7 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Date Of Birth" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding DateOfBirth, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="{Binding License.DateOfBirth, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -320,7 +346,8 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Driver ID" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding DriverID, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <!-- ★ تم التصحيح: DriverID -> DriverId ★ -->
+                                <TextBlock Text="{Binding License.DriverId, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -335,7 +362,7 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Issue Date" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding IssueDate, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="{Binding License.IssueDate, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -350,7 +377,7 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Expiration Date" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding ExpirationDate, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="{Binding License.ExpirationDate, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -365,7 +392,7 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Issue Reason" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding IssueReason, FallbackValue='[???]'}" Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="{Binding License.IssueReason, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -380,19 +407,19 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Is Active?" Style="{StaticResource FieldLabel}"/>
-                                <Border x:Name="ActiveBadge">
+                                <Border>
                                     <Border.Style>
                                         <Style TargetType="Border" BasedOn="{StaticResource StatusBadge}">
                                             <Setter Property="Background" Value="{DynamicResource InputBackground}"/>
                                             <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
                                             <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <DataTrigger Binding="{Binding License.IsActive, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                                     <Setter Property="Background" Value="{StaticResource ActiveGreenBg}"/>
                                                     <Setter Property="BorderBrush" Value="{StaticResource ActiveGreenText}"/>
                                                     <Setter Property="BorderThickness" Value="0"/>
                                                 </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                <DataTrigger Binding="{Binding License.IsActive, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
                                                     <Setter Property="Background" Value="{StaticResource InactiveRedBg}"/>
                                                     <Setter Property="BorderBrush" Value="{StaticResource InactiveRedText}"/>
                                                     <Setter Property="BorderThickness" Value="0"/>
@@ -400,17 +427,17 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock x:Name="ActiveText" FontSize="11.5" FontWeight="SemiBold">
+                                    <TextBlock FontSize="11.5" FontWeight="SemiBold">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Text" Value="Unknown"/>
                                                 <Setter Property="Foreground" Value="{DynamicResource SecondaryTextColor}"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <DataTrigger Binding="{Binding License.IsActive, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                                         <Setter Property="Text" Value="Active"/>
                                                         <Setter Property="Foreground" Value="{StaticResource ActiveGreenText}"/>
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                                    <DataTrigger Binding="{Binding License.IsActive, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
                                                         <Setter Property="Text" Value="Inactive"/>
                                                         <Setter Property="Foreground" Value="{StaticResource InactiveRedText}"/>
                                                     </DataTrigger>
@@ -433,19 +460,19 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Is Detained?" Style="{StaticResource FieldLabel}"/>
-                                <Border x:Name="DetainedBadge">
+                                <Border>
                                     <Border.Style>
                                         <Style TargetType="Border" BasedOn="{StaticResource StatusBadge}">
                                             <Setter Property="Background" Value="{DynamicResource InputBackground}"/>
                                             <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
                                             <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsDetained}" Value="True">
+                                                <DataTrigger Binding="{Binding License.IsDetained, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                                     <Setter Property="Background" Value="{StaticResource DetainedRedBg}"/>
                                                     <Setter Property="BorderBrush" Value="{StaticResource DetainedRedText}"/>
                                                     <Setter Property="BorderThickness" Value="0"/>
                                                 </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsDetained}" Value="False">
+                                                <DataTrigger Binding="{Binding License.IsDetained, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
                                                     <Setter Property="Background" Value="{StaticResource FreeGreenBg}"/>
                                                     <Setter Property="BorderBrush" Value="{StaticResource FreeGreenText}"/>
                                                     <Setter Property="BorderThickness" Value="0"/>
@@ -453,17 +480,17 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock x:Name="DetainedText" FontSize="11.5" FontWeight="SemiBold">
+                                    <TextBlock FontSize="11.5" FontWeight="SemiBold">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Text" Value="Unknown"/>
                                                 <Setter Property="Foreground" Value="{DynamicResource SecondaryTextColor}"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsDetained}" Value="True">
+                                                    <DataTrigger Binding="{Binding License.IsDetained, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
                                                         <Setter Property="Text" Value="Detained"/>
                                                         <Setter Property="Foreground" Value="{StaticResource DetainedRedText}"/>
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsDetained}" Value="False">
+                                                    <DataTrigger Binding="{Binding License.IsDetained, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
                                                         <Setter Property="Text" Value="Free"/>
                                                         <Setter Property="Foreground" Value="{StaticResource FreeGreenText}"/>
                                                     </DataTrigger>
@@ -487,7 +514,7 @@
                             </Border>
                             <StackPanel>
                                 <TextBlock Text="Notes" Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding Notes, FallbackValue='[???]'}"
+                                <TextBlock Text="{Binding License.Notes, RelativeSource={RelativeSource AncestorType=UserControl}, FallbackValue='---'}"
                                            Style="{StaticResource FieldValue}"
                                            TextWrapping="Wrap" MaxHeight="50"/>
                             </StackPanel>
@@ -517,7 +544,8 @@
                                                Foreground="{DynamicResource SecondaryTextColor}"
                                                HorizontalAlignment="Center" Margin="0,12,0,0"/>
                                 </StackPanel>
-                                <Image Source="{Binding PersonImagePath}"
+                                <!-- ★ تم التصحيح: PersonImagePath -> ImagePath ★ -->
+                                <Image Source="{Binding License.ImagePath, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                        Stretch="UniformToFill"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center"/>

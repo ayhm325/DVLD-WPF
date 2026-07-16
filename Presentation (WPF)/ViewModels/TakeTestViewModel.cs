@@ -44,10 +44,10 @@ namespace Presentation.ViewModels
 
         // ✳️ IMPORTANT: make these observable (NOT computed)
         [ObservableProperty]
-        private string fullName;
+        private string fullName = string.Empty;
 
         [ObservableProperty]
-        private string licenseClassName;
+        private string licenseClassName = string.Empty;
 
         [ObservableProperty]
         private decimal fees;
@@ -56,12 +56,12 @@ namespace Presentation.ViewModels
         // PROPERTY CHANGED HOOKS
         // =========================
 
-        partial void OnScheduleChanged(ScheduleTestDto value)
+        partial void OnScheduleChanged(ScheduleTestDto? value)
         {
             if (value == null) return;
 
-            FullName = value.FullName;
-            LicenseClassName = value.LicenseClassName;
+            FullName = value.FullName ?? string.Empty;
+            LicenseClassName = value.LicenseClassName ?? string.Empty;
             Fees = value.Fees;
         }
 

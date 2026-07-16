@@ -31,6 +31,8 @@ namespace Application.DTOs
 
         public string Gender { get; set; } = string.Empty;
 
+        public decimal Fees { get; set; }
 
+        public string CreatedByUserName { get; set; } = string.Empty;
     }
 }

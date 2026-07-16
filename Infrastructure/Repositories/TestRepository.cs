@@ -36,7 +36,7 @@ namespace Infrastructure.Repositories
 
         public async Task<Test?> GetByIdAsync(int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .FirstOrDefaultAsync(t => t.TestID == id);
@@ -44,7 +44,7 @@ namespace Infrastructure.Repositories
 
         public async Task<List<Test>> GetAllAsync()
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .ToListAsync();
@@ -52,7 +52,7 @@ namespace Infrastructure.Repositories
 
         public async Task<List<Test>> GetByTestAppointmentIdAsync(int appointmentId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+           await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .Where(t => t.TestAppointmentID == appointmentId)
@@ -61,7 +61,7 @@ namespace Infrastructure.Repositories
 
         public async Task<List<Test>> GetByUserIdAsync(int userId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await Query(context)
                 .Where(t => t.CreatedByUserID == userId)
@@ -70,7 +70,7 @@ namespace Infrastructure.Repositories
 
         public async Task<int> GetTrialCountByApplicationIdAsync(int ldlAppId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.Tests
                 .Where(t => t.TestAppointment != null &&
@@ -84,7 +84,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> IsTestExistsAsync(int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.Tests
                 .AnyAsync(t => t.TestID == id);
@@ -92,7 +92,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> IsTestAlreadyTakenAsync(int appointmentId)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.Tests
                 .AnyAsync(t => t.TestAppointmentID == appointmentId);
@@ -104,7 +104,7 @@ namespace Infrastructure.Repositories
 
         public async Task<int> AddAsync(Test test)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             await context.Tests.AddAsync(test);
             await context.SaveChangesAsync();
@@ -118,7 +118,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> UpdateAsync(Test test)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             var existing = await context.Tests
                 .FirstOrDefaultAsync(t => t.TestID == test.TestID);
@@ -139,7 +139,7 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> DeleteAsync(int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             var entity = await context.Tests.FindAsync(id);
 
@@ -155,7 +155,7 @@ namespace Infrastructure.Repositories
         // =========================
         public async Task<int> CountAsync(Expression<Func<Test, bool>> predicate)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.Tests.CountAsync(predicate);
         }
