@@ -1,16 +1,23 @@
-﻿using Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using Application.DTOs;
+using Domain.Entities;
 
 namespace Application.Interfaces
 {
     public interface IDetainedLicenseService
     {
-        Task<DetainedLicense?> GetByIdAsync(int id);
-        Task<List<DetainedLicense>> GetAllAsync();
+        Task<DetainedLicenseDto?> GetByIdAsync(int id);
+
+        Task<List<DetainedLicenseDto>> GetAllAsync();
+
         Task<DetainedLicense> AddAsync(DetainedLicense entity);
+
         Task UpdateAsync(DetainedLicense entity);
+
         Task<bool> IsLicenseDetainedAsync(int licenseId);
-        Task ReleaseAsync(int detainId, int releasedByUserId, int applicationId);
+
+        Task ReleaseAsync(
+            int detainId,
+            int releasedByUserId,
+            int applicationId);
     }
 }

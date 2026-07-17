@@ -166,5 +166,36 @@ namespace DVLD_WPF
             window.ShowDialog();
         }
 
+        private void ReplacementForLostOrDamaged_Click(object sender, RoutedEventArgs e)
+        {
+            var window = App.ServiceProvider
+                .GetRequiredService<ReplacementDamagedLicense>();
+
+            window.Owner = System.Windows.Application.Current.MainWindow;
+
+            window.ShowDialog();
+        }
+
+        private void ManageDetainedLicenses_Click(object sender, RoutedEventArgs e)
+        {
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ListDetainedLicenses>());            
+        }
+
+        private void DetainLicense_Click(object sender, RoutedEventArgs e)
+        {
+           
+        }
+
+        private void ReleaseDetainedLicense_Click(object sender, RoutedEventArgs e)
+        {
+           
+        }
+
+        
+        private void ReleaseDetainedDrivingLicense_Click(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
     }
 }

@@ -130,6 +130,7 @@ namespace Presentation.ViewModels
                 ExpirationDate = LicenseInfo.ExpirationDate,
                 ApplicationFees = applicationType.ApplicationTypeFees,
                 LicenseFees = LicenseInfo.LicenseClassFees,
+                IssueReason = (byte)Domain.Enums.IssueReason.Renew,
                 CreatedByUserName = _currentUserService.Username
             };
 

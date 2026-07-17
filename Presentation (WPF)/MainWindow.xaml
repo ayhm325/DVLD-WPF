@@ -116,9 +116,9 @@
                         </MenuItem>
                         <MenuItem Header="Renew Driving License"  Click="RenewDrivingLicense_Click"/>
                         <Separator/>
-                        <MenuItem Header="Replacement for Lost or Damaged"/>
+                        <MenuItem Header="Replacement for Lost or Damaged" Click="ReplacementForLostOrDamaged_Click"/>
                         <Separator/>
-                        <MenuItem Header="Release Detained Driving License"/>
+                        <MenuItem Header="Release Detained Driving License" Click="ReleaseDetainedDrivingLicense_Click"/>
                         <MenuItem Header="Retake Test"/>
                     </MenuItem>
                     <Separator/>
@@ -127,7 +127,11 @@
                         <MenuItem Header="International License Applications" Click="InternationalLicenseApplications_Click"/>
                     </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Detain Licenses"/>
+                    <MenuItem Header="Detain Licenses">
+                        <MenuItem Header="Manage Detained Licenses" Click="ManageDetainedLicenses_Click"/>
+                        <MenuItem Header="Detain License" Click="DetainLicense_Click"/>
+                        <MenuItem Header="Release Detained License" Click="ReleaseDetainedLicense_Click"/>
+                    </MenuItem>
                     <MenuItem Header="Manage Application Types" Click="ApplicationType_Click"/>
                     <MenuItem Header="Manage Test Types" Click="TestType_Click"/>
                 </MenuItem>

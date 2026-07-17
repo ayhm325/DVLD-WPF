@@ -43,6 +43,65 @@ namespace Application.Services
             _applicationTypeService = applicationTypeService;
         }
 
+        // Replace License
+        public async Task<int> ReplaceLicenseAsync(int oldLicenseId, string replacementReason, int applicationTypeId)
+        {
+            var oldLicense = await _repository.GetLicenseByIdAsync(oldLicenseId);
+
+            if (oldLicense == null)
+                throw new Exception("Old license not found.");
+
+            if (!oldLicense.IsActive)
+                throw new Exception("Cannot replace inactive license.");
+
+            var reasonEnum = replacementReason == "Lost License"
+                     ? Domain.Enums.IssueReason.ReplacementForLost
+                     : Domain.Enums.IssueReason.ReplacementForDamaged;
+
+            var applicationType = await _applicationTypeService.GetApplicationTypeByIdAsync(applicationTypeId);
+
+            if (applicationType == null)
+                throw new Exception("Replacement application type not found.");
+
+            var application = new ApplicationDto
+            {
+                ApplicantPersonID = oldLicense.Driver.PersonID,
+                ApplicationTypeID = applicationTypeId,
+                ApplicationDate = DateTime.Now,
+                ApplicationStatus = AppStatus.New,
+                LastStatusDate = DateTime.Now,
+                PaidFees = applicationType.ApplicationTypeFees,
+                CreatedByUserID = _currentUserService.UserId
+            };
+
+            int applicationId = await _applicationService.AddNewApplicationAsync(application);
+
+            var newLicense = new LicenseDto
+            {
+                ApplicationID = applicationId,
+                DriverID = oldLicense.DriverID,
+                LicenseClassID = oldLicense.LicenseClass,
+                IssueDate = DateTime.Now,
+                ExpirationDate = oldLicense.ExpirationDate,
+                PaidFees = oldLicense.LicenseClassInfo.ClassFees,
+                Notes = replacementReason,
+                IsActive = true,
+                IssueReason = (byte)reasonEnum,
+                CreatedByUserID = _currentUserService.UserId
+            };
+            int newLicenseId = await AddAsync(newLicense);
+            // Deactivate old license
+            oldLicense.IsActive = false;
+            await _repository.UpdateLicenseAsync(oldLicense);
+
+            application.ApplicationID = applicationId;
+            application.ApplicationStatus = AppStatus.Completed;
+            await _applicationService.UpdateApplicationAsync(application);
+
+            return newLicenseId;
+        }
+
+        // Renew License
         public async Task<int> RenewLicenseAsync(int oldLicenseId, string? notes)
         {
             // 1) Get old license
@@ -94,7 +153,7 @@ namespace Application.Services
                 PaidFees = oldLicense.LicenseClassInfo.ClassFees,
                 Notes = notes,
                 IsActive = true,
-                IssueReason = 2,
+                IssueReason = (byte)Domain.Enums.IssueReason.Renew,
                 CreatedByUserID = _currentUserService.UserId
             };
 
@@ -219,7 +278,7 @@ namespace Application.Services
                 IsActive = l.IsActive ,
 
                 IssueReason = l.IssueReason ,
-                IssueReasonText = l.IssueReason.ToString(),
+                IssueReasonText = ((Domain.Enums.IssueReason)l.IssueReason).ToString(),
 
                 CreatedByUserID = l.CreatedByUserID,
                 CreatedByUserName = l.CreatedByUser?.UserName ?? "Unknown"
@@ -311,7 +370,7 @@ namespace Application.Services
                 ExpirationDate = license.ExpirationDate,
                 IsActive = license.IsActive,
                 IsDetained =await _detainedLicenseService.IsLicenseDetainedAsync(license.LicenseID),
-                IssueReason =license.IssueReason.ToString(),
+                IssueReason = ((Domain.Enums.IssueReason)license.IssueReason).ToString(),
                 Notes = license.Notes,
                 // Driver Info
                 DriverId = license.DriverID,
@@ -413,7 +472,7 @@ namespace Application.Services
 
                 IsActive = true,
 
-                IssueReason = 1, // First Time
+                IssueReason = (byte)Domain.Enums.IssueReason.FirstTime,
 
                 CreatedByUserID = _currentUserService.UserId
             };

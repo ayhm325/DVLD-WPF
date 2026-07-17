@@ -4,6 +4,7 @@ namespace Application.Interfaces
 {
     public interface ILicenseService
     {
+        Task<int> ReplaceLicenseAsync(int oldLicenseId, string replacementReason, int applicationTypeId);
         Task<int> RenewLicenseAsync(int oldLicenseId, string? notes);
 
         // =========================

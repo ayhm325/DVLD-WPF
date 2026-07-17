@@ -47,14 +47,14 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- أيقونة بنمط المربّع المستدير الموحد -->
+                        <!-- أيقونة بنمط المربّع المستدير الموحد (مصمتة وواضحة) -->
                         <Border Width="38" Height="38" CornerRadius="10" 
                                 Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
+                                Opacity="0.25"
                                 VerticalAlignment="Center" Margin="0,0,14,0"
                                 Padding="8">
-                            <materialDesign:PackIcon Kind="InformationOutline" 
-                                                    Foreground="{StaticResource PrimaryColor}" 
+                            <materialDesign:PackIcon Kind="Information" 
+                                                    Foreground="White" 
                                                     Width="22" Height="22" 
                                                     VerticalAlignment="Center" 
                                                     HorizontalAlignment="Center"/>
