@@ -59,19 +59,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- ===== Row (Hover) ===== -->
-        <Style x:Key="RowStyle" TargetType="DataGridRow">
-            <Style.Triggers>
-                <MultiTrigger>
-                    <MultiTrigger.Conditions>
-                        <Condition Property="IsMouseOver" Value="True"/>
-                        <Condition Property="IsSelected" Value="False"/>
-                    </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="#1A1A1E"/>
-                </MultiTrigger>
-            </Style.Triggers>
-        </Style>
-
         <!-- ===== نصوص الأعمدة ===== -->
         <Style x:Key="ColumnTextStyle" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -97,70 +84,6 @@
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Height" Value="38"/>
             <Setter Property="Margin" Value="10,0,0,0"/>
-        </Style>
-
-        <!-- ===== زر أيقونة صغير (Primary) ===== -->
-        <Style x:Key="IconButtonPrimaryStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Width" Value="38"/>
-            <Setter Property="Height" Value="38"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
-                                CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource PrimaryHoverColor}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95" CenterX="0.5" CenterY="0.5"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ===== زر أيقونة صغير (Secondary) ===== -->
-        <Style x:Key="IconButtonSecondaryStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Width" Value="38"/>
-            <Setter Property="Height" Value="38"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
-                                BorderBrush="{StaticResource BorderColor}" 
-                                BorderThickness="1" 
-                                CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1A1A1E"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="#374151"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
     </Page.Resources>
@@ -239,9 +162,60 @@
                       Style="{StaticResource DataGridStyle}"
                       ColumnHeaderStyle="{StaticResource ColumnHeaderStyle}"
                       CellStyle="{StaticResource CellStyle}"
-                      RowStyle="{StaticResource RowStyle}"
                       ItemsSource="{Binding Drivers}"
+                      SelectedItem="{Binding SelectedDriver}"
                       Margin="0">
+
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+
+                        <!-- حفظ الـ ViewModel في Tag -->
+                        <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"/>
+
+                        <!-- تفعيل التحديد عند الضغط بالزر الأيمن -->
+                        <EventSetter Event="MouseRightButtonDown" Handler="DataGridRow_MouseRightButtonDown"/>
+
+                        <!-- Context Menu -->
+                        <Setter Property="ContextMenu">
+                            <Setter.Value>
+                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+
+                                    <MenuItem Header="Show Person Info" 
+                                              Command="{Binding PlacementTarget.Tag.ShowPersonInfoCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                        <MenuItem.Icon>
+                                            <Path Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" 
+                                                  Fill="{StaticResource PrimaryColor}" Stretch="Uniform" Width="18" Height="18"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                    <MenuItem Header="Show Person License History" 
+                                              Command="{Binding PlacementTarget.Tag.ShowLicenseHistoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                        <MenuItem.Icon>
+                                            <Path Data="M13,3A9,9 0 0,0 4,12H1L4.89,15.89L8.89,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.06,19 9.3,18.21 8.08,16.92L6.64,18.36C8.25,20 10.47,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3M12,8V12L15.28,13.94L16.05,12.66L13,10.8V8H12Z" 
+                                                  Fill="{StaticResource PrimaryColor}" Stretch="Uniform" Width="18" Height="18"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+
+                                </ContextMenu>
+                            </Setter.Value>
+                        </Setter>
+
+                        <!-- تفاعلات الصفوف -->
+                        <Style.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Background" Value="#1A1A1E"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#042F2E"/>
+                            </Trigger>
+                        </Style.Triggers>
+
+                    </Style>
+                </DataGrid.RowStyle>
 
                 <DataGrid.Columns>
 
@@ -280,6 +254,5 @@
             </DataGrid>
 
         </Border>
-
     </Grid>
 </Page>
