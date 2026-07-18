@@ -81,6 +81,11 @@ namespace Infrastructure.Repositories
             using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.DetainedLicenses
+                .AsNoTracking()
+                .Include(d => d.License)
+                    .ThenInclude(l => l.Driver)
+                        .ThenInclude(dr => dr.Person)
+                .Include(d => d.CreatedByUser)
                 .FirstOrDefaultAsync(d =>
                     d.LicenseID == licenseId &&
                     !d.IsReleased);

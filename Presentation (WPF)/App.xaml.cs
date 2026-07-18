@@ -103,11 +103,12 @@ namespace DVLD_WPF
             services.AddTransient<RenewLicenseViewModel>();
             services.AddTransient<ReplacementDamagedLicenseViewModel>();
             services.AddTransient<ListDetainedLicensesViewModel>();
+            services.AddTransient<DetainLicenseViewModel>();
+            services.AddTransient<ReleaseDetainedViewModel>();
 
             // 5. Views (Pages & Windows)
             services.AddTransient<LoginWindow>();
-            services.AddTransient<MainWindow>();
-            services.AddTransient<HomePage>();           
+            services.AddTransient<MainWindow>();            
             services.AddTransient<UserPage>();
             services.AddTransient<DriversPage>();
             services.AddTransient<ChangePasswordWindow>();
@@ -132,6 +133,8 @@ namespace DVLD_WPF
             services.AddTransient<RenewLicenseApplicationWin>();
             services.AddTransient<ReplacementDamagedLicense>();
             services.AddTransient<ListDetainedLicenses>();
+            services.AddTransient<DetainLicenseWin>();
+            services.AddTransient<ReleaseDetainedLicenseWin>();
 
 
             // 6. Navigation Service (⚠️ مهم)

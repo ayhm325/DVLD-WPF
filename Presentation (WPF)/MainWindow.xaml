@@ -6,68 +6,6 @@
         Background="{StaticResource BackgroundColor}"       
         ResizeMode="CanResize">
 
-    <Window.Resources>
-        <!-- ستايل أزرار الشريط الجانبي (شفافة مع تمييز عند التحويم) -->
-        <Style x:Key="SidebarButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Height" Value="42"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Margin" Value="12,2,12,2"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                                Background="{TemplateBinding Background}" 
-                                CornerRadius="10" 
-                                Padding="14,0">
-                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1A1A1E"/>
-                                <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ستايل زر الإغلاق للنافذة -->
-        <Style x:Key="WindowCloseButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="46"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#7F1D1D"/>
-                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
     <!-- حاوية رئيسية مع حدود النافذة -->
     <Border BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1"
@@ -98,8 +36,6 @@
                                    Foreground="{StaticResource TextColor}" 
                                    VerticalAlignment="Center"/>
                     </StackPanel>
-
-
                 </Grid>
             </Border>
 
@@ -119,7 +55,7 @@
                         <MenuItem Header="Replacement for Lost or Damaged" Click="ReplacementForLostOrDamaged_Click"/>
                         <Separator/>
                         <MenuItem Header="Release Detained Driving License" Click="ReleaseDetainedDrivingLicense_Click"/>
-                        <MenuItem Header="Retake Test"/>
+                        <MenuItem Header="Retake Test" Click="RetakeTest_Click"/>
                     </MenuItem>
                     <Separator/>
                     <MenuItem Header="Manage Applications">
@@ -150,59 +86,142 @@
             <!-- فاصل أسفل القائمة -->
             <Border DockPanel.Dock="Top" Height="1" Background="{StaticResource BorderColor}"/>
 
-            <!-- ═══════════════ المحتوى ═══════════════ -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="220"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <!-- ═══════════════ منطقة عرض الصفحات والشاشة الفارغة ═══════════════ -->
+            <Grid x:Name="ContentArea">
 
-                <!-- الشريط الجانبي -->
-                <Border Grid.Column="0" Background="{StaticResource CardBackground}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                <!-- إطار عرض الصفحات -->
+                <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
 
-                        <!-- عنوان الشريط الجانبي -->
-                        <Border Grid.Row="0" Padding="0,20,0,15" Margin="0,0,0,10">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#042F2E" Offset="0"/>
-                                    <GradientStop Color="Transparent" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <TextBlock Text="MENU" 
-                                       Foreground="{StaticResource PrimaryColor}" 
-                                       FontSize="20" 
-                                       FontWeight="Bold" 
-                                       Margin="20,0,0,0"/>
+                <!-- ═══════ شاشة الترحيب الاحترافية مع المؤثرات ═══════ -->
+                <Grid x:Name="EmptyStatePlaceholder">
+
+                    <Grid.Resources>
+                        <!-- حركة النبض للخلفية المتوهجة -->
+                        <Storyboard x:Key="PulseGlowStoryboard" RepeatBehavior="Forever">
+                            <DoubleAnimation 
+                                Storyboard.TargetName="GlowEffect" 
+                                Storyboard.TargetProperty="Opacity" 
+                                From="0.4" To="0.8" 
+                                Duration="0:0:3" 
+                                AutoReverse="True">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseInOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+
+                        <!-- حركة الظهور التدريجي (Fade In & Slide Up) -->
+                        <Storyboard x:Key="FadeInStoryboard">
+                            <DoubleAnimation 
+                                Storyboard.TargetName="MainContent" 
+                                Storyboard.TargetProperty="Opacity" 
+                                From="0" To="1" Duration="0:0:1.2">
+                                <DoubleAnimation.EasingFunction>
+                                    <QuinticEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation 
+                                Storyboard.TargetName="MainContent" 
+                                Storyboard.TargetProperty="(RenderTransform).(TranslateTransform.Y)" 
+                                From="40" To="0" Duration="0:0:1.2">
+                                <DoubleAnimation.EasingFunction>
+                                    <QuinticEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </Grid.Resources>
+
+                    <!-- تشغيل المؤثرات عند تحميل النافذة -->
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource PulseGlowStoryboard}"/>
+                            <BeginStoryboard Storyboard="{StaticResource FadeInStoryboard}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
+
+                    <!-- خلفية هندسية خفيفة (تأثير تكنولوجي) -->
+                    <Ellipse Width="350" Height="350" Stroke="{StaticResource BorderColor}" StrokeThickness="0.5" StrokeDashArray="4 4" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.4"/>
+                    <Ellipse Width="520" Height="520" Stroke="{StaticResource BorderColor}" StrokeThickness="0.3" StrokeDashArray="2 6" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.2"/>
+                    <Ellipse Width="700" Height="700" Stroke="{StaticResource BorderColor}" StrokeThickness="0.2" StrokeDashArray="1 8" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.1"/>
+
+                    <!-- التوهج الخلفي (Background Glow) - تم تصحيح اللون ليحمل الشفافية بداخل #334F46E5 -->
+                    <Ellipse x:Name="GlowEffect" Width="500" Height="500" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#334F46E5" Offset="0"/>
+                                <GradientStop Color="Transparent" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
+                    <!-- المحتوى الرئيسي -->
+                    <StackPanel x:Name="MainContent" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                        <StackPanel.RenderTransform>
+                            <TranslateTransform/>
+                        </StackPanel.RenderTransform>
+
+                        <!-- حاوية الأيقونة مع الظل المتوهج -->
+                        <Border Width="120" Height="120" CornerRadius="28" 
+                                Background="#0F0F12" 
+                                BorderBrush="#4F46E5" 
+                                BorderThickness="1.5" 
+                                Margin="0,0,0,40"
+                                HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#4F46E5" BlurRadius="50" ShadowDepth="0" Opacity="0.6"/>
+                            </Border.Effect>
+
+                            <TextBlock Text="🪪" FontSize="55" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,5">
+                                <TextBlock.Foreground>
+                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                        <GradientStop Color="Black"/>
+                                        <GradientStop Color="White" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </TextBlock.Foreground>
+                            </TextBlock>
                         </Border>
 
-                        <!-- أزرار التنقل -->
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <Button Content="Home" Click="Home_Click" Style="{StaticResource SidebarButtonStyle}"/>
-                                <Button Content="Manage People" Click="ManagePeople_Click" Style="{StaticResource SidebarButtonStyle}"/>
-                                <Button Content="Manage Users" Click="Users_Click" Style="{StaticResource SidebarButtonStyle}"/>
-                                <Button Content="Application Type" Click="ApplicationType_Click" Style="{StaticResource SidebarButtonStyle}"/>
-                                <Button Content="Test Type" Click="TestType_Click" Style="{StaticResource SidebarButtonStyle}"/>
-                                <Button Content="L.D.L.App" Click="LDLApp_Click" Style="{StaticResource SidebarButtonStyle}"/>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Grid>
-                </Border>
+                        <!-- العنوان الرئيسي مع تأثير التوهج النصي (تم إزالة LetterSpacing) -->
+                        <TextBlock Text="DVLD System" 
+                                   FontSize="34" 
+                                   FontWeight="Bold" 
+                                   Foreground="White" 
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#4F46E5" BlurRadius="25" ShadowDepth="0" Opacity="0.5"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
 
-                <!-- الفاصل بين الشريط الجانبي والمحتوى -->
-                <Border Grid.Column="1" Width="1" Background="{StaticResource BorderColor}"/>
+                        <!-- العنوان الفرعي -->
+                        <TextBlock Text="Driving License Management" 
+                                   FontSize="15" 
+                                   FontWeight="SemiBold"
+                                   Foreground="#4F46E5" 
+                                   HorizontalAlignment="Center" 
+                                   Margin="0,8,0,25"
+                                   Opacity="0.9"/>
 
-                <!-- المحتوى الرئيسي -->
-                <Frame x:Name="MainFrame" 
-                       Grid.Column="2" 
-                       NavigationUIVisibility="Hidden" 
-                       Background="Transparent"/>
+                        <!-- خط فاصل بسيط -->
+                        <Rectangle Width="50" Height="2" Fill="#4F46E5" HorizontalAlignment="Center" Margin="0,0,0,25" Opacity="0.4" RadiusX="1" RadiusY="1"/>
+
+                        <!-- وصف الترحيب -->
+                        <TextBlock Text="Navigate through the menu above to manage licenses," 
+                                   FontSize="13" 
+                                   Foreground="{StaticResource SecondaryTextColor}" 
+                                   HorizontalAlignment="Center" 
+                                   TextAlignment="Center" 
+                                   Opacity="0.7"/>
+                        <TextBlock Text="applications, drivers, and system users." 
+                                   FontSize="13" 
+                                   Foreground="{StaticResource SecondaryTextColor}" 
+                                   HorizontalAlignment="Center" 
+                                   TextAlignment="Center" 
+                                   Opacity="0.7"
+                                   Margin="0,0,0,0"/>
+
+                    </StackPanel>
+                </Grid>
+
             </Grid>
 
         </DockPanel>

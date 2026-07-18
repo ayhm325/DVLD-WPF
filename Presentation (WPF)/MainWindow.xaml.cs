@@ -13,7 +13,7 @@ using System.Windows.Controls;
 namespace DVLD_WPF
 {
     public partial class MainWindow : Window
-    {       
+    {
         public static INavigationService Navigation { get; private set; } = null!;
         private readonly ICurrentUserService _currentUserService;
         private readonly IServiceProvider _serviceProvider;
@@ -24,94 +24,124 @@ namespace DVLD_WPF
             _currentUserService = currentUserService;
             _serviceProvider = serviceProvider;
             this.WindowState = WindowState.Maximized;
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
 
             Navigation = new NavigationService(MainFrame);
+        }
 
-            // استدعاء الصفحة من الـ ServiceProvider
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
+        // ═══════ وظائف مساعدة لتنظيم الكود ═══════
+
+        // إظهار شاشة الترحيب وتفريغ الصفحة السابقة
+        private void ShowWelcomeScreen()
+        {
+            EmptyStatePlaceholder.Visibility = Visibility.Visible;
+            MainFrame.Content = null; // تفريغ الـ Frame لإخفاء الصفحة تماماً
+        }
+
+        // إخفاء شاشة الترحيب
+        private void HideWelcomeScreen()
+        {
+            EmptyStatePlaceholder.Visibility = Visibility.Collapsed;
         }
 
         public void NavigateTo<TPage>() where TPage : Page
         {
             var page = App.ServiceProvider.GetRequiredService<TPage>();
+            HideWelcomeScreen();
             MainFrame.Navigate(page);
         }
 
-        private void Home_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<HomePage>());
-        }
+        // ═══════ أحداث فتح الصفحات (Pages) ═══════
 
         private void Users_Click(object sender, RoutedEventArgs e)
-        {           
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<UserPage>());
-        }
-
-        private void NewLocalLicnnse_Click(object sender, RoutedEventArgs e)
-        {            
-            var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewLocalLicnnse>();           
-            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow; 
-            newLicenseWindow.ShowDialog();
-        }
-
-        private void InternationalLicense_Click(object sender, RoutedEventArgs e)
         {
-            var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewInternationalLicenseApplicationWin>();
-            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow;
-            newLicenseWindow.ShowDialog();
+            HideWelcomeScreen();
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<UserPage>());
         }
 
         private void ManagePeople_Click(object sender, RoutedEventArgs e)
         {
+            HideWelcomeScreen();
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<PeoplePage>());
         }
 
         private void ApplicationType_Click(object sender, RoutedEventArgs e)
         {
+            HideWelcomeScreen();
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ManageApplicationTypePage>());
-
         }
 
         private void TestType_Click(object sender, RoutedEventArgs e)
         {
+            HideWelcomeScreen();
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ManageTestTypePage>());
-        }
-
-        private void LDLApp_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
         }
 
         private void Drivers_Click(object sender, RoutedEventArgs e)
         {
+            HideWelcomeScreen();
             MainFrame.Navigate(App.ServiceProvider.GetRequiredService<DriversPage>());
+        }
+
+        private void LocalDrivingLicenseApplications_Click(object sender, RoutedEventArgs e)
+        {
+            HideWelcomeScreen();
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
+        }
+
+        private void InternationalLicenseApplications_Click(object sender, RoutedEventArgs e)
+        {
+            HideWelcomeScreen();
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<InterLAppPage>());
+        }
+
+        private void ManageDetainedLicenses_Click(object sender, RoutedEventArgs e)
+        {
+            HideWelcomeScreen();
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ListDetainedLicenses>());
+        }
+
+        private void RetakeTest_Click(object sender, RoutedEventArgs e)
+        {
+            HideWelcomeScreen();
+            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
+        }
+
+        // ═══════ أحداث فتح النوافذ (Windows) ═══════
+
+        private void NewLocalLicnnse_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewLocalLicnnse>();
+            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow;
+            newLicenseWindow.ShowDialog();
+        }
+
+        private void InternationalLicense_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var newLicenseWindow = App.ServiceProvider.GetRequiredService<NewInternationalLicenseApplicationWin>();
+            newLicenseWindow.Owner = System.Windows.Application.Current.MainWindow;
+            newLicenseWindow.ShowDialog();
         }
 
         private async void CurrentUser_Click(object sender, RoutedEventArgs e)
         {
-            var userDetailsVm = App.ServiceProvider
-        .GetRequiredService<AddEditUserViewModel>();
-
-            var currentUser = App.ServiceProvider
-                .GetRequiredService<ICurrentUserService>();
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var userDetailsVm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
+            var currentUser = App.ServiceProvider.GetRequiredService<ICurrentUserService>();
 
             await userDetailsVm.InitializeAsync(currentUser.UserId);
 
-            var window = App.ServiceProvider
-                .GetRequiredService<UserDetailsWindow>();
-
+            var window = App.ServiceProvider.GetRequiredService<UserDetailsWindow>();
             window.Owner = System.Windows.Application.Current.MainWindow;
             window.DataContext = userDetailsVm;
-
             window.ShowDialog();
         }
 
         private void ChangePassword_Click(object sender, RoutedEventArgs e)
         {
-            var vm = App.ServiceProvider
-                .GetRequiredService<ChangePasswordViewModel>();
-
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var vm = App.ServiceProvider.GetRequiredService<ChangePasswordViewModel>();
             vm.UserId = _currentUserService.UserId;
             vm.UserName = _currentUserService.Username;
 
@@ -119,7 +149,46 @@ namespace DVLD_WPF
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };
+            window.ShowDialog();
+        }
 
+        private void RenewDrivingLicense_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var window = App.ServiceProvider.GetRequiredService<RenewLicenseApplicationWin>();
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
+        }
+
+        private void ReplacementForLostOrDamaged_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var window = App.ServiceProvider.GetRequiredService<ReplacementDamagedLicense>();
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
+        }
+
+        private void DetainLicense_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var window = App.ServiceProvider.GetRequiredService<DetainLicenseWin>();
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
+        }
+
+        private void ReleaseDetainedLicense_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var window = App.ServiceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
+        }
+
+        private void ReleaseDetainedDrivingLicense_Click(object sender, RoutedEventArgs e)
+        {
+            ShowWelcomeScreen(); // إظهار شاشة الترحيب قبل فتح النافذة
+            var window = App.ServiceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
+            window.Owner = System.Windows.Application.Current.MainWindow;
             window.ShowDialog();
         }
 
@@ -133,69 +202,12 @@ namespace DVLD_WPF
 
             if (result != MessageBoxResult.Yes)
                 return;
-          
-            _currentUserService.Clear();
-          
-            var loginWindow = App.ServiceProvider
-                .GetRequiredService<LoginWindow>();
 
+            _currentUserService.Clear();
+
+            var loginWindow = App.ServiceProvider.GetRequiredService<LoginWindow>();
             loginWindow.Show();
-           
             Close();
         }
-
-        private void LocalDrivingLicenseApplications_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
-            
-        }
-
-        private void InternationalLicenseApplications_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<InterLAppPage>());            
-        }
-
-        private void RenewDrivingLicense_Click(object sender, RoutedEventArgs e)
-        {
-            var window =
-                App.ServiceProvider
-                .GetRequiredService<RenewLicenseApplicationWin>();
-
-            window.Owner = System.Windows.Application.Current.MainWindow;
-
-            window.ShowDialog();
-        }
-
-        private void ReplacementForLostOrDamaged_Click(object sender, RoutedEventArgs e)
-        {
-            var window = App.ServiceProvider
-                .GetRequiredService<ReplacementDamagedLicense>();
-
-            window.Owner = System.Windows.Application.Current.MainWindow;
-
-            window.ShowDialog();
-        }
-
-        private void ManageDetainedLicenses_Click(object sender, RoutedEventArgs e)
-        {
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ListDetainedLicenses>());            
-        }
-
-        private void DetainLicense_Click(object sender, RoutedEventArgs e)
-        {
-           
-        }
-
-        private void ReleaseDetainedLicense_Click(object sender, RoutedEventArgs e)
-        {
-           
-        }
-
-        
-        private void ReleaseDetainedDrivingLicense_Click(object sender, RoutedEventArgs e)
-        {
-            
-        }
-
     }
 }

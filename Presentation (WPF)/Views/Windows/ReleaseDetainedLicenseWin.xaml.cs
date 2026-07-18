@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Presentation.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,19 +11,24 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace DVLD_WPF
+namespace Presentation.Views.Windows
 {
     /// <summary>
-    /// Interaction logic for HomePage.xaml
+    /// Interaction logic for ReleaseDetainedLicense.xaml
     /// </summary>
-    public partial class HomePage : Page
+    public partial class ReleaseDetainedLicenseWin : Window
     {
-        public HomePage()
+        public ReleaseDetainedLicenseWin(ReleaseDetainedViewModel viewModel)
         {
             InitializeComponent();
+            this.DataContext = viewModel;
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

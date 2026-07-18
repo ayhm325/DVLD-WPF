@@ -9,9 +9,11 @@ namespace Application.Interfaces
 
         Task<List<DetainedLicenseDto>> GetAllAsync();
 
-        Task<DetainedLicense> AddAsync(DetainedLicense entity);
+        Task<DetainedLicenseDto?> AddAsync(DetainedLicenseDto dto);
 
-        Task UpdateAsync(DetainedLicense entity);
+        Task UpdateAsync(DetainedLicenseDto dto);
+
+        Task<DetainedLicenseDto?> GetActiveDetainByLicenseIdAsync(int licenseId);
 
         Task<bool> IsLicenseDetainedAsync(int licenseId);
 
