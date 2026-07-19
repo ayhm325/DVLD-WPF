@@ -8,11 +8,13 @@ using Presentation.Views.Pages.Applications;
 using Presentation.Views.Pages.Tests;
 using Presentation.Views.Windows;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace DVLD_WPF
@@ -24,146 +26,398 @@ namespace DVLD_WPF
         private readonly IServiceProvider _serviceProvider;
         private readonly IDashboardService _dashboardService;
 
-        // ═══════ متغيرات نظام الجسيمات ═══════
-        private bool _isParticlesRunning = false;
-        private readonly Random _random = new Random();
-
         // ═══════ متغيرات تأثير الكاتبة ═══════
         private DispatcherTimer? _typewriterTimer;
         private Storyboard? _cursorBlinkStoryboard;
         private int _typewriterIndex = 0;
         private const string TypewriterFullText =
-            "Navigate through the menu above to manage licenses, applications, drivers, and system users.";
+            "Welcome back. Use the sidebar to navigate, or choose a quick action below to get started.";
+
+        // ═══════ متغيرات الساعة ═══════
+        private DispatcherTimer? _clockTimer;
+
+        // ═══════ متغيرات الـ Sidebar ═══════
+        private readonly List<Border> _allNavItems;
+        private Border? _activeNavItem;
 
         // ═══════ متغيرات تحكم عامة ═══════
         private bool _isFirstLoad = true;
 
-        public MainWindow(ICurrentUserService currentUserService, IServiceProvider serviceProvider, IDashboardService dashboardService)
+        public MainWindow(
+            ICurrentUserService currentUserService,
+            IServiceProvider serviceProvider,
+            IDashboardService dashboardService)
         {
             InitializeComponent();
+
             _currentUserService = currentUserService;
             _serviceProvider = serviceProvider;
-            this.WindowState = WindowState.Maximized;
+            _dashboardService = dashboardService;
 
+            WindowState = WindowState.Maximized;
             Navigation = new NavigationService(MainFrame);
 
+            // جمع كل عناصر التنقل
+            _allNavItems = new List<Border>
+            {
+                NavDashboard,
+                NavPeople,
+                NavDrivers,
+                NavNewLocal,
+                NavNewInternational,
+                NavRenew,
+                NavReplace,
+                NavReleaseDetained,
+                NavLocalApps,
+                NavIntlApps,
+                NavDetained,
+                NavDetainLicense,
+                NavRetakeTest,
+                NavUsers,
+                NavAppTypes,
+                NavTestTypes,
+                NavMyProfile,
+                NavChangePassword,
+                NavSignOut
+            };
+            _activeNavItem = NavDashboard;
+
             this.Loaded += MainWindow_Loaded;
-            this.SizeChanged += MainWindow_SizeChanged;
-            _dashboardService = dashboardService;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //                  أحداث النافذة
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════
+        //                     أحداث النافذة
+        // ═══════════════════════════════════════════════════════════
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            StartWelcomeAnimations();
-        }
+            // تشغيل الساعة
+            _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _clockTimer.Tick += UpdateClock;
+            _clockTimer.Start();
+            UpdateClock(null, null);
 
-        private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (_isParticlesRunning && EmptyStatePlaceholder.Visibility == Visibility.Visible)
-            {
-                StopParticleAnimation();
-                StartParticleAnimation();
-            }
+            // بدء حركات الداشبورد
+            StartDashboardAnimations();
+            StartTypewriterEffect();
+            LoadStatisticsAsync();
         }
 
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
+            _clockTimer?.Stop();
             _typewriterTimer?.Stop();
-            StopParticleAnimation();
         }
 
-        // ═══════════════════════════════════════════════════════
-        //            1. نظام الجسيمات المتحركة (Particles)
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════
+        //              Title Bar — سحب + أزرار النافذة
+        // ═══════════════════════════════════════════════════════════
 
-        private void StartParticleAnimation()
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (ParticleCanvas.ActualWidth <= 0 || ParticleCanvas.ActualHeight <= 0)
+            if (e.ChangedButton == MouseButton.Left)
+                DragMove();
+        }
+
+        private void MinBtn_Click(object sender, MouseButtonEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void MaxBtn_Click(object sender, MouseButtonEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
+
+        private void CloseBtn_Click(object sender, MouseButtonEventArgs e)
+        {
+            Close();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //                         الساعة
+        // ═══════════════════════════════════════════════════════════
+
+        private void UpdateClock(object? sender, EventArgs? e)
+        {
+            ClockText.Text = DateTime.Now.ToString("hh:mm tt");
+            DateText.Text = DateTime.Now.ToString("ddd, MMM dd");
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //            Sidebar — تحديد العنصر النشط
+        // ═══════════════════════════════════════════════════════════
+
+        private void SetActiveNav(Border item)
+        {
+            foreach (var nav in _allNavItems)
             {
-                Dispatcher.BeginInvoke(new Action(StartParticleAnimation), DispatcherPriority.Loaded);
+                if (nav == NavSignOut)
+                    continue;
+
+                nav.Style = (Style)FindResource("NavItemStyle");
+            }
+
+            if (item != NavSignOut)
+                item.Style = (Style)FindResource("NavItemActiveStyle");
+
+            _activeNavItem = item;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //            Sidebar — التنقل إلى صفحات (Pages)
+        // ═══════════════════════════════════════════════════════════
+
+        private void NavigateToPage(string title, string subtitle, Border navItem, Page page)
+        {
+            DashboardPanel.Visibility = Visibility.Collapsed;
+            StopTypewriterEffect();
+
+            MainFrame.Visibility = Visibility.Visible;
+            MainFrame.Navigate(page);
+
+            SetActiveNav(navItem);
+            HeaderTitle.Text = title;
+            HeaderSubtitle.Text = subtitle;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //            Sidebar — فتح نوافذ منبثقة (Windows)
+        // ═══════════════════════════════════════════════════════════
+
+        private void OpenWindow(Window window)
+        {
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
+
+            // تحديث الإحصائيات عند العودة إذا الداشبورد ظاهر
+            if (DashboardPanel.Visibility == Visibility.Visible)
+                LoadStatisticsAsync();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //            Sidebar — العودة للداشبورد
+        // ═══════════════════════════════════════════════════════════
+
+        private void ShowDashboard()
+        {
+            DashboardPanel.Visibility = Visibility.Visible;
+            MainFrame.Visibility = Visibility.Collapsed;
+            MainFrame.Content = null;
+
+            SetActiveNav(NavDashboard);
+            HeaderTitle.Text = "Dashboard";
+            HeaderSubtitle.Text = "Overview of your driving license system";
+
+            _isFirstLoad = false;
+            StartDashboardAnimations();
+            StartTypewriterEffect();
+            LoadStatisticsAsync();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //         Sidebar Click Handlers — الصفحات (Pages)
+        // ═══════════════════════════════════════════════════════════
+
+        private void NavDashboard_Click(object sender, MouseButtonEventArgs e)
+        {
+            ShowDashboard();
+        }
+
+        private void NavPeople_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Manage People",
+                "View and manage all registered people",
+                NavPeople,
+                App.ServiceProvider.GetRequiredService<PeoplePage>());
+        }
+
+        private void NavDrivers_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Manage Drivers",
+                "View and manage all licensed drivers",
+                NavDrivers,
+                App.ServiceProvider.GetRequiredService<DriversPage>());
+        }
+
+        private void NavLocalApps_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Local Applications",
+                "Manage local driving license applications",
+                NavLocalApps,
+                App.ServiceProvider.GetRequiredService<LDLAppPage>());
+        }
+
+        private void NavIntlApps_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "International Applications",
+                "Manage international license applications",
+                NavIntlApps,
+                App.ServiceProvider.GetRequiredService<InterLAppPage>());
+        }
+
+        private void NavDetained_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Detained Licenses",
+                "View and manage all detained licenses",
+                NavDetained,
+                App.ServiceProvider.GetRequiredService<ListDetainedLicenses>());
+        }
+
+        private void NavRetakeTest_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Retake Test",
+                "Schedule a test retake for an applicant",
+                NavRetakeTest,
+                App.ServiceProvider.GetRequiredService<LDLAppPage>());
+        }
+
+        private void NavUsers_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Users",
+                "Manage system users and permissions",
+                NavUsers,
+                App.ServiceProvider.GetRequiredService<UserPage>());
+        }
+
+        private void NavAppTypes_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Application Types",
+                "Configure application type settings",
+                NavAppTypes,
+                App.ServiceProvider.GetRequiredService<ManageApplicationTypePage>());
+        }
+
+        private void NavTestTypes_Click(object sender, MouseButtonEventArgs e)
+        {
+            NavigateToPage(
+                "Test Types",
+                "Configure test type settings",
+                NavTestTypes,
+                App.ServiceProvider.GetRequiredService<ManageTestTypePage>());
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //        Sidebar Click Handlers — النوافذ (Windows)
+        // ═══════════════════════════════════════════════════════════
+
+        private void NavNewLocal_Click(object sender, MouseButtonEventArgs e)
+        {
+            OpenWindow(App.ServiceProvider.GetRequiredService<NewLocalLicnnse>());
+        }
+
+        private void NavNewInternational_Click(object sender, MouseButtonEventArgs e)
+        {
+            OpenWindow(App.ServiceProvider.GetRequiredService<NewInternationalLicenseApplicationWin>());
+        }
+
+        private void NavRenew_Click(object sender, MouseButtonEventArgs e)
+        {
+            OpenWindow(App.ServiceProvider.GetRequiredService<RenewLicenseApplicationWin>());
+        }
+
+        private void NavReplace_Click(object sender, MouseButtonEventArgs e)
+        {
+            OpenWindow(App.ServiceProvider.GetRequiredService<ReplacementDamagedLicense>());
+        }
+
+        private void NavReleaseDetained_Click(object sender, MouseButtonEventArgs e)
+        {
+            OpenWindow(App.ServiceProvider.GetRequiredService<ReleaseDetainedLicenseWin>());
+        }
+
+        private void NavDetainLicense_Click(object sender, MouseButtonEventArgs e)
+        {
+            OpenWindow(App.ServiceProvider.GetRequiredService<DetainLicenseWin>());
+        }
+
+        private async void NavMyProfile_Click(object sender, MouseButtonEventArgs e)
+        {
+            var userDetailsVm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
+            await userDetailsVm.InitializeAsync(_currentUserService.UserId);
+
+            var window = App.ServiceProvider.GetRequiredService<UserDetailsWindow>();
+            window.DataContext = userDetailsVm;
+            OpenWindow(window);
+        }
+
+        private void NavChangePassword_Click(object sender, MouseButtonEventArgs e)
+        {
+            var vm = App.ServiceProvider.GetRequiredService<ChangePasswordViewModel>();
+            vm.UserId = _currentUserService.UserId;
+            vm.UserName = _currentUserService.Username;
+
+            var window = new ChangePasswordWindow(vm)
+            {
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            OpenWindow(window);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //                    Sign Out
+        // ═══════════════════════════════════════════════════════════
+
+        private void NavSignOut_Click(object sender, MouseButtonEventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Are you sure you want to sign out?",
+                "Sign Out",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
                 return;
-            }
 
-            _isParticlesRunning = true;
+            _currentUserService.Clear();
 
-            for (int i = 0; i < 40; i++)
-            {
-                CreateParticle();
-            }
+            var loginWindow = App.ServiceProvider.GetRequiredService<LoginWindow>();
+            loginWindow.Show();
+            Close();
         }
 
-        private void CreateParticle()
+        // ═══════════════════════════════════════════════════════════
+        //       حركات الداشبورد (Staggered Entrance Animation)
+        // ═══════════════════════════════════════════════════════════
+
+        private void StartDashboardAnimations()
         {
-            if (!_isParticlesRunning) return;
+            // إعادة تعيين الحالة قبل الحركة
+            StatsRow1.Opacity = 0;
+            StatsRow1RT.Y = 24;
 
-            double canvasW = ParticleCanvas.ActualWidth;
-            double canvasH = ParticleCanvas.ActualHeight;
-            if (canvasW <= 0 || canvasH <= 0) return;
+            StatsRow2.Opacity = 0;
+            StatsRow2RT.Y = 24;
 
-            var particle = new Ellipse
-            {
-                Width = _random.Next(2, 6),
-                Height = _random.Next(2, 6),
-                IsHitTestVisible = false
-            };
+            QuickActionsSection.Opacity = 0;
+            QuickActionsRT.Y = 24;
 
-            // ألوان متنوعة بدرجات الأزرق/البنفسجي مع شفافية عالية
-            byte alpha = (byte)_random.Next(15, 55);
-            byte r = (byte)_random.Next(60, 110);
-            byte g = (byte)_random.Next(50, 90);
-            byte b = (byte)_random.Next(190, 245);
-            particle.Fill = new SolidColorBrush(Color.FromArgb(alpha, r, g, b));
-            particle.Opacity = _random.NextDouble() * 0.35 + 0.1;
+            RecentActivitiesSection.Opacity = 0;
+            RecentActivitiesRT.Y = 24;
 
-            double startX = _random.NextDouble() * canvasW;
-            double startY = _random.NextDouble() * canvasH;
-            double endX = _random.NextDouble() * canvasW;
-            double endY = _random.NextDouble() * canvasH;
+            // تشغيل الـ Storyboard المتدرج
+            var stagger = (Storyboard)FindResource("StaggerEnterStoryboard");
+            stagger.Begin(this);
 
-            Canvas.SetLeft(particle, startX);
-            Canvas.SetTop(particle, startY);
-            ParticleCanvas.Children.Add(particle);
-
-            // حركة أفقية
-            var animX = new DoubleAnimation
-            {
-                From = startX,
-                To = endX,
-                Duration = TimeSpan.FromSeconds(_random.Next(10, 28)),
-                AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-            };
-
-            // حركة عمودية
-            var animY = new DoubleAnimation
-            {
-                From = startY,
-                To = endY,
-                Duration = TimeSpan.FromSeconds(_random.Next(13, 32)),
-                AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-            };
-
-            particle.BeginAnimation(Canvas.LeftProperty, animX);
-            particle.BeginAnimation(Canvas.TopProperty, animY);
+            // تشغيل توهج النبض
+            var glow = (Storyboard)FindResource("PulseGlowStoryboard");
+            glow.Begin(this);
         }
 
-        private void StopParticleAnimation()
-        {
-            _isParticlesRunning = false;
-            ParticleCanvas.Children.Clear();
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //            2. تأثير الكاتبة (Typewriter Effect)
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════
+        //            تأثير الكاتبة (Typewriter Effect)
+        // ═══════════════════════════════════════════════════════════
 
         private void StartTypewriterEffect()
         {
@@ -171,7 +425,6 @@ namespace DVLD_WPF
             TypewriterText.Text = "";
             TypewriterCursor.Opacity = 1;
 
-            // تشغيل وميض المؤشر
             _cursorBlinkStoryboard = (Storyboard)FindResource("CursorBlinkStoryboard");
             _cursorBlinkStoryboard.Begin(TypewriterCursor, true);
 
@@ -191,10 +444,9 @@ namespace DVLD_WPF
             {
                 _typewriterTimer?.Stop();
 
-                // إخفاء المؤشر بعد ثانيتين
                 Dispatcher.BeginInvoke(new Action(async () =>
                 {
-                    await System.Threading.Tasks.Task.Delay(2000);
+                    await Task.Delay(2000);
                     if (TypewriterCursor != null)
                     {
                         TypewriterCursor.BeginAnimation(OpacityProperty,
@@ -212,298 +464,46 @@ namespace DVLD_WPF
             TypewriterCursor.Opacity = 0;
         }
 
-        // ═══════════════════════════════════════════════════════
-        //      3 & 5. الإحصائيات مع حركة العد التنازلي للأرقام
-        // ═══════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════
+        //         الإحصائيات مع حركة العد التصاعدي للأرقام
+        // ═══════════════════════════════════════════════════════════
 
         private async void LoadStatisticsAsync()
         {
             var stats = await _dashboardService.GetStatisticsAsync();
 
-
             await Task.Delay(_isFirstLoad ? 800 : 400);
 
-            _ = AnimateNumberAsync(
-                StatTotalPeople,
-                stats.TotalPeople);
-
-
-            _ = AnimateNumberAsync(
-                StatTotalDrivers,
-                stats.TotalDrivers);
-
-
-            _ = AnimateNumberAsync(
-                StatActiveLicenses,
-                stats.ActiveLicenses);
-
-
-            _ = AnimateNumberAsync(
-                StatPendingApps,
-                stats.PendingApplications);
-
-
-            _ = AnimateNumberAsync(
-                StatLocalDLApps,
-                stats.LocalDrivingLicenseApplications);
-
-
-            _ = AnimateNumberAsync(
-                StatInternationalLicenses,
-                stats.InternationalLicenses);
-
-
-            _ = AnimateNumberAsync(
-                StatDetainedLicenses,
-                stats.DetainedLicenses);
-
-
-            _ = AnimateNumberAsync(
-                StatUpcomingTests,
-                stats.UpcomingTests);
+            _ = AnimateNumberAsync(StatTotalPeople, stats.TotalPeople);
+            _ = AnimateNumberAsync(StatTotalDrivers, stats.TotalDrivers);
+            _ = AnimateNumberAsync(StatActiveLicenses, stats.ActiveLicenses);
+            _ = AnimateNumberAsync(StatPendingApps, stats.PendingApplications);
+            _ = AnimateNumberAsync(StatLocalDLApps, stats.LocalDrivingLicenseApplications);
+            _ = AnimateNumberAsync(StatInternationalLicenses, stats.InternationalLicenses);
+            _ = AnimateNumberAsync(StatDetainedLicenses, stats.DetainedLicenses);
+            _ = AnimateNumberAsync(StatUpcomingTests, stats.UpcomingTests);
         }
 
-        private async System.Threading.Tasks.Task AnimateNumberAsync(
+        private async Task AnimateNumberAsync(
             TextBlock textBlock, int targetValue, int durationMs = 1500)
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             while (stopwatch.ElapsedMilliseconds < durationMs)
             {
-                // إيقاف إذا تم إخفاء الشاشة
-                if (EmptyStatePlaceholder.Visibility != Visibility.Visible)
+                if (DashboardPanel.Visibility != Visibility.Visible)
                     return;
 
                 double progress = (double)stopwatch.ElapsedMilliseconds / durationMs;
-                // Ease Out Cubic لتسريع ثم تبطيء
                 double eased = 1 - Math.Pow(1 - progress, 3);
                 int currentValue = (int)(targetValue * eased);
 
                 textBlock.Text = currentValue.ToString("N0");
 
-                await System.Threading.Tasks.Task.Delay(16); // ~60 FPS
+                await Task.Delay(16);
             }
 
             textBlock.Text = targetValue.ToString("N0");
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //          6. زر Get Started + تحكم عام
-        // ═══════════════════════════════════════════════════════
-
-        private void GetStarted_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //               وظائف مساعدة للتحكم
-        // ═══════════════════════════════════════════════════════
-
-        /// <summary>
-        /// بدء جميع حركات شاشة الترحيب
-        /// </summary>
-        private void StartWelcomeAnimations()
-        {
-            // حركة الظهور التدريجي
-            var fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(_isFirstLoad ? 1.0 : 0.5));
-            fadeAnim.EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut };
-
-            var slideAnim = new DoubleAnimation
-            {
-                From = _isFirstLoad ? 35 : 15,
-                To = 0,
-                Duration = TimeSpan.FromSeconds(_isFirstLoad ? 1.0 : 0.5),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-
-            MainContent.RenderTransform = new TranslateTransform();
-            MainContent.BeginAnimation(OpacityProperty, fadeAnim);
-            MainContent.RenderTransform.BeginAnimation(TranslateTransform.YProperty, slideAnim);
-
-            // تشغيل الأنظمة
-            StartParticleAnimation();
-            StartTypewriterEffect();
-            LoadStatisticsAsync();
-        }
-
-        private void ShowWelcomeScreen()
-        {
-            EmptyStatePlaceholder.Visibility = Visibility.Visible;
-            MainFrame.Content = null;
-            StartWelcomeAnimations();
-        }
-
-        private void HideWelcomeScreen()
-        {
-            EmptyStatePlaceholder.Visibility = Visibility.Collapsed;
-            StopParticleAnimation();
-            StopTypewriterEffect();
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //          أحداث فتح الصفحات (Pages)
-        // ═══════════════════════════════════════════════════════
-
-        private void Users_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<UserPage>());
-        }
-
-        private void ManagePeople_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<PeoplePage>());
-        }
-
-        private void ApplicationType_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ManageApplicationTypePage>());
-        }
-
-        private void TestType_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ManageTestTypePage>());
-        }
-
-        private void Drivers_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<DriversPage>());
-        }
-
-        private void LocalDrivingLicenseApplications_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
-        }
-
-        private void InternationalLicenseApplications_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<InterLAppPage>());
-        }
-
-        private void ManageDetainedLicenses_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<ListDetainedLicenses>());
-        }
-
-        private void RetakeTest_Click(object sender, RoutedEventArgs e)
-        {
-            HideWelcomeScreen();
-            MainFrame.Navigate(App.ServiceProvider.GetRequiredService<LDLAppPage>());
-        }
-
-        // ═══════════════════════════════════════════════════════
-        //          أحداث فتح النوافذ (Windows)
-        // ═══════════════════════════════════════════════════════
-
-        private void NewLocalLicnnse_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var window = App.ServiceProvider.GetRequiredService<NewLocalLicnnse>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-        }
-
-        private void InternationalLicense_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var window = App.ServiceProvider.GetRequiredService<NewInternationalLicenseApplicationWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-        }
-
-        private async void CurrentUser_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var userDetailsVm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
-            var currentUser = App.ServiceProvider.GetRequiredService<ICurrentUserService>();
-
-            await userDetailsVm.InitializeAsync(currentUser.UserId);
-
-            var window = App.ServiceProvider.GetRequiredService<UserDetailsWindow>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.DataContext = userDetailsVm;
-            window.ShowDialog();
-        }
-
-        private void ChangePassword_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var vm = App.ServiceProvider.GetRequiredService<ChangePasswordViewModel>();
-            vm.UserId = _currentUserService.UserId;
-            vm.UserName = _currentUserService.Username;
-
-            var window = new ChangePasswordWindow(vm)
-            {
-                Owner = System.Windows.Application.Current.MainWindow
-            };
-            window.ShowDialog();
-        }
-
-        private void RenewDrivingLicense_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var window = App.ServiceProvider.GetRequiredService<RenewLicenseApplicationWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-        }
-
-        private void ReplacementForLostOrDamaged_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var window = App.ServiceProvider.GetRequiredService<ReplacementDamagedLicense>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-        }
-
-        private void DetainLicense_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var window = App.ServiceProvider.GetRequiredService<DetainLicenseWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-        }
-
-        private void ReleaseDetainedLicense_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var window = App.ServiceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-        }
-
-        private void ReleaseDetainedDrivingLicense_Click(object sender, RoutedEventArgs e)
-        {
-            ShowWelcomeScreen();
-            var window = App.ServiceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-        }
-
-        private void SignOut_Click(object sender, RoutedEventArgs e)
-        {
-            var result = MessageBox.Show(
-                "Are you sure you want to sign out?",
-                "Sign Out",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result != MessageBoxResult.Yes)
-                return;
-
-            _currentUserService.Clear();
-
-            var loginWindow = App.ServiceProvider.GetRequiredService<LoginWindow>();
-            loginWindow.Show();
-            Close();
         }
     }
 }
