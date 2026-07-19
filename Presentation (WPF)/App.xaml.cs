@@ -60,6 +60,7 @@ namespace DVLD_WPF
 
 
             // 3. Services
+            services.AddScoped<IDashboardService, DashboardService>();
             services.AddSingleton<IWindowService, WindowService>();
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
