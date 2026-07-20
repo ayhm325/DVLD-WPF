@@ -1,7 +1,5 @@
 ﻿using Application.Interfaces;
 using Application.Services;
-using Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation;
 using Presentation.ViewModels;
@@ -13,6 +11,9 @@ using Presentation.Views.Windows;
 using Presentation.Views.Windows.Applications;
 using Presentation.Views.Windows.Tests;
 using System.Windows;
+using Infrastructure;
+using Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace DVLD_WPF
 {
@@ -43,20 +44,21 @@ namespace DVLD_WPF
                 options.UseSqlServer(ConnectionString));
 
             // 2. Repositories
-            services.AddScoped<ApplicationRepository>();
-            services.AddScoped<ApplicationTypeRepository>();
-            services.AddScoped<CountryRepository>();
-            services.AddScoped<DetainedLicenseRepository>();
-            services.AddScoped<DriverRepository>();
-            services.AddScoped<LicenseClassRepository>();
-            services.AddScoped<LicenseRepository>();
-            services.AddScoped<LocalDrivingLicenseApplicationRepository>();
-            services.AddScoped<PersonRepository>();
-            services.AddScoped<TestAppointmentRepository>();
-            services.AddScoped<TestRepository>();
-            services.AddScoped<UserRepository>();           
-            services.AddScoped<TestTypeRepository>();
-            services.AddScoped<InternationalRepository>();
+            services.AddScoped<IDashboardRepository, DashboardRepository>();
+            services.AddScoped<IApplicationRepository, ApplicationRepository>();
+            services.AddScoped<IApplicationTypeRepository,ApplicationTypeRepository>();
+            services.AddScoped<ICountryRepository,CountryRepository>();
+            services.AddScoped<IDetainedLicenseRepository,DetainedLicenseRepository>();
+            services.AddScoped<IDriverRepository,DriverRepository>();
+            services.AddScoped<ILicenseClassRepository,LicenseClassRepository>();
+            services.AddScoped<ILicenseRepository,LicenseRepository>();
+            services.AddScoped<ILocalDrivingLicenseApplicationRepository,LocalDrivingLicenseApplicationRepository>();
+            services.AddScoped<IPersonRepository,PersonRepository>();
+            services.AddScoped<ITestAppointmentRepository,TestAppointmentRepository>();
+            services.AddScoped<ITestRepository, TestRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();           
+            services.AddScoped<ITestTypeRepository, TestTypeRepository>();
+            services.AddScoped<IInternationalRepository, InternationalRepository>();
 
 
             // 3. Services

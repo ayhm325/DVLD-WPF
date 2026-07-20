@@ -1,10 +1,11 @@
-﻿using Domain.Entities;
+﻿using Application.Interfaces;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories
 {
-    public class TestRepository
+    public class TestRepository : ITestRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 

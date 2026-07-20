@@ -1,18 +1,15 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-using Infrastructure.Repositories;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+
 
 namespace Application.Services
 {
     public class TestService : ITestService
     {
-        private readonly TestRepository _repository;
+        private readonly ITestRepository _repository;
 
-        public TestService(TestRepository repository)
+        public TestService(ITestRepository repository)
         {
             _repository = repository;
         }

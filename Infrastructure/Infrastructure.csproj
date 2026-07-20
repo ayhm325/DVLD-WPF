@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.18" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -20,12 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Configurations\" />
-    <Folder Include="Migrations\" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
+	<ProjectReference Include="..\Application\Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Domain\Domain.csproj" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

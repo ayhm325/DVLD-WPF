@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Application.Interfaces;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class PersonRepository
+    public class PersonRepository : IPersonRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 
@@ -78,7 +79,7 @@ namespace Infrastructure.Repositories
         // =========================
         public async Task<int> AddPersonAsync(Person person)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            using var  context = await _contextFactory.CreateDbContextAsync();
 
             await context.People.AddAsync(person);
 

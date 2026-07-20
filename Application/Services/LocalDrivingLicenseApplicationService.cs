@@ -1,6 +1,5 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
-using Infrastructure.Repositories;
 using Domain.Entities;
 using Domain.Enums;
 
@@ -8,10 +7,10 @@ namespace Application.Services
 {
     public class LocalDrivingLicenseApplicationService : ILocalDrivingLicenseApplicationService
     {
-        private readonly LocalDrivingLicenseApplicationRepository _repository;
-        private readonly LicenseRepository _licenseRepository;
+        private readonly ILocalDrivingLicenseApplicationRepository _repository;
+        private readonly ILicenseRepository _licenseRepository;
 
-        public LocalDrivingLicenseApplicationService(LocalDrivingLicenseApplicationRepository repository, LicenseRepository licenseRepository)
+        public LocalDrivingLicenseApplicationService(ILocalDrivingLicenseApplicationRepository repository, ILicenseRepository licenseRepository)
         {
             _repository = repository;
             _licenseRepository = licenseRepository;
@@ -56,7 +55,7 @@ namespace Application.Services
                 LicenseClassID = dto.LicenseClassId,                              
             };
 
-            return await _repository.CreatLocalDrivingLicenseApplicationAsync(entity);
+            return await _repository.CreateLocalDrivingLicenseApplicationAsync(entity);
         }
 
         public async Task<bool> UpdateLocalDrivingLicenseApplicationAsync(int id, LocalDrivingLicenseApplicationCreateUpdateDto dto)

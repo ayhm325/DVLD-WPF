@@ -29,7 +29,7 @@
         public int CreatedByUserID { get; set; }
         public string? CreatedByUserName { get; set; }
 
-
+        public DriverDto? Driver { get; set; }
 
         // =========================
         // UI HELPERS

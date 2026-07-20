@@ -2,15 +2,13 @@
 using Application.DTOs;
 using Domain.Entities;
 using Domain.Enums;
-using Infrastructure.Repositories;
 
 namespace Application.Services
 {
     public class ApplicationService : IApplicationService
     {
-        private readonly ApplicationRepository _repository;
-
-        public ApplicationService(ApplicationRepository repository)
+        private readonly IApplicationRepository _repository;
+        public ApplicationService(IApplicationRepository repository)
         {
             _repository = repository;
         }

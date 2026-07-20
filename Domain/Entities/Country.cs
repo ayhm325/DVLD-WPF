@@ -1,15 +1,17 @@
-﻿
-
-using System.ComponentModel.DataAnnotations;
-
-namespace Domain.Entities
+﻿namespace Domain.Entities
 {
-    public  class Country
+    public class Country
     {
-        [Key]
         public int CountryId { get; set; }
+
+
         public string CountryName { get; set; } = null!;
-        // Navigation Property (One Country -> Many People)
-        public virtual List<Person>? People { get; set; }
+
+
+        // Navigation Property
+        // One Country -> Many People
+
+        public virtual ICollection<Person> People { get; set; }
+            = new List<Person>();
     }
 }

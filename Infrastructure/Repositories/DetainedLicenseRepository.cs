@@ -1,19 +1,23 @@
-﻿using Domain.Entities;
+﻿using Application.Interfaces;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class DetainedLicenseRepository
+    public class DetainedLicenseRepository : IDetainedLicenseRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 
-        public DetainedLicenseRepository(IDbContextFactory<DVLDDbContext> contextFactory)
+
+        public DetainedLicenseRepository(
+            IDbContextFactory<DVLDDbContext> contextFactory)
         {
             _contextFactory = contextFactory
                 ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
-        // Get By Id
+
+
         public async Task<DetainedLicense?> GetByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -29,7 +33,8 @@ namespace Infrastructure.Repositories
                 .FirstOrDefaultAsync(d => d.DetainID == id);
         }
 
-        // Get All
+
+
         public async Task<List<DetainedLicense>> GetAllAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
@@ -46,37 +51,49 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        // Add
-        public async Task<DetainedLicense> AddAsync(DetainedLicense entity)
+
+
+        public async Task<DetainedLicense> AddAsync(
+            DetainedLicense entity)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             await context.DetainedLicenses.AddAsync(entity);
+
             await context.SaveChangesAsync();
 
             return entity;
         }
 
-        // Update
-        public async Task UpdateAsync(DetainedLicense entity)
+
+
+        public async Task UpdateAsync(
+            DetainedLicense entity)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             context.DetainedLicenses.Update(entity);
+
             await context.SaveChangesAsync();
         }
 
-        // Check if license is currently detained
-        public async Task<bool> IsLicenseDetainedAsync(int licenseId)
+
+
+        public async Task<bool> IsLicenseDetainedAsync(
+            int licenseId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             return await context.DetainedLicenses
-                .AnyAsync(d => d.LicenseID == licenseId && !d.IsReleased);
+                .AnyAsync(d =>
+                    d.LicenseID == licenseId &&
+                    !d.IsReleased);
         }
 
-        // Get active detention by license
-        public async Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(int licenseId)
+
+
+        public async Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(
+            int licenseId)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -91,7 +108,8 @@ namespace Infrastructure.Repositories
                     !d.IsReleased);
         }
 
-        // Release license
+
+
         public async Task ReleaseAsync(
             int detainId,
             int releasedByUserId,
@@ -99,19 +117,27 @@ namespace Infrastructure.Repositories
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            var detain = await context.DetainedLicenses
-                .FirstOrDefaultAsync(d => d.DetainID == detainId);
 
-            if (detain == null)
-                throw new InvalidOperationException("Detained license record was not found.");
+            var detain = await context.DetainedLicenses
+                .FirstOrDefaultAsync(d =>
+                    d.DetainID == detainId);
+
+
+            if (detain is null)
+                throw new InvalidOperationException(
+                    "Detained license record was not found.");
+
 
             if (detain.IsReleased)
-                throw new InvalidOperationException("This detained license has already been released.");
+                throw new InvalidOperationException(
+                    "This detained license has already been released.");
+
 
             detain.IsReleased = true;
             detain.ReleaseDate = DateTime.Now;
             detain.ReleasedByUserID = releasedByUserId;
             detain.ReleaseApplicationID = releaseApplicationId;
+
 
             await context.SaveChangesAsync();
         }

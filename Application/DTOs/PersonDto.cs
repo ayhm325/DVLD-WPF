@@ -1,5 +1,7 @@
 ﻿
 
+using Domain.Enums;
+
 namespace Application.DTOs
 {
     public class PersonDto
@@ -8,7 +10,7 @@ namespace Application.DTOs
         public string NationalNo { get; set; } = null!;
         public string FullName { get; set; } = null!;
         public DateTime DateOfBirth { get; set; }
-        public string Gender { get; set; } = null!;
+        public Gender Gender { get; set; }
         public string Address { get; set; } = null!;
         public string Phone { get; set; } = null!;
         public string? Email { get; set; }

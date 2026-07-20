@@ -3,19 +3,15 @@ using Application.Interfaces;
 using Application.Validators;
 using Domain.Entities;
 using Domain.Enums;
-using Infrastructure.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
 
 namespace Application.Services
 {
     public class PersonService : IPersonService
     {
-        private readonly PersonRepository _personRepository;
+        private readonly IPersonRepository _personRepository;
 
-        public PersonService(PersonRepository personRepository)
+        public PersonService(IPersonRepository personRepository)
         {
             _personRepository = personRepository;
         }
@@ -98,7 +94,7 @@ namespace Application.Services
                 NationalNo = p.NationalNo,
                 FullName = p.FullName,
                 DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender == Gender.Male ? "Male" : "Female",
+                Gender = p.Gender,
                 Address = p.Address,
                 Phone = p.Phone,
                 Email = p.Email,

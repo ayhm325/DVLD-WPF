@@ -1,15 +1,15 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-using Infrastructure.Repositories;
+
 
 namespace Application.Services
 {
     public class LicenseClassService : ILicenseClassService
     {
-        private readonly LicenseClassRepository _licenseClassRepository;
+        private readonly ILicenseClassRepository _licenseClassRepository;
 
-        public LicenseClassService(LicenseClassRepository licenseClassRepository)
+        public LicenseClassService(ILicenseClassRepository licenseClassRepository)
         {
             _licenseClassRepository = licenseClassRepository;
         }

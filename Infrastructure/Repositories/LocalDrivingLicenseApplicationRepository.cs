@@ -1,9 +1,10 @@
-﻿using Domain.Entities;
+﻿using Application.Interfaces;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class LocalDrivingLicenseApplicationRepository
+    public class LocalDrivingLicenseApplicationRepository : ILocalDrivingLicenseApplicationRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 
@@ -115,7 +116,7 @@ namespace Infrastructure.Repositories
         // CREATE
         // =========================
 
-        public async Task<int> CreatLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplication LDLApp)
+        public async Task<int> CreateLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplication LDLApp)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 

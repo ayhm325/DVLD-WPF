@@ -1,24 +1,16 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-using System.Windows;
-using Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Application.Services
 {
     public class UserService : IUserService
     {
-        private readonly UserRepository _userRepository;
+        private readonly IUserRepository _userRepository;
        
 
-        public UserService(UserRepository userRepository)
+        public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
            

@@ -1,60 +1,23 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
-using Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
-public class DashboardService : IDashboardService
+namespace Application.Services
 {
-    private readonly IDbContextFactory<DVLDDbContext> _factory;
-
-    public DashboardService(
-        IDbContextFactory<DVLDDbContext> factory)
+    public class DashboardService : IDashboardService
     {
-        _factory = factory;
-    }
+        private readonly IDashboardRepository _repository;
 
 
-    public async Task<DashboardDto> GetStatisticsAsync()
-    {
-        using var context = await _factory.CreateDbContextAsync();
-
-
-        return new DashboardDto
+        public DashboardService(
+            IDashboardRepository repository)
         {
-            TotalPeople =
-                await context.People.CountAsync(),
+            _repository = repository;
+        }
 
 
-            TotalDrivers =
-                await context.Drivers.CountAsync(),
-
-
-            ActiveLicenses =
-                await context.Licenses
-                .CountAsync(x => x.IsActive),
-
-
-            PendingApplications =
-                await context.Applications
-                .CountAsync(x => x.ApplicationStatus != 3),
-
-
-            LocalDrivingLicenseApplications =
-                await context.LocalDrivingLicenseApplications.CountAsync(),
-
-
-            InternationalLicenses =
-                await context.InternationalLicenses.CountAsync(),
-
-
-            DetainedLicenses =
-                await context.DetainedLicenses
-                .CountAsync(x => !x.IsReleased),
-
-
-            UpcomingTests =
-                await context.TestAppointments
-                .CountAsync(x => x.AppointmentDate >= DateTime.Today)
-        };
+        public async Task<DashboardDto> GetStatisticsAsync()
+        {
+            return await _repository.GetStatisticsAsync();
+        }
     }
 }

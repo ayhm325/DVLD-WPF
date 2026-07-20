@@ -17,8 +17,7 @@ namespace Presentation.ViewModels
     {
         // 🟢 1. المتغيرات المعرفة في الكلاس
         private readonly IPersonService _personService;
-        private readonly PersonRepository _personRepository;
-        private List<Person> _allPeople = new();
+        private List<PersonDto> _allPeople = new();
 
         [ObservableProperty] private ObservableCollection<PersonDto> _filteredPeople = new();
         [ObservableProperty] private int _peopleCount;
@@ -58,16 +57,16 @@ namespace Presentation.ViewModels
         }
 
         // 🟢 2. تحديث الـ Constructor ليقبل ويحقن الـ IPersonService تلقائياً
-        public PeopleViewModel(PersonRepository personRepository, IPersonService personService)
+        public PeopleViewModel( IPersonService personService)
         {
-            _personRepository = personRepository;
+           
             _personService = personService;
         }
 
         [RelayCommand]
         public async Task LoadPeopleAsync()
         {
-            _allPeople = await _personRepository.GetAllPersonsAsync();
+            _allPeople = await _personService.GetAllPeopleAsync();
             ApplyFilter();
         }
 
@@ -122,11 +121,11 @@ namespace Presentation.ViewModels
                 NationalNo = p.NationalNo,
                 FullName = p.FullName,
                 DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender == Gender.Male ? "Male" : "Female",
+                Gender = p.Gender ,
                 Address = p.Address,
                 Phone = p.Phone,
                 Email = p.Email,
-                CountryName = p.Country?.CountryName ?? "N/A",
+                CountryName = p.CountryName ?? "N/A",
 
                 // ✅ السطر المفقود الذي تسبب بحجب الصور عن الـ DataGrid والواجهات:
                 ImagePath = p.ImagePath
@@ -152,7 +151,7 @@ namespace Presentation.ViewModels
         }
 
         [RelayCommand]
-        private async Task AddNewPerson() 
+        private async Task AddNewPerson()
         {
             if (App.ServiceProvider != null)
             {
@@ -171,7 +170,7 @@ namespace Presentation.ViewModels
         }
 
         [RelayCommand]
-        private async Task EditPerson(PersonDto Person) 
+        private async Task EditPerson(PersonDto Person)
         {
             if (Person == null) return;
 

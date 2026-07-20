@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enums;
+using System;
 
 namespace Application.DTOs
 {
@@ -8,12 +9,17 @@ namespace Application.DTOs
 
         public int PersonID { get; set; }
 
+
         // معلومات الشخص للعرض
         public string FullName { get; set; } = string.Empty;
 
         public string NationalNo { get; set; } = string.Empty;
 
         public DateTime DateOfBirth { get; set; }
+
+        public Gender Gender { get; set; }
+
+        public string? ImagePath { get; set; }
 
         public int ActiveLicenses { get; set; }
 

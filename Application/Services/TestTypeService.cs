@@ -1,16 +1,16 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-using Infrastructure.Repositories;
+
 
 
 namespace Application.Services
 {
     public class TestTypeService : ITestTypeService
     {
-        private readonly TestTypeRepository _testTypeRespository;
+        private readonly ITestTypeRepository _testTypeRespository;
 
-        public TestTypeService(TestTypeRepository testTypeRespository)
+        public TestTypeService(ITestTypeRepository testTypeRespository)
         {
             _testTypeRespository= testTypeRespository;
         }

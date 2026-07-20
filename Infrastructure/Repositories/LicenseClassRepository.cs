@@ -1,9 +1,10 @@
-﻿using Domain.Entities;
+﻿using Application.Interfaces;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class LicenseClassRepository
+    public class LicenseClassRepository : ILicenseClassRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 

@@ -2,14 +2,14 @@
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
-using Infrastructure.Repositories;
+
 
 
 namespace Application.Services
 {
     public class LicenseService : ILicenseService
     {
-        private readonly LicenseRepository _repository;
+        private readonly ILicenseRepository _repository;
 
         private readonly ILocalDrivingLicenseApplicationService _lDLAppService;
         private readonly IApplicationService _applicationService;
@@ -22,7 +22,7 @@ namespace Application.Services
 
 
         public LicenseService(
-                LicenseRepository repository,
+                ILicenseRepository repository,
                 ILocalDrivingLicenseApplicationService lDLAppService,
                 IApplicationService applicationService,
                 IDriverService driverService,
@@ -340,7 +340,7 @@ namespace Application.Services
                 FullName = person.FullName,
                 NationalNo = person.NationalNo,
                 DateOfBirth = person.DateOfBirth,
-                Gender = person.Gender,
+                Gender = person.Gender.ToString(),
                 ImagePath = person.ImagePath
             };
         }

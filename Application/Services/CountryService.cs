@@ -1,17 +1,15 @@
 ﻿using Application.Interfaces;
 using Domain.Entities;
-using Infrastructure.Repositories;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+
 
 namespace Application.Services
 {
     public class CountryService : ICountryService
     {
-        private readonly CountryRepository _countryRepository;
+        private readonly ICountryRepository _countryRepository;
 
         // نحقن الـ Repository داخل الخدمة
-        public CountryService(CountryRepository countryRepository)
+        public CountryService(ICountryRepository countryRepository)
         {
             _countryRepository = countryRepository;
         }

@@ -1,14 +1,7 @@
-﻿
-
-using Domain.Entities;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace Domain.Entities
+﻿namespace Domain.Entities
 {
     public class ApplicationD
     {
-        [Key]
         public int ApplicationID { get; set; }
 
         public int ApplicantPersonID { get; set; }
@@ -21,19 +14,23 @@ namespace Domain.Entities
 
         public DateTime LastStatusDate { get; set; }
 
-        public decimal PaidFees { get; set; } 
+        public decimal PaidFees { get; set; }
 
         public int CreatedByUserID { get; set; }
 
-        [ForeignKey("ApplicantPersonID")]
+
+        // Navigation Properties
+
         public virtual Person Person { get; set; } = null!;
 
-        [ForeignKey("ApplicationTypeID")]
+
         public virtual ApplicationType? ApplicationType { get; set; }
 
-        [ForeignKey("CreatedByUserID")]
+
         public virtual User CreatedByUser { get; set; } = null!;
 
-        public ICollection<License> Licenses { get; set; } = new List<License>();
+
+        public virtual ICollection<License> Licenses { get; set; }
+            = new List<License>();
     }
 }

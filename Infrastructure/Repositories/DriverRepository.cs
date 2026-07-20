@@ -1,10 +1,11 @@
 ﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using Application.Interfaces;
 
 namespace Infrastructure.Repositories
 {
-    public class DriverRepository
+    public class DriverRepository : IDriverRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 

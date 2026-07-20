@@ -1,9 +1,10 @@
-﻿using Domain.Entities;
+﻿using Application.Interfaces;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class InternationalRepository 
+    public class InternationalRepository : IInternationalRepository
     {
         private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 

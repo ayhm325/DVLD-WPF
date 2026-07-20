@@ -1,17 +1,16 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-using Infrastructure.Repositories;
 
 namespace Application.Services
 {
     public class DetainedLicenseService : IDetainedLicenseService
     {
-        private readonly DetainedLicenseRepository _repository;
+        private readonly IDetainedLicenseRepository _repository;
 
 
         public DetainedLicenseService(
-            DetainedLicenseRepository repository)
+            IDetainedLicenseRepository repository)
         {
             _repository = repository;
         }

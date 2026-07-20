@@ -2,27 +2,27 @@
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
-using Infrastructure.Repositories;
+
 
 namespace Application.Services
 {
     public class InternationalService : IInternationalService
     {
-        private readonly InternationalRepository _repository;
-        private readonly LicenseRepository _licenseRepository;
+        private readonly IInternationalRepository _repository;
+        private readonly ILicenseService _licenseService;
         private readonly IApplicationService _applicationService;
         private readonly IApplicationTypeService _applicationTypeService;
         private readonly ICurrentUserService _currentUserService;
 
         public InternationalService(
-            InternationalRepository repository,
-            LicenseRepository licenseRepository,
+            IInternationalRepository repository,
+            ILicenseService licenseService,
             IApplicationService applicationService,
             IApplicationTypeService applicationTypeService,
             ICurrentUserService currentUserService)
         {
             _repository = repository;
-            _licenseRepository = licenseRepository;
+            _licenseService = licenseService;
             _applicationService = applicationService;
             _applicationTypeService = applicationTypeService;
             _currentUserService = currentUserService;
@@ -119,7 +119,7 @@ namespace Application.Services
         public async Task<bool> IssueInternationalLicenseAsync(int localLicenseId)
         {
             // 1. جلب الرخصة المحلية
-            var license = await _licenseRepository.GetLicenseByIdAsync(localLicenseId);
+            var license = await _licenseService.GetByIdAsync(localLicenseId);
 
             if (license == null)
                 return false;
@@ -176,12 +176,12 @@ namespace Application.Services
 
         public async Task<DriverLicenseInfoDto?> GetLocalLicenseInfoAsync(int licenseId)
         {
-            var license = await _licenseRepository.GetLicenseByIdAsync(licenseId);
+            var license = await _licenseService.GetByIdAsync(licenseId);
 
             if (license == null)
                 return null;
 
-            if (license.LicenseClass != 3)
+            if (license.LicenseClassID != 3)
                 return null;
 
 
@@ -189,15 +189,15 @@ namespace Application.Services
             {
                 LicenseId = license.LicenseID,
                 DriverId = license.DriverID,
-                LicenseClass = license.LicenseClassInfo?.ClassName ?? string.Empty,
+                LicenseClass = license.LicenseClassName,
                 PersonID = license.Driver.PersonID,
-                FullName = license.Driver?.Person?.FullName ?? string.Empty,
-                NationalNo = license.Driver?.Person?.NationalNo ?? string.Empty,
-                Gender = license.Driver?.Person?.Gender == Gender.Male
+                FullName = license.Driver?.FullName ?? string.Empty,
+                NationalNo = license.Driver?.NationalNo ?? string.Empty,
+                Gender = license.Driver?.Gender == Gender.Male
                     ? "Male"
                     : "Female",
 
-                DateOfBirth = license.Driver?.Person?.DateOfBirth?? DateTime.MinValue,
+                DateOfBirth = license.Driver?.DateOfBirth?? DateTime.MinValue,
 
                 IssueDate = license.IssueDate,
 
@@ -209,7 +209,7 @@ namespace Application.Services
 
                 IssueReason = license.IssueReason.ToString(),
 
-                ImagePath = license.Driver?.Person?.ImagePath ?? string.Empty
+                ImagePath = license.Driver?.ImagePath ?? string.Empty
             };
         }
 

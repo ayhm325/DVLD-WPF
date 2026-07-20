@@ -2,21 +2,21 @@
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
-using Infrastructure.Repositories;
+
 
 namespace Application.Services
 {
     public class TestAppointmentService : ITestAppointmentService
     {
-        private readonly TestAppointmentRepository _repository;
-        private readonly TestTypeRepository _testTypeRepository;
-        private readonly TestRepository _testRepository;
+        private readonly ITestAppointmentRepository _repository;
+        private readonly ITestTypeRepository _testTypeRepository;
+        private readonly ITestRepository _testRepository;
         private readonly IApplicationTypeService _applicationTypeService;
 
         public TestAppointmentService(
-            TestAppointmentRepository repository,
-            TestTypeRepository testTypeRepository,
-            TestRepository testRepository,
+            ITestAppointmentRepository repository,
+            ITestTypeRepository testTypeRepository,
+            ITestRepository testRepository,
             IApplicationTypeService applicationTypeService)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));

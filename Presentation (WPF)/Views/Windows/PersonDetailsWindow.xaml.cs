@@ -1,11 +1,12 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
+using Domain.Enums;
 using DVLD_WPF;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Presentation.Views.Windows
 {
@@ -60,7 +61,7 @@ namespace Presentation.Views.Windows
             LblPersonId.Text = person.PersonId.ToString();
             LblNationalNo.Text = person.NationalNo;
             LblFullName.Text = person.FullName;
-            LblGender.Text = person.Gender;
+            LblGender.Text = person.Gender.ToString();
             LblDateOfBirth.Text = person.DateOfBirth.ToString("dd/MM/yyyy");
             LblPhone.Text = person.Phone;
             LblEmail.Text = string.IsNullOrEmpty(person.Email) ? "N/A" : person.Email;
@@ -100,9 +101,9 @@ namespace Presentation.Views.Windows
         }
 
         // ================= DEFAULT IMAGE =================
-        private void LoadDefaultImage(string gender)
+        private void LoadDefaultImage(Gender gender)
         {
-            string defaultImage = gender == "Male"
+            string defaultImage = gender == Gender.Male
                 ? "pack://application:,,,/Resources/Default_Male.png"
                 : "pack://application:,,,/Resources/Default_Female.png";
 

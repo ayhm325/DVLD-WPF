@@ -1,18 +1,16 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
-using Application.Validators;
 using Domain.Entities;
-using Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore.Internal;
+
 
 
 namespace Application.Services
 {
     public class ApplicationTypeService : IApplicationTypeService
     {
-        private readonly ApplicationTypeRepository _applicationTypeRespository;
+        private readonly IApplicationTypeRepository _applicationTypeRespository;
 
-        public ApplicationTypeService(ApplicationTypeRepository applicationTypeRespository)
+        public ApplicationTypeService(IApplicationTypeRepository applicationTypeRespository)
         {
             _applicationTypeRespository = applicationTypeRespository;
         }

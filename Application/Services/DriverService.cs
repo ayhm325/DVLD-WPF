@@ -1,16 +1,15 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-using Infrastructure.Repositories;
 
 namespace Application.Services
 {
     public class DriverService : IDriverService
     {
-        private readonly DriverRepository _repository;
+        private readonly IDriverRepository _repository;
         
 
-        public DriverService(DriverRepository repository)
+        public DriverService(IDriverRepository repository)
         {
             _repository = repository
                 ?? throw new ArgumentNullException(nameof(repository));

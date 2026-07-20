@@ -148,8 +148,8 @@ namespace Presentation.ViewModels
             Email = p.Email ?? "";
             Address = p.Address ?? "";
             DateOfBirth = p.DateOfBirth;
-            IsMale = p.Gender == "Male";
-            IsFemale = p.Gender == "Female";
+            IsMale = p.Gender == Gender.Male;
+            IsFemale = p.Gender == Gender.Female;
 
             SelectedCountry = Countries.FirstOrDefault(c => c.CountryName == p.CountryName) ?? Countries.FirstOrDefault()!;
             ImagePath = p.ImagePath ?? "";
