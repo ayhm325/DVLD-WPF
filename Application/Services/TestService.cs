@@ -1,7 +1,10 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -18,28 +21,38 @@ namespace Application.Services
         // GET
         // =========================
 
-        public async Task<TestDto?> GetByIdAsync(int id)
+        public async Task<Result<TestDto>> GetByIdAsync(int id)
         {
             var entity = await _repository.GetByIdAsync(id);
-            return entity is null ? null : MapToDto(entity);
+
+            if (entity is null)
+                return Result<TestDto>.Fail("الاختبار غير موجود.");
+
+            return Result<TestDto>.Success(MapToDto(entity));
         }
 
-        public async Task<List<TestDto>> GetAllAsync()
+        public async Task<Result<List<TestDto>>> GetAllAsync()
         {
             var list = await _repository.GetAllAsync();
-            return list.Select(MapToDto).ToList();
+
+            return Result<List<TestDto>>.Success(
+                list.Select(MapToDto).ToList());
         }
 
-        public async Task<List<TestDto>> GetByTestAppointmentIdAsync(int appointmentId)
+        public async Task<Result<List<TestDto>>> GetByTestAppointmentIdAsync(int appointmentId)
         {
             var list = await _repository.GetByTestAppointmentIdAsync(appointmentId);
-            return list.Select(MapToDto).ToList();
+
+            return Result<List<TestDto>>.Success(
+                list.Select(MapToDto).ToList());
         }
 
-        public async Task<List<TestDto>> GetByUserIdAsync(int userId)
+        public async Task<Result<List<TestDto>>> GetByUserIdAsync(int userId)
         {
             var list = await _repository.GetByUserIdAsync(userId);
-            return list.Select(MapToDto).ToList();
+
+            return Result<List<TestDto>>.Success(
+                list.Select(MapToDto).ToList());
         }
 
         // =========================
@@ -56,20 +69,44 @@ namespace Application.Services
         // COMMANDS
         // =========================
 
-        public async Task<int> AddAsync(TestDto dto)
+        public async Task<Result<int>> AddAsync(TestDto dto)
         {
+            if (dto == null)
+                return Result<int>.Fail("بيانات الاختبار مطلوبة.");
+
             var entity = MapToEntity(dto);
-            return await _repository.AddAsync(entity);
+            int id = await _repository.AddAsync(entity);
+
+            if (id <= 0)
+                return Result<int>.Fail("فشل في إضافة الاختبار.");
+
+            return Result<int>.Success(id);
         }
 
-        public async Task<bool> UpdateAsync(TestDto dto)
+        public async Task<Result> UpdateAsync(TestDto dto)
         {
+            if (dto == null)
+                return Result.Failure("بيانات الاختبار مطلوبة.");
+
             var entity = MapToEntity(dto);
-            return await _repository.UpdateAsync(entity);
+            var isSuccess = await _repository.UpdateAsync(entity);
+
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في تحديث الاختبار.");
         }
 
-        public Task<bool> DeleteAsync(int id)
-            => _repository.DeleteAsync(id);
+        public async Task<Result> DeleteAsync(int id)
+        {
+            if (!await _repository.IsTestExistsAsync(id))
+                return Result.Failure("الاختبار غير موجود.");
+
+            var isSuccess = await _repository.DeleteAsync(id);
+
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في حذف الاختبار.");
+        }
 
         // =========================
         // MAPPING

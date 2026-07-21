@@ -7,6 +7,7 @@ using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace Presentation.ViewModels
 {
@@ -57,31 +58,86 @@ namespace Presentation.ViewModels
         // =========================
         // LOAD
         // =========================
-
-        
         public async Task LoadAsync(int localApplicationId, TestTypeEnum type)
         {
             TestType = type;
-            LdlAppInfo = await _lDLAppService.GetLocalDrivingLicenseApplicationByIdAsync(localApplicationId);
-            var appId = await _lDLAppService.GetApplicationIdByLocalIdAsync(localApplicationId);
-            ApplicationInfo = await _appService.GetBasicInfoAsync(appId!.Value);
 
-            var data = await _testAppointmentService.GetByApplicationIdAsync(localApplicationId);
+            var ldlResult = await _lDLAppService
+                .GetLocalDrivingLicenseApplicationByIdAsync(localApplicationId);
+
+
+            if (ldlResult.IsFailure)
+            {
+                LdlAppInfo = null;
+                MessageBox.Show(ldlResult.Error);
+                return;
+            }
+
+
+            LdlAppInfo = ldlResult.Value;
+
+
+            var appIdResult = await _lDLAppService
+                .GetApplicationIdByLocalIdAsync(localApplicationId);
+
+
+            if (appIdResult.IsFailure)
+            {
+                ApplicationInfo = null;
+                MessageBox.Show(appIdResult.Error);
+                return;
+            }
+
+
+            var result = await _appService
+                .GetBasicInfoAsync(appIdResult.Value);
+
+
+            ApplicationInfo = result.IsSuccess
+                ? result.Value
+                : null;
+
+
+            var appointmentsResult = await _testAppointmentService
+    .GetByApplicationIdAsync(localApplicationId);
+
+            if (appointmentsResult.IsFailure)
+            {
+                AppointmentsList.Clear();
+                MessageBox.Show(appointmentsResult.Error);
+                return;
+            }
+
+            var data = appointmentsResult.Value!;
 
             var filtered = data
                 .Where(x => x.TestTypeID == (int)type)
                 .ToList();
 
+
             AppointmentsList.Clear();
 
-            // إضافة البيانات مباشرة لأن الـ Service جهزت الـ DTO بالكامل
             foreach (var item in filtered)
             {
                 AppointmentsList.Add(item);
             }
 
-            CanAddAppointment = !await _testAppointmentService.IsAppointmentAlreadyScheduledAsync(
-                localApplicationId, (int)type);
+
+            AppointmentsList.Clear();
+
+
+            foreach (var item in filtered)
+            {
+                AppointmentsList.Add(item);
+            }
+
+
+            CanAddAppointment =
+                !await _testAppointmentService
+                .IsAppointmentAlreadyScheduledAsync(
+                    localApplicationId,
+                    (int)type);
+
 
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(PageDescription));

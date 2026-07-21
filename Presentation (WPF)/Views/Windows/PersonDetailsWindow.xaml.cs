@@ -32,23 +32,28 @@ namespace Presentation.Views.Windows
         {
             try
             {
-                var fullPersonDto =
+                var personResult =
                     await _personService.GetPersonByIdAsync(_personId);
 
-                if (fullPersonDto == null)
+                if (personResult.IsFailure)
                 {
-                    MessageBox.Show("Person not found",
+                    MessageBox.Show(
+                        personResult.Error,
                         "Error",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
+
                     return;
                 }
+
+                var fullPersonDto = personResult.Value!;
 
                 LoadPersonData(fullPersonDto);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading person data: {ex.Message}",
+                MessageBox.Show(
+                    $"Error loading person data: {ex.Message}",
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);

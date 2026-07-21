@@ -122,35 +122,52 @@ namespace Presentation.ViewModels
                 CreatedByUserID = _currentUser.UserId
             };
 
-            var isSaved = await _service.SaveTestResultAsync(testDto);
 
-            if (isSaved)
+            var saveResult = await _service.SaveTestResultAsync(testDto);
+
+            if (saveResult.IsFailure)
             {
-                if (testDto.TestResult)
+                MessageBox.Show(
+                    saveResult.Error,
+                    "Warning",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+
+            if (testDto.TestResult)
+            {
+                var applicationIdResult = await _localService
+                    .GetApplicationIdByLocalIdAsync(
+                        Schedule.LocalDrivingLicenseApplicationID);
+
+
+                if (applicationIdResult.IsSuccess)
                 {
-                    int? applicationId = await _localService
-                        .GetApplicationIdByLocalIdAsync(Schedule.LocalDrivingLicenseApplicationID);
+                    int applicationId = applicationIdResult.Value;
 
-                    if (applicationId.HasValue)
+                    bool passedAll = await _service
+                        .HasPassedAllTestsAsync(applicationId);
+
+
+                    if (passedAll)
                     {
-                        bool passedAll = await _service.HasPassedAllTestsAsync(applicationId.Value);
-
-                        if (passedAll)
-                        {
-                            await _applicationService.CompleteApplicationAsync(applicationId.Value);
-                        }
+                        await _applicationService
+                            .CompleteApplicationAsync(applicationId);
                     }
                 }
-
-                MessageBox.Show("Result saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);               
-                Close();
-            }
-            else
-            {
-                MessageBox.Show("Save failed.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
 
+            MessageBox.Show(
+                "Result saved successfully!",
+                "Success",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            Close();
         }
 
         // =========================
@@ -159,14 +176,17 @@ namespace Presentation.ViewModels
 
         public async Task LoadAsync(int appointmentId)
         {
-            var data = await _service.GetScheduleInfoAsync(appointmentId);
+            var result = await _service.GetScheduleInfoAsync(appointmentId);
 
-            if (data == null)
+            if (result.IsFailure)
                 return;
+
+            var data = result.Value!;
 
             Schedule = data;
 
-            int trialCount = await _service.GetTrialCountAsync(data.LocalDrivingLicenseApplicationID, data.TestTypeID);
+            int trialCount = await _service.GetTrialCountAsync(data.LocalDrivingLicenseApplicationID,data.TestTypeID);
+
             Schedule.Trial = trialCount;
         }
     }

@@ -71,21 +71,29 @@ namespace Presentation.ViewModels
 
             try
             {
-                // تنفيذ التغيير
-                bool result = await _userService.ChangePasswordAsync(UserId, CurrentPassword, NewPassword);
+                var result = await _userService.ChangePasswordAsync(UserId,CurrentPassword,NewPassword);
 
-                if (result)
+                if (result.IsSuccess)
                 {
-                    MessageBox.Show("Password changed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(
+                        "Password changed successfully.",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
 
-                    // === إصلاح خطأ Application.Current ===
-                    // نستخدم System.Windows.Application.Current بشكل كامل لتجنب تضارب الأسماء مع مشروعك
-                    var window = System.Windows.Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.DataContext == this);
+                    var window = System.Windows.Application.Current.Windows
+                        .OfType<Window>()
+                        .FirstOrDefault(w => w.DataContext == this);
+
                     window?.Close();
                 }
                 else
                 {
-                    MessageBox.Show("Current password is incorrect.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(
+                        result.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)

@@ -66,46 +66,62 @@ namespace Presentation.ViewModels
 
             LocalLicenseId = licenseId;
 
-            LicenseInfo = await _internationalService.GetLocalLicenseInfoAsync(licenseId);
+            var licenseResult = await _internationalService
+                .GetLocalLicenseInfoAsync(licenseId);
 
-            if (LicenseInfo == null)
+            if (licenseResult.IsFailure)
             {
-                MessageBox.Show("Local License not found");
+                LicenseInfo = null;
+
+                MessageBox.Show(licenseResult.Error);
                 return;
             }
-            var applicationType = await _applicationTypeService.GetApplicationTypeByIdAsync(6);
-            if (applicationType == null)
+
+            LicenseInfo = licenseResult.Value;
+
+
+            var applicationTypeResult =
+                await _applicationTypeService.GetApplicationTypeByIdAsync(6);
+
+            if (applicationTypeResult.IsFailure)
             {
-                MessageBox.Show("Application Type not found");
+                MessageBox.Show(applicationTypeResult.Error);
                 return;
             }
-            var PaidFees = applicationType.ApplicationTypeFees;
+
+            var applicationType = applicationTypeResult.Value!;
+
+
+            var paidFees = applicationType.ApplicationTypeFees;
+
+
             ApplicationInfo = new ApplicationDto
-            {                
+            {
                 LocalLicenseID = licenseId,
 
                 ApplicationDate = DateTime.Now,
+
                 IssueDate = DateTime.Now,
+
                 ExpirationDate = DateTime.Now.AddYears(1),
 
                 ApplicationStatus = AppStatus.New,
+
                 LastStatusDate = DateTime.Now,
 
-                PaidFees = PaidFees,
+                PaidFees = paidFees,
 
                 CreatedByUserID = _currentUserService.UserId,
+
                 CreatedByUserName = _currentUserService.Username
             };
-
-            // ربط الرخصة المحلية قبل الإصدار
-            ApplicationInfo!.LocalLicenseID = licenseId;
 
 
             MessageBox.Show("Local License Found Successfully");
         }
 
 
-        // ===============================
+        /// ===============================
         // Issue International License
         // ===============================
         [RelayCommand]
@@ -114,44 +130,75 @@ namespace Presentation.ViewModels
             if (LicenseInfo == null)
             {
                 MessageBox.Show("Please search for a local license first");
-
                 return;
             }
 
-            var result = await _internationalService.IssueInternationalLicenseAsync(LocalLicenseId);
+
+            var result = await _internationalService
+                .IssueInternationalLicenseAsync(LocalLicenseId);
 
 
-            if (!result)
+            if (result.IsFailure)
             {
-                MessageBox.Show("Failed to issue international license");
-
+                MessageBox.Show(result.Error);
                 return;
-            }            
-
-            var application = await _internationalService.GetByLocalLicenseIdAsync(LocalLicenseId);
-            var international = System.Linq.Enumerable.FirstOrDefault(application);
-
-            if (international != null)
-            {
-                ApplicationInfo = new ApplicationDto
-                {
-                    ApplicationID = international.ApplicationID,
-                    LicenseID = international.InternationalLicenseID,
-                    LocalLicenseID = international.IssuedUsingLocalLicenseID,
-                    ApplicationDate = international.IssueDate,
-                    IssueDate = international.IssueDate,
-                    ExpirationDate = international.ExpirationDate,
-                    ApplicationStatus = AppStatus.Completed,
-                    LastStatusDate = DateTime.Now,
-                    PaidFees = international.Fees,
-                    CreatedByUserID = international.CreatedByUserID,
-                    CreatedByUserName = international.CreatedByUserName
-                };
-
-                IsLicenseIssued = true;
-                MessageBox.Show("International License Issued Successfully");
-               
             }
+
+
+            var internationalResult =
+                await _internationalService
+                .GetByLocalLicenseIdAsync(LocalLicenseId);
+
+
+            if (internationalResult.IsFailure)
+            {
+                MessageBox.Show(internationalResult.Error);
+                return;
+            }
+
+
+            var international =
+                internationalResult.Value!.FirstOrDefault();
+
+
+            if (international == null)
+            {
+                MessageBox.Show("International license not found");
+                return;
+            }
+
+
+            ApplicationInfo = new ApplicationDto
+            {
+                ApplicationID = international.ApplicationID,
+
+                LicenseID = international.InternationalLicenseID,
+
+                LocalLicenseID = international.IssuedUsingLocalLicenseID,
+
+                ApplicationDate = international.IssueDate,
+
+                IssueDate = international.IssueDate,
+
+                ExpirationDate = international.ExpirationDate,
+
+                ApplicationStatus = AppStatus.Completed,
+
+                LastStatusDate = DateTime.Now,
+
+                PaidFees = international.Fees,
+
+                CreatedByUserID = international.CreatedByUserID,
+
+                CreatedByUserName = international.CreatedByUserName
+            };
+
+
+            IsLicenseIssued = true;
+
+
+            MessageBox.Show(
+                "International License Issued Successfully");
         }
 
         // ===============================

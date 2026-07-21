@@ -55,7 +55,23 @@ namespace Presentation.ViewModels
             if (!int.TryParse(LicenseIdText, out int licenseId))
                 return;
 
-            LicenseInfo = await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
+
+            var result = await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
+
+
+            if (result.IsFailure)
+            {
+                LicenseInfo = null;
+                DetainInfo = null;
+                IsLicenseIssued = false;
+
+                MessageBox.Show(result.Error);
+                return;
+            }
+
+
+            LicenseInfo = result.Value;
+
 
             if (LicenseInfo == null)
             {
@@ -64,10 +80,13 @@ namespace Presentation.ViewModels
                 return;
             }
 
+
             IsLicenseIssued = true;
 
+
             DetainInfo = new DetainedLicenseDto
-            {               
+            {
+                LicenseID = LicenseInfo.LicenseId,
                 DetainDate = DateTime.Now,
                 CreatedByUserName = _currentUserService.Username
             };
@@ -103,10 +122,19 @@ namespace Presentation.ViewModels
 
             var result = await _detainedLicenseService.AddAsync(dto);
 
-
-            if (result != null)
+            if (result.IsFailure)
             {
-                DetainInfo = result;
+                MessageBox.Show(result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            if (result.Value != null)
+            {
+                DetainInfo = result.Value;
 
                 MessageBox.Show(
                     "License detained successfully.",

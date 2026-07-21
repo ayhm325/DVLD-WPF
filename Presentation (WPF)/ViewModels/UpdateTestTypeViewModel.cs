@@ -24,13 +24,30 @@ namespace Presentation.ViewModels
 
         public async Task InitializeAsync(int id)
         {
-            CurrentTestType = await _testTypeService.GetTestTypeByIdAsync(id);
+            var result = await _testTypeService.GetTestTypeByIdAsync(id);
+
+            if (result.IsFailure)
+            {
+                CurrentTestType = null;
+
+                MessageBox.Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            CurrentTestType = result.Value!;
         }
 
         [RelayCommand]
         private async Task SaveAsync(Window window)
         {
-            if (CurrentTestType == null) return;
+            if (CurrentTestType == null)
+                return;
+
             var testDto = new TestTypeDto
             {
                 TestTypeId = CurrentTestType.TestTypeId,
@@ -38,11 +55,31 @@ namespace Presentation.ViewModels
                 TestTypeDescription = CurrentTestType.TestTypeDescription,
                 TestTypeFees = CurrentTestType.TestTypeFees
             };
-            bool result = await _testTypeService.UpdateTestTypeAsync(CurrentTestType.TestTypeId, testDto);
-            if (result)
+
+
+            var result = await _testTypeService
+                .UpdateTestTypeAsync(
+                    CurrentTestType.TestTypeId,
+                    testDto);
+
+
+            if (result.IsSuccess)
             {
-                MessageBox.Show("Test Type updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(
+                    "Test Type updated successfully!",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
                 window?.Close();
+            }
+            else
+            {
+                MessageBox.Show(
+                    result.Error,
+                    "Update Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 

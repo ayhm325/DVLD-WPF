@@ -1,11 +1,12 @@
-﻿
+﻿using Application.Common.Results;
+using Domain.Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-using Domain.Entities; 
 namespace Application.Interfaces
 {
     public interface ICountryService
     {
-        Task<List<Country>> GetAllCountriesAsync();
-        // يمكنك إضافة دالة GetCountryById مستقبلاً إذا احتجتها
+        Task<Result<List<Country>>> GetAllCountriesAsync();
     }
 }

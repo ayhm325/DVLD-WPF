@@ -44,15 +44,22 @@ namespace Presentation.ViewModels
         [RelayCommand]
         private async Task LoginAsync()
         {
-            var user = await _userService.LoginAsync(
-                Username,
-                Password);
+            var userResult = await _userService.LoginAsync(
+        Username,
+        Password);
 
-            if (user == null)
+            if (userResult.IsFailure)
             {
-                MessageBox.Show("Invalid username or password.");
+                MessageBox.Show(
+                    userResult.Error,
+                    "Login Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
+
+            var user = userResult.Value!;
 
             _currentUser.UserId = user.UserId;
             _currentUser.Username = user.UserName;

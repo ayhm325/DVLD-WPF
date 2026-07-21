@@ -45,11 +45,15 @@ namespace Presentation.Views.Windows
         {
             try
             {
-                var fullLicenseDto = await _licenseService.GetLicenseDetailsByIdAsync(_licenseId);
-                if (fullLicenseDto != null)
+                var result = await _licenseService.GetLicenseDetailsByIdAsync(_licenseId);
+
+                if (result.IsFailure)
                 {
-                    LicenseData = fullLicenseDto; 
+                    MessageBox.Show(result.Error);
+                    return;
                 }
+
+                LicenseData = result.Value;
             }
             catch (Exception ex)
             {

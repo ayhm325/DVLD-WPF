@@ -1,6 +1,8 @@
-﻿using Application.Interfaces;
+﻿using Application.Common.Results;
+using Application.Interfaces;
 using Domain.Entities;
-
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -8,16 +10,16 @@ namespace Application.Services
     {
         private readonly ICountryRepository _countryRepository;
 
-        // نحقن الـ Repository داخل الخدمة
         public CountryService(ICountryRepository countryRepository)
         {
             _countryRepository = countryRepository;
         }
 
-        public async Task<List<Country>> GetAllCountriesAsync()
+        public async Task<Result<List<Country>>> GetAllCountriesAsync()
         {
-            // استدعاء مباشر للـ Repository لجلب البيانات
-            return await _countryRepository.GetAllCountriesAsync();
+            var countries = await _countryRepository.GetAllCountriesAsync();
+
+            return Result<List<Country>>.Success(countries);
         }
     }
 }

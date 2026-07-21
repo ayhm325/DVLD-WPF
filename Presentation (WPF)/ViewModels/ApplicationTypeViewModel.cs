@@ -26,19 +26,23 @@ namespace Presentation.ViewModels
 
         private async void LoadApplicationTypesAsync()
         {
-            var data = await _applicationTypeService.GetAllApplicationTypesAsync();
+            var result = await _applicationTypeService.GetAllApplicationTypesAsync();
 
-            // 1. التحقق من أن البيانات ليست null
-            if (data == null)
+            if (result.IsFailure)
             {
-                System.Diagnostics.Debug.WriteLine("DEBUG: Failed to load application types (data is null).");
+                System.Diagnostics.Debug.WriteLine(
+                    $"DEBUG: Failed to load application types: {result.Error}");
+
                 return;
             }
 
-            System.Diagnostics.Debug.WriteLine($"DEBUG: Loaded {data.Count} items.");
+            var data = result.Value!;
 
-            // 2. تحديث الـ ObservableCollection (أو المجموعة التي تستخدمها)
+            System.Diagnostics.Debug.WriteLine(
+                $"DEBUG: Loaded {data.Count} items.");
+
             ApplicationTypes.Clear();
+
             foreach (var item in data)
             {
                 ApplicationTypes.Add(item);

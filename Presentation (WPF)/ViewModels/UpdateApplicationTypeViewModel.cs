@@ -21,17 +21,33 @@ namespace Presentation.ViewModels
             _applicationTypeService = applicationTypeService;
         }
 
-        // دالة التهيئة التي ستناديها عند فتح النافذة
         public async Task InitializeAsync(int id)
         {
-            CurrentApplicationType = await _applicationTypeService.GetApplicationTypeByIdAsync(id);
+            var result = await _applicationTypeService
+                .GetApplicationTypeByIdAsync(id);
+
+            if (result.IsFailure)
+            {
+                CurrentApplicationType = null;
+
+                MessageBox.Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            CurrentApplicationType = result.Value!;
         }
 
         // أمر الحفظ
         [RelayCommand]
         private async Task SaveAsync(Window window)
         {
-            if (CurrentApplicationType == null) return;
+            if (CurrentApplicationType == null)
+                return;
 
             var appDto = new ApplicationTypeDto
             {
@@ -40,12 +56,30 @@ namespace Presentation.ViewModels
                 ApplicationTypeFees = CurrentApplicationType.ApplicationTypeFees
             };
 
-            bool result = await _applicationTypeService.UpdateApplicationTypeAsync(CurrentApplicationType.ApplicationTypeId, appDto);
 
-            if (result)
+            var result = await _applicationTypeService
+                .UpdateApplicationTypeAsync(
+                    CurrentApplicationType.ApplicationTypeId,
+                    appDto);
+
+
+            if (result.IsSuccess)
             {
-                MessageBox.Show("Application Type updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(
+                    "Application Type updated successfully!",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
                 window?.Close();
+            }
+            else
+            {
+                MessageBox.Show(
+                    result.Error,
+                    "Update Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 

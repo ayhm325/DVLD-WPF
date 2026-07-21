@@ -1,8 +1,11 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -29,50 +32,60 @@ namespace Application.Services
         // GET OPERATIONS
         // =========================
 
-        public async Task<TestAppointmentDto?> GetByIdAsync(int id)
+        public async Task<Result<TestAppointmentDto>> GetByIdAsync(int id)
         {
             var entity = await _repository.GetByIdAsync(id);
-            return entity is null ? null : MapToDto(entity);
+
+            if (entity is null)
+                return Result<TestAppointmentDto>.Fail("الموعد غير موجود.");
+
+            return Result<TestAppointmentDto>.Success(MapToDto(entity));
         }
 
-        public async Task<List<TestAppointmentDto>> GetAllAsync()
+        public async Task<Result<List<TestAppointmentDto>>> GetAllAsync()
         {
-            return (await _repository.GetAllAsync())
+            var list = (await _repository.GetAllAsync())
                 .Select(MapToDto)
                 .ToList();
+
+            return Result<List<TestAppointmentDto>>.Success(list);
         }
 
-        public async Task<List<TestAppointmentDto>> GetByApplicationIdAsync(int applicationId)
+        public async Task<Result<List<TestAppointmentDto>>> GetByApplicationIdAsync(int applicationId)
         {
-            return (await _repository.GetByApplicationIdAsync(applicationId))
+            var list = (await _repository.GetByApplicationIdAsync(applicationId))
                 .Select(MapToDto)
                 .ToList();
+
+            return Result<List<TestAppointmentDto>>.Success(list);
         }
 
-
-        public async Task<List<TestAppointmentDto>> GetByTestTypeIdAsync(TestTypeEnum testType)
+        public async Task<Result<List<TestAppointmentDto>>> GetByTestTypeIdAsync(TestTypeEnum testType)
         {
-            return (await _repository.GetByTestTypeIdAsync(testType))
+            var list = (await _repository.GetByTestTypeIdAsync(testType))
                 .Select(MapToDto)
                 .ToList();
+
+            return Result<List<TestAppointmentDto>>.Success(list);
         }
 
-
-        public async Task<List<TestAppointmentDto>> GetByCreatedUserIdAsync(int userId)
+        public async Task<Result<List<TestAppointmentDto>>> GetByCreatedUserIdAsync(int userId)
         {
-            return (await _repository.GetByCreatedUserIdAsync(userId))
+            var list = (await _repository.GetByCreatedUserIdAsync(userId))
                 .Select(MapToDto)
                 .ToList();
+
+            return Result<List<TestAppointmentDto>>.Success(list);
         }
 
-        public async Task<ScheduleTestDto?> GetScheduleInfoAsync(int testAppointmentId)
+        public async Task<Result<ScheduleTestDto>> GetScheduleInfoAsync(int testAppointmentId)
         {
             var data = await _repository.GetScheduleInfoAsync(testAppointmentId);
 
             if (data is null)
-                return null;
+                return Result<ScheduleTestDto>.Fail("بيانات الموعد غير موجودة.");
 
-            return new ScheduleTestDto
+            return Result<ScheduleTestDto>.Success(new ScheduleTestDto
             {
                 AppointmentID = data.TestAppointmentID,
                 LocalDrivingLicenseApplicationID = data.LocalDrivingLicenseApplicationID,
@@ -84,11 +97,11 @@ namespace Application.Services
                 RetakerFees = data.RetakeTestApplication != null
                     ? data.TestType?.TestTypeFees ?? 0
                     : 0
-            };
+            });
         }
 
         // =========================
-        // BUSINESS
+        // BUSINESS HELPERS
         // =========================
 
         public Task<bool> HasConflictAsync(int testTypeId, DateTime dateTime)
@@ -106,52 +119,69 @@ namespace Application.Services
         public Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId)
             => _repository.IsAppointmentAlreadyScheduledAsync(localAppId, testTypeId);
 
-
         // =========================
         // COMMANDS
         // =========================
 
-        public async Task<bool> AddAsync(TestAppointmentDto dto)
+        public async Task<Result> AddAsync(TestAppointmentDto dto)
         {
-            ArgumentNullException.ThrowIfNull(dto);
+            if (dto == null)
+                return Result.Failure("بيانات الموعد مطلوبة.");
 
             if (await _repository.IsAppointmentAlreadyScheduledAsync(
                     dto.LocalDrivingLicenseApplicationID,
                     dto.TestTypeID))
             {
-                throw new InvalidOperationException(
-                    "Appointment already exists or test already passed.");
+                return Result.Failure("يوجد موعد محجوز بالفعل لهذا الاختبار أو تم اجتياز الاختبار مسبقاً.");
             }
 
             if (await HasConflictAsync(dto.TestTypeID, dto.AppointmentDate))
             {
-                throw new InvalidOperationException(
-                    "Date is already reserved.");
+                return Result.Failure("التاريخ محجوز مسبقاً لاختبار آخر.");
             }
 
             var entity = MapToEntity(dto);
+            var isSuccess = await _repository.AddAsync(entity);
 
-            return await _repository.AddAsync(entity);
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في حجز الموعد.");
         }
 
-        public async Task<bool> UpdateAsync(TestAppointmentDto dto)
+        public async Task<Result> UpdateAsync(TestAppointmentDto dto)
         {
-            ArgumentNullException.ThrowIfNull(dto);
+            if (dto == null)
+                return Result.Failure("بيانات الموعد مطلوبة.");
 
             var entity = MapToEntity(dto);
+            var isSuccess = await _repository.UpdateAsync(entity);
 
-            return await _repository.UpdateAsync(entity);
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في تحديث الموعد.");
         }
 
-        public Task DeleteAsync(int id)
-            => _repository.DeleteAsync(id);
+        public async Task<Result> DeleteAsync(int id)
+        {
+            var exists = await _repository.GetByIdAsync(id);
+
+            if (exists is null)
+                return Result.Failure("الموعد غير موجود.");
+
+            await _repository.DeleteAsync(id);
+
+            return Result.Success();
+        }
 
         // =========================
         // SAVE TEST RESULT
         // =========================
 
-        public async Task<bool> SaveTestResultAsync(TestDto dto)
+        public async Task<Result> SaveTestResultAsync(TestDto dto)
         {
+            if (dto == null)
+                return Result.Failure("بيانات نتيجة الاختبار مطلوبة.");
+
             var testEntity = new Test
             {
                 TestAppointmentID = dto.TestAppointmentID,
@@ -163,18 +193,20 @@ namespace Application.Services
             int newTestId = await _testRepository.AddAsync(testEntity);
 
             if (newTestId <= 0)
-                return false;
+                return Result.Failure("فشل في حفظ نتيجة الاختبار.");
 
             var appointment = await _repository.GetByIdAsync(dto.TestAppointmentID);
 
             if (appointment is null)
-                return false;
+                return Result.Failure("الموعد المرتبط بالاختبار غير موجود.");
 
             appointment.IsLocked = true;
 
-            await _repository.UpdateAsync(appointment);
+            var isSuccess = await _repository.UpdateAsync(appointment);
 
-            return true;
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في قفل الموعد بعد حفظ النتيجة.");
         }
 
         // =========================
@@ -219,11 +251,18 @@ namespace Application.Services
             };
         }
 
+        // =========================
+        // HELPERS
+        // =========================
+
         public async Task<int> GetTrialCountAsync(int localAppId, int testTypeId)
         {
-            var appointments = await GetByApplicationIdAsync(localAppId);
+            var appointmentsResult = await GetByApplicationIdAsync(localAppId);
 
-            return appointments.Count(x => x.TestTypeID == testTypeId);
+            if (appointmentsResult.IsFailure)
+                return 0;
+
+            return appointmentsResult.Value.Count(x => x.TestTypeID == testTypeId);
         }
 
         public async Task<decimal> GetTestTypeFeesAsync(int testTypeId)

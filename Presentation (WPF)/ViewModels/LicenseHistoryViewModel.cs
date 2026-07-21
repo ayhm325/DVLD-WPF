@@ -48,23 +48,48 @@ namespace Presentation.ViewModels
 
         public async Task LoadAsync(int personId)
         {
-            Person = await _personService.GetPersonByIdAsync(personId);
+            var personResult = await _personService.GetPersonByIdAsync(personId);
 
-            var driver = await _driverService.GetByPersonIdAsync(personId);
-
-            if (driver is null)
+            if (personResult.IsFailure)
             {
-                LocalLicenses.Clear();
+                Person = null;
                 return;
             }
 
-            var licenses = await _licenseService.GetByDriverIdAsync(driver.DriverID);           
+            Person = personResult.Value!;
 
-            LocalLicenses = new ObservableCollection<LicenseDto>(licenses);
+            var driverResult = await _driverService.GetByPersonIdAsync(personId);
 
-            var international = await _internationalService.GetByDriverIdAsync(driver.DriverID);
-            
-            InternationalLicenses = new ObservableCollection<InternationalDto>(international);
+            if (driverResult.IsFailure)
+            {
+                LocalLicenses.Clear();
+                InternationalLicenses.Clear();
+                return;
+            }
+
+            var driver = driverResult.Value!;
+
+            var licensesResult = await _licenseService.GetByDriverIdAsync(driver.DriverID);
+
+            if (licensesResult.IsFailure)
+            {
+                LocalLicenses.Clear();
+            }
+            else
+            {
+                LocalLicenses = new ObservableCollection<LicenseDto>(licensesResult.Value!);
+            }
+
+            var internationalResult = await _internationalService.GetByDriverIdAsync(driver.DriverID);
+
+            if (internationalResult.IsFailure)
+            {
+                InternationalLicenses.Clear();
+            }
+            else
+            {
+                InternationalLicenses = new ObservableCollection<InternationalDto>( internationalResult.Value!);
+            }
         }
 
         [RelayCommand]

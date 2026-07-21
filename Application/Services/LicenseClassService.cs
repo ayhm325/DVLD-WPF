@@ -1,7 +1,10 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -14,19 +17,24 @@ namespace Application.Services
             _licenseClassRepository = licenseClassRepository;
         }
 
-
         // ================= GET ALL =================
-        public async Task<List<LicenseClassDto>> GetAllLicenseClassesAsync()
+        public async Task<Result<List<LicenseClassDto>>> GetAllLicenseClassesAsync()
         {
             var licenseClasses = await _licenseClassRepository.GetAllLicenseClassAsync();
-            return [.. licenseClasses.Select(MapToDto)];
+
+            return Result<List<LicenseClassDto>>.Success(
+                [.. licenseClasses.Select(MapToDto)]);
         }
 
         // ================= GET BY ID =================
-        public async Task<LicenseClassDto?> GetLicenseClassByIdAsync(int id)
+        public async Task<Result<LicenseClassDto>> GetLicenseClassByIdAsync(int id)
         {
             var licenseClass = await _licenseClassRepository.GetLicenseClassByIdAsync(id);
-            return licenseClass != null ? MapToDto(licenseClass) : null;
+
+            if (licenseClass == null)
+                return Result<LicenseClassDto>.Fail("فئة الرخصة غير موجودة.");
+
+            return Result<LicenseClassDto>.Success(MapToDto(licenseClass));
         }
 
         // ================= MAPPING =================
@@ -42,6 +50,5 @@ namespace Application.Services
                 LicenseClassFees = licenseClass.ClassFees
             };
         }
-
     }
 }

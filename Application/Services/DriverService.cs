@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
 
@@ -7,53 +8,51 @@ namespace Application.Services
     public class DriverService : IDriverService
     {
         private readonly IDriverRepository _repository;
-        
 
         public DriverService(IDriverRepository repository)
         {
             _repository = repository
                 ?? throw new ArgumentNullException(nameof(repository));
-           
         }
 
         // =========================
         // GET
         // =========================
 
-        public async Task<DriverDto?> GetByIdAsync(int id)
+        public async Task<Result<DriverDto>> GetByIdAsync(int id)
         {
             var entity = await _repository.GetByIdAsync(id);
 
-            return entity is null
-                ? null
-                : MapToDto(entity);
+            if (entity is null)
+                return Result<DriverDto>.Fail("Driver not found.");
+
+            return Result<DriverDto>.Success(MapToDto(entity));
         }
 
-        public async Task<List<DriverDto>> GetAllAsync()
+        public async Task<Result<List<DriverDto>>> GetAllAsync()
         {
             var drivers = await _repository.GetAllAsync();
-          
-            return drivers
-                .Select(MapToDto)
-                .ToList();
+
+            return Result<List<DriverDto>>.Success(
+                drivers.Select(MapToDto).ToList());
         }
 
-        public async Task<DriverDto?> GetByPersonIdAsync(int personId)
+        public async Task<Result<DriverDto>> GetByPersonIdAsync(int personId)
         {
             var entity = await _repository.GetByPersonIdAsync(personId);
 
-            return entity is null
-                ? null
-                : MapToDto(entity);
+            if (entity is null)
+                return Result<DriverDto>.Fail("Driver not found.");
+
+            return Result<DriverDto>.Success(MapToDto(entity));
         }
 
-        public async Task<List<DriverDto>> GetByCreatedUserIdAsync(int userId)
+        public async Task<Result<List<DriverDto>>> GetByCreatedUserIdAsync(int userId)
         {
             var drivers = await _repository.GetByCreatedUserIdAsync(userId);
 
-            return drivers
-                .Select(MapToDto)
-                .ToList();
+            return Result<List<DriverDto>>.Success(
+                drivers.Select(MapToDto).ToList());
         }
 
         // =========================
@@ -74,43 +73,45 @@ namespace Application.Services
         // COMMANDS
         // =========================
 
-        public async Task<int> AddAsync(DriverDto dto)
+        public async Task<Result<int>> AddAsync(DriverDto dto)
         {
             if (dto is null)
-                throw new ArgumentNullException(nameof(dto));
+                return Result<int>.Fail("Driver data is required.");
 
             if (await ExistsByPersonIdAsync(dto.PersonID))
-                throw new InvalidOperationException(
+                return Result<int>.Fail(
                     "This person is already registered as a driver.");
 
             var entity = MapToEntity(dto);
 
             await _repository.AddAsync(entity);
 
-            return entity.DriverID;
+            return Result<int>.Success(entity.DriverID);
         }
 
-        public async Task UpdateAsync(DriverDto dto)
+        public async Task<Result> UpdateAsync(DriverDto dto)
         {
             if (dto is null)
-                throw new ArgumentNullException(nameof(dto));
+                return Result.Failure("Driver data is required.");
 
             if (!await ExistsByIdAsync(dto.DriverID))
-                throw new InvalidOperationException(
-                    "Driver not found.");
+                return Result.Failure("Driver not found.");
 
             var entity = MapToEntity(dto);
 
             await _repository.UpdateAsync(entity);
+
+            return Result.Success();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<Result> DeleteAsync(int id)
         {
             if (!await ExistsByIdAsync(id))
-                throw new InvalidOperationException(
-                    "Driver not found.");
+                return Result.Failure("Driver not found.");
 
             await _repository.DeleteAsync(id);
+
+            return Result.Success();
         }
 
         // =========================
@@ -122,21 +123,13 @@ namespace Application.Services
             return new DriverDto
             {
                 DriverID = entity.DriverID,
-
                 PersonID = entity.PersonID,
-
                 FullName = entity.Person?.FullName ?? string.Empty,
-
                 NationalNo = entity.Person?.NationalNo ?? string.Empty,
-
-                DateOfBirth = entity.Person?.DateOfBirth ?? DateTime.MinValue,                
-
+                DateOfBirth = entity.Person?.DateOfBirth ?? DateTime.MinValue,
                 CreatedByUserID = entity.CreatedByUserID,
-
                 CreatedByUserName = entity.CreatedByUser?.UserName ?? string.Empty,
-
                 CreatedDate = entity.CreatedDate,
-
                 ActiveLicenses = entity.Licenses?.Count(l => l.IsActive) ?? 0
             };
         }
@@ -146,11 +139,8 @@ namespace Application.Services
             return new Driver
             {
                 DriverID = dto.DriverID,
-
                 PersonID = dto.PersonID,
-
                 CreatedByUserID = dto.CreatedByUserID,
-
                 CreatedDate = dto.CreatedDate
             };
         }

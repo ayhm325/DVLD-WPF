@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -72,22 +73,46 @@ namespace Presentation.ViewModels
         // ===================== LOAD DATA =====================
         private async void LoadLicenseClasses()
         {
-            var classes = await _licenseClassService.GetAllLicenseClassesAsync();
-            foreach (var c in classes) LicenseClasses.Add(c);
+            var result = await _licenseClassService.GetAllLicenseClassesAsync();
+
+            if (result.IsFailure)
+            {
+                MessageBox.Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            LicenseClasses.Clear();
+
+            foreach (var c in result.Value!)
+                LicenseClasses.Add(c);
 
             SelectedLicenseClass = LicenseClasses.FirstOrDefault();
         }
 
         private async void LoadApplicationType()
         {
-            // LDL Application Type ثابت (مثلاً ID = 1)
-            _ldlApplicationType =
+            var result =
                 await _applicationTypeService.GetApplicationTypeByIdAsync(1);
 
-            if (_ldlApplicationType != null)
+            if (result.IsFailure)
             {
-                ApplicationTypeFees = _ldlApplicationType.ApplicationTypeFees;
+                MessageBox.Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
             }
+
+            _ldlApplicationType = result.Value!;
+
+            ApplicationTypeFees = _ldlApplicationType.ApplicationTypeFees;
         }
 
 
@@ -141,8 +166,15 @@ namespace Presentation.ViewModels
                 LastStatusDate = DateTime.Now
             };
 
-            int newAppId = await _applicationService.AddNewApplicationAsync(newApp);
-            
+            var result = await _applicationService.AddNewApplicationAsync(newApp);
+
+            if (result.IsFailure)
+            {
+                throw new Exception(result.Error);
+            }
+
+            int newAppId = result.Value;
+
             if (newAppId > 0)
             {
                 ApplicationId = newAppId;
@@ -154,7 +186,15 @@ namespace Presentation.ViewModels
                 LicenseClassId = SelectedLicenseClass?.LicenseClassID ?? 0
             };
 
-            int newLappId = await _localDrivingLicenseApplicationService.AddLocalDrivingLicenseApplicationAsync(newLDLApp);
+            var result1 = await _localDrivingLicenseApplicationService.AddLocalDrivingLicenseApplicationAsync(newLDLApp);
+
+            if (result.IsFailure)
+            {
+                MessageBox.Show(result.Error);
+                return;
+            }
+
+            int newLappId = result1.Value;
 
             System.Windows.MessageBox.Show(
                 $"The application has been successfully created and saved to the system.\n\nID: {newAppId}",
@@ -169,38 +209,38 @@ namespace Presentation.ViewModels
         [RelayCommand]
         private async Task Search()
         {
-            if (string.IsNullOrWhiteSpace(FilterText)) return;
-
-            PersonDto? person = null;
+            if (string.IsNullOrWhiteSpace(FilterText))
+                return;
 
             try
             {
-                // 1. البحث عن الشخص
-                if (SelectedFilterIndex == 0 && int.TryParse(FilterText, out int id))
-                    person = await _personService.GetPersonByIdAsync(id);
-                else
-                    person = await _personService.GetPersonByNationalNoAsync(FilterText);
-                Person = person;
+                Result<PersonDto> result;
 
-                if (person == null)
+                // البحث عن الشخص
+                if (SelectedFilterIndex == 0 && int.TryParse(FilterText, out int id))
+                    result = await _personService.GetPersonByIdAsync(id);
+                else
+                    result = await _personService.GetPersonByNationalNoAsync(FilterText);
+
+                if (result.IsFailure)
                 {
                     MessageBox.Show(
-                        "No person was found with the specified criteria.",
+                        result.Error,
                         "Person Not Found",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
-                    // لا نغير أي شيء في الـ SelectedPerson أو الـ UserName
+
                     return;
                 }
 
-                                                                   
+                var person = result.Value!;
+
+                Person = person;
             }
             catch (Exception ex)
             {
-                // 1. تسجيل الخطأ في نافذة المخرجات (للمطور)
                 System.Diagnostics.Debug.WriteLine($"Error during search: {ex.Message}");
 
-                // 2. إظهار رسالة للمستخدم (لأن الخطأ قد يعني فشل الاتصال بقاعدة البيانات)
                 MessageBox.Show(
                     "An error occurred while searching. Please try again later.",
                     "Search Error",

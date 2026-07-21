@@ -86,13 +86,16 @@ namespace Presentation.ViewModels
         {
             try
             {
-                var localApp =
+                var localAppResult =
                     await _localAppService
                     .GetLocalDrivingLicenseApplicationByIdAsync(_localAppId);
 
 
-                if (localApp == null)
+                if (localAppResult.IsFailure)
                     return;
+
+
+                var localApp = localAppResult.Value!;
 
 
                 DrivingLicenseApplicationId =
@@ -108,17 +111,33 @@ namespace Presentation.ViewModels
 
 
 
-                var applicationId =
+                var applicationIdResult =
                     await _localAppService
                     .GetApplicationIdByLocalIdAsync(_localAppId);
 
 
-                if (applicationId.HasValue)
+                if (applicationIdResult.IsFailure)
                 {
-                    BasicApplicationInfo =
-                        await _applicationService
-                        .GetBasicInfoAsync(applicationId.Value);
+                    BasicApplicationInfo = null;
+                    return;
                 }
+
+
+                int applicationId = applicationIdResult.Value;
+
+
+                var result = await _applicationService
+                    .GetBasicInfoAsync(applicationId);
+
+
+                if (result.IsFailure)
+                {
+                    BasicApplicationInfo = null;
+                    return;
+                }
+
+
+                BasicApplicationInfo = result.Value;
             }
             catch (Exception ex)
             {

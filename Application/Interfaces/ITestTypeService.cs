@@ -1,16 +1,16 @@
-﻿
+﻿using Application.Common.Results;
 using Application.DTOs;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Application.Interfaces
 {
     public interface ITestTypeService
     {
-        Task<List<TestTypeDto>> GetAllTestTypesAsync();
-    
-        Task<TestTypeDto?> GetTestTypeByIdAsync(int id);   
-    
-        Task<bool> UpdateTestTypeAsync(int id, TestTypeDto dto);
+        Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync();
 
-        //Task<bool> IsTestTypeExistsAsync(int id);
+        Task<Result<TestTypeDto>> GetTestTypeByIdAsync(int id);
+
+        Task<Result> UpdateTestTypeAsync(int id, TestTypeDto dto);
     }
 }

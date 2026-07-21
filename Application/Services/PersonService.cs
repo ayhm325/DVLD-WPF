@@ -1,9 +1,11 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Application.Validators;
 using Domain.Entities;
-using Domain.Enums;
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -17,25 +19,37 @@ namespace Application.Services
         }
 
         // ================= GET ALL =================
-        public async Task<List<PersonDto>> GetAllPeopleAsync()
+        public async Task<Result<List<PersonDto>>> GetAllPeopleAsync()
         {
-            // استدعاء مباشر لـ Async - لا حاجة لـ Task.Run
             var people = await _personRepository.GetAllPersonsAsync();
-            return people.Select(MapToDto).ToList();
+
+            return Result<List<PersonDto>>.Success(
+                people.Select(MapToDto).ToList());
         }
 
         // ================= GET BY ID =================
-        public async Task<PersonDto?> GetPersonByIdAsync(int id)
+        public async Task<Result<PersonDto>> GetPersonByIdAsync(int id)
         {
             var p = await _personRepository.GetPersonByIdAsync(id);
-            return p == null ? null : MapToDto(p);
+
+            if (p == null)
+                return Result<PersonDto>.Fail("الشخص غير موجود.");
+
+            return Result<PersonDto>.Success(MapToDto(p));
         }
 
         // ================= GET BY NATIONAL NO =================
-        public async Task<PersonDto?> GetPersonByNationalNoAsync(string nationalNo)
+        public async Task<Result<PersonDto>> GetPersonByNationalNoAsync(string nationalNo)
         {
+            if (string.IsNullOrWhiteSpace(nationalNo))
+                return Result<PersonDto>.Fail("الرقم الوطني مطلوب.");
+
             var p = await _personRepository.GetPersonByNationalNoAsync(nationalNo);
-            return p == null ? null : MapToDto(p);
+
+            if (p == null)
+                return Result<PersonDto>.Fail("لا يوجد شخص بهذا الرقم الوطني.");
+
+            return Result<PersonDto>.Success(MapToDto(p));
         }
 
         // ================= EXISTS =================
@@ -45,44 +59,72 @@ namespace Application.Services
         }
 
         // ================= ADD =================
-        public async Task<int> AddPersonAsync(PersonCreateUpdateDto dto)
+        public async Task<Result<int>> AddPersonAsync(PersonCreateUpdateDto dto)
         {
+            if (dto == null)
+                return Result<int>.Fail("بيانات الشخص مطلوبة.");
+
             var person = MapToEntity(dto);
 
             var validation = PersonValidator.Validate(person);
-            if (!validation.IsValid) return -1;
 
-            // التأكد من أن الفحص أيضاً Async
+            if (!validation.IsValid)
+            {
+                return Result<int>.Fail(string.Join(" | ", validation.Errors));
+            }
+
             if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, 0))
-                return -1;
+                return Result<int>.Fail("الرقم الوطني مسجل مسبقاً.");
 
-            return await _personRepository.AddPersonAsync(person);
+            int id = await _personRepository.AddPersonAsync(person);
+
+            return Result<int>.Success(id);
         }
 
         // ================= UPDATE =================
-        public async Task<bool> UpdatePersonAsync(int id, PersonCreateUpdateDto dto)
+        public async Task<Result> UpdatePersonAsync(int id, PersonCreateUpdateDto dto)
         {
-            if (id <= 0) return false;
+            if (id <= 0)
+                return Result.Failure("معرف الشخص غير صالح.");
+
+            if (dto == null)
+                return Result.Failure("بيانات الشخص مطلوبة.");
+
+            if (!await _personRepository.IsPersonExistsByIdAsync(id))
+                return Result.Failure("الشخص غير موجود.");
 
             var person = MapToEntity(dto);
             person.PersonId = id;
 
             var validation = PersonValidator.Validate(person);
-            if (!validation.IsValid) return false;
+
+            if (!validation.IsValid)
+            {
+                var errors = string.Join(" | ", validation.Errors);
+                return Result.Failure(errors);
+            }
 
             if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, id))
-                return false;
+                return Result.Failure("الرقم الوطني مسجل مسبقاً لشخص آخر.");
 
-            return await _personRepository.UpdatePersonAsync(person);
+            var isSuccess = await _personRepository.UpdatePersonAsync(person);
+
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في تحديث بيانات الشخص.");
         }
 
         // ================= DELETE =================
-        public async Task<bool> DeletePersonAsync(int id)
+        public async Task<Result> DeletePersonAsync(int id)
         {
             if (!await _personRepository.IsPersonExistsByIdAsync(id))
-                return false;
+                return Result.Failure("الشخص غير موجود.");
 
-            return await _personRepository.DeletePersonAsync(id);
+            var isSuccess = await _personRepository.DeletePersonAsync(id);
+
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في حذف الشخص.");
         }
 
         // ================= MAPPING =================
@@ -123,4 +165,3 @@ namespace Application.Services
         }
     }
 }
-

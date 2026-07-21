@@ -1,8 +1,10 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
-
-
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -16,32 +18,44 @@ namespace Application.Services
         }
 
         // ================= GET ALL =================
-        public async Task<List<ApplicationTypeDto>> GetAllApplicationTypesAsync()
+        public async Task<Result<List<ApplicationTypeDto>>> GetAllApplicationTypesAsync()
         {
             var appTypes = await _applicationTypeRespository.GetAllApplicationTypesAsync();
-            return [.. appTypes.Select(MapToDto)];
+
+            return Result<List<ApplicationTypeDto>>.Success(
+                [.. appTypes.Select(MapToDto)]);
         }
 
         // ================= GET BY ID =================
-        public async Task<ApplicationTypeDto?> GetApplicationTypeByIdAsync(int id)
+        public async Task<Result<ApplicationTypeDto>> GetApplicationTypeByIdAsync(int id)
         {
             var appType = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
-            return appType == null ? null : MapToDto(appType);
+
+            if (appType == null)
+                return Result<ApplicationTypeDto>.Fail("نوع الطلب غير موجود.");
+
+            return Result<ApplicationTypeDto>.Success(MapToDto(appType));
         }
 
-        
-
         // ================= UPDATE =================
-        public async Task<bool> UpdateApplicationTypeAsync(int id, ApplicationTypeDto dto)
+        public async Task<Result> UpdateApplicationTypeAsync(int id, ApplicationTypeDto dto)
         {
+            if (dto == null)
+                return Result.Failure("بيانات نوع الطلب مطلوبة.");
+
             var appType = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
-            if (appType is null) return false;
+
+            if (appType is null)
+                return Result.Failure("نوع الطلب غير موجود.");
 
             appType.ApplicationTypeTitle = dto.ApplicationTypeTitle;
             appType.ApplicationFees = dto.ApplicationTypeFees;
 
-            return await _applicationTypeRespository.UpdateApplicationTypeAsync(appType);
+            var isSuccess = await _applicationTypeRespository.UpdateApplicationTypeAsync(appType);
 
+            return isSuccess
+                ? Result.Success()
+                : Result.Failure("فشل في تحديث نوع الطلب.");
         }
 
         // ================= MAPPING =================
@@ -54,7 +68,5 @@ namespace Application.Services
                 ApplicationTypeFees = apptype.ApplicationFees
             };
         }
-
-
     }
 }

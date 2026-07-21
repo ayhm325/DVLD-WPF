@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 
 namespace Application.Interfaces
 {
@@ -8,13 +9,13 @@ namespace Application.Interfaces
         // GET
         // =========================
 
-        Task<DriverDto?> GetByIdAsync(int id);
+        Task<Result<DriverDto>> GetByIdAsync(int id);
 
-        Task<List<DriverDto>> GetAllAsync();
+        Task<Result<List<DriverDto>>> GetAllAsync();
 
-        Task<DriverDto?> GetByPersonIdAsync(int personId);
+        Task<Result<DriverDto>> GetByPersonIdAsync(int personId);
 
-        Task<List<DriverDto>> GetByCreatedUserIdAsync(int userId);
+        Task<Result<List<DriverDto>>> GetByCreatedUserIdAsync(int userId);
 
         // =========================
         // CHECKS
@@ -28,10 +29,10 @@ namespace Application.Interfaces
         // COMMANDS
         // =========================
 
-        Task<int> AddAsync(DriverDto dto);
+        Task<Result<int>> AddAsync(DriverDto dto);
 
-        Task UpdateAsync(DriverDto dto);
+        Task<Result> UpdateAsync(DriverDto dto);
 
-        Task DeleteAsync(int id);
+        Task<Result> DeleteAsync(int id);
     }
 }

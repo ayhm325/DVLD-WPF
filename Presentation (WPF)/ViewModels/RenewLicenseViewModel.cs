@@ -77,17 +77,28 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            LicenseInfo =await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
 
-            if (LicenseInfo == null)
+            var licenseResult =
+                await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
+
+
+            if (licenseResult.IsFailure)
             {
-                MessageBox.Show("License not found");
+                MessageBox.Show(
+                    licenseResult.Error,
+                    "Renew License",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
+                LicenseInfo = null;
                 NewLicenseInfo = null;
                 ApplicationInfo = null;
 
                 return;
             }
+
+
+            LicenseInfo = licenseResult.Value!;
 
             if (LicenseInfo.ExpirationDate > DateTime.Now)
             {
@@ -112,13 +123,20 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            var applicationType =await _applicationTypeService.GetApplicationTypeByIdAsync(RenewLicenseApplicationTypeId);
+            var applicationTypeResult = await _applicationTypeService.GetApplicationTypeByIdAsync(RenewLicenseApplicationTypeId);
 
-            if (applicationType == null)
+            if (applicationTypeResult.IsFailure)
             {
-                MessageBox.Show("Renew License Application Type not found");
+                MessageBox.Show(
+                    applicationTypeResult.Error,
+                    "Renew License",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
+
+            var applicationType = applicationTypeResult.Value!;
 
             // معلومات العرض
             NewLicenseInfo = new ApplicationNewLicenseInfoDto
@@ -170,45 +188,95 @@ namespace Presentation.ViewModels
                 return;
             }
 
+
             try
             {
-                var newLicenseId =await _licenseService.RenewLicenseAsync(
-                        LicenseInfo.LicenseId,NewLicenseInfo?.Notes);
+                var renewResult =
+                    await _licenseService.RenewLicenseAsync(
+                        LicenseInfo.LicenseId,
+                        NewLicenseInfo?.Notes);
 
-                var newLicense =await _licenseService.GetByIdAsync(newLicenseId);
-                if (newLicense == null)
+
+                if (renewResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        renewResult.Error,
+                        "Renew License",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
                     return;
+                }
+
+
+                int newLicenseId = renewResult.Value;
+
+
+                var licenseResult =
+                    await _licenseService.GetByIdAsync(newLicenseId);
+
+
+                if (licenseResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        licenseResult.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    return;
+                }
+
+
+                var newLicense = licenseResult.Value!;
+
 
                 if (ApplicationInfo != null)
                 {
                     ApplicationInfo.LicenseID = newLicense.LicenseID;
                 }
 
+
                 RenewedLicenseId = newLicense.LicenseID;
+
 
                 NewLicenseInfo = new ApplicationNewLicenseInfoDto
                 {
-                    RenewedLicenseApplicationID =newLicense.ApplicationID,
-                    RenewedLicenseID =newLicense.LicenseID,
-                    OldLicenseID =LicenseInfo.LicenseId,
-                    ApplicationDate =newLicense.IssueDate,
-                    IssueDate =newLicense.IssueDate,
-                    ExpirationDate =newLicense.ExpirationDate,
-                    ApplicationFees =ApplicationInfo?.PaidFees ?? 0,
-                    LicenseFees =newLicense.PaidFees,
-                    CreatedByUserName =newLicense.CreatedByUserName ?? "Unknown"
+                    RenewedLicenseApplicationID = newLicense.ApplicationID,
+
+                    RenewedLicenseID = newLicense.LicenseID,
+
+                    OldLicenseID = LicenseInfo.LicenseId,
+
+                    ApplicationDate = newLicense.IssueDate,
+
+                    IssueDate = newLicense.IssueDate,
+
+                    ExpirationDate = newLicense.ExpirationDate,
+
+                    ApplicationFees = ApplicationInfo?.PaidFees ?? 0,
+
+                    LicenseFees = newLicense.PaidFees,
+
+                    CreatedByUserName =
+                        newLicense.CreatedByUserName ?? "Unknown"
                 };
-                
+
+
                 IsLicenseIssued = true;
-                MessageBox.Show($"License renewed successfully.\nNew License ID: {newLicenseId}",
-                    "Success",MessageBoxButton.OK,MessageBoxImage.Information);
+
+
+                MessageBox.Show(
+                    $"License renewed successfully.\nNew License ID: {newLicenseId}",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
         }
-
 
         // =========================
         // History

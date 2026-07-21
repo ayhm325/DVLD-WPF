@@ -36,7 +36,16 @@ namespace Presentation.ViewModels
 
         public async Task LoadAsync()
         {
-            _allDrivers = await _driverService.GetAllAsync();
+            var result = await _driverService.GetAllAsync();
+
+            if (result.IsFailure)
+            {
+                _allDrivers = new List<DriverDto>();
+                return;
+            }
+
+            _allDrivers = result.Value ?? new List<DriverDto>();
+
             FilterDrivers(string.Empty, "None");
         }
 

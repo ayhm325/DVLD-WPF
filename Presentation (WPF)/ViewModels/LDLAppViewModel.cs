@@ -82,7 +82,16 @@ namespace Presentation.ViewModels
         [RelayCommand]
         public async Task LoadApplicationsAsync()
         {
-            _allApplications = await _service.GetAllLocalDrivingLicenseApplicationsAsync();
+            var result = await _service.GetAllLocalDrivingLicenseApplicationsAsync();
+
+            if (result.IsFailure)
+            {
+                _allApplications.Clear();
+                return;
+            }
+
+            _allApplications = result.Value ?? new List<LocalDrivingLicenseApplicationListDto>();
+
             FilterApplications();
 
             RefreshCommands();
@@ -123,10 +132,23 @@ namespace Presentation.ViewModels
         {
             try
             {
-                bool isDeleted = await _service.DeleteLocalDrivingLicenseApplicationAsync(localApplicationId);
-                if (isDeleted) { await LoadApplicationsAsync(); SelectedApplication = null; }
+                var result = await _service
+                    .DeleteLocalDrivingLicenseApplicationAsync(localApplicationId);
+
+                if (result.IsFailure)
+                {
+                    MessageBox.Show(result.Error);
+                    return;
+                }
+
+                await LoadApplicationsAsync();
+
+                SelectedApplication = null;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         [RelayCommand]
@@ -153,14 +175,28 @@ namespace Presentation.ViewModels
         {
             try
             {
-                var appId = await _service.GetApplicationIdByLocalIdAsync(localApplicationId);
-                if (appId.HasValue && await _appService.CancelApplicationAsync(appId.Value))
+                var appIdResult = await _service.GetApplicationIdByLocalIdAsync(localApplicationId);
+                if (appIdResult.IsFailure)
                 {
-                    await LoadApplicationsAsync();
-                    SelectedApplication = null;
+                    MessageBox.Show(appIdResult.Error);
+                    return;
                 }
+                int appId = appIdResult.Value;
+                var result = await _appService.CancelApplicationAsync(appId);
+                if (result.IsFailure)
+                {
+                    MessageBox.Show(result.Error);
+                    return;
+                }
+
+                await LoadApplicationsAsync();
+
+                SelectedApplication = null;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message,"Error", MessageBoxButton.OK,MessageBoxImage.Error);
+            }
         }
 
         public bool CanScheduleTests => SelectedApplication != null &&
@@ -246,20 +282,35 @@ namespace Presentation.ViewModels
             if (SelectedApplication == null)
                 return;
 
-            var applicationId = await _service
+
+            var applicationIdResult = await _service
                 .GetApplicationIdByLocalIdAsync(
                     SelectedApplication.LocalDrivingLicenseApplicationID);
 
-            if (!applicationId.HasValue)
+
+            if (applicationIdResult.IsFailure)
             {
-                MessageBox.Show("Application not found");
+                MessageBox.Show(applicationIdResult.Error);
                 return;
             }
 
-            var licenses = await _licenseService
-                .GetByApplicationIdAsync(applicationId.Value);
 
-            var license = licenses.FirstOrDefault();
+            int applicationId = applicationIdResult.Value;
+
+
+            var result = await _licenseService
+                .GetByApplicationIdAsync(applicationId);
+
+
+            if (result.IsFailure)
+            {
+                MessageBox.Show(result.Error);
+                return;
+            }
+
+
+            var license = result.Value.FirstOrDefault();
+
 
             if (license == null)
             {
@@ -267,7 +318,9 @@ namespace Presentation.ViewModels
                 return;
             }
 
+
             var window = new DriverLicenseInfoWin(license.LicenseID);
+
             window.ShowDialog();
         }
 

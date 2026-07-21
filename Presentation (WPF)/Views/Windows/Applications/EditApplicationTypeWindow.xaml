@@ -6,7 +6,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Update Application Type"
-        Height="450"
+        Height="600"
         Width="500"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"        

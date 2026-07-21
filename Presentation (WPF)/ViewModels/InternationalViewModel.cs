@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Data;
 
 namespace Presentation.ViewModels
@@ -42,12 +43,24 @@ namespace Presentation.ViewModels
 
         private async Task LoadApplications()
         {
-            var data = await _licenseService.GetAllAsync();
+            var result = await _licenseService.GetAllAsync();
+
 
             _allApplications.Clear();
 
-            foreach (var item in data)
+
+            if (result.IsFailure)
+            {
+                MessageBox.Show(result.Error);
+                return;
+            }
+
+
+            foreach (var item in result.Value!)
+            {
                 _allApplications.Add(item);
+            }
+
 
             ApplyFilter();
         }

@@ -1,6 +1,5 @@
 ﻿using Application.DTOs;
-using Domain.Entities;
-
+using Application.Common.Results;
 
 namespace Application.Interfaces
 {
@@ -8,21 +7,31 @@ namespace Application.Interfaces
     {
         Task<List<ApplicationDto>> GetAllApplicationsAsync();
 
-        Task<ApplicationDto?> GetApplicationByIdAsync(int id);
 
-        Task<int> AddNewApplicationAsync(ApplicationDto dto);
+        Task<Result<ApplicationDto>> GetApplicationByIdAsync(int id);
 
-        Task<bool> UpdateApplicationAsync(ApplicationDto dto);
 
-        Task<bool> DeleteApplicationAsync(int id);
+        Task<Result<int>> AddNewApplicationAsync(ApplicationDto dto);
 
-        Task<int?> HasDuplicateApplicationAsync(int personId, int licenseClassId);
 
-        Task<bool> CompleteApplicationAsync(int id);
-        
-        Task<bool> CancelApplicationAsync(int id);
+        Task<Result> UpdateApplicationAsync(ApplicationDto dto);
 
-        Task<ApplicationBasicInfoDto> GetBasicInfoAsync(int id);
-       
+
+        Task<Result> DeleteApplicationAsync(int id);
+
+
+        Task<int?> HasDuplicateApplicationAsync(
+            int personId,
+            int licenseClassId);
+
+
+
+        Task<Result> CompleteApplicationAsync(int id);
+
+
+        Task<Result> CancelApplicationAsync(int id);
+
+
+        Task<Result<ApplicationBasicInfoDto>> GetBasicInfoAsync(int id);
     }
 }

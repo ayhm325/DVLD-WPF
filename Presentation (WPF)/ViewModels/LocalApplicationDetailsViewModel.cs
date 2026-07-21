@@ -1,6 +1,7 @@
 ﻿using Application.DTOs;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Windows;
 
 namespace Presentation.ViewModels
 {
@@ -24,19 +25,47 @@ namespace Presentation.ViewModels
 
         public async Task LoadAsync(int localId)
         {
-            var localApp = await _localService
+            var localAppResult = await _localService
                 .GetLocalDrivingLicenseApplicationByIdAsync(localId);
 
-            LdlAppInfo = localApp;
 
-            var appId = await _localService
+            if (localAppResult.IsFailure)
+            {
+                LdlAppInfo = null;
+                return;
+            }
+
+
+            LdlAppInfo = localAppResult.Value;
+
+
+            var appIdResult = await _localService
                 .GetApplicationIdByLocalIdAsync(localId);
 
-            if (!appId.HasValue || localApp == null)
-                return;
 
-            ApplicationInfo = await _applicationService
-                .GetBasicInfoAsync(appId.Value);
+            if (appIdResult.IsFailure)
+            {
+                ApplicationInfo = null;
+                return;
+            }
+
+
+            int appId = appIdResult.Value;
+
+
+            var result = await _applicationService
+                .GetBasicInfoAsync(appId);
+
+
+            if (result.IsSuccess)
+            {
+                ApplicationInfo = result.Value;
+            }
+            else
+            {
+                ApplicationInfo = null;
+                MessageBox.Show(result.Error);
+            }
         }
     }
 }

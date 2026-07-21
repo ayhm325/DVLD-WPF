@@ -59,14 +59,26 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            LicenseInfo = await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
 
-            if (LicenseInfo == null)
+            var licenseResult =
+                await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
+
+
+            if (licenseResult.IsFailure)
             {
-                MessageBox.Show("License not found");
+                MessageBox.Show(
+                    licenseResult.Error,
+                    "Warning",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                LicenseInfo = null;
                 ReplacementInfo = null;
                 return;
             }
+
+
+            LicenseInfo = licenseResult.Value!;
 
             if (!LicenseInfo.IsActive)
             {
@@ -76,13 +88,20 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            var applicationType = await _applicationTypeService.GetApplicationTypeByIdAsync(ApplicationTypeId);
+            var applicationTypeResult =await _applicationTypeService.GetApplicationTypeByIdAsync(ApplicationTypeId);
 
-            if (applicationType == null)
+            if (applicationTypeResult.IsFailure)
             {
-                MessageBox.Show("Replacement Application Type not found");
+                MessageBox.Show(
+                    applicationTypeResult.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
+
+            var applicationType = applicationTypeResult.Value!;
 
             ReplacementInfo = new ApplicationReplacementInfoDto
             {
@@ -107,25 +126,76 @@ namespace Presentation.ViewModels
 
             try
             {
-                var newLicenseId = await _licenseService.ReplaceLicenseAsync(LicenseInfo.LicenseId, ReplacementReason, ApplicationTypeId);
-                var newLicense = await _licenseService.GetByIdAsync(newLicenseId);
+                var replaceResult =
+                    await _licenseService.ReplaceLicenseAsync(
+                        LicenseInfo.LicenseId,
+                        ReplacementReason,
+                        ApplicationTypeId);
 
-                if (newLicense == null) return;
+
+                if (replaceResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        replaceResult.Error,
+                        "Replacement License",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+
+                int newLicenseId = replaceResult.Value;
+
+
+                var licenseResult =
+                    await _licenseService.GetByIdAsync(newLicenseId);
+
+
+                if (licenseResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        licenseResult.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    return;
+                }
+
+
+                var newLicense = licenseResult.Value!;
+
 
                 ReplacementInfo = new ApplicationReplacementInfoDto
                 {
                     ReplacementApplicationID = newLicense.ApplicationID,
+
                     ReplacementLicenseID = newLicense.LicenseID,
+
                     OldLicenseID = LicenseInfo.LicenseId,
+
                     ApplicationDate = newLicense.IssueDate,
+
                     ApplicationFees = ReplacementInfo?.ApplicationFees ?? 0,
+
                     LicenseFees = newLicense.PaidFees,
-                    ReplacementReason = ReplacementReason, // يستخدم الخاصية الديناميكية
-                    CreatedByUserName = newLicense.CreatedByUserName ?? "Unknown"
+
+                    ReplacementReason = ReplacementReason,
+
+                    CreatedByUserName =
+                        newLicense.CreatedByUserName ?? "Unknown"
                 };
 
+
                 IsLicenseIssued = true;
-                MessageBox.Show($"License replaced successfully.\nNew License ID: {newLicenseId}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+
+                MessageBox.Show(
+                    $"License replaced successfully.\nNew License ID: {newLicenseId}",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
             catch (Exception ex)
             {

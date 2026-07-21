@@ -1,29 +1,49 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 
 namespace Application.Interfaces
 {
     public interface IInternationalService
     {
-        Task<IEnumerable<InternationalDto>> GetAllAsync();
+        // =========================
+        // GET
+        // =========================
 
-        Task<InternationalDto?> GetByIdAsync(int internationalLicenseId);
+        Task<Result<List<InternationalDto>>> GetAllAsync();
 
-        Task<IEnumerable<InternationalDto>> GetByDriverIdAsync(int driverId);
+        Task<Result<InternationalDto>> GetByIdAsync(int internationalLicenseId);
 
-        Task<InternationalDto?> GetByApplicationIdAsync(int applicationId);
+        Task<Result<List<InternationalDto>>> GetByDriverIdAsync(int driverId);
 
-        Task<IEnumerable<InternationalDto>> GetByLocalLicenseIdAsync(int localLicenseId);
+        Task<Result<InternationalDto>> GetByApplicationIdAsync(int applicationId);
+
+        Task<Result<List<InternationalDto>>> GetByLocalLicenseIdAsync(int localLicenseId);
+
+
+        // =========================
+        // CHECKS
+        // =========================
 
         Task<bool> HasActiveInternationalLicenseAsync(int driverId);
 
-        Task AddAsync(InternationalDto dto);
 
-        Task UpdateAsync(InternationalDto dto);
+        // =========================
+        // COMMANDS
+        // =========================
 
-        Task DeleteAsync(int internationalLicenseId);
+        Task<Result> AddAsync(InternationalDto dto);
 
-        Task<bool> IssueInternationalLicenseAsync(int localLicenseId);
+        Task<Result> UpdateAsync(InternationalDto dto);
 
-        Task<DriverLicenseInfoDto?> GetLocalLicenseInfoAsync(int licenseId);
+        Task<Result> DeleteAsync(int internationalLicenseId);
+
+
+        // =========================
+        // BUSINESS
+        // =========================
+
+        Task<Result<int>> IssueInternationalLicenseAsync(int localLicenseId);
+
+        Task<Result<DriverLicenseInfoDto>> GetLocalLicenseInfoAsync(int licenseId);
     }
 }

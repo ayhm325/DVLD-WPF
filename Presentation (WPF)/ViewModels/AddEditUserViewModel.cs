@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Application.Validators;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -115,16 +116,21 @@ public partial class AddEditUserViewModel : ObservableObject
             UserId = userId.Value;
             UserIdDisplay = userId.Value.ToString();
 
-            var user = await _userService.GetUserByIdAsync(userId.Value);
-            if (user != null)
+            var userResult = await _userService.GetUserByIdAsync(userId.Value);
+
+            if (userResult.IsSuccess)
             {
+                var user = userResult.Value!;
+
                 UserName = user.UserName;
                 IsActive = user.IsActive;
 
-                Person = await _personService.GetPersonByIdAsync(user.PersonId);
+                var personResult = await _personService.GetPersonByIdAsync(user.PersonId);
 
-                if (Person != null)
+                if (personResult.IsSuccess)
                 {
+                    Person = personResult.Value!;
+
                     CanGoToNextTab = true;
                     GoToNextTabCommand.NotifyCanExecuteChanged();
                 }
@@ -154,34 +160,43 @@ public partial class AddEditUserViewModel : ObservableObject
     [RelayCommand]
     private async Task Search()
     {
-        if (string.IsNullOrWhiteSpace(FilterText)) return;
+        if (string.IsNullOrWhiteSpace(FilterText))
+            return;
 
         CanGoToNextTab = false;
         GoToNextTabCommand.NotifyCanExecuteChanged();
 
-        PersonDto? person = null;
-
         try
         {
-            if (SelectedFilterIndex == 0 && int.TryParse(FilterText, out int id))
-                person = await _personService.GetPersonByIdAsync(id);
-            else
-                person = await _personService.GetPersonByNationalNoAsync(FilterText);
+            Result<PersonDto> personResult;
 
-            if (person == null)
+            if (SelectedFilterIndex == 0 && int.TryParse(FilterText, out int id))
+                personResult = await _personService.GetPersonByIdAsync(id);
+            else
+                personResult = await _personService.GetPersonByNationalNoAsync(FilterText);
+
+
+            if (personResult.IsFailure)
             {
                 MessageBox.Show(
-                    "No person was found with the specified criteria.",
+                    personResult.Error,
                     "Person Not Found",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
+
                 return;
             }
 
-            var existingUser = await _userService.GetUserByPersonIdAsync(person.PersonId);
+            var person = personResult.Value!;
 
-            if (existingUser != null)
+
+            var existingUserResult = await _userService.GetUserByPersonIdAsync(person.PersonId);
+
+            // إذا كانت UserService أصبحت Result<T>
+            if (existingUserResult.IsSuccess)
             {
+                var existingUser = existingUserResult.Value!;
+
                 if (existingUser.UserId != UserId)
                 {
                     MessageBox.Show(
@@ -189,30 +204,29 @@ public partial class AddEditUserViewModel : ObservableObject
                         "User Already Exists",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
+
                     return;
                 }
 
                 Person = person;
                 UserName = existingUser.UserName;
                 IsActive = existingUser.IsActive;
-                CanGoToNextTab = true;
-                GoToNextTabCommand.NotifyCanExecuteChanged();
             }
             else
             {
                 Person = person;
-                CanGoToNextTab = true;
-                GoToNextTabCommand.NotifyCanExecuteChanged();
             }
+
+            CanGoToNextTab = true;
+            GoToNextTabCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error during search: {ex.Message}");
+
             MessageBox.Show(
-                "An error occurred while searching. Please try again later.",
-                "Search Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                    "An error occurred while searching. Please try again later.",
+                    "Search Error",MessageBoxButton.OK,MessageBoxImage.Error);
         }
     }
 
@@ -276,24 +290,48 @@ public partial class AddEditUserViewModel : ObservableObject
 
         if (isEdit)
         {
-            isSuccess = await _userService.UpdateUserAsync(UserId, userDto);
+            var updateResult = await _userService.UpdateUserAsync(UserId, userDto);
+
+            if (updateResult.IsFailure)
+            {
+                MessageBox.Show(
+                    updateResult.Error,
+                    "Save Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                SaveCompleted?.Invoke(false);
+                return;
+            }
+
+            isSuccess = true;
         }
         else
         {
-            int newUserId = await _userService.AddUserAsync(userDto);
-            if (newUserId > 0)
+            var addResult = await _userService.AddUserAsync(userDto);
+
+            if (addResult.IsFailure)
             {
-                UserId = newUserId;
-                UserIdDisplay = newUserId.ToString();
-                Mode = OperationMode.Edit;
-                OnPropertyChanged(nameof(PasswordVisibility));
-                OnPropertyChanged(nameof(ConfirmPasswordVisibility));
-                isSuccess = true;
+                MessageBox.Show(
+                    addResult.Error,
+                    "Save Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                SaveCompleted?.Invoke(false);
+                return;
             }
-            else
-            {
-                isSuccess = false;
-            }
+
+            int newUserId = addResult.Value;
+
+            UserId = newUserId;
+            UserIdDisplay = newUserId.ToString();
+            Mode = OperationMode.Edit;
+
+            OnPropertyChanged(nameof(PasswordVisibility));
+            OnPropertyChanged(nameof(ConfirmPasswordVisibility));
+
+            isSuccess = true;
         }
 
         if (isSuccess)

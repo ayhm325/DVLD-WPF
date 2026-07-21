@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
 using Domain.Entities;
 
@@ -16,188 +17,233 @@ namespace Application.Services
         }
 
 
+
         public async Task<List<DetainedLicenseDto>> GetAllAsync()
         {
-            var list = await _repository.GetAllAsync();
+            var entities = await _repository.GetAllAsync();
 
-
-            return list.Select(d => new DetainedLicenseDto
-            {
-                DetainID = d.DetainID,
-
-                LicenseID = d.LicenseID,
-
-                PersonID = d.License.Driver.Person.PersonId,
-
-                DetainDate = d.DetainDate,
-
-                FineFees = d.FineFees,
-
-                CreatedByUserID = d.CreatedByUserID,
-
-                CreatedByUserName = d.CreatedByUser.UserName,
-
-                IsReleased = d.IsReleased,
-
-                ReleaseDate = d.ReleaseDate,
-
-                ReleasedByUserID = d.ReleasedByUserID,
-
-                ReleaseApplicationID = d.ReleaseApplicationID,
-
-                ApplicantPersonID = d.License.Driver.Person.PersonId,
-
-                NationalNo = d.License.Driver.Person.NationalNo,
-
-                FullName =
-                    $"{d.License.Driver.Person.FirstName} " +
-                    $"{d.License.Driver.Person.SecondName} " +
-                    $"{d.License.Driver.Person.ThirdName} " +
-                    $"{d.License.Driver.Person.LastName}"
-
-            }).ToList();
+            return entities
+                .Select(MapToDto)
+                .ToList();
         }
 
 
 
         public async Task<DetainedLicenseDto?> GetByIdAsync(int id)
         {
-            var d = await _repository.GetByIdAsync(id);
+            var entity = await _repository.GetByIdAsync(id);
 
-            if (d == null)
-                return null;
-
-
-            return new DetainedLicenseDto
-            {
-                DetainID = d.DetainID,
-
-                LicenseID = d.LicenseID,
-
-                PersonID = d.License.Driver.Person.PersonId,
-
-                DetainDate = d.DetainDate,
-
-                FineFees = d.FineFees,
-
-                CreatedByUserID = d.CreatedByUserID,
-
-                CreatedByUserName = d.CreatedByUser.UserName,
-
-                IsReleased = d.IsReleased,
-
-                ReleaseDate = d.ReleaseDate,
-
-                ReleasedByUserID = d.ReleasedByUserID,
-
-                ReleaseApplicationID = d.ReleaseApplicationID,
-
-                ApplicantPersonID = d.License.Driver.Person.PersonId,
-
-                NationalNo = d.License.Driver.Person.NationalNo,
-
-                FullName =
-                    $"{d.License.Driver.Person.FirstName} " +
-                    $"{d.License.Driver.Person.SecondName} " +
-                    $"{d.License.Driver.Person.ThirdName} " +
-                    $"{d.License.Driver.Person.LastName}"
-            };
+            return entity == null
+                ? null
+                : MapToDto(entity);
         }
 
-        public async Task<DetainedLicenseDto?> GetActiveDetainByLicenseIdAsync(int licenseId)
+
+
+        public async Task<DetainedLicenseDto?>
+            GetActiveDetainByLicenseIdAsync(int licenseId)
         {
-            var d = await _repository.GetActiveDetainByLicenseIdAsync(licenseId);
+            var entity =await _repository.GetActiveDetainByLicenseIdAsync(licenseId);
 
-            if (d == null)
-                return null;
-
-            return new DetainedLicenseDto
-            {
-                DetainID = d.DetainID,
-
-                LicenseID = d.LicenseID,
-
-                PersonID = d.License.Driver.Person.PersonId,
-
-                DetainDate = d.DetainDate,
-
-                FineFees = d.FineFees,                
-
-                CreatedByUserID = d.CreatedByUserID,
-
-                CreatedByUserName = d.CreatedByUser.UserName,
-
-                IsReleased = d.IsReleased,
-
-                ReleaseDate = d.ReleaseDate,
-
-                ReleasedByUserID = d.ReleasedByUserID,
-
-                ReleaseApplicationID = d.ReleaseApplicationID,
-
-                ApplicantPersonID = d.License.Driver.Person.PersonId,
-
-                FullName =
-                    $"{d.License.Driver.Person.FirstName} " +
-                    $"{d.License.Driver.Person.SecondName} " +
-                    $"{d.License.Driver.Person.ThirdName} " +
-                    $"{d.License.Driver.Person.LastName}",
-
-                NationalNo = d.License.Driver.Person.NationalNo
-            };
+            return entity == null
+                ? null
+                : MapToDto(entity);
         }
 
-        public async Task<DetainedLicenseDto?> AddAsync(DetainedLicenseDto dto)
+        public async Task<Result<DetainedLicenseDto>> AddAsync(DetainedLicenseDto dto)
         {
+
+            if (dto.LicenseID <= 0)
+            {
+                return Result<DetainedLicenseDto>.Fail("Invalid license id.");
+            }
+
+            bool exists = await _repository.IsLicenseDetainedAsync(dto.LicenseID);
+
+
+            if (exists)
+            {
+                return Result<DetainedLicenseDto>.Fail("License already detained.");
+            }
+
             var entity = new DetainedLicense
             {
                 LicenseID = dto.LicenseID,
+
                 DetainDate = dto.DetainDate,
+
                 FineFees = dto.FineFees,
+
                 CreatedByUserID = dto.CreatedByUserID
             };
 
+            var created = await _repository.AddAsync(entity);
 
-            var result = await _repository.AddAsync(entity);
+            var result = await GetByIdAsync(created.DetainID);
 
-            return await GetByIdAsync(result.DetainID);
+            if (result == null)
+            {
+                return Result<DetainedLicenseDto>.Fail("Unable to create detained license.");
+            }
+
+            return Result<DetainedLicenseDto>.Success(result);
         }
 
 
-        public async Task UpdateAsync(DetainedLicenseDto dto)
+
+
+
+        public async Task<Result> UpdateAsync(
+            DetainedLicenseDto dto)
         {
-            var entity = new DetainedLicense
+
+            var entity = await _repository.GetByIdAsync(dto.DetainID);
+
+            if (entity == null)
             {
-                DetainID = dto.DetainID,
-                LicenseID = dto.LicenseID,
-                DetainDate = dto.DetainDate,
-                FineFees = dto.FineFees,
-                CreatedByUserID = dto.CreatedByUserID,
-                IsReleased = dto.IsReleased,
-                ReleaseDate = dto.ReleaseDate,
-                ReleasedByUserID = dto.ReleasedByUserID,
-                ReleaseApplicationID = dto.ReleaseApplicationID
-            };
+                return Result.Failure(
+                    "Detained license not found.");
+            }
+
+
+
+            entity.FineFees = dto.FineFees;
+
+            entity.IsReleased = dto.IsReleased;
+
+            entity.ReleaseDate = dto.ReleaseDate;
+
+            entity.ReleasedByUserID =
+                dto.ReleasedByUserID;
+
+            entity.ReleaseApplicationID =
+                dto.ReleaseApplicationID;
+
 
 
             await _repository.UpdateAsync(entity);
+
+
+
+            return Result.Success();
         }
 
-        public async Task<bool> IsLicenseDetainedAsync(int licenseId)
+
+
+
+
+        public async Task<bool> IsLicenseDetainedAsync(
+            int licenseId)
         {
-            return await _repository.IsLicenseDetainedAsync(licenseId);
+            return await _repository
+                .IsLicenseDetainedAsync(licenseId);
         }
 
 
-        public async Task ReleaseAsync(
+
+
+
+        public async Task<Result> ReleaseAsync(
             int detainId,
             int releasedByUserId,
             int applicationId)
         {
-            await _repository.ReleaseAsync(
-                detainId,
-                releasedByUserId,
-                applicationId);
+
+            var entity =
+                await _repository.GetByIdAsync(detainId);
+
+
+
+            if (entity == null)
+            {
+                return Result.Failure(
+                    "Detained license not found.");
+            }
+
+
+
+            if (entity.IsReleased)
+            {
+                return Result.Failure(
+                    "License already released.");
+            }
+
+
+
+            entity.IsReleased = true;
+
+            entity.ReleaseDate = DateTime.Now;
+
+            entity.ReleasedByUserID =
+                releasedByUserId;
+
+            entity.ReleaseApplicationID =
+                applicationId;
+
+
+
+            await _repository.UpdateAsync(entity);
+
+
+
+            return Result.Success();
+        }
+
+
+
+
+
+        private static DetainedLicenseDto MapToDto(
+            DetainedLicense d)
+        {
+            return new DetainedLicenseDto
+            {
+                DetainID = d.DetainID,
+
+                LicenseID = d.LicenseID,
+
+                PersonID =
+                    d.License?.Driver?.Person?.PersonId ?? 0,
+
+
+                DetainDate = d.DetainDate,
+
+
+                FineFees = d.FineFees,
+
+
+                CreatedByUserID =
+                    d.CreatedByUserID,
+
+
+                CreatedByUserName =
+                    d.CreatedByUser?.UserName
+                    ?? string.Empty,
+
+
+                IsReleased = d.IsReleased,
+
+
+                ReleaseDate = d.ReleaseDate,
+
+
+                ReleasedByUserID =
+                    d.ReleasedByUserID,
+
+
+                ReleaseApplicationID =
+                    d.ReleaseApplicationID,
+
+
+                NationalNo =
+                    d.License?.Driver?.Person?.NationalNo
+                    ?? string.Empty,
+
+
+                FullName =
+                    d.License?.Driver?.Person?.FullName
+                    ?? string.Empty
+            };
         }
     }
 }

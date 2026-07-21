@@ -98,12 +98,24 @@ public partial class UsersViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadUsersAsync()
     {
-        // 1. جلب البيانات وتخزينها في القائمة الأصلية
-        _allUsers = await _userService.GetAllUsersAsync();
+        var result = await _userService.GetAllUsersAsync();
 
-        // 2. تحديث الواجهة
+        if (result.IsFailure)
+        {
+            _allUsers = new List<UserDto>();
+
+            MessageBox.Show(
+                result.Error,
+                "Load Users Failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            return;
+        }
+
+        _allUsers = result.Value!;
+
         ApplyFilter();
-        // UsersCount = _allUsers.Count;
     }
 
     [RelayCommand]

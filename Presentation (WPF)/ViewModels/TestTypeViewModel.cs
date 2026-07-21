@@ -4,10 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
-using Presentation.Views.Windows.Applications;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
-using Presentation.ViewModels;
 using Presentation.Views.Windows.Tests;
 
 namespace Presentation.ViewModels
@@ -21,23 +18,28 @@ namespace Presentation.ViewModels
         public TestTypeViewModel(ITestTypeService testTypeService)
         {
             _testTypeService = testTypeService;
-            LoadTestTyepsAsync();
+            LoadTestTypesAsync();
         }
 
-        public async void LoadTestTyepsAsync()
+        public async Task LoadTestTypesAsync()
         {
-            var data = await _testTypeService.GetAllTestTypesAsync();
+            var result = await _testTypeService.GetAllTestTypesAsync();
 
-            // التحقق من أن data ليست null قبل الاستخدام
-            if (data == null)
+            if (result.IsFailure)
             {
-                System.Diagnostics.Debug.WriteLine("DEBUG: Data returned is null.");
-                return; // الخروج إذا لم توجد بيانات
+                System.Diagnostics.Debug.WriteLine(
+                    $"DEBUG: Failed to load test types: {result.Error}");
+
+                return;
             }
 
-            System.Diagnostics.Debug.WriteLine($"DEBUG: Loaded {data.Count} items.");
+            var data = result.Value!;
+
+            System.Diagnostics.Debug.WriteLine(
+                $"DEBUG: Loaded {data.Count} items.");
 
             TestTypes.Clear();
+
             foreach (var item in data)
             {
                 TestTypes.Add(item);
@@ -55,7 +57,7 @@ namespace Presentation.ViewModels
             var editWindow = new EditTestTypeWindow(updateVm);
             editWindow.ShowDialog();
 
-            LoadTestTyepsAsync();
+            LoadTestTypesAsync();
         }
 
 

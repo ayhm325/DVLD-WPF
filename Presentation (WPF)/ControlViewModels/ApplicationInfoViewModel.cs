@@ -25,7 +25,15 @@ namespace Presentation.ControlViewModels
 
         public async Task LoadAsync(int applicationId)
         {
-            ApplicationInfo = await _applicationService.GetBasicInfoAsync(applicationId);
+            var result = await _applicationService.GetBasicInfoAsync(applicationId);
+
+            if (result.IsFailure)
+            {
+                ApplicationInfo = null;
+                return;
+            }
+
+            ApplicationInfo = result.Value;
         }
 
 

@@ -74,44 +74,71 @@ namespace Presentation.ViewModels
             if (!int.TryParse(LicenseIdText, out int licenseId))
                 return;
 
-            LicenseInfo = await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
 
-            if (LicenseInfo == null)
+            var licenseResult =
+                await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
+
+
+            if (licenseResult.IsFailure)
+            {
+                LicenseInfo = null;
+                Release = null;
+                IsLicenseIssued = false;
+
+                CustomMessageBox.Show(
+                    licenseResult.Error,
+                    "Warning",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+
+            LicenseInfo = licenseResult.Value;
+
+
+            var releaseResult =
+                await _detainedLicenseService
+                .GetActiveDetainByLicenseIdAsync(licenseId);
+
+
+            if (releaseResult == null)
             {
                 Release = null;
                 IsLicenseIssued = false;
 
                 CustomMessageBox.Show(
-                      "The license was not found in the system.","Warning",
-                      MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            Release = await _detainedLicenseService.GetActiveDetainByLicenseIdAsync(licenseId);
-
-            if (Release == null)
-            {
-                IsLicenseIssued = false;
-
-                CustomMessageBox.Show(
-                    "This license is not detained.","Warning",
-                    MessageBoxButton.OK,MessageBoxImage.Warning);
+                    "This license is not detained.",
+                    "Warning",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
                 return;
             }
+
+
+            Release = releaseResult;
+
 
             IsLicenseIssued = true;
 
-            var applicationType = await _applicationTypeService.GetApplicationTypeByIdAsync(5);
-            if (applicationType == null)
+
+            var applicationTypeResult = await _applicationTypeService.GetApplicationTypeByIdAsync(5);
+
+            if (applicationTypeResult.IsFailure)
             {
                 CustomMessageBox.Show(
-                    "The application type was not found in the system.",
-                    "Error",MessageBoxButton.OK,MessageBoxImage.Error);
+                    applicationTypeResult.Error,"Error",
+                    MessageBoxButton.OK,MessageBoxImage.Error);
+
                 return;
             }
 
+            var applicationType = applicationTypeResult.Value!;
+
             ApplicationFees = applicationType.ApplicationTypeFees;
+
             OnPropertyChanged(nameof(TotalFees));
         }
 
@@ -140,7 +167,8 @@ namespace Presentation.ViewModels
                     CreatedByUserName = _currentUserService.Username
                 };
 
-                int newApplicationId = await _applicationService.AddNewApplicationAsync(newApplication);
+                var result = await _applicationService.AddNewApplicationAsync(newApplication);
+                int newApplicationId = result.Value;
 
                 await _detainedLicenseService.ReleaseAsync(
                     Release.DetainID,

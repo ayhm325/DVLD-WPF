@@ -66,7 +66,21 @@ namespace Presentation.ViewModels
         [RelayCommand]
         public async Task LoadPeopleAsync()
         {
-            _allPeople = await _personService.GetAllPeopleAsync();
+            var result = await _personService.GetAllPeopleAsync();
+
+            if (result.IsFailure)
+            {
+                MessageBox.Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            _allPeople = result.Value!;
+
             ApplyFilter();
         }
 

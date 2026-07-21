@@ -42,11 +42,19 @@ namespace Presentation.Views.Windows
         {
             try
             {
-                var fullLicenseDto = await _internationalLicenseService.GetByIdAsync(_internationalLicenseId);
-                if (fullLicenseDto != null)
+                var result =
+                    await _internationalLicenseService
+                    .GetByIdAsync(_internationalLicenseId);
+
+
+                if (result.IsFailure)
                 {
-                    LicenseData = fullLicenseDto; // سيتم تحديث الـ UI تلقائياً
+                    MessageBox.Show(result.Error);
+                    return;
                 }
+
+
+                LicenseData = result.Value!;
             }
             catch (Exception ex)
             {

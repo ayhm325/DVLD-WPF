@@ -52,33 +52,59 @@ namespace Presentation.ViewModels
         {
             try
             {
-                var countries = await _countryService.GetAllCountriesAsync();
-            Countries.Clear();
-            foreach (var country in countries) Countries.Add(country);
+                var countriesResult = await _countryService.GetAllCountriesAsync();
 
-            if (personId.HasValue && personId.Value > 0)
-            {
-                var person = await _personService.GetPersonByIdAsync(personId.Value);
-                if (person != null)
+                if (countriesResult.IsFailure)
                 {
-                    Mode = OperationMode.Edit;
-                    PersonId = personId.Value;
-                    PageTitle = "Edit Person";
-                    LoadData(person);
+                    MessageBox.Show(
+                        countriesResult.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    return;
                 }
-            }
-            else
-            {
-                Mode = OperationMode.Add;
-                PageTitle = "Add Person";
-                SelectedCountry = Countries.FirstOrDefault(c => c.CountryName == "Jordan") ?? Countries.FirstOrDefault()!;
-            }
+
+                Countries.Clear();
+
+                foreach (var country in countriesResult.Value!)
+                    Countries.Add(country);
+
+                if (personId.HasValue && personId.Value > 0)
+                {
+                    var personResult = await _personService.GetPersonByIdAsync(personId.Value);
+
+                    if (personResult.IsSuccess)
+                    {
+                        Mode = OperationMode.Edit;
+                        PersonId = personId.Value;
+                        PageTitle = "Edit Person";
+
+                        LoadData(personResult.Value!);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            personResult.Error,
+                            "Person Not Found",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                    }
+                }
+                else
+                {
+                    Mode = OperationMode.Add;
+                    PageTitle = "Add Person";
+
+                    SelectedCountry =
+                        Countries.FirstOrDefault(c => c.CountryName == "Jordan")
+                        ?? Countries.FirstOrDefault()!;
+                }
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString(), "InitializeAsync Error");
             }
-        
         }
 
         [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateFirstNameField))] private string _firstName = string.Empty;
@@ -161,11 +187,16 @@ namespace Presentation.ViewModels
         private async Task SavePersonAsync()
         {
             ValidateAllProperties();
-            if (HasErrors) { SaveCompleted?.Invoke(false); return; }
+
+            if (HasErrors)
+            {
+                SaveCompleted?.Invoke(false);
+                return;
+            }
 
             var dto = new PersonCreateUpdateDto
             {
-                PersonId = this.PersonId,
+                PersonId = PersonId,
                 FirstName = FirstName,
                 SecondName = SecondName,
                 ThirdName = ThirdName,
@@ -180,11 +211,48 @@ namespace Presentation.ViewModels
                 ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath
             };
 
-            bool result = Mode == OperationMode.Edit
-                ? await _personService.UpdatePersonAsync(PersonId, dto)
-                : await _personService.AddPersonAsync(dto) > 0;
 
-            if (result)
+            bool success;
+
+            if (Mode == OperationMode.Edit)
+            {
+                var updateResult = await _personService.UpdatePersonAsync(PersonId, dto);
+
+                if (updateResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        updateResult.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    SaveCompleted?.Invoke(false);
+                    return;
+                }
+
+                success = true;
+            }
+            else
+            {
+                var addResult = await _personService.AddPersonAsync(dto);
+
+                if (addResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        addResult.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    SaveCompleted?.Invoke(false);
+                    return;
+                }
+
+                success = addResult.Value > 0;
+            }
+
+
+            if (success)
             {
                 MessageBox.Show(
                     "Data has been saved successfully.",
@@ -192,17 +260,8 @@ namespace Presentation.ViewModels
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
-            else
-            {
-                MessageBox.Show(
-                    "An error occurred while saving the data. Please try again.",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
 
-
-            SaveCompleted?.Invoke(result);
+            SaveCompleted?.Invoke(success);
         }
 
         [RelayCommand]

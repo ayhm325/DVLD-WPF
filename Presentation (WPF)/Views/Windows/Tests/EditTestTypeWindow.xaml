@@ -6,7 +6,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Edit Test Type"
-        Height="600"
+        Height="700"
         Width="800"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"        
