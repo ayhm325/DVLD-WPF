@@ -1,4 +1,5 @@
-﻿<UserControl x:Class="Presentation.Views.Controls.DriverLicenseInfo"
+﻿<UserControl x:Name="Root"
+             x:Class="Presentation.Views.Controls.DriverLicenseInfo"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -198,7 +199,9 @@
                                      BorderThickness="0"
                                      Text="{Binding LicenseIdText,
                                              RelativeSource={RelativeSource AncestorType=UserControl},
-                                             UpdateSourceTrigger=PropertyChanged}"/>
+                                             UpdateSourceTrigger=PropertyChanged}"
+                                     IsReadOnly="{Binding IsLicenseIdReadOnly,
+                                             RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                         </Grid>
 
                         <Button Style="{StaticResource HeaderSearchBtnStyle}"

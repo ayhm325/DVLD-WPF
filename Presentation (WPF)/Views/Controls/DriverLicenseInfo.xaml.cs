@@ -12,7 +12,6 @@ namespace Presentation.Views.Controls
             InitializeComponent();
         }
 
-
         public DriverLicenseInfoDto? License
         {
             get => (DriverLicenseInfoDto?)GetValue(LicenseProperty);
@@ -52,5 +51,20 @@ namespace Presentation.Views.Controls
                 typeof(ICommand),
                 typeof(DriverLicenseInfo),
                 new PropertyMetadata(null));
+
+
+        // ReadOnly للـ License ID
+        public bool IsLicenseIdReadOnly
+        {
+            get => (bool)GetValue(IsLicenseIdReadOnlyProperty);
+            set => SetValue(IsLicenseIdReadOnlyProperty, value);
+        }
+
+        public static readonly DependencyProperty IsLicenseIdReadOnlyProperty =
+            DependencyProperty.Register(
+                nameof(IsLicenseIdReadOnly),
+                typeof(bool),
+                typeof(DriverLicenseInfo),
+                new PropertyMetadata(false));
     }
 }

@@ -20,6 +20,9 @@ namespace Presentation.ViewModels
         private readonly IApplicationService _applicationService;
 
         [ObservableProperty]
+        private bool isLicenseIdReadOnly;
+
+        [ObservableProperty]
         private string? licenseIdText;
 
         [ObservableProperty]
@@ -66,6 +69,16 @@ namespace Presentation.ViewModels
         partial void OnApplicationFeesChanged(decimal value)
         {
             OnPropertyChanged(nameof(TotalFees));
+        }
+
+
+        public async Task LoadAsync(int licenseId)
+        {
+            IsLicenseIdReadOnly = true;
+
+            LicenseIdText = licenseId.ToString();
+
+            await SearchAsync();
         }
 
         [RelayCommand]

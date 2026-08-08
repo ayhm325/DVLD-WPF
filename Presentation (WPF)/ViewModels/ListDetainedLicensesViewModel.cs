@@ -187,14 +187,18 @@ namespace Presentation.ViewModels
             window.ShowDialog();
         }
 
-        [RelayCommand]
-        private async Task ReleaseDetainedLicenseAsync()
-        {
-            var window = App.ServiceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
-            await LoadAsync();
-        }
+        [RelayCommand] private async Task ReleaseDetainedLicenseAsync() 
+        { 
+            if (SelectedDetainedLicense == null) 
+                return; 
+            
+            int licenseId = SelectedDetainedLicense.LicenseID; 
+            
+            var window = _serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>(); 
+            await window.LoadAsync(licenseId); 
+            window.Owner = System.Windows.Application.Current.MainWindow; 
+            window.ShowDialog(); 
+            await LoadAsync(); }
 
         [RelayCommand]
         private async Task Detain()

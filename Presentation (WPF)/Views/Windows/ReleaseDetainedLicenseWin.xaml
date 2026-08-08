@@ -141,7 +141,8 @@
                     <controls:DriverLicenseInfo
                             LicenseIdText="{Binding LicenseIdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             SearchCommand="{Binding SearchCommand}"
-                            License="{Binding LicenseInfo}"/>
+                            License="{Binding LicenseInfo}"
+                            IsLicenseIdReadOnly="{Binding IsLicenseIdReadOnly}"/>
 
                     <!-- Application New License Info Card -->
                     <controls:ReleaseDetainedInfo

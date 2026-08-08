@@ -17,8 +17,6 @@ namespace Application.Services
             _repository = repository;
         }
 
-
-
         public async Task<List<ApplicationDto>> GetAllApplicationsAsync()
         {
             var apps = await _repository.GetAllApplicationsAsync();
@@ -46,21 +44,15 @@ namespace Application.Services
             }).ToList();
         }
 
-
-
-
-
         public async Task<Result<ApplicationBasicInfoDto>> GetBasicInfoAsync(int id)
         {
             var app = await _repository.GetApplicationByIdAsync(id);
-
 
             if (app == null)
             {
                 return Result<ApplicationBasicInfoDto>.Fail(
                     "Application not found.");
             }
-
 
             var dto = new ApplicationBasicInfoDto
             {
@@ -73,23 +65,16 @@ namespace Application.Services
 
                 PaidFees = app.PaidFees,
 
-
                 ApplicationTypeName =
                     app.ApplicationType?.ApplicationTypeTitle,
-
 
                 ApplicantFullName =
                     app.Person != null
                     ? $"{app.Person.FirstName} {app.Person.LastName}"
                     : null,
 
-
                 ApplicationDate = app.ApplicationDate,
-
-
                 LastStatusDate = app.LastStatusDate,
-
-
                 CreatedByUserName =
                     app.CreatedByUser?.UserName
             };
@@ -97,12 +82,6 @@ namespace Application.Services
 
             return Result<ApplicationBasicInfoDto>.Success(dto);
         }
-
-
-
-
-
-
 
         public async Task<Result<int>> AddNewApplicationAsync(
             ApplicationDto dto)
@@ -112,8 +91,6 @@ namespace Application.Services
                 return Result<int>.Fail(
                     "Invalid applicant person.");
             }
-
-
 
             var entity = new ApplicationD
             {
@@ -133,22 +110,11 @@ namespace Application.Services
                 CreatedByUserID = dto.CreatedByUserID
             };
 
-
-
             var id =
                 await _repository.AddNewApplicationAsync(entity);
 
-
-
             return Result<int>.Success(id);
         }
-
-
-
-
-
-
-
 
         public async Task<Result<ApplicationDto>> GetApplicationByIdAsync(
             int id)
@@ -156,15 +122,11 @@ namespace Application.Services
             var app =
                 await _repository.GetApplicationByIdAsync(id);
 
-
-
             if (app == null)
             {
                 return Result<ApplicationDto>.Fail(
                     "Application not found.");
             }
-
-
 
             var dto = new ApplicationDto
             {
@@ -186,19 +148,8 @@ namespace Application.Services
                 CreatedByUserID = app.CreatedByUserID
             };
 
-
-
             return Result<ApplicationDto>.Success(dto);
         }
-
-
-
-
-
-
-
-
-
 
         public async Task<Result> UpdateApplicationAsync(
             ApplicationDto dto)
@@ -207,15 +158,11 @@ namespace Application.Services
                 await _repository.GetApplicationByIdAsync(
                     dto.ApplicationID);
 
-
-
             if (entity == null)
             {
                 return Result.Failure(
                     "Application not found.");
             }
-
-
 
             entity.ApplicationStatus =
                 (byte)dto.ApplicationStatus;
@@ -243,15 +190,8 @@ namespace Application.Services
             entity.CreatedByUserID =
                 dto.CreatedByUserID;
 
-
-
-
-
             var updated =
                 await _repository.UpdateApplicationAsync(entity);
-
-
-
 
             return updated
 
@@ -261,30 +201,17 @@ namespace Application.Services
                     "Application update failed.");
         }
 
-
-
-
-
-
-
-
-
         public async Task<Result> DeleteApplicationAsync(
             int id)
         {
             var app =
                 await _repository.GetApplicationByIdAsync(id);
 
-
-
             if (app == null)
             {
                 return Result.Failure(
                     "Application not found.");
             }
-
-
-
 
             if (app.ApplicationStatus ==
                 (int)AppStatus.Completed)
@@ -293,16 +220,8 @@ namespace Application.Services
                     "Cannot delete completed application.");
             }
 
-
-
-
-
-
             var deleted =
                 await _repository.DeleteApplicationAsync(id);
-
-
-
 
             return deleted
 
@@ -311,14 +230,6 @@ namespace Application.Services
                 : Result.Failure(
                     "Delete application failed.");
         }
-
-
-
-
-
-
-
-
 
         public async Task<int?> HasDuplicateApplicationAsync(
             int personId,
@@ -329,14 +240,6 @@ namespace Application.Services
                 licenseClassId);
         }
 
-
-
-
-
-
-
-
-
         public async Task<Result> CancelApplicationAsync(
             int applicationId)
         {
@@ -344,16 +247,11 @@ namespace Application.Services
                 await _repository.GetApplicationByIdAsync(
                     applicationId);
 
-
-
             if (app == null)
             {
                 return Result.Failure(
                     "Application not found.");
             }
-
-
-
 
             if (app.ApplicationStatus ==
                 (int)AppStatus.Completed)
@@ -362,10 +260,6 @@ namespace Application.Services
                     "Cannot cancel completed application.");
             }
 
-
-
-
-
             if (app.ApplicationStatus ==
                 (int)AppStatus.Cancelled)
             {
@@ -373,29 +267,14 @@ namespace Application.Services
                     "Application already cancelled.");
             }
 
-
-
-
-
-
             app.ApplicationStatus =
                 (byte)AppStatus.Cancelled;
-
-
 
             app.LastStatusDate =
                 DateTime.UtcNow;
 
-
-
-
-
-
             var updated =
                 await _repository.UpdateApplicationAsync(app);
-
-
-
 
             return updated
 
@@ -406,13 +285,6 @@ namespace Application.Services
         }
 
 
-
-
-
-
-
-
-
         public async Task<Result> CompleteApplicationAsync(
             int applicationId)
         {
@@ -420,18 +292,11 @@ namespace Application.Services
                 await _repository.GetApplicationByIdAsync(
                     applicationId);
 
-
-
-
             if (app == null)
             {
                 return Result.Failure(
                     "Application not found.");
             }
-
-
-
-
 
             if (app.ApplicationStatus ==
                 (int)AppStatus.Completed)
@@ -439,11 +304,6 @@ namespace Application.Services
                 return Result.Failure(
                     "Application already completed.");
             }
-
-
-
-
-
 
             if (app.ApplicationStatus ==
                 (int)AppStatus.Cancelled)
@@ -453,28 +313,15 @@ namespace Application.Services
             }
 
 
-
-
-
-
             app.ApplicationStatus =
                 (byte)AppStatus.Completed;
-
-
 
             app.LastStatusDate =
                 DateTime.UtcNow;
 
 
-
-
-
-
             var updated =
                 await _repository.UpdateApplicationAsync(app);
-
-
-
 
 
             return updated
