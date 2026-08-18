@@ -13,10 +13,10 @@
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
+        <!-- تدرج الهيدر الموحد (فاتح) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- ستايل زر الإغلاق -->
@@ -24,7 +24,7 @@
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -36,7 +36,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -45,7 +45,7 @@
             </Setter>
         </Style>
 
-        <!-- Ghost Button -->
+        <!-- Ghost Button (فاتح) -->
         <Style x:Key="GhostButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="20,0"/>
@@ -66,14 +66,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#042F2E"/>
+                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource PrimaryLightColor}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#1A1A1E"/>
+                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Opacity" Value="0.8"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="#6B7280"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextDisabledColor}"/>
                                 <Setter Property="Opacity" Value="0.5"/>
                                 <Setter Property="Cursor" Value="Arrow"/>
                             </Trigger>
@@ -85,7 +85,7 @@
 
         <!-- Radio Button ستايل -->
         <Style x:Key="HeaderRadioButtonStyle" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -124,7 +124,7 @@
                                 <Setter TargetName="innerDot" Property="Opacity" Value="1"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -138,11 +138,8 @@
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
             CornerRadius="16" 
-            Margin="15">
-
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
-        </Border.Effect>
+            Margin="15"
+            Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -157,10 +154,12 @@
             <!-- ================= الهيدر الموحد (معدل) ================= -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
                     CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18">
+                    Padding="25,18,25,18"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 
-                    <!-- أيقونة البطاقة (تم تصحيح اللون ليكون فاتحاً وواضحاً) -->
+                    <!-- أيقونة البطاقة -->
                     <Border Width="38" Height="38" CornerRadius="10" 
                             Background="{StaticResource PrimaryColor}" 
                             Opacity="0.15"
@@ -168,7 +167,7 @@
                             Padding="8"
                             VerticalAlignment="Center">
                         <Path Data="M19,12H21V14H19V12M19,8H21V10H19V8M3,20H17V4H3A2,2 0 0,0 1,6V18A2,2 0 0,0 3,20Z" 
-                              Stroke="{StaticResource TextColor}" StrokeThickness="1.6" 
+                              Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
                               Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
                     </Border>
 
@@ -178,18 +177,18 @@
                         <!-- عنوان النافذة الرئيسي -->
                         <TextBlock Text="License Replacement" 
                                    FontSize="18" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextColor}" 
+                                   Foreground="{StaticResource TextPrimaryColor}" 
                                    VerticalAlignment="Center"
                                    Margin="0,0,12,0"/>
 
                         <!-- فاصل بسيط -->
                         <TextBlock Text="-" 
                                    FontSize="18" FontWeight="Light" 
-                                   Foreground="{StaticResource SecondaryTextColor}" 
+                                   Foreground="{StaticResource TextSecondaryColor}" 
                                    VerticalAlignment="Center"
                                    Margin="0,0,15,0"/>
 
-                        <!-- خيارات نوع الاستبدال (خط أوضح وأقرب للعنوان) -->
+                        <!-- خيارات نوع الاستبدال -->
                         <RadioButton Content="Damaged License"
                                      Style="{StaticResource HeaderRadioButtonStyle}"
                                      GroupName="ReplacementType"

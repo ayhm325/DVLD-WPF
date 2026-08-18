@@ -2,91 +2,68 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="DVLD System"
-        MinWidth="1100" MinHeight="700"
-        Width="1200" Height="750"
+        MinWidth="1100"
+        MinHeight="700"
+        Width="1280"
+        Height="800"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
         WindowStyle="None"
         AllowsTransparency="True"
         ResizeMode="CanResize">
-
-    <!-- ════════════════════════════════════════════════════════════════ -->
-    <!-- ═══  RESOURCES — Colors · Styles · Storyboards                ═══ -->
-    <!-- ════════════════════════════════════════════════════════════════ -->
     <Window.Resources>
-
-        <!-- ── Color System ── -->
-        <SolidColorBrush x:Key="BgDark"       Color="#0B0B12"/>
-        <SolidColorBrush x:Key="BgSidebar"    Color="#0E0E15"/>
-        <SolidColorBrush x:Key="BgCard"       Color="#141419"/>
-        <SolidColorBrush x:Key="BgCardHover"  Color="#1A1A2E"/>
-        <SolidColorBrush x:Key="BgActive"     Color="#1E1B4B"/>
-        <SolidColorBrush x:Key="BgInput"      Color="#1A1A24"/>
-        <SolidColorBrush x:Key="BorderDark"   Color="#1E1E2A"/>
-        <SolidColorBrush x:Key="BorderLight"  Color="#2A2A35"/>
-        <SolidColorBrush x:Key="Primary"      Color="#6366F1"/>
-        <SolidColorBrush x:Key="PrimaryDark"  Color="#4338CA"/>
-        <SolidColorBrush x:Key="PrimaryLight" Color="#818CF8"/>
-        <SolidColorBrush x:Key="Success"      Color="#22C55E"/>
-        <SolidColorBrush x:Key="Warning"      Color="#F59E0B"/>
-        <SolidColorBrush x:Key="Danger"       Color="#EF4444"/>
-        <SolidColorBrush x:Key="TextPrimary"  Color="#E2E2E8"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#8888A0"/>
-        <SolidColorBrush x:Key="TextMuted"    Color="#555568"/>
-
-        <!-- ── Sidebar Item Style ── -->
         <Style x:Key="NavItemStyle" TargetType="Border">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="12,9"/>
-            <Setter Property="Margin" Value="6,1"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="8,2"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BgCardHover}"/>
+                    <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
-
-        <!-- ── Sidebar Item Active ── -->
         <Style x:Key="NavItemActiveStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource BgActive}"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="12,9"/>
-            <Setter Property="Margin" Value="6,1"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryLightColor}"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Margin" Value="8,2"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderBrush" Value="{StaticResource PrimaryDark}"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
         </Style>
-
-        <!-- ── Stat Card Style ── -->
         <Style x:Key="StatCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource BgCard}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderDark}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Padding" Value="20,16"/>
-            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusLarge}"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Effect" Value="{StaticResource ElevationShadow1}"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryDark}"/>
-                    <Setter Property="Background" Value="{StaticResource BgCardHover}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                    <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
-
-        <!-- ── Quick Action Style ── -->
         <Style x:Key="QuickActionStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource BgCard}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderDark}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="18,14"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusLarge}"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="5"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Effect" Value="{StaticResource ElevationShadow1}"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryDark}"/>
-                    <Setter Property="Background" Value="{StaticResource BgCardHover}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                    <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                     <Setter Property="RenderTransform">
                         <Setter.Value>
                             <TranslateTransform Y="-2"/>
@@ -95,1221 +72,1282 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
-        <!-- ── Activity Item Style ── -->
         <Style x:Key="ActivityItemStyle" TargetType="Border">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="2"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BgCard}"/>
+                    <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
-
-        <!-- ── Staggered Enter Animations ── -->
         <Storyboard x:Key="StaggerEnterStoryboard">
             <DoubleAnimation Storyboard.TargetName="StatsRow1"
                              Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.4" BeginTime="0:0:0.05">
+                             From="0"
+                             To="1"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.05">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="StatsRow1RT"
                              Storyboard.TargetProperty="Y"
-                             From="24" To="0" Duration="0:0:0.4" BeginTime="0:0:0.05">
+                             From="24"
+                             To="0"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.05">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-
             <DoubleAnimation Storyboard.TargetName="StatsRow2"
                              Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.4" BeginTime="0:0:0.15">
+                             From="0"
+                             To="1"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.15">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="StatsRow2RT"
                              Storyboard.TargetProperty="Y"
-                             From="24" To="0" Duration="0:0:0.4" BeginTime="0:0:0.15">
+                             From="24"
+                             To="0"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.15">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-
             <DoubleAnimation Storyboard.TargetName="QuickActionsSection"
                              Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.4" BeginTime="0:0:0.25">
+                             From="0"
+                             To="1"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.25">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="QuickActionsRT"
                              Storyboard.TargetProperty="Y"
-                             From="24" To="0" Duration="0:0:0.4" BeginTime="0:0:0.25">
+                             From="24"
+                             To="0"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.25">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-
             <DoubleAnimation Storyboard.TargetName="RecentActivitiesSection"
                              Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.4" BeginTime="0:0:0.35">
+                             From="0"
+                             To="1"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.35">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
             <DoubleAnimation Storyboard.TargetName="RecentActivitiesRT"
                              Storyboard.TargetProperty="Y"
-                             From="24" To="0" Duration="0:0:0.4" BeginTime="0:0:0.35">
+                             From="24"
+                             To="0"
+                             Duration="0:0:0.4"
+                             BeginTime="0:0:0.35">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
-
-        <!-- ── Cursor Blink ── -->
         <Storyboard x:Key="CursorBlinkStoryboard" RepeatBehavior="Forever">
             <DoubleAnimation Storyboard.TargetName="TypewriterCursor"
                              Storyboard.TargetProperty="Opacity"
-                             From="1" To="0" Duration="0:0:0.5" AutoReverse="True"/>
+                             From="1"
+                             To="0"
+                             Duration="0:0:0.5"
+                             AutoReverse="True"/>
         </Storyboard>
-
-        <!-- ── Glow Pulse ── -->
         <Storyboard x:Key="PulseGlowStoryboard" RepeatBehavior="Forever">
             <DoubleAnimation Storyboard.TargetName="GlowEffect"
                              Storyboard.TargetProperty="Opacity"
-                             From="0.12" To="0.28" Duration="0:0:5" AutoReverse="True">
+                             From="0.03"
+                             To="0.08"
+                             Duration="0:0:5"
+                             AutoReverse="True">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseInOut"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
-
     </Window.Resources>
-
-
-    <!-- ════════════════════════════════════════════════════════════════ -->
-    <!-- ═══  MAIN CONTAINER                                           ═══ -->
-    <!-- ════════════════════════════════════════════════════════════════ -->
-    <Border Background="{StaticResource BgDark}"
-            BorderBrush="{StaticResource BorderDark}"
+    <Border Background="{StaticResource BackgroundColor}"
+            BorderBrush="{StaticResource BorderColor}"
             BorderThickness="1"
-            CornerRadius="10"
+            CornerRadius="14"
             ClipToBounds="True">
-
         <Grid>
-
             <Grid.RowDefinitions>
-                <RowDefinition Height="36"/>
+                <RowDefinition Height="58"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="26"/>
+                <RowDefinition Height="30"/>
             </Grid.RowDefinitions>
-
-
-            <!-- ════════════════════════════════════════════════════════ -->
-            <!-- ═══  ROW 0 — CUSTOM TITLE BAR                          ═══ -->
-            <!-- ════════════════════════════════════════════════════════ -->
-            <Grid Grid.Row="0" Background="{StaticResource BgSidebar}"
-                  MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
-                    <Border Width="7" Height="7" CornerRadius="4"
-                            Background="{StaticResource Primary}" Margin="0,0,9,0"
-                            VerticalAlignment="Center"/>
-                    <TextBlock Text="DVLD System" FontSize="12" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Border x:Name="MinBtn" Width="36" Height="36" Cursor="Hand"
-                            MouseLeftButtonDown="MinBtn_Click"
-                            Background="Transparent">
-                        <TextBlock Text="─" FontSize="12" Foreground="{StaticResource TextSecondary}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <Border x:Name="MaxBtn" Width="36" Height="36" Cursor="Hand"
-                            MouseLeftButtonDown="MaxBtn_Click"
-                            Background="Transparent">
-                        <TextBlock Text="☐" FontSize="11" Foreground="{StaticResource TextSecondary}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
-                    </Border>
-                    <Border x:Name="CloseBtn" Width="36" Height="36" Cursor="Hand"
-                            MouseLeftButtonDown="CloseBtn_Click"
-                            Background="Transparent">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#DC2626"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Text="✕" FontSize="12" Foreground="{StaticResource TextSecondary}"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                </StackPanel>
-            </Grid>
-
-
-            <!-- ════════════════════════════════════════════════════════ -->
-            <!-- ═══  ROW 1 — MAIN CONTENT AREA                          ═══ -->
-            <!-- ════════════════════════════════════════════════════════ -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource SurfaceColor}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="22,0,0,0">
+                        <Border Width="34"
+                                Height="34"
+                                CornerRadius="10"
+                                Background="{StaticResource PrimaryColor}"
+                                Margin="0,0,12,0">
+                            <TextBlock Text="D"
+                                       Foreground="White"
+                                       FontSize="17"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="DVLD"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                            <TextBlock Text="Driving License Management"
+                                       FontSize="10"
+                                       Foreground="{StaticResource TextMutedColor}"
+                                       Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="0,0,12,0">
+                        <Border Width="42"
+                                Height="38"
+                                Cursor="Hand"
+                                Background="Transparent"
+                                MouseLeftButtonDown="MinBtn_Click">
+                            <TextBlock Text="─"
+                                       FontSize="13"
+                                       Foreground="{StaticResource TextSecondaryColor}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Width="42"
+                                Height="38"
+                                Cursor="Hand"
+                                Background="Transparent"
+                                MouseLeftButtonDown="MaxBtn_Click">
+                            <TextBlock Text="□"
+                                       FontSize="13"
+                                       Foreground="{StaticResource TextSecondaryColor}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Width="42"
+                                Height="38"
+                                Cursor="Hand"
+                                Background="Transparent"
+                                MouseLeftButtonDown="CloseBtn_Click">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource DangerColor}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="×"
+                                       FontSize="20"
+                                       Foreground="{StaticResource TextSecondaryColor}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="220" MinWidth="220"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="250"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-
-
-                <!-- ══════════════════════════════════════════════════ -->
-                <!-- ═══  SIDEBAR                                     ═══ -->
-                <!-- ══════════════════════════════════════════════════ -->
-                <Border Grid.Column="0" Background="{StaticResource BgSidebar}"
-                        BorderBrush="{StaticResource BorderDark}" BorderThickness="0,0,1,0">
-
-                    <DockPanel>
-
-                        <!-- ── User Profile ── -->
-                        <Border DockPanel.Dock="Top" Padding="16,18"
-                                BorderBrush="{StaticResource BorderDark}" BorderThickness="0,0,0,1">
-                            <StackPanel>
-                                <!-- ✅ FIX #1: LinearGradient صحيح -->
-                                <Border Width="44" Height="44" CornerRadius="12"
-                                        HorizontalAlignment="Left" Margin="0,0,0,10">
-                                    <Border.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#6366F1" Offset="0"/>
-                                            <GradientStop Color="#4338CA" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Border.Background>
-                                    <TextBlock Text="AM" FontSize="15" FontWeight="Bold"
-                                               Foreground="White" HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                <Border Grid.Column="0"
+                        Background="{StaticResource SurfaceColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="0,0,1,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="150"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="70"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0"
+                                Margin="16,16,16,10"
+                                Padding="16"
+                                CornerRadius="14"
+                                Background="{StaticResource SurfaceSecondaryColor}"
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="42"
+                                            Height="42"
+                                            CornerRadius="12"
+                                            Background="{StaticResource PrimaryColor}">
+                                        <TextBlock Text="AM"
+                                                   Foreground="White"
+                                                   FontSize="12"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Margin="10,0,0,0"
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="Ayhm Mohammed"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                        <TextBlock Text="Administrator"
+                                                   FontSize="10"
+                                                   Foreground="{StaticResource TextMutedColor}"
+                                                   Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Border Grid.Row="2"
+                                        Height="5"
+                                        CornerRadius="3"
+                                        Background="{StaticResource PrimaryLightColor}">
+                                    <Border Width="80"
+                                            HorizontalAlignment="Left"
+                                            CornerRadius="3"
+                                            Background="{StaticResource PrimaryColor}"/>
                                 </Border>
-                                <TextBlock Text="Ayhm Mohammed" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextPrimary}"/>
-                                <TextBlock Text="Administrator" FontSize="11"
-                                           Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"/>
-                            </StackPanel>
+                            </Grid>
                         </Border>
-
-                        <!-- ── Navigation ── -->
-                        <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled" Padding="0,6">
-                            <StackPanel>
-
-                                <TextBlock Text="OVERVIEW" FontSize="10" FontWeight="Bold"
-                                           Foreground="{StaticResource TextMuted}" Margin="16,8,0,4"/>
-
-                                <Border x:Name="NavDashboard" Style="{StaticResource NavItemActiveStyle}"
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="8,4,8,10">
+                                <TextBlock Text="MAIN"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           Margin="12,8,0,6"/>
+                                <Border x:Name="NavDashboard"
+                                        Style="{StaticResource NavItemActiveStyle}"
                                         MouseLeftButtonUp="NavDashboard_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⬡" FontSize="15" Width="24" TextAlignment="Center"
-                                                   Foreground="{StaticResource Primary}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Dashboard" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <TextBlock Text="PEOPLE" FontSize="10" FontWeight="Bold"
-                                           Foreground="{StaticResource TextMuted}" Margin="16,14,0,4"/>
-
-                                <Border x:Name="NavPeople" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavPeople_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="👤" FontSize="14" Width="24" TextAlignment="Center"
+                                        <TextBlock Text="⌂"
+                                                   Width="28"
+                                                   FontSize="17"
+                                                   Foreground="{StaticResource PrimaryColor}"
+                                                   VerticalAlignment="Center"
+                                                   TextAlignment="Center"/>
+                                        <TextBlock Text="Dashboard"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryColor}"
                                                    VerticalAlignment="Center"/>
-                                        <TextBlock Text="Manage People" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavDrivers" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavDrivers_Click">
+                                <TextBlock Text="PEOPLE"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           Margin="12,16,0,6"/>
+                                <Border x:Name="NavPeople" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavPeople_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🚗" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Manage Drivers" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="●" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Manage People" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <TextBlock Text="SERVICES" FontSize="10" FontWeight="Bold"
-                                           Foreground="{StaticResource TextMuted}" Margin="16,14,0,4"/>
-
-                                <Border x:Name="NavNewLocal" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavNewLocal_Click">
+                                <Border x:Name="NavDrivers" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavDrivers_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📝" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="New Local License" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="◆" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Manage Drivers" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavNewInternational" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavNewInternational_Click">
+                                <TextBlock Text="LICENSE SERVICES"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           Margin="12,16,0,6"/>
+                                <Border x:Name="NavNewLocal" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavNewLocal_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🌍" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="New Intl. License" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="+" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="New Local License" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavRenew" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavRenew_Click">
+                                <Border x:Name="NavNewInternational" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavNewInternational_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🔄" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Renew License" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="◎" Width="28" Foreground="{StaticResource InfoColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="New Intl. License" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavReplace" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavReplace_Click">
+                                <Border x:Name="NavRenew" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavRenew_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🔁" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Replace License" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="↻" Width="28" Foreground="{StaticResource SuccessColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Renew License" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavReleaseDetained" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavReleaseDetained_Click">
+                                <Border x:Name="NavReplace" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavReplace_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="✅" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Release Detained" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="⇄" Width="28" Foreground="{StaticResource WarningColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Replace License" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <TextBlock Text="MANAGEMENT" FontSize="10" FontWeight="Bold"
-                                           Foreground="{StaticResource TextMuted}" Margin="16,14,0,4"/>
-
-                                <Border x:Name="NavLocalApps" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavLocalApps_Click">
+                                <Border x:Name="NavDetainLicense" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavDetainLicense_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📋" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Local Applications" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="!" Width="28" Foreground="{StaticResource DangerColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Detain License" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavIntlApps" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavIntlApps_Click">
+                                <Border x:Name="NavReleaseDetained" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavReleaseDetained_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="📄" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Intl. Applications" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="✓" Width="28" Foreground="{StaticResource SuccessColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Release Detained" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavDetained" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavDetained_Click">
+                                <TextBlock Text="MANAGEMENT"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           Margin="12,16,0,6"/>
+                                <Border x:Name="NavLocalApps" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavLocalApps_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⚠" FontSize="14" Width="24" TextAlignment="Center"
-                                                   Foreground="{StaticResource Warning}" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Detained Licenses" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="▤" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Local Applications" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavDetainLicense" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavDetainLicense_Click">
+                                <Border x:Name="NavIntlApps" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavIntlApps_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🔒" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Detain License" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="▧" Width="28" Foreground="{StaticResource InfoColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Intl. Applications" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavRetakeTest" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavRetakeTest_Click">
+                                <Border x:Name="NavDetained" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavDetained_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🧪" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Retake Test" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="!" Width="28" Foreground="{StaticResource WarningColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Detained Licenses" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavUsers" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavUsers_Click">
+                                <Border x:Name="NavRetakeTest" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavRetakeTest_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="👥" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Users" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="◇" Width="28" Foreground="{StaticResource WarningColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Retake Test" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <TextBlock Text="CONFIG" FontSize="10" FontWeight="Bold"
-                                           Foreground="{StaticResource TextMuted}" Margin="16,14,0,4"/>
-
-                                <Border x:Name="NavAppTypes" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavAppTypes_Click">
+                                <Border x:Name="NavUsers" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavUsers_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⚙" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Application Types" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="○" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Users" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavTestTypes" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavTestTypes_Click">
+                                <TextBlock Text="CONFIGURATION"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           Margin="12,16,0,6"/>
+                                <Border x:Name="NavAppTypes" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavAppTypes_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🔧" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Test Types" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="⚙" Width="28" Foreground="{StaticResource TextSecondaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Application Types" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <TextBlock Text="ACCOUNT" FontSize="10" FontWeight="Bold"
-                                           Foreground="{StaticResource TextMuted}" Margin="16,14,0,4"/>
-
-                                <Border x:Name="NavMyProfile" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavMyProfile_Click">
+                                <Border x:Name="NavTestTypes" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavTestTypes_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="ℹ" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="My Profile" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="⚙" Width="28" Foreground="{StaticResource TextSecondaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Test Types" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <Border x:Name="NavChangePassword" Style="{StaticResource NavItemStyle}"
-                                        MouseLeftButtonUp="NavChangePassword_Click">
+                                <TextBlock Text="ACCOUNT"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           Margin="12,16,0,6"/>
+                                <Border x:Name="NavMyProfile" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavMyProfile_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🔑" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Change Password" FontSize="13"
-                                                   Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="◉" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="My Profile" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <!-- ✅ FIX #2: Style مرة واحدة فقط -->
+                                <Border x:Name="NavChangePassword" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavChangePassword_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="◆" Width="28" Foreground="{StaticResource WarningColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Change Password" Foreground="{StaticResource TextPrimaryColor}"/>
+                                    </StackPanel>
+                                </Border>
                                 <Border x:Name="NavSignOut"
-                                        MouseLeftButtonUp="NavSignOut_Click" Margin="6,6,6,8">
+                                        Margin="8,8,8,10"
+                                        MouseLeftButtonUp="NavSignOut_Click">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="CornerRadius" Value="8"/>
-                                            <Setter Property="Padding" Value="12,9"/>
+                                            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+                                            <Setter Property="Padding" Value="12,10"/>
                                             <Setter Property="Cursor" Value="Hand"/>
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#2D1515"/>
+                                                    <Setter Property="Background" Value="{StaticResource DangerLightColor}"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🚪" FontSize="14" Width="24" TextAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="Sign Out" FontSize="13"
-                                                   Foreground="{StaticResource Danger}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="←"
+                                                   Width="28"
+                                                   Foreground="{StaticResource DangerColor}"
+                                                   TextAlignment="Center"/>
+                                        <TextBlock Text="Sign Out"
+                                                   Foreground="{StaticResource DangerColor}"/>
                                     </StackPanel>
                                 </Border>
-
                             </StackPanel>
                         </ScrollViewer>
-
-                    </DockPanel>
+                        <Border Grid.Row="2"
+                                Margin="16,8"
+                                Padding="12,8"
+                                CornerRadius="10"
+                                Background="{StaticResource SurfaceSecondaryColor}">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="7"
+                                         Height="7"
+                                         Fill="{StaticResource SuccessColor}"
+                                         VerticalAlignment="Center"
+                                         Margin="0,0,8,0"/>
+                                <TextBlock Text="System Online"
+                                           FontSize="10"
+                                           Foreground="{StaticResource TextSecondaryColor}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </Border>
-
-
-                <Border Grid.Column="1" Width="1" Background="{StaticResource BorderDark}"/>
-
-
-                <!-- ══════════════════════════════════════════════════ -->
-                <!-- ═══  CONTENT AREA                                ═══ -->
-                <!-- ══════════════════════════════════════════════════ -->
-                <Grid Grid.Column="2">
+                <Grid Grid.Column="1">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="86"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
-
-                    <!-- ══════════════════════════════════════════ -->
-                    <!-- ═══  HEADER BAR                          ═══ -->
-                    <!-- ══════════════════════════════════════════ -->
-                    <Border Grid.Row="0" Background="{StaticResource BgSidebar}"
-                            BorderBrush="{StaticResource BorderDark}" BorderThickness="0,0,0,1"
-                            Padding="24,14">
+                    <Border Grid.Row="0"
+                            Background="{StaticResource SurfaceColor}"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="0,0,0,1"
+                            Padding="28,16">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-
                             <StackPanel VerticalAlignment="Center">
-                                <TextBlock x:Name="HeaderTitle" Text="Dashboard"
-                                           FontSize="18" FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimary}"/>
-                                <TextBlock x:Name="HeaderSubtitle" Text="Overview of your driving license system"
-                                           FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="HeaderTitle"
+                                           Text="Dashboard"
+                                           FontSize="{StaticResource FontSizeHeader}"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                <TextBlock x:Name="HeaderSubtitle"
+                                           Text="Overview of your driving license system"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           Margin="0,4,0,0"/>
                             </StackPanel>
-
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-
-                                <Border Background="{StaticResource BgInput}" CornerRadius="8"
-                                        BorderBrush="{StaticResource BorderDark}" BorderThickness="1"
-                                        Padding="10,7" Margin="0,0,16,0" Width="200">
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <Border Width="190"
+                                        Height="38"
+                                        Background="{StaticResource InputBackgroundColor}"
+                                        BorderBrush="{StaticResource BorderColor}"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        Padding="12,0"
+                                        Margin="0,0,12,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="🔍" FontSize="12" Foreground="{StaticResource TextMuted}"
-                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="Search..." FontSize="12"
-                                                   Foreground="{StaticResource TextMuted}"
+                                        <TextBlock Text="⌕"
+                                                   FontSize="18"
+                                                   Foreground="{StaticResource TextMutedColor}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,8,0"/>
+                                        <TextBlock Text="Search"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextMutedColor}"
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
-
-                                <TextBlock x:Name="DateText" Text="" FontSize="11"
-                                           Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"
-                                           Margin="0,0,14,0"/>
-
-                                <Border Width="36" Height="36" CornerRadius="8"
-                                        Background="{StaticResource BgInput}" Cursor="Hand"
-                                        BorderBrush="{StaticResource BorderDark}" BorderThickness="1"
-                                        Margin="0,0,14,0">
-                                    <Grid>
-                                        <TextBlock Text="🔔" FontSize="14" HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center" Margin="0,-1,0,0"/>
-                                        <Border Width="8" Height="8" CornerRadius="4"
-                                                Background="{StaticResource Danger}"
-                                                HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                Margin="0,-2,-2,0"/>
-                                    </Grid>
+                                <Border Width="38"
+                                        Height="38"
+                                        Background="{StaticResource InputBackgroundColor}"
+                                        BorderBrush="{StaticResource BorderColor}"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        Margin="0,0,12,0">
+                                    <TextBlock Text="◌"
+                                               FontSize="18"
+                                               Foreground="{StaticResource TextSecondaryColor}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
                                 </Border>
-
-                                <TextBlock x:Name="ClockText" Text="" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"
-                                           Margin="0,0,16,0" FontFamily="Consolas"/>
-
-                                <Border Background="{StaticResource BgInput}" CornerRadius="8"
-                                        BorderBrush="{StaticResource BorderDark}" BorderThickness="1"
-                                        Padding="8,5" Cursor="Hand">
-                                    <StackPanel Orientation="Horizontal">
-                                        <!-- ✅ FIX #1b: LinearGradient صحيح -->
-                                        <Border Width="26" Height="26" CornerRadius="6"
-                                                Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#6366F1" Offset="0"/>
-                                                    <GradientStop Color="#4338CA" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                            <TextBlock Text="A" FontSize="11" FontWeight="Bold"
-                                                       Foreground="White" HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Border>
-                                        <TextBlock Text="Admin" FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimary}"
-                                                   VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                        <TextBlock Text="▾" FontSize="10"
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
+                                <StackPanel VerticalAlignment="Center"
+                                            Margin="0,0,16,0">
+                                    <TextBlock x:Name="DateText"
+                                               Text=""
+                                               FontSize="10"
+                                               Foreground="{StaticResource TextMutedColor}"
+                                               HorizontalAlignment="Right"/>
+                                    <TextBlock x:Name="ClockText"
+                                               Text=""
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryColor}"
+                                               FontFamily="Consolas"
+                                               Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <Border Width="36"
+                                        Height="36"
+                                        CornerRadius="10"
+                                        Background="{StaticResource PrimaryColor}">
+                                    <TextBlock Text="A"
+                                               FontSize="12"
+                                               FontWeight="Bold"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
                                 </Border>
-
                             </StackPanel>
                         </Grid>
                     </Border>
-
-
-                    <!-- ══════════════════════════════════════════ -->
-                    <!-- ═══  PAGE CONTENT (Frame + Dashboard)    ═══ -->
-                    <!-- ══════════════════════════════════════════ -->
                     <Grid Grid.Row="1">
-
-                        <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden"
+                        <Frame x:Name="MainFrame"
+                               NavigationUIVisibility="Hidden"
                                Visibility="Collapsed"/>
-
-
-                        <!-- ══════════════════════════════════════════════ -->
-                        <!-- ═══  DASHBOARD                             ═══ -->
-                        <!-- ══════════════════════════════════════════════ -->
                         <Grid x:Name="DashboardPanel">
-
                             <Grid.Triggers>
                                 <EventTrigger RoutedEvent="Loaded">
                                     <BeginStoryboard Storyboard="{StaticResource PulseGlowStoryboard}"/>
-                                    <BeginStoryboard Storyboard="{StaticResource CursorBlinkStoryboard}"/>
                                 </EventTrigger>
                             </Grid.Triggers>
-
-                            <!-- ✅ FIX #3: Effect بدل RenderTransform -->
-                            <Ellipse Width="500" Height="500" HorizontalAlignment="Right"
-                                     VerticalAlignment="Top" Margin="0,-150,-100,0"
-                                     Fill="#6366F1" Opacity="0.03" IsHitTestVisible="False">
-                                <Ellipse.Effect>
-                                    <BlurEffect Radius="80"/>
-                                </Ellipse.Effect>
-                            </Ellipse>
-                            <Ellipse Width="400" Height="400" HorizontalAlignment="Left"
-                                     VerticalAlignment="Bottom" Margin="-80,0,0,-100"
-                                     Fill="#22C55E" Opacity="0.025" IsHitTestVisible="False">
-                                <Ellipse.Effect>
-                                    <BlurEffect Radius="70"/>
-                                </Ellipse.Effect>
-                            </Ellipse>
-                            <Ellipse x:Name="GlowEffect" Width="500" Height="500"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     IsHitTestVisible="False" Opacity="0.15">
+                            <Ellipse x:Name="GlowEffect"
+                                     Width="500"
+                                     Height="500"
+                                     HorizontalAlignment="Right"
+                                     VerticalAlignment="Top"
+                                     Margin="0,-220,-150,0"
+                                     IsHitTestVisible="False"
+                                     Opacity="0.05">
                                 <Ellipse.Fill>
                                     <RadialGradientBrush>
-                                        <GradientStop Color="#1A6366F1" Offset="0"/>
+                                        <GradientStop Color="#0F766E" Offset="0"/>
                                         <GradientStop Color="Transparent" Offset="1"/>
                                     </RadialGradientBrush>
                                 </Ellipse.Fill>
                             </Ellipse>
-
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
-                                <StackPanel Margin="28,24" MaxWidth="960">
-
-                                    <!-- ── Stats Row 1 ── -->
-                                    <StackPanel x:Name="StatsRow1" Opacity="0"
+                                <StackPanel Margin="28,24,28,30">
+                                    <Border Background="{StaticResource SurfaceColor}"
+                                            BorderBrush="{StaticResource BorderColor}"
+                                            BorderThickness="1"
+                                            CornerRadius="14"
+                                            Padding="20,16"
+                                            Margin="0,0,0,22"
+                                            Effect="{StaticResource ElevationShadow1}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="42"
+                                                    Height="42"
+                                                    CornerRadius="12"
+                                                    Background="{StaticResource PrimaryLightColor}"
+                                                    Margin="0,0,14,0">
+                                                <TextBlock Text="✦"
+                                                           FontSize="19"
+                                                           Foreground="{StaticResource PrimaryColor}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="Good to see you again"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMutedColor}"/>
+                                                <StackPanel Orientation="Horizontal"
+                                                            Margin="0,4,0,0">
+                                                    <TextBlock x:Name="TypewriterText"
+                                                               Text=""
+                                                               FontSize="13"
+                                                               Foreground="{StaticResource TextSecondaryColor}"
+                                                               VerticalAlignment="Center"/>
+                                                    <Border x:Name="TypewriterCursor"
+                                                            Width="2"
+                                                            Height="17"
+                                                            Background="{StaticResource PrimaryColor}"
+                                                            Margin="2,0,0,0"
+                                                            VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel x:Name="StatsRow1"
+                                                Opacity="0"
                                                 RenderTransformOrigin="0.5,0.5">
                                         <StackPanel.RenderTransform>
                                             <TranslateTransform x:Name="StatsRow1RT" Y="24"/>
                                         </StackPanel.RenderTransform>
-
-                                        <TextBlock Text="📊  General Statistics" FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,12"/>
-
-                                        <UniformGrid Columns="4" Margin="0,0,0,24">
-
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="SYSTEM OVERVIEW"
+                                                       FontSize="10"
+                                                       FontWeight="Bold"
+                                                       Foreground="{StaticResource TextMutedColor}"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="Live data"
+                                                       FontSize="10"
+                                                       Foreground="{StaticResource SuccessColor}"/>
+                                        </Grid>
+                                        <UniformGrid Columns="4"
+                                                     Margin="-5,0,-5,20">
                                             <Border Style="{StaticResource StatCardStyle}">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                                                        <Border Width="32" Height="32" CornerRadius="8"
-                                                                Background="#1E1B4B" Margin="0,0,10,0">
-                                                            <TextBlock Text="👥" FontSize="15"
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource PrimaryLightColor}">
+                                                            <TextBlock Text="P"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{StaticResource PrimaryColor}"
                                                                        HorizontalAlignment="Center"
                                                                        VerticalAlignment="Center"/>
                                                         </Border>
-                                                        <Polyline Points="0,18 8,14 16,16 24,8 32,10 40,4"
-                                                                  Stroke="{StaticResource Success}" StrokeThickness="1.5"
-                                                                  Fill="Transparent" VerticalAlignment="Bottom"
-                                                                  HorizontalAlignment="Right" Width="50" Height="22"
-                                                                  Margin="20,0,0,0"/>
+                                                        <TextBlock Text="PEOPLE"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="10,0,0,0"/>
                                                     </StackPanel>
-                                                    <TextBlock x:Name="StatTotalPeople" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Total People" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↑ 12%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Success}"/>
-                                                        <TextBlock Text=" this month" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
-                                                    </StackPanel>
-                                                </Grid>
+                                                    <TextBlock x:Name="StatTotalPeople"
+                                                               Text="0"
+                                                               FontSize="28"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryColor}"
+                                                               Margin="0,16,0,0"/>
+                                                    <TextBlock Text="Registered people"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource TextMutedColor}"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
                                             </Border>
-
                                             <Border Style="{StaticResource StatCardStyle}">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                                                        <Border Width="32" Height="32" CornerRadius="8"
-                                                                Background="#1E1B4B" Margin="0,0,10,0">
-                                                            <TextBlock Text="🚗" FontSize="15"
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource PrimaryLightColor}">
+                                                            <TextBlock Text="D"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{StaticResource PrimaryColor}"
                                                                        HorizontalAlignment="Center"
                                                                        VerticalAlignment="Center"/>
                                                         </Border>
-                                                        <Polyline Points="0,20 8,16 16,12 24,14 32,6 40,8"
-                                                                  Stroke="{StaticResource Success}" StrokeThickness="1.5"
-                                                                  Fill="Transparent" VerticalAlignment="Bottom"
-                                                                  HorizontalAlignment="Right" Width="50" Height="22"
-                                                                  Margin="20,0,0,0"/>
+                                                        <TextBlock Text="DRIVERS"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="10,0,0,0"/>
                                                     </StackPanel>
-                                                    <TextBlock x:Name="StatTotalDrivers" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Total Drivers" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↑ 8%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Success}"/>
-                                                        <TextBlock Text=" this month" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
-                                                    </StackPanel>
-                                                </Grid>
+                                                    <TextBlock x:Name="StatTotalDrivers"
+                                                               Text="0"
+                                                               FontSize="28"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryColor}"
+                                                               Margin="0,16,0,0"/>
+                                                    <TextBlock Text="Licensed drivers"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource TextMutedColor}"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
                                             </Border>
-
                                             <Border Style="{StaticResource StatCardStyle}">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                                                        <Border Width="32" Height="32" CornerRadius="8"
-                                                                Background="#1E1B4B" Margin="0,0,10,0">
-                                                            <TextBlock Text="🪪" FontSize="15"
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource SuccessLightColor}">
+                                                            <TextBlock Text="✓"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{StaticResource SuccessColor}"
                                                                        HorizontalAlignment="Center"
                                                                        VerticalAlignment="Center"/>
                                                         </Border>
-                                                        <Polyline Points="0,10 8,12 16,8 24,14 32,6 40,10"
-                                                                  Stroke="{StaticResource Warning}" StrokeThickness="1.5"
-                                                                  Fill="Transparent" VerticalAlignment="Bottom"
-                                                                  HorizontalAlignment="Right" Width="50" Height="22"
-                                                                  Margin="20,0,0,0"/>
+                                                        <TextBlock Text="ACTIVE"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="10,0,0,0"/>
                                                     </StackPanel>
-                                                    <TextBlock x:Name="StatActiveLicenses" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Active Licenses" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↑ 3%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Warning}"/>
-                                                        <TextBlock Text=" this month" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
-                                                    </StackPanel>
-                                                </Grid>
+                                                    <TextBlock x:Name="StatActiveLicenses"
+                                                               Text="0"
+                                                               FontSize="28"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryColor}"
+                                                               Margin="0,16,0,0"/>
+                                                    <TextBlock Text="Active licenses"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource TextMutedColor}"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
                                             </Border>
-
                                             <Border Style="{StaticResource StatCardStyle}">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-                                                        <Border Width="32" Height="32" CornerRadius="8"
-                                                                Background="#2D1515" Margin="0,0,10,0">
-                                                            <TextBlock Text="📝" FontSize="15"
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource WarningLightColor}">
+                                                            <TextBlock Text="T"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="{StaticResource WarningColor}"
                                                                        HorizontalAlignment="Center"
                                                                        VerticalAlignment="Center"/>
                                                         </Border>
-                                                        <Polyline Points="0,6 8,10 16,8 24,14 32,16 40,18"
-                                                                  Stroke="{StaticResource Danger}" StrokeThickness="1.5"
-                                                                  Fill="Transparent" VerticalAlignment="Bottom"
-                                                                  HorizontalAlignment="Right" Width="50" Height="22"
-                                                                  Margin="20,0,0,0"/>
+                                                        <TextBlock Text="TESTS"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="10,0,0,0"/>
                                                     </StackPanel>
-                                                    <TextBlock x:Name="StatPendingApps" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Pending Apps" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↓ 5%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Danger}"/>
-                                                        <TextBlock Text=" this month" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
-                                                    </StackPanel>
-                                                </Grid>
+                                                    <TextBlock x:Name="StatTestsToday"
+                                                               Text="0"
+                                                               FontSize="28"
+                                                               FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimaryColor}"
+                                                               Margin="0,16,0,0"/>
+                                                    <TextBlock Text="Upcoming tests"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource TextMutedColor}"
+                                                               Margin="0,2,0,0"/>
+                                                </StackPanel>
                                             </Border>
-
                                         </UniformGrid>
                                     </StackPanel>
-
-
-                                    <!-- ── Stats Row 2 ── -->
-                                    <StackPanel x:Name="StatsRow2" Opacity="0"
+                                    <StackPanel x:Name="StatsRow2"
+                                                Opacity="0"
                                                 RenderTransformOrigin="0.5,0.5">
                                         <StackPanel.RenderTransform>
                                             <TranslateTransform x:Name="StatsRow2RT" Y="24"/>
                                         </StackPanel.RenderTransform>
-
-                                        <TextBlock Text="⚡  Operations Statistics" FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,12"/>
-
-                                        <UniformGrid Columns="4" Margin="0,0,0,24">
-
+                                        <TextBlock Text="APPLICATIONS &amp; LICENSE OPERATIONS"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource TextMutedColor}"
+                                                   Margin="0,0,0,6"/>
+                                        <UniformGrid Columns="3"
+                                                     Margin="-5,0,-5,20">
                                             <Border Style="{StaticResource StatCardStyle}">
                                                 <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" Width="32" Height="32" CornerRadius="8"
-                                                            Background="#1E1B4B" Margin="0,0,0,10">
-                                                        <TextBlock Text="📋" FontSize="15"
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Width="40"
+                                                            Height="40"
+                                                            CornerRadius="11"
+                                                            Background="{StaticResource PrimaryLightColor}">
+                                                        <TextBlock Text="L"
+                                                                   FontSize="16"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource PrimaryColor}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <TextBlock x:Name="StatLocalDLApps" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Local DL Apps" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↑ 15%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Success}"/>
-                                                        <TextBlock Text=" this month" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
+                                                    <StackPanel Grid.Column="1"
+                                                                Margin="14,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="LOCAL APPLICATIONS"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextMutedColor}"/>
+                                                        <TextBlock x:Name="StatLocalApps"
+                                                                   Text="0"
+                                                                   FontSize="22"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"
+                                                                   Margin="0,3,0,0"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
-
                                             <Border Style="{StaticResource StatCardStyle}">
                                                 <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" Width="32" Height="32" CornerRadius="8"
-                                                            Background="#1E1B4B" Margin="0,0,0,10">
-                                                        <TextBlock Text="🌍" FontSize="15"
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Width="40"
+                                                            Height="40"
+                                                            CornerRadius="11"
+                                                            Background="{StaticResource InfoLightColor}">
+                                                        <TextBlock Text="I"
+                                                                   FontSize="16"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource InfoColor}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <TextBlock x:Name="StatInternationalLicenses" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Intl. Licenses" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↑ 6%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Success}"/>
-                                                        <TextBlock Text=" this month" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
+                                                    <StackPanel Grid.Column="1"
+                                                                Margin="14,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="INTERNATIONAL"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextMutedColor}"/>
+                                                        <TextBlock x:Name="StatIntlApps"
+                                                                   Text="0"
+                                                                   FontSize="22"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"
+                                                                   Margin="0,3,0,0"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
-
                                             <Border Style="{StaticResource StatCardStyle}">
                                                 <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" Width="32" Height="32" CornerRadius="8"
-                                                            Background="#2D1F0A" Margin="0,0,0,10">
-                                                        <TextBlock Text="⚠" FontSize="15"
-                                                                   Foreground="{StaticResource Warning}"
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Width="40"
+                                                            Height="40"
+                                                            CornerRadius="11"
+                                                            Background="{StaticResource DangerLightColor}">
+                                                        <TextBlock Text="!"
+                                                                   FontSize="17"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource DangerColor}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <TextBlock x:Name="StatDetainedLicenses" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Detained Licenses" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↓ 2%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Success}"/>
-                                                        <TextBlock Text=" this month" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
+                                                    <StackPanel Grid.Column="1"
+                                                                Margin="14,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="DETAINED"
+                                                                   FontSize="9"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextMutedColor}"/>
+                                                        <TextBlock x:Name="StatDetainedLicenses"
+                                                                   Text="0"
+                                                                   FontSize="22"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"
+                                                                   Margin="0,3,0,0"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
-
-                                            <Border Style="{StaticResource StatCardStyle}">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="*"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Border Grid.Row="0" Width="32" Height="32" CornerRadius="8"
-                                                            Background="#1E1B4B" Margin="0,0,0,10">
-                                                        <TextBlock Text="🧪" FontSize="15"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <TextBlock x:Name="StatUpcomingTests" Grid.Row="1"
-                                                               Text="0" FontSize="28" FontWeight="Bold"
-                                                               Foreground="White" Margin="0,0,0,2"/>
-                                                    <TextBlock Grid.Row="2" Text="Upcoming Tests" FontSize="11"
-                                                               Foreground="{StaticResource TextSecondary}"/>
-                                                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom"
-                                                                Orientation="Horizontal" Margin="0,6,0,0">
-                                                        <TextBlock Text="↑ 20%" FontSize="10" FontWeight="SemiBold"
-                                                                   Foreground="{StaticResource Success}"/>
-                                                        <TextBlock Text=" this week" FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
-
                                         </UniformGrid>
                                     </StackPanel>
-
-
-                                    <!-- ── Quick Actions ── -->
-                                    <StackPanel x:Name="QuickActionsSection" Opacity="0"
+                                    <StackPanel x:Name="QuickActionsSection"
+                                                Opacity="0"
                                                 RenderTransformOrigin="0.5,0.5">
                                         <StackPanel.RenderTransform>
                                             <TranslateTransform x:Name="QuickActionsRT" Y="24"/>
                                         </StackPanel.RenderTransform>
-
-                                        <TextBlock Text="⚡  Quick Actions" FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,12"/>
-
-                                        <UniformGrid Columns="5" Margin="0,0,0,24">
-
-                                            <Border Style="{StaticResource QuickActionStyle}"
-                                                    MouseLeftButtonUp="NavNewLocal_Click">
-                                                <StackPanel HorizontalAlignment="Center">
-                                                    <Border Width="40" Height="40" CornerRadius="10"
-                                                            Background="#1E1B4B" Margin="0,0,0,8"
-                                                            HorizontalAlignment="Center">
-                                                        <TextBlock Text="+" FontSize="20" FontWeight="Bold"
-                                                                   Foreground="{StaticResource Primary}"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center" Margin="0,-2,0,0"/>
-                                                    </Border>
-                                                    <TextBlock Text="New License" FontSize="11"
-                                                               Foreground="{StaticResource TextPrimary}"
-                                                               HorizontalAlignment="Center"/>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <Border Style="{StaticResource QuickActionStyle}"
-                                                    MouseLeftButtonUp="NavRenew_Click">
-                                                <StackPanel HorizontalAlignment="Center">
-                                                    <Border Width="40" Height="40" CornerRadius="10"
-                                                            Background="#0A2618" Margin="0,0,0,8"
-                                                            HorizontalAlignment="Center">
-                                                        <TextBlock Text="🔄" FontSize="18"
+                                        <TextBlock Text="QUICK ACTIONS"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource TextMutedColor}"
+                                                   Margin="0,0,0,6"/>
+                                        <UniformGrid Columns="3"
+                                                     Margin="-5,0,-5,20">
+                                            <Border Style="{StaticResource QuickActionStyle}" MouseLeftButtonUp="NavNewLocal_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Width="38"
+                                                            Height="38"
+                                                            CornerRadius="10"
+                                                            Background="{StaticResource PrimaryLightColor}">
+                                                        <TextBlock Text="+"
+                                                                   FontSize="20"
+                                                                   Foreground="{StaticResource PrimaryColor}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <TextBlock Text="Renew License" FontSize="11"
-                                                               Foreground="{StaticResource TextPrimary}"
-                                                               HorizontalAlignment="Center"/>
+                                                    <StackPanel Margin="12,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="New Local License"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                                        <TextBlock Text="Create application"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   Margin="0,3,0,0"/>
+                                                    </StackPanel>
                                                 </StackPanel>
                                             </Border>
-
-                                            <Border Style="{StaticResource QuickActionStyle}"
-                                                    MouseLeftButtonUp="NavDetainLicense_Click">
-                                                <StackPanel HorizontalAlignment="Center">
-                                                    <Border Width="40" Height="40" CornerRadius="10"
-                                                            Background="#2D1F0A" Margin="0,0,0,8"
-                                                            HorizontalAlignment="Center">
-                                                        <TextBlock Text="🔒" FontSize="17"
+                                            <Border Style="{StaticResource QuickActionStyle}" MouseLeftButtonUp="NavNewInternational_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Width="38"
+                                                            Height="38"
+                                                            CornerRadius="10"
+                                                            Background="{StaticResource InfoLightColor}">
+                                                        <TextBlock Text="I"
+                                                                   FontSize="17"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource InfoColor}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <TextBlock Text="Detain License" FontSize="11"
-                                                               Foreground="{StaticResource TextPrimary}"
-                                                               HorizontalAlignment="Center"/>
+                                                    <StackPanel Margin="12,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="International"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                                        <TextBlock Text="Issue international"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   Margin="0,3,0,0"/>
+                                                    </StackPanel>
                                                 </StackPanel>
                                             </Border>
-
-                                            <Border Style="{StaticResource QuickActionStyle}"
-                                                    MouseLeftButtonUp="NavReleaseDetained_Click">
-                                                <StackPanel HorizontalAlignment="Center">
-                                                    <Border Width="40" Height="40" CornerRadius="10"
-                                                            Background="#0A2618" Margin="0,0,0,8"
-                                                            HorizontalAlignment="Center">
-                                                        <TextBlock Text="✅" FontSize="17"
+                                            <Border Style="{StaticResource QuickActionStyle}" MouseLeftButtonUp="NavRenew_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Width="38"
+                                                            Height="38"
+                                                            CornerRadius="10"
+                                                            Background="{StaticResource SuccessLightColor}">
+                                                        <TextBlock Text="↻"
+                                                                   FontSize="20"
+                                                                   Foreground="{StaticResource SuccessColor}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <TextBlock Text="Release License" FontSize="11"
-                                                               Foreground="{StaticResource TextPrimary}"
-                                                               HorizontalAlignment="Center"/>
+                                                    <StackPanel Margin="12,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="Renew License"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                                        <TextBlock Text="Renew existing"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   Margin="0,3,0,0"/>
+                                                    </StackPanel>
                                                 </StackPanel>
                                             </Border>
-
-                                            <Border Style="{StaticResource QuickActionStyle}"
-                                                    MouseLeftButtonUp="NavReplace_Click">
-                                                <StackPanel HorizontalAlignment="Center">
-                                                    <Border Width="40" Height="40" CornerRadius="10"
-                                                            Background="#1E1B4B" Margin="0,0,0,8"
-                                                            HorizontalAlignment="Center">
-                                                        <TextBlock Text="🔁" FontSize="17"
+                                            <Border Style="{StaticResource QuickActionStyle}" MouseLeftButtonUp="NavReplace_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Width="38"
+                                                            Height="38"
+                                                            CornerRadius="10"
+                                                            Background="{StaticResource WarningLightColor}">
+                                                        <TextBlock Text="⇄"
+                                                                   FontSize="18"
+                                                                   Foreground="{StaticResource WarningColor}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <TextBlock Text="Replace License" FontSize="11"
-                                                               Foreground="{StaticResource TextPrimary}"
-                                                               HorizontalAlignment="Center"/>
+                                                    <StackPanel Margin="12,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="Replace License"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                                        <TextBlock Text="Lost or damaged"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   Margin="0,3,0,0"/>
+                                                    </StackPanel>
                                                 </StackPanel>
                                             </Border>
-
+                                            <Border Style="{StaticResource QuickActionStyle}" MouseLeftButtonUp="NavDetainLicense_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Width="38"
+                                                            Height="38"
+                                                            CornerRadius="10"
+                                                            Background="{StaticResource DangerLightColor}">
+                                                        <TextBlock Text="!"
+                                                                   FontSize="18"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource DangerColor}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Margin="12,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="Detain License"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                                        <TextBlock Text="Court order"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   Margin="0,3,0,0"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Style="{StaticResource QuickActionStyle}" MouseLeftButtonUp="NavReleaseDetained_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Width="38"
+                                                            Height="38"
+                                                            CornerRadius="10"
+                                                            Background="{StaticResource SuccessLightColor}">
+                                                        <TextBlock Text="✓"
+                                                                   FontSize="18"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource SuccessColor}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Margin="12,0,0,0"
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Text="Release Detained"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                                        <TextBlock Text="Release license"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   Margin="0,3,0,0"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
                                         </UniformGrid>
                                     </StackPanel>
-
-
-                                    <!-- ── Recent Activities ── -->
-                                    <StackPanel x:Name="RecentActivitiesSection" Opacity="0"
+                                    <StackPanel x:Name="RecentActivitiesSection"
+                                                Opacity="0"
                                                 RenderTransformOrigin="0.5,0.5">
                                         <StackPanel.RenderTransform>
                                             <TranslateTransform x:Name="RecentActivitiesRT" Y="24"/>
                                         </StackPanel.RenderTransform>
-
-                                        <TextBlock Text="🕐  Recent Activities" FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,12"/>
-
-                                        <Border Background="{StaticResource BgCard}"
-                                                BorderBrush="{StaticResource BorderDark}" BorderThickness="1"
-                                                CornerRadius="14" Padding="6,8" Margin="0,0,0,24">
-
+                                        <TextBlock Text="RECENT ACTIVITY"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource TextMutedColor}"
+                                                   Margin="0,0,0,6"/>
+                                        <Border Background="{StaticResource SurfaceColor}"
+                                                BorderBrush="{StaticResource BorderColor}"
+                                                BorderThickness="1"
+                                                CornerRadius="14"
+                                                Padding="5"
+                                                Effect="{StaticResource ElevationShadow1}">
                                             <StackPanel>
-
                                                 <Border Style="{StaticResource ActivityItemStyle}">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="42"/>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Border Width="8" Height="8" CornerRadius="4"
-                                                                Background="{StaticResource Success}"
-                                                                VerticalAlignment="Center" Margin="6,0,12,0"/>
-                                                        <StackPanel Grid.Column="1">
-                                                            <TextBlock Text="License #1254 issued successfully"
-                                                                       FontSize="12" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource TextPrimary}"/>
-                                                            <TextBlock Text="Ahmed Ali — Local Driving License"
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource SuccessLightColor}">
+                                                            <TextBlock Text="✓"
+                                                                       Foreground="{StaticResource SuccessColor}"
+                                                                       FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1"
+                                                                    VerticalAlignment="Center">
+                                                            <TextBlock Text="Local license issued"
                                                                        FontSize="11"
-                                                                       Foreground="{StaticResource TextMuted}"
-                                                                       Margin="0,2,0,0"/>
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                                            <TextBlock Text="Application #LDL-1042 — Ahmed K. Al-Rashidi"
+                                                                       FontSize="9"
+                                                                       Foreground="{StaticResource TextMutedColor}"
+                                                                       Margin="0,3,0,0"/>
                                                         </StackPanel>
-                                                        <TextBlock Grid.Column="2" Text="2 min ago"
-                                                                   FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"
-                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="2"
+                                                                   Text="2 min ago"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="12,0,6,0"/>
                                                     </Grid>
                                                 </Border>
-
                                                 <Border Style="{StaticResource ActivityItemStyle}">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="42"/>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Border Width="8" Height="8" CornerRadius="4"
-                                                                Background="{StaticResource Warning}"
-                                                                VerticalAlignment="Center" Margin="6,0,12,0"/>
-                                                        <StackPanel Grid.Column="1">
-                                                            <TextBlock Text="Test appointment scheduled"
-                                                                       FontSize="12" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource TextPrimary}"/>
-                                                            <TextBlock Text="Omar Khaled — Vision Test"
-                                                                       FontSize="11"
-                                                                       Foreground="{StaticResource TextMuted}"
-                                                                       Margin="0,2,0,0"/>
-                                                        </StackPanel>
-                                                        <TextBlock Grid.Column="2" Text="10 min ago"
-                                                                   FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </Grid>
-                                                </Border>
-
-                                                <Border Style="{StaticResource ActivityItemStyle}">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <Border Width="8" Height="8" CornerRadius="4"
-                                                                Background="{StaticResource Danger}"
-                                                                VerticalAlignment="Center" Margin="6,0,12,0"/>
-                                                        <StackPanel Grid.Column="1">
-                                                            <TextBlock Text="License detained — Traffic violation"
-                                                                       FontSize="12" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource TextPrimary}"/>
-                                                            <TextBlock Text="John Smith — License #872"
-                                                                       FontSize="11"
-                                                                       Foreground="{StaticResource TextMuted}"
-                                                                       Margin="0,2,0,0"/>
-                                                        </StackPanel>
-                                                        <TextBlock Grid.Column="2" Text="25 min ago"
-                                                                   FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"
-                                                                   VerticalAlignment="Center"/>
-                                                    </Grid>
-                                                </Border>
-
-                                                <Border Style="{StaticResource ActivityItemStyle}">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <Border Width="8" Height="8" CornerRadius="4"
-                                                                Background="{StaticResource Primary}"
-                                                                VerticalAlignment="Center" Margin="6,0,12,0"/>
-                                                        <StackPanel Grid.Column="1">
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource PrimaryLightColor}">
+                                                            <TextBlock Text="+"
+                                                                       Foreground="{StaticResource PrimaryColor}"
+                                                                       FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1"
+                                                                    VerticalAlignment="Center">
                                                             <TextBlock Text="New application submitted"
-                                                                       FontSize="12" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource TextPrimary}"/>
-                                                            <TextBlock Text="Sara Mohammed — International License"
                                                                        FontSize="11"
-                                                                       Foreground="{StaticResource TextMuted}"
-                                                                       Margin="0,2,0,0"/>
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                                            <TextBlock Text="Application #LDL-1043 — Sara M. Hassan"
+                                                                       FontSize="9"
+                                                                       Foreground="{StaticResource TextMutedColor}"
+                                                                       Margin="0,3,0,0"/>
                                                         </StackPanel>
-                                                        <TextBlock Grid.Column="2" Text="1 hr ago"
-                                                                   FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"
-                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="2"
+                                                                   Text="18 min ago"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="12,0,6,0"/>
                                                     </Grid>
                                                 </Border>
-
                                                 <Border Style="{StaticResource ActivityItemStyle}">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="42"/>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Border Width="8" Height="8" CornerRadius="4"
-                                                                Background="{StaticResource Success}"
-                                                                VerticalAlignment="Center" Margin="6,0,12,0"/>
-                                                        <StackPanel Grid.Column="1">
-                                                            <TextBlock Text="License renewed successfully"
-                                                                       FontSize="12" FontWeight="SemiBold"
-                                                                       Foreground="{StaticResource TextPrimary}"/>
-                                                            <TextBlock Text="Khalid Ibrahim — License #341"
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource WarningLightColor}">
+                                                            <TextBlock Text="↻"
+                                                                       Foreground="{StaticResource WarningColor}"
+                                                                       FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1"
+                                                                    VerticalAlignment="Center">
+                                                            <TextBlock Text="License renewed"
                                                                        FontSize="11"
-                                                                       Foreground="{StaticResource TextMuted}"
-                                                                       Margin="0,2,0,0"/>
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                                            <TextBlock Text="License #DL-000891 — Omar J. Khalil"
+                                                                       FontSize="9"
+                                                                       Foreground="{StaticResource TextMutedColor}"
+                                                                       Margin="0,3,0,0"/>
                                                         </StackPanel>
-                                                        <TextBlock Grid.Column="2" Text="2 hrs ago"
-                                                                   FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"
-                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="2"
+                                                                   Text="45 min ago"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="12,0,6,0"/>
                                                     </Grid>
                                                 </Border>
-
-                                                <Border Padding="12,8" Cursor="Hand">
-                                                    <TextBlock Text="View all activities →" FontSize="11"
-                                                               Foreground="{StaticResource Primary}"
-                                                               HorizontalAlignment="Center"/>
+                                                <Border Style="{StaticResource ActivityItemStyle}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="42"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Width="34"
+                                                                Height="34"
+                                                                CornerRadius="10"
+                                                                Background="{StaticResource DangerLightColor}">
+                                                            <TextBlock Text="!"
+                                                                       Foreground="{StaticResource DangerColor}"
+                                                                       FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <StackPanel Grid.Column="1"
+                                                                    VerticalAlignment="Center">
+                                                            <TextBlock Text="License detained"
+                                                                       FontSize="11"
+                                                                       FontWeight="SemiBold"
+                                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                                            <TextBlock Text="License #DL-000432 — Court order"
+                                                                       FontSize="9"
+                                                                       Foreground="{StaticResource TextMutedColor}"
+                                                                       Margin="0,3,0,0"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="2"
+                                                                   Text="1 hr ago"
+                                                                   FontSize="9"
+                                                                   Foreground="{StaticResource TextMutedColor}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="12,0,6,0"/>
+                                                    </Grid>
                                                 </Border>
-
                                             </StackPanel>
                                         </Border>
+                                        <Border Height="20"/>
                                     </StackPanel>
-
-
-                                    <!-- ── Typewriter ── -->
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                                Margin="0,0,0,16">
-                                        <TextBlock x:Name="TypewriterText" Text="" FontSize="12"
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock x:Name="TypewriterCursor" Text="|" FontSize="12"
-                                                   Foreground="{StaticResource Primary}" Opacity="0"
-                                                   Margin="-1,0,0,0"/>
-                                    </StackPanel>
-
-                                    <!-- ── Footer ── -->
-                                    <Border Height="1" Background="{StaticResource BorderDark}"
-                                            Margin="0,0,0,12"/>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                                Margin="0,0,0,8">
-                                        <TextBlock Text="DVLD System v1.0" FontSize="10"
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="  •  " FontSize="10"
-                                                   Foreground="{StaticResource BorderDark}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Text="© 2025 DVLD" FontSize="10"
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   VerticalAlignment="Center"/>
-                                    </StackPanel>
-
                                 </StackPanel>
                             </ScrollViewer>
-
                         </Grid>
-
                     </Grid>
-
                 </Grid>
-
             </Grid>
-
-
-            <!-- ════════════════════════════════════════════════════════ -->
-            <!-- ═══  ROW 2 — STATUS BAR                                ═══ -->
-            <!-- ════════════════════════════════════════════════════════ -->
-            <Border Grid.Row="2" Background="{StaticResource BgSidebar}"
-                    BorderBrush="{StaticResource BorderDark}" BorderThickness="0,1,0,0"
-                    Padding="14,0">
-                <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="6" Height="6" CornerRadius="3"
-                                Background="{StaticResource Success}" Margin="0,0,6,0"
-                                VerticalAlignment="Center"/>
-                        <TextBlock Text="Connected" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}"
-                                   VerticalAlignment="Center" Margin="0,0,16,0"/>
-                        <TextBlock Text="Database: DVLD_DB" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}"
-                                   VerticalAlignment="Center" Margin="0,0,16,0"/>
-                        <TextBlock Text="User: Admin" FontSize="10"
-                                   Foreground="{StaticResource TextMuted}"
-                                   VerticalAlignment="Center"/>
+            <Border Grid.Row="2"
+                    Background="{StaticResource SurfaceSecondaryColor}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0">
+                <Grid Margin="18,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Ellipse Width="6"
+                                 Height="6"
+                                 Fill="{StaticResource SuccessColor}"
+                                 Margin="0,0,7,0"/>
+                        <TextBlock Text="DVLD Management System"
+                                   FontSize="9"
+                                   Foreground="{StaticResource TextMutedColor}"/>
                     </StackPanel>
-
-                    <TextBlock Text="v1.0.0" FontSize="10"
-                               Foreground="{StaticResource TextMuted}"
-                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
-
-                    <ResizeGrip HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                Width="12" Height="12" Opacity="0.2"/>
+                    <TextBlock Grid.Column="1"
+                               FontSize="9"
+                               Foreground="{StaticResource TextMutedColor}"
+                               VerticalAlignment="Center">
+                        <Run Text="v4.2"/>
+                        <Run Text="  •  "/>
+                        <Run Text="Connected"/>
+                        <Run Text="  •  "/>
+                        <Run Text="Database Online"/>
+                    </TextBlock>
                 </Grid>
             </Border>
-
         </Grid>
     </Border>
 </Window>

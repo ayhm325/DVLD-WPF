@@ -498,18 +498,44 @@ namespace Application.Services
             {
                 LicenseID = l.LicenseID,
                 ApplicationID = l.ApplicationID,
-                ApplicationInfo = l.Application != null ? $"App #{l.ApplicationID}" : null,
+                ApplicationInfo = l.Application != null
+                    ? $"App #{l.ApplicationID}"
+                    : null,
+
                 DriverID = l.DriverID,
                 DriverName = l.Driver?.Person?.FullName,
+
+                Driver = l.Driver == null
+                    ? null
+                    : new DriverDto
+                    {
+                        DriverID = l.Driver.DriverID,
+                        PersonID = l.Driver.PersonID,
+                        FullName = l.Driver.Person?.FullName ?? string.Empty,
+                        NationalNo = l.Driver.Person?.NationalNo ?? string.Empty,
+                        DateOfBirth = l.Driver.Person?.DateOfBirth ?? DateTime.MinValue,
+                        Gender = l.Driver.Person?.Gender ?? Gender.Male,
+                        ImagePath = l.Driver.Person?.ImagePath,
+                        ActiveLicenses = 0,
+                        CreatedByUserID = l.Driver.CreatedByUserID,
+                        CreatedByUserName = l.Driver.CreatedByUser?.UserName ?? string.Empty,
+                        CreatedDate = l.Driver.CreatedDate
+                    },
+
                 LicenseClassID = l.LicenseClass,
                 LicenseClassName = l.LicenseClassInfo?.ClassName,
+
                 IssueDate = l.IssueDate,
                 ExpirationDate = l.ExpirationDate,
+
                 Notes = l.Notes,
                 PaidFees = l.PaidFees,
+
                 IsActive = l.IsActive,
+
                 IssueReason = l.IssueReason,
                 IssueReasonText = ((IssueReason)l.IssueReason).ToString(),
+
                 CreatedByUserID = l.CreatedByUserID,
                 CreatedByUserName = l.CreatedByUser?.UserName ?? "Unknown"
             };

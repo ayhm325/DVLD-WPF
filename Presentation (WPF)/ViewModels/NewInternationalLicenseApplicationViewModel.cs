@@ -64,7 +64,8 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            LocalLicenseId = licenseId;
+            LocalLicenseId = 0;
+            LicenseInfo = null;
 
             var licenseResult = await _internationalService
                 .GetLocalLicenseInfoAsync(licenseId);
@@ -77,6 +78,7 @@ namespace Presentation.ViewModels
                 return;
             }
 
+            LocalLicenseId = licenseId;
             LicenseInfo = licenseResult.Value;
 
 
@@ -121,7 +123,7 @@ namespace Presentation.ViewModels
         }
 
 
-        /// ===============================
+        // ===============================
         // Issue International License
         // ===============================
         [RelayCommand]

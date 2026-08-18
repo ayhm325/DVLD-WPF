@@ -187,18 +187,52 @@ namespace Presentation.ViewModels
             window.ShowDialog();
         }
 
-        [RelayCommand] private async Task ReleaseDetainedLicenseAsync() 
-        { 
-            if (SelectedDetainedLicense == null) 
-                return; 
-            
-            int licenseId = SelectedDetainedLicense.LicenseID; 
-            
-            var window = _serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>(); 
-            await window.LoadAsync(licenseId); 
-            window.Owner = System.Windows.Application.Current.MainWindow; 
-            window.ShowDialog(); 
-            await LoadAsync(); }
+        //[RelayCommand] 
+        //private async Task ReleaseDetainedLicenseAsync() 
+        //{ 
+        //    if (SelectedDetainedLicense == null) 
+        //        return; 
+
+        //    int licenseId = SelectedDetainedLicense.LicenseID; 
+
+        //    var window = _serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>(); 
+        //    await window.LoadAsync(licenseId); 
+        //    window.Owner = System.Windows.Application.Current.MainWindow; 
+        //    window.ShowDialog(); 
+        //    await LoadAsync(); 
+        //}
+
+        [RelayCommand]
+        private async Task ReleaseDetainedLicenseAsync()
+        {
+            if (SelectedDetainedLicense == null)
+                return;
+
+            int licenseId = SelectedDetainedLicense.LicenseID;
+
+            var detainedLicense =await _detainedLicenseService.GetActiveDetainByLicenseIdAsync(licenseId);
+
+            if (detainedLicense == null)
+            {
+                MessageBox.Show(
+                    "This license is not currently detained.",
+                    "Release Detained License",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            var window =
+                _serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
+
+            await window.LoadAsync(licenseId);
+
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
+
+            await LoadAsync();
+        }
 
         [RelayCommand]
         private async Task Detain()

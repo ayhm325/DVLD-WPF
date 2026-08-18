@@ -11,44 +11,36 @@ public class PersonConfiguration
     {
         builder.HasKey(p => p.PersonId);
 
-
         builder.Property(p => p.NationalNo)
             .HasMaxLength(20)
             .IsRequired();
-
 
         builder.Property(p => p.FirstName)
             .HasMaxLength(50)
             .IsRequired();
 
-
         builder.Property(p => p.SecondName)
             .HasMaxLength(50)
             .IsRequired();
 
-
         builder.Property(p => p.ThirdName)
             .HasMaxLength(50);
-
 
         builder.Property(p => p.LastName)
             .HasMaxLength(50)
             .IsRequired();
 
-
         builder.Property(p => p.Address)
             .HasMaxLength(200)
             .IsRequired();
-
 
         builder.Property(p => p.Phone)
             .HasMaxLength(20)
             .IsRequired();
 
-
+        // Unique Index
         builder.HasIndex(p => p.NationalNo)
             .IsUnique();
-
 
         builder.HasOne(p => p.Country)
             .WithMany(c => c.People)

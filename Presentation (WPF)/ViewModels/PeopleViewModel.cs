@@ -23,7 +23,7 @@ namespace Presentation.ViewModels
         [ObservableProperty] private int _peopleCount;
         [ObservableProperty] private string _searchText = string.Empty;
         [ObservableProperty] private string _searchToolTip = "Search...";
-
+        [ObservableProperty] private PersonDto? _selectedPerson;
         [ObservableProperty] private bool _isSearchTextVisible;
         [ObservableProperty] private bool _isGenderComboVisible;
 

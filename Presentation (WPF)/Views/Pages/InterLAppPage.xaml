@@ -9,24 +9,15 @@
       Background="{StaticResource BackgroundColor}">
 
     <Page.Resources>
-        <!-- ألوان الجدول مطابقة للوحة الألوان العامة -->
-        <SolidColorBrush x:Key="AlternatingRowBrush" Color="#111114"/>
-        <SolidColorBrush x:Key="HoverBrush" Color="#1A1A1E"/>
-        <SolidColorBrush x:Key="SelectedRowBg" Color="#042F2E"/>
-
-        <!-- ألوان دلالية للأيقونات -->
-        <SolidColorBrush x:Key="IconOrange" Color="#F59E0B"/>
-        <SolidColorBrush x:Key="IconGreen" Color="#34D399"/>
-
-        <!-- تحويل Boolean إلى نص/رمز -->
+        <!-- ===================== CONVERTER ===================== -->
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- ستايل الجدول -->
+        <!-- ===================== DATA GRID STYLE ===================== -->
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="{StaticResource AlternatingRowBrush}"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource SurfaceSecondaryColor}"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
@@ -34,16 +25,19 @@
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="FontSize" Value="14"/>
         </Style>
 
         <!-- ستايل عناوين الأعمدة -->
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Padding" Value="15,12"/>
             <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
         </Style>
 
         <!-- ستايل الخلايا -->
@@ -52,23 +46,102 @@
             <Setter Property="Padding" Value="15,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource SelectedRowBg}"/>
-                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="{StaticResource SelectionForegroundColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- تسمية الفلتر -->
-        <Style x:Key="FilterLabelStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
+        <!-- ===================== CONTEXT MENU STYLE ===================== -->
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                Effect="{StaticResource PopupShadow}"
+                                SnapsToDevicePixels="True">
+                            <ItemsPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <Style TargetType="MenuItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  Content="{TemplateBinding Icon}"
+                                                  Margin="0,0,10,0"
+                                                  VerticalAlignment="Center"/>
+                                <ContentPresenter Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource PrimaryColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Separator">
+            <Setter Property="Background" Value="{StaticResource BorderColor}"/>
+            <Setter Property="Margin" Value="6,4"/>
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="0.5"
+                                Height="1"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Page.Resources>
 
     <Grid Margin="25">
@@ -79,14 +152,16 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+        <!-- ===================== HEADER ===================== -->
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
             <TextBlock Text="International Driving License Applications " Style="{StaticResource HeaderStyle}"/>
             <TextBlock Text="{Binding Applications.Count, StringFormat='({0})'}" 
-                       Style="{StaticResource HeaderStyle}" Foreground="{StaticResource SecondaryTextColor}" Margin="5,0,0,0"/>
+                       Style="{StaticResource HeaderStyle}" 
+                       Foreground="{StaticResource TextSecondaryColor}" 
+                       Margin="5,0,0,0"/>
         </StackPanel>
 
-        <!-- Filter Bar -->
+        <!-- ===================== FILTER BAR ===================== -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -94,14 +169,19 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Filter by:" Style="{StaticResource FilterLabelStyle}" Margin="0,0,10,0"/>
+                <TextBlock Text="Filter by:" 
+                           Style="{StaticResource LabelStyle}" 
+                           Margin="0,0,10,0"/>
 
                 <ComboBox Width="170"
-                    Margin="0,0,10,0"
-                    ItemsSource="{Binding Filters}"
-                    SelectedItem="{Binding SelectedFilter, Mode=TwoWay}" />
+                          Margin="0,0,10,0"
+                          ItemsSource="{Binding Filters}"
+                          SelectedItem="{Binding SelectedFilter, Mode=TwoWay}" />
 
-                <TextBox Width="180" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                <TextBox Width="180" 
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                         Margin="0,0,10,0" 
+                         VerticalAlignment="Center"/>
             </StackPanel>
 
             <Button Grid.Column="1" Content="+ Issue New" 
@@ -111,7 +191,7 @@
                     HorizontalAlignment="Right"/>
         </Grid>
 
-        <!-- DataGrid Card Container -->
+        <!-- ===================== DATA GRID CARD ===================== -->
         <Border Grid.Row="3" Style="{StaticResource CardStyle}" Padding="0">
             <DataGrid ItemsSource="{Binding Applications}" 
                       SelectedItem="{Binding SelectedApplication}">
@@ -121,7 +201,7 @@
                         <Setter Property="Height" Value="45"/>
 
                         <!-- حفظ الـ ViewModel في Tag -->
-                        <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}"/>
+                        <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType={x:Type Page}}}"/>
 
                         <!-- تفعيل التحديد عند الضغط بالزر الأيمن -->
                         <EventSetter Event="MouseRightButtonDown" Handler="DataGridRow_MouseRightButtonDown"/>
@@ -129,10 +209,10 @@
                         <!-- Context Menu -->
                         <Setter Property="ContextMenu">
                             <Setter.Value>
-                                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-
+                                <ContextMenu>
                                     <MenuItem Header="Show Person Details" 
-                                              Command="{Binding PlacementTarget.Tag.ShowPersonDetailsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                              Command="{Binding PlacementTarget.Tag.ShowPersonDetailsCommand, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
                                         <MenuItem.Icon>
                                             <Path Data="M12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" 
                                                   Fill="{StaticResource PrimaryColor}" Stretch="Uniform" Width="18" Height="18"/>
@@ -140,18 +220,20 @@
                                     </MenuItem>
 
                                     <MenuItem Header="Show License Details" 
-                                              Command="{Binding PlacementTarget.Tag.ShowLicenseDetailsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                              Command="{Binding PlacementTarget.Tag.ShowLicenseDetailsCommand, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
                                         <MenuItem.Icon>
                                             <Path Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" 
-                                                  Fill="{StaticResource IconGreen}" Stretch="Uniform" Width="18" Height="18"/>
+                                                  Fill="{StaticResource SuccessColor}" Stretch="Uniform" Width="18" Height="18"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
 
                                     <MenuItem Header="Show Person License History" 
-                                              Command="{Binding PlacementTarget.Tag.ShowPersonLicenseHistoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                              Command="{Binding PlacementTarget.Tag.ShowPersonLicenseHistoryCommand, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
                                         <MenuItem.Icon>
                                             <Path Data="M13,3A9,9 0 0,0 4,12H1L4.89,15.89L8.89,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.06,19 9.3,18.21 8.08,16.92L6.64,18.36C8.25,20 10.47,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3M12,8V12L15.28,13.94L16.05,12.66L13,10.8V8H12Z" 
-                                                  Fill="{StaticResource IconOrange}" Stretch="Uniform" Width="18" Height="18"/>
+                                                  Fill="{StaticResource WarningColor}" Stretch="Uniform" Width="18" Height="18"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
 
@@ -162,11 +244,10 @@
                         <!-- تفاعلات الصفوف -->
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{StaticResource HoverBrush}"/>
+                                <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{StaticResource SelectedRowBg}"/>
-                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Setter Property="Background" Value="{StaticResource SelectionBackgroundColor}"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -210,7 +291,7 @@
                                 <TextBlock Text="√" 
                                            FontWeight="Bold" 
                                            FontSize="16"
-                                           Foreground="{StaticResource IconGreen}"
+                                           Foreground="{StaticResource SuccessColor}"
                                            VerticalAlignment="Center"
                                            Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}"/>
                             </DataTemplate>

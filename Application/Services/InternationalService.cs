@@ -159,6 +159,8 @@ namespace Application.Services
 
             var license = licenseResult.Value!;
 
+            if (license.LicenseClassID != 3)
+                return Result<int>.Fail("Only class 3 licenses can be issued internationally.");
 
             if (!license.IsActive)
                 return Result<int>.Fail("License is not active.");
@@ -245,7 +247,7 @@ namespace Application.Services
                 LicenseId = license.LicenseID,
                 DriverId = license.DriverID,
                 LicenseClass = license.LicenseClassName,
-                PersonID = license.Driver.PersonID,
+                PersonID = license.Driver?.PersonID ?? 0,
                 FullName = license.Driver?.FullName ?? string.Empty,
                 NationalNo = license.Driver?.NationalNo ?? string.Empty,
 

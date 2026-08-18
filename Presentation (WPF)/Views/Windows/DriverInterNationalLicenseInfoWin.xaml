@@ -9,19 +9,15 @@
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
+        <!-- تدرج الهيدر الموحد (فاتح) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
-
-        <!-- ألوان دلالية مطابقة للستايل العام -->
-        <SolidColorBrush x:Key="ActiveGreenText" Color="#34D399"/>
-        <SolidColorBrush x:Key="InactiveRedText" Color="#F87171"/>
 
         <!-- نمط حدود المجموعات الفرعية -->
         <Style x:Key="SubGroupBorderStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource InputBackground}"/>
+            <Setter Property="Background" Value="{StaticResource InputBackgroundColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
@@ -32,7 +28,7 @@
         <!-- نمط لقيم الحقول -->
         <Style x:Key="ValueTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Margin" Value="0,4,0,10"/>
@@ -46,6 +42,19 @@
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="Padding" Value="5,0"/>
         </Style>
+
+        <!-- نمط البادج (ID Badge) -->
+        <Style x:Key="IdBadgeStyle" TargetType="Border">
+            <Setter Property="MinWidth" Value="40"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryLightColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="0,4,0,10"/>
+            <Setter Property="Padding" Value="8,0"/>
+        </Style>
     </Window.Resources>
 
     <!-- الحاوية الرئيسية -->
@@ -53,11 +62,8 @@
             BorderBrush="{StaticResource BorderColor}"
             BorderThickness="1"
             CornerRadius="16"
-            Margin="15">
-
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
-        </Border.Effect>
+            Margin="15"
+            Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -69,7 +75,9 @@
             <!-- ================= الهيدر الموحد ================= -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}"
                     CornerRadius="16,16,0,0"
-                    Padding="25,18,25,18">
+                    Padding="25,18,25,18"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="38" Height="38" CornerRadius="10"
@@ -84,12 +92,12 @@
                         </Border>
                         <TextBlock Text="Driver International License Info"
                                    FontSize="18" FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextColor}"
+                                   Foreground="{StaticResource TextPrimaryColor}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- شارة الـ ID -->
-                    <Border Background="#042F2E"
+                    <Border Background="{StaticResource PrimaryLightColor}"
                             BorderBrush="{StaticResource PrimaryColor}"
                             BorderThickness="1"
                             CornerRadius="6"
@@ -152,12 +160,7 @@
 
                                 <!-- 5. Driver ID -->
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Driver ID" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <Border Grid.Row="4" Grid.Column="1"
-                                        MinWidth="40" Height="24" CornerRadius="6"
-                                        Background="#042F2E"
-                                        BorderBrush="{StaticResource PrimaryColor}"
-                                        BorderThickness="1"
-                                        HorizontalAlignment="Left" Margin="0,4,0,10" Padding="8,0">
+                                <Border Grid.Row="4" Grid.Column="1" Style="{StaticResource IdBadgeStyle}">
                                     <TextBlock Text="{Binding LicenseData.DriverID}"
                                                Foreground="{StaticResource PrimaryColor}"
                                                FontWeight="Bold" FontSize="12"
@@ -186,12 +189,7 @@
 
                                 <!-- 6. International License ID -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Int. License ID" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <Border Grid.Row="0" Grid.Column="1"
-                                        MinWidth="40" Height="24" CornerRadius="6"
-                                        Background="#042F2E"
-                                        BorderBrush="{StaticResource PrimaryColor}"
-                                        BorderThickness="1"
-                                        HorizontalAlignment="Left" Margin="0,4,0,10" Padding="8,0">
+                                <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource IdBadgeStyle}">
                                     <TextBlock Text="{Binding LicenseData.InternationalLicenseID}"
                                                Foreground="{StaticResource PrimaryColor}"
                                                FontWeight="Bold" FontSize="12"
@@ -207,7 +205,7 @@
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Application ID" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
                                 <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseData.ApplicationID}"
                                            Style="{StaticResource ValueTextStyle}"
-                                           Foreground="{StaticResource SecondaryTextColor}"
+                                           Foreground="{StaticResource TextSecondaryColor}"
                                            FontStyle="Italic" x:Name="txtApplicationId"/>
 
                                 <!-- 9. Issue Date -->
@@ -236,16 +234,16 @@
                                     <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
-                                                <Setter Property="Fill" Value="{StaticResource SecondaryTextColor}"/>
+                                                <Setter Property="Fill" Value="{StaticResource TextSecondaryColor}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding LicenseData.IsActive}" Value="True">
-                                                        <Setter Property="Fill" Value="{StaticResource ActiveGreenText}"/>
+                                                        <Setter Property="Fill" Value="{StaticResource SuccessColor}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Ellipse.Style>
                                     </Ellipse>
-                                    <TextBlock Text="{Binding LicenseData.IsActive}" FontWeight="Bold" Foreground="{StaticResource TextColor}" x:Name="txtIsActive"/>
+                                    <TextBlock Text="{Binding LicenseData.IsActive}" FontWeight="Bold" Foreground="{StaticResource TextPrimaryColor}" x:Name="txtIsActive"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -258,9 +256,9 @@
                         Width="180"
                         Height="240"
                         CornerRadius="12"
-                        Background="{StaticResource InputBackground}"
-                        BorderBrush="{StaticResource PrimaryColor}"
-                        BorderThickness="2"
+                        Background="{StaticResource InputBackgroundColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
                         VerticalAlignment="Top"
                         HorizontalAlignment="Center">
 
@@ -268,7 +266,7 @@
                         <TextBlock Text="NO PHOTO"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
-                                   Foreground="{StaticResource SecondaryTextColor}"
+                                   Foreground="{StaticResource TextSecondaryColor}"
                                    FontWeight="Bold">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
@@ -308,10 +306,12 @@
             </Grid>
 
             <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}"
+            <Border Grid.Row="2"
+                    Background="{StaticResource BackgroundColor}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0"
                     Padding="20,15,25,20"
-                    CornerRadius="0,0,16,16"
-                    Margin="-1,0,-1,-1">
+                    CornerRadius="0,0,16,16">
                 <Button Content="Close"
                         Width="120"
                         HorizontalAlignment="Right"

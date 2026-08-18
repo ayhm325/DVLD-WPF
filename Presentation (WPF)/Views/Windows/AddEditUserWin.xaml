@@ -1,425 +1,884 @@
 ﻿<Window x:Class="Presentation.Views.Windows.AddEditUserWin"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:controls="clr-namespace:Presentation.Views.Controls"
-      xmlns:helpers="clr-namespace:Presentation.Helpers"
-      mc:Ignorable="d"
-      Title="Add/Edit User"
-      WindowStartupLocation="CenterScreen"     
-      Background="Transparent"
-      ResizeMode="NoResize"
-      Height="750"
-      Width="950">
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:controls="clr-namespace:Presentation.Views.Controls"
+        xmlns:helpers="clr-namespace:Presentation.Helpers"
+        mc:Ignorable="d"
+
+        Title="Add/Edit User"
+        Height="750"
+        Width="950"
+
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+
+        Background="Transparent"
+        FontFamily="Segoe UI">
+
+    <!-- ========================================================= -->
+    <!-- WINDOW RESOURCES                                           -->
+    <!-- ========================================================= -->
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
-        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+
+        <!-- ===================================================== -->
+        <!-- Window Header                                          -->
+        <!-- ===================================================== -->
+
+        <LinearGradientBrush x:Key="WindowHeaderGradient"
+                             StartPoint="0,0"
+                             EndPoint="1,0">
+
+            <GradientStop Color="#FFFFFF"
+                          Offset="0"/>
+
+            <GradientStop Color="#F8FAFC"
+                          Offset="1"/>
+
         </LinearGradientBrush>
 
-        <!-- لون أخضر زمردي للزر (Accent) مع متغيرات -->
-        <SolidColorBrush x:Key="AccentColor" Color="#10B981"/>
-        <SolidColorBrush x:Key="AccentHoverColor" Color="#34D399"/>
 
-        <!-- ستايل زر الإغلاق -->
-        <Style x:Key="CloseButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Cursor" Value="Hand"/>
+        <!-- ===================================================== -->
+        <!-- Close Button                                           -->
+        <!-- ===================================================== -->
+
+        <Style x:Key="WindowCloseButtonStyle"
+               TargetType="Button">
+
+            <Setter Property="Width"
+                    Value="34"/>
+
+            <Setter Property="Height"
+                    Value="34"/>
+
+            <Setter Property="Background"
+                    Value="Transparent"/>
+
+            <Setter Property="Foreground"
+                    Value="{StaticResource TextMutedColor}"/>
+
+            <Setter Property="BorderThickness"
+                    Value="0"/>
+
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+
             <Setter Property="Template">
+
                 <Setter.Value>
+
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                        <Border x:Name="CloseBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="8">
+
+                            <ContentPresenter
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+
                         </Border>
+
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
-                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+
+                                <Setter TargetName="CloseBorder"
+                                        Property="Background"
+                                        Value="{StaticResource DangerLightColor}"/>
+
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource DangerColor}"/>
+
                             </Trigger>
+
+                            <Trigger Property="IsPressed"
+                                     Value="True">
+
+                                <Setter TargetName="CloseBorder"
+                                        Property="Background"
+                                        Value="#FEE2E2"/>
+
+                            </Trigger>
+
                         </ControlTemplate.Triggers>
+
                     </ControlTemplate>
+
                 </Setter.Value>
+
             </Setter>
+
         </Style>
 
-        <!-- ستايل زر الحفظ (Accent Emerald) بقالب مستقل -->
-        <Style x:Key="AccentButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10" Padding="20,0">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverColor}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.8"/>
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98" CenterX="0.5" CenterY="0.5"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+
+        <!-- ===================================================== -->
+        <!-- Accent Button                                          -->
+        <!-- ===================================================== -->
+
+        <Style x:Key="AccentButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource PrimaryButtonStyle}">
+
+            <Setter Property="Background"
+                    Value="{StaticResource PrimaryColor}"/>
+
+            <Setter Property="Foreground"
+                    Value="White"/>
+
         </Style>
 
-        <!-- ستايل زر إظهار/إخفاء كلمة المرور -->
-        <Style x:Key="EyeButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="38"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="0,8,8,0">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1A1A1E"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+
+        <!-- ===================================================== -->
+        <!-- Next Button                                             -->
+        <!-- ===================================================== -->
+
+        <Style x:Key="NextButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource PrimaryButtonStyle}">
+
+            <Setter Property="Height"
+                    Value="38"/>
+
+            <Setter Property="FontSize"
+                    Value="13"/>
+
+            <Setter Property="Padding"
+                    Value="18,0"/>
+
         </Style>
 
-        <!-- عدّل ستايل NextButtonStyle -->
-        <Style x:Key="NextButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Height" Value="38"/>
+
+        <!-- ===================================================== -->
+        <!-- Eye Button                                              -->
+        <!-- ===================================================== -->
+
+        <Style x:Key="EyeButtonStyle"
+               TargetType="Button">
+
+            <Setter Property="Width"
+                    Value="34"/>
+
+            <Setter Property="Height"
+                    Value="36"/>
+
+            <Setter Property="Background"
+                    Value="Transparent"/>
+
+            <Setter Property="BorderThickness"
+                    Value="0"/>
+
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+
             <Setter Property="Template">
+
                 <Setter.Value>
+
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" 
-                        Background="{TemplateBinding Background}" 
-                        CornerRadius="10" 
-                        Padding="18,0"
-                        Opacity="{TemplateBinding Opacity}">
-                            <StackPanel Orientation="Horizontal" 
-                                HorizontalAlignment="Center" 
-                                VerticalAlignment="Center">
-                                <!-- أضف Foreground="{TemplateBinding Foreground}" هنا -->
-                                <TextBlock Text="Next" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{TemplateBinding Foreground}"/>
-                                <TextBlock Text="&#x276F;" FontSize="16" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>
-                            </StackPanel>
+
+                        <Border x:Name="EyeBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="0,8,8,0">
+
+                            <ContentPresenter
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+
                         </Border>
+
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverColor}"/>
+
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+
+                                <Setter TargetName="EyeBorder"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.85"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#374151"/>
-                                <Setter Property="Foreground" Value="#6B7280"/>
-                                <Setter Property="Opacity" Value="0.6"/>
-                                <Setter Property="Cursor" Value="No"/>
-                            </Trigger>
+
                         </ControlTemplate.Triggers>
+
                     </ControlTemplate>
+
                 </Setter.Value>
+
             </Setter>
+
         </Style>
+
+
+        <!-- ===================================================== -->
+        <!-- Tab Header                                             -->
+        <!-- ===================================================== -->
+
+        <Style x:Key="UserTabItemStyle"
+               TargetType="TabItem"
+               BasedOn="{StaticResource TabItemStyle}">
+
+            <Setter Property="FontSize"
+                    Value="14"/>
+
+        </Style>
+
+
+        <!-- ===================================================== -->
+        <!-- Login Label                                            -->
+        <!-- ===================================================== -->
+
+        <Style x:Key="LoginLabelStyle"
+               TargetType="Label">
+
+            <Setter Property="Foreground"
+                    Value="{StaticResource TextSecondaryColor}"/>
+
+            <Setter Property="FontSize"
+                    Value="13"/>
+
+            <Setter Property="FontWeight"
+                    Value="SemiBold"/>
+
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+
+        </Style>
+
+
+        <!-- ===================================================== -->
+        <!-- Login Card                                             -->
+        <!-- ===================================================== -->
+
+        <Style x:Key="LoginCardStyle"
+               TargetType="Border"
+               BasedOn="{StaticResource CardStyle}">
+
+            <Setter Property="Padding"
+                    Value="25"/>
+
+            <Setter Property="Margin"
+                    Value="0,5,0,10"/>
+
+        </Style>
+
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
-    <Border Background="{StaticResource BackgroundColor}" 
-            BorderBrush="{StaticResource BorderColor}" 
-            BorderThickness="1" 
-            CornerRadius="16" 
-            Margin="15">
+
+    <!-- ========================================================= -->
+    <!-- MAIN WINDOW                                               -->
+    <!-- ========================================================= -->
+
+    <Border Margin="10"
+            Background="{StaticResource BackgroundColor}"
+            BorderBrush="{StaticResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="16"
+            SnapsToDevicePixels="True">
 
         <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+
+            <DropShadowEffect
+                Color="#000000"
+                Direction="270"
+                ShadowDepth="0"
+                BlurRadius="24"
+                Opacity="0.16"/>
+
         </Border.Effect>
 
+
         <Grid>
+
+            <!-- ================================================= -->
+            <!-- ROW DEFINITIONS                                    -->
+            <!-- ================================================= -->
+
             <Grid.RowDefinitions>
+
                 <RowDefinition Height="Auto"/>
-                <!-- Header -->
+
                 <RowDefinition Height="*"/>
-                <!-- Tabs Content -->
+
                 <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
+
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر الموحد ================= -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18">
+
+            <!-- ================================================= -->
+            <!-- HEADER                                             -->
+            <!-- ================================================= -->
+
+            <Border Grid.Row="0"
+                    Background="{StaticResource WindowHeaderGradient}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1"
+                    CornerRadius="16,16,0,0"
+                    Padding="24,18">
+
                 <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="38" Height="38" CornerRadius="10" 
-                                Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
-                                Margin="0,0,14,0"
-                                Padding="8"
+
+                    <Grid.ColumnDefinitions>
+
+                        <ColumnDefinition Width="*"/>
+
+                        <ColumnDefinition Width="Auto"/>
+
+                    </Grid.ColumnDefinitions>
+
+
+                    <!-- HEADER CONTENT -->
+
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
                                 VerticalAlignment="Center">
-                            <Path Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" 
-                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
-                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+
+
+                        <!-- ICON -->
+
+                        <Border Width="42"
+                                Height="42"
+                                CornerRadius="11"
+                                Background="{StaticResource PrimaryLightColor}"
+                                BorderBrush="#DBEAFE"
+                                BorderThickness="1"
+                                Margin="0,0,14,0">
+
+                            <Path
+                                Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"
+                                Stroke="{StaticResource PrimaryColor}"
+                                StrokeThickness="1.5"
+                                Fill="Transparent"
+                                Stretch="Uniform"
+                                Width="21"
+                                Height="21"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+
                         </Border>
+
+
+                        <!-- TITLE -->
+
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="User Information Details"
-                                       FontSize="18" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextColor}"/>
-                            <TextBlock Text="Review or update the user profile details below"
-                                       FontSize="12" Foreground="{StaticResource SecondaryTextColor}" Margin="0,3,0,0"/>
+
+                            <TextBlock
+                                Text="User Information Details"
+                                FontSize="19"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextColor}"/>
+
+                            <TextBlock
+                                Text="Review or update the user profile details below"
+                                FontSize="12"
+                                Foreground="{StaticResource TextSecondaryColor}"
+                                Margin="0,3,0,0"/>
+
                         </StackPanel>
+
                     </StackPanel>
 
 
+                    <!-- CLOSE -->
+
+                    <Button Grid.Column="1"
+                            Style="{StaticResource WindowCloseButtonStyle}"
+                            Click="CloseButton_Click"
+                            ToolTip="Close">
+
+                        <TextBlock
+                            Text="×"
+                            FontSize="24"
+                            FontWeight="Light"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"/>
+
+                    </Button>
+
                 </Grid>
+
             </Border>
 
-            <!-- ================= المحتوى (تبويبات) ================= -->
-            <ScrollViewer Grid.Row="1" 
+
+            <!-- ================================================= -->
+            <!-- CONTENT                                             -->
+            <!-- ================================================= -->
+
+            <ScrollViewer Grid.Row="1"
+                          Margin="20,15,20,15"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Margin="20,15,20,20">
+                          CanContentScroll="True">
 
-                <TabControl x:Name="MainTabControl" Background="Transparent" 
+                <TabControl x:Name="MainTabControl"
+                            Background="Transparent"
                             BorderThickness="0"
                             SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
-                    <!-- Tab 1: Personal & Filter -->
-                    <TabItem Header="Personal &amp; Filter" 
-                             Style="{StaticResource TabItemStyle}" 
-                             FontSize="14">
 
-                        <StackPanel>
-                            <controls:Filter Margin="0,0,0,15"/>
-                            <controls:InformationPerson Person="{Binding Person}" />
+                    <!-- ========================================= -->
+                    <!-- TAB 1                                       -->
+                    <!-- ========================================= -->
 
-                            <!-- زر Next -->
+                    <TabItem Header="Personal &amp; Filter"
+                             Style="{StaticResource UserTabItemStyle}">
+
+                        <StackPanel Margin="0,15,0,5">
+
+
+                            <!-- FILTER -->
+
+                            <controls:Filter
+                                Margin="0,0,0,15"/>
+
+
+                            <!-- PERSON INFORMATION -->
+
+                            <controls:InformationPerson
+                                Person="{Binding Person}"/>
+
+
+                            <!-- NEXT -->
+
                             <Grid Margin="0,20,0,0">
-                                <Button Style="{StaticResource NextButtonStyle}"
-                                        HorizontalAlignment="Right"
-                                        Command="{Binding GoToNextTabCommand}"/>
+
+                                <Button
+                                    Style="{StaticResource NextButtonStyle}"
+                                    HorizontalAlignment="Right"
+                                    Command="{Binding GoToNextTabCommand}">
+
+                                    <StackPanel
+                                        Orientation="Horizontal">
+
+                                        <TextBlock
+                                            Text="Next"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,8,0"/>
+
+                                        <TextBlock
+                                            Text="›"
+                                            FontSize="20"
+                                            VerticalAlignment="Center"/>
+
+                                    </StackPanel>
+
+                                </Button>
+
                             </Grid>
+
                         </StackPanel>
 
                     </TabItem>
 
-                    <!-- Tab 2: Login Information -->
-                    <TabItem Header="Login Information" 
-                             Style="{StaticResource TabItemStyle}" 
-                             FontSize="14" IsEnabled="{Binding CanGoToNextTab}">
 
-                        <Border Style="{StaticResource CardStyle}" Padding="25">
+                    <!-- ========================================= -->
+                    <!-- TAB 2                                       -->
+                    <!-- ========================================= -->
+
+                    <TabItem Header="Login Information"
+                             Style="{StaticResource UserTabItemStyle}"
+                             IsEnabled="{Binding CanGoToNextTab}">
+
+
+                        <Border Style="{StaticResource LoginCardStyle}">
+
                             <StackPanel>
 
-                                <TextBlock Text="Login Information"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource PrimaryColor}"
-                                           Margin="0,0,0,20"/>
+
+                                <!-- SECTION TITLE -->
+
+                                <StackPanel Margin="0,0,0,22">
+
+                                    <TextBlock
+                                        Text="Login Information"
+                                        FontSize="17"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextColor}"/>
+
+                                    <TextBlock
+                                        Text="Configure the user's login credentials and account status."
+                                        FontSize="12"
+                                        Foreground="{StaticResource TextMutedColor}"
+                                        Margin="0,4,0,0"/>
+
+                                </StackPanel>
+
+
+                                <!-- ================================= -->
+                                <!-- LOGIN GRID                          -->
+                                <!-- ================================= -->
 
                                 <Grid>
-                                    <Grid.Resources>
-                                        <!-- تنسيق التسميات -->
-                                        <Style TargetType="Label">
-                                            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
-                                            <Setter Property="FontSize" Value="13"/>
-                                            <Setter Property="VerticalAlignment" Value="Center"/>
-                                        </Style>
-                                    </Grid.Resources>
 
                                     <Grid.ColumnDefinitions>
+
                                         <ColumnDefinition Width="150"/>
+
                                         <ColumnDefinition Width="*"/>
+
                                     </Grid.ColumnDefinitions>
 
+
                                     <Grid.RowDefinitions>
+
                                         <RowDefinition Height="Auto"/>
+
                                         <RowDefinition Height="Auto"/>
+
                                         <RowDefinition Height="Auto"/>
+
                                         <RowDefinition Height="Auto"/>
+
                                         <RowDefinition Height="Auto"/>
+
                                         <RowDefinition Height="Auto"/>
+
                                     </Grid.RowDefinitions>
 
-                                    <!-- User ID -->
-                                    <Label Content="User ID:" Grid.Row="0"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1"
-                                               Text="{Binding UserIdDisplay, TargetNullValue='???'}"
-                                               VerticalAlignment="Center"
-                                               Margin="10,0"
-                                               Foreground="{StaticResource SecondaryTextColor}"/>
 
-                                    <!-- User Name -->
-                                    <Label Grid.Row="1" Content="User Name:"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1"
-                                             Width="300" Margin="0,5"
-                                             HorizontalAlignment="Left"
-                                             Text="{Binding UserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <!-- USER ID -->
 
-                                    <!-- Validation Message -->
-                                    <TextBlock Grid.Row="2" Grid.Column="1"
-                                               Text="{Binding UserNameValidationMessage}"
-                                               Foreground="{Binding UserNameValidationColor}"
-                                               FontSize="11"
-                                               Margin="10,0,0,5"
-                                               HorizontalAlignment="Left"
-                                               VerticalAlignment="Top"
-                                               TextWrapping="Wrap"/>
+                                    <Label
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        Content="User ID:"
+                                        Style="{StaticResource LoginLabelStyle}"/>
 
-                                    <!-- Password -->
-                                    <Label Grid.Row="3" Content="Password:"
-                                           Visibility="{Binding PasswordVisibility}" />
 
-                                    <Grid Grid.Row="3" Grid.Column="1"
-                                          Width="300" Margin="0,5"
-                                          HorizontalAlignment="Left"
-                                          Visibility="{Binding PasswordVisibility}">
+                                    <TextBlock
+                                        Grid.Row="0"
+                                        Grid.Column="1"
+                                        Text="{Binding UserIdDisplay, TargetNullValue='???'}"
+                                        VerticalAlignment="Center"
+                                        Margin="10,0"
+                                        Foreground="{StaticResource TextSecondaryColor}"
+                                        FontSize="14"/>
 
-                                        <PasswordBox helpers:PasswordBoxHelper.Attach="True"
-                                                     helpers:PasswordBoxHelper.Password="{Binding Password, Mode=TwoWay}"
-                                                     Padding="10,0,30,0">
+
+                                    <!-- USER NAME -->
+
+                                    <Label
+                                        Grid.Row="1"
+                                        Grid.Column="0"
+                                        Content="User Name:"
+                                        Style="{StaticResource LoginLabelStyle}"/>
+
+
+                                    <TextBox
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Width="300"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        Text="{Binding UserName,
+                                                       Mode=TwoWay,
+                                                       UpdateSourceTrigger=PropertyChanged}"/>
+
+
+                                    <!-- USERNAME VALIDATION -->
+
+                                    <TextBlock
+                                        Grid.Row="2"
+                                        Grid.Column="1"
+                                        Text="{Binding UserNameValidationMessage}"
+                                        Foreground="{Binding UserNameValidationColor}"
+                                        FontSize="11"
+                                        Margin="10,0,0,5"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        TextWrapping="Wrap"/>
+
+
+                                    <!-- PASSWORD LABEL -->
+
+                                    <Label
+                                        Grid.Row="3"
+                                        Grid.Column="0"
+                                        Content="Password:"
+                                        Style="{StaticResource LoginLabelStyle}"
+                                        Visibility="{Binding PasswordVisibility}"/>
+
+
+                                    <!-- PASSWORD -->
+
+                                    <Grid
+                                        Grid.Row="3"
+                                        Grid.Column="1"
+                                        Width="300"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        Visibility="{Binding PasswordVisibility}">
+
+
+                                        <!-- HIDDEN PASSWORD -->
+
+                                        <PasswordBox
+                                            helpers:PasswordBoxHelper.Attach="True"
+                                            helpers:PasswordBoxHelper.Password="{Binding Password,
+                                                                                          Mode=TwoWay}"
+                                            Padding="10,0,35,0">
+
                                             <PasswordBox.Style>
-                                                <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
+
+                                                <Style
+                                                    TargetType="PasswordBox"
+                                                    BasedOn="{StaticResource {x:Type PasswordBox}}">
+
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsPasswordVisible}" Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
+
+                                                        <DataTrigger
+                                                            Binding="{Binding IsPasswordVisible}"
+                                                            Value="True">
+
+                                                            <Setter
+                                                                Property="Visibility"
+                                                                Value="Collapsed"/>
+
                                                         </DataTrigger>
+
                                                     </Style.Triggers>
+
                                                 </Style>
+
                                             </PasswordBox.Style>
+
                                         </PasswordBox>
 
-                                        <TextBox Text="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Padding="10,0,30,0" VerticalContentAlignment="Center">
+
+                                        <!-- VISIBLE PASSWORD -->
+
+                                        <TextBox
+                                            Text="{Binding Password,
+                                                           Mode=TwoWay,
+                                                           UpdateSourceTrigger=PropertyChanged}"
+                                            Padding="10,0,35,0"
+                                            VerticalContentAlignment="Center">
+
                                             <TextBox.Style>
-                                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+
+                                                <Style
+                                                    TargetType="TextBox"
+                                                    BasedOn="{StaticResource {x:Type TextBox}}">
+
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsPasswordVisible}" Value="False">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
+
+                                                        <DataTrigger
+                                                            Binding="{Binding IsPasswordVisible}"
+                                                            Value="False">
+
+                                                            <Setter
+                                                                Property="Visibility"
+                                                                Value="Collapsed"/>
+
                                                         </DataTrigger>
+
                                                     </Style.Triggers>
+
                                                 </Style>
+
                                             </TextBox.Style>
+
                                         </TextBox>
 
-                                        <Button Style="{StaticResource EyeButtonStyle}"
-                                                HorizontalAlignment="Right"
-                                                Command="{Binding TogglePasswordVisibilityCommand}">
-                                            <TextBlock Text="👁️" FontSize="14" 
-                                                       Foreground="{StaticResource PrimaryColor}" 
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                        <!-- EYE -->
+
+                                        <Button
+                                            Style="{StaticResource EyeButtonStyle}"
+                                            HorizontalAlignment="Right"
+                                            Command="{Binding TogglePasswordVisibilityCommand}">
+
+                                            <TextBlock
+                                                Text="👁"
+                                                FontSize="15"
+                                                Foreground="{StaticResource PrimaryColor}"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+
                                         </Button>
 
                                     </Grid>
 
-                                    <!-- Confirm Password -->
-                                    <Label Grid.Row="4" Content="Confirm Password:"
-                                           Visibility="{Binding ConfirmPasswordVisibility}" />
 
-                                    <Grid Grid.Row="4" Grid.Column="1"
-                                          Width="300" Margin="0,5"
-                                          HorizontalAlignment="Left"
-                                          Visibility="{Binding ConfirmPasswordVisibility}">
+                                    <!-- CONFIRM PASSWORD LABEL -->
 
-                                        <PasswordBox helpers:PasswordBoxHelper.Attach="True"
-                                                     helpers:PasswordBoxHelper.Password="{Binding ConfirmPassword, Mode=TwoWay}"
-                                                     Padding="10,0,30,0">
+                                    <Label
+                                        Grid.Row="4"
+                                        Grid.Column="0"
+                                        Content="Confirm Password:"
+                                        Style="{StaticResource LoginLabelStyle}"
+                                        Visibility="{Binding ConfirmPasswordVisibility}"/>
+
+
+                                    <!-- CONFIRM PASSWORD -->
+
+                                    <Grid
+                                        Grid.Row="4"
+                                        Grid.Column="1"
+                                        Width="300"
+                                        Margin="0,5"
+                                        HorizontalAlignment="Left"
+                                        Visibility="{Binding ConfirmPasswordVisibility}">
+
+
+                                        <!-- HIDDEN CONFIRM -->
+
+                                        <PasswordBox
+                                            helpers:PasswordBoxHelper.Attach="True"
+                                            helpers:PasswordBoxHelper.Password="{Binding ConfirmPassword,
+                                                                                          Mode=TwoWay}"
+                                            Padding="10,0,35,0">
+
                                             <PasswordBox.Style>
-                                                <Style TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
+
+                                                <Style
+                                                    TargetType="PasswordBox"
+                                                    BasedOn="{StaticResource {x:Type PasswordBox}}">
+
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsConfirmPasswordVisible}" Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
+
+                                                        <DataTrigger
+                                                            Binding="{Binding IsConfirmPasswordVisible}"
+                                                            Value="True">
+
+                                                            <Setter
+                                                                Property="Visibility"
+                                                                Value="Collapsed"/>
+
                                                         </DataTrigger>
+
                                                     </Style.Triggers>
+
                                                 </Style>
+
                                             </PasswordBox.Style>
+
                                         </PasswordBox>
 
-                                        <TextBox Text="{Binding ConfirmPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Padding="10,0,30,0" VerticalContentAlignment="Center">
+
+                                        <!-- VISIBLE CONFIRM -->
+
+                                        <TextBox
+                                            Text="{Binding ConfirmPassword,
+                                                           Mode=TwoWay,
+                                                           UpdateSourceTrigger=PropertyChanged}"
+                                            Padding="10,0,35,0"
+                                            VerticalContentAlignment="Center">
+
                                             <TextBox.Style>
-                                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+
+                                                <Style
+                                                    TargetType="TextBox"
+                                                    BasedOn="{StaticResource {x:Type TextBox}}">
+
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsConfirmPasswordVisible}" Value="False">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
+
+                                                        <DataTrigger
+                                                            Binding="{Binding IsConfirmPasswordVisible}"
+                                                            Value="False">
+
+                                                            <Setter
+                                                                Property="Visibility"
+                                                                Value="Collapsed"/>
+
                                                         </DataTrigger>
+
                                                     </Style.Triggers>
+
                                                 </Style>
+
                                             </TextBox.Style>
+
                                         </TextBox>
 
-                                        <Button Style="{StaticResource EyeButtonStyle}"
-                                                HorizontalAlignment="Right"
-                                                Command="{Binding ToggleConfirmPasswordVisibilityCommand}">
-                                            <TextBlock Text="👁️" FontSize="14" 
-                                                       Foreground="{StaticResource PrimaryColor}" 
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                        <!-- EYE -->
+
+                                        <Button
+                                            Style="{StaticResource EyeButtonStyle}"
+                                            HorizontalAlignment="Right"
+                                            Command="{Binding ToggleConfirmPasswordVisibilityCommand}">
+
+                                            <TextBlock
+                                                Text="👁"
+                                                FontSize="15"
+                                                Foreground="{StaticResource PrimaryColor}"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+
                                         </Button>
 
                                     </Grid>
 
-                                    <!-- Active -->
-                                    <CheckBox Grid.Row="5" Grid.Column="1"
-                                              Content="Is Active"
-                                              IsChecked="{Binding IsActive}"
-                                              Margin="0,10,0,0"/>
+
+                                    <!-- ACTIVE -->
+
+                                    <CheckBox
+                                        Grid.Row="5"
+                                        Grid.Column="1"
+                                        Content="Is Active"
+                                        IsChecked="{Binding IsActive}"
+                                        Margin="0,12,0,0"/>
 
                                 </Grid>
 
                             </StackPanel>
+
                         </Border>
 
                     </TabItem>
+
                 </TabControl>
 
             </ScrollViewer>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
-                    Padding="20,15,25,20" 
-                    CornerRadius="0,0,16,16"
-                    Margin="-1,0,-1,-1">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 
-                    <Button Content="Close" 
-                            Style="{StaticResource SecondaryButtonStyle}" 
-                            Click="CloseButton_Click" 
-                            Width="120"
-                            Margin="0,0,15,0"/>
+            <!-- ================================================= -->
+            <!-- FOOTER                                             -->
+            <!-- ================================================= -->
 
-                    <Button Content="Save"
-                            Style="{StaticResource AccentButtonStyle}"
-                            Width="120"
-                            Command="{Binding SaveUserCommand}" />
+            <Border
+                Grid.Row="2"
+                Background="{StaticResource SurfaceColor}"
+                BorderBrush="{StaticResource BorderColor}"
+                BorderThickness="0,1,0,0"
+                Padding="20,14,25,18"
+                CornerRadius="0,0,16,16">
+
+
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+
+
+                    <!-- CLOSE -->
+
+                    <Button
+                        Content="Close"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="CloseButton_Click"
+                        Width="120"
+                        Margin="0,0,12,0"/>
+
+
+                    <!-- SAVE -->
+
+                    <Button
+                        Content="Save"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Width="120"
+                        Command="{Binding SaveUserCommand}"/>
 
                 </StackPanel>
+
             </Border>
 
         </Grid>
+
     </Border>
+
 </Window>

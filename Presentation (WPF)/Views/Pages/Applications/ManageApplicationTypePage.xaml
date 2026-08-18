@@ -8,20 +8,12 @@
       Background="{StaticResource BackgroundColor}">
 
     <Page.Resources>
-        <!-- ألوان الجدول مطابقة للوحة الألوان العامة (Teal Dark) -->
-        <SolidColorBrush x:Key="AlternatingRowBrush" Color="#111114"/>
-        <!-- أغمق قليلاً من CardBackground -->
-        <SolidColorBrush x:Key="HoverBrush" Color="#1A1A1E"/>
-        <!-- مطابق لتحويلات التبويبات -->
-        <SolidColorBrush x:Key="SelectedRowBg" Color="#042F2E"/>
-        <!-- خلفية Teal داكنة عند التحديد -->
-
-        <!-- ستايل الجدول -->
+        <!-- ===================== DATA GRID STYLE ===================== -->
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="{StaticResource AlternatingRowBrush}"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource SurfaceSecondaryColor}"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
@@ -29,30 +21,19 @@
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="FontSize" Value="14"/>
         </Style>
 
         <!-- ستايل عناوين الأعمدة -->
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Padding" Value="15,12"/>
             <Setter Property="FontSize" Value="13"/>
-        </Style>
-
-        <!-- ستايل الصفوف -->
-        <Style TargetType="DataGridRow">
-            <Setter Property="Height" Value="45"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource HoverBrush}"/>
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource SelectedRowBg}"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
         </Style>
 
         <!-- ستايل الخلايا -->
@@ -61,15 +42,87 @@
             <Setter Property="Padding" Value="15,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource SelectedRowBg}"/>
-                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="{StaticResource SelectionForegroundColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <!-- ===================== CONTEXT MENU STYLE ===================== -->
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                Effect="{StaticResource PopupShadow}"
+                                SnapsToDevicePixels="True">
+                            <ItemsPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="MenuItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  Content="{TemplateBinding Icon}"
+                                                  Margin="0,0,10,0"
+                                                  VerticalAlignment="Center"/>
+                                <ContentPresenter Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource PrimaryColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Page.Resources>
 
     <Grid Margin="25">
@@ -78,21 +131,37 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Section -->
+        <!-- ===================== HEADER SECTION ===================== -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
             <TextBlock Text="Manage Application Types" 
                        Style="{StaticResource HeaderStyle}"/>
 
             <TextBlock Text="{Binding ApplicationTypes.Count, StringFormat='({0})'}" 
                        Style="{StaticResource HeaderStyle}" 
-                       Foreground="{StaticResource SecondaryTextColor}" 
+                       Foreground="{StaticResource TextSecondaryColor}" 
                        Margin="8,0,0,0"/>
         </StackPanel>
 
-        <!-- DataGrid Card Container -->
+        <!-- ===================== DATA GRID CARD ===================== -->
         <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="0">
             <DataGrid x:Name="dgAppType"
                       ItemsSource="{Binding ApplicationTypes}">
+
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Height" Value="45"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="{StaticResource SelectionBackgroundColor}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
 
                 <DataGrid.ContextMenu>
                     <ContextMenu>
@@ -101,7 +170,7 @@
                                   CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                             <MenuItem.Icon>
                                 <Path Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" 
-                                      Fill="{StaticResource TextColor}" Stretch="Uniform" Width="16" Height="16"/>
+                                      Fill="{StaticResource WarningColor}" Stretch="Uniform" Width="16" Height="16"/>
                             </MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>

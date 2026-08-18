@@ -175,10 +175,7 @@ namespace Presentation.ViewModels
             if (LicenseInfo == null)
                 return;
 
-
-            var window = new DriverLicenseInfoWin(
-                LicenseInfo.LicenseId);
-
+            var window = new DriverLicenseInfoWin(LicenseInfo.LicenseId);
 
             window.Owner = System.Windows.Application.Current.MainWindow;
             window.ShowDialog();

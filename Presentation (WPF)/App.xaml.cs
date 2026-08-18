@@ -44,41 +44,41 @@ namespace DVLD_WPF
                 options.UseSqlServer(ConnectionString));
 
             // 2. Repositories
-            services.AddScoped<IDashboardRepository, DashboardRepository>();
-            services.AddScoped<IApplicationRepository, ApplicationRepository>();
-            services.AddScoped<IApplicationTypeRepository,ApplicationTypeRepository>();
-            services.AddScoped<ICountryRepository,CountryRepository>();
-            services.AddScoped<IDetainedLicenseRepository,DetainedLicenseRepository>();
-            services.AddScoped<IDriverRepository,DriverRepository>();
-            services.AddScoped<ILicenseClassRepository,LicenseClassRepository>();
-            services.AddScoped<ILicenseRepository,LicenseRepository>();
-            services.AddScoped<ILocalDrivingLicenseApplicationRepository,LocalDrivingLicenseApplicationRepository>();
-            services.AddScoped<IPersonRepository,PersonRepository>();
-            services.AddScoped<ITestAppointmentRepository,TestAppointmentRepository>();
-            services.AddScoped<ITestRepository, TestRepository>();
-            services.AddScoped<IUserRepository, UserRepository>();           
-            services.AddScoped<ITestTypeRepository, TestTypeRepository>();
-            services.AddScoped<IInternationalRepository, InternationalRepository>();
+            services.AddTransient<IDashboardRepository, DashboardRepository>();
+            services.AddTransient<IApplicationRepository, ApplicationRepository>();
+            services.AddTransient<IApplicationTypeRepository, ApplicationTypeRepository>();
+            services.AddTransient<ICountryRepository, CountryRepository>();
+            services.AddTransient<IDetainedLicenseRepository, DetainedLicenseRepository>();
+            services.AddTransient<IDriverRepository, DriverRepository>();
+            services.AddTransient<ILicenseClassRepository, LicenseClassRepository>();
+            services.AddTransient<ILicenseRepository, LicenseRepository>();
+            services.AddTransient<ILocalDrivingLicenseApplicationRepository, LocalDrivingLicenseApplicationRepository>();
+            services.AddTransient<IPersonRepository, PersonRepository>();
+            services.AddTransient<ITestAppointmentRepository, TestAppointmentRepository>();
+            services.AddTransient<ITestRepository, TestRepository>();
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<ITestTypeRepository, TestTypeRepository>();
+            services.AddTransient<IInternationalRepository, InternationalRepository>();
 
 
             // 3. Services
-            services.AddScoped<IDashboardService, DashboardService>();
+            services.AddTransient<IDashboardService, DashboardService>();
             services.AddSingleton<IWindowService, WindowService>();
-            services.AddScoped<IApplicationService, ApplicationService>();
-            services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
-            services.AddScoped<ICountryService, CountryService>();
+            services.AddTransient<IApplicationService, ApplicationService>();
+            services.AddTransient<IApplicationTypeService, ApplicationTypeService>();
+            services.AddTransient<ICountryService, CountryService>();
             services.AddSingleton<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<IDetainedLicenseService, DetainedLicenseService>();
-            services.AddScoped<IDriverService, DriverService>();
-            services.AddScoped<ILicenseClassService, LicenseClassService>();
-            services.AddScoped<ILicenseService, LicenseService>();
-            services.AddScoped<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
-            services.AddScoped<IPersonService, PersonService>();
-            services.AddScoped<ITestAppointmentService, TestAppointmentService>();
-            services.AddScoped<ITestService, TestService>();
-            services.AddScoped<ITestTypeService, TestTypeService>();
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IInternationalService, InternationalService>();
+            services.AddTransient<IDetainedLicenseService, DetainedLicenseService>();
+            services.AddTransient<IDriverService, DriverService>();
+            services.AddTransient<ILicenseClassService, LicenseClassService>();
+            services.AddTransient<ILicenseService, LicenseService>();
+            services.AddTransient<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
+            services.AddTransient<IPersonService, PersonService>();
+            services.AddTransient<ITestAppointmentService, TestAppointmentService>();
+            services.AddTransient<ITestService, TestService>();
+            services.AddTransient<ITestTypeService, TestTypeService>();
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IInternationalService, InternationalService>();
 
 
             // 4. ViewModels

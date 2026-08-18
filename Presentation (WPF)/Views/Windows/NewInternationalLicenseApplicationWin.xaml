@@ -13,10 +13,10 @@
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
+        <!-- تدرج الهيدر الموحد (فاتح) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- ستايل زر الإغلاق -->
@@ -24,7 +24,7 @@
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -36,7 +36,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -45,7 +45,7 @@
             </Setter>
         </Style>
 
-        <!-- Ghost Button (مطابق للوحة Teal مع إضافة حالة التعطيل) -->
+        <!-- Ghost Button (فاتح وموحد) -->
         <Style x:Key="GhostButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="20,0"/>
@@ -66,15 +66,15 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#042F2E"/>
+                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource PrimaryLightColor}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="#1A1A1E"/>
+                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Opacity" Value="0.8"/>
                             </Trigger>
                             <!-- حالة التعطيل (الزر معطل) -->
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="#6B7280"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextDisabledColor}"/>
                                 <Setter Property="Opacity" Value="0.5"/>
                                 <Setter Property="Cursor" Value="Arrow"/>
                             </Trigger>
@@ -90,11 +90,8 @@
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
             CornerRadius="16" 
-            Margin="15">
-
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
-        </Border.Effect>
+            Margin="15"
+            Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -109,7 +106,9 @@
             <!-- ================= الهيدر الموحد ================= -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
                     CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18">
+                    Padding="25,18,25,18"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="38" Height="38" CornerRadius="10" 
@@ -124,11 +123,9 @@
                         </Border>
                         <TextBlock Text="New International License Application" 
                                    FontSize="18" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextColor}" 
+                                   Foreground="{StaticResource TextPrimaryColor}" 
                                    VerticalAlignment="Center"/>
                     </StackPanel>
-
-
                 </Grid>
             </Border>
 

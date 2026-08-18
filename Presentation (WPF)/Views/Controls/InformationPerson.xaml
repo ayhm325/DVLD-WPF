@@ -1,4 +1,5 @@
 ﻿<UserControl x:Class="Presentation.Views.Controls.InformationPerson"
+             x:Name="Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -6,158 +7,398 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DesignHeight="450"
-             d:DesignWidth="800">
+             d:DesignWidth="850"
+             HorizontalContentAlignment="Stretch"
+             VerticalContentAlignment="Stretch"
+             Background="Transparent"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True">
 
     <UserControl.Resources>
-        <!-- تدرج خفيف للهيدر -->
-        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
-        </LinearGradientBrush>
 
-        <!-- تسمية الحقل – يرث من الستايل العام مع تعديل المحاذاة والهامش -->
-        <Style x:Key="InfoLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource LabelStyle}">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
+        <Style x:Key="InfoLabelStyle"
+               TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+            <Setter Property="Margin"
+                    Value="0,0,0,5"/>
         </Style>
 
-        <!-- قيمة الحقل -->
-        <Style x:Key="InfoValueStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
+        <Style x:Key="InfoValueStyle"
+               TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+            <Setter Property="TextWrapping"
+                    Value="Wrap"/>
+            <Setter Property="Margin"
+                    Value="0,0,0,16"/>
         </Style>
+
+        <Style x:Key="PrimaryInfoValueStyle"
+               TargetType="{x:Type TextBlock}"
+               BasedOn="{StaticResource InfoValueStyle}">
+            <Setter Property="Foreground"
+                    Value="{StaticResource PrimaryColor}"/>
+        </Style>
+
+        <Style x:Key="HeaderTitleStyle"
+               TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize"
+                    Value="18"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource TextPrimaryColor}"/>
+        </Style>
+
+        <Style x:Key="HeaderSubtitleStyle"
+               TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightRegular}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Margin"
+                    Value="0,3,0,0"/>
+        </Style>
+
+        <Style x:Key="SectionTitleStyle"
+               TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Margin"
+                    Value="0,0,0,12"/>
+        </Style>
+
     </UserControl.Resources>
 
-    <!-- البطاقة الرئيسية باستخدام الستايل العام -->
-    <Border Style="{StaticResource CardStyle}" Padding="25" Margin="10">
+    <Border Style="{StaticResource CardStyle}"
+            Margin="10"
+            Padding="0"
+            HorizontalAlignment="Stretch"
+            SnapsToDevicePixels="True">
+
         <Grid>
+
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="74"/>
+                <RowDefinition Height="1"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- ═══════════════ HEADER ═══════════════ -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="12" Padding="18,14,18,14" Margin="-25,-25,-25,0">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- أيقونة بنمط المربّع المستدير الموحد -->
-                    <Border Width="36" Height="36" CornerRadius="10" 
-                            Background="{StaticResource PrimaryColor}" 
-                            Opacity="0.15"
-                            Margin="0,0,14,0"
-                            Padding="7"
-                            VerticalAlignment="Center">
-                        <materialDesign:PackIcon Kind="CardAccountDetails" 
-                                                Foreground="{StaticResource PrimaryColor}" 
-                                                Width="20" Height="20" 
-                                                VerticalAlignment="Center" 
-                                                HorizontalAlignment="Center"/>
+            <!-- HEADER -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource SurfaceSecondaryColor}"
+                    CornerRadius="{StaticResource RadiusMedium}"
+                    Padding="22,0">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Width="42"
+                            Height="42"
+                            CornerRadius="{StaticResource RadiusMedium}"
+                            Background="{StaticResource PrimaryLightColor}"
+                            VerticalAlignment="Center"
+                            Margin="0,0,14,0">
+
+                        <materialDesign:PackIcon Kind="CardAccountDetails"
+                                                 Width="23"
+                                                 Height="23"
+                                                 Foreground="{StaticResource PrimaryColor}"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="Personal Information" 
-                               FontSize="18" FontWeight="SemiBold" 
-                               Foreground="{StaticResource TextColor}" 
-                               VerticalAlignment="Center"/>
-                </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center">
+
+                        <TextBlock Text="Personal Information"
+                                   Style="{StaticResource HeaderTitleStyle}"/>
+
+                        <TextBlock Text="Personal details and contact information"
+                                   Style="{StaticResource HeaderSubtitleStyle}"/>
+
+                    </StackPanel>
+
+                </Grid>
+
             </Border>
 
-            <!-- فاصل بلون الحدود العام -->
-            <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Margin="0,0,0,20" Background="{StaticResource BorderColor}"/>
+            <!-- HEADER DIVIDER -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource BorderColor}"/>
 
-            <!-- ═══════════════ CONTENT ═══════════════ -->
-            <Grid Grid.Row="1">
+            <!-- CONTENT -->
+            <Grid Grid.Row="2"
+                  Margin="22,20,22,22">
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="30"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="170"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- عمود البيانات (يسار) -->
+                <!-- INFORMATION -->
                 <Grid Grid.Column="0">
+
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="110"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="30"/>
-                        <ColumnDefinition Width="110"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                    <!-- IDENTITY -->
+                    <StackPanel Grid.Row="0">
 
-                    <!-- Person ID & Gender -->
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Person ID" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Person.PersonId, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
+                        <TextBlock Text="IDENTITY"
+                                   Style="{StaticResource SectionTitleStyle}"/>
 
-                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Gender" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="4" Text="{Binding Person.Gender, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
+                        <Grid>
 
-                    <!-- Full Name (Full Width) -->
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Full Name" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" 
-                               Text="{Binding Person.FullName, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                               Style="{StaticResource InfoValueStyle}" FontSize="16"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                    <!-- فاصل -->
-                    <Border Grid.Row="2" Grid.ColumnSpan="5" Height="1" 
-                            Background="{StaticResource BorderColor}" 
-                            Margin="0,5,0,15" HorizontalAlignment="Stretch"/>
+                            <TextBlock Grid.Column="0"
+                                       Text="Person ID"
+                                       Style="{StaticResource InfoLabelStyle}"/>
 
-                    <!-- National No & DOB -->
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="National No" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Person.NationalNo, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Person.PersonId,
+                                                      ElementName=Root}"
+                                       Style="{StaticResource PrimaryInfoValueStyle}"/>
 
-                    <TextBlock Grid.Row="3" Grid.Column="3" Text="Date Of Birth" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="4" 
-                               Text="{Binding Person.DateOfBirth, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat='{}{0:dd/MM/yyyy}'}" 
-                               Style="{StaticResource InfoValueStyle}"/>
+                            <TextBlock Grid.Column="3"
+                                       Text="Gender"
+                                       Style="{StaticResource InfoLabelStyle}"/>
 
-                    <!-- Phone & Email -->
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Phone" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Person.Phone, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
+                            <TextBlock Grid.Column="4"
+                                       Text="{Binding Person.Gender,
+                                                      ElementName=Root}"
+                                       Style="{StaticResource InfoValueStyle}"/>
 
-                    <TextBlock Grid.Row="4" Grid.Column="3" Text="Email" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="4" Grid.Column="4" Text="{Binding Person.Email, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
+                        </Grid>
 
-                    <!-- Country & Address -->
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Country" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Person.CountryName, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
+                        <Grid>
 
-                    <TextBlock Grid.Row="5" Grid.Column="3" Text="Address" Style="{StaticResource InfoLabelStyle}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="4" Text="{Binding Person.Address, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource InfoValueStyle}"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="Full Name"
+                                       Style="{StaticResource InfoLabelStyle}"/>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Person.FullName,
+                                                      ElementName=Root}"
+                                       FontSize="16"
+                                       Style="{StaticResource InfoValueStyle}"/>
+
+                        </Grid>
+
+                    </StackPanel>
+
+                    <!-- CONTACT -->
+                    <StackPanel Grid.Row="1"
+                                Margin="0,4,0,0">
+
+                        <Border Height="1"
+                                Background="{StaticResource BorderColor}"
+                                Margin="0,0,0,16"/>
+
+                        <TextBlock Text="CONTACT INFORMATION"
+                                   Style="{StaticResource SectionTitleStyle}"/>
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="National No"
+                                       Style="{StaticResource InfoLabelStyle}"/>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Person.NationalNo,
+                                                      ElementName=Root}"
+                                       Style="{StaticResource InfoValueStyle}"/>
+
+                            <TextBlock Grid.Column="3"
+                                       Text="Phone"
+                                       Style="{StaticResource InfoLabelStyle}"/>
+
+                            <TextBlock Grid.Column="4"
+                                       Text="{Binding Person.Phone,
+                                                      ElementName=Root}"
+                                       Style="{StaticResource InfoValueStyle}"/>
+
+                        </Grid>
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="Email"
+                                       Style="{StaticResource InfoLabelStyle}"/>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Person.Email,
+                                                      ElementName=Root}"
+                                       Style="{StaticResource InfoValueStyle}"/>
+
+                            <TextBlock Grid.Column="3"
+                                       Text="Country"
+                                       Style="{StaticResource InfoLabelStyle}"/>
+
+                            <TextBlock Grid.Column="4"
+                                       Text="{Binding Person.CountryName,
+                                                      ElementName=Root}"
+                                       Style="{StaticResource InfoValueStyle}"/>
+
+                        </Grid>
+
+                    </StackPanel>
+
+                    <!-- ADDITIONAL -->
+                    <StackPanel Grid.Row="2"
+                                Margin="0,4,0,0">
+
+                        <Border Height="1"
+                                Background="{StaticResource BorderColor}"
+                                Margin="0,0,0,16"/>
+
+                        <TextBlock Text="ADDITIONAL INFORMATION"
+                                   Style="{StaticResource SectionTitleStyle}"/>
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="105"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="Date Of Birth"
+                                       Style="{StaticResource InfoLabelStyle}"/>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Person.DateOfBirth,
+                                                      ElementName=Root,
+                                                      StringFormat='{}{0:dd/MM/yyyy}'}"
+                                       Style="{StaticResource InfoValueStyle}"/>
+
+                            <TextBlock Grid.Column="3"
+                                       Text="Address"
+                                       Style="{StaticResource InfoLabelStyle}"/>
+
+                            <TextBlock Grid.Column="4"
+                                       Text="{Binding Person.Address,
+                                                      ElementName=Root}"
+                                       Style="{StaticResource InfoValueStyle}"/>
+
+                        </Grid>
+
+                    </StackPanel>
+
                 </Grid>
 
-                <!-- ═══════════════ PROFILE IMAGE ═══════════════ -->
-                <Border Grid.Column="2" Width="160" Height="160" 
-                        CornerRadius="100" 
-                        BorderThickness="3" 
-                        BorderBrush="{StaticResource PrimaryColor}" 
-                        VerticalAlignment="Top">
-                    <!-- ظل بنبضة Teal خفيفة بدلاً من CardShadow لتجنب مشاركة الـ Effect -->
-                    <Border.Effect>
-                        <DropShadowEffect Color="#14B8A6" Direction="270" ShadowDepth="0" BlurRadius="20" Opacity="0.15"/>
-                    </Border.Effect>
-                    <Border.Clip>
-                        <EllipseGeometry Center="80,80" RadiusX="80" RadiusY="80"/>
-                    </Border.Clip>
-                    <Grid>
-                        <Image Stretch="UniformToFill" 
-                               Source="{Binding Person.ImagePath, RelativeSource={RelativeSource AncestorType=UserControl}, TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}"/>
-                    </Grid>
-                </Border>
+                <!-- SPACER -->
+                <Border Grid.Column="1"/>
+
+                <!-- PROFILE -->
+                <StackPanel Grid.Column="2"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top">
+
+                    <Border Width="150"
+                            Height="150"
+                            CornerRadius="75"
+                            Background="{StaticResource InputBackground}"
+                            BorderBrush="{StaticResource PrimaryColor}"
+                            BorderThickness="2"
+                            ClipToBounds="True">
+
+                        <Grid>
+
+                            <Image Source="{Binding Person.ImagePath,
+                                                    ElementName=Root,
+                                                    TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}"
+                                   Stretch="UniformToFill"/>
+
+                            <Border Background="{StaticResource PrimaryLightColor}"
+                                    Opacity="0.15"/>
+
+                        </Grid>
+
+                    </Border>
+
+                    <TextBlock Text="{Binding Person.FullName,
+                                              ElementName=Root}"
+                               FontSize="15"
+                               FontWeight="{StaticResource FontWeightSemiBold}"
+                               Foreground="{StaticResource TextPrimaryColor}"
+                               HorizontalAlignment="Center"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               MaxWidth="160"
+                               Margin="0,12,0,2"/>
+
+                    <TextBlock Text="Profile Photo"
+                               FontSize="{StaticResource FontSizeCaption}"
+                               Foreground="{StaticResource SecondaryTextColor}"
+                               HorizontalAlignment="Center"/>
+
+                </StackPanel>
 
             </Grid>
+
         </Grid>
+
     </Border>
 
 </UserControl>

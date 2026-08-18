@@ -12,10 +12,10 @@
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
+        <!-- تدرج الهيدر الموحد (فاتح) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- ستايل زر الإغلاق -->
@@ -23,7 +23,7 @@
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -35,7 +35,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -49,7 +49,7 @@
             <ContextMenu.Resources>
                 <Style x:Key="CtxStyle" TargetType="MenuItem">
                     <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
                     <Setter Property="FontSize" Value="13"/>
                     <Setter Property="FontWeight" Value="Medium"/>
                     <Setter Property="Padding" Value="14,10"/>
@@ -71,7 +71,7 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsHighlighted" Value="True">
-                                        <Setter TargetName="Bd" Property="Background" Value="#1A2332"/>
+                                        <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                         <Setter TargetName="Ico" Property="Opacity" Value="1"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
@@ -81,7 +81,7 @@
                 </Style>
             </ContextMenu.Resources>
 
-            <MenuItem Header="Show License" Command="{Binding ShowLicenseCommand}"/>
+            <MenuItem Header="Show License" Command="{Binding ShowLicenseCommand}" Style="{StaticResource CtxStyle}"/>
         </ContextMenu>
 
         <!-- ===== DataGrid ===== -->
@@ -96,12 +96,12 @@
             <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="#111114"/>
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource SurfaceSecondaryColor}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="RowHeight" Value="36"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
             <Setter Property="ContextMenu" Value="{StaticResource RowContextMenu}"/>
@@ -109,8 +109,8 @@
 
         <!-- ===== Column Header ===== -->
         <Style x:Key="ColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#0E0E10"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="10,8"/>
@@ -124,11 +124,11 @@
             <Setter Property="Padding" Value="10,4"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#042F2E"/>
-                    <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="{StaticResource SelectionForegroundColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -142,8 +142,11 @@
                         <Condition Property="IsMouseOver" Value="True"/>
                         <Condition Property="IsSelected" Value="False"/>
                     </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="#1A1A1E"/>
+                    <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                 </MultiTrigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SelectionBackgroundColor}"/>
+                </Trigger>
             </Style.Triggers>
         </Style>
 
@@ -151,37 +154,37 @@
         <Style x:Key="ColumnTextStyle" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
         </Style>
 
         <Style x:Key="ColumnTextBoldStyle" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
         </Style>
 
         <Style x:Key="ColumnTextLeftStyle" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
         </Style>
 
-        <!-- ===== قالب عمود "هل نشط" ===== -->
+        <!-- ===== قالب عمود "هل نشط" (فاتح) ===== -->
         <DataTemplate x:Key="IsActiveTemplate">
-            <Border x:Name="PillBorder" Background="#064E3B" CornerRadius="6"
+            <Border x:Name="PillBorder" Background="{StaticResource SuccessLightColor}" CornerRadius="6"
                     Padding="10,4" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Ellipse x:Name="Dot" Width="7" Height="7" Fill="#34D399" Margin="0,0,6,0"/>
+                    <Ellipse x:Name="Dot" Width="7" Height="7" Fill="{StaticResource SuccessColor}" Margin="0,0,6,0"/>
                     <TextBlock x:Name="StatusText" Text="Active" FontSize="11" 
-                               FontWeight="SemiBold" Foreground="#34D399" VerticalAlignment="Center"/>
+                               FontWeight="SemiBold" Foreground="{StaticResource SuccessColor}" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsActive}" Value="False">
-                    <Setter TargetName="PillBorder" Property="Background" Value="#7F1D1D"/>
-                    <Setter TargetName="Dot" Property="Fill" Value="#F87171"/>
+                    <Setter TargetName="PillBorder" Property="Background" Value="{StaticResource DangerLightColor}"/>
+                    <Setter TargetName="Dot" Property="Fill" Value="{StaticResource DangerColor}"/>
                     <Setter TargetName="StatusText" Property="Text" Value="Inactive"/>
-                    <Setter TargetName="StatusText" Property="Foreground" Value="#F87171"/>
+                    <Setter TargetName="StatusText" Property="Foreground" Value="{StaticResource DangerColor}"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -191,10 +194,8 @@
     <!-- الحاوية الرئيسية -->
     <Border Background="{StaticResource BackgroundColor}" 
             BorderBrush="{StaticResource BorderColor}" 
-            BorderThickness="1" CornerRadius="16" Margin="15">
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
-        </Border.Effect>
+            BorderThickness="1" CornerRadius="16" Margin="15"
+            Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -205,7 +206,9 @@
 
             <!-- الهيدر -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="16,16,0,0" Padding="25,18,25,18">
+                    CornerRadius="16,16,0,0" Padding="25,18,25,18"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Width="38" Height="38" CornerRadius="10" 
                             Background="{StaticResource PrimaryColor}" Opacity="0.15"
@@ -215,7 +218,7 @@
                               Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
                     </Border>
                     <TextBlock Text="License History" FontSize="18" FontWeight="SemiBold" 
-                               Foreground="{StaticResource TextColor}" VerticalAlignment="Center"/>
+                               Foreground="{StaticResource TextPrimaryColor}" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
 

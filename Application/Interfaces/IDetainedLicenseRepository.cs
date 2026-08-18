@@ -15,10 +15,6 @@ namespace Application.Interfaces
         Task<bool> IsLicenseDetainedAsync(int licenseId);
 
         Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(int licenseId);
-
-        Task ReleaseAsync(
-            int detainId,
-            int releasedByUserId,
-            int releaseApplicationId);
+        
     }
 }

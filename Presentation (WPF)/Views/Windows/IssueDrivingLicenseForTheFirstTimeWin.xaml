@@ -15,8 +15,8 @@
     <Window.Resources>
         <!-- تدرج الهيدر الموحد -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+            <GradientStop Color="#F8FAFC" Offset="0"/>
+            <GradientStop Color="#F1F5F9" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- ستايل زر الإغلاق -->
@@ -24,7 +24,7 @@
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -36,8 +36,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
-                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource DangerLightColor}"/>
+                                <Setter Property="Foreground" Value="{StaticResource DangerColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -60,11 +60,11 @@
     <Border Background="{StaticResource BackgroundColor}" 
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
-            CornerRadius="16" 
+            CornerRadius="12" 
             Margin="15">
 
         <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+            <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" BlurRadius="12" Opacity="0.08"/>
         </Border.Effect>
 
         <Grid>
@@ -79,13 +79,15 @@
 
             <!-- ================= الهيدر الموحد ================= -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18">
+                    CornerRadius="12,12,0,0" 
+                    Padding="25,18,25,18"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="38" Height="38" CornerRadius="10" 
                                 Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
+                                Opacity="0.1"
                                 Margin="0,0,14,0"
                                 Padding="8"
                                 VerticalAlignment="Center">
@@ -98,8 +100,6 @@
                                    Foreground="{StaticResource TextColor}" 
                                    VerticalAlignment="Center"/>
                     </StackPanel>
-
-                   
                 </Grid>
             </Border>
 
@@ -118,7 +118,7 @@
                         LicenseClassName="{Binding LicenseClassName}"
                         PassedTests="{Binding PassedTests}"
                         TotalTests="{Binding TotalTests}"
-                        Margin="0,0,0,15"/>
+                        Margin="0,0,0,15" Loaded="drivingLicenseInfo_Loaded"/>
 
                     <!-- Application Basic Info -->
                     <controls:ApplicationBasicInfo
@@ -144,10 +144,12 @@
             </ScrollViewer>
 
             <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
+            <Border Grid.Row="2" 
+                    Background="{StaticResource BackgroundColor}" 
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0"
                     Padding="20,15,25,20" 
-                    CornerRadius="0,0,16,16"
-                    Margin="-1,0,-1,-1">
+                    CornerRadius="0,0,12,12">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
 
                     <Button Content="Close"

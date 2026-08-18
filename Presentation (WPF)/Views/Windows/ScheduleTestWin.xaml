@@ -14,10 +14,10 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- تدرج الهيدر الموحد -->
+        <!-- تدرج الهيدر الموحد (فاتح) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- ستايل زر الإغلاق -->
@@ -25,7 +25,7 @@
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -37,7 +37,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -46,9 +46,9 @@
             </Setter>
         </Style>
 
-        <!-- Retake Section Style (Teal Dark) -->
+        <!-- Retake Section Style (فاتح ومميز) -->
         <Style x:Key="RetakeSectionStyle" TargetType="Border">
-            <Setter Property="Background" Value="#042F2E"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryLightColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
@@ -56,10 +56,10 @@
             <Setter Property="Margin" Value="0,0,0,0"/>
         </Style>
 
-        <!-- ReadOnly Input Override (Teal Dark) -->
+        <!-- ReadOnly Input Override (فاتح) -->
         <Style x:Key="ReadOnlyInput" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Background" Value="#0E0E10"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Style.Triggers>
@@ -81,11 +81,11 @@
         <Style x:Key="RetakeTextBoxStyle" TargetType="TextBox">
             <Setter Property="Height" Value="32"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Background" Value="#0E0E10"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="IsReadOnly" Value="True"/>
         </Style>
     </Window.Resources>
@@ -95,11 +95,8 @@
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
             CornerRadius="16" 
-            Margin="15">
-
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
-        </Border.Effect>
+            Margin="15"
+            Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -116,7 +113,9 @@
             <!-- ================= الهيدر الموحد ================= -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
                     CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18">
+                    Padding="25,18,25,18"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="38" Height="38" CornerRadius="10" 
@@ -132,15 +131,13 @@
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="Schedule Test" 
                                        FontSize="18" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextColor}"/>
+                                       Foreground="{StaticResource TextPrimaryColor}"/>
                             <TextBlock Text="Vision Test" 
                                        FontSize="12" 
-                                       Foreground="{StaticResource SecondaryTextColor}" 
+                                       Foreground="{StaticResource TextSecondaryColor}" 
                                        Margin="0,2,0,0"/>
                         </StackPanel>
                     </StackPanel>
-
-                    
                 </Grid>
             </Border>
 
@@ -246,7 +243,7 @@
                             <TextBlock Text="R.Test.App.ID" Style="{StaticResource RetakeLabelStyle}"/>
                             <TextBox Text="{Binding AppDto.ApplicationID}" 
                                      Style="{StaticResource RetakeTextBoxStyle}" 
-                                     Foreground="{StaticResource SecondaryTextColor}"/>
+                                     Foreground="{StaticResource TextSecondaryColor}"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>

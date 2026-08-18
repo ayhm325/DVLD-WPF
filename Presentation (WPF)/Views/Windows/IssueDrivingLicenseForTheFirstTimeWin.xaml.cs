@@ -50,5 +50,10 @@ namespace Presentation.Views.Windows
         {
             Close();
         }
+
+        private void drivingLicenseInfo_Loaded(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

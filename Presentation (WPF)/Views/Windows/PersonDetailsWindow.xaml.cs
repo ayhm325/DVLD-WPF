@@ -33,13 +33,14 @@ namespace Presentation.Views.Windows
             try
             {
                 var personResult =
-                    await _personService.GetPersonByIdAsync(_personId);
+                    await _personService.GetPersonByIdAsync(_personId);                
 
                 if (personResult.IsFailure)
                 {
                     MessageBox.Show(
-                        personResult.Error,
-                        "Error",
+                        $"Person ID = {_personId}\n\n" +
+                        $"Error = {personResult.Error}",
+                        "Person Loading Error",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
 

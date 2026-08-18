@@ -6,44 +6,71 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Edit Test Type"
-        Height="700"
-        Width="800"
+        Height="680"
+        Width="760"
+        MinHeight="680"
+        MinWidth="760"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"        
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
         Background="Transparent">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
-        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+
+        <LinearGradientBrush x:Key="TestHeaderGradient"
+                             StartPoint="0,0"
+                             EndPoint="1,1">
+            <GradientStop Color="#062F2E" Offset="0"/>
+            <GradientStop Color="#0A5550" Offset="0.55"/>
+            <GradientStop Color="#0B1F1E" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- تسمية الحقل -->
-        <Style x:Key="FormLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource LabelStyle}">
+        <Style x:Key="FormLabelStyle"
+               TargetType="{x:Type TextBlock}"
+               BasedOn="{StaticResource LabelStyle}">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0"/>
         </Style>
 
-        <!-- ستايل زر الإغلاق -->
-        <Style x:Key="CloseButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
+        <Style x:Key="CloseButtonStyle"
+               TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="CloseBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="10">
+                            <ContentPresenter
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
-                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+                                <Setter TargetName="CloseBorder"
+                                        Property="Background"
+                                        Value="{StaticResource DangerLightColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource DangerColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed"
+                                     Value="True">
+                                <Setter TargetName="CloseBorder"
+                                        Property="Background"
+                                        Value="{StaticResource DangerColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -51,193 +78,392 @@
             </Setter>
         </Style>
 
-        <!-- تجاوز ارتفاع الـ TextBox للنصوص الطويلة -->
-        <Style x:Key="MultiLineTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Height" Value="Auto"/>
-            <Setter Property="MinHeight" Value="80"/>
+        <Style x:Key="DescriptionTextBoxStyle"
+               TargetType="{x:Type TextBox}"
+               BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="MinHeight" Value="118"/>
+            <Setter Property="Padding" Value="14"/>
             <Setter Property="AcceptsReturn" Value="True"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
             <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
         </Style>
+
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
-    <Border Style="{StaticResource CardStyle}" Padding="30" Margin="15">
+    <Border Margin="12"
+            Background="{StaticResource BackgroundColor}"
+            BorderBrush="{StaticResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="20">
+
         <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
+            <DropShadowEffect Color="#000000"
+                              Direction="270"
+                              ShadowDepth="0"
+                              BlurRadius="32"
+                              Opacity="0.22"/>
         </Border.Effect>
 
         <Grid>
+
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="150"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="82"/>
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر الموحد ================= -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="12" Padding="18,14,18,14" Margin="-30,-30,-30,20">
+            <!-- HEADER -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource TestHeaderGradient}"
+                    CornerRadius="20,20,0,0">
+
                 <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="36" Height="36" CornerRadius="10" 
-                                Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
-                                Margin="0,0,14,0"
-                                Padding="7"
+
+                    <Ellipse Width="210"
+                             Height="210"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Top"
+                             Margin="0,-105,-55,0"
+                             Fill="White"
+                             Opacity="0.035"/>
+
+                    <Ellipse Width="125"
+                             Height="125"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Bottom"
+                             Margin="0,0,65,-65"
+                             Fill="{StaticResource PrimaryColor}"
+                             Opacity="0.12"/>
+
+                    <Border Width="5"
+                            Height="74"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Margin="28,0,0,0"
+                            Background="{StaticResource PrimaryColor}"
+                            CornerRadius="3"/>
+
+                    <StackPanel Margin="52,0,70,0"
                                 VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="TestTube" 
-                                                    Foreground="{StaticResource PrimaryColor}" 
-                                                    Width="20" Height="20" 
-                                                    VerticalAlignment="Center" 
-                                                    HorizontalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Update Test Type" 
-                                   FontSize="18" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextColor}" 
-                                   VerticalAlignment="Center"/>
+
+                        <StackPanel Orientation="Horizontal">
+
+                            <Border Width="48"
+                                    Height="48"
+                                    CornerRadius="14"
+                                    Background="#22FFFFFF"
+                                    Margin="0,0,15,0">
+
+                                <materialDesign:PackIcon Kind="TestTube"
+                                                         Width="25"
+                                                         Height="25"
+                                                         Foreground="{StaticResource PrimaryColor}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                            </Border>
+
+                            <StackPanel VerticalAlignment="Center">
+
+                                <TextBlock Text="TEST CONFIGURATION"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="#9FE7DF"/>
+
+                                <TextBlock Text="Edit Test Type"
+                                           FontSize="25"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                        </StackPanel>
+
+                        <TextBlock Text="Update the test definition, description and examination fee."
+                                   FontSize="12"
+                                   Foreground="#B8D8D5"
+                                   Margin="63,10,0,0"/>
                     </StackPanel>
 
-                    <Button Content="✕" 
-                            Style="{StaticResource CloseButtonStyle}" 
-                            HorizontalAlignment="Right" 
+                    <Button Content="✕"
+                            Style="{StaticResource CloseButtonStyle}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,14,14,0"
                             Click="Close_Click"/>
+
                 </Grid>
+
             </Border>
 
-            <!-- ================= الحقول ================= -->
-            <Grid Grid.Row="1" Margin="0,10,0,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="20"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+            <!-- CONTENT -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
 
-                <!-- ================= ID ================= -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal">
-                    <Border Width="34" Height="34" CornerRadius="9" 
-                            Background="#042F2E" 
-                            Margin="0,0,12,0" 
-                            VerticalAlignment="Center"
-                            Padding="7">
-                        <materialDesign:PackIcon Kind="Identifier"
-                                                 Foreground="{StaticResource PrimaryColor}"
-                                                 Width="18" Height="18"
-                                                 VerticalAlignment="Center" 
-                                                 HorizontalAlignment="Center"/>
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="ID" Style="{StaticResource FormLabelStyle}"/>
-                        <TextBlock Text="{Binding CurrentTestType.TestTypeId}"
-                                   FontSize="15" FontWeight="Bold"
-                                   Foreground="{StaticResource SecondaryTextColor}"
-                                   Margin="0,4,0,0"/>
-                    </StackPanel>
-                </StackPanel>
+                <Grid Margin="30,26,30,24">
 
-                <!-- ================= TITLE ================= -->
-                <StackPanel Grid.Row="2">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <Border Width="34" Height="34" CornerRadius="9" 
-                                Background="#042F2E" 
-                                Margin="0,0,12,0" 
-                                VerticalAlignment="Center"
-                                Padding="7">
-                            <materialDesign:PackIcon Kind="TextBoxEditOutline"
-                                                     Foreground="{StaticResource PrimaryColor}"
-                                                     Width="18" Height="18"
-                                                     VerticalAlignment="Center" 
-                                                     HorizontalAlignment="Center"/>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- LEFT INFO PANEL -->
+                    <StackPanel Grid.Column="0"
+                                Margin="0,0,24,0">
+
+                        <TextBlock Text="TEST TYPE"
+                                   Style="{StaticResource CaptionStyle}"
+                                   FontWeight="SemiBold"/>
+
+                        <Border Margin="0,10,0,0"
+                                Padding="16"
+                                Background="{StaticResource SurfaceSecondaryColor}"
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1"
+                                CornerRadius="14">
+
+                            <StackPanel>
+
+                                <Border Width="54"
+                                        Height="54"
+                                        CornerRadius="16"
+                                        Background="{StaticResource PrimaryLightColor}"
+                                        HorizontalAlignment="Left">
+
+                                    <materialDesign:PackIcon Kind="TestTube"
+                                                             Width="27"
+                                                             Height="27"
+                                                             Foreground="{StaticResource PrimaryColor}"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"/>
+                                </Border>
+
+                                <TextBlock Text="Identifier"
+                                           Style="{StaticResource CaptionStyle}"
+                                           Margin="0,18,0,4"/>
+
+                                <TextBlock Text="{Binding CurrentTestType.TestTypeId}"
+                                           FontSize="25"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+
+                                <Border Height="1"
+                                        Background="{StaticResource BorderColor}"
+                                        Margin="0,18,0,14"/>
+
+                                <TextBlock Text="TEST"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource PrimaryColor}"/>
+
+                                <TextBlock Text="System managed test definition"
+                                           FontSize="11"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,5,0,0"/>
+
+                            </StackPanel>
+
                         </Border>
-                        <TextBlock Text="Title" Style="{StaticResource FormLabelStyle}" VerticalAlignment="Center"/>
+
                     </StackPanel>
-                    <TextBox Text="{Binding CurrentTestType.TestTypeTitle, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource MultiLineTextBoxStyle}"/>
-                </StackPanel>
 
-                <!-- ================= DESCRIPTION ================= -->
-                <StackPanel Grid.Row="4">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <Border Width="34" Height="34" CornerRadius="9" 
-                                Background="#042F2E" 
-                                Margin="0,0,12,0" 
-                                VerticalAlignment="Center"
-                                Padding="7">
-                            <materialDesign:PackIcon Kind="StickyNoteTextOutline"
-                                                     Foreground="{StaticResource PrimaryColor}"
-                                                     Width="18" Height="18"
-                                                     VerticalAlignment="Center" 
-                                                     HorizontalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Description" Style="{StaticResource FormLabelStyle}" VerticalAlignment="Center"/>
+                    <!-- RIGHT FORM -->
+                    <StackPanel Grid.Column="1">
+
+                        <TextBlock Text="Test Details"
+                                   Style="{StaticResource HeaderStyle}"/>
+
+                        <TextBlock Text="Configure the information shown throughout the system."
+                                   Style="{StaticResource CaptionStyle}"
+                                   Margin="0,3,0,20"/>
+
+                        <!-- TITLE -->
+                        <TextBlock Text="Test Title"
+                                   Style="{StaticResource FormLabelStyle}"
+                                   Margin="0,0,0,7"/>
+
+                        <Grid>
+
+                            <Border Width="38"
+                                    Height="38"
+                                    CornerRadius="10"
+                                    Background="{StaticResource PrimaryLightColor}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Panel.ZIndex="2"
+                                    Margin="6,0,0,0">
+
+                                <materialDesign:PackIcon Kind="TextBoxEditOutline"
+                                                         Width="19"
+                                                         Height="19"
+                                                         Foreground="{StaticResource PrimaryColor}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                            </Border>
+
+                            <TextBox Text="{Binding CurrentTestType.TestTypeTitle,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="54,0,14,0"
+                                     Height="46"/>
+                        </Grid>
+
+                        <!-- DESCRIPTION -->
+                        <TextBlock Text="Description"
+                                   Style="{StaticResource FormLabelStyle}"
+                                   Margin="0,20,0,7"/>
+
+                        <Grid>
+
+                            <Border Width="38"
+                                    Height="38"
+                                    CornerRadius="10"
+                                    Background="{StaticResource PrimaryLightColor}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Panel.ZIndex="2"
+                                    Margin="6,6,0,0">
+
+                                <materialDesign:PackIcon Kind="TextBoxMultipleOutline"
+                                                         Width="19"
+                                                         Height="19"
+                                                         Foreground="{StaticResource PrimaryColor}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                            </Border>
+
+                            <TextBox Text="{Binding CurrentTestType.TestTypeDescription,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource DescriptionTextBoxStyle}"
+                                     Padding="54,12,14,12"/>
+                        </Grid>
+
+                        <!-- FEES -->
+                        <TextBlock Text="Examination Fee"
+                                   Style="{StaticResource FormLabelStyle}"
+                                   Margin="0,20,0,7"/>
+
+                        <Grid>
+
+                            <Border Width="38"
+                                    Height="38"
+                                    CornerRadius="10"
+                                    Background="{StaticResource SuccessLightColor}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Panel.ZIndex="2"
+                                    Margin="6,0,0,0">
+
+                                <materialDesign:PackIcon Kind="CashMultiple"
+                                                         Width="19"
+                                                         Height="19"
+                                                         Foreground="{StaticResource SuccessColor}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                            </Border>
+
+                            <TextBox Text="{Binding CurrentTestType.TestTypeFees,
+                                                    UpdateSourceTrigger=PropertyChanged,
+                                                    StringFormat={}{0:F2}}"
+                                     Padding="54,0,55,0"
+                                     Height="46"/>
+
+                            <TextBlock Text="JOD"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,14,0"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedColor}"
+                                       IsHitTestVisible="False"/>
+
+                        </Grid>
+
                     </StackPanel>
-                    <TextBox Text="{Binding CurrentTestType.TestTypeDescription, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource MultiLineTextBoxStyle}"/>
-                </StackPanel>
 
-                <!-- ================= FEES ================= -->
-                <StackPanel Grid.Row="6">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <Border Width="34" Height="34" CornerRadius="9" 
-                                Background="#042F2E" 
-                                Margin="0,0,12,0" 
-                                VerticalAlignment="Center"
-                                Padding="7">
-                            <materialDesign:PackIcon Kind="Cash100"
-                                                     Foreground="{StaticResource PrimaryColor}"
-                                                     Width="18" Height="18"
-                                                     VerticalAlignment="Center" 
-                                                     HorizontalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Fees" Style="{StaticResource FormLabelStyle}" VerticalAlignment="Center"/>
+                </Grid>
+
+            </ScrollViewer>
+
+            <!-- FOOTER -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource SurfaceSecondaryColor}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,20,20">
+
+                <Grid Margin="30,0">
+
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+
+                        <Ellipse Width="8"
+                                 Height="8"
+                                 Fill="{StaticResource SuccessColor}"
+                                 Margin="0,0,8,0"/>
+
+                        <TextBlock Text="Changes will be saved to the system"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextMutedColor}"/>
+
                     </StackPanel>
-                    <TextBox Text="{Binding CurrentTestType.TestTypeFees,
-                                            UpdateSourceTrigger=PropertyChanged,
-                                            StringFormat={}{0:F2}}"/>
-                </StackPanel>
-            </Grid>
 
-            <!-- ================= الأزرار ================= -->
-            <StackPanel Grid.Row="2"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="0,25,0,0">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
 
-                <Button Command="{Binding SaveCommand}"
-                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                        Width="120"
-                        Margin="0,0,10,0"
-                        Style="{StaticResource PrimaryButtonStyle}">
+                        <Button Command="{Binding CloseCommand}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                                Width="112"
+                                Height="40"
+                                Margin="0,0,10,0"
+                                Style="{StaticResource SecondaryButtonStyle}">
 
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="ContentSave"
-                                                 Width="18" Height="18"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center"/>
-                        <TextBlock Text="Save" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon Kind="Close"
+                                                         Width="17"
+                                                         Height="17"
+                                                         Margin="0,0,7,0"
+                                                         VerticalAlignment="Center"/>
+
+                                <TextBlock Text="Cancel"
+                                           VerticalAlignment="Center"/>
+
+                            </StackPanel>
+
+                        </Button>
+
+                        <Button Command="{Binding SaveCommand}"
+                                CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                                Width="128"
+                                Height="40"
+                                Style="{StaticResource PrimaryButtonStyle}">
+
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon Kind="ContentSave"
+                                                         Width="17"
+                                                         Height="17"
+                                                         Margin="0,0,7,0"
+                                                         VerticalAlignment="Center"/>
+
+                                <TextBlock Text="Save Changes"
+                                           VerticalAlignment="Center"/>
+
+                            </StackPanel>
+
+                        </Button>
+
                     </StackPanel>
-                </Button>
 
-                <Button Command="{Binding CloseCommand}"
-                        CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                        Width="120"
-                        Style="{StaticResource SecondaryButtonStyle}">
+                </Grid>
 
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Close"
-                                                 Width="18" Height="18"
-                                                 Margin="0,0,8,0"
-                                                 VerticalAlignment="Center"/>
-                        <TextBlock Text="Close" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-
-            </StackPanel>
+            </Border>
 
         </Grid>
+
     </Border>
+
 </Window>

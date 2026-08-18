@@ -477,11 +477,11 @@ namespace DVLD_WPF
             _ = AnimateNumberAsync(StatTotalPeople, stats.TotalPeople);
             _ = AnimateNumberAsync(StatTotalDrivers, stats.TotalDrivers);
             _ = AnimateNumberAsync(StatActiveLicenses, stats.ActiveLicenses);
-            _ = AnimateNumberAsync(StatPendingApps, stats.PendingApplications);
-            _ = AnimateNumberAsync(StatLocalDLApps, stats.LocalDrivingLicenseApplications);
-            _ = AnimateNumberAsync(StatInternationalLicenses, stats.InternationalLicenses);
+           
+            _ = AnimateNumberAsync(StatLocalApps, stats.LocalDrivingLicenseApplications);
+            _ = AnimateNumberAsync(StatIntlApps, stats.InternationalLicenses);
             _ = AnimateNumberAsync(StatDetainedLicenses, stats.DetainedLicenses);
-            _ = AnimateNumberAsync(StatUpcomingTests, stats.UpcomingTests);
+            _ = AnimateNumberAsync(StatTestsToday, stats.UpcomingTests);
         }
 
         private async Task AnimateNumberAsync(

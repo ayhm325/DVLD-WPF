@@ -11,10 +11,10 @@
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
+        <!-- تدرج الهيدر الموحد (فاتح) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#042F2E" Offset="0"/>
-            <GradientStop Color="#0A0A0B" Offset="1"/>
+            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- ستايل زر الإغلاق -->
@@ -22,7 +22,7 @@
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -34,7 +34,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1F2937"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -46,8 +46,8 @@
         <!-- حقول مقفل للقراءة فقط -->
         <Style x:Key="LockedInput" TargetType="TextBox">
             <Setter Property="Height" Value="38"/>
-            <Setter Property="Background" Value="#0E0E10"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,0"/>
@@ -77,9 +77,9 @@
             </Setter>
         </Style>
 
-        <!-- مربع Test ID (Teal) -->
+        <!-- مربع Test ID (فاتح) -->
         <Style x:Key="TestIdBox" TargetType="Border">
-            <Setter Property="Background" Value="#042F2E"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryLightColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
@@ -87,51 +87,20 @@
             <Setter Property="Margin" Value="0,16,0,20"/>
         </Style>
 
-        <!-- زر التبديل الأساسي (State: Not Taken) -->
-        <Style x:Key="OptionToggle" TargetType="ToggleButton">
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="MinWidth" Value="110"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="ToggleBorder"
-                                Background="{StaticResource InputBackground}"
-                                BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="1.5"
-                                CornerRadius="10"
-                                Padding="16,0">
-                            <ContentPresenter x:Name="Content"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- زر Passed (أخضر) -->
+        <!-- زر Passed (أخضر فاتح) -->
         <Style x:Key="PassedToggle" TargetType="ToggleButton">
             <Setter Property="Height" Value="40"/>
             <Setter Property="MinWidth" Value="110"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#34D399"/>
+            <Setter Property="Foreground" Value="{StaticResource SuccessColor}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="ToggleBorder"
-                                Background="#064E3B"
-                                BorderBrush="#34D399"
+                                Background="{StaticResource SuccessLightColor}"
+                                BorderBrush="{StaticResource SuccessColor}"
                                 BorderThickness="1.5"
                                 CornerRadius="10"
                                 Padding="16,0">
@@ -141,7 +110,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#6EE7B7"/>
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource SuccessHoverColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -149,20 +118,20 @@
             </Setter>
         </Style>
 
-        <!-- زر Failed (أحمر) -->
+        <!-- زر Failed (أحمر فاتح) -->
         <Style x:Key="FailedToggle" TargetType="ToggleButton">
             <Setter Property="Height" Value="40"/>
             <Setter Property="MinWidth" Value="110"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#F87171"/>
+            <Setter Property="Foreground" Value="{StaticResource DangerColor}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="ToggleBorder"
-                                Background="#7F1D1D"
-                                BorderBrush="#F87171"
+                                Background="{StaticResource DangerLightColor}"
+                                BorderBrush="{StaticResource DangerColor}"
                                 BorderThickness="1.5"
                                 CornerRadius="10"
                                 Padding="16,0">
@@ -172,7 +141,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#FCA5A5"/>
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource DangerHoverColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -180,36 +149,6 @@
             </Setter>
         </Style>
 
-        <!-- زر Not Taken (رمادي دائف) -->
-        <Style x:Key="NotTakenToggle" TargetType="ToggleButton">
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="MinWidth" Value="110"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#A8A29E"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="ToggleBorder"
-                                Background="#1C1917"
-                                BorderBrush="#78716C"
-                                BorderThickness="1.5"
-                                CornerRadius="10"
-                                Padding="16,0">
-                            <ContentPresenter x:Name="Content"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#A8A29E"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
     <!-- الحاوية الرئيسية -->
@@ -217,11 +156,8 @@
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
             CornerRadius="16" 
-            Margin="15">
-
-        <Border.Effect>
-            <DropShadowEffect Color="Black" Direction="270" ShadowDepth="0" BlurRadius="30" Opacity="0.5"/>
-        </Border.Effect>
+            Margin="15"
+            Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -236,7 +172,9 @@
             <!-- ================= الهيدر الموحد ================= -->
             <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
                     CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18">
+                    Padding="25,18,25,18"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="38" Height="38" CornerRadius="10" 
@@ -252,15 +190,13 @@
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="Vision Test" 
                                        FontSize="18" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextColor}"/>
+                                       Foreground="{StaticResource TextPrimaryColor}"/>
                             <TextBlock Text="Scheduled Test" 
                                        FontSize="12" 
-                                       Foreground="{StaticResource SecondaryTextColor}" 
+                                       Foreground="{StaticResource TextSecondaryColor}" 
                                        Margin="0,2,0,0"/>
                         </StackPanel>
                     </StackPanel>
-
-                    
                 </Grid>
             </Border>
 
@@ -323,14 +259,14 @@
 
                     <!-- النتيجة -->
                     <TextBlock Text="Result" Style="{StaticResource LabelStyle}" Margin="0,0,0,8"/>
-                    <UniformGrid Columns="3" Margin="0,0,0,24">
+                    <UniformGrid Columns="2" Margin="0,0,0,24">
                         <ToggleButton Content="Passed" 
                                       Style="{StaticResource PassedToggle}" 
                                       Margin="0,0,8,0"
                                       IsChecked="{Binding IsPassed}"/>
                         <ToggleButton Content="Failed" 
                                       Style="{StaticResource FailedToggle}" 
-                                      Margin="4,0"
+                                      Margin="8,0,0,0"
                                       IsChecked="{Binding IsFailed}"/>
                     </UniformGrid>
 
@@ -341,12 +277,12 @@
                             <ColumnDefinition Width="38"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="{StaticResource InputBackground}" 
+                        <Border Grid.Column="0" Background="{StaticResource InputBackgroundColor}" 
                                 BorderBrush="{StaticResource BorderColor}" 
                                 BorderThickness="1,1,0,1" 
                                 CornerRadius="8,0,0,8">
                             <TextBlock Text="📝" FontSize="16" 
-                                       Foreground="{StaticResource SecondaryTextColor}" 
+                                       Foreground="{StaticResource TextMutedColor}" 
                                        HorizontalAlignment="Center" 
                                        VerticalAlignment="Center"/>
                         </Border>
@@ -359,8 +295,8 @@
                                  AcceptsReturn="True" 
                                  BorderBrush="{StaticResource BorderColor}" 
                                  BorderThickness="1" 
-                                 Background="{StaticResource InputBackground}" 
-                                 Foreground="{StaticResource TextColor}" 
+                                 Background="{StaticResource InputBackgroundColor}" 
+                                 Foreground="{StaticResource TextPrimaryColor}" 
                                  FontSize="14"/>
                     </Grid>
 

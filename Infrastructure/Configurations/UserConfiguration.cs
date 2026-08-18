@@ -11,20 +11,17 @@ public class UserConfiguration
     {
         builder.HasKey(u => u.UserId);
 
-
         builder.Property(u => u.UserName)
             .HasMaxLength(50)
             .IsRequired();
-
 
         builder.Property(u => u.Password)
             .HasMaxLength(200)
             .IsRequired();
 
-
+        // Unique Index
         builder.HasIndex(u => u.UserName)
             .IsUnique();
-
 
         builder.HasOne(u => u.Person)
             .WithOne()

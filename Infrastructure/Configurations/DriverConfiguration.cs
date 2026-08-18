@@ -11,16 +11,18 @@ public class DriverConfiguration
     {
         builder.HasKey(d => d.DriverID);
 
-
         builder.HasOne(d => d.Person)
             .WithMany()
             .HasForeignKey(d => d.PersonID)
             .OnDelete(DeleteBehavior.Restrict);
 
-
         builder.HasOne(d => d.CreatedByUser)
             .WithMany()
             .HasForeignKey(d => d.CreatedByUserID)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Indexes
+        builder.HasIndex(d => d.PersonID);
+        builder.HasIndex(d => d.CreatedByUserID);
     }
 }

@@ -24,7 +24,7 @@ namespace Infrastructure.Repositories
 
             return await context.ApplicationTypes
                 .AsNoTracking()
-                .OrderBy(x => x.ApplicationTypeTitle)
+                .OrderBy(x => x.ApplicationTypeId)
                 .ToListAsync();
         }
 
