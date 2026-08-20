@@ -1,8 +1,6 @@
-﻿
+﻿using Domain.Enums;
 
-using Domain.Enums;
-
-namespace Application.DTOs
+namespace Application.DTOs.PersonDTO
 {
     public class PersonDto
     {

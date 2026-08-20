@@ -40,7 +40,8 @@
     <sys:Double x:Key="InputFontSize">14</sys:Double>
 
     <!-- 1. COLORS -->
-    <SolidColorBrush x:Key="PrimaryColor" Color="#0F766E"/>
+    <!--<SolidColorBrush x:Key="PrimaryColor" Color="#0F766E"/>-->
+    <SolidColorBrush x:Key="PrimaryColor" Color="Goldenrod"/>
     <SolidColorBrush x:Key="PrimaryHoverColor" Color="#0D5F59"/>
     <SolidColorBrush x:Key="PrimaryPressedColor" Color="#134E4A"/>
     <SolidColorBrush x:Key="PrimaryLightColor" Color="#F0FDFA"/>

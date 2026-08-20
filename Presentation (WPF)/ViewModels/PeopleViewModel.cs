@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -180,6 +180,8 @@ namespace Presentation.ViewModels
                 };
 
                 win.ShowDialog();
+
+                await LoadPeopleAsync();
             }
         }
 
@@ -201,38 +203,47 @@ namespace Presentation.ViewModels
                 Owner = System.Windows.Application.Current.MainWindow
             };
             win.ShowDialog();
+
+            await LoadPeopleAsync();
         }
 
         [RelayCommand]
         private async Task DeletePersonAsync(PersonDto Person)
         {
-            // 1. التحقق من أن العنصر المحدد ليس فارغاً
-            if (Person == null) return;
+            if (Person == null)
+                return;
 
-            // 2. طلب تأكيد من المستخدم
-            var result = MessageBox.Show($"Are you sure you want to delete {Person.FullName}?",
-                                         "Confirm Delete",
-                                         MessageBoxButton.YesNo,
-                                         MessageBoxImage.Question);
+            var confirmation = MessageBox.Show(
+                $"Are you sure you want to delete {Person.FullName}?",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
 
-            if (result == MessageBoxResult.Yes)
+            if (confirmation != MessageBoxResult.Yes)
+                return;
+
+            var result = await _personService.DeletePersonAsync(Person.PersonId);
+
+            if (result.IsFailure)
             {
-                try
-                {
-                    // 3. استدعاء خدمة الحذف (يجب أن تكون معرفة في الـ Constructor)
-                    object value = await _personService.DeletePersonAsync(Person.PersonId);
+                MessageBox.Show(
+                    result.Error,
+                    "Delete Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
 
-                    // 4. تحديث القائمة في الواجهة (بافتراض أن لديك قائمة من نوع ObservableCollection)
-                    FilteredPeople.Remove(Person);
-
-                    MessageBox.Show("Person deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error: {ex.Message}", "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                return;
             }
+
+            await LoadPeopleAsync();
+
+            MessageBox.Show(
+                "Person deleted successfully.",
+                "Success",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
+        
 
         [RelayCommand] private void SendEmail(PersonDto Person) { }
         [RelayCommand] private void PhoneCall(PersonDto Person) { }

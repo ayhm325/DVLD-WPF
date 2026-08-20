@@ -1,5 +1,6 @@
 ﻿using Application.Common.Results;
 using Application.DTOs;
+using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

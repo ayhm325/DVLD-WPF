@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using Domain.Enums;
 using DVLD_WPF;

@@ -490,11 +490,22 @@
                                    Style="{StaticResource FormLabelStyle}"/>
 
                         <ComboBox x:Name="CboCountry"
-                                  ItemsSource="{Binding Countries}"
-                                  SelectedItem="{Binding SelectedCountry,
-                                                          ValidatesOnNotifyDataErrors=True,
-                                                          NotifyOnValidationError=True}"
-                                  DisplayMemberPath="CountryName"/>
+                                    ItemsSource="{Binding Countries}"
+                                    SelectedItem="{Binding SelectedCountry,
+                                                            Mode=TwoWay,
+                                                            UpdateSourceTrigger=PropertyChanged,
+                                                            ValidatesOnNotifyDataErrors=True,
+                                                            NotifyOnValidationError=True}">
+
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding CountryName}"
+                                                 VerticalAlignment="Center"
+                                                 TextTrimming="CharacterEllipsis"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+
+                        </ComboBox>
 
                         <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
                                                   ElementName=CboCountry}"

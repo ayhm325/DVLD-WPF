@@ -1,35 +1,84 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Application.DTOs.UserDTO;
 
 namespace Application.Interfaces
 {
     public interface IUserService
     {
+        // =========================
+        // GET OPERATIONS
+        // =========================
+
         Task<Result<List<UserDto>>> GetAllUsersAsync();
 
         Task<Result<UserDto>> GetUserByIdAsync(int id);
 
         Task<Result<UserDto>> GetUserByPersonIdAsync(int id);
 
-        Task<Result<UserDto>> GetUserByUsernameAsync(string username);
+        Task<Result<UserDto>> GetUserByUsernameAsync(
+            string username);
 
-        Task<Result<int>> AddUserAsync(CreateUserDto dto);
 
-        Task<Result> UpdateUserAsync(int id, CreateUserDto dto);
+        // =========================
+        // CREATE
+        // =========================
 
-        Task<Result> DeleteUserAsync(int id);
+        Task<Result<int>> AddUserAsync(
+            CreateUserDto dto);
 
-        // بقيت كما هي لأنها فحوصات بسيطة (Checks)
-        Task<bool> IsUserExistsByIdAsync(int id);
-        Task<bool> IsUsernameTakenForAnotherUserAsync(string username, int userId);
 
-        // بقيت bool لأسباب أمنية (لمنع تسريب معلومات المستخدمين)
-        Task<bool> AuthenticateUserAsync(string username, string password);
+        // =========================
+        // UPDATE
+        // =========================
 
-        Task<Result> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
+        Task<Result> UpdateUserAsync(
+            int id,
+            UpdateUserDto dto);
 
-        Task<Result<UserDto>> LoginAsync(string username, string password);
+
+        // =========================
+        // DELETE
+        // =========================
+
+        Task<Result> DeleteUserAsync(
+            int id);
+
+
+        // =========================
+        // CHECKS
+        // =========================
+
+        Task<bool> IsUserExistsByIdAsync(
+            int id);
+
+        Task<bool> IsUsernameTakenForAnotherUserAsync(
+            string username,
+            int userId);
+
+
+        // =========================
+        // AUTHENTICATION
+        // =========================
+
+        Task<bool> AuthenticateUserAsync(
+            string username,
+            string password);
+
+
+        // =========================
+        // CHANGE PASSWORD
+        // =========================
+
+        Task<Result> ChangePasswordAsync(
+            int userId,
+            ChangePasswordDto dto);
+
+
+        // =========================
+        // LOGIN
+        // =========================
+
+        Task<Result<UserDto>> LoginAsync(
+            LoginRequestDto dto);
     }
 }

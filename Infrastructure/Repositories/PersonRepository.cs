@@ -6,80 +6,135 @@ namespace Infrastructure.Repositories
 {
     public class PersonRepository : IPersonRepository
     {
-        private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+        private readonly IDbContextFactory<DVLDDbContext>
+            _contextFactory;
 
-        public PersonRepository(IDbContextFactory<DVLDDbContext> contextFactory)
+        public PersonRepository(
+            IDbContextFactory<DVLDDbContext> contextFactory)
         {
             _contextFactory = contextFactory
-                ?? throw new ArgumentNullException(nameof(contextFactory));
+                ?? throw new ArgumentNullException(
+                    nameof(contextFactory));
         }
 
-        // =========================
+        // =========================================================
         // BASE QUERY
-        // =========================
-        private IQueryable<Person> Query(DVLDDbContext context)
+        // =========================================================
+
+        private static IQueryable<Person> Query(
+            DVLDDbContext context)
         {
             return context.People
                 .AsNoTracking()
                 .Include(p => p.Country);
         }
 
-        // =========================
-        // GET OPERATIONS
-        // =========================
+        // =========================================================
+        // GET BY ID
+        // =========================================================
+
         public async Task<Person?> GetPersonByIdAsync(int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            if (id <= 0)
+                return null;
+
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
 
             return await Query(context)
-                .FirstOrDefaultAsync(p => p.PersonId == id);
+                .FirstOrDefaultAsync(
+                    p => p.PersonId == id);
         }
 
-        public async Task<Person?> GetPersonByNationalNoAsync(string nationalNo)
+        // =========================================================
+        // GET BY NATIONAL NUMBER
+        // =========================================================
+
+        public async Task<Person?> GetPersonByNationalNoAsync(
+            string nationalNo)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            if (string.IsNullOrWhiteSpace(nationalNo))
+                return null;
+
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
 
             return await Query(context)
-                .FirstOrDefaultAsync(p => p.NationalNo == nationalNo);
+                .FirstOrDefaultAsync(
+                    p => p.NationalNo == nationalNo);
         }
+
+        // =========================================================
+        // GET ALL
+        // =========================================================
 
         public async Task<List<Person>> GetAllPersonsAsync()
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
 
             return await Query(context)
                 .ToListAsync();
         }
 
-        // =========================
-        // CHECK OPERATIONS
-        // =========================
-        public async Task<bool> IsPersonExistsByIdAsync(int id)
+        // =========================================================
+        // CHECK PERSON EXISTS
+        // =========================================================
+
+        public async Task<bool> IsPersonExistsByIdAsync(
+            int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            if (id <= 0)
+                return false;
+
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
 
             return await context.People
                 .AsNoTracking()
-                .AnyAsync(p => p.PersonId == id);
+                .AnyAsync(
+                    p => p.PersonId == id);
         }
 
-        public async Task<bool> IsNationalNoDuplicatedAsync(string nationalNo, int id)
+        // =========================================================
+        // CHECK NATIONAL NUMBER DUPLICATE
+        // =========================================================
+
+        public async Task<bool> IsNationalNoDuplicatedAsync(
+            string nationalNo,
+            int id)
         {
-            using var context = await _contextFactory.CreateDbContextAsync();
+            if (string.IsNullOrWhiteSpace(nationalNo))
+                return false;
+
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
 
             return await context.People
                 .AsNoTracking()
-                .AnyAsync(p =>
-                    p.NationalNo == nationalNo &&
-                    p.PersonId != id);
+                .AnyAsync(
+                    p =>
+                        p.NationalNo == nationalNo &&
+                        p.PersonId != id);
         }
 
-        // =========================
+        // =========================================================
         // CREATE
-        // =========================
-        public async Task<int> AddPersonAsync(Person person)
+        // =========================================================
+
+        public async Task<int> AddPersonAsync(
+            Person person)
         {
-            using var  context = await _contextFactory.CreateDbContextAsync();
+            ArgumentNullException.ThrowIfNull(person);
+
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
 
             await context.People.AddAsync(person);
 
@@ -88,34 +143,55 @@ namespace Infrastructure.Repositories
             return person.PersonId;
         }
 
-        // =========================
+        // =========================================================
         // UPDATE
-        // =========================
-        public async Task<bool> UpdatePersonAsync(Person person)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
+        // =========================================================
 
-            var existing = await context.People
-                .FirstOrDefaultAsync(p => p.PersonId == person.PersonId);
+        public async Task<bool> UpdatePersonAsync(
+            Person person)
+        {
+            ArgumentNullException.ThrowIfNull(person);
+
+            if (person.PersonId <= 0)
+                return false;
+
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
+
+            var existing =
+                await context.People
+                    .FirstOrDefaultAsync(
+                        p => p.PersonId == person.PersonId);
 
             if (existing is null)
                 return false;
 
             context.Entry(existing)
-                   .CurrentValues
-                   .SetValues(person);
+                .CurrentValues
+                .SetValues(person);
 
             return await context.SaveChangesAsync() > 0;
         }
 
-        // =========================
+        // =========================================================
         // DELETE
-        // =========================
-        public async Task<bool> DeletePersonAsync(int id)
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
+        // =========================================================
 
-            var person = await context.People.FindAsync(id);
+        public async Task<bool> DeletePersonAsync(
+            int id)
+        {
+            if (id <= 0)
+                return false;
+
+            using var context =
+                await _contextFactory
+                    .CreateDbContextAsync();
+
+            var person =
+                await context.People
+                    .FirstOrDefaultAsync(
+                        p => p.PersonId == id);
 
             if (person is null)
                 return false;

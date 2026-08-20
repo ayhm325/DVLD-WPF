@@ -1,11 +1,8 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
+using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using Application.Validators;
 using Domain.Entities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -13,154 +10,377 @@ namespace Application.Services
     {
         private readonly IPersonRepository _personRepository;
 
-        public PersonService(IPersonRepository personRepository)
+        public PersonService(
+            IPersonRepository personRepository)
         {
-            _personRepository = personRepository;
+            _personRepository =
+                personRepository
+                ?? throw new ArgumentNullException(
+                    nameof(personRepository));
         }
 
-        // ================= GET ALL =================
-        public async Task<Result<List<PersonDto>>> GetAllPeopleAsync()
+
+        // =========================================================
+        // GET ALL
+        // =========================================================
+
+        public async Task<Result<List<PersonDto>>>
+            GetAllPeopleAsync()
         {
-            var people = await _personRepository.GetAllPersonsAsync();
+            var people =
+                await _personRepository.GetAllPersonsAsync();
+
+            var personDtos =
+                people
+                    .Select(MapToDto)
+                    .ToList();
 
             return Result<List<PersonDto>>.Success(
-                people.Select(MapToDto).ToList());
+                personDtos);
         }
 
-        // ================= GET BY ID =================
-        public async Task<Result<PersonDto>> GetPersonByIdAsync(int id)
-        {
-            var p = await _personRepository.GetPersonByIdAsync(id);
 
-            if (p == null)
-                return Result<PersonDto>.Fail("الشخص غير موجود.");
+        // =========================================================
+        // GET BY ID
+        // =========================================================
 
-            return Result<PersonDto>.Success(MapToDto(p));
-        }
-
-        // ================= GET BY NATIONAL NO =================
-        public async Task<Result<PersonDto>> GetPersonByNationalNoAsync(string nationalNo)
-        {
-            if (string.IsNullOrWhiteSpace(nationalNo))
-                return Result<PersonDto>.Fail("الرقم الوطني مطلوب.");
-
-            var p = await _personRepository.GetPersonByNationalNoAsync(nationalNo);
-
-            if (p == null)
-                return Result<PersonDto>.Fail("لا يوجد شخص بهذا الرقم الوطني.");
-
-            return Result<PersonDto>.Success(MapToDto(p));
-        }
-
-        // ================= EXISTS =================
-        public async Task<bool> IsPersonExistsAsync(int id)
-        {
-            return await _personRepository.IsPersonExistsByIdAsync(id);
-        }
-
-        // ================= ADD =================
-        public async Task<Result<int>> AddPersonAsync(PersonCreateUpdateDto dto)
-        {
-            if (dto == null)
-                return Result<int>.Fail("بيانات الشخص مطلوبة.");
-
-            var person = MapToEntity(dto);
-
-            var validation = PersonValidator.Validate(person);
-
-            if (!validation.IsValid)
-            {
-                return Result<int>.Fail(string.Join(" | ", validation.Errors));
-            }
-
-            if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, 0))
-                return Result<int>.Fail("الرقم الوطني مسجل مسبقاً.");
-
-            int id = await _personRepository.AddPersonAsync(person);
-
-            return Result<int>.Success(id);
-        }
-
-        // ================= UPDATE =================
-        public async Task<Result> UpdatePersonAsync(int id, PersonCreateUpdateDto dto)
+        public async Task<Result<PersonDto>>
+            GetPersonByIdAsync(int id)
         {
             if (id <= 0)
-                return Result.Failure("معرف الشخص غير صالح.");
+            {
+                return Result<PersonDto>.Fail(
+                    "Invalid person ID.");
+            }
 
-            if (dto == null)
-                return Result.Failure("بيانات الشخص مطلوبة.");
+            var person =
+                await _personRepository
+                    .GetPersonByIdAsync(id);
 
-            if (!await _personRepository.IsPersonExistsByIdAsync(id))
-                return Result.Failure("الشخص غير موجود.");
+            if (person is null)
+            {
+                return Result<PersonDto>.Fail(
+                    "Person not found.");
+            }
 
-            var person = MapToEntity(dto);
-            person.PersonId = id;
+            return Result<PersonDto>.Success(
+                MapToDto(person));
+        }
 
-            var validation = PersonValidator.Validate(person);
+
+        // =========================================================
+        // GET BY NATIONAL NUMBER
+        // =========================================================
+
+        public async Task<Result<PersonDto>>
+            GetPersonByNationalNoAsync(
+                string nationalNo)
+        {
+            if (string.IsNullOrWhiteSpace(nationalNo))
+            {
+                return Result<PersonDto>.Fail(
+                    "National number is required.");
+            }
+
+            nationalNo = nationalNo.Trim();
+
+            var person =
+                await _personRepository
+                    .GetPersonByNationalNoAsync(
+                        nationalNo);
+
+            if (person is null)
+            {
+                return Result<PersonDto>.Fail(
+                    "Person not found.");
+            }
+
+            return Result<PersonDto>.Success(
+                MapToDto(person));
+        }
+
+
+        // =========================================================
+        // EXISTS
+        // =========================================================
+
+        public async Task<bool>
+            IsPersonExistsAsync(int id)
+        {
+            if (id <= 0)
+                return false;
+
+            return await _personRepository
+                .IsPersonExistsByIdAsync(id);
+        }
+
+
+        // =========================================================
+        // ADD
+        // =========================================================
+
+        public async Task<Result<int>>
+            AddPersonAsync(
+                PersonCreateUpdateDto dto)
+        {
+            if (dto is null)
+            {
+                return Result<int>.Fail(
+                    "Person data is required.");
+            }
+
+            var person =
+                MapToEntity(dto);
+
+            // Validate
+            var validation =
+                PersonValidator.Validate(person);
 
             if (!validation.IsValid)
             {
-                var errors = string.Join(" | ", validation.Errors);
-                return Result.Failure(errors);
+                return Result<int>.Fail(
+                    string.Join(
+                        Environment.NewLine,
+                        validation.Errors));
             }
 
-            if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, id))
-                return Result.Failure("الرقم الوطني مسجل مسبقاً لشخص آخر.");
+            // National number uniqueness
+            var nationalNoExists =
+                await _personRepository
+                    .IsNationalNoDuplicatedAsync(
+                        person.NationalNo,
+                        0);
 
-            var isSuccess = await _personRepository.UpdatePersonAsync(person);
+            if (nationalNoExists)
+            {
+                return Result<int>.Fail(
+                    "The national number is already registered.");
+            }
 
-            return isSuccess
-                ? Result.Success()
-                : Result.Failure("فشل في تحديث بيانات الشخص.");
+            // Save
+            var personId =
+                await _personRepository
+                    .AddPersonAsync(person);
+
+            return Result<int>.Success(
+                personId);
         }
 
-        // ================= DELETE =================
-        public async Task<Result> DeletePersonAsync(int id)
+
+        // =========================================================
+        // UPDATE
+        // =========================================================
+
+        public async Task<Result>
+            UpdatePersonAsync(
+                int id,
+                PersonCreateUpdateDto dto)
         {
-            if (!await _personRepository.IsPersonExistsByIdAsync(id))
-                return Result.Failure("الشخص غير موجود.");
+            if (id <= 0)
+            {
+                return Result.Failure(
+                    "Invalid person ID.");
+            }
 
-            var isSuccess = await _personRepository.DeletePersonAsync(id);
+            if (dto is null)
+            {
+                return Result.Failure(
+                    "Person data is required.");
+            }
 
-            return isSuccess
+            // Check existence
+            var exists =
+                await _personRepository
+                    .IsPersonExistsByIdAsync(id);
+
+            if (!exists)
+            {
+                return Result.Failure(
+                    "Person not found.");
+            }
+
+            // Map
+            var person =
+                MapToEntity(dto);
+
+            person.PersonId = id;
+
+            // Validate
+            var validation =
+                PersonValidator.Validate(person);
+
+            if (!validation.IsValid)
+            {
+                return Result.Failure(
+                    string.Join(
+                        Environment.NewLine,
+                        validation.Errors));
+            }
+
+            // National number uniqueness
+            var nationalNoExists =
+                await _personRepository
+                    .IsNationalNoDuplicatedAsync(
+                        person.NationalNo,
+                        id);
+
+            if (nationalNoExists)
+            {
+                return Result.Failure(
+                    "The national number is already registered to another person.");
+            }
+
+            // Update
+            var success =
+                await _personRepository
+                    .UpdatePersonAsync(person);
+
+            return success
                 ? Result.Success()
-                : Result.Failure("فشل في حذف الشخص.");
+                : Result.Failure(
+                    "Failed to update person.");
         }
 
-        // ================= MAPPING =================
-        private PersonDto MapToDto(Person p)
+
+        // =========================================================
+        // DELETE
+        // =========================================================
+
+        public async Task<Result>
+            DeletePersonAsync(int id)
+        {
+            if (id <= 0)
+            {
+                return Result.Failure(
+                    "Invalid person ID.");
+            }
+
+            var exists =
+                await _personRepository
+                    .IsPersonExistsByIdAsync(id);
+
+            if (!exists)
+            {
+                return Result.Failure(
+                    "Person not found.");
+            }
+
+            var success =
+                await _personRepository
+                    .DeletePersonAsync(id);
+
+            return success
+                ? Result.Success()
+                : Result.Failure(
+                    "Failed to delete person.");
+        }
+
+
+        // =========================================================
+        // ENTITY -> DTO
+        // =========================================================
+
+        private static PersonDto MapToDto(
+            Person person)
         {
             return new PersonDto
             {
-                PersonId = p.PersonId,
-                NationalNo = p.NationalNo,
-                FullName = p.FullName,
-                DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender,
-                Address = p.Address,
-                Phone = p.Phone,
-                Email = p.Email,
-                CountryName = p.Country?.CountryName ?? "Unknown",
-                ImagePath = p.ImagePath
+                PersonId =
+                    person.PersonId,
+
+                NationalNo =
+                    person.NationalNo,
+
+                FullName =
+                    person.FullName,
+
+                DateOfBirth =
+                    person.DateOfBirth,
+
+                Gender =
+                    person.Gender,
+
+                Address =
+                    person.Address,
+
+                Phone =
+                    person.Phone,
+
+                Email =
+                    person.Email,
+
+                CountryName =
+                    person.Country?.CountryName
+                    ?? "Unknown",
+
+                NationalityCountryID =
+                    person.NationalityCountryID,
+
+                ImagePath =
+                    person.ImagePath
             };
         }
 
-        private Person MapToEntity(PersonCreateUpdateDto dto)
+
+        // =========================================================
+        // DTO -> ENTITY
+        // =========================================================
+
+        private static Person MapToEntity(
+            PersonCreateUpdateDto dto)
         {
             return new Person
             {
-                NationalNo = dto.NationalNo,
-                FirstName = dto.FirstName,
-                SecondName = dto.SecondName,
-                ThirdName = dto.ThirdName,
-                LastName = dto.LastName,
-                DateOfBirth = dto.DateOfBirth,
-                Gender = dto.Gender,
-                Address = dto.Address,
-                Phone = dto.Phone,
-                Email = dto.Email,
-                NationalityCountryID = dto.NationalityCountryID,
-                ImagePath = dto.ImagePath
+                PersonId =
+                    dto.PersonId,
+
+                NationalNo =
+                    dto.NationalNo?.Trim()
+                    ?? string.Empty,
+
+                FirstName =
+                    dto.FirstName?.Trim()
+                    ?? string.Empty,
+
+                SecondName =
+                    dto.SecondName?.Trim()
+                    ?? string.Empty,
+
+                ThirdName =
+                    string.IsNullOrWhiteSpace(dto.ThirdName)
+                        ? null
+                        : dto.ThirdName.Trim(),
+
+                LastName =
+                    dto.LastName?.Trim()
+                    ?? string.Empty,
+
+                DateOfBirth =
+                    dto.DateOfBirth,
+
+                Gender =
+                    dto.Gender,
+
+                Address =
+                    dto.Address?.Trim()
+                    ?? string.Empty,
+
+                Phone =
+                    dto.Phone?.Trim()
+                    ?? string.Empty,
+
+                Email =
+                    string.IsNullOrWhiteSpace(dto.Email)
+                        ? null
+                        : dto.Email.Trim(),
+
+                NationalityCountryID =
+                    dto.NationalityCountryID,
+
+                ImagePath =
+                    string.IsNullOrWhiteSpace(dto.ImagePath)
+                        ? null
+                        : dto.ImagePath.Trim()
             };
         }
     }

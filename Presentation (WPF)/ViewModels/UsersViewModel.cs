@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.PersonDTO;
+using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;

@@ -1,12 +1,11 @@
-﻿using Application.Interfaces;
+﻿using Application.DTOs.UserDTO;
+using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Entities;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-
 
 namespace Presentation.ViewModels
 {
@@ -14,64 +13,167 @@ namespace Presentation.ViewModels
     {
         private readonly IUserService _userService;
 
-        // خصائص المستخدم (تم تحويلها لـ ObservableProperty لضمان العمل مع الـ Binding)
-        [ObservableProperty] private int _userId;
-        [ObservableProperty] private string _userName = string.Empty;
+        // =========================
+        // USER
+        // =========================
 
-        // === 1. خصائص كلمات المرور (الخاصة) ===
-        // ملاحظة: [ObservableProperty] سيقوم بإنشاء CurrentPassword, NewPassword, ConfirmNewPassword تلقائياً
-        [ObservableProperty] private string _currentPassword = string.Empty;
-        [ObservableProperty] private string _newPassword = string.Empty;
-        [ObservableProperty] private string _confirmNewPassword = string.Empty;
+        [ObservableProperty]
+        private int _userId;
 
-        // === 2. خصائص العين (الظهور/الإخفاء) ===
-        [ObservableProperty] private bool _isCurrentPasswordVisible;
-        [ObservableProperty] private bool _isNewPasswordVisible;
-        [ObservableProperty] private bool _isConfirmNewPasswordVisible;
+        [ObservableProperty]
+        private string _userName = string.Empty;
 
-        public ChangePasswordViewModel(IUserService userService)
+
+        // =========================
+        // PASSWORDS
+        // =========================
+
+        [ObservableProperty]
+        private string _currentPassword = string.Empty;
+
+        [ObservableProperty]
+        private string _newPassword = string.Empty;
+
+        [ObservableProperty]
+        private string _confirmNewPassword = string.Empty;
+
+
+        // =========================
+        // PASSWORD VISIBILITY
+        // =========================
+
+        [ObservableProperty]
+        private bool _isCurrentPasswordVisible;
+
+        [ObservableProperty]
+        private bool _isNewPasswordVisible;
+
+        [ObservableProperty]
+        private bool _isConfirmNewPasswordVisible;
+
+
+        // =========================
+        // CONSTRUCTOR
+        // =========================
+
+        public ChangePasswordViewModel(
+            IUserService userService)
         {
-            _userService = userService;
+            _userService = userService
+                ?? throw new ArgumentNullException(
+                    nameof(userService));
         }
 
-        // === 3. أوامر العين ===
-        [RelayCommand]
-        private void ToggleCurrentPassword() => IsCurrentPasswordVisible = !IsCurrentPasswordVisible;
+
+        // =========================
+        // TOGGLE PASSWORD VISIBILITY
+        // =========================
 
         [RelayCommand]
-        private void ToggleNewPassword() => IsNewPasswordVisible = !IsNewPasswordVisible;
+        private void ToggleCurrentPassword()
+        {
+            IsCurrentPasswordVisible =
+                !IsCurrentPasswordVisible;
+        }
 
         [RelayCommand]
-        private void ToggleConfirmPassword() => IsConfirmNewPasswordVisible = !IsConfirmNewPasswordVisible;
+        private void ToggleNewPassword()
+        {
+            IsNewPasswordVisible =
+                !IsNewPasswordVisible;
+        }
 
-        // === 4. أمر تغيير كلمة المرور ===
+        [RelayCommand]
+        private void ToggleConfirmPassword()
+        {
+            IsConfirmNewPasswordVisible =
+                !IsConfirmNewPasswordVisible;
+        }
+
+
+        // =========================
+        // CHANGE PASSWORD
+        // =========================
+
         [RelayCommand]
         private async Task ChangePassword()
         {
-            // التحقق من الحقول
+            // =========================
+            // BASIC VALIDATION
+            // =========================
+
             if (string.IsNullOrWhiteSpace(CurrentPassword) ||
                 string.IsNullOrWhiteSpace(NewPassword) ||
                 string.IsNullOrWhiteSpace(ConfirmNewPassword))
             {
-                MessageBox.Show("Please fill in all fields.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    "Please fill in all fields.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
+
+
+            // =========================
+            // CONFIRM NEW PASSWORD
+            // =========================
 
             if (NewPassword != ConfirmNewPassword)
             {
-                MessageBox.Show("Passwords do not match.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    "Passwords do not match.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
+
+
+            // =========================
+            // SAME PASSWORD CHECK
+            // =========================
 
             if (CurrentPassword == NewPassword)
             {
-                MessageBox.Show("New password must be different from current.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    "New password must be different from current.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
+
             try
             {
-                var result = await _userService.ChangePasswordAsync(UserId,CurrentPassword,NewPassword);
+                // =========================
+                // CREATE DTO
+                // =========================
+
+                var dto = new ChangePasswordDto
+                {
+                    CurrentPassword = CurrentPassword,
+                    NewPassword = NewPassword
+                };
+
+
+                // =========================
+                // CALL SERVICE
+                // =========================
+
+                var result =
+                    await _userService.ChangePasswordAsync(
+                        UserId,
+                        dto);
+
+
+                // =========================
+                // SUCCESS
+                // =========================
 
                 if (result.IsSuccess)
                 {
@@ -81,24 +183,35 @@ namespace Presentation.ViewModels
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
 
-                    var window = System.Windows.Application.Current.Windows
-                        .OfType<Window>()
-                        .FirstOrDefault(w => w.DataContext == this);
+                    var window =
+                        System.Windows.Application.Current.Windows
+                            .OfType<Window>()
+                            .FirstOrDefault(
+                                w => w.DataContext == this);
 
                     window?.Close();
+
+                    return;
                 }
-                else
-                {
-                    MessageBox.Show(
-                        result.Error,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                }
+
+
+                // =========================
+                // FAILURE
+                // =========================
+
+                MessageBox.Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    $"An error occurred: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
     }

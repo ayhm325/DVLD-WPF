@@ -1,27 +1,35 @@
-﻿namespace Application.Common
+﻿namespace Application.Common;
+
+public sealed class ValidationResult
 {
-    public class ValidationResult
+    public bool IsValid { get; }
+
+    public IReadOnlyList<string> Errors { get; }
+
+    private ValidationResult(
+        bool isValid,
+        IReadOnlyList<string> errors)
     {
-        public bool IsValid { get; set; }
+        IsValid = isValid;
+        Errors = errors;
+    }
 
-        public List<string> Errors { get; set; } = [];
+    public static ValidationResult Success()
+    {
+        return new ValidationResult(
+            true,
+            Array.Empty<string>());
+    }
 
-        public static ValidationResult Success()
-        {
-            return new ValidationResult
-            {
-                IsValid = true,
-                Errors = []
-            };
-        }
+    public static ValidationResult Failure(
+        IEnumerable<string> errors)
+    {
+        var errorList = errors
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .ToList();
 
-        public static ValidationResult Failure(List<string> errors)
-        {
-            return new ValidationResult
-            {
-                IsValid = false,
-                Errors = errors
-            };
-        }
+        return new ValidationResult(
+            false,
+            errorList);
     }
 }

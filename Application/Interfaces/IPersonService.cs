@@ -1,24 +1,49 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Application.DTOs.PersonDTO;
 
 namespace Application.Interfaces
 {
     public interface IPersonService
     {
+        // =========================
+        // GET
+        // =========================
+
         Task<Result<List<PersonDto>>> GetAllPeopleAsync();
 
-        Task<Result<PersonDto>> GetPersonByIdAsync(int id);
+        Task<Result<PersonDto>> GetPersonByIdAsync(
+            int id);
 
-        Task<Result<PersonDto>> GetPersonByNationalNoAsync(string nationalNo);
+        Task<Result<PersonDto>> GetPersonByNationalNoAsync(
+            string nationalNo);
 
-        Task<Result<int>> AddPersonAsync(PersonCreateUpdateDto personDto);
+        // =========================
+        // CREATE
+        // =========================
 
-        Task<Result> UpdatePersonAsync(int id, PersonCreateUpdateDto personDto);
+        Task<Result<int>> AddPersonAsync(
+            PersonCreateUpdateDto personDto);
 
-        Task<Result> DeletePersonAsync(int id);
+        // =========================
+        // UPDATE
+        // =========================
 
-        Task<bool> IsPersonExistsAsync(int id);
+        Task<Result> UpdatePersonAsync(
+            int id,
+            PersonCreateUpdateDto personDto);
+
+        // =========================
+        // DELETE
+        // =========================
+
+        Task<Result> DeletePersonAsync(
+            int id);
+
+        // =========================
+        // CHECKS
+        // =========================
+
+        Task<bool> IsPersonExistsAsync(
+            int id);
     }
 }

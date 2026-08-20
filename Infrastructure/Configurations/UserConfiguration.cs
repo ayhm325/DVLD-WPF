@@ -2,30 +2,48 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Infrastructure.Configurations;
-
-public class UserConfiguration
-    : IEntityTypeConfiguration<User>
+namespace Infrastructure.Configurations
 {
-    public void Configure(EntityTypeBuilder<User> builder)
+    public class UserConfiguration
+        : IEntityTypeConfiguration<User>
     {
-        builder.HasKey(u => u.UserId);
+        public void Configure(EntityTypeBuilder<User> builder)
+        {
+            // =========================
+            // PRIMARY KEY
+            // =========================
 
-        builder.Property(u => u.UserName)
-            .HasMaxLength(50)
-            .IsRequired();
+            builder.HasKey(u => u.UserId);
 
-        builder.Property(u => u.Password)
-            .HasMaxLength(200)
-            .IsRequired();
+            // =========================
+            // USERNAME
+            // =========================
 
-        // Unique Index
-        builder.HasIndex(u => u.UserName)
-            .IsUnique();
+            builder.Property(u => u.UserName)
+                .HasMaxLength(50)
+                .IsRequired();
 
-        builder.HasOne(u => u.Person)
-            .WithOne()
-            .HasForeignKey<User>(u => u.PersonId)
-            .OnDelete(DeleteBehavior.Restrict);
+            builder.HasIndex(u => u.UserName)
+                .IsUnique();
+
+            // =========================
+            // PASSWORD
+            // =========================
+
+            // BCrypt hash is stored here.
+            // The plain-text password is never stored.
+            builder.Property(u => u.Password)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            // =========================
+            // PERSON RELATIONSHIP
+            // =========================
+
+            builder.HasOne(u => u.Person)
+                .WithOne()
+                .HasForeignKey<User>(u => u.PersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }

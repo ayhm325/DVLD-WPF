@@ -1,14 +1,10 @@
-﻿
-
-namespace Application.DTOs
+﻿namespace Application.DTOs.UserDTO
 {
     public class CreateUserDto
     {
-        public int UserId { get; set; }
-
         public string UserName { get; set; } = null!;
-       
-        public string? Password { get; set; } = null!;
+
+        public string Password { get; set; } = null!;
 
         public bool IsActive { get; set; }
 

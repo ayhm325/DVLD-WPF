@@ -4,31 +4,18 @@ public sealed class Result<T> : Result
 {
     public T? Value { get; }
 
-
     private Result(
-        T value
-    ) : base(true, string.Empty)
+        bool success,
+        T? value,
+        string error)
+        : base(success, error)
     {
         Value = value;
     }
 
-
-    private Result(
-        string error
-    ) : base(false, error)
-    {
-        Value = default;
-    }
-
-
     public static Result<T> Success(T value)
-    {
-        return new Result<T>(value);
-    }
-
+        => new(true, value, string.Empty);
 
     public static Result<T> Fail(string error)
-    {
-        return new Result<T>(error);
-    }
+        => new(false, default, error);
 }

@@ -1,10 +1,8 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
+using Application.DTOs.UserDTO;
 using Application.Interfaces;
+using Application.Validators;
 using Domain.Entities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Application.Services
 {
@@ -14,200 +12,484 @@ namespace Application.Services
 
         public UserService(IUserRepository userRepository)
         {
-            _userRepository = userRepository;
+            _userRepository = userRepository
+                ?? throw new ArgumentNullException(nameof(userRepository));
         }
 
-        // ================= GET ALL =================
+        // =========================================================
+        // GET ALL
+        // =========================================================
+
         public async Task<Result<List<UserDto>>> GetAllUsersAsync()
         {
             var users = await _userRepository.GetAllUsersAsync();
 
-            return Result<List<UserDto>>.Success(
-                [.. users.Select(MapToDto)]);
+            var userDtos = users
+                .Select(MapToDto)
+                .ToList();
+
+            return Result<List<UserDto>>.Success(userDtos);
         }
 
-        // ================= GET BY ID =================
+        // =========================================================
+        // GET BY ID
+        // =========================================================
+
         public async Task<Result<UserDto>> GetUserByIdAsync(int id)
         {
-            var u = await _userRepository.GetUserByUserIdAsync(id);
-
-            if (u == null)
-                return Result<UserDto>.Fail("المستخدم غير موجود.");
-
-            return Result<UserDto>.Success(MapToDto(u));
-        }
-
-        public async Task<Result<UserDto>> GetUserByPersonIdAsync(int id)
-        {
-            var u = await _userRepository.GetUserByPersonIdAsync(id);
-
-            if (u == null)
-                return Result<UserDto>.Fail("لا يوجد مستخدم مرتبط بهذا الشخص.");
-
-            return Result<UserDto>.Success(MapToDto(u));
-        }
-
-        public async Task<Result<UserDto>> GetUserByUsernameAsync(string username)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-                return Result<UserDto>.Fail("اسم المستخدم مطلوب.");
-
-            var u = await _userRepository.GetUserByUsernameAsync(username);
-
-            if (u == null)
-                return Result<UserDto>.Fail("المستخدم غير موجود.");
-
-            return Result<UserDto>.Success(MapToDto(u));
-        }
-
-        // ================= EXISTS & CHECKS =================
-        public async Task<bool> IsUserExistsByIdAsync(int id)
-        {
-            return await _userRepository.IsUserExistsByIdAsync(id);
-        }
-
-        public async Task<bool> IsUsernameTakenForAnotherUserAsync(string username, int userId)
-        {
-            return await _userRepository.IsUsernameTakenForAnotherUserAsync(username, userId);
-        }
-
-        // ================= ADD =================
-        public async Task<Result<int>> AddUserAsync(CreateUserDto dto)
-        {
-            if (dto == null)
-                return Result<int>.Fail("بيانات المستخدم مطلوبة.");
-
-            if (string.IsNullOrWhiteSpace(dto.Password))
-                return Result<int>.Fail("كلمة المرور مطلوبة.");
-
-            // التأكد من عدم تكرار اسم المستخدم
-            if (await _userRepository.IsUsernameTakenForAnotherUserAsync(dto.UserName, 0))
-                return Result<int>.Fail("اسم المستخدم مستخدم بالفعل.");
-
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-            var user = MapToEntity(dto, hashedPassword);
-
-            int id = await _userRepository.AddUserAsync(user);
-
-            return Result<int>.Success(id);
-        }
-
-        // ================= UPDATE =================
-        public async Task<Result> UpdateUserAsync(int id, CreateUserDto dto)
-        {
             if (id <= 0)
-                return Result.Failure("معرف المستخدم غير صالح.");
-
-            if (dto == null)
-                return Result.Failure("بيانات المستخدم مطلوبة.");
-
-            var user = await _userRepository.GetUserByUserIdAsync(id);
-
-            if (user is null)
-                return Result.Failure("المستخدم غير موجود.");
-
-            // التأكد من عدم تكرار اسم المستخدم لمستخدم آخر
-            if (await _userRepository.IsUsernameTakenForAnotherUserAsync(dto.UserName, id))
-                return Result.Failure("اسم المستخدم مستخدم من قبل مستخدم آخر.");
-
-            user.UserName = dto.UserName;
-            user.IsActive = dto.IsActive;
-            user.PersonId = dto.PersonId;
-
-            if (!string.IsNullOrWhiteSpace(dto.Password))
             {
-                user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+                return Result<UserDto>.Fail(
+                    "Invalid user ID.");
             }
 
-            var isSuccess = await _userRepository.UpdateUserAsync(user);
+            var user =
+                await _userRepository.GetUserByUserIdAsync(id);
 
-            return isSuccess
-                ? Result.Success()
-                : Result.Failure("فشل في تحديث بيانات المستخدم.");
+            if (user is null)
+            {
+                return Result<UserDto>.Fail(
+                    "User not found.");
+            }
+
+            return Result<UserDto>.Success(
+                MapToDto(user));
         }
 
-        // ================= DELETE =================
+        // =========================================================
+        // GET BY PERSON ID
+        // =========================================================
+
+        public async Task<Result<UserDto>> GetUserByPersonIdAsync(
+            int personId)
+        {
+            if (personId <= 0)
+            {
+                return Result<UserDto>.Fail(
+                    "Invalid person ID.");
+            }
+
+            var user =
+                await _userRepository.GetUserByPersonIdAsync(personId);
+
+            if (user is null)
+            {
+                return Result<UserDto>.Fail(
+                    "No user is associated with this person.");
+            }
+
+            return Result<UserDto>.Success(
+                MapToDto(user));
+        }
+
+        // =========================================================
+        // GET BY USERNAME
+        // =========================================================
+
+        public async Task<Result<UserDto>> GetUserByUsernameAsync(
+            string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return Result<UserDto>.Fail(
+                    "Username is required.");
+            }
+
+            var user =
+                await _userRepository.GetUserByUsernameAsync(username);
+
+            if (user is null)
+            {
+                return Result<UserDto>.Fail(
+                    "User not found.");
+            }
+
+            return Result<UserDto>.Success(
+                MapToDto(user));
+        }
+
+        // =========================================================
+        // CHECKS
+        // =========================================================
+
+        public async Task<bool> IsUserExistsByIdAsync(int id)
+        {
+            if (id <= 0)
+                return false;
+
+            return await _userRepository
+                .IsUserExistsByIdAsync(id);
+        }
+
+        public async Task<bool> IsUsernameTakenForAnotherUserAsync(
+            string username,
+            int userId)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                return false;
+
+            return await _userRepository
+                .IsUsernameTakenForAnotherUserAsync(
+                    username,
+                    userId);
+        }
+
+        // =========================================================
+        // ADD USER
+        // =========================================================
+
+        public async Task<Result<int>> AddUserAsync(
+            CreateUserDto dto)
+        {
+            if (dto is null)
+            {
+                return Result<int>.Fail(
+                    "User data is required.");
+            }
+
+            var validation =
+                UserValidator.ValidateCreateUser(dto);
+
+            if (!validation.IsValid)
+            {
+                return Result<int>.Fail(
+                    string.Join(
+                        Environment.NewLine,
+                        validation.Errors));
+            }
+
+            // Username must be unique
+            if (await _userRepository
+                .IsUsernameTakenAsync(dto.UserName))
+            {
+                return Result<int>.Fail(
+                    "Username is already in use.");
+            }
+
+            // One person = one user account
+            if (await _userRepository
+                .IsUserExistsByPersonIdAsync(dto.PersonId))
+            {
+                return Result<int>.Fail(
+                    "This person is already associated with a user account.");
+            }
+
+            // Hash password
+            var hashedPassword =
+                BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+            var user =
+                MapToEntity(dto, hashedPassword);
+
+            var userId =
+                await _userRepository.AddUserAsync(user);
+
+            return Result<int>.Success(userId);
+        }
+
+        // =========================================================
+        // UPDATE USER
+        // =========================================================
+
+        public async Task<Result> UpdateUserAsync(
+            int id,
+            UpdateUserDto dto)
+        {
+            if (id <= 0)
+            {
+                return Result.Failure(
+                    "Invalid user ID.");
+            }
+
+            if (dto is null)
+            {
+                return Result.Failure(
+                    "User data is required.");
+            }
+
+            var validation =
+                UserValidator.ValidateUpdateUser(dto);
+
+            if (!validation.IsValid)
+            {
+                return Result.Failure(
+                    string.Join(
+                        Environment.NewLine,
+                        validation.Errors));
+            }
+
+            var user =
+                await _userRepository
+                    .GetUserByUserIdAsync(id);
+
+            if (user is null)
+            {
+                return Result.Failure(
+                    "User not found.");
+            }
+
+            // Username uniqueness
+            if (await _userRepository
+                .IsUsernameTakenForAnotherUserAsync(
+                    dto.UserName,
+                    id))
+            {
+                return Result.Failure(
+                    "Username is already in use by another user.");
+            }
+
+            // Person uniqueness
+            if (user.PersonId != dto.PersonId &&
+                await _userRepository
+                    .IsUserExistsByPersonIdAsync(dto.PersonId))
+            {
+                return Result.Failure(
+                    "This person is already associated with another user account.");
+            }
+
+            user.UserName = dto.UserName;
+            user.PersonId = dto.PersonId;
+            user.IsActive = dto.IsActive;
+
+            // Password is optional during update
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+            {
+                user.Password =
+                    BCrypt.Net.BCrypt.HashPassword(
+                        dto.Password);
+            }
+
+            var success =
+                await _userRepository.UpdateUserAsync(user);
+
+            return success
+                ? Result.Success()
+                : Result.Failure(
+                    "Failed to update user data.");
+        }
+
+        // =========================================================
+        // DELETE USER
+        // =========================================================
+
         public async Task<Result> DeleteUserAsync(int id)
         {
-            if (!await _userRepository.IsUserExistsByIdAsync(id))
-                return Result.Failure("المستخدم غير موجود.");
+            if (id <= 0)
+            {
+                return Result.Failure(
+                    "Invalid user ID.");
+            }
 
-            var isSuccess = await _userRepository.DeleteUserAsync(id);
+            var exists =
+                await _userRepository
+                    .IsUserExistsByIdAsync(id);
 
-            return isSuccess
+            if (!exists)
+            {
+                return Result.Failure(
+                    "User not found.");
+            }
+
+            var success =
+                await _userRepository.DeleteUserAsync(id);
+
+            return success
                 ? Result.Success()
-                : Result.Failure("فشل في حذف المستخدم.");
+                : Result.Failure(
+                    "Failed to delete user.");
         }
 
-        // ================= AUTHENTICATE =================
-        // بقيت Task<bool> لأسباب أمنية حتى لا نعطي رسائل تساعد على معرفة إذا كان المستخدم موجوداً أم لا
-        public async Task<bool> AuthenticateUserAsync(string username, string password)
-        {
-            var user = await _userRepository.GetUserByUsernameAsync(username);
-            if (user == null) return false;
+        // =========================================================
+        // AUTHENTICATE
+        // =========================================================
 
-            return BCrypt.Net.BCrypt.Verify(password, user.Password);
+        public async Task<bool> AuthenticateUserAsync(
+            string username,
+            string password)
+        {
+            if (string.IsNullOrWhiteSpace(username) ||
+                string.IsNullOrWhiteSpace(password))
+            {
+                return false;
+            }
+
+            var user =
+                await _userRepository
+                    .GetUserByUsernameAsync(username);
+
+            if (user is null)
+                return false;
+
+            if (!user.IsActive)
+                return false;
+
+            return BCrypt.Net.BCrypt.Verify(
+                password,
+                user.Password);
         }
 
-        // ================= CHANGE PASSWORD =================
-        public async Task<Result> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+        // =========================================================
+        // CHANGE PASSWORD
+        // =========================================================
+
+        public async Task<Result> ChangePasswordAsync(
+            int userId,
+            ChangePasswordDto dto)
         {
-            if (string.IsNullOrWhiteSpace(newPassword))
-                return Result.Failure("كلمة المرور الجديدة مطلوبة.");
+            if (userId <= 0)
+            {
+                return Result.Failure(
+                    "Invalid user ID.");
+            }
 
-            var user = await _userRepository.GetUserByUserIdAsync(userId);
+            if (dto is null)
+            {
+                return Result.Failure(
+                    "Change password data is required.");
+            }
 
-            if (user == null)
-                return Result.Failure("المستخدم غير موجود.");
+            var validation =
+                UserValidator.ValidateChangePassword(dto);
 
-            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.Password))
-                return Result.Failure("كلمة المرور الحالية غير صحيحة.");
+            if (!validation.IsValid)
+            {
+                return Result.Failure(
+                    string.Join(
+                        Environment.NewLine,
+                        validation.Errors));
+            }
 
-            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            var user =
+                await _userRepository
+                    .GetUserByUserIdAsync(userId);
 
-            var isSuccess = await _userRepository.UpdateUserAsync(user);
+            if (user is null)
+            {
+                return Result.Failure(
+                    "User not found.");
+            }
 
-            return isSuccess
+            // Verify current password
+            var currentPasswordValid =
+                BCrypt.Net.BCrypt.Verify(
+                    dto.CurrentPassword,
+                    user.Password);
+
+            if (!currentPasswordValid)
+            {
+                return Result.Failure(
+                    "Current password is incorrect.");
+            }
+
+            // Hash new password
+            user.Password =
+                BCrypt.Net.BCrypt.HashPassword(
+                    dto.NewPassword);
+
+            var success =
+                await _userRepository.UpdateUserAsync(user);
+
+            return success
                 ? Result.Success()
-                : Result.Failure("فشل في تحديث كلمة المرور.");
+                : Result.Failure(
+                    "Failed to update password.");
         }
 
-        // ================= LOGIN =================
-        public async Task<Result<UserDto>> LoginAsync(string username, string password)
+        // =========================================================
+        // LOGIN
+        // =========================================================
+
+        public async Task<Result<UserDto>> LoginAsync(
+            LoginRequestDto dto)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-                return Result<UserDto>.Fail("اسم المستخدم وكلمة المرور مطلوبان.");
+            if (dto is null)
+            {
+                return Result<UserDto>.Fail(
+                    "Login data is required.");
+            }
 
-            var isAuthenticated = await AuthenticateUserAsync(username, password);
+            var validation =
+                UserValidator.ValidateLogin(dto);
 
-            if (!isAuthenticated)
-                return Result<UserDto>.Fail("اسم المستخدم أو كلمة المرور غير صحيحة.");
+            if (!validation.IsValid)
+            {
+                return Result<UserDto>.Fail(
+                    string.Join(
+                        Environment.NewLine,
+                        validation.Errors));
+            }
 
-            var userResult = await GetUserByUsernameAsync(username);
+            var user =
+                await _userRepository
+                    .GetUserByUsernameAsync(dto.UserName);
 
-            if (userResult.IsFailure)
-                return Result<UserDto>.Fail("حدث خطأ أثناء جلب بيانات المستخدم.");
+            // Don't reveal whether username exists
+            if (user is null)
+            {
+                return Result<UserDto>.Fail(
+                    "Invalid username or password.");
+            }
 
-            return Result<UserDto>.Success(userResult.Value);
+            if (!user.IsActive)
+            {
+                return Result<UserDto>.Fail(
+                    "This user account is inactive.");
+            }
+
+            var passwordValid =
+                BCrypt.Net.BCrypt.Verify(
+                    dto.Password,
+                    user.Password);
+
+            if (!passwordValid)
+            {
+                return Result<UserDto>.Fail(
+                    "Invalid username or password.");
+            }
+
+            return Result<UserDto>.Success(
+                MapToDto(user));
         }
 
-        // ================= MAPPING =================
-        private UserDto MapToDto(User u)
+        // =========================================================
+        // MAPPING ENTITY -> DTO
+        // =========================================================
+
+        private static UserDto MapToDto(User user)
         {
             return new UserDto
             {
-                UserId = u.UserId,
-                PersonId = u.PersonId,
-                UserName = u.UserName,
-                Password = u.Password,
-                IsActive = u.IsActive,
-                FullName = u.Person != null
-                    ? $"{u.Person.FirstName} {u.Person.SecondName} {u.Person.ThirdName} {u.Person.LastName}"
-                    : string.Empty
+                UserId = user.UserId,
+
+                PersonId = user.PersonId,
+
+                UserName = user.UserName,
+
+                IsActive = user.IsActive,
+
+                FullName = user.Person is null
+                    ? string.Empty
+                    : string.Join(
+                        " ",
+                        new[]
+                        {
+                            user.Person.FirstName,
+                            user.Person.SecondName,
+                            user.Person.ThirdName,
+                            user.Person.LastName
+                        }
+                        .Where(x =>
+                            !string.IsNullOrWhiteSpace(x)))
             };
         }
 
-        private User MapToEntity(CreateUserDto dto, string hashedPassword)
+        // =========================================================
+        // MAPPING CREATE DTO -> ENTITY
+        // =========================================================
+
+        private static User MapToEntity(
+            CreateUserDto dto,
+            string hashedPassword)
         {
             return new User
             {

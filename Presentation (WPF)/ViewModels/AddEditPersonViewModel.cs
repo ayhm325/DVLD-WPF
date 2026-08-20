@@ -1,6 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.PersonDTO;
 using Application.Interfaces;
-using Application.Validators;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Entities;
@@ -9,50 +8,258 @@ using DVLD_WPF;
 using Microsoft.Win32;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace Presentation.ViewModels
 {
-    public partial class AddEditPersonViewModel : ObservableValidator
+    public partial class AddEditPersonViewModel : ObservableObject
     {
+        // =========================================================
+        // EVENTS
+        // =========================================================
+
         public event Action<bool>? SaveCompleted;
+
+
+        // =========================================================
+        // DEPENDENCIES
+        // =========================================================
 
         private readonly IPersonService _personService;
         private readonly ICountryService _countryService;
-        private readonly string _destinationFolder = @"C:\ImageDVLD\";
 
-        [ObservableProperty] private int _personId;
-        [ObservableProperty] private OperationMode _mode;
-        [ObservableProperty] private string _pageTitle = "Add Person";
-        [ObservableProperty] private Country _selectedCountry = null!;
-        [ObservableProperty] private string _imagePath = string.Empty;
-
-        public string ImageDisplayPath => !string.IsNullOrEmpty(ImagePath)
-            ? ImagePath
-            : (IsMale ? "pack://application:,,,/Resources/Default_Male.png" : "pack://application:,,,/Resources/Default_Female.png");
-
-        public string FullName => $"{FirstName} {SecondName} {ThirdName} {LastName}".Replace("  ", " ").Trim();
-        public string CountryName => SelectedCountry?.CountryName ?? "Unknown";
-        public ObservableCollection<Country> Countries { get; } = new();
-        public DateTime MaxBirthDate => DateTime.Now.AddYears(-18);
+        private readonly string _destinationFolder =
+            @"C:\ImageDVLD\";
 
 
-        public AddEditPersonViewModel(IPersonService personService, ICountryService countryService)
+        // =========================================================
+        // CONSTRUCTOR
+        // =========================================================
+
+        public AddEditPersonViewModel(
+            IPersonService personService,
+            ICountryService countryService)
         {
-            _personService = personService;
-            _countryService = countryService;
+            _personService =
+                personService
+                ?? throw new ArgumentNullException(
+                    nameof(personService));
+
+            _countryService =
+                countryService
+                ?? throw new ArgumentNullException(
+                    nameof(countryService));
         }
 
-        public async Task InitializeAsync(int? personId)
+
+        // =========================================================
+        // BASIC PROPERTIES
+        // =========================================================
+
+        [ObservableProperty]
+        private int _personId;
+
+
+        [ObservableProperty]
+        private OperationMode _mode;
+
+
+        [ObservableProperty]
+        private string _pageTitle = "Add Person";
+
+
+        [ObservableProperty]
+        private Country? _selectedCountry;
+
+
+        [ObservableProperty]
+        private string _imagePath = string.Empty;
+
+
+        // =========================================================
+        // PERSON INFORMATION
+        // =========================================================
+
+        [ObservableProperty]
+        private string _firstName = string.Empty;
+
+
+        [ObservableProperty]
+        private string _secondName = string.Empty;
+
+
+        [ObservableProperty]
+        private string _thirdName = string.Empty;
+
+
+        [ObservableProperty]
+        private string _lastName = string.Empty;
+
+
+        [ObservableProperty]
+        private string _nationalNo = string.Empty;
+
+
+        [ObservableProperty]
+        private string _phone = string.Empty;
+
+
+        [ObservableProperty]
+        private string _email = string.Empty;
+
+
+        [ObservableProperty]
+        private string _address = string.Empty;
+
+
+        [ObservableProperty]
+        private DateTime _dateOfBirth =
+            DateTime.Today.AddYears(-18);
+
+
+        // =========================================================
+        // GENDER
+        // =========================================================
+
+        [ObservableProperty]
+        private bool _isMale = true;
+
+
+        [ObservableProperty]
+        private bool _isFemale;
+
+
+        // =========================================================
+        // COUNTRIES
+        // =========================================================
+
+        public ObservableCollection<Country> Countries { get; } =
+            new();
+
+
+        // =========================================================
+        // UI PROPERTIES
+        // =========================================================
+
+        public DateTime MaxBirthDate =>
+            DateTime.Today.AddYears(-18);
+
+
+        public string FullName =>
+            string.Join(
+                " ",
+                new[]
+                {
+                    FirstName,
+                    SecondName,
+                    ThirdName,
+                    LastName
+                }
+                .Where(x =>
+                    !string.IsNullOrWhiteSpace(x)));
+
+
+        public string CountryName =>
+            SelectedCountry?.CountryName
+            ?? "Unknown";
+
+
+        public string ImageDisplayPath =>
+            !string.IsNullOrWhiteSpace(ImagePath)
+                ? ImagePath
+                : IsMale
+                    ? "pack://application:,,,/Resources/Default_Male.png"
+                    : "pack://application:,,,/Resources/Default_Female.png";
+
+
+        // =========================================================
+        // GENDER CHANGES
+        // =========================================================
+
+        partial void OnIsMaleChanged(bool value)
+        {
+            if (value)
+            {
+                IsFemale = false;
+            }
+
+            OnPropertyChanged(
+                nameof(ImageDisplayPath));
+        }
+
+
+        partial void OnIsFemaleChanged(bool value)
+        {
+            if (value)
+            {
+                IsMale = false;
+            }
+
+            OnPropertyChanged(
+                nameof(ImageDisplayPath));
+        }
+
+
+        // =========================================================
+        // NAME CHANGES
+        // =========================================================
+
+        partial void OnFirstNameChanged(string value)
+        {
+            OnPropertyChanged(
+                nameof(FullName));
+        }
+
+
+        partial void OnSecondNameChanged(string value)
+        {
+            OnPropertyChanged(
+                nameof(FullName));
+        }
+
+
+        partial void OnThirdNameChanged(string value)
+        {
+            OnPropertyChanged(
+                nameof(FullName));
+        }
+
+
+        partial void OnLastNameChanged(string value)
+        {
+            OnPropertyChanged(
+                nameof(FullName));
+        }
+
+
+        partial void OnSelectedCountryChanged(
+            Country? value)
+        {
+            OnPropertyChanged(
+                nameof(CountryName));
+        }
+
+
+        // =========================================================
+        // INITIALIZE
+        // =========================================================
+
+        public async Task InitializeAsync(
+            int? personId)
         {
             try
             {
-                var countriesResult = await _countryService.GetAllCountriesAsync();
+                // -------------------------------------------------
+                // Load countries
+                // -------------------------------------------------
+
+                var countriesResult =
+                    await _countryService
+                        .GetAllCountriesAsync();
+
 
                 if (countriesResult.IsFailure)
                 {
@@ -65,274 +272,544 @@ namespace Presentation.ViewModels
                     return;
                 }
 
+
                 Countries.Clear();
 
-                foreach (var country in countriesResult.Value!)
-                    Countries.Add(country);
 
-                if (personId.HasValue && personId.Value > 0)
+                foreach (var country
+                    in countriesResult.Value!)
                 {
-                    var personResult = await _personService.GetPersonByIdAsync(personId.Value);
+                    Countries.Add(country);
+                }
 
-                    if (personResult.IsSuccess)
-                    {
-                        Mode = OperationMode.Edit;
-                        PersonId = personId.Value;
-                        PageTitle = "Edit Person";
 
-                        LoadData(personResult.Value!);
-                    }
-                    else
+                // -------------------------------------------------
+                // EDIT MODE
+                // -------------------------------------------------
+
+                if (personId.HasValue &&
+                    personId.Value > 0)
+                {
+                    var personResult =
+                        await _personService
+                            .GetPersonByIdAsync(
+                                personId.Value);
+
+
+                    if (personResult.IsFailure)
                     {
                         MessageBox.Show(
                             personResult.Error,
                             "Person Not Found",
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning);
-                    }
-                }
-                else
-                {
-                    Mode = OperationMode.Add;
-                    PageTitle = "Add Person";
 
-                    SelectedCountry =
-                        Countries.FirstOrDefault(c => c.CountryName == "Jordan")
-                        ?? Countries.FirstOrDefault()!;
+                        return;
+                    }
+
+
+                    Mode =
+                        OperationMode.Edit;
+
+                    PersonId =
+                        personId.Value;
+
+                    PageTitle =
+                        "Edit Person";
+
+
+                    LoadData(
+                        personResult.Value!);
+
+                    return;
                 }
+
+
+                // -------------------------------------------------
+                // ADD MODE
+                // -------------------------------------------------
+
+                Mode =
+                    OperationMode.Add;
+
+                PageTitle =
+                    "Add Person";
+
+
+                SelectedCountry =
+                    Countries.FirstOrDefault(
+                        c => c.CountryName == "Jordan")
+                    ?? Countries.FirstOrDefault();
+
+
+                // Default values
+                FirstName = string.Empty;
+                SecondName = string.Empty;
+                ThirdName = string.Empty;
+                LastName = string.Empty;
+                NationalNo = string.Empty;
+                Phone = string.Empty;
+                Email = string.Empty;
+                Address = string.Empty;
+
+                DateOfBirth =
+                    DateTime.Today.AddYears(-18);
+
+                IsMale = true;
+                IsFemale = false;
+
+                ImagePath = string.Empty;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString(), "InitializeAsync Error");
+                MessageBox.Show(
+                    ex.Message,
+                    "Initialization Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
-        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateFirstNameField))] private string _firstName = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateSecondNameField))] private string _secondName = string.Empty;
-        [ObservableProperty] private string _thirdName = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateLastNameField))] private string _lastName = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateNationalNoField))] private string _nationalNo = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidatePhoneField))] private string _phone = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateEmailField))] private string _email = string.Empty;
-        [ObservableProperty][CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateAddressField))] private string _address = string.Empty;
 
-        [ObservableProperty]
-        [CustomValidation(typeof(AddEditPersonViewModel), nameof(ValidateAge))]
-        private DateTime _dateOfBirth = DateTime.Now.AddYears(-18);
+        // =========================================================
+        // LOAD EXISTING PERSON
+        // =========================================================
 
-        [ObservableProperty]
-        private bool _isMale = true;
-
-        [ObservableProperty]
-        private bool _isFemale;
-
-        partial void OnIsMaleChanged(bool value)
+        private void LoadData(
+            PersonDto person)
         {
-            if (value)
-                IsFemale = false;
-
-            OnPropertyChanged(nameof(ImageDisplayPath));
-        }
-
-        partial void OnIsFemaleChanged(bool value)
-        {
-            if (value)
-                IsMale = false;
-
-            OnPropertyChanged(nameof(ImageDisplayPath));
-        }
+            if (person is null)
+                return;
 
 
-        partial void OnFirstNameChanged(string value) => OnPropertyChanged(nameof(FullName));
-        partial void OnSecondNameChanged(string value) => OnPropertyChanged(nameof(FullName));
-        partial void OnThirdNameChanged(string value) => OnPropertyChanged(nameof(FullName));
-        partial void OnLastNameChanged(string value) => OnPropertyChanged(nameof(FullName));
-        partial void OnSelectedCountryChanged(Country value) => OnPropertyChanged(nameof(CountryName));
+            // -----------------------------------------------------
+            // NAME
+            // -----------------------------------------------------
+
+            var nameParts =
+                person.FullName?
+                    .Split(
+                        ' ',
+                        StringSplitOptions.RemoveEmptyEntries)
+                ?? Array.Empty<string>();
 
 
-        private void LoadData(PersonDto p)
-        {
-            var nameParts = p.FullName?.Split(' ') ?? Array.Empty<string>();
-            FirstName = nameParts.ElementAtOrDefault(0) ?? "";
-            SecondName = nameParts.ElementAtOrDefault(1) ?? "";
+            FirstName =
+                nameParts.ElementAtOrDefault(0)
+                ?? string.Empty;
+
+
+            SecondName =
+                nameParts.ElementAtOrDefault(1)
+                ?? string.Empty;
+
+
             if (nameParts.Length == 3)
             {
-                // إذا كان الاسم 3 أجزاء فقط (أول، ثانٍ، أخير)
-                ThirdName = ""; // نترك الثالث فارغاً
-                LastName = nameParts.ElementAtOrDefault(2) ?? "";
+                ThirdName =
+                    string.Empty;
+
+                LastName =
+                    nameParts[2];
             }
-            else if (nameParts.Length >= 4)
+            else
             {
-                // إذا كان الاسم 4 أجزاء أو أكثر
-                ThirdName = nameParts.ElementAtOrDefault(2) ?? "";
-                LastName = nameParts.ElementAtOrDefault(3) ?? "";
+                ThirdName =
+                    nameParts.ElementAtOrDefault(2)
+                    ?? string.Empty;
+
+                LastName =
+                    nameParts.ElementAtOrDefault(3)
+                    ?? string.Empty;
             }
 
 
-            NationalNo = p.NationalNo ?? "";
-            Phone = p.Phone ?? "";
-            Email = p.Email ?? "";
-            Address = p.Address ?? "";
-            DateOfBirth = p.DateOfBirth;
-            IsMale = p.Gender == Gender.Male;
-            IsFemale = p.Gender == Gender.Female;
+            // -----------------------------------------------------
+            // OTHER DATA
+            // -----------------------------------------------------
 
-            SelectedCountry = Countries.FirstOrDefault(c => c.CountryName == p.CountryName) ?? Countries.FirstOrDefault()!;
-            ImagePath = p.ImagePath ?? "";
+            NationalNo =
+                person.NationalNo
+                ?? string.Empty;
 
-            ValidateAllProperties();
+
+            Phone =
+                person.Phone
+                ?? string.Empty;
+
+
+            Email =
+                person.Email
+                ?? string.Empty;
+
+
+            Address =
+                person.Address
+                ?? string.Empty;
+
+
+            DateOfBirth =
+                person.DateOfBirth;
+
+
+            // -----------------------------------------------------
+            // GENDER
+            // -----------------------------------------------------
+
+            IsMale =
+                person.Gender == Gender.Male;
+
+
+            IsFemale =
+                person.Gender == Gender.Female;
+
+
+            // -----------------------------------------------------
+            // COUNTRY
+            // -----------------------------------------------------
+
+            SelectedCountry =
+                Countries.FirstOrDefault(
+                    c => c.CountryId ==
+                         person.NationalityCountryID)
+                ?? Countries.FirstOrDefault();
+
+
+            // -----------------------------------------------------
+            // IMAGE
+            // -----------------------------------------------------
+
+            ImagePath =
+                person.ImagePath
+                ?? string.Empty;
+
+
+            OnPropertyChanged(
+                nameof(FullName));
+
+            OnPropertyChanged(
+                nameof(CountryName));
+
+            OnPropertyChanged(
+                nameof(ImageDisplayPath));
         }
+
+
+        // =========================================================
+        // SAVE
+        // =========================================================
 
         [RelayCommand]
         private async Task SavePersonAsync()
         {
-            ValidateAllProperties();
-
-            if (HasErrors)
+            try
             {
-                SaveCompleted?.Invoke(false);
-                return;
-            }
+                // -------------------------------------------------
+                // Basic UI checks
+                // -------------------------------------------------
 
-            var dto = new PersonCreateUpdateDto
-            {
-                PersonId = PersonId,
-                FirstName = FirstName,
-                SecondName = SecondName,
-                ThirdName = ThirdName,
-                LastName = LastName,
-                NationalNo = NationalNo,
-                Phone = Phone,
-                Email = Email,
-                Address = Address,
-                DateOfBirth = DateOfBirth,
-                Gender = IsMale ? Gender.Male : Gender.Female,
-                NationalityCountryID = SelectedCountry?.CountryId ?? 0,
-                ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath
-            };
-
-
-            bool success;
-
-            if (Mode == OperationMode.Edit)
-            {
-                var updateResult = await _personService.UpdatePersonAsync(PersonId, dto);
-
-                if (updateResult.IsFailure)
+                if (string.IsNullOrWhiteSpace(FirstName))
                 {
-                    MessageBox.Show(
-                        updateResult.Error,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    ShowValidationMessage(
+                        "First name is required.");
 
-                    SaveCompleted?.Invoke(false);
                     return;
                 }
 
-                success = true;
-            }
-            else
-            {
-                var addResult = await _personService.AddPersonAsync(dto);
+
+                if (string.IsNullOrWhiteSpace(SecondName))
+                {
+                    ShowValidationMessage(
+                        "Second name is required.");
+
+                    return;
+                }
+
+
+                if (string.IsNullOrWhiteSpace(LastName))
+                {
+                    ShowValidationMessage(
+                        "Last name is required.");
+
+                    return;
+                }
+
+
+                if (string.IsNullOrWhiteSpace(NationalNo))
+                {
+                    ShowValidationMessage(
+                        "National number is required.");
+
+                    return;
+                }
+
+
+                if (string.IsNullOrWhiteSpace(Phone))
+                {
+                    ShowValidationMessage(
+                        "Phone number is required.");
+
+                    return;
+                }
+
+
+                if (string.IsNullOrWhiteSpace(Address))
+                {
+                    ShowValidationMessage(
+                        "Address is required.");
+
+                    return;
+                }
+
+
+                if (SelectedCountry is null)
+                {
+                    ShowValidationMessage(
+                        "Nationality country is required.");
+
+                    return;
+                }
+
+
+                // -------------------------------------------------
+                // DTO
+                // -------------------------------------------------
+
+                var dto =
+                    new PersonCreateUpdateDto
+                    {
+                        PersonId =
+                            PersonId,
+
+                        FirstName =
+                            FirstName.Trim(),
+
+                        SecondName =
+                            SecondName.Trim(),
+
+                        ThirdName =
+                            string.IsNullOrWhiteSpace(
+                                ThirdName)
+                                ? null
+                                : ThirdName.Trim(),
+
+                        LastName =
+                            LastName.Trim(),
+
+                        NationalNo =
+                            NationalNo.Trim(),
+
+                        Phone =
+                            Phone.Trim(),
+
+                        Email =
+                            string.IsNullOrWhiteSpace(
+                                Email)
+                                ? null
+                                : Email.Trim(),
+
+                        Address =
+                            Address.Trim(),
+
+                        DateOfBirth =
+                            DateOfBirth,
+
+                        Gender =
+                            IsMale
+                                ? Gender.Male
+                                : Gender.Female,
+
+                        NationalityCountryID =
+                            SelectedCountry.CountryId,
+
+                        ImagePath =
+                            string.IsNullOrWhiteSpace(
+                                ImagePath)
+                                ? null
+                                : ImagePath
+                    };
+
+
+                // -------------------------------------------------
+                // EDIT
+                // -------------------------------------------------
+
+                if (Mode == OperationMode.Edit)
+                {
+                    var updateResult =
+                        await _personService
+                            .UpdatePersonAsync(
+                                PersonId,
+                                dto);
+
+
+                    if (updateResult.IsFailure)
+                    {
+                        MessageBox.Show(
+                            updateResult.Error,
+                            "Validation Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+
+                        SaveCompleted?.Invoke(false);
+
+                        return;
+                    }
+
+
+                    MessageBox.Show(
+                        "Person data has been updated successfully.",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+
+                    SaveCompleted?.Invoke(true);
+
+                    return;
+                }
+
+
+                // -------------------------------------------------
+                // ADD
+                // -------------------------------------------------
+
+                var addResult =
+                    await _personService
+                        .AddPersonAsync(dto);
+
 
                 if (addResult.IsFailure)
                 {
                     MessageBox.Show(
                         addResult.Error,
-                        "Error",
+                        "Validation Error",
                         MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                        MessageBoxImage.Warning);
 
                     SaveCompleted?.Invoke(false);
+
                     return;
                 }
 
-                success = addResult.Value > 0;
-            }
 
-
-            if (success)
-            {
                 MessageBox.Show(
-                    "Data has been saved successfully.",
+                    "Person has been added successfully.",
                     "Success",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
-            }
 
-            SaveCompleted?.Invoke(success);
+
+                SaveCompleted?.Invoke(true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Save Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                SaveCompleted?.Invoke(false);
+            }
         }
+
+
+        // =========================================================
+        // CHOOSE IMAGE
+        // =========================================================
 
         [RelayCommand]
         private void ChooseImage()
         {
-            var openFileDialog = new OpenFileDialog { Filter = "Image Files (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp" };
-            if (openFileDialog.ShowDialog() == true)
+            var dialog =
+                new OpenFileDialog
+                {
+                    Filter =
+                        "Image Files (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp"
+                };
+
+
+            if (dialog.ShowDialog() != true)
+                return;
+
+
+            try
             {
-                if (!Directory.Exists(_destinationFolder)) Directory.CreateDirectory(_destinationFolder);
-                string targetPath = Path.Combine(_destinationFolder, Guid.NewGuid().ToString() + Path.GetExtension(openFileDialog.FileName));
-                File.Copy(openFileDialog.FileName, targetPath, true);
-                ImagePath = targetPath;
-                OnPropertyChanged(nameof(ImageDisplayPath));
+                // -------------------------------------------------
+                // Create destination folder
+                // -------------------------------------------------
+
+                if (!Directory.Exists(
+                    _destinationFolder))
+                {
+                    Directory.CreateDirectory(
+                        _destinationFolder);
+                }
+
+
+                // -------------------------------------------------
+                // Generate unique file name
+                // -------------------------------------------------
+
+                var extension =
+                    Path.GetExtension(
+                        dialog.FileName);
+
+
+                var targetPath =
+                    Path.Combine(
+                        _destinationFolder,
+                        $"{Guid.NewGuid()}{extension}");
+
+
+                // -------------------------------------------------
+                // Copy image
+                // -------------------------------------------------
+
+                File.Copy(
+                    dialog.FileName,
+                    targetPath,
+                    true);
+
+
+                ImagePath =
+                    targetPath;
+
+
+                OnPropertyChanged(
+                    nameof(ImageDisplayPath));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Image Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
+
+
+        // =========================================================
+        // REMOVE IMAGE
+        // =========================================================
 
         [RelayCommand]
         private void RemoveImage()
         {
-            ImagePath = string.Empty;
-            OnPropertyChanged(nameof(ImageDisplayPath));
+            ImagePath =
+                string.Empty;
+
+
+            OnPropertyChanged(
+                nameof(ImageDisplayPath));
         }
 
-        // --- الدوال المفقودة التي كانت تسبب الخطأ ---
 
-        public static ValidationResult? ValidateAge(DateTime dateOfBirth, ValidationContext context)
-        {
-            if (dateOfBirth > DateTime.Now.AddYears(-18))
-            {
-                return new ValidationResult("Person must be at least 18 years old.");
-            }
-            return ValidationResult.Success;
-        }
-
-        public static ValidationResult? ValidateFirstNameField(string value, ValidationContext context) => ValidateField(value, "First name", context);
-        public static ValidationResult? ValidateSecondNameField(string value, ValidationContext context) => ValidateField(value, "Second name", context);
-        public static ValidationResult? ValidateLastNameField(string value, ValidationContext context) => ValidateField(value, "Last name", context);
-        public static ValidationResult? ValidateNationalNoField(string value, ValidationContext context) => ValidateField(value, "National", context);
-        public static ValidationResult? ValidatePhoneField(string value, ValidationContext context) => ValidateField(value, "Phone", context);
-        public static ValidationResult? ValidateEmailField(string value, ValidationContext context) => string.IsNullOrWhiteSpace(value) ? ValidationResult.Success : ValidateField(value, "Email", context);
-        public static ValidationResult? ValidateAddressField(string value, ValidationContext context) => ValidateField(value, "Address", context);
-
-
-        private static ValidationResult? ValidateField(string value, string fieldName, ValidationContext context)
-        {
-            // الحصول على الـ ViewModel الحالي
-            var vm = (AddEditPersonViewModel)context.ObjectInstance;
-
-            // إنشاء كائن Person يحتوي على البيانات الحالية التي أدخلها المستخدم في الـ UI
-            var personToValidate = new Person
-            {
-                FirstName = vm.FirstName,
-                SecondName = vm.SecondName,
-                ThirdName = vm.ThirdName,
-                LastName = vm.LastName,
-                NationalNo = vm.NationalNo,
-                Phone = vm.Phone,
-                Email = vm.Email,
-                Address = vm.Address,
-                Gender = vm.IsMale ? Gender.Male : Gender.Female
-            };
-
-            // استخدام الـ Validator الخاص بك للتحقق من الكائن الفعلي
-            var res = PersonValidator.Validate(personToValidate);
-
-            // البحث عن الخطأ المرتبط بهذا الحقل تحديداً
-            var err = res.Errors.FirstOrDefault(e => e.Contains(fieldName, StringComparison.OrdinalIgnoreCase));
-
-            return err != null ? new ValidationResult(err) : ValidationResult.Success;
-        }
-
+        // =========================================================
+        // CANCEL
+        // =========================================================
 
         [RelayCommand]
         private void Cancel()
@@ -341,6 +818,18 @@ namespace Presentation.ViewModels
         }
 
 
+        // =========================================================
+        // HELPER
+        // =========================================================
 
+        private static void ShowValidationMessage(
+            string message)
+        {
+            MessageBox.Show(
+                message,
+                "Validation Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 }
