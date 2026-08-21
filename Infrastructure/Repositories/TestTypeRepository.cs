@@ -10,50 +10,31 @@ namespace Infrastructure.Repositories
 
         public TestTypeRepository(IDbContextFactory<DVLDDbContext> contextFactory)
         {
-            _contextFactory = contextFactory
-                ?? throw new ArgumentNullException(nameof(contextFactory));
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
-        // =========================
-        // GET OPERATIONS
-        // =========================
-
+        // GET
         public async Task<List<TestType>> GetAllTestTypeAsync()
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-
-            return await context.TestTypes
-                .AsNoTracking()
-                .ToListAsync();
+            return await context.TestTypes.AsNoTracking().ToListAsync();
         }
 
         public async Task<TestType?> GetTestTypeByIdAsync(int id)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
-
-            return await context.TestTypes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.TestTypeId == id);
+            return await context.TestTypes.AsNoTracking().FirstOrDefaultAsync(t => t.TestTypeId == id);
         }
 
-        // =========================
-        // UPDATE OPERATION
-        // =========================
-
+        // UPDATE
         public async Task<bool> UpdateTestTypeAsync(TestType testtype)
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            var existing = await context.TestTypes
-                .FindAsync(testtype.TestTypeId);
+            var existing = await context.TestTypes.FindAsync(testtype.TestTypeId);
+            if (existing is null) return false;
 
-            if (existing is null)
-                return false;
-
-            context.Entry(existing)
-                .CurrentValues
-                .SetValues(testtype);
-
+            context.Entry(existing).CurrentValues.SetValues(testtype);
             return await context.SaveChangesAsync() > 0;
         }
     }

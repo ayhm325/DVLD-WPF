@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.ApplicationDTO;
+using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

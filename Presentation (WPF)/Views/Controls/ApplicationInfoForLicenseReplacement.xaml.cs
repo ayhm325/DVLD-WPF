@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using Application.DTOs;
+using Application.DTOs.ApplicationDTO;
 
 namespace Presentation.Views.Controls
 {

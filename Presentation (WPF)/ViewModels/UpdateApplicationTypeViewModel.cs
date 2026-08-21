@@ -2,10 +2,8 @@
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Entities;
-using System.Threading.Tasks;
 using System.Windows;
-using Presentation.ViewModels;
+
 
 namespace Presentation.ViewModels
 {

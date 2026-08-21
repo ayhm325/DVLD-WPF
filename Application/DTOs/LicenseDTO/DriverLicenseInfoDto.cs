@@ -1,7 +1,4 @@
-﻿
-
-
-namespace Application.DTOs
+﻿namespace Application.DTOs.LicenseDTO
 {
     public class DriverLicenseInfoDto
     {

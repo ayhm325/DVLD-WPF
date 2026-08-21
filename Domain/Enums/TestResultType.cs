@@ -1,10 +1,8 @@
-﻿
+﻿namespace Domain.Enums;
 
-namespace Domain.Enums
+public enum TestResultType
 {
-    public enum TestResultType
-    {                
-        Fail=0,
-        Pass=1       
-    }
+    NotTaken = -1,
+    Fail = 0,
+    Pass = 1
 }

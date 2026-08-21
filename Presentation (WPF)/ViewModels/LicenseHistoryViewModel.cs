@@ -1,10 +1,9 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.InternationalLicenseDTO;
+using Application.DTOs.LicenseDTO;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Entities;
-using Infrastructure.Repositories;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;

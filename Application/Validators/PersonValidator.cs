@@ -1,4 +1,4 @@
-﻿using Application.Common;
+﻿using Application.Common.Results;
 using Domain.Entities;
 using Domain.Enums;
 using System.Text.RegularExpressions;
@@ -7,256 +7,101 @@ namespace Application.Validators
 {
     public static class PersonValidator
     {
-        // =========================================================
         // REGEX
-        // =========================================================
+        private static readonly Regex NationalNumberRegex = new(@"^\d{10}$", RegexOptions.Compiled);
+        private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled);
+        private static readonly Regex PhoneRegex = new(@"^(077|078|079)\d{7}$", RegexOptions.Compiled);
 
-        private static readonly Regex NationalNumberRegex =
-            new(
-                @"^\d{10}$",
-                RegexOptions.Compiled);
-
-        private static readonly Regex EmailRegex =
-            new(
-                @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-                RegexOptions.Compiled);
-
-        private static readonly Regex PhoneRegex =
-            new(
-                @"^(077|078|079)\d{7}$",
-                RegexOptions.Compiled);
-
-
-        // =========================================================
         // VALIDATE
-        // =========================================================
-
-        public static ValidationResult Validate(Person? person)
+        public static Result Validate(Person? person)
         {
+            if (person is null)
+                return Result.Failure("Person data is required.");
+
             var errors = new List<string>();
 
-            if (person is null)
-            {
-                errors.Add("Person data is required.");
-                return ValidationResult.Failure(errors);
-            }
-
-
-            // =========================================================
-            // NATIONAL NUMBER
-            // =========================================================
-
-            var nationalNo =
-                person.NationalNo?.Trim() ?? string.Empty;
-
+            // National number
+            var nationalNo = person.NationalNo?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(nationalNo))
-            {
-                errors.Add(
-                    "National number is required.");
-            }
+                errors.Add("National number is required.");
             else if (!NationalNumberRegex.IsMatch(nationalNo))
-            {
-                errors.Add(
-                    "National number must be exactly 10 digits.");
-            }
+                errors.Add("National number must be exactly 10 digits.");
 
-
-            // =========================================================
-            // FIRST NAME
-            // =========================================================
-
-            var firstName =
-                person.FirstName?.Trim() ?? string.Empty;
-
+            // First name
+            var firstName = person.FirstName?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(firstName))
-            {
-                errors.Add(
-                    "First name is required.");
-            }
+                errors.Add("First name is required.");
             else if (firstName.Length > 50)
-            {
-                errors.Add(
-                    "First name cannot exceed 50 characters.");
-            }
+                errors.Add("First name cannot exceed 50 characters.");
 
-
-            // =========================================================
-            // SECOND NAME
-            // =========================================================
-
-            var secondName =
-                person.SecondName?.Trim() ?? string.Empty;
-
+            // Second name
+            var secondName = person.SecondName?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(secondName))
-            {
-                errors.Add(
-                    "Second name is required.");
-            }
+                errors.Add("Second name is required.");
             else if (secondName.Length > 50)
-            {
-                errors.Add(
-                    "Second name cannot exceed 50 characters.");
-            }
+                errors.Add("Second name cannot exceed 50 characters.");
 
+            // Third name
+            var thirdName = person.ThirdName?.Trim();
+            if (!string.IsNullOrWhiteSpace(thirdName) && thirdName.Length > 50)
+                errors.Add("Third name cannot exceed 50 characters.");
 
-            // =========================================================
-            // THIRD NAME
-            // =========================================================
-
-            var thirdName =
-                person.ThirdName?.Trim();
-
-            if (!string.IsNullOrWhiteSpace(thirdName) &&
-                thirdName.Length > 50)
-            {
-                errors.Add(
-                    "Third name cannot exceed 50 characters.");
-            }
-
-
-            // =========================================================
-            // LAST NAME
-            // =========================================================
-
-            var lastName =
-                person.LastName?.Trim() ?? string.Empty;
-
+            // Last name
+            var lastName = person.LastName?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(lastName))
-            {
-                errors.Add(
-                    "Last name is required.");
-            }
+                errors.Add("Last name is required.");
             else if (lastName.Length > 50)
-            {
-                errors.Add(
-                    "Last name cannot exceed 50 characters.");
-            }
+                errors.Add("Last name cannot exceed 50 characters.");
 
-
-            // =========================================================
-            // EMAIL
-            // =========================================================
-
-            var email =
-                person.Email?.Trim();
-
+            // Email
+            var email = person.Email?.Trim();
             if (!string.IsNullOrWhiteSpace(email))
             {
                 if (email.Length > 100)
-                {
-                    errors.Add(
-                        "Email cannot exceed 100 characters.");
-                }
+                    errors.Add("Email cannot exceed 100 characters.");
                 else if (!EmailRegex.IsMatch(email))
-                {
-                    errors.Add(
-                        "Invalid email format.");
-                }
+                    errors.Add("Invalid email format.");
             }
 
-
-            // =========================================================
-            // PHONE
-            // =========================================================
-
-            var phone =
-                person.Phone?.Trim() ?? string.Empty;
-
+            // Phone
+            var phone = person.Phone?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(phone))
-            {
-                errors.Add(
-                    "Phone number is required.");
-            }
+                errors.Add("Phone number is required.");
             else if (!PhoneRegex.IsMatch(phone))
-            {
-                errors.Add(
-                    "Phone number must start with 077, 078, or 079 and contain exactly 10 digits.");
-            }
+                errors.Add("Phone number must start with 077, 078, or 079 and contain exactly 10 digits.");
 
-
-            // =========================================================
-            // DATE OF BIRTH
-            // =========================================================
-
+            // Date of birth
             if (person.DateOfBirth == default)
             {
-                errors.Add(
-                    "Date of birth is required.");
+                errors.Add("Date of birth is required.");
             }
             else
             {
                 var today = DateTime.Today;
-
-                var minimumDate =
-                    today.AddYears(-120);
-
-                var maximumDate =
-                    today.AddYears(-18);
-
-                if (person.DateOfBirth > maximumDate)
-                {
-                    errors.Add(
-                        "The person must be at least 18 years old.");
-                }
-
-                if (person.DateOfBirth < minimumDate)
-                {
-                    errors.Add(
-                        "Date of birth is not realistic.");
-                }
+                if (person.DateOfBirth > today.AddYears(-18))
+                    errors.Add("The person must be at least 18 years old.");
+                if (person.DateOfBirth < today.AddYears(-120))
+                    errors.Add("Date of birth is not realistic.");
             }
 
-
-            // =========================================================
-            // ADDRESS
-            // =========================================================
-
-            var address =
-                person.Address?.Trim() ?? string.Empty;
-
+            // Address
+            var address = person.Address?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(address))
-            {
-                errors.Add(
-                    "Address is required.");
-            }
+                errors.Add("Address is required.");
             else if (address.Length > 200)
-            {
-                errors.Add(
-                    "Address cannot exceed 200 characters.");
-            }
+                errors.Add("Address cannot exceed 200 characters.");
 
+            // Gender
+            if (!Enum.IsDefined(typeof(Gender), person.Gender))
+                errors.Add("Invalid gender value.");
 
-            // =========================================================
-            // GENDER
-            // =========================================================
-
-            if (!Enum.IsDefined(
-                typeof(Gender),
-                person.Gender))
-            {
-                errors.Add(
-                    "Invalid gender value.");
-            }
-
-
-            // =========================================================
-            // NATIONALITY COUNTRY
-            // =========================================================
-
+            // Nationality country
             if (person.NationalityCountryID <= 0)
-            {
-                errors.Add(
-                    "Nationality country is required.");
-            }
-
-
-            // =========================================================
-            // RESULT
-            // =========================================================
+                errors.Add("Nationality country is required.");
 
             return errors.Count > 0
-                ? ValidationResult.Failure(errors)
-                : ValidationResult.Success();
+                ? Result.Failure(string.Join(Environment.NewLine, errors))
+                : Result.Success();
         }
     }
 }

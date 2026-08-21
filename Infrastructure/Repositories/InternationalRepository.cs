@@ -2,128 +2,273 @@
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Repositories
+namespace Infrastructure.Repositories;
+
+public class InternationalRepository : IInternationalRepository
 {
-    public class InternationalRepository : IInternationalRepository
+    private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+
+    public InternationalRepository(
+        IDbContextFactory<DVLDDbContext> contextFactory)
     {
-        private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+        _contextFactory = contextFactory
+            ?? throw new ArgumentNullException(nameof(contextFactory));
+    }
 
-        public InternationalRepository(IDbContextFactory<DVLDDbContext> contextFactory)
-        {
-            _contextFactory = contextFactory
-                ?? throw new ArgumentNullException(nameof(contextFactory));
-        }
 
-        // BASE QUERY
-        private IQueryable<InternationalLicense> Query(DVLDDbContext context)
-        {
-            return context.InternationalLicenses
-                .Include(i => i.Application)
-                .Include(i => i.Driver)
-                    .ThenInclude(d => d.Person)
-                .Include(i => i.IssuedUsingLocalLicense)
-                .Include(i => i.CreatedByUser);
-        }
+    // =========================================================
+    // BASE QUERY
+    // =========================================================
 
-        // Get all international licenses
-        public async Task<IEnumerable<InternationalLicense>> GetAllAsync()
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+    private static IQueryable<InternationalLicense> Query(
+        DVLDDbContext context)
+    {
+        return context.InternationalLicenses
 
-            return await Query(context)
-                .AsNoTracking()
-                .ToListAsync();
-        }
+            // Application
+            .Include(i => i.Application)
 
-        // Get an international license by its ID
-        public async Task<InternationalLicense?> GetByIdAsync(int id)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+            // Driver -> Person
+            .Include(i => i.Driver)
+                .ThenInclude(d => d.Person)
 
-            return await Query(context)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.InternationalLicenseID == id);
-        }
+            // Local License
+            .Include(i => i.IssuedUsingLocalLicense)
 
-        // Get all international licenses for a specific driver
-        public async Task<IEnumerable<InternationalLicense>> GetByDriverIdAsync(int driverId)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+            // Created By User
+            .Include(i => i.CreatedByUser);
+    }
 
-            return await Query(context)
-                .Where(x => x.DriverID == driverId)
-                .AsNoTracking()
-                .ToListAsync();
-        }
 
-        // Get an international license by application ID
-        public async Task<InternationalLicense?> GetByApplicationIdAsync(int applicationId)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+    // =========================================================
+    // GET ALL
+    // =========================================================
 
-            return await Query(context)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.ApplicationID == applicationId);
-        }
+    public async Task<List<InternationalLicense>>
+        GetAllAsync()
+    {
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
 
-        // Get all international licenses issued using a specific local license ID
-        public async Task<IEnumerable<InternationalLicense>> GetByLocalLicenseIdAsync(int localLicenseId)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+        return await Query(context)
+            .AsNoTracking()
+            .ToListAsync();
+    }
 
-            return await Query(context)
-                .Where(x => x.IssuedUsingLocalLicenseID == localLicenseId)
-                .AsNoTracking()
-                .ToListAsync();
-        }
-        // Check if an international license exists for a given local license ID
-        public async Task<bool> ExistsByLocalLicenseAsync(int localLicenseId)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
 
-            return await context.InternationalLicenses
-                .AnyAsync(x => x.IssuedUsingLocalLicenseID == localLicenseId);
-        }
+    // =========================================================
+    // GET BY ID
+    // =========================================================
 
-        // Check if a driver has an active international license
-        public async Task<bool> HasActiveInternationalLicenseAsync(int driverId)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+    public async Task<InternationalLicense?>
+        GetByIdAsync(
+            int internationalLicenseId)
+    {
+        if (internationalLicenseId <= 0)
+            return null;
 
-            return await context.InternationalLicenses
-                .AnyAsync(x => x.DriverID == driverId && x.IsActive);
-        }
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
 
-        // Create operation
-        public async Task AddAsync(InternationalLicense entity)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+        return await Query(context)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                i => i.InternationalLicenseID ==
+                     internationalLicenseId);
+    }
 
-            await context.InternationalLicenses.AddAsync(entity);
-            await context.SaveChangesAsync();
-        }
 
-        // Update operation
-        public async Task UpdateAsync(InternationalLicense entity)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+    // =========================================================
+    // GET BY DRIVER ID
+    // =========================================================
 
-            context.InternationalLicenses.Update(entity);
-            await context.SaveChangesAsync();
-        }
+    public async Task<List<InternationalLicense>>
+        GetByDriverIdAsync(
+            int driverId)
+    {
+        if (driverId <= 0)
+            return [];
 
-        // Delete operation
-        public async Task DeleteAsync(int id)
-        {
-            await using var context = await _contextFactory.CreateDbContextAsync();
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
 
-            var entity = await context.InternationalLicenses.FindAsync(id);
+        return await Query(context)
+            .AsNoTracking()
+            .Where(i => i.DriverID == driverId)
+            .ToListAsync();
+    }
 
-            if (entity == null)
-                return;
 
-            context.InternationalLicenses.Remove(entity);
-            await context.SaveChangesAsync();
-        }
+    // =========================================================
+    // GET BY APPLICATION ID
+    // =========================================================
+
+    public async Task<InternationalLicense?>
+        GetByApplicationIdAsync(
+            int applicationId)
+    {
+        if (applicationId <= 0)
+            return null;
+
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        return await Query(context)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                i => i.ApplicationID ==
+                     applicationId);
+    }
+
+
+    // =========================================================
+    // GET BY LOCAL LICENSE ID
+    // =========================================================
+
+    public async Task<List<InternationalLicense>>
+        GetByLocalLicenseIdAsync(
+            int localLicenseId)
+    {
+        if (localLicenseId <= 0)
+            return [];
+
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        return await Query(context)
+            .AsNoTracking()
+            .Where(i =>
+                i.IssuedUsingLocalLicenseID ==
+                localLicenseId)
+            .ToListAsync();
+    }
+
+
+    // =========================================================
+    // CHECK - EXISTS BY LOCAL LICENSE
+    // =========================================================
+
+    public async Task<bool>
+        ExistsByLocalLicenseAsync(
+            int localLicenseId)
+    {
+        if (localLicenseId <= 0)
+            return false;
+
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        return await context.InternationalLicenses
+            .AsNoTracking()
+            .AnyAsync(i =>
+                i.IssuedUsingLocalLicenseID ==
+                localLicenseId);
+    }
+
+
+    // =========================================================
+    // CHECK - ACTIVE INTERNATIONAL LICENSE
+    // =========================================================
+
+    public async Task<bool>
+        HasActiveInternationalLicenseAsync(
+            int driverId)
+    {
+        if (driverId <= 0)
+            return false;
+
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        return await context.InternationalLicenses
+            .AsNoTracking()
+            .AnyAsync(i =>
+                i.DriverID == driverId &&
+                i.IsActive);
+    }
+
+
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    public async Task<int>
+        AddAsync(
+            InternationalLicense entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        await context.InternationalLicenses
+            .AddAsync(entity);
+
+        await context.SaveChangesAsync();
+
+        return entity.InternationalLicenseID;
+    }
+
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    public async Task<bool>
+        UpdateAsync(
+            InternationalLicense entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        if (entity.InternationalLicenseID <= 0)
+            return false;
+
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        var existing =
+            await context.InternationalLicenses
+                .FirstOrDefaultAsync(i =>
+                    i.InternationalLicenseID ==
+                    entity.InternationalLicenseID);
+
+        if (existing is null)
+            return false;
+
+        context.Entry(existing)
+            .CurrentValues
+            .SetValues(entity);
+
+        return await context.SaveChangesAsync() > 0;
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    public async Task<bool>
+        DeleteAsync(
+            int internationalLicenseId)
+    {
+        if (internationalLicenseId <= 0)
+            return false;
+
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        var entity =
+            await context.InternationalLicenses
+                .FirstOrDefaultAsync(i =>
+                    i.InternationalLicenseID ==
+                    internationalLicenseId);
+
+        if (entity is null)
+            return false;
+
+        context.InternationalLicenses
+            .Remove(entity);
+
+        return await context.SaveChangesAsync() > 0;
     }
 }

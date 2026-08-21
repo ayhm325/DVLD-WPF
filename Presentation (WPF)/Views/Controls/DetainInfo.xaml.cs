@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.DetainedLicenseDTO;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -27,13 +27,13 @@ namespace Presentation.Views.Controls
         public static readonly DependencyProperty FineFeesProperty =
             DependencyProperty.Register(
                 nameof(FineFees),
-                typeof(string),
+                typeof(decimal),
                 typeof(DetainInfo),
-                new PropertyMetadata(string.Empty));
+                new PropertyMetadata(0m));
 
-        public string FineFees
+        public decimal FineFees
         {
-            get => (string)GetValue(FineFeesProperty);
+            get => (decimal)GetValue(FineFeesProperty);
             set => SetValue(FineFeesProperty, value);
         }
     }

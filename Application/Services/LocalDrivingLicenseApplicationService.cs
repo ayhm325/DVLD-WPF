@@ -1,215 +1,203 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
+using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
+using Application.Validators;
 using Domain.Entities;
 using Domain.Enums;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace Application.Services
+namespace Application.Services;
+
+public class LocalDrivingLicenseApplicationService : ILocalDrivingLicenseApplicationService
 {
-    public class LocalDrivingLicenseApplicationService : ILocalDrivingLicenseApplicationService
+    private readonly ILocalDrivingLicenseApplicationRepository _repository;
+    private readonly ILicenseRepository _licenseRepository;
+
+    public LocalDrivingLicenseApplicationService(
+        ILocalDrivingLicenseApplicationRepository repository,
+        ILicenseRepository licenseRepository)
     {
-        private readonly ILocalDrivingLicenseApplicationRepository _repository;
-        private readonly ILicenseRepository _licenseRepository;
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _licenseRepository = licenseRepository ?? throw new ArgumentNullException(nameof(licenseRepository));
+    }
 
-        public LocalDrivingLicenseApplicationService(
-            ILocalDrivingLicenseApplicationRepository repository,
-            ILicenseRepository licenseRepository)
+    // GET ALL
+    public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetAllLocalDrivingLicenseApplicationsAsync()
+    {
+        var entities = await _repository.GetAllAsync();
+        var dtoList = new List<LocalDrivingLicenseApplicationListDto>();
+
+        foreach (var entity in entities)
         {
-            _repository = repository;
-            _licenseRepository = licenseRepository;
+            var count = await _repository.GetPassedTestCountAsync(entity.LocalDrivingLicenseApplicationID);
+            var hasLicense = await _licenseRepository.IsApplicationHasLicenseAsync(entity.ApplicationID);
+            dtoList.Add(MapToDto(entity, count, hasLicense));
         }
 
-        // =========================
-        // GET ALL
-        // =========================
-        public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetAllLocalDrivingLicenseApplicationsAsync()
+        return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
+    }
+
+    // GET BY ID
+    public async Task<Result<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationByIdAsync(int id)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidateId(id);
+        if (validation.IsFailure)
+            return Result<LocalDrivingLicenseApplicationListDto>.FromFailure(validation.Error);
+
+        var entity = await _repository.GetByIdAsync(id);
+        if (entity is null)
+            return Result<LocalDrivingLicenseApplicationListDto>.FromFailure("Local driving license application not found.");
+
+        var count = await _repository.GetPassedTestCountAsync(entity.LocalDrivingLicenseApplicationID);
+        var hasLicense = await _licenseRepository.IsApplicationHasLicenseAsync(entity.ApplicationID);
+
+        return Result<LocalDrivingLicenseApplicationListDto>.Success(MapToDto(entity, count, hasLicense));
+    }
+
+    // ADD
+    public async Task<Result<int>> AddLocalDrivingLicenseApplicationAsync(CreateLocalDrivingLicenseApplicationDto dto)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidateCreate(dto);
+        if (validation.IsFailure)
+            return Result<int>.FromFailure(validation.Error);
+
+        var entity = new LocalDrivingLicenseApplication
         {
-            var entities = await _repository.GetAllAsync();
-            var dtoList = new List<LocalDrivingLicenseApplicationListDto>();
+            ApplicationID = dto.ApplicationID,
+            LicenseClassID = dto.LicenseClassID
+        };
 
-            foreach (var e in entities)
-            {
-                int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
-                bool hasLicense = await _licenseRepository.IsApplicationHasLicenseAsync(e.ApplicationID);
-                dtoList.Add(MapToDto(e, count, hasLicense));
-            }
+        var id = await _repository.CreateLocalDrivingLicenseApplicationAsync(entity);
+        return Result<int>.Success(id);
+    }
 
-            return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
+    // UPDATE
+    public async Task<Result> UpdateLocalDrivingLicenseApplicationAsync(int id, UpdateLocalDrivingLicenseApplicationDto dto)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidateUpdate(id, dto);
+        if (validation.IsFailure)
+            return Result.Failure(validation.Error);
+
+        var existing = await _repository.GetByIdAsync(id);
+        if (existing is null)
+            return Result.Failure("Local driving license application not found.");
+
+        existing.LicenseClassID = dto.LicenseClassID;
+        var isSuccess = await _repository.UpdateAsync(existing);
+        return isSuccess ? Result.Success() : Result.Failure("Failed to update application.");
+    }
+
+    // DELETE
+    public async Task<Result> DeleteLocalDrivingLicenseApplicationAsync(int id)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidateId(id);
+        if (validation.IsFailure)
+            return Result.Failure(validation.Error);
+
+        var existing = await _repository.GetByIdAsync(id);
+        if (existing is null)
+            return Result.Failure("Local driving license application not found.");
+
+        var isSuccess = await _repository.DeleteAsync(id);
+        return isSuccess ? Result.Success() : Result.Failure("Failed to delete application.");
+    }
+
+    // GET BY PERSON ID
+    public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidatePersonId(applicantPersonId);
+        if (validation.IsFailure)
+            return Result<List<LocalDrivingLicenseApplicationListDto>>.FromFailure(validation.Error);
+
+        var list = await _repository.GetByPersonIdAsync(applicantPersonId);
+        var dtoList = await MapListToDtoAsync(list);
+        return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
+    }
+
+    // GET BY APPLICATION ID
+    public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidateApplicationId(applicationId);
+        if (validation.IsFailure)
+            return Result<List<LocalDrivingLicenseApplicationListDto>>.FromFailure(validation.Error);
+
+        var list = await _repository.GetByApplicationIdAsync(applicationId);
+        var dtoList = await MapListToDtoAsync(list);
+        return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
+    }
+
+    // GET BY LICENSE CLASS ID
+    public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidateLicenseClassId(licenseClassId);
+        if (validation.IsFailure)
+            return Result<List<LocalDrivingLicenseApplicationListDto>>.FromFailure(validation.Error);
+
+        var list = await _repository.GetByLicenseClassIdAsync(licenseClassId);
+        var dtoList = await MapListToDtoAsync(list);
+        return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
+    }
+
+    // GET APPLICATION ID BY LOCAL ID
+    public async Task<Result<int>> GetApplicationIdByLocalIdAsync(int localId)
+    {
+        var validation = LocalDrivingLicenseApplicationValidator.ValidateId(localId);
+        if (validation.IsFailure)
+            return Result<int>.FromFailure(validation.Error);
+
+        var applicationId = await _repository.GetApplicationIdByLocalIdAsync(localId);
+        if (!applicationId.HasValue)
+            return Result<int>.FromFailure("Main application not found for this local application.");
+
+        return Result<int>.Success(applicationId.Value);
+    }
+
+    // CHECK
+    public async Task<bool> IsLocalDrivingLicenseApplicationExistsAsync(int id)
+    {
+        if (id <= 0) return false;
+        return await _repository.GetByIdAsync(id) is not null;
+    }
+
+    // MAP LIST
+    private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(List<LocalDrivingLicenseApplication> list)
+    {
+        var dtoList = new List<LocalDrivingLicenseApplicationListDto>();
+
+        foreach (var entity in list)
+        {
+            var count = await _repository.GetPassedTestCountAsync(entity.LocalDrivingLicenseApplicationID);
+            var hasLicense = await _licenseRepository.IsApplicationHasLicenseAsync(entity.ApplicationID);
+            dtoList.Add(MapToDto(entity, count, hasLicense));
         }
 
-        // =========================
-        // GET BY ID
-        // =========================
-        public async Task<Result<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationByIdAsync(int id)
+        return dtoList;
+    }
+
+    // MAP ENTITY -> DTO
+    private static LocalDrivingLicenseApplicationListDto MapToDto(
+        LocalDrivingLicenseApplication entity,
+        int passedTestCount,
+        bool hasLicense)
+    {
+        return new LocalDrivingLicenseApplicationListDto
         {
-            var e = await _repository.GetByIdAsync(id);
-
-            if (e == null)
-                return Result<LocalDrivingLicenseApplicationListDto>.Fail("طلب الرخصة المحلي غير موجود.");
-
-            int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
-            bool hasLicense = await _licenseRepository.IsApplicationHasLicenseAsync(e.ApplicationID);
-
-            return Result<LocalDrivingLicenseApplicationListDto>.Success(MapToDto(e, count, hasLicense));
-        }
-
-        // =========================
-        // ADD
-        // =========================
-        public async Task<Result<int>> AddLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplicationCreateUpdateDto dto)
-        {
-            if (dto == null)
-                return Result<int>.Fail("بيانات الطلب مطلوبة.");
-
-            var entity = new LocalDrivingLicenseApplication
-            {
-                ApplicationID = dto.ApplicatonId,
-                LicenseClassID = dto.LicenseClassId,
-            };
-
-            int id = await _repository.CreateLocalDrivingLicenseApplicationAsync(entity);
-
-            return Result<int>.Success(id);
-        }
-
-        // =========================
-        // UPDATE
-        // =========================
-        public async Task<Result> UpdateLocalDrivingLicenseApplicationAsync(int id, LocalDrivingLicenseApplicationCreateUpdateDto dto)
-        {
-            if (dto == null)
-                return Result.Failure("بيانات الطلب مطلوبة.");
-
-            var existing = await _repository.GetByIdAsync(id);
-
-            if (existing == null)
-                return Result.Failure("طلب الرخصة المحلي غير موجود.");
-
-            existing.LicenseClassID = dto.LicenseClassId;
-
-            var isSuccess = await _repository.UpdateAsync(existing);
-
-            return isSuccess
-                ? Result.Success()
-                : Result.Failure("فشل في تحديث الطلب.");
-        }
-
-        // =========================
-        // DELETE
-        // =========================
-        public async Task<Result> DeleteLocalDrivingLicenseApplicationAsync(int id)
-        {
-            var existing = await _repository.GetByIdAsync(id);
-
-            if (existing == null)
-                return Result.Failure("طلب الرخصة المحلي غير موجود.");
-
-            var isSuccess = await _repository.DeleteAsync(id);
-
-            return isSuccess
-                ? Result.Success()
-                : Result.Failure("فشل في حذف الطلب.");
-        }
-
-        // =========================
-        // GET BY PERSON ID
-        // =========================
-        public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId)
-        {
-            var list = await _repository.GetByPersonIdAsync(applicantPersonId);
-            var dtoList = await MapListToDtoAsync(list);
-
-            return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
-        }
-
-        // =========================
-        // GET BY APPLICATION ID
-        // =========================
-        public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId)
-        {
-            var list = await _repository.GetByApplicationIdAsync(applicationId);
-            var dtoList = await MapListToDtoAsync(list);
-
-            return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
-        }
-
-        // =========================
-        // GET BY LICENSE CLASS ID
-        // =========================
-        public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId)
-        {
-            var list = await _repository.GetByLicenseClassIdAsync(licenseClassId);
-            var dtoList = await MapListToDtoAsync(list);
-
-            return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(dtoList);
-        }
-
-        // =========================
-        // GET APPLICATION ID BY LOCAL ID
-        // =========================
-        public async Task<Result<int>> GetApplicationIdByLocalIdAsync(int localId)
-        {
-            var applicationId = await _repository.GetApplicationIdByLocalIdAsync(localId);
-
-            if (!applicationId.HasValue)
-                return Result<int>.Fail("الطلب الرئيسي غير موجود لهذا الطلب المحلي.");
-
-            return Result<int>.Success(applicationId.Value);
-        }
-
-        // =========================
-        // CHECKS
-        // =========================
-        public async Task<bool> IsLocalDrivingLicenseApplicationExistsAsync(int id)
-        {
-            return await _repository.GetByIdAsync(id) != null;
-        }
-
-        // =========================
-        // PRIVATE HELPERS
-        // =========================
-        private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(
-            List<LocalDrivingLicenseApplication> list)
-        {
-            var dtoList = new List<LocalDrivingLicenseApplicationListDto>();
-
-            foreach (var e in list)
-            {
-                int count = await _repository.GetPassedTestCountAsync(e.LocalDrivingLicenseApplicationID);
-                bool hasLicense = await _licenseRepository.IsApplicationHasLicenseAsync(e.ApplicationID);
-                dtoList.Add(MapToDto(e, count, hasLicense));
-            }
-
-            return dtoList;
-        }
-
-        private LocalDrivingLicenseApplicationListDto MapToDto(
-            LocalDrivingLicenseApplication e,
-            int passedTestCount,
-            bool hasLicense)
-        {
-            return new LocalDrivingLicenseApplicationListDto
-            {
-                LocalDrivingLicenseApplicationID = e.LocalDrivingLicenseApplicationID,
-                LicenseClassID = e.LicenseClassID,
-                LicenseClassName = e.LicenseClass?.ClassName ?? "N/A",
-                NationalNo = e.Application?.Person?.NationalNo ?? "N/A",
-                Fees = e.LicenseClass?.ClassFees ?? 0,
-                FullName =
-                    $"{e.Application?.Person?.FirstName} " +
-                    $"{e.Application?.Person?.SecondName} " +
-                    $"{e.Application?.Person?.ThirdName} " +
-                    $"{e.Application?.Person?.LastName}".Trim(),
-                ApplicationDate = e.Application?.ApplicationDate ?? DateTime.MinValue,
-                PassedTest = passedTestCount,
-                ApplicationStatus = e.Application is not null && Enum.IsDefined(typeof(AppStatus), e.Application.ApplicationStatus)
-                    ? (AppStatus)e.Application.ApplicationStatus
+            LocalDrivingLicenseApplicationID = entity.LocalDrivingLicenseApplicationID,
+            LicenseClassID = entity.LicenseClassID,
+            LicenseClassName = entity.LicenseClass?.ClassName ?? "N/A",
+            NationalNo = entity.Application?.Person?.NationalNo ?? "N/A",
+            Fees = entity.LicenseClass?.ClassFees ?? 0,
+            FullName = $"{entity.Application?.Person?.FirstName} " +
+                        $"{entity.Application?.Person?.SecondName} " +
+                        $"{entity.Application?.Person?.ThirdName} " +
+                        $"{entity.Application?.Person?.LastName}".Trim(),
+            ApplicationDate = entity.Application?.ApplicationDate ?? DateTime.MinValue,
+            PassedTest = passedTestCount,
+            ApplicationStatus = entity.Application is not null &&
+                Enum.IsDefined(typeof(AppStatus), entity.Application.ApplicationStatus)
+                    ? (AppStatus)entity.Application.ApplicationStatus
                     : AppStatus.Cancelled,
-                HasLicense = hasLicense,
-                ApplicantPersonID = e.Application?.Person?.PersonId ?? 0
-            };
-        }
+            HasLicense = hasLicense,
+            ApplicantPersonID = entity.Application?.Person?.PersonId ?? 0
+        };
     }
 }

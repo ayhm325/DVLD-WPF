@@ -1,4 +1,5 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.DetainedLicenseDTO;
+using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,6 +16,7 @@ namespace Presentation.ViewModels
         private readonly IPersonService _personService;
         private readonly IDriverService _driverService;
         private readonly IInternationalService _internationalService;
+
 
         [ObservableProperty]
         private string? licenseIdText;
@@ -40,32 +42,80 @@ namespace Presentation.ViewModels
             IDriverService driverService,
             IInternationalService internationalService)
         {
-            _licenseService = licenseService;
-            _detainedLicenseService = detainedLicenseService;
-            _currentUserService = currentUserService;
-            _personService = personService;
-            _driverService = driverService;
-            _internationalService = internationalService;
+            _licenseService =
+                licenseService
+                ?? throw new ArgumentNullException(
+                    nameof(licenseService));
+
+            _detainedLicenseService =
+                detainedLicenseService
+                ?? throw new ArgumentNullException(
+                    nameof(detainedLicenseService));
+
+            _currentUserService =
+                currentUserService
+                ?? throw new ArgumentNullException(
+                    nameof(currentUserService));
+
+            _personService =
+                personService
+                ?? throw new ArgumentNullException(
+                    nameof(personService));
+
+            _driverService =
+                driverService
+                ?? throw new ArgumentNullException(
+                    nameof(driverService));
+
+            _internationalService =
+                internationalService
+                ?? throw new ArgumentNullException(
+                    nameof(internationalService));
         }
 
+
+        // =========================================================
+        // SEARCH LICENSE
+        // =========================================================
 
         [RelayCommand]
         private async Task SearchAsync()
         {
-            if (!int.TryParse(LicenseIdText, out int licenseId))
+            if (!int.TryParse(
+                    LicenseIdText,
+                    out int licenseId) ||
+                licenseId <= 0)
+            {
+                MessageBox.Show(
+                    "Please enter a valid License ID.",
+                    "Validation",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
+            }
 
 
-            var result = await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
+            LicenseInfo = null;
+            DetainInfo = null;
+            FineFees = 0;
+            IsLicenseIssued = false;
+
+
+            var result =
+                await _licenseService
+                    .GetLicenseDetailsByIdAsync(
+                        licenseId);
 
 
             if (result.IsFailure)
             {
-                LicenseInfo = null;
-                DetainInfo = null;
-                IsLicenseIssued = false;
+                MessageBox.Show(
+                    result.Error,
+                    "License Not Found",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
-                MessageBox.Show(result.Error);
                 return;
             }
 
@@ -75,8 +125,12 @@ namespace Presentation.ViewModels
 
             if (LicenseInfo == null)
             {
-                DetainInfo = null;
-                IsLicenseIssued = false;
+                MessageBox.Show(
+                    "License information was not found.",
+                    "Warning",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
@@ -84,22 +138,62 @@ namespace Presentation.ViewModels
             IsLicenseIssued = true;
 
 
-            DetainInfo = new DetainedLicenseDto
+            // =====================================================
+            // Check Existing Active Detention
+            // =====================================================
+
+            var detentionResult =
+                await _detainedLicenseService
+                    .GetActiveDetainByLicenseIdAsync(
+                        LicenseInfo.LicenseId);
+
+
+            if (detentionResult.IsSuccess)
             {
-                LicenseID = LicenseInfo.LicenseId,
-                DetainDate = DateTime.Now,
-                CreatedByUserName = _currentUserService.Username
-            };
+                DetainInfo =
+                    detentionResult.Value;
+
+                FineFees =
+                    DetainInfo?.FineFees ?? 0;
+            }
+            else
+            {
+                DetainInfo = null;
+                FineFees = 0;
+            }
         }
 
+
+        // =========================================================
+        // DETAIN LICENSE
+        // =========================================================
 
         [RelayCommand]
         private async Task IssueAsync()
         {
             if (LicenseInfo == null)
-                return;
+            {
+                MessageBox.Show(
+                    "Please search for a license first.",
+                    "Warning",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
-            if (await _detainedLicenseService.IsLicenseDetainedAsync(LicenseInfo.LicenseId))
+                return;
+            }
+
+
+            // =====================================================
+            // Check Existing Active Detention
+            // =====================================================
+
+            var alreadyDetained =
+                await _detainedLicenseService
+                    .IsLicenseDetainedAsync(
+                        LicenseInfo.LicenseId);
+
+
+            if (alreadyDetained)
             {
                 MessageBox.Show(
                     "This license is already detained.",
@@ -111,20 +205,56 @@ namespace Presentation.ViewModels
             }
 
 
-            var dto = new DetainedLicenseDto
+            // =====================================================
+            // Validate Fine
+            // =====================================================
+
+            if (FineFees < 0)
             {
-                LicenseID = LicenseInfo.LicenseId,
-                DetainDate = DateTime.Now,
-                FineFees = FineFees,
-                CreatedByUserID = _currentUserService.UserId
-            };
+                MessageBox.Show(
+                    "Fine fees cannot be negative.",
+                    "Validation",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
 
 
-            var result = await _detainedLicenseService.AddAsync(dto);
+            // =====================================================
+            // DTO FOR CREATE
+            // =====================================================
+
+            var dto =
+                new CreateDetainedLicenseDto
+                {
+                    LicenseID =
+                        LicenseInfo.LicenseId,
+
+                    DetainDate =
+                        DateTime.Now,
+
+                    FineFees =
+                        FineFees,
+
+                    CreatedByUserID =
+                        _currentUserService.UserId
+                };
+
+
+            // =====================================================
+            // Service
+            // =====================================================
+
+            var result =
+                await _detainedLicenseService
+                    .AddAsync(dto);
+
 
             if (result.IsFailure)
             {
-                MessageBox.Show(result.Error,
+                MessageBox.Show(
+                    result.Error,
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -132,18 +262,26 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            if (result.Value != null)
-            {
-                DetainInfo = result.Value;
 
-                MessageBox.Show(
-                    "License detained successfully.",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
+            // =====================================================
+            // Update UI With Returned DTO
+            // =====================================================
+
+            DetainInfo =
+                result.Value;
+
+
+            MessageBox.Show(
+                "License detained successfully.",
+                "Success",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
 
+
+        // =========================================================
+        // LICENSE HISTORY
+        // =========================================================
 
         [RelayCommand]
         private void ShowLicensesHistory()
@@ -152,22 +290,30 @@ namespace Presentation.ViewModels
                 return;
 
 
-            var vm = new LicenseHistoryViewModel(
-                _personService,
-                _driverService,
-                _licenseService,
-                _internationalService);
+            var vm =
+                new LicenseHistoryViewModel(
+                    _personService,
+                    _driverService,
+                    _licenseService,
+                    _internationalService);
 
 
-            var window = new LicenseHistoryWin(
-                vm,
-                LicenseInfo.PersonID);
+            var window =
+                new LicenseHistoryWin(
+                    vm,
+                    LicenseInfo.PersonID);
 
 
-            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
+
             window.ShowDialog();
         }
 
+
+        // =========================================================
+        // LICENSE INFO
+        // =========================================================
 
         [RelayCommand]
         private void ShowLicensesInfo()
@@ -175,9 +321,15 @@ namespace Presentation.ViewModels
             if (LicenseInfo == null)
                 return;
 
-            var window = new DriverLicenseInfoWin(LicenseInfo.LicenseId);
 
-            window.Owner = System.Windows.Application.Current.MainWindow;
+            var window =
+                new DriverLicenseInfoWin(
+                    LicenseInfo.LicenseId);
+
+
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
+
             window.ShowDialog();
         }
     }

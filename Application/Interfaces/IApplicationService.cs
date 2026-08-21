@@ -1,37 +1,57 @@
-﻿using Application.DTOs;
-using Application.Common.Results;
+﻿using Application.Common.Results;
+using Application.DTOs.ApplicationDTO;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IApplicationService
 {
-    public interface IApplicationService
-    {
-        Task<List<ApplicationDto>> GetAllApplicationsAsync();
+    // =========================================================
+    // GET
+    // =========================================================
+
+    Task<Result<List<ApplicationDto>>>
+        GetAllApplicationsAsync();
+
+    Task<Result<ApplicationDto>>
+        GetApplicationByIdAsync(int id);
+
+    Task<Result<ApplicationBasicInfoDto>>
+        GetBasicInfoAsync(int id);
 
 
-        Task<Result<ApplicationDto>> GetApplicationByIdAsync(int id);
+    // =========================================================
+    // CREATE / UPDATE
+    // =========================================================
+
+    Task<Result<int>>
+        AddNewApplicationAsync(
+            CreateApplicationDto dto);
+
+    Task<Result>
+        UpdateApplicationAsync(
+            UpdateApplicationDto dto);
 
 
-        Task<Result<int>> AddNewApplicationAsync(ApplicationDto dto);
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    Task<Result>
+        DeleteApplicationAsync(int id);
 
 
-        Task<Result> UpdateApplicationAsync(ApplicationDto dto);
+    // =========================================================
+    // BUSINESS
+    // =========================================================
 
-
-        Task<Result> DeleteApplicationAsync(int id);
-
-
-        Task<int?> HasDuplicateApplicationAsync(
+    Task<int?>
+        HasDuplicateApplicationAsync(
             int personId,
             int licenseClassId);
 
+    Task<Result>
+        CompleteApplicationAsync(int id);
 
-
-        Task<Result> CompleteApplicationAsync(int id);
-
-
-        Task<Result> CancelApplicationAsync(int id);
-
-
-        Task<Result<ApplicationBasicInfoDto>> GetBasicInfoAsync(int id);
-    }
+    Task<Result>
+        CancelApplicationAsync(int id);
 }

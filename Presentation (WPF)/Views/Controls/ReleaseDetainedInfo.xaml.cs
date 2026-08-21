@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.DetainedLicenseDTO;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -11,6 +11,9 @@ namespace Presentation.Views.Controls
             InitializeComponent();
         }
 
+        // =========================================================
+        // Release
+        // =========================================================
 
         public static readonly DependencyProperty ReleaseProperty =
             DependencyProperty.Register(
@@ -19,14 +22,15 @@ namespace Presentation.Views.Controls
                 typeof(ReleaseDetainedInfo),
                 new PropertyMetadata(null));
 
-
         public DetainedLicenseDto? Release
         {
             get => (DetainedLicenseDto?)GetValue(ReleaseProperty);
             set => SetValue(ReleaseProperty, value);
         }
 
-
+        // =========================================================
+        // Application Fees
+        // =========================================================
 
         public static readonly DependencyProperty ApplicationFeesProperty =
             DependencyProperty.Register(
@@ -35,14 +39,15 @@ namespace Presentation.Views.Controls
                 typeof(ReleaseDetainedInfo),
                 new PropertyMetadata(0m));
 
-
         public decimal ApplicationFees
         {
             get => (decimal)GetValue(ApplicationFeesProperty);
             set => SetValue(ApplicationFeesProperty, value);
         }
 
-
+        // =========================================================
+        // Total Fees
+        // =========================================================
 
         public static readonly DependencyProperty TotalFeesProperty =
             DependencyProperty.Register(
@@ -50,7 +55,6 @@ namespace Presentation.Views.Controls
                 typeof(decimal),
                 typeof(ReleaseDetainedInfo),
                 new PropertyMetadata(0m));
-
 
         public decimal TotalFees
         {

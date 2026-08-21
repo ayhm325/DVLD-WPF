@@ -91,10 +91,10 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1"
                             Margin="0,0,12,15">
-                    <TextBlock Text="LICENSE ID"
-                               Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.LicenseID, ElementName=Root}"
-                               Style="{StaticResource FieldValue}"/>
+                    <TextBlock Text="INTERNATIONAL LICENSE ID"
+                                Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{Binding Application.InternationalLicenseID, ElementName=Root}"
+                                Style="{StaticResource FieldValue}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2"
                             Margin="0,0,12,15">

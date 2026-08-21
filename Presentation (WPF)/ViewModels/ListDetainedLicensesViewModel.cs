@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.DetainedLicenseDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,7 +17,8 @@ namespace Presentation.ViewModels
 
         private List<DetainedLicenseDto> _allDetainedLicenses = new();
 
-        public ObservableCollection<DetainedLicenseDto> DetainedLicenses { get; }= new();
+        public ObservableCollection<DetainedLicenseDto> DetainedLicenses { get; }
+            = new();
 
         [ObservableProperty]
         private DetainedLicenseDto? selectedDetainedLicense;
@@ -27,6 +28,9 @@ namespace Presentation.ViewModels
 
         [ObservableProperty]
         private string selectedFilter = "None";
+
+        [ObservableProperty]
+        private string selectedReleaseFilter = "All";
 
         public ObservableCollection<string> FilterOptions { get; } =
         [
@@ -45,29 +49,57 @@ namespace Presentation.ViewModels
             "Not Released"
         ];
 
-        [ObservableProperty]
-        private string selectedReleaseFilter = "All";
+        public bool IsSearchVisible =>
+            SelectedFilter != "None" &&
+            SelectedFilter != "Released";
 
-        public bool IsSearchVisible => SelectedFilter != "None" &&SelectedFilter != "Released";
-
-        public bool IsReleaseFilterVisible => SelectedFilter == "Released";
+        public bool IsReleaseFilterVisible =>
+            SelectedFilter == "Released";
 
         public ListDetainedLicensesViewModel(
             IDetainedLicenseService detainedLicenseService,
             IServiceProvider serviceProvider)
         {
-            _detainedLicenseService = detainedLicenseService;
-            _serviceProvider = serviceProvider;
+            _detainedLicenseService =
+                detainedLicenseService
+                ?? throw new ArgumentNullException(
+                    nameof(detainedLicenseService));
+
+            _serviceProvider =
+                serviceProvider
+                ?? throw new ArgumentNullException(
+                    nameof(serviceProvider));
         }
+
+        // =========================================================
+        // LOAD
+        // =========================================================
 
         public async Task LoadAsync()
         {
-            var list = await _detainedLicenseService.GetAllAsync();
+            var result =
+                await _detainedLicenseService.GetAllAsync();
 
-            _allDetainedLicenses = list;
+            if (result.IsFailure)
+            {
+                MessageBox.Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            _allDetainedLicenses =
+                result.Value ?? [];
 
             ApplyFilter();
         }
+
+        // =========================================================
+        // PROPERTY CHANGES
+        // =========================================================
 
         partial void OnSearchTextChanged(string value)
         {
@@ -78,6 +110,7 @@ namespace Presentation.ViewModels
         {
             OnPropertyChanged(nameof(IsSearchVisible));
             OnPropertyChanged(nameof(IsReleaseFilterVisible));
+
             ApplyFilter();
         }
 
@@ -86,61 +119,80 @@ namespace Presentation.ViewModels
             ApplyFilter();
         }
 
+        // =========================================================
+        // FILTER
+        // =========================================================
+
         private void ApplyFilter()
         {
-            IEnumerable<DetainedLicenseDto> query = _allDetainedLicenses;
+            IEnumerable<DetainedLicenseDto> query =
+                _allDetainedLicenses;
 
             if (SelectedFilter == "Released")
             {
                 query = SelectedReleaseFilter switch
                 {
-                    "Released" => query.Where(x => x.IsReleased),
+                    "Released" =>
+                        query.Where(x => x.IsReleased),
 
-                    "Not Released" =>query.Where(x => !x.IsReleased),
+                    "Not Released" =>
+                        query.Where(x => !x.IsReleased),
 
-                    _ => query
+                    _ =>
+                        query
                 };
             }
-
-            else if (!string.IsNullOrWhiteSpace(SearchText)&& SelectedFilter != "None")
+            else if (
+                !string.IsNullOrWhiteSpace(SearchText) &&
+                SelectedFilter != "None")
             {
-                string text = SearchText.Trim().ToLower();
+                string text =
+                    SearchText.Trim();
 
                 query = SelectedFilter switch
                 {
                     "Detain ID" =>
                         query.Where(x =>
                             x.DetainID
-                            .ToString()
-                            .Contains(text)),
+                                .ToString()
+                                .Contains(text)),
 
                     "License ID" =>
                         query.Where(x =>
                             x.LicenseID
-                            .ToString()
-                            .Contains(text)),
+                                .ToString()
+                                .Contains(text)),
 
                     "National No" =>
                         query.Where(x =>
-                            !string.IsNullOrEmpty(x.NationalNo) &&
-                            x.NationalNo.ToLower()
-                            .Contains(text)),
+                            !string.IsNullOrWhiteSpace(x.NationalNo) &&
+                            x.NationalNo.Contains(
+                                text,
+                                StringComparison.OrdinalIgnoreCase)),
 
                     "Full Name" =>
                         query.Where(x =>
-                            !string.IsNullOrEmpty(x.FullName) &&
-                            x.FullName.ToLower()
-                            .Contains(text)),
+                            !string.IsNullOrWhiteSpace(x.FullName) &&
+                            x.FullName.Contains(
+                                text,
+                                StringComparison.OrdinalIgnoreCase)),
 
-                    _ => query
+                    _ =>
+                        query
                 };
             }
+
             DetainedLicenses.Clear();
+
             foreach (var item in query)
             {
                 DetainedLicenses.Add(item);
             }
         }
+
+        // =========================================================
+        // REFRESH
+        // =========================================================
 
         [RelayCommand]
         private async Task RefreshAsync()
@@ -148,71 +200,99 @@ namespace Presentation.ViewModels
             await LoadAsync();
         }
 
+        // =========================================================
+        // PERSON DETAILS
+        // =========================================================
+
         [RelayCommand]
         private void ShowPersonDetails()
         {
-            if (SelectedDetainedLicense == null)
+            if (SelectedDetainedLicense is null)
                 return;
-            var window = new PersonDetailsWindow(SelectedDetainedLicense.ApplicantPersonID)
-            {
-                Owner = System.Windows.Application.Current.MainWindow
-            };
+
+            var window =
+                new PersonDetailsWindow(
+                    SelectedDetainedLicense.ApplicantPersonID)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
+
             window.ShowDialog();
         }
+
+        // =========================================================
+        // LICENSE DETAILS
+        // =========================================================
 
         [RelayCommand]
         private void ShowLicenseDetails()
         {
-            if (SelectedDetainedLicense == null)
+            if (SelectedDetainedLicense is null)
                 return;
-            var window = new DriverLicenseInfoWin(SelectedDetainedLicense.LicenseID)
-            {
-                Owner = System.Windows.Application.Current.MainWindow
-            };
+
+            var window =
+                new DriverLicenseInfoWin(
+                    SelectedDetainedLicense.LicenseID)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
+
             window.ShowDialog();
         }
+
+        // =========================================================
+        // LICENSE HISTORY
+        // =========================================================
 
         [RelayCommand]
         private async Task ShowPersonLicenseHistory()
         {
-            if (SelectedDetainedLicense == null)
+            if (SelectedDetainedLicense is null)
                 return;
-            int personId = SelectedDetainedLicense.ApplicantPersonID;
-            var vm = _serviceProvider.GetRequiredService<LicenseHistoryViewModel>();
+
+            int personId =
+                SelectedDetainedLicense.ApplicantPersonID;
+
+            var vm =
+                _serviceProvider
+                    .GetRequiredService<LicenseHistoryViewModel>();
+
             await vm.LoadAsync(personId);
-            var window = new LicenseHistoryWin(vm, personId)
-            {
-                Owner = System.Windows.Application.Current.MainWindow
-            };
+
+            var window =
+                new LicenseHistoryWin(
+                    vm,
+                    personId)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
+
             window.ShowDialog();
         }
 
-        //[RelayCommand] 
-        //private async Task ReleaseDetainedLicenseAsync() 
-        //{ 
-        //    if (SelectedDetainedLicense == null) 
-        //        return; 
-
-        //    int licenseId = SelectedDetainedLicense.LicenseID; 
-
-        //    var window = _serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>(); 
-        //    await window.LoadAsync(licenseId); 
-        //    window.Owner = System.Windows.Application.Current.MainWindow; 
-        //    window.ShowDialog(); 
-        //    await LoadAsync(); 
-        //}
+        // =========================================================
+        // RELEASE SELECTED DETAINED LICENSE
+        // =========================================================
 
         [RelayCommand]
         private async Task ReleaseDetainedLicenseAsync()
         {
-            if (SelectedDetainedLicense == null)
+            if (SelectedDetainedLicense is null)
                 return;
 
-            int licenseId = SelectedDetainedLicense.LicenseID;
+            int licenseId =
+                SelectedDetainedLicense.LicenseID;
 
-            var detainedLicense =await _detainedLicenseService.GetActiveDetainByLicenseIdAsync(licenseId);
+            var detainedResult =
+                await _detainedLicenseService
+                    .GetActiveDetainByLicenseIdAsync(
+                        licenseId);
 
-            if (detainedLicense == null)
+            if (detainedResult.IsFailure ||
+                detainedResult.Value is null)
             {
                 MessageBox.Show(
                     "This license is not currently detained.",
@@ -224,31 +304,54 @@ namespace Presentation.ViewModels
             }
 
             var window =
-                _serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
+                _serviceProvider
+                    .GetRequiredService<ReleaseDetainedLicenseWin>();
 
             await window.LoadAsync(licenseId);
 
-            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
+
             window.ShowDialog();
 
             await LoadAsync();
         }
+
+        // =========================================================
+        // DETAIN NEW LICENSE
+        // =========================================================
 
         [RelayCommand]
         private async Task Detain()
         {
-            var window = App.ServiceProvider.GetRequiredService<DetainLicenseWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
+            var window =
+                _serviceProvider
+                    .GetRequiredService<DetainLicenseWin>();
+
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
+
             window.ShowDialog();
+
             await LoadAsync();
         }
+
+        // =========================================================
+        // RELEASE DETAINED LICENSE
+        // =========================================================
 
         [RelayCommand]
         private async Task ReleaseDetain()
         {
-            var window = App.ServiceProvider.GetRequiredService<ReleaseDetainedLicenseWin>();
-            window.Owner = System.Windows.Application.Current.MainWindow;
+            var window =
+                _serviceProvider
+                    .GetRequiredService<ReleaseDetainedLicenseWin>();
+
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
+
             window.ShowDialog();
+
             await LoadAsync();
         }
     }

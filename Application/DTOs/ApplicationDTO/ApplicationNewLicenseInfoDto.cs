@@ -1,6 +1,4 @@
-﻿
-
-namespace Application.DTOs
+﻿namespace Application.DTOs.ApplicationDTO
 {
     public class ApplicationNewLicenseInfoDto
     {

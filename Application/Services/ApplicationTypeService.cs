@@ -1,72 +1,66 @@
 ﻿using Application.Common.Results;
 using Application.DTOs;
 using Application.Interfaces;
+using Application.Validators;
 using Domain.Entities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Application.Services
+namespace Application.Services;
+
+public class ApplicationTypeService : IApplicationTypeService
 {
-    public class ApplicationTypeService : IApplicationTypeService
+    private readonly IApplicationTypeRepository _applicationTypeRepository;
+
+    public ApplicationTypeService(IApplicationTypeRepository applicationTypeRepository)
     {
-        private readonly IApplicationTypeRepository _applicationTypeRespository;
+        _applicationTypeRepository = applicationTypeRepository ?? throw new ArgumentNullException(nameof(applicationTypeRepository));
+    }
 
-        public ApplicationTypeService(IApplicationTypeRepository applicationTypeRespository)
+    // GET ALL
+    public async Task<Result<List<ApplicationTypeDto>>> GetAllApplicationTypesAsync()
+    {
+        var appTypes = await _applicationTypeRepository.GetAllApplicationTypesAsync();
+        return Result<List<ApplicationTypeDto>>.Success([.. appTypes.Select(MapToDto)]);
+    }
+
+    // GET BY ID
+    public async Task<Result<ApplicationTypeDto>> GetApplicationTypeByIdAsync(int id)
+    {
+        if (id <= 0)
+            return Result<ApplicationTypeDto>.FromFailure("Invalid application type ID.");
+
+        var appType = await _applicationTypeRepository.GetApplicationTypeByIdAsync(id);
+        if (appType is null)
+            return Result<ApplicationTypeDto>.FromFailure("Application type not found.");
+
+        return Result<ApplicationTypeDto>.Success(MapToDto(appType));
+    }
+
+    // UPDATE
+    public async Task<Result> UpdateApplicationTypeAsync(int id, ApplicationTypeDto dto)
+    {
+        var validation = ApplicationTypeValidator.ValidateUpdate(id, dto);
+        if (validation.IsFailure)
+            return Result.Failure(validation.Error);
+
+        var appType = await _applicationTypeRepository.GetApplicationTypeByIdAsync(id);
+        if (appType is null)
+            return Result.Failure("Application type not found.");
+
+        appType.ApplicationTypeTitle = dto.ApplicationTypeTitle.Trim();
+        appType.ApplicationFees = dto.ApplicationTypeFees;
+
+        var isSuccess = await _applicationTypeRepository.UpdateApplicationTypeAsync(appType);
+        return isSuccess ? Result.Success() : Result.Failure("Failed to update application type.");
+    }
+
+    // MAPPING
+    private static ApplicationTypeDto MapToDto(ApplicationType appType)
+    {
+        return new ApplicationTypeDto
         {
-            _applicationTypeRespository = applicationTypeRespository;
-        }
-
-        // ================= GET ALL =================
-        public async Task<Result<List<ApplicationTypeDto>>> GetAllApplicationTypesAsync()
-        {
-            var appTypes = await _applicationTypeRespository.GetAllApplicationTypesAsync();
-
-            return Result<List<ApplicationTypeDto>>.Success(
-                [.. appTypes.Select(MapToDto)]);
-        }
-
-        // ================= GET BY ID =================
-        public async Task<Result<ApplicationTypeDto>> GetApplicationTypeByIdAsync(int id)
-        {
-            var appType = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
-
-            if (appType == null)
-                return Result<ApplicationTypeDto>.Fail("نوع الطلب غير موجود.");
-
-            return Result<ApplicationTypeDto>.Success(MapToDto(appType));
-        }
-
-        // ================= UPDATE =================
-        public async Task<Result> UpdateApplicationTypeAsync(int id, ApplicationTypeDto dto)
-        {
-            if (dto == null)
-                return Result.Failure("بيانات نوع الطلب مطلوبة.");
-
-            var appType = await _applicationTypeRespository.GetApplicationTypeByIdAsync(id);
-
-            if (appType is null)
-                return Result.Failure("نوع الطلب غير موجود.");
-
-            appType.ApplicationTypeTitle = dto.ApplicationTypeTitle;
-            appType.ApplicationFees = dto.ApplicationTypeFees;
-
-            var isSuccess = await _applicationTypeRespository.UpdateApplicationTypeAsync(appType);
-
-            return isSuccess
-                ? Result.Success()
-                : Result.Failure("فشل في تحديث نوع الطلب.");
-        }
-
-        // ================= MAPPING =================
-        private ApplicationTypeDto MapToDto(ApplicationType apptype)
-        {
-            return new ApplicationTypeDto
-            {
-                ApplicationTypeId = apptype.ApplicationTypeId,
-                ApplicationTypeTitle = apptype.ApplicationTypeTitle,
-                ApplicationTypeFees = apptype.ApplicationFees
-            };
-        }
+            ApplicationTypeId = appType.ApplicationTypeId,
+            ApplicationTypeTitle = appType.ApplicationTypeTitle,
+            ApplicationTypeFees = appType.ApplicationFees
+        };
     }
 }

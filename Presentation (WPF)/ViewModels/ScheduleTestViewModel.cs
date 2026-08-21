@@ -1,5 +1,6 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
+using Application.DTOs.ApplicationDTO;
+using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,35 +22,59 @@ namespace Presentation.ViewModels
         private readonly IApplicationTypeService _applicationTypeService;
         private readonly IApplicationService _appService;
 
-        public ScheduleTestViewModel(ITestAppointmentService service,
-                                     ILocalDrivingLicenseApplicationService lDLAppService,
-                                     ITestTypeService testTypeService,
-                                     ICurrentUserService currentUserService,
-                                     IApplicationTypeService applicationTypeService,
-                                     IApplicationService appService)
+        public ScheduleTestViewModel(
+            ITestAppointmentService service,
+            ILocalDrivingLicenseApplicationService lDLAppService,
+            ITestTypeService testTypeService,
+            ICurrentUserService currentUserService,
+            IApplicationTypeService applicationTypeService,
+            IApplicationService appService)
         {
-            _service = service;
-            _lDLAppService = lDLAppService;
-            _testTypeService = testTypeService;
-            _currentUserService = currentUserService;
-            _applicationTypeService = applicationTypeService;
-            _appService = appService;
+            _service = service
+                ?? throw new ArgumentNullException(nameof(service));
+
+            _lDLAppService = lDLAppService
+                ?? throw new ArgumentNullException(nameof(lDLAppService));
+
+            _testTypeService = testTypeService
+                ?? throw new ArgumentNullException(nameof(testTypeService));
+
+            _currentUserService = currentUserService
+                ?? throw new ArgumentNullException(nameof(currentUserService));
+
+            _applicationTypeService = applicationTypeService
+                ?? throw new ArgumentNullException(nameof(applicationTypeService));
+
+            _appService = appService
+                ?? throw new ArgumentNullException(nameof(appService));
         }
+
+        // =========================================================
+        // PROPERTIES
+        // =========================================================
 
         [ObservableProperty]
         private ScheduleTestDto schedule = new();
+
         [ObservableProperty]
         private ApplicationDto appDto = new();
+
+        [ObservableProperty]
+        private bool isRetake;
 
         private int _localAppId;
         private int _applicationId;
 
+        public decimal TotalFees =>
+            (Schedule?.Fees ?? 0) +
+            (Schedule?.RetakerFees ?? 0);
 
-        [ObservableProperty]
-        private bool _isRetake;
+        public DateTime MinDate =>
+            DateTime.Now.Date.AddDays(1);
 
-        public decimal TotalFees => (Schedule?.Fees ?? 0) + (Schedule?.RetakerFees ?? 0);
-        public DateTime MinDate => DateTime.Now.Date.AddDays(1);
+        // =========================================================
+        // PROPERTY CHANGED
+        // =========================================================
 
         partial void OnScheduleChanged(ScheduleTestDto value)
         {
@@ -57,61 +82,115 @@ namespace Presentation.ViewModels
             OnPropertyChanged(nameof(TotalFees));
         }
 
-        public async Task LoadAsync(int localAppId, TestTypeEnum type)
+        // =========================================================
+        // LOAD - NEW APPOINTMENT
+        // =========================================================
+
+        public async Task LoadAsync(
+            int localAppId,
+            TestTypeEnum type)
         {
             _localAppId = localAppId;
 
-            var appIdResult = await _lDLAppService
-                .GetApplicationIdByLocalIdAsync(localAppId);
+            // -----------------------------------------------------
+            // Get Application ID from Local Driving License App
+            // -----------------------------------------------------
+
+            var appIdResult =
+                await _lDLAppService
+                    .GetApplicationIdByLocalIdAsync(localAppId);
 
             if (appIdResult.IsFailure)
                 throw new Exception(appIdResult.Error);
 
             _applicationId = appIdResult.Value;
 
+            // -----------------------------------------------------
+            // Get Local Driving License Application info
+            // -----------------------------------------------------
 
-            var appInfoResult = await _lDLAppService
-                .GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
-
+            var appInfoResult =
+                await _lDLAppService
+                    .GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
 
             if (appInfoResult.IsFailure)
                 throw new Exception(appInfoResult.Error);
 
-
             var appInfo = appInfoResult.Value;
 
+            if (appInfo is null)
+                throw new Exception(
+                    "Local driving license application was not found.");
 
-            var appointmentsResult = await _service.GetByApplicationIdAsync(localAppId);
+            // -----------------------------------------------------
+            // Get previous appointments
+            //
+            // IMPORTANT:
+            // GetByApplicationIdAsync expects ApplicationID,
+            // not LocalDrivingLicenseApplicationID.
+            // -----------------------------------------------------
+
+            var appointmentsResult =
+                await _service.GetByApplicationIdAsync(_applicationId);
 
             if (appointmentsResult.IsFailure)
                 throw new Exception(appointmentsResult.Error);
 
-            var appointments = appointmentsResult.Value!;
+            var appointments =
+                appointmentsResult.Value ?? [];
 
-            var filteredAppointments = appointments
-                .Where(x => x.TestTypeID == (int)type)
-                .ToList();
+            // -----------------------------------------------------
+            // Only appointments for the selected test type
+            // -----------------------------------------------------
+
+            var filteredAppointments =
+                appointments
+                    .Where(x => x.TestTypeID == (int)type)
+                    .ToList();
 
             int count = filteredAppointments.Count;
 
+            // -----------------------------------------------------
+            // Test fees
+            // -----------------------------------------------------
 
             decimal testFees =
                 await _service.GetTestTypeFeesAsync((int)type);
 
+            // -----------------------------------------------------
+            // Retake Application Type
+            // 7 = Retake Test
+            // -----------------------------------------------------
+
+            const int retakeApplicationTypeId = 7;
 
             var retakeTypeResult =
-                await _applicationTypeService.GetApplicationTypeByIdAsync(7);
+                await _applicationTypeService
+                    .GetApplicationTypeByIdAsync(
+                        retakeApplicationTypeId);
 
             if (retakeTypeResult.IsFailure)
                 throw new Exception(retakeTypeResult.Error);
 
-            var retakeType = retakeTypeResult.Value!;
+            var retakeType = retakeTypeResult.Value;
 
-            decimal retakeFees = retakeType.ApplicationTypeFees;
+            if (retakeType is null)
+                throw new Exception(
+                    "Retake application type was not found.");
 
+            decimal retakeFees =
+                retakeType.ApplicationTypeFees;
+
+            // -----------------------------------------------------
+            // If there are previous attempts,
+            // this appointment is a Retake.
+            // -----------------------------------------------------
 
             bool shouldShowRetake = count > 0;
 
+            // -----------------------------------------------------
+            // Prepare Schedule DTO for UI
+            // -----------------------------------------------------
 
             Schedule = new ScheduleTestDto
             {
@@ -119,7 +198,8 @@ namespace Presentation.ViewModels
 
                 FullName = appInfo.FullName,
 
-                LicenseClassName = appInfo.LicenseClassName,
+                LicenseClassName =
+                    appInfo.LicenseClassName,
 
                 Trial = count + 1,
 
@@ -127,20 +207,31 @@ namespace Presentation.ViewModels
 
                 Fees = testFees,
 
-                RetakerFees = shouldShowRetake
-                    ? retakeFees
-                    : 0,
+                RetakerFees =
+                    shouldShowRetake
+                        ? retakeFees
+                        : 0,
 
-                TestTypeID = (int)type
+                TestTypeID = (int)type,
+
+                AppointmentID = 0,
+
+                RetakeTestApplicationID = 0
             };
-
 
             IsRetake = shouldShowRetake;
         }
 
-        public async Task LoadForEditAsync(int appointmentId)
+        // =========================================================
+        // LOAD - EDIT APPOINTMENT
+        // =========================================================
+
+        public async Task LoadForEditAsync(
+            int appointmentId)
         {
-            var result = await _service.GetScheduleInfoAsync(appointmentId);
+            var result =
+                await _service
+                    .GetScheduleInfoAsync(appointmentId);
 
             if (result.IsFailure)
             {
@@ -153,13 +244,50 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            var data = result.Value!;
+            var data = result.Value;
+
+            if (data is null)
+            {
+                MessageBox.Show(
+                    "Appointment information was not found.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
 
             data.AppointmentID = appointmentId;
 
+            // -----------------------------------------------------
+            // Get all appointments for the application
+            //
+            // ScheduleTestDto contains LocalApplicationID,
+            // so first resolve its ApplicationID.
+            // -----------------------------------------------------
+
+            var applicationIdResult =
+                await _lDLAppService
+                    .GetApplicationIdByLocalIdAsync(
+                        data.LocalDrivingLicenseApplicationID);
+
+            if (applicationIdResult.IsFailure)
+            {
+                MessageBox.Show(
+                    applicationIdResult.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            var applicationId =
+                applicationIdResult.Value;
 
             var allAppointmentsResult =
-                await _service.GetByApplicationIdAsync(data.LocalDrivingLicenseApplicationID);
+                await _service
+                    .GetByApplicationIdAsync(applicationId);
 
             if (allAppointmentsResult.IsFailure)
             {
@@ -172,71 +300,186 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            var allAppointments = allAppointmentsResult.Value!;
+            var allAppointments =
+                allAppointmentsResult.Value ?? [];
 
+            // -----------------------------------------------------
+            // Trial number
+            // -----------------------------------------------------
 
-            data.Trial = allAppointments.Count(
-                x => x.TestTypeID == data.TestTypeID);
+            data.Trial =
+                allAppointments.Count(
+                    x => x.TestTypeID == data.TestTypeID);
 
+            // -----------------------------------------------------
+            // Determine Retake state
+            // -----------------------------------------------------
+
+            IsRetake =
+                data.RetakeTestApplicationID > 0;
+
+            // -----------------------------------------------------
+            // Load schedule
+            // -----------------------------------------------------
 
             Schedule = data;
         }
 
+        // =========================================================
+        // SAVE
+        // =========================================================
+
         [RelayCommand]
         private async Task SaveAsync()
         {
-            if (Schedule == null) return;
+            if (Schedule is null)
+                return;
 
             try
             {
-                // إذا كان Retake ولم يتم إنشاء طلب إعادة بعد
-                if (IsRetake && Schedule.AppointmentID == 0 && Schedule.RetakeTestApplicationID == 0)
+                // =================================================
+                // RETAKE
+                //
+                // Create Retake Application only when:
+                //
+                // 1. This is a Retake
+                // 2. This is a new appointment
+                // 3. No Retake Application exists yet
+                // =================================================
+
+                if (IsRetake &&
+                    Schedule.AppointmentID == 0 &&
+                    Schedule.RetakeTestApplicationID == 0)
                 {
-                    var applicationResult = await _appService
-    .GetApplicationByIdAsync(_applicationId);
+                    var applicationResult =
+                        await _appService
+                            .GetApplicationByIdAsync(
+                                _applicationId);
 
                     if (applicationResult.IsFailure)
-                        throw new Exception(applicationResult.Error);
+                        throw new Exception(
+                            applicationResult.Error);
 
-                    var originalApplication = applicationResult.Value;
+                    var originalApplication =
+                        applicationResult.Value;
 
-                    AppDto = new ApplicationDto
-                    {
-                        ApplicantPersonID = originalApplication.ApplicantPersonID,
-                        ApplicationDate = DateTime.Now,
-                        ApplicationTypeID = 7, // Retake Test
-                        ApplicationStatus = AppStatus.New,
-                        LastStatusDate = DateTime.Now,
-                        PaidFees = TotalFees,
-                        CreatedByUserID = _currentUserService.UserId
-                    };
+                    if (originalApplication is null)
+                        throw new Exception(
+                            "Original application was not found.");
 
+                    // -------------------------------------------------
+                    // Create Retake Application DTO
+                    // -------------------------------------------------
 
-                    var retakeResult = await _appService
-                        .AddNewApplicationAsync(AppDto);
+                    var createApplication =
+                        new CreateApplicationDto
+                        {
+                            ApplicantPersonID =
+                                originalApplication.ApplicantPersonID,
+
+                            ApplicationDate =
+                                DateTime.Now,
+
+                            ApplicationTypeID = 7,
+
+                            ApplicationStatus =
+                                AppStatus.New,
+
+                            LastStatusDate =
+                                DateTime.Now,
+
+                            PaidFees =
+                                TotalFees,
+
+                            CreatedByUserID =
+                                _currentUserService.UserId
+                        };
+
+                    // -------------------------------------------------
+                    // Create Retake Application
+                    // -------------------------------------------------
+
+                    var retakeResult =
+                        await _appService
+                            .AddNewApplicationAsync(
+                                createApplication);
 
                     if (retakeResult.IsFailure)
-                        throw new Exception(retakeResult.Error);
+                        throw new Exception(
+                            retakeResult.Error);
 
-                    Schedule.RetakeTestApplicationID = retakeResult.Value;
+                    Schedule.RetakeTestApplicationID =
+                        retakeResult.Value;
                 }
 
-                var appointmentToSave = MapScheduleToAppointment(Schedule);
+                // =================================================
+                // CREATE / UPDATE APPOINTMENT
+                // =================================================
 
                 Result saveResult;
 
                 if (Schedule.AppointmentID > 0)
                 {
-                    saveResult = await _service.UpdateAsync(appointmentToSave);
+                    // ---------------------------------------------
+                    // UPDATE
+                    // ---------------------------------------------
+
+                    var updateDto =
+                        new UpdateTestAppointmentDto
+                        {
+                            TestAppointmentID =
+                                Schedule.AppointmentID,
+
+                            AppointmentDate =
+                                Schedule.Date
+                        };
+
+                    saveResult =
+                        await _service.UpdateAsync(
+                            updateDto);
                 }
                 else
                 {
-                    saveResult = await _service.AddAsync(appointmentToSave);
+                    // ---------------------------------------------
+                    // CREATE
+                    // ---------------------------------------------
+
+                    var createDto =
+                        new CreateTestAppointmentDto
+                        {
+                            TestTypeID =
+                                Schedule.TestTypeID,
+
+                            LocalDrivingLicenseApplicationID =
+                                Schedule.LocalDrivingLicenseApplicationID,
+
+                            AppointmentDate =
+                                Schedule.Date,
+
+                            RetakeTestApplicationID =
+                                Schedule.RetakeTestApplicationID > 0
+                                    ? Schedule.RetakeTestApplicationID
+                                    : null
+                        };
+
+                    saveResult =
+                        await _service.AddAsync(
+                            createDto);
                 }
+
+                // =================================================
+                // RESULT
+                // =================================================
 
                 if (saveResult.IsSuccess)
                 {
-                    MessageBox.Show("Appointment saved successfully.");
+                    MessageBox.Show(
+                        "Appointment saved successfully.",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    Close();
                 }
                 else
                 {
@@ -249,31 +492,26 @@ namespace Presentation.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                MessageBox.Show(
+                    ex.Message,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
-        private TestAppointmentDto MapScheduleToAppointment(ScheduleTestDto schedule)
-        {
-            return new TestAppointmentDto
-            {
-                TestAppointmentID = schedule.AppointmentID,
-                LocalDrivingLicenseApplicationID = schedule.LocalDrivingLicenseApplicationID,
-                AppointmentID = schedule.AppointmentID,
-                TestTypeID = schedule.TestTypeID,
-                AppointmentDate = schedule.Date,
-                PaidFees = schedule.Fees,
-                CreatedByUserID = _currentUserService.UserId,
-                IsLocked = false,
-                // التعديل هنا: إذا كان الـ ID هو 0، نرسل null ليتم التعامل معه كـ NULL في قاعدة البيانات
-                RetakeTestApplicationID = (schedule.RetakeTestApplicationID > 0) ? schedule.RetakeTestApplicationID : null
-            };
-        }
+        // =========================================================
+        // CLOSE
+        // =========================================================
 
         [RelayCommand]
         private void Close()
         {
-            var window = System.Windows.Application.Current.Windows.OfType<ScheduleTestWin>().FirstOrDefault();
+            var window =
+                System.Windows.Application.Current.Windows
+                    .OfType<ScheduleTestWin>()
+                    .FirstOrDefault();
+
             window?.Close();
         }
     }

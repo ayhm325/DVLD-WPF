@@ -2,6 +2,7 @@
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace Infrastructure.Repositories
 {
     public class DetainedLicenseRepository : IDetainedLicenseRepository

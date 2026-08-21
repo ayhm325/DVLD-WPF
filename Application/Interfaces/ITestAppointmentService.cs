@@ -1,38 +1,99 @@
 ﻿using Application.Common.Results;
 using Application.DTOs;
+using Application.DTOs.TestAppointmentDTO;
 using Domain.Enums;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+
+namespace Application.Interfaces;
 
 public interface ITestAppointmentService
 {
-    Task<Result<TestAppointmentDto>> GetByIdAsync(int id);
+    // =========================================================
+    // GET
+    // =========================================================
 
-    Task<Result<List<TestAppointmentDto>>> GetAllAsync();
+    Task<Result<TestAppointmentDto>>
+        GetByIdAsync(int id);
 
-    Task<Result<List<TestAppointmentDto>>> GetByApplicationIdAsync(int applicationId);
+    Task<Result<List<TestAppointmentDto>>>
+        GetAllAsync();
 
-    Task<Result<List<TestAppointmentDto>>> GetByTestTypeIdAsync(TestTypeEnum testType);
+    Task<Result<List<TestAppointmentDto>>>
+        GetByApplicationIdAsync(
+            int applicationId);
 
-    Task<Result<List<TestAppointmentDto>>> GetByCreatedUserIdAsync(int userId);
+    Task<Result<List<TestAppointmentDto>>>
+        GetByTestTypeIdAsync(
+            TestTypeEnum testType);
 
-    Task<Result<ScheduleTestDto>> GetScheduleInfoAsync(int testAppointmentId);
+    Task<Result<List<TestAppointmentDto>>>
+        GetByCreatedUserIdAsync(
+            int userId);
 
-    Task<decimal> GetTestTypeFeesAsync(int testTypeId);
+    Task<Result<ScheduleTestDto>>
+        GetScheduleInfoAsync(
+            int testAppointmentId);
 
-    Task<int> GetTrialCountAsync(int localAppId, int testTypeId);
 
-    // فحوصات بسيطة (تبقى bool)
-    Task<bool> HasConflictAsync(int testTypeId, DateTime dateTime);
-    Task<bool> HasUserConflictAsync(int userId, DateTime dateTime);
-    Task<bool> HasApplicationConflictAsync(int applicationId, DateTime dateTime);
-    Task<bool> HasPassedAllTestsAsync(int appId);
-    Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId);
+    // =========================================================
+    // BUSINESS HELPERS
+    // =========================================================
 
-    // أوامر (Commands)
-    Task<Result> AddAsync(TestAppointmentDto dto);
-    Task<Result> UpdateAsync(TestAppointmentDto dto);
-    Task<Result> DeleteAsync(int id);
+    Task<decimal>
+        GetTestTypeFeesAsync(
+            int testTypeId);
 
-    Task<Result> SaveTestResultAsync(TestDto dto);
+    Task<int>
+        GetTrialCountAsync(
+            int localAppId,
+            int testTypeId);
+
+
+    // =========================================================
+    // CHECKS
+    // =========================================================
+
+    Task<bool>
+        HasConflictAsync(
+            int testTypeId,
+            DateTime dateTime);
+
+    Task<bool>
+        HasUserConflictAsync(
+            int userId,
+            DateTime dateTime);
+
+    Task<bool>
+        HasApplicationConflictAsync(
+            int applicationId,
+            DateTime dateTime);
+
+    Task<bool>
+        HasPassedAllTestsAsync(
+            int appId);
+
+    Task<bool>
+        IsAppointmentAlreadyScheduledAsync(
+            int localAppId,
+            int testTypeId);
+
+
+    // =========================================================
+    // COMMANDS
+    // =========================================================
+
+    Task<Result>
+        AddAsync(
+            CreateTestAppointmentDto dto);
+
+    Task<Result>
+        UpdateAsync(
+            UpdateTestAppointmentDto dto);
+
+    Task<Result>
+        DeleteAsync(
+            int id);
+
+    Task<Result>
+        SaveTestResultAsync(
+            SaveTestResultDto dto);
 }

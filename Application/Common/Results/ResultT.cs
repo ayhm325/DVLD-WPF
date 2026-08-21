@@ -16,6 +16,6 @@ public sealed class Result<T> : Result
     public static Result<T> Success(T value)
         => new(true, value, string.Empty);
 
-    public static Result<T> Fail(string error)
+    public static Result<T> FromFailure(string error)
         => new(false, default, error);
 }

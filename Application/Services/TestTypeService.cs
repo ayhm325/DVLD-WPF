@@ -1,74 +1,69 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
+using Application.DTOs.TestTypeDTO;
 using Application.Interfaces;
+using Application.Validators;
 using Domain.Entities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Application.Services
+namespace Application.Services;
+
+public class TestTypeService : ITestTypeService
 {
-    public class TestTypeService : ITestTypeService
+    private readonly ITestTypeRepository _repository;
+
+    public TestTypeService(ITestTypeRepository repository)
     {
-        private readonly ITestTypeRepository _testTypeRespository;
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+    }
 
-        public TestTypeService(ITestTypeRepository testTypeRespository)
+    // GET ALL
+    public async Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync()
+    {
+        var testTypes = await _repository.GetAllTestTypeAsync();
+        return Result<List<TestTypeDto>>.Success(testTypes.Select(MapToDto).ToList());
+    }
+
+    // GET BY ID
+    public async Task<Result<TestTypeDto>> GetTestTypeByIdAsync(int id)
+    {
+        var validation = TestTypeValidator.ValidateId(id);
+        if (validation.IsFailure)
+            return Result<TestTypeDto>.FromFailure(validation.Error);
+
+        var testType = await _repository.GetTestTypeByIdAsync(id);
+        if (testType is null)
+            return Result<TestTypeDto>.FromFailure("Test type not found.");
+
+        return Result<TestTypeDto>.Success(MapToDto(testType));
+    }
+
+    // UPDATE
+    public async Task<Result> UpdateTestTypeAsync(int id, TestTypeDto dto)
+    {
+        var validation = TestTypeValidator.ValidateUpdate(id, dto);
+        if (validation.IsFailure)
+            return validation;
+
+        var testType = await _repository.GetTestTypeByIdAsync(id);
+        if (testType is null)
+            return Result.Failure("Test type not found.");
+
+        testType.TestTypeTitle = dto.TestTypeTitle.Trim();
+        testType.TestTypeDescription = dto.TestTypeDescription.Trim();
+        testType.TestTypeFees = dto.TestTypeFees;
+
+        var isSuccess = await _repository.UpdateTestTypeAsync(testType);
+        return isSuccess ? Result.Success() : Result.Failure("Failed to update test type.");
+    }
+
+    // MAPPING
+    private static TestTypeDto MapToDto(TestType entity)
+    {
+        return new TestTypeDto
         {
-            _testTypeRespository = testTypeRespository;
-        }
-
-        // ================= GET ALL =================
-        public async Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync()
-        {
-            var testTypes = await _testTypeRespository.GetAllTestTypeAsync();
-
-            return Result<List<TestTypeDto>>.Success(
-                [.. testTypes.Select(MapToDto)]);
-        }
-
-        // ================= GET BY ID =================
-        public async Task<Result<TestTypeDto>> GetTestTypeByIdAsync(int id)
-        {
-            var testType = await _testTypeRespository.GetTestTypeByIdAsync(id);
-
-            if (testType == null)
-                return Result<TestTypeDto>.Fail("نوع الاختبار غير موجود.");
-
-            return Result<TestTypeDto>.Success(MapToDto(testType));
-        }
-
-        // ================= UPDATE =================
-        public async Task<Result> UpdateTestTypeAsync(int id, TestTypeDto dto)
-        {
-            if (dto == null)
-                return Result.Failure("بيانات نوع الاختبار مطلوبة.");
-
-            var testType = await _testTypeRespository.GetTestTypeByIdAsync(id);
-
-            if (testType == null)
-                return Result.Failure("نوع الاختبار غير موجود.");
-
-            testType.TestTypeTitle = dto.TestTypeTitle;
-            testType.TestTypeDescription = dto.TestTypeDescription;
-            testType.TestTypeFees = dto.TestTypeFees;
-
-            var isSuccess = await _testTypeRespository.UpdateTestTypeAsync(testType);
-
-            return isSuccess
-                ? Result.Success()
-                : Result.Failure("فشل في تحديث نوع الاختبار.");
-        }
-
-        // ================= MAPPING =================
-        private TestTypeDto MapToDto(TestType testtype)
-        {
-            return new TestTypeDto
-            {
-                TestTypeId = testtype.TestTypeId,
-                TestTypeTitle = testtype.TestTypeTitle,
-                TestTypeDescription = testtype.TestTypeDescription,
-                TestTypeFees = testtype.TestTypeFees
-            };
-        }
+            TestTypeId = entity.TestTypeId,
+            TestTypeTitle = entity.TestTypeTitle,
+            TestTypeDescription = entity.TestTypeDescription,
+            TestTypeFees = entity.TestTypeFees
+        };
     }
 }

@@ -1,9 +1,9 @@
-﻿
-using Application.DTOs;
+﻿using Application.DTOs.LicenseDTO;
+using Application.DTOs.ApplicationDTO;
+using Application.DTOs.InternationalLicenseDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using Domain.Enums;
 using Presentation.Views.Windows;
 using System.Windows;
@@ -30,7 +30,7 @@ namespace Presentation.ViewModels
         private string licenseIdText = string.Empty;
 
         [ObservableProperty]
-        private ApplicationDto? applicationInfo;
+        private InternationalLicenseApplicationInfoDto? applicationInfo;
 
         [ObservableProperty]
         private bool isLicenseIssued = false;
@@ -97,7 +97,7 @@ namespace Presentation.ViewModels
             var paidFees = applicationType.ApplicationTypeFees;
 
 
-            ApplicationInfo = new ApplicationDto
+            ApplicationInfo = new InternationalLicenseApplicationInfoDto
             {
                 LocalLicenseID = licenseId,
 
@@ -170,29 +170,39 @@ namespace Presentation.ViewModels
             }
 
 
-            ApplicationInfo = new ApplicationDto
+            ApplicationInfo = new InternationalLicenseApplicationInfoDto
             {
                 ApplicationID = international.ApplicationID,
 
-                LicenseID = international.InternationalLicenseID,
+                InternationalLicenseID =
+        international.InternationalLicenseID,
 
-                LocalLicenseID = international.IssuedUsingLocalLicenseID,
+                LocalLicenseID =
+        international.IssuedUsingLocalLicenseID,
 
-                ApplicationDate = international.IssueDate,
+                ApplicationDate =
+        international.IssueDate,
 
-                IssueDate = international.IssueDate,
+                IssueDate =
+        international.IssueDate,
 
-                ExpirationDate = international.ExpirationDate,
+                ExpirationDate =
+        international.ExpirationDate,
 
-                ApplicationStatus = AppStatus.Completed,
+                ApplicationStatus =
+        AppStatus.Completed,
 
-                LastStatusDate = DateTime.Now,
+                LastStatusDate =
+        DateTime.Now,
 
-                PaidFees = international.Fees,
+                PaidFees =
+        international.Fees,
 
-                CreatedByUserID = international.CreatedByUserID,
+                CreatedByUserID =
+        international.CreatedByUserID,
 
-                CreatedByUserName = international.CreatedByUserName
+                CreatedByUserName =
+        international.CreatedByUserName
             };
 
 
@@ -237,17 +247,15 @@ namespace Presentation.ViewModels
         private void ShowLicensesInfo()
         {
             if (ApplicationInfo == null ||
-                !IsLicenseIssued ||
-                ApplicationInfo.LicenseID == null)
+    !IsLicenseIssued ||
+    ApplicationInfo.InternationalLicenseID <= 0)
             {
                 return;
             }
 
-
             var win = new DriverInterNationalLicenseInfoWin(
-                ApplicationInfo.LicenseID.Value
+                ApplicationInfo.InternationalLicenseID
             );
-
 
             win.ShowDialog();
         }

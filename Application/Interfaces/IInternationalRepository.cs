@@ -1,29 +1,59 @@
 ﻿using Domain.Entities;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IInternationalRepository
 {
-    public interface IInternationalRepository
-    {
-        Task<IEnumerable<InternationalLicense>> GetAllAsync();
+    // =========================================================
+    // GET
+    // =========================================================
 
-        Task<InternationalLicense?> GetByIdAsync(int id);
+    Task<List<InternationalLicense>>
+        GetAllAsync();
 
-        Task<IEnumerable<InternationalLicense>> GetByDriverIdAsync(int driverId);
+    Task<InternationalLicense?>
+        GetByIdAsync(
+            int internationalLicenseId);
 
-        Task<InternationalLicense?> GetByApplicationIdAsync(int applicationId);
+    Task<List<InternationalLicense>>
+        GetByDriverIdAsync(
+            int driverId);
 
-        Task<IEnumerable<InternationalLicense>> GetByLocalLicenseIdAsync(int localLicenseId);
+    Task<InternationalLicense?>
+        GetByApplicationIdAsync(
+            int applicationId);
+
+    Task<List<InternationalLicense>>
+        GetByLocalLicenseIdAsync(
+            int localLicenseId);
 
 
-        Task<bool> ExistsByLocalLicenseAsync(int localLicenseId);
+    // =========================================================
+    // CHECKS
+    // =========================================================
 
-        Task<bool> HasActiveInternationalLicenseAsync(int driverId);
+    Task<bool>
+        ExistsByLocalLicenseAsync(
+            int localLicenseId);
+
+    Task<bool>
+        HasActiveInternationalLicenseAsync(
+            int driverId);
 
 
-        Task AddAsync(InternationalLicense entity);
+    // =========================================================
+    // COMMANDS
+    // =========================================================
 
-        Task UpdateAsync(InternationalLicense entity);
+    Task<int>
+        AddAsync(
+            InternationalLicense entity);
 
-        Task DeleteAsync(int id);
-    }
+    Task<bool>
+        UpdateAsync(
+            InternationalLicense entity);
+
+    Task<bool>
+        DeleteAsync(
+            int internationalLicenseId);
 }

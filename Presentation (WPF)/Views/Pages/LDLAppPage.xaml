@@ -97,15 +97,36 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
+
                                 <ContentPresenter Grid.Column="0"
-                                                  Content="{TemplateBinding Icon}"
-                                                  Margin="0,0,10,0"
-                                                  VerticalAlignment="Center"/>
+                                                Content="{TemplateBinding Icon}"
+                                                Margin="0,0,10,0"
+                                                VerticalAlignment="Center"/>
+
                                 <ContentPresenter Grid.Column="1"
-                                                  ContentSource="Header"
-                                                  VerticalAlignment="Center"
-                                                  RecognizesAccessKey="True"/>
+                                                ContentSource="Header"
+                                                VerticalAlignment="Center"
+                                                RecognizesAccessKey="True"/>
+
+                                <!-- Popup الخاص بالقائمة الفرعية -->
+                                <Popup x:Name="SubMenuPopup"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                       Placement="Right"
+                                       PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}">
+                                    <Border Background="{StaticResource SurfaceColor}"
+                                            BorderBrush="{StaticResource BorderColor}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="6"
+                                            Effect="{StaticResource PopupShadow}"
+                                            SnapsToDevicePixels="True">
+                                        <ItemsPresenter/>
+                                    </Border>
+                                </Popup>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -117,6 +138,10 @@
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="True">
+                                <Setter TargetName="SubMenuPopup" Property="IsOpen"
+                                        Value="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

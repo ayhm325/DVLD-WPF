@@ -1,7 +1,7 @@
 ﻿using Domain.Enums;
 
 
-namespace Application.DTOs
+namespace Application.DTOs.ApplicationDTO
 {
     public class ApplicationBasicInfoDto
     {

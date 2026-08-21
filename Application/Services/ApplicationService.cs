@@ -1,335 +1,457 @@
-﻿using Application.Interfaces;
-using Application.DTOs;
-using Application.Common.Results;
+﻿using Application.Common.Results;
+using Application.DTOs.ApplicationDTO;
+using Application.Interfaces;
+using Application.Validators;
 using Domain.Entities;
 using Domain.Enums;
 
-namespace Application.Services
+namespace Application.Services;
+
+public class ApplicationService : IApplicationService
 {
-    public class ApplicationService : IApplicationService
+    private readonly IApplicationRepository _repository;
+
+    public ApplicationService(
+        IApplicationRepository repository)
     {
-        private readonly IApplicationRepository _repository;
+        _repository = repository
+            ?? throw new ArgumentNullException(nameof(repository));
+    }
+
+    // =========================================================
+    // GET ALL
+    // =========================================================
+
+    public async Task<Result<List<ApplicationDto>>>
+        GetAllApplicationsAsync()
+    {
+        var apps = await _repository
+            .GetAllApplicationsAsync();
+
+        var dtos = apps
+            .Select(MapToDto)
+            .ToList();
+
+        return Result<List<ApplicationDto>>
+            .Success(dtos);
+    }
 
 
-        public ApplicationService(
-            IApplicationRepository repository)
+    // =========================================================
+    // GET BASIC INFO
+    // =========================================================
+
+    public async Task<Result<ApplicationBasicInfoDto>>
+        GetBasicInfoAsync(int id)
+    {
+        var validation =
+            ApplicationValidator.ValidateId(id);
+
+        if (validation.IsFailure)
         {
-            _repository = repository;
+            return Result<ApplicationBasicInfoDto>
+                .FromFailure(validation.Error);
         }
 
-        public async Task<List<ApplicationDto>> GetAllApplicationsAsync()
+        var app = await _repository
+            .GetApplicationByIdAsync(id);
+
+        if (app is null)
         {
-            var apps = await _repository.GetAllApplicationsAsync();
-
-
-            return apps.Select(a => new ApplicationDto
-            {
-                ApplicationID = a.ApplicationID,
-
-                ApplicantPersonID = a.ApplicantPersonID,
-
-                ApplicationDate = a.ApplicationDate,
-
-                ApplicationTypeID = a.ApplicationTypeID,
-
-                ApplicationStatus =
-                    (AppStatus)a.ApplicationStatus,
-
-                LastStatusDate = a.LastStatusDate,
-
-                PaidFees = a.PaidFees,
-
-                CreatedByUserID = a.CreatedByUserID
-
-            }).ToList();
-        }
-
-        public async Task<Result<ApplicationBasicInfoDto>> GetBasicInfoAsync(int id)
-        {
-            var app = await _repository.GetApplicationByIdAsync(id);
-
-            if (app == null)
-            {
-                return Result<ApplicationBasicInfoDto>.Fail(
+            return Result<ApplicationBasicInfoDto>
+                .FromFailure(
                     "Application not found.");
-            }
+        }
 
-            var dto = new ApplicationBasicInfoDto
-            {
-                ApplicationID = app.ApplicationID,
+        var dto = new ApplicationBasicInfoDto
+        {
+            ApplicationID = app.ApplicationID,
 
-                ApplicantPersonID = app.ApplicantPersonID,
+            ApplicantPersonID =
+                app.ApplicantPersonID,
 
-                ApplicationStatus =
-                    (AppStatus)app.ApplicationStatus,
+            ApplicationStatus =
+                (AppStatus)app.ApplicationStatus,
 
-                PaidFees = app.PaidFees,
+            PaidFees =
+                app.PaidFees,
 
-                ApplicationTypeName =
-                    app.ApplicationType?.ApplicationTypeTitle,
+            ApplicationTypeName =
+                app.ApplicationType?.ApplicationTypeTitle,
 
-                ApplicantFullName =
-                    app.Person != null
+            ApplicantFullName =
+                app.Person is not null
                     ? $"{app.Person.FirstName} {app.Person.LastName}"
                     : null,
 
-                ApplicationDate = app.ApplicationDate,
-                LastStatusDate = app.LastStatusDate,
-                CreatedByUserName =
-                    app.CreatedByUser?.UserName
-            };
+            ApplicationDate =
+                app.ApplicationDate,
+
+            LastStatusDate =
+                app.LastStatusDate,
+
+            CreatedByUserName =
+                app.CreatedByUser?.UserName
+        };
+
+        return Result<ApplicationBasicInfoDto>
+            .Success(dto);
+    }
 
 
-            return Result<ApplicationBasicInfoDto>.Success(dto);
+    // =========================================================
+    // GET BY ID
+    // =========================================================
+
+    public async Task<Result<ApplicationDto>>
+        GetApplicationByIdAsync(int id)
+    {
+        var validation =
+            ApplicationValidator.ValidateId(id);
+
+        if (validation.IsFailure)
+        {
+            return Result<ApplicationDto>
+                .FromFailure(validation.Error);
         }
 
-        public async Task<Result<int>> AddNewApplicationAsync(
-            ApplicationDto dto)
+        var app = await _repository
+            .GetApplicationByIdAsync(id);
+
+        if (app is null)
         {
-            if (dto.ApplicantPersonID <= 0)
-            {
-                return Result<int>.Fail(
-                    "Invalid applicant person.");
-            }
-
-            var entity = new ApplicationD
-            {
-                ApplicantPersonID = dto.ApplicantPersonID,
-
-                ApplicationDate = dto.ApplicationDate,
-
-                ApplicationTypeID = dto.ApplicationTypeID,
-
-                ApplicationStatus =
-                    (byte)dto.ApplicationStatus,
-
-                LastStatusDate = dto.LastStatusDate,
-
-                PaidFees = dto.PaidFees,
-
-                CreatedByUserID = dto.CreatedByUserID
-            };
-
-            var id =
-                await _repository.AddNewApplicationAsync(entity);
-
-            return Result<int>.Success(id);
-        }
-
-        public async Task<Result<ApplicationDto>> GetApplicationByIdAsync(
-            int id)
-        {
-            var app =
-                await _repository.GetApplicationByIdAsync(id);
-
-            if (app == null)
-            {
-                return Result<ApplicationDto>.Fail(
+            return Result<ApplicationDto>
+                .FromFailure(
                     "Application not found.");
-            }
-
-            var dto = new ApplicationDto
-            {
-                ApplicationID = app.ApplicationID,
-
-                ApplicantPersonID = app.ApplicantPersonID,
-
-                ApplicationDate = app.ApplicationDate,
-
-                ApplicationTypeID = app.ApplicationTypeID,
-
-                ApplicationStatus =
-                    (AppStatus)app.ApplicationStatus,
-
-                LastStatusDate = app.LastStatusDate,
-
-                PaidFees = app.PaidFees,
-
-                CreatedByUserID = app.CreatedByUserID
-            };
-
-            return Result<ApplicationDto>.Success(dto);
         }
 
-        public async Task<Result> UpdateApplicationAsync(
-            ApplicationDto dto)
+        return Result<ApplicationDto>
+            .Success(MapToDto(app));
+    }
+
+
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    public async Task<Result<int>>
+        AddNewApplicationAsync(
+            CreateApplicationDto dto)
+    {
+        var validation =
+            ApplicationValidator.ValidateCreate(dto);
+
+        if (validation.IsFailure)
         {
-            var entity =
-                await _repository.GetApplicationByIdAsync(
-                    dto.ApplicationID);
-
-            if (entity == null)
-            {
-                return Result.Failure(
-                    "Application not found.");
-            }
-
-            entity.ApplicationStatus =
-                (byte)dto.ApplicationStatus;
-
-
-            entity.PaidFees = dto.PaidFees;
-
-
-            entity.LastStatusDate =
-                dto.LastStatusDate;
-
-
-            entity.ApplicationTypeID =
-                dto.ApplicationTypeID;
-
-
-            entity.ApplicantPersonID =
-                dto.ApplicantPersonID;
-
-
-            entity.ApplicationDate =
-                dto.ApplicationDate;
-
-
-            entity.CreatedByUserID =
-                dto.CreatedByUserID;
-
-            var updated =
-                await _repository.UpdateApplicationAsync(entity);
-
-            return updated
-
-                ? Result.Success()
-
-                : Result.Failure(
-                    "Application update failed.");
+            return Result<int>
+                .FromFailure(validation.Error);
         }
 
-        public async Task<Result> DeleteApplicationAsync(
-            int id)
+        var entity = new ApplicationD
         {
-            var app =
-                await _repository.GetApplicationByIdAsync(id);
+            ApplicantPersonID =
+                dto.ApplicantPersonID,
 
-            if (app == null)
-            {
-                return Result.Failure(
-                    "Application not found.");
-            }
+            ApplicationDate =
+                dto.ApplicationDate,
 
-            if (app.ApplicationStatus ==
-                (int)AppStatus.Completed)
-            {
-                return Result.Failure(
-                    "Cannot delete completed application.");
-            }
+            ApplicationTypeID =
+                dto.ApplicationTypeID,
 
-            var deleted =
-                await _repository.DeleteApplicationAsync(id);
+            ApplicationStatus =
+                (byte)dto.ApplicationStatus,
 
-            return deleted
+            LastStatusDate =
+                dto.LastStatusDate,
 
-                ? Result.Success()
+            PaidFees =
+                dto.PaidFees,
 
-                : Result.Failure(
-                    "Delete application failed.");
+            CreatedByUserID =
+                dto.CreatedByUserID
+        };
+
+        var id = await _repository
+            .AddNewApplicationAsync(entity);
+
+        if (id <= 0)
+        {
+            return Result<int>.FromFailure("Failed to create application.");
         }
 
-        public async Task<int?> HasDuplicateApplicationAsync(
+        return Result<int>
+            .Success(id);
+    }
+
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    public async Task<Result>
+        UpdateApplicationAsync(
+            UpdateApplicationDto dto)
+    {
+        var validation =
+            ApplicationValidator.ValidateUpdate(dto);
+
+        if (validation.IsFailure)
+        {
+            return Result
+                .Failure(validation.Error);
+        }
+
+        var entity = await _repository
+            .GetApplicationByIdAsync(
+                dto.ApplicationID);
+
+        if (entity is null)
+        {
+            return Result
+                .Failure(
+                    "Application not found.");
+        }
+
+        entity.ApplicationStatus =
+            (byte)dto.ApplicationStatus;
+
+        entity.PaidFees =
+            dto.PaidFees;
+
+        entity.LastStatusDate =
+            dto.LastStatusDate;
+
+        entity.ApplicationTypeID =
+            dto.ApplicationTypeID;
+
+        entity.ApplicantPersonID =
+            dto.ApplicantPersonID;
+
+        entity.ApplicationDate =
+            dto.ApplicationDate;
+
+        entity.CreatedByUserID =
+            dto.CreatedByUserID;
+
+        var updated = await _repository
+            .UpdateApplicationAsync(entity);
+
+        return updated
+            ? Result.Success()
+            : Result.Failure(
+                "Application update failed.");
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    public async Task<Result>
+        DeleteApplicationAsync(int id)
+    {
+        var validation =
+            ApplicationValidator.ValidateId(id);
+
+        if (validation.IsFailure)
+            return validation;
+
+        var app = await _repository
+            .GetApplicationByIdAsync(id);
+
+        if (app is null)
+        {
+            return Result.Failure(
+                "Application not found.");
+        }
+
+        if (app.ApplicationStatus ==
+            (int)AppStatus.Completed)
+        {
+            return Result.Failure(
+                "Cannot delete completed application.");
+        }
+
+        var deleted =
+            await _repository
+                .DeleteApplicationAsync(id);
+
+        return deleted
+            ? Result.Success()
+            : Result.Failure(
+                "Delete application failed.");
+    }
+
+
+    // =========================================================
+    // CHECK DUPLICATE
+    // =========================================================
+
+    public async Task<int?>
+        HasDuplicateApplicationAsync(
             int personId,
             int licenseClassId)
+    {
+        if (personId <= 0 ||
+            licenseClassId <= 0)
         {
-            return await _repository.HasDuplicateApplicationAsync(
+            return null;
+        }
+
+        return await _repository
+            .HasDuplicateApplicationAsync(
                 personId,
                 licenseClassId);
-        }
+    }
 
-        public async Task<Result> CancelApplicationAsync(
+
+    // =========================================================
+    // CANCEL
+    // =========================================================
+
+    public async Task<Result>
+        CancelApplicationAsync(
             int applicationId)
+    {
+        var validation =
+            ApplicationValidator.ValidateId(
+                applicationId);
+
+        if (validation.IsFailure)
+            return validation;
+
+        var app = await _repository
+            .GetApplicationByIdAsync(applicationId);
+
+        if (app is null)
         {
-            var app =
-                await _repository.GetApplicationByIdAsync(
-                    applicationId);
-
-            if (app == null)
-            {
-                return Result.Failure(
-                    "Application not found.");
-            }
-
-            if (app.ApplicationStatus ==
-                (int)AppStatus.Completed)
-            {
-                return Result.Failure(
-                    "Cannot cancel completed application.");
-            }
-
-            if (app.ApplicationStatus ==
-                (int)AppStatus.Cancelled)
-            {
-                return Result.Failure(
-                    "Application already cancelled.");
-            }
-
-            app.ApplicationStatus =
-                (byte)AppStatus.Cancelled;
-
-            app.LastStatusDate =
-                DateTime.UtcNow;
-
-            var updated =
-                await _repository.UpdateApplicationAsync(app);
-
-            return updated
-
-                ? Result.Success()
-
-                : Result.Failure(
-                    "Cancel application failed.");
+            return Result.Failure(
+                "Application not found.");
         }
 
+        if (app.ApplicationStatus ==
+            (int)AppStatus.Completed)
+        {
+            return Result.Failure(
+                "Cannot cancel completed application.");
+        }
 
-        public async Task<Result> CompleteApplicationAsync(
+        if (app.ApplicationStatus ==
+            (int)AppStatus.Cancelled)
+        {
+            return Result.Failure(
+                "Application already cancelled.");
+        }
+
+        app.ApplicationStatus =
+            (byte)AppStatus.Cancelled;
+
+        app.LastStatusDate =
+            DateTime.UtcNow;
+
+        var updated =
+            await _repository
+                .UpdateApplicationAsync(app);
+
+        return updated
+            ? Result.Success()
+            : Result.Failure(
+                "Cancel application failed.");
+    }
+
+
+    // =========================================================
+    // COMPLETE
+    // =========================================================
+
+    public async Task<Result>
+        CompleteApplicationAsync(
             int applicationId)
+    {
+        var validation =
+            ApplicationValidator.ValidateId(
+                applicationId);
+
+        if (validation.IsFailure)
+            return validation;
+
+        var app = await _repository
+            .GetApplicationByIdAsync(
+                applicationId);
+
+        if (app is null)
         {
-            var app =
-                await _repository.GetApplicationByIdAsync(
-                    applicationId);
-
-            if (app == null)
-            {
-                return Result.Failure(
-                    "Application not found.");
-            }
-
-            if (app.ApplicationStatus ==
-                (int)AppStatus.Completed)
-            {
-                return Result.Failure(
-                    "Application already completed.");
-            }
-
-            if (app.ApplicationStatus ==
-                (int)AppStatus.Cancelled)
-            {
-                return Result.Failure(
-                    "Cannot complete cancelled application.");
-            }
-
-
-            app.ApplicationStatus =
-                (byte)AppStatus.Completed;
-
-            app.LastStatusDate =
-                DateTime.UtcNow;
-
-
-            var updated =
-                await _repository.UpdateApplicationAsync(app);
-
-
-            return updated
-
-                ? Result.Success()
-
-                : Result.Failure(
-                    "Complete application failed.");
+            return Result.Failure(
+                "Application not found.");
         }
+
+        if (app.ApplicationStatus ==
+            (int)AppStatus.Completed)
+        {
+            return Result.Failure(
+                "Application already completed.");
+        }
+
+        if (app.ApplicationStatus ==
+            (int)AppStatus.Cancelled)
+        {
+            return Result.Failure(
+                "Cannot complete cancelled application.");
+        }
+
+        app.ApplicationStatus =
+            (byte)AppStatus.Completed;
+
+        app.LastStatusDate =
+            DateTime.UtcNow;
+
+        var updated =
+            await _repository
+                .UpdateApplicationAsync(app);
+
+        return updated
+            ? Result.Success()
+            : Result.Failure(
+                "Complete application failed.");
+    }
+
+
+    // =========================================================
+    // MAPPING
+    // =========================================================
+
+    private static ApplicationDto MapToDto(
+        ApplicationD entity)
+    {
+        return new ApplicationDto
+        {
+            ApplicationID =
+                entity.ApplicationID,
+
+            ApplicantPersonID =
+                entity.ApplicantPersonID,
+
+            ApplicationDate =
+                entity.ApplicationDate,
+
+            ApplicationTypeID =
+                entity.ApplicationTypeID,
+
+            ApplicationStatus =
+                (AppStatus)entity.ApplicationStatus,
+
+            LastStatusDate =
+                entity.LastStatusDate,
+
+            PaidFees =
+                entity.PaidFees,
+
+            CreatedByUserID =
+                entity.CreatedByUserID,
+
+            CreatedByUserName =
+                entity.CreatedByUser?.UserName
+                ?? string.Empty
+        };
     }
 }

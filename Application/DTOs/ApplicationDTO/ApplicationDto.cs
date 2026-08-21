@@ -1,5 +1,7 @@
 ﻿using Domain.Enums;
 
+namespace Application.DTOs.ApplicationDTO;
+
 public class ApplicationDto
 {
     public int ApplicationID { get; set; }
@@ -18,18 +20,7 @@ public class ApplicationDto
 
     public int CreatedByUserID { get; set; }
 
-
-    // إضافات للعرض
-    public int? LicenseID { get; set; }
-
-    public int? LocalLicenseID { get; set; }
-
-    public DateTime? IssueDate { get; set; }
-
-    public DateTime? ExpirationDate { get; set; }
-
     public string CreatedByUserName { get; set; } = string.Empty;
-
 
     public string StatusText => ApplicationStatus switch
     {

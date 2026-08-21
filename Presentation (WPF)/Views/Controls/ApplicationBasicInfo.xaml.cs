@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.ApplicationDTO;
 using System.Windows;
 using System.Windows.Controls;
 

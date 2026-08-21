@@ -1,11 +1,8 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.TestTypeDTO;
 using Application.Interfaces;
-using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Entities;
-using Presentation.ViewModels;
-using System.Threading.Tasks;
+
 using System.Windows;
 
 namespace Presentation.ViewModels

@@ -1,6 +1,7 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.ApplicationDTO;
+using Application.DTOs.DetainedLicenseDTO;
+using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
-using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Presentation.Views.Windows;
@@ -50,47 +51,93 @@ namespace Presentation.ViewModels
             IApplicationTypeService applicationTypeService,
             IApplicationService applicationService)
         {
-            _licenseService = licenseService;
-            _detainedLicenseService = detainedLicenseService;
-            _currentUserService = currentUserService;
-            _personService = personService;
-            _driverService = driverService;
-            _internationalService = internationalService;
-            _applicationTypeService = applicationTypeService;
-            _applicationService = applicationService;
+            _licenseService =
+                licenseService
+                ?? throw new ArgumentNullException(nameof(licenseService));
+
+            _detainedLicenseService =
+                detainedLicenseService
+                ?? throw new ArgumentNullException(nameof(detainedLicenseService));
+
+            _currentUserService =
+                currentUserService
+                ?? throw new ArgumentNullException(nameof(currentUserService));
+
+            _personService =
+                personService
+                ?? throw new ArgumentNullException(nameof(personService));
+
+            _driverService =
+                driverService
+                ?? throw new ArgumentNullException(nameof(driverService));
+
+            _internationalService =
+                internationalService
+                ?? throw new ArgumentNullException(nameof(internationalService));
+
+            _applicationTypeService =
+                applicationTypeService
+                ?? throw new ArgumentNullException(nameof(applicationTypeService));
+
+            _applicationService =
+                applicationService
+                ?? throw new ArgumentNullException(nameof(applicationService));
         }
 
-        partial void OnReleaseChanged(DetainedLicenseDto? value)
+        // =========================================================
+        // PROPERTY CHANGES
+        // =========================================================
+
+        partial void OnReleaseChanged(
+            DetainedLicenseDto? value)
         {
             IsLicenseIssued = value != null;
+
             OnPropertyChanged(nameof(TotalFees));
         }
 
-        partial void OnApplicationFeesChanged(decimal value)
+        partial void OnApplicationFeesChanged(
+            decimal value)
         {
             OnPropertyChanged(nameof(TotalFees));
         }
 
+        // =========================================================
+        // LOAD
+        // =========================================================
 
         public async Task LoadAsync(int licenseId)
         {
             IsLicenseIdReadOnly = true;
 
-            LicenseIdText = licenseId.ToString();
+            LicenseIdText =
+                licenseId.ToString();
 
             await SearchAsync();
         }
 
+        // =========================================================
+        // SEARCH
+        // =========================================================
+
         [RelayCommand]
         private async Task SearchAsync()
         {
-            if (!int.TryParse(LicenseIdText, out int licenseId))
+            if (!int.TryParse(
+                    LicenseIdText,
+                    out int licenseId))
+            {
                 return;
+            }
 
+            // -----------------------------------------------------
+            // Get License
+            // -----------------------------------------------------
 
             var licenseResult =
-                await _licenseService.GetLicenseDetailsByIdAsync(licenseId);
-
+                await _licenseService
+                    .GetLicenseDetailsByIdAsync(
+                        licenseId);
 
             if (licenseResult.IsFailure)
             {
@@ -107,16 +154,42 @@ namespace Presentation.ViewModels
                 return;
             }
 
+            LicenseInfo =
+                licenseResult.Value;
 
-            LicenseInfo = licenseResult.Value;
+            if (LicenseInfo == null)
+            {
+                Release = null;
+                IsLicenseIssued = false;
 
+                return;
+            }
+
+            // -----------------------------------------------------
+            // Get Active Detention
+            // -----------------------------------------------------
 
             var releaseResult =
                 await _detainedLicenseService
-                .GetActiveDetainByLicenseIdAsync(licenseId);
+                    .GetActiveDetainByLicenseIdAsync(
+                        licenseId);
 
+            // Result<T> نفسه لا نقارنه بـ null
+            if (releaseResult.IsFailure)
+            {
+                Release = null;
+                IsLicenseIssued = false;
 
-            if (releaseResult == null)
+                CustomMessageBox.Show(
+                    releaseResult.Error,
+                    "Warning",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            if (releaseResult.Value == null)
             {
                 Release = null;
                 IsLicenseIssued = false;
@@ -130,84 +203,208 @@ namespace Presentation.ViewModels
                 return;
             }
 
-
-            Release = releaseResult;
-
+            Release =
+                releaseResult.Value;
 
             IsLicenseIssued = true;
 
+            // -----------------------------------------------------
+            // Get Application Type
+            // -----------------------------------------------------
 
-            var applicationTypeResult = await _applicationTypeService.GetApplicationTypeByIdAsync(5);
+            var applicationTypeResult =
+                await _applicationTypeService
+                    .GetApplicationTypeByIdAsync(5);
 
             if (applicationTypeResult.IsFailure)
             {
                 CustomMessageBox.Show(
-                    applicationTypeResult.Error,"Error",
-                    MessageBoxButton.OK,MessageBoxImage.Error);
+                    applicationTypeResult.Error,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
 
                 return;
             }
 
-            var applicationType = applicationTypeResult.Value!;
+            var applicationType =
+                applicationTypeResult.Value;
 
-            ApplicationFees = applicationType.ApplicationTypeFees;
+            if (applicationType == null)
+            {
+                CustomMessageBox.Show(
+                    "Application type was not found.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            ApplicationFees =
+                applicationType.ApplicationTypeFees;
 
             OnPropertyChanged(nameof(TotalFees));
         }
 
+        // =========================================================
+        // RELEASE
+        // =========================================================
+
         [RelayCommand]
         private async Task ReleaseLicenseAsync()
         {
-            if (Release == null || LicenseInfo == null)
+            if (Release == null ||
+                LicenseInfo == null)
             {
                 CustomMessageBox.Show(
                     "Please search for a detained license first.",
-                    "Error",MessageBoxButton.OK,MessageBoxImage.Error);
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
                 return;
             }
 
             try
             {
-                var newApplication = new ApplicationDto
+                // -------------------------------------------------
+                // 1. Create Release Application
+                // -------------------------------------------------
+
+                var newApplication =
+                    new CreateApplicationDto
+                    {
+                        ApplicantPersonID =
+                            LicenseInfo.PersonID,
+
+                        ApplicationDate =
+                            DateTime.Now,
+
+                        ApplicationTypeID = 5,
+
+                        ApplicationStatus =
+                            Domain.Enums.AppStatus.Completed,
+
+                        LastStatusDate =
+                            DateTime.Now,
+
+                        PaidFees =
+                            ApplicationFees,
+
+                        CreatedByUserID =
+                            _currentUserService.UserId
+                    };
+
+                var applicationResult =
+                    await _applicationService
+                        .AddNewApplicationAsync(
+                            newApplication);
+
+                if (applicationResult.IsFailure)
                 {
-                    ApplicantPersonID = LicenseInfo.PersonID,
-                    ApplicationTypeID = 5,
-                    ApplicationDate = DateTime.Now,
-                    ApplicationStatus = Domain.Enums.AppStatus.Completed,
-                    LastStatusDate = DateTime.Now,
-                    PaidFees = ApplicationFees,
-                    CreatedByUserID = _currentUserService.UserId,
-                    CreatedByUserName = _currentUserService.Username
-                };
+                    CustomMessageBox.Show(
+                        applicationResult.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
 
-                var result = await _applicationService.AddNewApplicationAsync(newApplication);
-                int newApplicationId = result.Value;
+                    return;
+                }
 
-                await _detainedLicenseService.ReleaseAsync(
-                    Release.DetainID,
-                    _currentUserService.UserId,
-                    newApplicationId);
+                int newApplicationId =
+                    applicationResult.Value;
 
-                Release.IsReleased = true;
-                Release.ReleaseDate = DateTime.Now;
-
-                CustomMessageBox.Show(
-                    "License released successfully. The application has been created.",
-                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                string errorMessage = ex.Message;
-                if (ex.InnerException != null)
+                if (newApplicationId <= 0)
                 {
-                    errorMessage += "\n" + ex.InnerException.Message;
+                    CustomMessageBox.Show(
+                        "Failed to create the release application.",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    return;
+                }
+
+                // -------------------------------------------------
+                // 2. Release Detained License
+                // -------------------------------------------------
+
+                var releaseDto =
+                    new ReleaseDetainedLicenseDto
+                    {
+                        DetainID =
+                            Release.DetainID,
+
+                        ReleasedByUserID =
+                            _currentUserService.UserId,
+
+                        ReleaseApplicationID =
+                            newApplicationId
+                    };
+
+                var releaseResult =
+                    await _detainedLicenseService
+                        .ReleaseAsync(
+                            releaseDto);
+
+                if (releaseResult.IsFailure)
+                {
+                    CustomMessageBox.Show(
+                        releaseResult.Error,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    return;
+                }
+
+                // -------------------------------------------------
+                // 3. Refresh UI
+                // -------------------------------------------------
+
+                var refreshedResult =
+                    await _detainedLicenseService
+                        .GetByIdAsync(
+                            Release.DetainID);
+
+                if (refreshedResult.IsSuccess)
+                {
+                    Release =
+                        refreshedResult.Value;
                 }
 
                 CustomMessageBox.Show(
-                    $"An error occurred while processing the operation:\n{errorMessage}",
-                    "Error",MessageBoxButton.OK,MessageBoxImage.Error);
+                    "License released successfully. " +
+                    "The application has been created.",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                string errorMessage =
+                    ex.Message;
+
+                if (ex.InnerException != null)
+                {
+                    errorMessage +=
+                        Environment.NewLine +
+                        ex.InnerException.Message;
+                }
+
+                CustomMessageBox.Show(
+                    $"An error occurred while processing the operation:" +
+                    $"{Environment.NewLine}{errorMessage}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
+
+        // =========================================================
+        // LICENSE HISTORY
+        // =========================================================
 
         [RelayCommand]
         private void ShowLicensesHistory()
@@ -215,16 +412,27 @@ namespace Presentation.ViewModels
             if (LicenseInfo == null)
                 return;
 
-            var vm = new LicenseHistoryViewModel(
-                _personService,
-                _driverService,
-                _licenseService,
-                _internationalService);
+            var vm =
+                new LicenseHistoryViewModel(
+                    _personService,
+                    _driverService,
+                    _licenseService,
+                    _internationalService);
 
-            var window = new LicenseHistoryWin(vm, LicenseInfo.PersonID);
-            window.Owner = System.Windows.Application.Current.MainWindow;
+            var window =
+                new LicenseHistoryWin(
+                    vm,
+                    LicenseInfo.PersonID);
+
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
+
             window.ShowDialog();
         }
+
+        // =========================================================
+        // LICENSE INFO
+        // =========================================================
 
         [RelayCommand]
         private void ShowLicensesInfo()
@@ -232,11 +440,20 @@ namespace Presentation.ViewModels
             if (LicenseInfo == null)
                 return;
 
-            var window = new DriverLicenseInfoWin(LicenseInfo.LicenseId);
-            window.Owner = System.Windows.Application.Current.MainWindow;
+            var window =
+                new DriverLicenseInfoWin(
+                    LicenseInfo.LicenseId);
+
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
+
             window.ShowDialog();
         }
     }
+
+    // =============================================================
+    // CUSTOM MESSAGE BOX
+    // =============================================================
 
     public static class CustomMessageBox
     {
@@ -246,8 +463,11 @@ namespace Presentation.ViewModels
             MessageBoxButton button,
             MessageBoxImage icon)
         {
-            var result = MessageBox.Show(message, title, button, icon);
-            return result;
+            return MessageBox.Show(
+                message,
+                title,
+                button,
+                icon);
         }
     }
 }

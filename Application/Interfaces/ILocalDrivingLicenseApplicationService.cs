@@ -1,30 +1,61 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface ILocalDrivingLicenseApplicationService
 {
-    public interface ILocalDrivingLicenseApplicationService
-    {
-        Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetAllLocalDrivingLicenseApplicationsAsync();
+    // =========================================================
+    // GET
+    // =========================================================
 
-        Task<Result<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationByIdAsync(int id);
+    Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
+        GetAllLocalDrivingLicenseApplicationsAsync();
 
-        Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId);
+    Task<Result<LocalDrivingLicenseApplicationListDto>>
+        GetLocalDrivingLicenseApplicationByIdAsync(
+            int id);
 
-        Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId);
+    Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
+        GetLocalDrivingLicenseApplicationsByApplicationIdAsync(
+            int applicationId);
 
-        Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId);
+    Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
+        GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(
+            int licenseClassId);
 
-        Task<Result<int>> AddLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplicationCreateUpdateDto dto);
+    Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
+        GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(
+            int applicantPersonId);
 
-        Task<Result> UpdateLocalDrivingLicenseApplicationAsync(int id, LocalDrivingLicenseApplicationCreateUpdateDto dto);
 
-        Task<Result> DeleteLocalDrivingLicenseApplicationAsync(int id);
+    // =========================================================
+    // COMMANDS
+    // =========================================================
 
-        Task<Result<int>> GetApplicationIdByLocalIdAsync(int localId);
+    Task<Result<int>>
+        AddLocalDrivingLicenseApplicationAsync(
+            CreateLocalDrivingLicenseApplicationDto dto);
 
-        Task<bool> IsLocalDrivingLicenseApplicationExistsAsync(int id);
-    }
+    Task<Result>
+        UpdateLocalDrivingLicenseApplicationAsync(
+            int id,
+            UpdateLocalDrivingLicenseApplicationDto dto);
+
+    Task<Result>
+        DeleteLocalDrivingLicenseApplicationAsync(
+            int id);
+
+
+    // =========================================================
+    // OTHER
+    // =========================================================
+
+    Task<Result<int>>
+        GetApplicationIdByLocalIdAsync(
+            int localId);
+
+    Task<bool>
+        IsLocalDrivingLicenseApplicationExistsAsync(
+            int id);
 }

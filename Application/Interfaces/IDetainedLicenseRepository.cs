@@ -1,20 +1,43 @@
 ﻿using Domain.Entities;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IDetainedLicenseRepository
 {
-    public interface IDetainedLicenseRepository
-    {
-        Task<DetainedLicense?> GetByIdAsync(int id);
+    // =========================================================
+    // GET
+    // =========================================================
 
-        Task<List<DetainedLicense>> GetAllAsync();
+    Task<DetainedLicense?>
+        GetByIdAsync(
+            int id);
 
-        Task<DetainedLicense> AddAsync(DetainedLicense entity);
+    Task<List<DetainedLicense>>
+        GetAllAsync();
 
-        Task UpdateAsync(DetainedLicense entity);
+    Task<DetainedLicense?>
+        GetActiveDetainByLicenseIdAsync(
+            int licenseId);
 
-        Task<bool> IsLicenseDetainedAsync(int licenseId);
 
-        Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(int licenseId);
-        
-    }
+    // =========================================================
+    // CHECKS
+    // =========================================================
+
+    Task<bool>
+        IsLicenseDetainedAsync(
+            int licenseId);
+
+
+    // =========================================================
+    // COMMANDS
+    // =========================================================
+
+    Task<DetainedLicense>
+        AddAsync(
+            DetainedLicense entity);
+
+    Task
+        UpdateAsync(
+            DetainedLicense entity);
 }

@@ -1,6 +1,8 @@
 ﻿using Application.Common.Results;
 using Application.DTOs;
+using Application.DTOs.ApplicationDTO;
 using Application.DTOs.PersonDTO;
+using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
+
 
 namespace Presentation.ViewModels
 {
@@ -231,7 +234,7 @@ namespace Presentation.ViewModels
                     return;
                 }
 
-                var newApplication = new ApplicationDto
+                var newApplication = new CreateApplicationDto
                 {
                     ApplicantPersonID = Person.PersonId,
                     ApplicationDate = ApplicationDate,
@@ -274,10 +277,10 @@ namespace Presentation.ViewModels
                 }
 
                 var newLDLApplication =
-                    new LocalDrivingLicenseApplicationCreateUpdateDto
+                    new CreateLocalDrivingLicenseApplicationDto
                     {
-                        ApplicatonId = ApplicationId,
-                        LicenseClassId = licenseClassId
+                        ApplicationID = ApplicationId,
+                        LicenseClassID = licenseClassId
                     };
 
                 var ldlResult =

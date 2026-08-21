@@ -1,11 +1,11 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.TestAppointmentDTO;
+using Application.DTOs.TestDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Enums;
 using Presentation.Views.Windows;
-using System.Linq;
-using System.Threading.Tasks;
+
 using System.Windows;
 
 namespace Presentation.ViewModels
@@ -114,7 +114,7 @@ namespace Presentation.ViewModels
             if (Schedule == null)
                 return;
 
-            var testDto = new TestDto
+            var saveTestResultDto = new SaveTestResultDto
             {
                 TestAppointmentID = Schedule.AppointmentID,
                 TestResult = TestResult == TestResultType.Pass,
@@ -123,7 +123,7 @@ namespace Presentation.ViewModels
             };
 
 
-            var saveResult = await _service.SaveTestResultAsync(testDto);
+            var saveResult = await _service.SaveTestResultAsync(saveTestResultDto);
 
             if (saveResult.IsFailure)
             {
@@ -137,7 +137,7 @@ namespace Presentation.ViewModels
             }
 
 
-            if (testDto.TestResult)
+            if (saveTestResultDto.TestResult)
             {
                 var applicationIdResult = await _localService
                     .GetApplicationIdByLocalIdAsync(

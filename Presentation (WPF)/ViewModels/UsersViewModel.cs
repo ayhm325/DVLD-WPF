@@ -1,19 +1,13 @@
 ﻿using Application.DTOs.PersonDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
-using Application.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Entities;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
-using Presentation.Helpers;
 using Presentation.ViewModels;
-using Presentation.Views;
-using Presentation.Views.Pages;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 using System.Windows;
 
 public partial class UsersViewModel : ObservableObject
