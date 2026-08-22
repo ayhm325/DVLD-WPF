@@ -2,14 +2,12 @@
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Entities;
-using Domain.Enums;
 using DVLD_WPF;
-using Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
+using Domain.Enums;
 
 namespace Presentation.ViewModels
 {
