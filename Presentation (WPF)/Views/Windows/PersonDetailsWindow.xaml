@@ -7,16 +7,26 @@
         Width="920"
         WindowStartupLocation="CenterScreen"       
         Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد (فاتح) -->
+
+        <!-- تدرج الهيدر: PrimaryLightColor(#FEF2F2) → SurfaceColor(#FFFFFF) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FEF2F2" Offset="0"/>
             <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- ستايل زر الإغلاق -->
+        <!-- أبعاد محلية — تتبع نظام الـ Spacing -->
+        <Thickness x:Key="HeaderPadding">24,16,24,16</Thickness>
+        <Thickness x:Key="FooterPadding">24,16,24,20</Thickness>
+        <Thickness x:Key="ContentMargin">24,16,24,20</Thickness>
+        <Thickness x:Key="FieldRowMargin">0,0,0,15</Thickness>
+        <GridLength x:Key="LabelColumnWidth">120</GridLength>
+
+        <!-- ═══════ زر الإغلاق ═══════ -->
         <Style x:Key="CloseButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
@@ -25,16 +35,27 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource RadiusMedium}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource TextDisabledColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -42,20 +63,87 @@
             </Setter>
         </Style>
 
-        <!-- نمط قيمة الحقل -->
+        <!-- ═══════ نمط قيمة الحقل ═══════ -->
         <Style x:Key="ValueTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
         </Style>
+
+        <!-- ═══════ زر ثانوي — يتبع الـ Tokens ═══════ -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="{StaticResource ButtonHeight}"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="{StaticResource ButtonPadding}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="{StaticResource ButtonFontSize}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightMedium}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource TextSecondaryColor}"/>
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource ButtonPressedColor}"/>
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource BorderStrongColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource BorderColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource TextDisabledColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
-    <Border Background="{StaticResource BackgroundColor}" 
+    <!-- ═══════════════ الحاوية الرئيسية ═══════════════ -->
+    <Border Background="{StaticResource SurfaceColor}" 
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
-            CornerRadius="16" 
-            Margin="15"
+            CornerRadius="{StaticResource RadiusLarge}" 
+            Margin="16"
             Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
@@ -65,90 +153,100 @@
                 <RowDefinition Height="*"/>
                 <!-- Content -->
                 <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
+                <!-- Footer -->
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر الموحد ================= -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18"
+            <!-- ==================== الهيدر ==================== -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="12,12,0,0"
+                    Padding="{StaticResource HeaderPadding}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1">
-                <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="38" Height="38" CornerRadius="10" 
-                                Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
-                                Margin="0,0,14,0"
-                                Padding="8"
-                                VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="AccountDetails" 
-                                                    Foreground="{StaticResource PrimaryColor}" 
-                                                    Width="20" Height="20" 
-                                                    VerticalAlignment="Center" 
-                                                    HorizontalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="Detailed Person Profile" 
-                                   FontSize="18" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextPrimaryColor}" 
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
+
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center">
+
+                    <Border Width="38"
+                            Height="38"
+                            CornerRadius="{StaticResource RadiusMedium}" 
+                            Background="{StaticResource PrimaryLightColor}" 
+                            Margin="0,0,16,0"
+                            Padding="8"
+                            VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="AccountDetails" 
+                                                 Foreground="{StaticResource PrimaryColor}" 
+                                                 Width="20" 
+                                                 Height="20" 
+                                                 VerticalAlignment="Center" 
+                                                 HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <TextBlock Text="Detailed Person Profile" 
+                               Style="{StaticResource HeaderStyle}"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
             </Border>
 
-            <!-- ================= المحتوى ================= -->
-            <Grid Grid.Row="1" Margin="25,15,25,20">
+            <!-- ==================== المحتوى ==================== -->
+            <Grid Grid.Row="1"
+                  Margin="{StaticResource ContentMargin}">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="40"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="40"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- ===== العمود الأيسر ===== -->
-                <StackPanel Grid.Column="0">
+                <StackPanel Grid.Column="0"
+                            Margin="0,0,24,0">
 
-                    <Grid Margin="0,0,0,15">
+                    <!-- Person ID -->
+                    <Grid Margin="{StaticResource FieldRowMargin}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Person ID" Style="{StaticResource LabelStyle}"/>
                         <TextBlock Grid.Column="1" x:Name="LblPersonId" Style="{StaticResource ValueTextStyle}"/>
                     </Grid>
 
-                    <Grid Margin="0,0,0,15">
+                    <!-- National No -->
+                    <Grid Margin="{StaticResource FieldRowMargin}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="National No" Style="{StaticResource LabelStyle}"/>
                         <TextBlock Grid.Column="1" x:Name="LblNationalNo" Style="{StaticResource ValueTextStyle}"/>
                     </Grid>
 
-                    <Grid Margin="0,0,0,15">
+                    <!-- Full Name -->
+                    <Grid Margin="{StaticResource FieldRowMargin}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Full Name" Style="{StaticResource LabelStyle}"/>
                         <TextBlock Grid.Column="1" x:Name="LblFullName" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
                     </Grid>
 
-                    <Grid Margin="0,0,0,15">
+                    <!-- Gender -->
+                    <Grid Margin="{StaticResource FieldRowMargin}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Gender" Style="{StaticResource LabelStyle}"/>
                         <TextBlock Grid.Column="1" x:Name="LblGender" Style="{StaticResource ValueTextStyle}"/>
                     </Grid>
 
+                    <!-- Phone -->
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Phone" Style="{StaticResource LabelStyle}"/>
@@ -157,51 +255,11 @@
 
                 </StackPanel>
 
-                <!-- ===== العمود الأيمن ===== -->
-                <StackPanel Grid.Column="2">
-
-                    <Grid Margin="0,0,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Date Of Birth" Style="{StaticResource LabelStyle}"/>
-                        <TextBlock Grid.Column="1" x:Name="LblDateOfBirth" Style="{StaticResource ValueTextStyle}"/>
-                    </Grid>
-
-                    <Grid Margin="0,0,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Email" Style="{StaticResource LabelStyle}"/>
-                        <TextBlock Grid.Column="1" x:Name="LblEmail" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
-                    </Grid>
-
-                    <Grid Margin="0,0,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Country" Style="{StaticResource LabelStyle}"/>
-                        <TextBlock Grid.Column="1" x:Name="LblCountry" Style="{StaticResource ValueTextStyle}"/>
-                    </Grid>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Address" Style="{StaticResource LabelStyle}" VerticalAlignment="Top"/>
-                        <TextBlock Grid.Column="1" x:Name="LblAddress" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
-                    </Grid>
-
-                </StackPanel>
-
-                <!-- ===== الصورة ===== -->
-                <Border Grid.Column="4"
+                <!-- ===== الصورة الشخصية ===== -->
+                <Border Grid.Column="1"
                         Width="160"
                         Height="160"
+                        Margin="0,0,24,0"
                         CornerRadius="80"
                         Background="{StaticResource InputBackgroundColor}"
                         BorderBrush="{StaticResource PrimaryColor}"
@@ -216,18 +274,66 @@
                     <Image x:Name="ImgPerson" Stretch="UniformToFill"/>
                 </Border>
 
+                <!-- ===== العمود الأيمن ===== -->
+                <StackPanel Grid.Column="2">
+
+                    <!-- Date Of Birth -->
+                    <Grid Margin="{StaticResource FieldRowMargin}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Date Of Birth" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblDateOfBirth" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
+
+                    <!-- Email -->
+                    <Grid Margin="{StaticResource FieldRowMargin}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Email" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblEmail" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <!-- Country -->
+                    <Grid Margin="{StaticResource FieldRowMargin}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Country" Style="{StaticResource LabelStyle}"/>
+                        <TextBlock Grid.Column="1" x:Name="LblCountry" Style="{StaticResource ValueTextStyle}"/>
+                    </Grid>
+
+                    <!-- Address -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource LabelColumnWidth}"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Address" Style="{StaticResource LabelStyle}" VerticalAlignment="Top"/>
+                        <TextBlock Grid.Column="1" x:Name="LblAddress" Style="{StaticResource ValueTextStyle}" TextWrapping="Wrap"/>
+                    </Grid>
+
+                </StackPanel>
+
             </Grid>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
-                    Padding="25,15,25,20" 
-                    CornerRadius="0,0,16,16"
-                    Margin="-1,0,-1,-1">
-                <Button Content="Close"
-                        Width="120"
+            <!-- ==================== شريط الأزرار ==================== -->
+            <Border Grid.Row="2" 
+                    Background="{StaticResource SurfaceColor}" 
+                    Padding="{StaticResource FooterPadding}" 
+                    CornerRadius="0,0,12,12"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0">
+
+                <Button Content="Close" 
                         HorizontalAlignment="Right"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Click="Close_Click"/>
+
             </Border>
 
         </Grid>

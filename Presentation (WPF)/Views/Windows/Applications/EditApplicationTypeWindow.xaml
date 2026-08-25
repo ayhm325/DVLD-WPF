@@ -6,12 +6,10 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="Update Application Type"
-        Height="570"
-        Width="560"
-        MinHeight="570"
-        MinWidth="560"
-        MaxHeight="570"
-        MaxWidth="560"
+        Height="640"
+        Width="700"
+        MinHeight="640"
+        MinWidth="700"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -19,9 +17,18 @@
         Background="Transparent"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
+
     <Window.Resources>
-        <Style x:Key="EditCloseButtonStyle"
-               TargetType="{x:Type Button}">
+
+        <LinearGradientBrush x:Key="AppHeaderGradient"
+                             StartPoint="0,0"
+                             EndPoint="1,1">
+            <GradientStop Color="#1C0505" Offset="0"/>
+            <GradientStop Color="#3D0C0C" Offset="0.55"/>
+            <GradientStop Color="#150404" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="EditCloseButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Width" Value="36"/>
             <Setter Property="Height" Value="36"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -43,40 +50,29 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CloseBorder"
-                                        Property="Background"
+                                <Setter TargetName="CloseBorder" Property="Background"
                                         Value="{StaticResource DangerLightColor}"/>
                                 <Setter Property="Foreground"
                                         Value="{StaticResource DangerColor}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CloseBorder"
-                                        Property="Background"
+                                <Setter TargetName="CloseBorder" Property="Background"
                                         Value="{StaticResource DangerColor}"/>
-                                <Setter Property="Foreground"
-                                        Value="White"/>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="EditLabelStyle"
-               TargetType="{x:Type TextBlock}"
+
+        <Style x:Key="EditLabelStyle" TargetType="{x:Type TextBlock}"
                BasedOn="{StaticResource LabelStyle}">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0"/>
         </Style>
-        <Style x:Key="EditTextBoxStyle"
-               TargetType="{x:Type TextBox}"
-               BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Height" Value="46"/>
-            <Setter Property="Padding" Value="14,0"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-        <Style x:Key="EditMultiLineTextBoxStyle"
-               TargetType="{x:Type TextBox}"
+
+        <Style x:Key="EditMultiLineTextBoxStyle" TargetType="{x:Type TextBox}"
                BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="MinHeight" Value="82"/>
             <Setter Property="Padding" Value="14,12"/>
@@ -86,183 +82,262 @@
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
             <Setter Property="VerticalContentAlignment" Value="Top"/>
         </Style>
+
     </Window.Resources>
+
     <Border Margin="14"
             Background="{StaticResource BackgroundColor}"
             BorderBrush="{StaticResource BorderColor}"
             BorderThickness="1"
-            CornerRadius="22">
+            CornerRadius="20">
+
         <Border.Effect>
             <DropShadowEffect Color="#000000"
-                              BlurRadius="32"
+                              Direction="270"
                               ShadowDepth="0"
-                              Opacity="0.18"/>
+                              BlurRadius="32"
+                              Opacity="0.22"/>
         </Border.Effect>
+
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="86"/>
+                <RowDefinition Height="140"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="82"/>
             </Grid.RowDefinitions>
+
+            <!-- ==================== الهيدر الداكن ==================== -->
             <Border Grid.Row="0"
-                    Background="{StaticResource SurfaceColor}"
-                    BorderBrush="{StaticResource BorderColor}"
-                    BorderThickness="0,0,0,1"
-                    CornerRadius="22,22,0,0">
-                <Grid Margin="26,0">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <Border Width="48"
-                                Height="48"
-                                CornerRadius="14"
-                                Background="{StaticResource PrimaryLightColor}">
-                            <materialDesign:PackIcon Kind="ApplicationEdit"
-                                                     Width="23"
-                                                     Height="23"
-                                                     Foreground="{StaticResource PrimaryColor}"
-                                                     HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel Margin="15,0,0,0"
-                                    VerticalAlignment="Center">
-                            <TextBlock Text="APPLICATION TYPE"
-                                       Foreground="{StaticResource PrimaryColor}"
-                                       FontSize="10"
-                                       FontWeight="Bold"/>
-                            <TextBlock Text="Update application type"
-                                       Foreground="{StaticResource TextPrimaryColor}"
-                                       FontSize="20"
-                                       FontWeight="SemiBold"
-                                       Margin="0,3,0,0"/>
-                        </StackPanel>
-                    </StackPanel>
-                    <Button Content="✕"
-                            Click="Close_Click"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource EditCloseButtonStyle}"/>
-                </Grid>
-            </Border>
-            <ScrollViewer Grid.Row="1"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="30,28,30,24">
-                    <Grid Margin="0,0,0,24">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="150"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Application information"
-                                       Foreground="{StaticResource TextPrimaryColor}"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"/>
-                            <TextBlock Text="Edit the details and pricing for this application type."
-                                       Foreground="{StaticResource TextMutedColor}"
-                                       FontSize="11"
-                                       TextWrapping="Wrap"
-                                       Margin="0,5,0,0"/>
-                        </StackPanel>
-                        <Border Grid.Column="1"
-                                Height="58"
-                                Background="{StaticResource SurfaceSecondaryColor}"
-                                BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="1"
-                                CornerRadius="14"
-                                Padding="13">
-                            <Grid>
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="TYPE ID"
-                                               Foreground="{StaticResource TextMutedColor}"
-                                               FontSize="9"
-                                               FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding CurrentApplicationType.ApplicationTypeId}"
-                                               Foreground="{StaticResource TextPrimaryColor}"
-                                               FontSize="17"
-                                               FontWeight="Bold"
-                                               Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <Border Width="7"
-                                        Height="7"
-                                        CornerRadius="4"
-                                        Background="{StaticResource SuccessColor}"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Top"/>
-                            </Grid>
-                        </Border>
-                    </Grid>
-                    <TextBlock Text="TITLE"
-                               Style="{StaticResource EditLabelStyle}"/>
-                    <TextBlock Text="Name displayed throughout the application."
-                               Foreground="{StaticResource TextMutedColor}"
-                               FontSize="10"
-                               Margin="0,4,0,7"/>
-                    <TextBox Text="{Binding CurrentApplicationType.ApplicationTypeTitle,UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource EditMultiLineTextBoxStyle}"
-                             Margin="0,0,0,22"/>
-                    <TextBlock Text="FEES"
-                               Style="{StaticResource EditLabelStyle}"/>
-                    <TextBlock Text="Amount charged when this application type is created."
-                               Foreground="{StaticResource TextMutedColor}"
-                               FontSize="10"
-                               Margin="0,4,0,7"/>
-                    <Grid>
-                        <TextBox Text="{Binding CurrentApplicationType.ApplicationTypeFees,UpdateSourceTrigger=PropertyChanged,StringFormat={}{0:F2}}"
-                                 Style="{StaticResource EditTextBoxStyle}"
-                                 Padding="44,0,70,0"/>
-                        <TextBlock Text="$"
-                                   Foreground="{StaticResource PrimaryColor}"
-                                   FontSize="15"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"
-                                   Margin="15,0,0,0"/>
-                        <TextBlock Text="JOD"
-                                   Foreground="{StaticResource TextMutedColor}"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,15,0"/>
-                    </Grid>
-                    <Border Margin="0,25,0,0"
-                            Padding="14"
-                            Background="{StaticResource PrimaryLightColor}"
-                            CornerRadius="12">
-                        <Grid>
-                            <Border Width="30"
-                                    Height="30"
-                                    CornerRadius="9"
-                                    Background="{StaticResource PrimaryColor}"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="InformationOutline"
-                                                         Width="16"
-                                                         Height="16"
-                                                         Foreground="White"
+                    Background="{StaticResource AppHeaderGradient}"
+                    CornerRadius="20,20,0,0">
+
+                <Grid>
+                    <Ellipse Width="180" Height="180"
+                             HorizontalAlignment="Right" VerticalAlignment="Top"
+                             Margin="0,-90,-50,0"
+                             Fill="White" Opacity="0.035"/>
+                    <Ellipse Width="110" Height="110"
+                             HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                             Margin="0,0,55,-55"
+                             Fill="{StaticResource PrimaryColor}" Opacity="0.12"/>
+                    <Border Width="5" Height="64"
+                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Margin="28,0,0,0"
+                            Background="{StaticResource PrimaryColor}" CornerRadius="3"/>
+
+                    <StackPanel Margin="48,0,70,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="46" Height="46"
+                                    CornerRadius="13" Background="#22FFFFFF"
+                                    Margin="0,0,14,0">
+                                <materialDesign:PackIcon Kind="ApplicationEdit"
+                                                         Width="23" Height="23"
+                                                         Foreground="{StaticResource PrimaryColor}"
                                                          HorizontalAlignment="Center"
                                                          VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="Changes will be applied to new applications using this type."
-                                       Foreground="{StaticResource TextPrimaryColor}"
-                                       FontSize="10"
-                                       TextWrapping="Wrap"
-                                       Margin="42,0,5,0"
-                                       VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="APPLICATION TYPE"
+                                           FontSize="10" FontWeight="SemiBold"
+                                           Foreground="#FCA5A5"/>
+                                <TextBlock Text="Update Application Type"
+                                           FontSize="23" FontWeight="SemiBold"
+                                           Foreground="White" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Text="Edit the details and pricing for this application type."
+                                   FontSize="12" Foreground="#C9A0A0"
+                                   Margin="60,10,0,0"/>
+                    </StackPanel>
+
+                    <Button Content="✕" Click="Close_Click"
+                            Style="{StaticResource EditCloseButtonStyle}"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Margin="0,14,14,0"/>
+                </Grid>
+            </Border>
+
+            <!-- ==================== المحتوى (عمودين مثل Test) ==================== -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+
+                <Grid Margin="30,24,30,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ===== العمود الأيسر: بطاقة المعرف ===== -->
+                    <StackPanel Grid.Column="0"
+                                Margin="0,0,24,0">
+
+                        <TextBlock Text="APPLICATION TYPE"
+                                   Style="{StaticResource CaptionStyle}"
+                                   FontWeight="SemiBold"/>
+
+                        <Border Margin="0,10,0,0"
+                                Padding="16"
+                                Background="{StaticResource SurfaceSecondaryColor}"
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1"
+                                CornerRadius="14">
+
+                            <StackPanel>
+
+                                <Border Width="54" Height="54"
+                                        CornerRadius="16"
+                                        Background="{StaticResource PrimaryLightColor}"
+                                        HorizontalAlignment="Left">
+                                    <materialDesign:PackIcon Kind="ApplicationEdit"
+                                                             Width="27" Height="27"
+                                                             Foreground="{StaticResource PrimaryColor}"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"/>
+                                </Border>
+
+                                <TextBlock Text="Identifier"
+                                           Style="{StaticResource CaptionStyle}"
+                                           Margin="0,18,0,4"/>
+
+                                <TextBlock Text="{Binding CurrentApplicationType.ApplicationTypeId}"
+                                           FontSize="25"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+
+                                <Border Height="1"
+                                        Background="{StaticResource BorderColor}"
+                                        Margin="0,18,0,14"/>
+
+                                <TextBlock Text="APPLICATION"
+                                           FontSize="9"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource PrimaryColor}"/>
+
+                                <TextBlock Text="System managed application type definition"
+                                           FontSize="11"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,5,0,0"/>
+
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+
+                    <!-- ===== العمود الأيمن: النموذج ===== -->
+                    <StackPanel Grid.Column="1">
+
+                        <TextBlock Text="Application Details"
+                                   Style="{StaticResource HeaderStyle}"/>
+
+                        <TextBlock Text="Configure the information shown throughout the system."
+                                   Style="{StaticResource CaptionStyle}"
+                                   Margin="0,3,0,20"/>
+
+                        <!-- حقل العنوان -->
+                        <TextBlock Text="TITLE"
+                                   Style="{StaticResource EditLabelStyle}"
+                                   Margin="0,0,0,7"/>
+
+                        <Grid>
+                            <Border Width="38" Height="38"
+                                    CornerRadius="10"
+                                    Background="{StaticResource PrimaryLightColor}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Panel.ZIndex="2"
+                                    Margin="6,6,0,0">
+                                <materialDesign:PackIcon Kind="TextBoxMultipleOutline"
+                                                         Width="19" Height="19"
+                                                         Foreground="{StaticResource PrimaryColor}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBox Text="{Binding CurrentApplicationType.ApplicationTypeTitle,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource EditMultiLineTextBoxStyle}"
+                                     Padding="54,12,14,12"/>
                         </Grid>
-                    </Border>
-                </StackPanel>
+
+                        <!-- حقل الرسوم -->
+                        <TextBlock Text="FEES"
+                                   Style="{StaticResource EditLabelStyle}"
+                                   Margin="0,20,0,7"/>
+
+                        <Grid>
+                            <Border Width="38" Height="38"
+                                    CornerRadius="10"
+                                    Background="{StaticResource SuccessLightColor}"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Panel.ZIndex="2"
+                                    Margin="6,0,0,0">
+                                <materialDesign:PackIcon Kind="CashMultiple"
+                                                         Width="19" Height="19"
+                                                         Foreground="{StaticResource SuccessColor}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBox Text="{Binding CurrentApplicationType.ApplicationTypeFees,
+                                                    UpdateSourceTrigger=PropertyChanged,
+                                                    StringFormat={}{0:F2}}"
+                                     Height="46"
+                                     Padding="54,0,55,0"
+                                     VerticalContentAlignment="Center"
+                                     FontSize="13"/>
+                            <TextBlock Text="JOD"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,14,0"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMutedColor}"
+                                       IsHitTestVisible="False"/>
+                        </Grid>
+
+                        <!-- ملاحظة معلوماتية -->
+                        <Border Margin="0,22,0,0"
+                                Padding="14"
+                                Background="{StaticResource PrimaryLightColor}"
+                                CornerRadius="12">
+                            <Grid>
+                                <Border Width="30" Height="30"
+                                        CornerRadius="9"
+                                        Background="{StaticResource PrimaryColor}"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="InformationOutline"
+                                                             Width="16" Height="16"
+                                                             Foreground="White"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Changes will be applied to new applications using this type."
+                                           Foreground="{StaticResource TextPrimaryColor}"
+                                           FontSize="10"
+                                           TextWrapping="Wrap"
+                                           Margin="42,0,5,0"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </Grid>
             </ScrollViewer>
+
+            <!-- ==================== الفوتر ==================== -->
             <Border Grid.Row="2"
-                    Background="{StaticResource SurfaceColor}"
+                    Background="{StaticResource SurfaceSecondaryColor}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,1,0,0"
-                    CornerRadius="0,0,22,22">
+                    CornerRadius="0,0,20,20">
+
                 <Grid Margin="30,0">
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Left">
-                        <Border Width="7"
-                                Height="7"
+                        <Border Width="7" Height="7"
                                 CornerRadius="4"
                                 Background="{StaticResource SuccessColor}"
                                 VerticalAlignment="Center"/>
@@ -277,38 +352,34 @@
                                 VerticalAlignment="Center">
                         <Button Command="{Binding CloseCommand}"
                                 CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                                Width="105"
-                                Height="40"
+                                Width="105" Height="40"
                                 Margin="0,0,10,0"
                                 Style="{StaticResource SecondaryButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Close"
-                                                         Width="16"
-                                                         Height="16"
+                                                         Width="16" Height="16"
                                                          Margin="0,0,7,0"
                                                          VerticalAlignment="Center"/>
-                                <TextBlock Text="Cancel"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="Cancel" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding SaveCommand}"
                                 CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                                Width="115"
-                                Height="40"
+                                Width="115" Height="40"
                                 Style="{StaticResource PrimaryButtonStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="ContentSave"
-                                                         Width="16"
-                                                         Height="16"
+                                                         Width="16" Height="16"
                                                          Margin="0,0,7,0"
                                                          VerticalAlignment="Center"/>
-                                <TextBlock Text="Save"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="Save" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
                 </Grid>
             </Border>
+
         </Grid>
     </Border>
+
 </Window>

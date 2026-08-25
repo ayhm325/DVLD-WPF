@@ -11,16 +11,24 @@
         Height="750"
         WindowStartupLocation="CenterScreen"       
         Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر: PrimaryLightColor → SurfaceColor -->
+
+        <!-- تدرج الهيدر: PrimaryLightColor(#FEF2F2) → SurfaceColor(#FFFFFF) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FEF2F2" Offset="0"/>
             <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- زر الإغلاق — يتبع الـ Tokens حرفياً -->
+        <!-- أبعاد محلية — تتبع نظام الـ Spacing -->
+        <Thickness x:Key="HeaderPadding">24,16,24,16</Thickness>
+        <Thickness x:Key="FooterPadding">20,16,24,20</Thickness>
+        <Thickness x:Key="ContentMargin">20,16,20,0</Thickness>
+
+        <!-- ═══════ زر الإغلاق ═══════ -->
         <Style x:Key="CloseButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
@@ -56,10 +64,76 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- ═══════ زر ثانوي — يتبع الـ Tokens حرفياً ═══════ -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="{StaticResource ButtonHeight}"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="{StaticResource ButtonPadding}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="{StaticResource ButtonFontSize}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightMedium}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource TextSecondaryColor}"/>
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource ButtonPressedColor}"/>
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource BorderStrongColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource BorderColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource TextDisabledColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
-    <Border Background="{StaticResource BackgroundColor}" 
+    <!-- ═══════════════ الحاوية الرئيسية ═══════════════ -->
+    <Border Background="{StaticResource SurfaceColor}" 
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
             CornerRadius="{StaticResource RadiusLarge}" 
@@ -73,74 +147,73 @@
                 <RowDefinition Height="*"/>
                 <!-- Content -->
                 <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
+                <!-- Footer -->
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر ================= -->
+            <!-- ==================== الهيدر ==================== -->
             <Border Grid.Row="0"
                     Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="12,12,0,0" 
-                    Padding="24,16,24,16"
+                    CornerRadius="12,12,0,0"
+                    Padding="{StaticResource HeaderPadding}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1">
-                <Grid>
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <!-- أيقونة الهيدر -->
-                        <Border Width="38"
-                                Height="38"
-                                CornerRadius="{StaticResource RadiusMedium}" 
-                                Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
-                                Margin="0,0,16,0"
-                                Padding="8"
-                                VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="AccountDetails" 
-                                                     Foreground="{StaticResource PrimaryColor}" 
-                                                     Width="20" 
-                                                     Height="20" 
-                                                     VerticalAlignment="Center" 
-                                                     HorizontalAlignment="Center"/>
-                        </Border>
 
-                        <!-- عنوان الهيدر -->
-                        <TextBlock Text="User Details" 
-                                   Style="{StaticResource HeaderStyle}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center">
+
+                    <!-- أيقونة الهيدر -->
+                    <Border Width="38"
+                            Height="38"
+                            CornerRadius="{StaticResource RadiusMedium}" 
+                            Background="{StaticResource PrimaryLightColor}" 
+                            Margin="0,0,16,0"
+                            Padding="8"
+                            VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="AccountDetails" 
+                                                 Foreground="{StaticResource PrimaryColor}" 
+                                                 Width="20" 
+                                                 Height="20" 
+                                                 VerticalAlignment="Center" 
+                                                 HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <TextBlock Text="User Details" 
+                               Style="{StaticResource HeaderStyle}"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
             </Border>
 
-            <!-- ================= المحتوى ================= -->
+            <!-- ==================== المحتوى ==================== -->
             <ScrollViewer Grid.Row="1" 
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Margin="20,16,20,0">
+                          Margin="{StaticResource ContentMargin}">
 
                 <StackPanel>
 
-                    <!-- بطاقة تفاصيل المستخدم -->
                     <controls:InformationPerson Person="{Binding Person}" 
                                                 Margin="0,0,0,20"/>
 
-                    <!-- بطاقة حالة المستخدم -->
                     <controls:UserCard DataContext="{Binding}"/>
 
                 </StackPanel>
 
             </ScrollViewer>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
+            <!-- ==================== شريط الأزرار ==================== -->
             <Border Grid.Row="2" 
-                    Background="{StaticResource BackgroundColor}" 
-                    Padding="20,16,24,20" 
+                    Background="{StaticResource SurfaceColor}" 
+                    Padding="{StaticResource FooterPadding}" 
                     CornerRadius="0,0,12,12"
-                    Margin="-1,0,-1,-1">
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0">
+
                 <Button Content="Close" 
-                        Width="120" 
                         HorizontalAlignment="Right"
                         Click="CloseButton_Click"
                         Style="{StaticResource SecondaryButtonStyle}"/>
+
             </Border>
 
         </Grid>

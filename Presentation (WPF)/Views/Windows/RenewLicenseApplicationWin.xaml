@@ -8,18 +8,26 @@
         mc:Ignorable="d"
         Title="Renew License Application"
         Height="680" Width="840"
-        WindowStartupLocation="CenterScreen"        
+        WindowStartupLocation="CenterScreen"       
         Background="Transparent"
+        WindowStyle="None"
+        AllowsTransparency="True"
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد (فاتح) -->
+
+        <!-- تدرج الهيدر: PrimaryLightColor(#FEF2F2) → SurfaceColor(#FFFFFF) -->
         <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#F0FDFA" Offset="0"/>
+            <GradientStop Color="#FEF2F2" Offset="0"/>
             <GradientStop Color="#FFFFFF" Offset="1"/>
         </LinearGradientBrush>
 
-        <!-- ستايل زر الإغلاق -->
+        <!-- أبعاد محلية -->
+        <Thickness x:Key="HeaderPadding">24,16,24,16</Thickness>
+        <Thickness x:Key="FooterPadding">24,16,24,20</Thickness>
+        <Thickness x:Key="ContentMargin">20,16,20,20</Thickness>
+
+        <!-- ═══════ زر الإغلاق ═══════ -->
         <Style x:Key="CloseButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
@@ -28,16 +36,27 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource RadiusMedium}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource ErrorColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource TextDisabledColor}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -45,36 +64,48 @@
             </Setter>
         </Style>
 
-        <!-- Ghost Button (فاتح) -->
+        <!-- ═══════ زر Ghost — يتبع الـ Tokens ═══════ -->
         <Style x:Key="GhostButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="Padding" Value="20,0"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Height" Value="{StaticResource ButtonHeight}"/>
+            <Setter Property="Padding" Value="{StaticResource ButtonPadding}"/>
+            <Setter Property="FontSize" Value="{StaticResource ButtonFontSize}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightMedium}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="btnBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="10"
-                                SnapsToDevicePixels="True">
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
                             <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource PrimaryLightColor}"/>
+                                <Setter TargetName="btnBorder"
+                                        Property="Background"
+                                        Value="{StaticResource PrimaryLightColor}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="btnBorder" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-                                <Setter Property="Opacity" Value="0.8"/>
+                                <Setter TargetName="btnBorder"
+                                        Property="Background"
+                                        Value="{StaticResource PrimaryLightColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource PrimaryHoverColor}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="{StaticResource TextDisabledColor}"/>
-                                <Setter Property="Opacity" Value="0.5"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource TextDisabledColor}"/>
                                 <Setter Property="Cursor" Value="Arrow"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -82,14 +113,133 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- ═══════ زر أساسي — يتبع الـ Tokens ═══════ -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="{StaticResource ButtonHeight}"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="{StaticResource ButtonPadding}"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="{StaticResource ButtonFontSize}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightMedium}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource PrimaryHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource PrimaryPressedColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource TextDisabledColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ═══════ زر ثانوي — يتبع الـ Tokens ═══════ -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="{StaticResource ButtonHeight}"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="{StaticResource ButtonPadding}"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderStrongColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="{StaticResource ButtonFontSize}"/>
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightMedium}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"
+                                              TextElement.FontWeight="{TemplateBinding FontWeight}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource TextSecondaryColor}"/>
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource ButtonPressedColor}"/>
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource BorderStrongColor}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border"
+                                        Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter TargetName="border"
+                                        Property="BorderBrush"
+                                        Value="{StaticResource BorderColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource TextDisabledColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
-    <Border Background="{StaticResource BackgroundColor}" 
+    <!-- ═══════════════ الحاوية الرئيسية ═══════════════ -->
+    <Border Background="{StaticResource SurfaceColor}" 
             BorderBrush="{StaticResource BorderColor}" 
             BorderThickness="1" 
-            CornerRadius="16" 
-            Margin="15"
+            CornerRadius="{StaticResource RadiusLarge}" 
+            Margin="16"
             Effect="{StaticResource ElevationShadow3}">
 
         <Grid>
@@ -97,70 +247,79 @@
                 <RowDefinition Height="Auto"/>
                 <!-- Header -->
                 <RowDefinition Height="*"/>
-                <!-- Scrollable Content -->
+                <!-- Content -->
                 <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
+                <!-- Footer -->
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر الموحد ================= -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18"
+            <!-- ==================== الهيدر ==================== -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource HeaderBgGradient}" 
+                    CornerRadius="12,12,0,0"
+                    Padding="{StaticResource HeaderPadding}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1">
-                <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="38" Height="38" CornerRadius="10" 
-                                Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
-                                Margin="0,0,14,0"
-                                Padding="8"
-                                VerticalAlignment="Center">
-                            <Path Data="M19,12H21V14H19V12M19,8H21V10H19V8M3,20H17V4H3A2,2 0 0,0 1,6V18A2,2 0 0,0 3,20Z" 
-                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
-                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
-                        </Border>
-                        <TextBlock Text="Renew License Application" 
-                                   FontSize="18" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextPrimaryColor}" 
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Grid>
+
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center">
+
+                    <Border Width="38"
+                            Height="38"
+                            CornerRadius="{StaticResource RadiusMedium}" 
+                            Background="{StaticResource PrimaryLightColor}" 
+                            Margin="0,0,16,0"
+                            Padding="8"
+                            VerticalAlignment="Center">
+                        <Path Data="M19,12H21V14H19V12M19,8H21V10H19V8M3,20H17V4H3A2,2 0 0,0 1,6V18A2,2 0 0,0 3,20Z" 
+                              Stroke="{StaticResource PrimaryColor}" 
+                              StrokeThickness="1.6" 
+                              Fill="Transparent" 
+                              Stretch="Uniform" 
+                              Height="20" 
+                              Width="20"/>
+                    </Border>
+
+                    <TextBlock Text="Renew License Application" 
+                               Style="{StaticResource HeaderStyle}"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
             </Border>
 
-            <!-- ================= المحتوى ================= -->
+            <!-- ==================== المحتوى ==================== -->
             <ScrollViewer Grid.Row="1" 
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Margin="20,15,20,20">
+                          Margin="{StaticResource ContentMargin}">
 
                 <StackPanel>
 
-                    <!-- Driver License Info Card -->
                     <controls:DriverLicenseInfo
                             LicenseIdText="{Binding LicenseIdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             SearchCommand="{Binding SearchCommand}"
                             License="{Binding LicenseInfo}"/>
 
-                    <!-- Application New License Info Card -->
                     <controls:ApplicationNewLicenseInfo Application="{Binding NewLicenseInfo}"/>
 
                 </StackPanel>
 
             </ScrollViewer>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="2" Background="{StaticResource BackgroundColor}" 
-                    Padding="20,15,25,20" 
-                    CornerRadius="0,0,16,16"
-                    Margin="-1,0,-1,-1">
+            <!-- ==================== شريط الأزرار ==================== -->
+            <Border Grid.Row="2" 
+                    Background="{StaticResource SurfaceColor}" 
+                    Padding="{StaticResource FooterPadding}" 
+                    CornerRadius="0,0,12,12"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0">
+
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left Side -->
+                    <!-- الجانب الأيسر -->
                     <StackPanel Grid.Column="0"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
@@ -170,7 +329,8 @@
                                 Command="{Binding ShowLicensesHistoryCommand}"
                                 IsEnabled="{Binding IsLicenseIssued}"/>
 
-                        <Rectangle Width="1" Height="20"
+                        <Rectangle Width="1" 
+                                   Height="20"
                                    Fill="{StaticResource BorderColor}"
                                    Margin="12,0"
                                    VerticalAlignment="Center"/>
@@ -182,19 +342,20 @@
 
                     </StackPanel>
 
-                    <!-- Right Side -->
+                    <!-- الجانب الأيمن -->
                     <StackPanel Grid.Column="1"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
+
                         <Button Content="Issue"
                                 Style="{StaticResource PrimaryButtonStyle}"
-                                Width="120"
-                                Margin="0,0,15,0"
+                                Margin="0,0,12,0"
                                 Command="{Binding IssueCommand}"/>
+
                         <Button Content="Close"
                                 Style="{StaticResource SecondaryButtonStyle}"
-                                Width="120"
                                 Click="CloseButton_Click"/>
+
                     </StackPanel>
                 </Grid>
             </Border>
