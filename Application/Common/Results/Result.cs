@@ -8,17 +8,49 @@ public class Result
 
     public string Error { get; }
 
+    public ErrorType ErrorType { get; }
+
     protected Result(
         bool success,
-        string error)
+        string error,
+        ErrorType errorType)
     {
         IsSuccess = success;
         Error = error;
+        ErrorType = errorType;
     }
 
     public static Result Success()
-        => new(true, string.Empty);
+        => new(
+            true,
+            string.Empty,
+            ErrorType.None);
 
-    public static Result Failure(string error)
-        => new(false, error);
+    public static Result Failure(
+        string error)
+        => new(
+            false,
+            error,
+            ErrorType.Failure);
+
+    public static Result ValidationFailure(
+        string error)
+        => new(
+            false,
+            error,
+            ErrorType.Validation);
+
+    public static Result NotFound(
+        string error)
+        => new(
+            false,
+            error,
+            ErrorType.NotFound);
+
+    public static Result Conflict(
+        string error)
+        => new(
+            false,
+            error,
+            ErrorType.Conflict);
 }
