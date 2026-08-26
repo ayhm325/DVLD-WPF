@@ -25,11 +25,11 @@ public class PersonService : IPersonService
     // Get By Id
     public async Task<Result<PersonDto>> GetPersonByIdAsync(int id)
     {
-        if (id <= 0) return Result<PersonDto>.ValidationFailure("Invalid person ID.");
+        if (id <= 0) return Result<PersonDto>.FromValidationFailure("Invalid person ID.");
 
         var person = await _personRepository.GetPersonByIdAsync(id);
         return person is null
-            ? Result<PersonDto>.NotFound("Person not found.")
+            ? Result<PersonDto>.FromNotFound("Person not found.")
             : Result<PersonDto>.Success(PersonMapper.ToDto(person));
     }
 
@@ -37,11 +37,11 @@ public class PersonService : IPersonService
     public async Task<Result<PersonDto>> GetPersonByNationalNoAsync(string nationalNo)
     {
         if (string.IsNullOrWhiteSpace(nationalNo))
-            return Result<PersonDto>.ValidationFailure("National number is required.");
+            return Result<PersonDto>.FromValidationFailure("National number is required.");
 
         var person = await _personRepository.GetPersonByNationalNoAsync(nationalNo.Trim());
         return person is null
-            ? Result<PersonDto>.NotFound("Person not found.")
+            ? Result<PersonDto>.FromNotFound("Person not found.")
             : Result<PersonDto>.Success(PersonMapper.ToDto(person));
     }
 
@@ -52,16 +52,16 @@ public class PersonService : IPersonService
     // Create
     public async Task<Result<int>> AddPersonAsync(PersonCreateUpdateDto dto)
     {
-        if (dto is null) return Result<int>.ValidationFailure("Person data is required.");
+        if (dto is null) return Result<int>.FromValidationFailure("Person data is required.");
 
         var validation = PersonValidator.Validate(dto);
-        if (validation.IsFailure) return Result<int>.ValidationFailure(validation.Error);
+        if (validation.IsFailure) return Result<int>.FromValidationFailure(validation.Error);
 
         var person = PersonMapper.ToEntity(dto);
 
         // التحقق من عدم تكرار الرقم الوطني
         if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, 0))
-            return Result<int>.Conflict("The national number is already registered.");
+            return Result<int>.FromConflict("The national number is already registered.");
 
         var personId = await _personRepository.AddPersonAsync(person);
         return Result<int>.Success(personId);
