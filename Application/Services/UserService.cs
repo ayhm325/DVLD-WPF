@@ -25,11 +25,11 @@ public class UserService : IUserService
     // Get By Id
     public async Task<Result<UserDto>> GetUserByIdAsync(int id)
     {
-        if (id <= 0) return Result<UserDto>.FromFailure("Invalid user ID.");
+        if (id <= 0) return Result<UserDto>.FromValidationFailure("Invalid user ID.");
 
         var user = await _userRepository.GetUserByUserIdAsync(id);
         return user is null
-            ? Result<UserDto>.FromFailure("User not found.")
+            ? Result<UserDto>.FromNotFound("User not found.")
             : Result<UserDto>.Success(UserMapper.ToDto(user));
     }
 
@@ -40,7 +40,7 @@ public class UserService : IUserService
 
         var user = await _userRepository.GetUserByPersonIdAsync(personId);
         return user is null
-            ? Result<UserDto>.FromFailure("No user is associated with this person.")
+            ? Result<UserDto>.FromNotFound("No user is associated with this person.")
             : Result<UserDto>.Success(UserMapper.ToDto(user));
     }
 
@@ -52,7 +52,7 @@ public class UserService : IUserService
 
         var user = await _userRepository.GetUserByUsernameAsync(username.Trim());
         return user is null
-            ? Result<UserDto>.FromFailure("User not found.")
+            ? Result<UserDto>.FromNotFound("User not found.")
             : Result<UserDto>.Success(UserMapper.ToDto(user));
     }
 
@@ -67,18 +67,18 @@ public class UserService : IUserService
     // Create
     public async Task<Result<int>> AddUserAsync(CreateUserDto dto)
     {
-        if (dto is null) return Result<int>.FromFailure("User data is required.");
+        if (dto is null) return Result<int>.FromValidationFailure("User data is required.");
 
         var validation = UserValidator.ValidateCreateUser(dto);
-        if (validation.IsFailure) return Result<int>.FromFailure(validation.Error);
+        if (validation.IsFailure) return Result<int>.FromValidationFailure(validation.Error);
 
         // التحقق من تفرد اسم المستخدم
         if (await _userRepository.IsUsernameTakenAsync(dto.UserName))
-            return Result<int>.FromFailure("Username is already in use.");
+            return Result<int>.FromConflict("Username is already in use.");
 
         // التحقق من أن لكل شخص حساب مستخدم واحد فقط
         if (await _userRepository.IsUserExistsByPersonIdAsync(dto.PersonId))
-            return Result<int>.FromFailure("This person is already associated with a user account.");
+            return Result<int>.FromConflict("This person is already associated with a user account.");
 
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.Password);
         var user = UserMapper.ToEntity(dto, hashedPassword);
@@ -90,22 +90,22 @@ public class UserService : IUserService
     // Update
     public async Task<Result> UpdateUserAsync(int id, UpdateUserDto dto)
     {
-        if (id <= 0) return Result.Failure("Invalid user ID.");
-        if (dto is null) return Result.Failure("User data is required.");
+        if (id <= 0) return Result.ValidationFailure("Invalid user ID.");
+        if (dto is null) return Result.ValidationFailure("User data is required.");
 
         var validation = UserValidator.ValidateUpdateUser(dto);
-        if (validation.IsFailure) return Result.Failure(validation.Error);
+        if (validation.IsFailure) return Result.ValidationFailure(validation.Error);
 
         var user = await _userRepository.GetUserByUserIdAsync(id);
         if (user is null) return Result.Failure("User not found.");
 
         // التحقق من تفرد اسم المستخدم لغير المستخدم الحالي
         if (await _userRepository.IsUsernameTakenForAnotherUserAsync(dto.UserName, id))
-            return Result.Failure("Username is already in use by another user.");
+            return Result.Conflict("Username is already in use by another user.");
 
         // التحقق من تفرد الشخص في حال تم تغييره
         if (user.PersonId != dto.PersonId && await _userRepository.IsUserExistsByPersonIdAsync(dto.PersonId))
-            return Result.Failure("This person is already associated with another user account.");
+            return Result.Conflict("This person is already associated with another user account.");
 
         // تحديث البيانات
         user.UserName = dto.UserName.Trim();
@@ -113,8 +113,8 @@ public class UserService : IUserService
         user.IsActive = dto.IsActive;
 
         // تحديث كلمة المرور اختيارياً
-        if (!string.IsNullOrWhiteSpace(dto.Password))
-            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        //if (!string.IsNullOrWhiteSpace(dto.Password))
+        //    user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
         var success = await _userRepository.UpdateUserAsync(user);
         return success ? Result.Success() : Result.Failure("Failed to update user data.");
@@ -123,9 +123,9 @@ public class UserService : IUserService
     // Delete
     public async Task<Result> DeleteUserAsync(int id)
     {
-        if (id <= 0) return Result.Failure("Invalid user ID.");
+        if (id <= 0) return Result.ValidationFailure("Invalid user ID.");
         if (!await _userRepository.IsUserExistsByIdAsync(id))
-            return Result.Failure("User not found.");
+            return Result.NotFound("User not found.");
 
         var success = await _userRepository.DeleteUserAsync(id);
         return success ? Result.Success() : Result.Failure("Failed to delete user.");
@@ -146,14 +146,14 @@ public class UserService : IUserService
     // Change Password
     public async Task<Result> ChangePasswordAsync(int userId, ChangePasswordDto dto)
     {
-        if (userId <= 0) return Result.Failure("Invalid user ID.");
-        if (dto is null) return Result.Failure("Change password data is required.");
+        if (userId <= 0) return Result.ValidationFailure("Invalid user ID.");
+        if (dto is null) return Result.ValidationFailure("Change password data is required.");
 
         var validation = UserValidator.ValidateChangePassword(dto);
-        if (validation.IsFailure) return Result.Failure(validation.Error);
+        if (validation.IsFailure) return Result.ValidationFailure(validation.Error);
 
         var user = await _userRepository.GetUserByUserIdAsync(userId);
-        if (user is null) return Result.Failure("User not found.");
+        if (user is null) return Result.NotFound("User not found.");
 
         // التحقق من كلمة المرور الحالية
         if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.Password))

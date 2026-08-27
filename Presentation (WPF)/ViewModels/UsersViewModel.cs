@@ -38,6 +38,14 @@ public partial class UsersViewModel : ObservableObject
         _userService = userService;
     }
 
+    // استدعاء LoadUsersAsync عند إنشاء الـ ViewModel
+    private async void OnUserSaveCompleted(bool success)
+    {
+        if (!success)
+            return;
+
+        await LoadUsersAsync();
+    }
 
     // تأكد من وجود partial void عند التنفيذ
     partial void OnSelectedFilterTypeChanged(string value)
@@ -147,19 +155,23 @@ public partial class UsersViewModel : ObservableObject
     private async Task AddUser()
     {
         // 1.جلب الـ ViewModel الخاص بصفحة الإضافة / التعديل من الـ ServiceProvider
-        var addEditUserVm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
+        var vm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
 
         // 2. تهيئة الـ ViewModel بـ null (وهذا يعني للمشروع أننا في وضع الإضافة)
         // لاحظ أن دالتك InitializeAsync مهيأة لتستقبل int? userId
-        await addEditUserVm.InitializeAsync(null);
+        await vm.InitializeAsync(null);
+
+        vm.SaveCompleted += OnUserSaveCompleted;
 
         // 3. التنقل لصفحة الإضافة باستخدام الـ Helper الخاص بك
         //MainWindow.Navigation.Navigate(new AddEditUserPage(addEditUserVm));
-        var win = new AddEditUserWin(addEditUserVm)
+        var win = new AddEditUserWin(vm)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };
         win.ShowDialog();
+
+        vm.SaveCompleted -= OnUserSaveCompleted;
     }
 
     [RelayCommand]
@@ -174,6 +186,8 @@ public partial class UsersViewModel : ObservableObject
         // 3. إضافة await لانتظار تحميل بيانات المستخدم من قاعدة البيانات
         await vm.InitializeAsync(SelectedUser.UserId);
 
+        vm.SaveCompleted += OnUserSaveCompleted;
+
         // 4. الانتقال للصفحة بعد أن أصبحت البيانات جاهزة
         //MainWindow.Navigation.Navigate(new AddEditUserPage(vm));
         var win = new AddEditUserWin(vm)
@@ -181,6 +195,7 @@ public partial class UsersViewModel : ObservableObject
             Owner = System.Windows.Application.Current.MainWindow
         };
         win.ShowDialog();
+        vm.SaveCompleted -= OnUserSaveCompleted;
     }
 
     [RelayCommand]

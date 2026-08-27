@@ -68,12 +68,22 @@ public partial class AddEditUserViewModel : ObservableObject
     [ObservableProperty] private bool _isConfirmPasswordVisible;
 
     // TABS
-    [ObservableProperty] private int _selectedTabIndex;
-    [ObservableProperty] private bool _canGoToNextTab;
+    [ObservableProperty]
+    private int _selectedTabIndex;
+
+    [ObservableProperty]
+    private bool _canGoToNextTab;
+
+    [RelayCommand(CanExecute = nameof(CanGoToNextTab))]
+    private void GoToNextTab()
+    {
+        if (SelectedTabIndex < 1)
+            SelectedTabIndex++;
+    }
 
     // UI VISIBILITY
-    public Visibility PasswordVisibility => Visibility.Visible;
-    public Visibility ConfirmPasswordVisibility => Visibility.Visible;
+    [ObservableProperty] private Visibility _passwordVisibility = Visibility.Visible;
+    [ObservableProperty] private Visibility _confirmPasswordVisibility = Visibility.Visible;
 
     // INITIALIZATION
     public async Task InitializeAsync(int? userId)
@@ -89,10 +99,12 @@ public partial class AddEditUserViewModel : ObservableObject
                 Mode = OperationMode.Edit;
                 UserId = userId.Value;
                 UserIdDisplay = userId.Value.ToString();
+
+                // ⬇️ إخفاء حقول كلمة السر في وضع التعديل ⬇️
+                PasswordVisibility = Visibility.Collapsed;
+                ConfirmPasswordVisibility = Visibility.Collapsed;
                 Password = string.Empty;
                 ConfirmPassword = string.Empty;
-                OnPropertyChanged(nameof(PasswordVisibility));
-                OnPropertyChanged(nameof(ConfirmPasswordVisibility));
 
                 var userResult = await _userService.GetUserByIdAsync(userId.Value);
                 if (userResult.IsFailure || userResult.Value is null)
@@ -128,6 +140,11 @@ public partial class AddEditUserViewModel : ObservableObject
             FilterText = string.Empty;
             SelectedFilterIndex = 0;
             UserName = string.Empty;
+
+            // ⬇️ إظهار حقول كلمة السر في وضع الإضافة ⬇️
+            PasswordVisibility = Visibility.Visible;
+            ConfirmPasswordVisibility = Visibility.Visible;
+
             Password = string.Empty;
             ConfirmPassword = string.Empty;
             IsActive = true;
@@ -135,8 +152,6 @@ public partial class AddEditUserViewModel : ObservableObject
             CanGoToNextTab = false;
             UserNameValidationMessage = "3-20 chars, start with a letter, numbers & _ allowed.";
             UserNameValidationColor = "Gray";
-            OnPropertyChanged(nameof(PasswordVisibility));
-            OnPropertyChanged(nameof(ConfirmPasswordVisibility));
             GoToNextTabCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
@@ -146,9 +161,6 @@ public partial class AddEditUserViewModel : ObservableObject
         }
     }
 
-    // NEXT TAB
-    [RelayCommand(CanExecute = nameof(CanGoToNextTab))]
-    private void GoToNextTab() => SelectedTabIndex = 1;
 
     // SEARCH PERSON
     [RelayCommand]
@@ -156,8 +168,12 @@ public partial class AddEditUserViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(FilterText))
         {
-            MessageBox.Show("Please enter a Person ID or National Number.", "Search",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                "Please enter a Person ID or National Number.",
+                "Search",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
             return;
         }
 
@@ -173,31 +189,43 @@ public partial class AddEditUserViewModel : ObservableObject
             {
                 if (!int.TryParse(FilterText.Trim(), out int personId))
                 {
-                    MessageBox.Show("Please enter a valid Person ID.", "Invalid ID",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        "Please enter a valid Person ID.",
+                        "Invalid ID",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
                     return;
                 }
+
                 personResult = await _personService.GetPersonByIdAsync(personId);
             }
             // BY NATIONAL NUMBER
             else
             {
-                personResult = await _personService.GetPersonByNationalNoAsync(FilterText.Trim());
+                personResult = await _personService
+                    .GetPersonByNationalNoAsync(FilterText.Trim());
             }
 
             if (personResult.IsFailure || personResult.Value is null)
             {
-                MessageBox.Show(personResult.Error ?? "Person data could not be loaded.", "Person Not Found",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    personResult.Error ?? "Person data could not be loaded.",
+                    "Person Not Found",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
             var person = personResult.Value;
 
             // CHECK IF PERSON ALREADY HAS USER
-            var existingUserResult = await _userService.GetUserByPersonIdAsync(person.PersonId);
+            var existingUserResult =
+                await _userService.GetUserByPersonIdAsync(person.PersonId);
 
-            if (existingUserResult.IsSuccess && existingUserResult.Value is not null)
+            if (existingUserResult.IsSuccess &&
+                existingUserResult.Value is not null)
             {
                 var existingUser = existingUserResult.Value;
 
@@ -205,7 +233,10 @@ public partial class AddEditUserViewModel : ObservableObject
                 {
                     MessageBox.Show(
                         $"This person is already associated with the user account '{existingUser.UserName}'.",
-                        "User Already Exists", MessageBoxButton.OK, MessageBoxImage.Information);
+                        "User Already Exists",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
                     return;
                 }
 
@@ -213,7 +244,10 @@ public partial class AddEditUserViewModel : ObservableObject
                 {
                     MessageBox.Show(
                         $"This person is already associated with the user account '{existingUser.UserName}'.",
-                        "User Already Exists", MessageBoxButton.OK, MessageBoxImage.Information);
+                        "User Already Exists",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
                     return;
                 }
 
@@ -231,9 +265,14 @@ public partial class AddEditUserViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error during person search: {ex}");
-            MessageBox.Show($"An error occurred while searching for the person.\n\n{ex.Message}",
-                "Search Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Diagnostics.Debug.WriteLine(
+                $"Error during person search: {ex}");
+
+            MessageBox.Show(
+                $"An error occurred while searching for the person.\n\n{ex.Message}",
+                "Search Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
@@ -322,10 +361,12 @@ public partial class AddEditUserViewModel : ObservableObject
                 UserId = addResult.Value;
                 UserIdDisplay = addResult.Value.ToString();
                 Mode = OperationMode.Edit;
+
+                // إخفاء حقول كلمة السر بعد التحول لوضع التعديل
+                PasswordVisibility = Visibility.Collapsed;
+                ConfirmPasswordVisibility = Visibility.Collapsed;
                 Password = string.Empty;
                 ConfirmPassword = string.Empty;
-                OnPropertyChanged(nameof(PasswordVisibility));
-                OnPropertyChanged(nameof(ConfirmPasswordVisibility));
 
                 MessageBox.Show($"The user account has been created successfully.\n\nUser ID: {UserId}",
                     "Operation Completed", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -338,7 +379,7 @@ public partial class AddEditUserViewModel : ObservableObject
             {
                 PersonId = Person.PersonId,
                 UserName = UserName.Trim(),
-                Password = string.IsNullOrWhiteSpace(Password) ? null : Password,
+                //Password = string.IsNullOrWhiteSpace(Password) ? null : Password,
                 IsActive = IsActive
             };
 
@@ -380,7 +421,7 @@ public partial class AddEditUserViewModel : ObservableObject
                 "Save Error", MessageBoxButton.OK, MessageBoxImage.Error);
             SaveCompleted?.Invoke(false);
         }
-    }
+    }    
 
     // CANCEL
     [RelayCommand]

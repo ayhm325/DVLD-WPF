@@ -39,8 +39,8 @@ public static class UserValidator
             errors.Add("A valid person must be selected.");
 
         // Password is optional during update
-        if (!string.IsNullOrWhiteSpace(dto.Password))
-            ValidatePassword(dto.Password, errors);
+        //if (!string.IsNullOrWhiteSpace(dto.Password))
+        //    ValidatePassword(dto.Password, errors);
 
         return CreateValidationResult(errors);
     }
