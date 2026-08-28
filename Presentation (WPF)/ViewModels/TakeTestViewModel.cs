@@ -5,7 +5,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Enums;
 using Presentation.Views.Windows;
-
 using System.Windows;
 
 namespace Presentation.ViewModels
@@ -13,90 +12,170 @@ namespace Presentation.ViewModels
     public partial class TakeTestViewModel : ObservableObject
     {
         private readonly ITestAppointmentService _service;
+        private readonly ITestWorkflowService _testWorkflowService;
         private readonly ICurrentUserService _currentUser;
         private readonly IApplicationService _applicationService;
         private readonly ILocalDrivingLicenseApplicationService _localService;
 
+        // =========================================================
+        // CONSTRUCTOR
+        // =========================================================
+
         public TakeTestViewModel(
             ITestAppointmentService service,
+            ITestWorkflowService testWorkflowService,
             ICurrentUserService currentUser,
             IApplicationService applicationService,
             ILocalDrivingLicenseApplicationService localService)
         {
-            _service = service;
-            _currentUser = currentUser;
-            _applicationService = applicationService;
-            _localService = localService;
+            _service =
+                service
+                ?? throw new ArgumentNullException(nameof(service));
+
+            _testWorkflowService =
+                testWorkflowService
+                ?? throw new ArgumentNullException(
+                    nameof(testWorkflowService));
+
+            _currentUser =
+                currentUser
+                ?? throw new ArgumentNullException(nameof(currentUser));
+
+            _applicationService =
+                applicationService
+                ?? throw new ArgumentNullException(
+                    nameof(applicationService));
+
+            _localService =
+                localService
+                ?? throw new ArgumentNullException(nameof(localService));
         }
 
-        // =========================
+        // =========================================================
         // STATE
-        // =========================
+        // =========================================================
 
         [ObservableProperty]
-        private TestResultType testResult = TestResultType.Fail;
+        private TestResultType testResult =
+            TestResultType.Fail;
 
         [ObservableProperty]
-        private string notes = string.Empty;
+        private string notes =
+            string.Empty;
 
         [ObservableProperty]
         private ScheduleTestDto? schedule;
 
-        // ✳️ IMPORTANT: make these observable (NOT computed)
-        [ObservableProperty]
-        private string fullName = string.Empty;
+        // =========================================================
+        // DISPLAY DATA
+        // =========================================================
 
         [ObservableProperty]
-        private string licenseClassName = string.Empty;
+        private string fullName =
+            string.Empty;
+
+        [ObservableProperty]
+        private string licenseClassName =
+            string.Empty;
 
         [ObservableProperty]
         private decimal fees;
 
-        // =========================
-        // PROPERTY CHANGED HOOKS
-        // =========================
+        // =========================================================
+        // PROPERTY CHANGED
+        // =========================================================
 
-        partial void OnScheduleChanged(ScheduleTestDto? value)
+        partial void OnScheduleChanged(
+            ScheduleTestDto? value)
         {
-            if (value == null) return;
+            if (value is null)
+            {
+                FullName = string.Empty;
+                LicenseClassName = string.Empty;
+                Fees = 0;
+                return;
+            }
 
-            FullName = value.FullName ?? string.Empty;
-            LicenseClassName = value.LicenseClassName ?? string.Empty;
-            Fees = value.Fees;
+            FullName =
+                value.FullName
+                ?? string.Empty;
+
+            LicenseClassName =
+                value.LicenseClassName
+                ?? string.Empty;
+
+            Fees =
+                value.Fees;
         }
 
-        partial void OnTestResultChanged(TestResultType value)
+        partial void OnTestResultChanged(
+            TestResultType value)
         {
-            OnPropertyChanged(nameof(IsPassed));
-            OnPropertyChanged(nameof(IsFailed));
-            OnPropertyChanged(nameof(IsNotTaken));
+            OnPropertyChanged(
+                nameof(IsPassed));
+
+            OnPropertyChanged(
+                nameof(IsFailed));
+
+            OnPropertyChanged(
+                nameof(IsNotTaken));
         }
 
-        // =========================
-        // TOGGLES
-        // =========================
+        // =========================================================
+        // RESULT TOGGLES
+        // =========================================================
 
         public bool IsPassed
         {
-            get => TestResult == TestResultType.Pass;
-            set { if (value) TestResult = TestResultType.Pass; }
+            get =>
+                TestResult ==
+                TestResultType.Pass;
+
+            set
+            {
+                if (value)
+                {
+                    TestResult =
+                        TestResultType.Pass;
+                }
+            }
         }
 
         public bool IsFailed
         {
-            get => TestResult == TestResultType.Fail;
-            set { if (value) TestResult = TestResultType.Fail; }
+            get =>
+                TestResult ==
+                TestResultType.Fail;
+
+            set
+            {
+                if (value)
+                {
+                    TestResult =
+                        TestResultType.Fail;
+                }
+            }
         }
 
         public bool IsNotTaken
         {
-            get => TestResult == TestResultType.Fail;
-            set { if (value) TestResult = TestResultType.Fail; }
+            get =>
+                TestResult ==
+                TestResultType.NotTaken;
+
+            set
+            {
+                if (value)
+                {
+                    TestResult =
+                        TestResultType.NotTaken;
+                }
+            }
         }
 
-        // =========================
-        // COMMANDS
-        // =========================
+        // =========================================================
+        // CLOSE
+        // =========================================================
 
         [RelayCommand]
         private void Close()
@@ -107,87 +186,306 @@ namespace Presentation.ViewModels
                 .Close();
         }
 
+        // =========================================================
+        // SAVE TEST RESULT
+        // =========================================================
 
         [RelayCommand]
         private async Task SaveAsync()
         {
-            if (Schedule == null)
-                return;
-
-            var saveTestResultDto = new SaveTestResultDto
-            {
-                TestAppointmentID = Schedule.AppointmentID,
-                TestResult = TestResult == TestResultType.Pass,
-                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes,
-                CreatedByUserID = _currentUser.UserId
-            };
-
-
-            var saveResult = await _service.SaveTestResultAsync(saveTestResultDto);
-
-            if (saveResult.IsFailure)
+            if (Schedule is null)
             {
                 MessageBox.Show(
-                    saveResult.Error,
-                    "Warning",
+                    "Test appointment data is not available.",
+                    "Take Test",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
 
                 return;
             }
 
+            // -----------------------------------------------------
+            // USER VALIDATION
+            // -----------------------------------------------------
 
-            if (saveTestResultDto.TestResult)
+            if (!_currentUser.IsLoggedIn ||
+                _currentUser.UserId <= 0)
             {
-                var applicationIdResult = await _localService
-                    .GetApplicationIdByLocalIdAsync(
-                        Schedule.LocalDrivingLicenseApplicationID);
+                MessageBox.Show(
+                    "You must be logged in first.",
+                    "Take Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
-
-                if (applicationIdResult.IsSuccess)
-                {
-                    int applicationId = applicationIdResult.Value;
-
-                    bool passedAll = await _service
-                        .HasPassedAllTestsAsync(applicationId);
-
-
-                    if (passedAll)
-                    {
-                        await _applicationService
-                            .CompleteApplicationAsync(applicationId);
-                    }
-                }
+                return;
             }
 
+            // -----------------------------------------------------
+            // VALIDATE RESULT
+            // -----------------------------------------------------
 
-            MessageBox.Show(
-                "Result saved successfully!",
-                "Success",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            if (TestResult ==
+                TestResultType.NotTaken)
+            {
+                MessageBox.Show(
+                    "Please select Pass or Fail.",
+                    "Take Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
-            Close();
+                return;
+            }
+
+            // -----------------------------------------------------
+            // BUILD DTO
+            // -----------------------------------------------------
+
+            var saveTestResultDto =
+                new SaveTestResultDto
+                {
+                    TestAppointmentID =
+                        Schedule.AppointmentID,
+
+                    TestResult =
+                        TestResult ==
+                        TestResultType.Pass,
+
+                    Notes =
+                        string.IsNullOrWhiteSpace(Notes)
+                            ? null
+                            : Notes.Trim(),
+
+                    CreatedByUserID =
+                        _currentUser.UserId
+                };
+
+            try
+            {
+                // -------------------------------------------------
+                // SAVE RESULT
+                // -------------------------------------------------
+
+                var saveResult =
+                    await _service
+                        .SaveTestResultAsync(
+                            saveTestResultDto);
+
+                if (saveResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        saveResult.Error,
+                        "Take Test",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                // -------------------------------------------------
+                // IF FAILED
+                // -------------------------------------------------
+
+                if (!saveTestResultDto.TestResult)
+                {
+                    MessageBox.Show(
+                        "Test result saved successfully.\n\nResult: Failed.",
+                        "Take Test",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    Close();
+
+                    return;
+                }
+
+                // -------------------------------------------------
+                // IF PASSED
+                // -------------------------------------------------
+
+                var localAppId =
+                    Schedule
+                        .LocalDrivingLicenseApplicationID;
+
+                // -------------------------------------------------
+                // CHECK ALL TESTS
+                // -------------------------------------------------
+
+                var passedAllTests =
+                    await _testWorkflowService
+                        .HasPassedAllTestsAsync(
+                            localAppId);
+
+                if (passedAllTests)
+                {
+                    // ---------------------------------------------
+                    // GET APPLICATION ID
+                    // ---------------------------------------------
+
+                    var applicationIdResult =
+                        await _localService
+                            .GetApplicationIdByLocalIdAsync(
+                                localAppId);
+
+                    if (applicationIdResult.IsFailure)
+                    {
+                        MessageBox.Show(
+                            applicationIdResult.Error,
+                            "Test Result",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+
+                        return;
+                    }
+
+                    var applicationId =
+                        applicationIdResult.Value;
+
+                    // ---------------------------------------------
+                    // COMPLETE APPLICATION
+                    // ---------------------------------------------
+
+                    var completeResult =
+                        await _applicationService
+                            .CompleteApplicationAsync(
+                                applicationId);
+
+                    if (completeResult.IsFailure)
+                    {
+                        MessageBox.Show(
+                            completeResult.Error,
+                            "Test Result",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+
+                        return;
+                    }
+
+                    MessageBox.Show(
+                        "Test passed successfully.\n\n" +
+                        "All three tests have been passed.\n" +
+                        "The application is now completed.",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    Close();
+
+                    return;
+                }
+
+                // -------------------------------------------------
+                // PASSED BUT NOT ALL TESTS
+                // -------------------------------------------------
+
+                MessageBox.Show(
+                    "Test result saved successfully.\n\n" +
+                    "Result: Passed.",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                Close();
+            }
+            catch (Exception ex)
+            {
+                var errorMessage =
+                    ex.Message;
+
+                if (ex.InnerException is not null)
+                {
+                    errorMessage +=
+                        "\n\nInner Exception:\n" +
+                        ex.InnerException.Message;
+                }
+
+                MessageBox.Show(
+                    errorMessage,
+                    "Take Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
 
-        // =========================
+        // =========================================================
         // LOAD
-        // =========================
+        // =========================================================
 
-        public async Task LoadAsync(int appointmentId)
+        public async Task LoadAsync(
+            int appointmentId)
         {
-            var result = await _service.GetScheduleInfoAsync(appointmentId);
+            if (appointmentId <= 0)
+            {
+                MessageBox.Show(
+                    "Invalid test appointment ID.",
+                    "Take Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
-            if (result.IsFailure)
                 return;
+            }
 
-            var data = result.Value!;
+            try
+            {
+                var result =
+                    await _service
+                        .GetScheduleInfoAsync(
+                            appointmentId);
 
-            Schedule = data;
+                if (result.IsFailure)
+                {
+                    MessageBox.Show(
+                        result.Error,
+                        "Take Test",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
 
-            int trialCount = await _service.GetTrialCountAsync(data.LocalDrivingLicenseApplicationID,data.TestTypeID);
+                    return;
+                }
 
-            Schedule.Trial = trialCount;
+                var data =
+                    result.Value;
+
+                if (data is null)
+                {
+                    MessageBox.Show(
+                        "Test appointment data was not found.",
+                        "Take Test",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                Schedule =
+                    data;
+
+                var trialCount =
+                    await _service
+                        .GetTrialCountAsync(
+                            data.LocalDrivingLicenseApplicationID,
+                            data.TestTypeID);
+
+                Schedule.Trial =
+                    trialCount;
+            }
+            catch (Exception ex)
+            {
+                var errorMessage =
+                    ex.Message;
+
+                if (ex.InnerException is not null)
+                {
+                    errorMessage +=
+                        "\n\nInner Exception:\n" +
+                        ex.InnerException.Message;
+                }
+
+                MessageBox.Show(
+                    errorMessage,
+                    "Loading Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
     }
 }

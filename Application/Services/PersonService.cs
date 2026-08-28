@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+﻿
+using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using Application.Mappings;
@@ -10,93 +11,319 @@ public class PersonService : IPersonService
 {
     private readonly IPersonRepository _personRepository;
 
-    public PersonService(IPersonRepository personRepository)
+    public PersonService(
+        IPersonRepository personRepository)
     {
-        _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
+        _personRepository =
+            personRepository
+            ?? throw new ArgumentNullException(
+                nameof(personRepository));
     }
 
-    // Get All
-    public async Task<Result<List<PersonDto>>> GetAllPeopleAsync()
+    // =========================================================
+    // GET ALL
+    // =========================================================
+
+    public async Task<Result<List<PersonDto>>>
+        GetAllPeopleAsync()
     {
-        var people = await _personRepository.GetAllPersonsAsync();
-        return Result<List<PersonDto>>.Success(people.Select(PersonMapper.ToDto).ToList());
+        var people =
+            await _personRepository
+                .GetAllPersonsAsync();
+
+        var result =
+            people
+                .Select(PersonMapper.ToDto)
+                .ToList();
+
+        return Result<List<PersonDto>>
+            .Success(result);
     }
 
-    // Get By Id
-    public async Task<Result<PersonDto>> GetPersonByIdAsync(int id)
-    {
-        if (id <= 0) return Result<PersonDto>.FromValidationFailure("Invalid person ID.");
+    // =========================================================
+    // GET BY ID
+    // =========================================================
 
-        var person = await _personRepository.GetPersonByIdAsync(id);
-        return person is null
-            ? Result<PersonDto>.FromNotFound("Person not found.")
-            : Result<PersonDto>.Success(PersonMapper.ToDto(person));
+    public async Task<Result<PersonDto>>
+        GetPersonByIdAsync(int id)
+    {
+        if (id <= 0)
+        {
+            return Result<PersonDto>
+                .FromValidationFailure(
+                    "Invalid person ID.");
+        }
+
+        var person =
+            await _personRepository
+                .GetPersonByIdAsync(id);
+
+        if (person is null)
+        {
+            return Result<PersonDto>
+                .FromNotFound(
+                    "Person not found.");
+        }
+
+        return Result<PersonDto>
+            .Success(
+                PersonMapper.ToDto(person));
     }
 
-    // Get By National No
-    public async Task<Result<PersonDto>> GetPersonByNationalNoAsync(string nationalNo)
+    // =========================================================
+    // GET BY NATIONAL NUMBER
+    // =========================================================
+
+    public async Task<Result<PersonDto>>
+        GetPersonByNationalNoAsync(
+            string nationalNo)
     {
         if (string.IsNullOrWhiteSpace(nationalNo))
-            return Result<PersonDto>.FromValidationFailure("National number is required.");
+        {
+            return Result<PersonDto>
+                .FromValidationFailure(
+                    "National number is required.");
+        }
 
-        var person = await _personRepository.GetPersonByNationalNoAsync(nationalNo.Trim());
-        return person is null
-            ? Result<PersonDto>.FromNotFound("Person not found.")
-            : Result<PersonDto>.Success(PersonMapper.ToDto(person));
+        var normalizedNationalNo =
+            nationalNo.Trim();
+
+        if (normalizedNationalNo.Length != 10 ||
+            normalizedNationalNo.Any(
+                c => !char.IsDigit(c)))
+        {
+            return Result<PersonDto>
+                .FromValidationFailure(
+                    "National number must be exactly 10 digits.");
+        }
+
+        var person =
+            await _personRepository
+                .GetPersonByNationalNoAsync(
+                    normalizedNationalNo);
+
+        if (person is null)
+        {
+            return Result<PersonDto>
+                .FromNotFound(
+                    "Person not found.");
+        }
+
+        return Result<PersonDto>
+            .Success(
+                PersonMapper.ToDto(person));
     }
 
-    // Check Exists
-    public async Task<bool> IsPersonExistsAsync(int id) =>
-        id > 0 && await _personRepository.IsPersonExistsByIdAsync(id);
+    // =========================================================
+    // EXISTS
+    // =========================================================
 
-    // Create
-    public async Task<Result<int>> AddPersonAsync(PersonCreateUpdateDto dto)
+    public async Task<bool>
+        IsPersonExistsAsync(int id)
     {
-        if (dto is null) return Result<int>.FromValidationFailure("Person data is required.");
+        if (id <= 0)
+            return false;
 
-        var validation = PersonValidator.Validate(dto);
-        if (validation.IsFailure) return Result<int>.FromValidationFailure(validation.Error);
-
-        var person = PersonMapper.ToEntity(dto);
-
-        // التحقق من عدم تكرار الرقم الوطني
-        if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, 0))
-            return Result<int>.FromConflict("The national number is already registered.");
-
-        var personId = await _personRepository.AddPersonAsync(person);
-        return Result<int>.Success(personId);
+        return await _personRepository
+            .IsPersonExistsByIdAsync(id);
     }
 
-    // Update
-    public async Task<Result> UpdatePersonAsync(int id, PersonCreateUpdateDto dto)
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    public async Task<Result<int>>
+        AddPersonAsync(
+            PersonCreateDto personDto)
     {
-        if (id <= 0) return Result.ValidationFailure("Invalid person ID.");
-        if (dto is null) return Result.ValidationFailure("Person data is required.");
-        if (!await _personRepository.IsPersonExistsByIdAsync(id))
-            return Result.NotFound("Person not found.");
+        if (personDto is null)
+        {
+            return Result<int>
+                .FromValidationFailure(
+                    "Person data is required.");
+        }
 
-        var validation = PersonValidator.Validate(dto);
-        if (validation.IsFailure) return Result.ValidationFailure(validation.Error);
+        // -----------------------------------------------------
+        // 1. Validate input
+        // -----------------------------------------------------
 
-        var person = PersonMapper.ToEntity(dto);
-        person.PersonId = id; // التأكد من استخدام الـ ID من الرابط
+        var validation =
+            PersonValidator.Validate(personDto);
 
-        // التحقق من عدم تكرار الرقم الوطني مع استبعاد الشخص الحالي
-        if (await _personRepository.IsNationalNoDuplicatedAsync(person.NationalNo, id))
-            return Result.Conflict("The national number is already registered to another person.");
+        if (validation.IsFailure)
+        {
+            return Result<int>
+                .FromValidationFailure(
+                    validation.Error);
+        }
 
-        var success = await _personRepository.UpdatePersonAsync(person);
-        return success ? Result.Success() : Result.Failure("Failed to update person.");
+        // -----------------------------------------------------
+        // 2. Map DTO -> Entity
+        // -----------------------------------------------------
+
+        var person =
+            PersonMapper.ToEntity(personDto);
+
+        // -----------------------------------------------------
+        // 3. Check NationalNo uniqueness
+        // -----------------------------------------------------
+
+        var duplicated =
+            await _personRepository
+                .IsNationalNoDuplicatedAsync(
+                    person.NationalNo,
+                    0);
+
+        if (duplicated)
+        {
+            return Result<int>
+                .FromConflict(
+                    "The national number is already registered.");
+        }
+
+        // -----------------------------------------------------
+        // 4. Persist
+        // -----------------------------------------------------
+
+        try
+        {
+            var personId =
+                await _personRepository
+                    .AddPersonAsync(person);
+
+            return Result<int>
+                .Success(personId);
+        }
+        catch (Exception)
+        {
+            // We will later replace this with a more specific
+            // database exception handler for the unique index.
+            throw;
+        }
     }
 
-    // Delete
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    public async Task<Result>
+        UpdatePersonAsync(
+            int id,
+            PersonUpdateDto personDto)
+    {
+        // -----------------------------------------------------
+        // 1. Validate ID
+        // -----------------------------------------------------
+
+        if (id <= 0)
+        {
+            return Result.ValidationFailure(
+                "Invalid person ID.");
+        }
+
+        // -----------------------------------------------------
+        // 2. Validate DTO
+        // -----------------------------------------------------
+
+        if (personDto is null)
+        {
+            return Result.ValidationFailure(
+                "Person data is required.");
+        }
+
+        var validation =
+            PersonValidator.Validate(personDto);
+
+        if (validation.IsFailure)
+        {
+            return Result.ValidationFailure(
+                validation.Error);
+        }
+
+        // -----------------------------------------------------
+        // 3. Load existing tracked entity
+        // -----------------------------------------------------
+
+        var existingPerson =
+            await _personRepository
+                .GetPersonForUpdateAsync(id);
+
+        if (existingPerson is null)
+        {
+            return Result.NotFound(
+                "Person not found.");
+        }
+
+        // -----------------------------------------------------
+        // 4. Check NationalNo uniqueness
+        // -----------------------------------------------------
+
+        var normalizedNationalNo =
+            personDto.NationalNo.Trim();
+
+        var duplicated =
+            await _personRepository
+                .IsNationalNoDuplicatedAsync(
+                    normalizedNationalNo,
+                    id);
+
+        if (duplicated)
+        {
+            return Result.Conflict(
+                "The national number is already registered to another person.");
+        }
+
+        // -----------------------------------------------------
+        // 5. Apply DTO to existing entity
+        // -----------------------------------------------------
+
+        PersonMapper.ApplyUpdate(
+            personDto,
+            existingPerson);
+
+        // -----------------------------------------------------
+        // 6. Persist
+        // -----------------------------------------------------
+
+        var success =
+            await _personRepository
+                .UpdatePersonAsync(
+                    existingPerson);
+
+        return success
+            ? Result.Success()
+            : Result.Failure(
+                "Failed to update person.");
+    }
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
     public async Task<Result> DeletePersonAsync(int id)
     {
-        if (id <= 0) return Result.ValidationFailure("Invalid person ID.");
-        if (!await _personRepository.IsPersonExistsByIdAsync(id))
-            return Result.NotFound("Person not found.");
+        if (id <= 0)
+            return Result.ValidationFailure(
+                "Invalid person ID.");
 
-        var success = await _personRepository.DeletePersonAsync(id);
-        return success ? Result.Success() : Result.Failure("Failed to delete person.");
+        if (!await _personRepository.IsPersonExistsByIdAsync(id))
+            return Result.NotFound(
+                "Person not found.");
+
+        // Person cannot be deleted if he/she
+        // has any application.
+        if (await _personRepository.HasApplicationsAsync(id))
+        {
+            return Result.Conflict(
+                "Cannot delete this person because they have one or more applications.");
+        }
+
+        var success =
+            await _personRepository.DeletePersonAsync(id);
+
+        return success
+            ? Result.Success()
+            : Result.Failure(
+                "Failed to delete person.");
     }
 }

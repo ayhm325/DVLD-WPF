@@ -70,8 +70,7 @@ namespace DVLD_WPF
             services.AddSingleton<ICurrentUserService, CurrentUserService>();
             services.AddTransient<IDetainedLicenseService, DetainedLicenseService>();
             services.AddTransient<IDriverService, DriverService>();
-            services.AddTransient<ILicenseClassService, LicenseClassService>();
-            services.AddTransient<ILicenseService, LicenseService>();
+            services.AddTransient<ILicenseClassService, LicenseClassService>();           
             services.AddTransient<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
             services.AddTransient<IPersonService, PersonService>();
             services.AddTransient<ITestAppointmentService, TestAppointmentService>();
@@ -79,6 +78,13 @@ namespace DVLD_WPF
             services.AddTransient<ITestTypeService, TestTypeService>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IInternationalService, InternationalService>();
+            // =========================================================
+            services.AddTransient<ILicenseService, LicenseService>();
+            services.AddScoped<ILicenseRenewalService,LicenseRenewalService>();
+            services.AddScoped<ILicenseIssuanceService, LicenseIssuanceService>();
+            services.AddScoped<ILicenseReplacementService,LicenseReplacementService>();
+            //=========================================================
+            services.AddScoped<ITestWorkflowService, TestWorkflowService>();
 
 
             // 4. ViewModels

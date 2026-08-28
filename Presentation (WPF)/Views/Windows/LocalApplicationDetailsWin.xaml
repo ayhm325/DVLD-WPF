@@ -97,12 +97,13 @@
 
                     <!-- البطاقة الأولى: تفاصيل رخصة القيادة -->
                     <controls:DrivingLicenseApplicationInfo 
-                        x:Name="DrivingLicenseApplicationInfoControl"
-                        DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
-                        PassedTests="{Binding LdlAppInfo.PassedTest}"
-                        TotalTests="3"
-                        LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"
-                        Margin="0,0,0,15"/>
+    x:Name="DrivingLicenseApplicationInfoControl"
+    DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
+    LicenseId="{Binding LicenseInfo.LicenseID}"
+    PassedTests="{Binding LdlAppInfo.PassedTest}"
+    TotalTests="3"
+    LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"
+    Margin="0,0,0,15"/>
 
                     <!-- البطاقة الثانية: المعلومات الأساسية -->
                     <controls:ApplicationBasicInfo 

@@ -1,35 +1,40 @@
 ﻿using Domain.Enums;
 
+namespace Application.DTOs.ApplicationDTO;
 
-namespace Application.DTOs.ApplicationDTO
+public class ApplicationBasicInfoDto
 {
-    public class ApplicationBasicInfoDto
-    {
-        public int ApplicantPersonID { get; set; }
+    public int ApplicantPersonID { get; set; }
 
-        public int ApplicationID { get; set; }                        
+    public int ApplicationID { get; set; }
 
-        public AppStatus ApplicationStatus { get; set; }
-        public string StatusText => ApplicationStatus switch
+    public AppStatus ApplicationStatus { get; set; }
+
+    public string StatusText =>
+        ApplicationStatus switch
         {
-            AppStatus.New => "New",
-            AppStatus.Cancelled => "Cancelled",
-            AppStatus.Completed => "Completed",
-            _ => "Unknown"
+            AppStatus.New =>
+                "New",
+
+            AppStatus.Cancelled =>
+                "Cancelled",
+
+            AppStatus.Completed =>
+                "Completed",
+
+            _ =>
+                "Unknown"
         };
 
-        public decimal PaidFees { get; set; }
+    public decimal PaidFees { get; set; }
 
-        public string? ApplicationTypeName { get; set; }
+    public string? ApplicationTypeName { get; set; }
 
-        public string? ApplicantFullName { get; set; }
+    public string? ApplicantFullName { get; set; }
 
-        public DateTime ApplicationDate { get; set; }
+    public DateTime ApplicationDate { get; set; }
 
-        public DateTime LastStatusDate { get; set; }                
+    public DateTime LastStatusDate { get; set; }
 
-        public string? CreatedByUserName { get; set; }
-
-       
-    }
+    public string? CreatedByUserName { get; set; }
 }

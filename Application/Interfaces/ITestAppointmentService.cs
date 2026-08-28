@@ -1,5 +1,4 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
 using Application.DTOs.TestAppointmentDTO;
 using Domain.Enums;
 
@@ -52,10 +51,11 @@ public interface ITestAppointmentService
     // CHECKS
     // =========================================================
 
-    Task<bool>
-        HasConflictAsync(
-            int testTypeId,
-            DateTime dateTime);
+    Task<bool> HasConflictAsync(
+     int localAppId,
+     int testTypeId,
+     DateTime dateTime,
+     int? excludeAppointmentId = null);
 
     Task<bool>
         HasUserConflictAsync(
@@ -66,10 +66,6 @@ public interface ITestAppointmentService
         HasApplicationConflictAsync(
             int applicationId,
             DateTime dateTime);
-
-    Task<bool>
-        HasPassedAllTestsAsync(
-            int appId);
 
     Task<bool>
         IsAppointmentAlreadyScheduledAsync(

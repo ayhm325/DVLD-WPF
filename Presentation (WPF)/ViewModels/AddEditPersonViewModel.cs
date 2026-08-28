@@ -1,4 +1,5 @@
-﻿using Application.DTOs.PersonDTO;
+﻿
+using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -68,7 +69,8 @@ namespace Presentation.ViewModels
 
 
         [ObservableProperty]
-        private string _pageTitle = "Add Person";
+        private string _pageTitle =
+            "Add Person";
 
 
         [ObservableProperty]
@@ -76,7 +78,8 @@ namespace Presentation.ViewModels
 
 
         [ObservableProperty]
-        private string _imagePath = string.Empty;
+        private string _imagePath =
+            string.Empty;
 
 
         // =========================================================
@@ -84,35 +87,43 @@ namespace Presentation.ViewModels
         // =========================================================
 
         [ObservableProperty]
-        private string _firstName = string.Empty;
+        private string _firstName =
+            string.Empty;
 
 
         [ObservableProperty]
-        private string _secondName = string.Empty;
+        private string _secondName =
+            string.Empty;
 
 
         [ObservableProperty]
-        private string _thirdName = string.Empty;
+        private string _thirdName =
+            string.Empty;
 
 
         [ObservableProperty]
-        private string _lastName = string.Empty;
+        private string _lastName =
+            string.Empty;
 
 
         [ObservableProperty]
-        private string _nationalNo = string.Empty;
+        private string _nationalNo =
+            string.Empty;
 
 
         [ObservableProperty]
-        private string _phone = string.Empty;
+        private string _phone =
+            string.Empty;
 
 
         [ObservableProperty]
-        private string _email = string.Empty;
+        private string _email =
+            string.Empty;
 
 
         [ObservableProperty]
-        private string _address = string.Empty;
+        private string _address =
+            string.Empty;
 
 
         [ObservableProperty]
@@ -260,7 +271,6 @@ namespace Presentation.ViewModels
                     await _countryService
                         .GetAllCountriesAsync();
 
-
                 if (countriesResult.IsFailure)
                 {
                     MessageBox.Show(
@@ -272,9 +282,7 @@ namespace Presentation.ViewModels
                     return;
                 }
 
-
                 Countries.Clear();
-
 
                 foreach (var country
                     in countriesResult.Value!)
@@ -295,7 +303,6 @@ namespace Presentation.ViewModels
                             .GetPersonByIdAsync(
                                 personId.Value);
 
-
                     if (personResult.IsFailure)
                     {
                         MessageBox.Show(
@@ -307,7 +314,6 @@ namespace Presentation.ViewModels
                         return;
                     }
 
-
                     Mode =
                         OperationMode.Edit;
 
@@ -316,7 +322,6 @@ namespace Presentation.ViewModels
 
                     PageTitle =
                         "Edit Person";
-
 
                     LoadData(
                         personResult.Value!);
@@ -332,25 +337,46 @@ namespace Presentation.ViewModels
                 Mode =
                     OperationMode.Add;
 
+                PersonId = 0;
+
                 PageTitle =
                     "Add Person";
 
 
                 SelectedCountry =
                     Countries.FirstOrDefault(
-                        c => c.CountryName == "Jordan")
+                        c =>
+                            c.CountryName == "Jordan")
                     ?? Countries.FirstOrDefault();
 
 
+                // -------------------------------------------------
                 // Default values
-                FirstName = string.Empty;
-                SecondName = string.Empty;
-                ThirdName = string.Empty;
-                LastName = string.Empty;
-                NationalNo = string.Empty;
-                Phone = string.Empty;
-                Email = string.Empty;
-                Address = string.Empty;
+                // -------------------------------------------------
+
+                FirstName =
+                    string.Empty;
+
+                SecondName =
+                    string.Empty;
+
+                ThirdName =
+                    string.Empty;
+
+                LastName =
+                    string.Empty;
+
+                NationalNo =
+                    string.Empty;
+
+                Phone =
+                    string.Empty;
+
+                Email =
+                    string.Empty;
+
+                Address =
+                    string.Empty;
 
                 DateOfBirth =
                     DateTime.Today.AddYears(-18);
@@ -358,7 +384,8 @@ namespace Presentation.ViewModels
                 IsMale = true;
                 IsFemale = false;
 
-                ImagePath = string.Empty;
+                ImagePath =
+                    string.Empty;
             }
             catch (Exception ex)
             {
@@ -386,42 +413,24 @@ namespace Presentation.ViewModels
             // NAME
             // -----------------------------------------------------
 
-            var nameParts =
-                person.FullName?
-                    .Split(
-                        ' ',
-                        StringSplitOptions.RemoveEmptyEntries)
-                ?? Array.Empty<string>();
-
+            // IMPORTANT:
+            // Do NOT split FullName.
+            //
+            // The database stores the four names separately.
+            // PersonDto now exposes them separately as well.
 
             FirstName =
-                nameParts.ElementAtOrDefault(0)
-                ?? string.Empty;
-
+                person.FirstName;
 
             SecondName =
-                nameParts.ElementAtOrDefault(1)
+                person.SecondName;
+
+            ThirdName =
+                person.ThirdName
                 ?? string.Empty;
 
-
-            if (nameParts.Length == 3)
-            {
-                ThirdName =
-                    string.Empty;
-
-                LastName =
-                    nameParts[2];
-            }
-            else
-            {
-                ThirdName =
-                    nameParts.ElementAtOrDefault(2)
-                    ?? string.Empty;
-
-                LastName =
-                    nameParts.ElementAtOrDefault(3)
-                    ?? string.Empty;
-            }
+            LastName =
+                person.LastName;
 
 
             // -----------------------------------------------------
@@ -429,24 +438,17 @@ namespace Presentation.ViewModels
             // -----------------------------------------------------
 
             NationalNo =
-                person.NationalNo
-                ?? string.Empty;
-
+                person.NationalNo;
 
             Phone =
-                person.Phone
-                ?? string.Empty;
-
+                person.Phone;
 
             Email =
                 person.Email
                 ?? string.Empty;
 
-
             Address =
-                person.Address
-                ?? string.Empty;
-
+                person.Address;
 
             DateOfBirth =
                 person.DateOfBirth;
@@ -459,7 +461,6 @@ namespace Presentation.ViewModels
             IsMale =
                 person.Gender == Gender.Male;
 
-
             IsFemale =
                 person.Gender == Gender.Female;
 
@@ -470,8 +471,9 @@ namespace Presentation.ViewModels
 
             SelectedCountry =
                 Countries.FirstOrDefault(
-                    c => c.CountryId ==
-                         person.NationalityCountryID)
+                    c =>
+                        c.CountryId ==
+                        person.NationalityCountryID)
                 ?? Countries.FirstOrDefault();
 
 
@@ -505,7 +507,7 @@ namespace Presentation.ViewModels
             try
             {
                 // -------------------------------------------------
-                // Basic UI checks
+                // BASIC UI CHECKS
                 // -------------------------------------------------
 
                 if (string.IsNullOrWhiteSpace(FirstName))
@@ -516,7 +518,6 @@ namespace Presentation.ViewModels
                     return;
                 }
 
-
                 if (string.IsNullOrWhiteSpace(SecondName))
                 {
                     ShowValidationMessage(
@@ -524,7 +525,6 @@ namespace Presentation.ViewModels
 
                     return;
                 }
-
 
                 if (string.IsNullOrWhiteSpace(LastName))
                 {
@@ -534,7 +534,6 @@ namespace Presentation.ViewModels
                     return;
                 }
 
-
                 if (string.IsNullOrWhiteSpace(NationalNo))
                 {
                     ShowValidationMessage(
@@ -543,7 +542,6 @@ namespace Presentation.ViewModels
                     return;
                 }
 
-
                 if (string.IsNullOrWhiteSpace(Phone))
                 {
                     ShowValidationMessage(
@@ -551,16 +549,6 @@ namespace Presentation.ViewModels
 
                     return;
                 }
-
-
-                if (string.IsNullOrWhiteSpace(Address))
-                {
-                    ShowValidationMessage(
-                        "Address is required.");
-
-                    return;
-                }
-
 
                 if (SelectedCountry is null)
                 {
@@ -572,15 +560,111 @@ namespace Presentation.ViewModels
 
 
                 // -------------------------------------------------
-                // DTO
+                // GENDER
                 // -------------------------------------------------
 
-                var dto =
-                    new PersonCreateUpdateDto
-                    {
-                        PersonId =
-                            PersonId,
+                var gender =
+                    IsMale
+                        ? Gender.Male
+                        : Gender.Female;
 
+
+                // =================================================
+                // EDIT
+                // =================================================
+
+                if (Mode == OperationMode.Edit)
+                {
+                    var updateDto =
+                        new PersonUpdateDto
+                        {
+                            FirstName =
+                                FirstName.Trim(),
+
+                            SecondName =
+                                SecondName.Trim(),
+
+                            ThirdName =
+                                string.IsNullOrWhiteSpace(
+                                    ThirdName)
+                                    ? null
+                                    : ThirdName.Trim(),
+
+                            LastName =
+                                LastName.Trim(),
+
+                            NationalNo =
+                                NationalNo.Trim(),
+
+                            Phone =
+                                Phone.Trim(),
+
+                            Email =
+                                string.IsNullOrWhiteSpace(
+                                    Email)
+                                    ? null
+                                    : Email.Trim(),
+
+                            Address =
+                                Address.Trim(),
+
+                            DateOfBirth =
+                                DateOfBirth,
+
+                            Gender =
+                                gender,
+
+                            NationalityCountryID =
+                                SelectedCountry.CountryId,
+
+                            ImagePath =
+                                string.IsNullOrWhiteSpace(
+                                    ImagePath)
+                                    ? null
+                                    : ImagePath.Trim()
+                        };
+
+
+                    var updateResult =
+                        await _personService
+                            .UpdatePersonAsync(
+                                PersonId,
+                                updateDto);
+
+
+                    if (updateResult.IsFailure)
+                    {
+                        MessageBox.Show(
+                            updateResult.Error,
+                            "Validation Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+
+                        SaveCompleted?.Invoke(false);
+
+                        return;
+                    }
+
+
+                    MessageBox.Show(
+                        "Person data has been updated successfully.",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    SaveCompleted?.Invoke(true);
+
+                    return;
+                }
+
+
+                // =================================================
+                // ADD
+                // =================================================
+
+                var createDto =
+                    new PersonCreateDto
+                    {
                         FirstName =
                             FirstName.Trim(),
 
@@ -615,9 +699,7 @@ namespace Presentation.ViewModels
                             DateOfBirth,
 
                         Gender =
-                            IsMale
-                                ? Gender.Male
-                                : Gender.Female,
+                            gender,
 
                         NationalityCountryID =
                             SelectedCountry.CountryId,
@@ -626,57 +708,14 @@ namespace Presentation.ViewModels
                             string.IsNullOrWhiteSpace(
                                 ImagePath)
                                 ? null
-                                : ImagePath
+                                : ImagePath.Trim()
                     };
 
 
-                // -------------------------------------------------
-                // EDIT
-                // -------------------------------------------------
-
-                if (Mode == OperationMode.Edit)
-                {
-                    var updateResult =
-                        await _personService
-                            .UpdatePersonAsync(
-                                PersonId,
-                                dto);
-
-
-                    if (updateResult.IsFailure)
-                    {
-                        MessageBox.Show(
-                            updateResult.Error,
-                            "Validation Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
-
-                        SaveCompleted?.Invoke(false);
-
-                        return;
-                    }
-
-
-                    MessageBox.Show(
-                        "Person data has been updated successfully.",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-
-
-                    SaveCompleted?.Invoke(true);
-
-                    return;
-                }
-
-
-                // -------------------------------------------------
-                // ADD
-                // -------------------------------------------------
-
                 var addResult =
                     await _personService
-                        .AddPersonAsync(dto);
+                        .AddPersonAsync(
+                            createDto);
 
 
                 if (addResult.IsFailure)
@@ -698,7 +737,6 @@ namespace Presentation.ViewModels
                     "Success",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
-
 
                 SaveCompleted?.Invoke(true);
             }
@@ -729,17 +767,11 @@ namespace Presentation.ViewModels
                         "Image Files (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp"
                 };
 
-
             if (dialog.ShowDialog() != true)
                 return;
 
-
             try
             {
-                // -------------------------------------------------
-                // Create destination folder
-                // -------------------------------------------------
-
                 if (!Directory.Exists(
                     _destinationFolder))
                 {
@@ -747,35 +779,22 @@ namespace Presentation.ViewModels
                         _destinationFolder);
                 }
 
-
-                // -------------------------------------------------
-                // Generate unique file name
-                // -------------------------------------------------
-
                 var extension =
                     Path.GetExtension(
                         dialog.FileName);
-
 
                 var targetPath =
                     Path.Combine(
                         _destinationFolder,
                         $"{Guid.NewGuid()}{extension}");
 
-
-                // -------------------------------------------------
-                // Copy image
-                // -------------------------------------------------
-
                 File.Copy(
                     dialog.FileName,
                     targetPath,
                     true);
 
-
                 ImagePath =
                     targetPath;
-
 
                 OnPropertyChanged(
                     nameof(ImageDisplayPath));
@@ -800,7 +819,6 @@ namespace Presentation.ViewModels
         {
             ImagePath =
                 string.Empty;
-
 
             OnPropertyChanged(
                 nameof(ImageDisplayPath));

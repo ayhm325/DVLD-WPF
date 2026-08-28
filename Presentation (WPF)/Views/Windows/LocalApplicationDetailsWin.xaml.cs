@@ -30,9 +30,16 @@ namespace Presentation.Views.Windows
             window.ShowDialog();
         }
 
-        private void OnOpenLicenseRequested(int applicationId)
+        private void OnOpenLicenseRequested(int licenseId)
         {
-            var window = new DriverLicenseInfoWin(applicationId);
+            if (licenseId <= 0)
+                return;
+
+            var window = new DriverLicenseInfoWin(licenseId)
+            {
+                Owner = this
+            };
+
             window.ShowDialog();
         }
 

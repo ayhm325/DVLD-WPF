@@ -82,8 +82,7 @@ namespace Presentation.ViewModels
 
             int personId = SelectedDriver.PersonID;
 
-            var vm = _serviceProvider
-                .GetRequiredService<LicenseHistoryViewModel>();
+            var vm = _serviceProvider.GetRequiredService<LicenseHistoryViewModel>();
 
             await vm.LoadAsync(personId);
 
@@ -101,8 +100,7 @@ namespace Presentation.ViewModels
             if (SelectedDriver == null)
                 return;
 
-            var window = new PersonDetailsWindow(
-                SelectedDriver.PersonID)
+            var window = new PersonDetailsWindow(SelectedDriver.PersonID)
             {
                 Owner = System.Windows.Application.Current.MainWindow
             };

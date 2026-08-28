@@ -1,4 +1,5 @@
-﻿using Application.DTOs.ApplicationDTO;
+﻿
+using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
@@ -16,182 +17,556 @@ namespace Presentation.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ITestAppointmentService _testAppointmentService;
+        private readonly ITestWorkflowService _testWorkflowService;
         private readonly ILocalDrivingLicenseApplicationService _localDrivingLicenseApplicationService;
         private readonly IApplicationService _applicationService;
 
+        private int _localApplicationId;
+
         public TestAppointmentViewModel(
             ITestAppointmentService testAppointmentService,
+            ITestWorkflowService testWorkflowService,
             ILocalDrivingLicenseApplicationService localDrivingLicenseApplicationService,
             IApplicationService applicationService,
             IServiceProvider serviceProvider)
         {
-            _testAppointmentService = testAppointmentService ?? throw new ArgumentNullException(nameof(testAppointmentService));
-            _localDrivingLicenseApplicationService = localDrivingLicenseApplicationService ?? throw new ArgumentNullException(nameof(localDrivingLicenseApplicationService));
-            _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _testAppointmentService =
+                testAppointmentService
+                ?? throw new ArgumentNullException(nameof(testAppointmentService));
+
+            _testWorkflowService =
+                testWorkflowService
+                ?? throw new ArgumentNullException(nameof(testWorkflowService));
+
+            _localDrivingLicenseApplicationService =
+                localDrivingLicenseApplicationService
+                ?? throw new ArgumentNullException(nameof(localDrivingLicenseApplicationService));
+
+            _applicationService =
+                applicationService
+                ?? throw new ArgumentNullException(nameof(applicationService));
+
+            _serviceProvider =
+                serviceProvider
+                ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
-        // Properties
-        [ObservableProperty]
-        private TestTypeEnum _testType;
+        // =========================================================
+        // STATE
+        // =========================================================
 
         [ObservableProperty]
-        private LocalDrivingLicenseApplicationListDto? _ldlAppInfo;
+        private TestTypeEnum testType;
 
         [ObservableProperty]
-        private ApplicationBasicInfoDto? _applicationInfo;
-
-        public ObservableCollection<TestAppointmentDto> AppointmentsList { get; } = [];
+        private LocalDrivingLicenseApplicationListDto? ldlAppInfo;
 
         [ObservableProperty]
-        private TestAppointmentDto? _selectedAppointment;
+        private ApplicationBasicInfoDto? applicationInfo;
 
         [ObservableProperty]
-        private bool _canAddAppointment;
+        private TestAppointmentDto? selectedAppointment;
 
-        // UI Text
-        public string PageTitle => TestType switch
+        [ObservableProperty]
+        private bool canAddAppointment;
+
+        [ObservableProperty]
+        private bool canTakeTest;
+
+        [ObservableProperty]
+        private bool canEditAppointment;
+
+        [ObservableProperty]
+        private bool isWorkflowAllowed;
+
+        [ObservableProperty]
+        private string workflowMessage = string.Empty;
+
+        public ObservableCollection<TestAppointmentDto> AppointmentsList { get; }
+            = new();
+
+        // =========================================================
+        // UI TEXT
+        // =========================================================
+
+        public string PageTitle =>
+            TestType switch
+            {
+                TestTypeEnum.Theory =>
+                    "Theory Test Appointments",
+
+                TestTypeEnum.Written =>
+                    "Written Test Appointments",
+
+                TestTypeEnum.Practical =>
+                    "Practical Test Appointments",
+
+                _ =>
+                    "Test Appointments"
+            };
+
+        public string PageDescription =>
+            TestType switch
+            {
+                TestTypeEnum.Theory =>
+                    "Manage theory test appointments for this application.",
+
+                TestTypeEnum.Written =>
+                    "Manage written test appointments for this application.",
+
+                TestTypeEnum.Practical =>
+                    "Manage practical test appointments for this application.",
+
+                _ =>
+                    "Manage test appointments for this application."
+            };
+
+        // =========================================================
+        // LOAD
+        // =========================================================
+
+        public async Task LoadAsync(
+            int localApplicationId,
+            TestTypeEnum type)
         {
-            TestTypeEnum.Theory => "Vision Test Appointments",
-            TestTypeEnum.Written => "Written Test Appointments",
-            TestTypeEnum.Practical => "Practical Test Appointments",
-            _ => "Test Appointments"
-        };
+            try
+            {
+                _localApplicationId = localApplicationId;
 
-        public string PageDescription => TestType switch
-        {
-            TestTypeEnum.Theory => "Manage vision test appointments for this application.",
-            TestTypeEnum.Written => "Manage written test appointments for this application.",
-            TestTypeEnum.Practical => "Manage practical test appointments for this application.",
-            _ => "Manage test appointments for this application."
-        };
+                TestType = type;
 
-        // Load
-        public async Task LoadAsync(int localApplicationId, TestTypeEnum type)
-        {
-            TestType = type;
-            OnPropertyChanged(nameof(PageTitle));
-            OnPropertyChanged(nameof(PageDescription));
+                OnPropertyChanged(nameof(PageTitle));
+                OnPropertyChanged(nameof(PageDescription));
 
-            // Validate
-            if (localApplicationId <= 0)
+                ResetState();
+
+                // -------------------------------------------------
+                // Validate ID
+                // -------------------------------------------------
+
+                if (localApplicationId <= 0)
+                {
+                    WorkflowMessage =
+                        "Invalid local driving license application ID.";
+
+                    MessageBox.Show(
+                        WorkflowMessage,
+                        "Invalid Data",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                // -------------------------------------------------
+                // Load Local Driving License Application
+                // -------------------------------------------------
+
+                var ldlResult =
+                    await _localDrivingLicenseApplicationService
+                        .GetLocalDrivingLicenseApplicationByIdAsync(
+                            localApplicationId);
+
+                if (ldlResult.IsFailure)
+                {
+                    WorkflowMessage = ldlResult.Error;
+
+                    MessageBox.Show(
+                        ldlResult.Error,
+                        "Application Not Found",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                LdlAppInfo = ldlResult.Value;
+
+                // -------------------------------------------------
+                // Get Application ID
+                // -------------------------------------------------
+
+                var applicationIdResult =
+                    await _localDrivingLicenseApplicationService
+                        .GetApplicationIdByLocalIdAsync(
+                            localApplicationId);
+
+                if (applicationIdResult.IsFailure)
+                {
+                    WorkflowMessage =
+                        applicationIdResult.Error;
+
+                    MessageBox.Show(
+                        applicationIdResult.Error,
+                        "Application Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                int applicationId =
+                    applicationIdResult.Value;
+
+                // -------------------------------------------------
+                // Load Basic Application Info
+                // -------------------------------------------------
+
+                var applicationResult =
+                    await _applicationService
+                        .GetBasicInfoAsync(applicationId);
+
+                if (applicationResult.IsSuccess)
+                {
+                    ApplicationInfo =
+                        applicationResult.Value;
+                }
+
+                // -------------------------------------------------
+                // CHECK WORKFLOW
+                //
+                // Theory -> Written -> Practical
+                // -------------------------------------------------
+
+                var workflowResult =
+                    await _testWorkflowService
+                        .CanScheduleTestAsync(
+                            localApplicationId,
+                            TestType);
+
+                if (workflowResult.IsFailure)
+                {
+                    IsWorkflowAllowed = false;
+
+                    WorkflowMessage =
+                        workflowResult.Error;
+
+                    await LoadAppointmentsAsync();
+
+                    RefreshCommands();
+
+                    return;
+                }
+
+                IsWorkflowAllowed = true;
+                WorkflowMessage = string.Empty;
+
+                // -------------------------------------------------
+                // Load Appointments
+                // -------------------------------------------------
+
+                await LoadAppointmentsAsync();
+
+                // -------------------------------------------------
+                // Determine whether new appointment can be added
+                // -------------------------------------------------
+
+                await RefreshAppointmentStateAsync();
+
+                RefreshCommands();
+            }
+            catch (Exception ex)
             {
                 ResetState();
-                MessageBox.Show("Invalid local driving license application ID.", "Invalid Data", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+
+                MessageBox.Show(
+                    ex.Message,
+                    "Loading Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
+        }
 
-            // Load LDL App
-            var ldlResult = await _localDrivingLicenseApplicationService.GetLocalDrivingLicenseApplicationByIdAsync(localApplicationId);
-            if (ldlResult.IsFailure)
-            {
-                ResetState();
-                MessageBox.Show(ldlResult.Error, "Application Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            LdlAppInfo = ldlResult.Value;
+        // =========================================================
+        // LOAD APPOINTMENTS
+        // =========================================================
 
-            // Get Application ID
-            var applicationIdResult = await _localDrivingLicenseApplicationService.GetApplicationIdByLocalIdAsync(localApplicationId);
-            if (applicationIdResult.IsFailure)
-            {
-                ApplicationInfo = null;
-                AppointmentsList.Clear();
-                CanAddAppointment = false;
-                AddAppointmentCommand.NotifyCanExecuteChanged();
-                MessageBox.Show(applicationIdResult.Error, "Application Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // Load basic app info
-            var applicationResult = await _applicationService.GetBasicInfoAsync(applicationIdResult.Value);
-            ApplicationInfo = applicationResult.IsSuccess ? applicationResult.Value : null;
-
-            // Load appointments
-            var appointmentsResult = await _testAppointmentService.GetByApplicationIdAsync(localApplicationId);
+        private async Task LoadAppointmentsAsync()
+        {
             AppointmentsList.Clear();
-            if (appointmentsResult.IsFailure)
+
+            var result =
+                await _testAppointmentService
+                    .GetByApplicationIdAsync(
+                        _localApplicationId);
+
+            if (result.IsFailure)
             {
-                CanAddAppointment = false;
-                AddAppointmentCommand.NotifyCanExecuteChanged();
-                MessageBox.Show(appointmentsResult.Error, "Appointments Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    result.Error,
+                    "Appointments Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
-            var filteredAppointments = appointmentsResult.Value?.Where(x => x.TestTypeID == (int)TestType).ToList() ?? [];
-            foreach (var appointment in filteredAppointments)
-                AppointmentsList.Add(appointment);
+            var appointments =
+                result.Value?
+                    .Where(x =>
+                        x.TestTypeID ==
+                        (int)TestType)
+                    .OrderByDescending(x =>
+                        x.AppointmentDate)
+                    .ToList()
+                ?? new List<TestAppointmentDto>();
 
-            // Check if can add new appointment
-            CanAddAppointment = !await _testAppointmentService.IsAppointmentAlreadyScheduledAsync(localApplicationId, (int)TestType);
-            AddAppointmentCommand.NotifyCanExecuteChanged();
-            EditAppointmentCommand.NotifyCanExecuteChanged();
-            TakeTestCommand.NotifyCanExecuteChanged();
+            foreach (var appointment in appointments)
+            {
+                AppointmentsList.Add(appointment);
+            }
         }
+
+        // =========================================================
+        // REFRESH STATE
+        // =========================================================
+
+        private async Task RefreshAppointmentStateAsync()
+        {
+            CanAddAppointment = false;
+
+            if (!IsWorkflowAllowed)
+                return;
+
+            var alreadyScheduled =
+                await _testAppointmentService
+                    .IsAppointmentAlreadyScheduledAsync(
+                        _localApplicationId,
+                        (int)TestType);
+
+            CanAddAppointment =
+                !alreadyScheduled;
+        }
+
+        // =========================================================
+        // RESET
+        // =========================================================
 
         private void ResetState()
         {
             LdlAppInfo = null;
             ApplicationInfo = null;
+            SelectedAppointment = null;
+
             AppointmentsList.Clear();
+
             CanAddAppointment = false;
-            AddAppointmentCommand.NotifyCanExecuteChanged();
+            CanTakeTest = false;
+            CanEditAppointment = false;
+
+            IsWorkflowAllowed = false;
+
+            WorkflowMessage = string.Empty;
+
+            RefreshCommands();
         }
 
-        // Add
+        // =========================================================
+        // ADD APPOINTMENT
+        // =========================================================
+
         [RelayCommand(CanExecute = nameof(CanAddAppointment))]
-        private async Task AddAppointment()
+        private async Task AddAppointmentAsync()
         {
-            if (LdlAppInfo is null) return;
+            if (LdlAppInfo is null)
+                return;
 
-            var vm = _serviceProvider.GetRequiredService<ScheduleTestViewModel>();
-            await vm.LoadAsync(LdlAppInfo.LocalDrivingLicenseApplicationID, TestType);
+            // Safety check.
+            // The workflow service is the final authority.
+            var workflowResult =
+                await _testWorkflowService
+                    .CanScheduleTestAsync(
+                        LdlAppInfo.LocalDrivingLicenseApplicationID,
+                        TestType);
 
-            var window = new ScheduleTestWin(vm) { Owner = System.Windows.Application.Current.MainWindow };
+            if (workflowResult.IsFailure)
+            {
+                MessageBox.Show(
+                    workflowResult.Error,
+                    "Cannot Schedule Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            var vm =
+                _serviceProvider
+                    .GetRequiredService<ScheduleTestViewModel>();
+
+            await vm.LoadAsync(
+                LdlAppInfo.LocalDrivingLicenseApplicationID,
+                TestType);
+
+            var window =
+                new ScheduleTestWin(vm)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
+
             window.ShowDialog();
 
-            await LoadAsync(LdlAppInfo.LocalDrivingLicenseApplicationID, TestType);
+            await LoadAsync(
+                LdlAppInfo.LocalDrivingLicenseApplicationID,
+                TestType);
         }
 
-        // Edit
-        private bool CanEditAppointment() => SelectedAppointment is not null && !SelectedAppointment.IsLocked;
+        // =========================================================
+        // EDIT APPOINTMENT
+        // =========================================================
 
         [RelayCommand(CanExecute = nameof(CanEditAppointment))]
-        private async Task EditAppointment()
+        private async Task EditAppointmentAsync()
         {
-            if (SelectedAppointment is null || LdlAppInfo is null) return;
+            if (SelectedAppointment is null ||
+                LdlAppInfo is null)
+            {
+                return;
+            }
 
-            var vm = _serviceProvider.GetRequiredService<ScheduleTestViewModel>();
-            await vm.LoadForEditAsync(SelectedAppointment.TestAppointmentID);
+            if (SelectedAppointment.IsLocked)
+            {
+                MessageBox.Show(
+                    "This appointment is locked and cannot be modified.",
+                    "Edit Appointment",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
-            var window = new ScheduleTestWin(vm) { Owner = System.Windows.Application.Current.MainWindow };
+                return;
+            }
+
+            var vm =
+                _serviceProvider
+                    .GetRequiredService<ScheduleTestViewModel>();
+
+            await vm.LoadForEditAsync(
+                SelectedAppointment.TestAppointmentID);
+
+            var window =
+                new ScheduleTestWin(vm)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
+
             window.ShowDialog();
 
-            await LoadAsync(LdlAppInfo.LocalDrivingLicenseApplicationID, TestType);
+            await LoadAsync(
+                LdlAppInfo.LocalDrivingLicenseApplicationID,
+                TestType);
         }
 
-        // Take Test
-        private bool CanTakeTest() => SelectedAppointment is not null && !SelectedAppointment.IsLocked;
+        // =========================================================
+        // TAKE TEST
+        // =========================================================
 
         [RelayCommand(CanExecute = nameof(CanTakeTest))]
-        private async Task TakeTest()
+        private async Task TakeTestAsync()
         {
-            if (SelectedAppointment is null || LdlAppInfo is null) return;
+            if (SelectedAppointment is null ||
+                LdlAppInfo is null)
+            {
+                return;
+            }
 
-            var vm = _serviceProvider.GetRequiredService<TakeTestViewModel>();
-            await vm.LoadAsync(SelectedAppointment.TestAppointmentID);
+            if (SelectedAppointment.IsLocked)
+            {
+                MessageBox.Show(
+                    "This appointment is already locked.",
+                    "Take Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
-            var window = new TakeTestWin(vm) { Owner = System.Windows.Application.Current.MainWindow };
+                return;
+            }
+
+            // Workflow validation before taking the test.
+            var workflowResult =
+                await _testWorkflowService
+                    .CanTakeTestAsync(SelectedAppointment.TestAppointmentID);
+
+            if (workflowResult.IsFailure)
+            {
+                MessageBox.Show(
+                    workflowResult.Error,
+                    "Cannot Take Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            var vm =
+                _serviceProvider
+                    .GetRequiredService<TakeTestViewModel>();
+
+            await vm.LoadAsync(
+                SelectedAppointment.TestAppointmentID);
+
+            var window =
+                new TakeTestWin(vm)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
+
             window.ShowDialog();
 
-            await LoadAsync(LdlAppInfo.LocalDrivingLicenseApplicationID, TestType);
+            await LoadAsync(
+                LdlAppInfo.LocalDrivingLicenseApplicationID,
+                TestType);
         }
 
-        // Partial Methods
-        partial void OnSelectedAppointmentChanged(TestAppointmentDto? value)
+        // =========================================================
+        // SELECTED APPOINTMENT CHANGED
+        // =========================================================
+
+        partial void OnSelectedAppointmentChanged(
+            TestAppointmentDto? value)
         {
-            EditAppointmentCommand.NotifyCanExecuteChanged();
-            TakeTestCommand.NotifyCanExecuteChanged();
+            UpdateSelectedAppointmentState();
+        }
+
+        // =========================================================
+        // SELECTED APPOINTMENT STATE
+        // =========================================================
+
+        private void UpdateSelectedAppointmentState()
+        {
+            if (SelectedAppointment is null)
+            {
+                CanEditAppointment = false;
+                CanTakeTest = false;
+
+                RefreshCommands();
+
+                return;
+            }
+
+            CanEditAppointment =
+                !SelectedAppointment.IsLocked;
+
+            CanTakeTest =
+                !SelectedAppointment.IsLocked;
+
+            RefreshCommands();
+        }
+
+        // =========================================================
+        // COMMAND REFRESH
+        // =========================================================
+
+        private void RefreshCommands()
+        {
+            AddAppointmentCommand
+                .NotifyCanExecuteChanged();
+
+            EditAppointmentCommand
+                .NotifyCanExecuteChanged();
+
+            TakeTestCommand
+                .NotifyCanExecuteChanged();
         }
     }
 }

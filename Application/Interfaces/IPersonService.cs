@@ -1,49 +1,50 @@
-﻿using Application.Common.Results;
+﻿
+using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IPersonService
 {
-    public interface IPersonService
-    {
-        // =========================
-        // GET
-        // =========================
+    // =========================
+    // GET
+    // =========================
 
-        Task<Result<List<PersonDto>>> GetAllPeopleAsync();
+    Task<Result<List<PersonDto>>> GetAllPeopleAsync();
 
-        Task<Result<PersonDto>> GetPersonByIdAsync(
-            int id);
+    Task<Result<PersonDto>> GetPersonByIdAsync(
+        int id);
 
-        Task<Result<PersonDto>> GetPersonByNationalNoAsync(
-            string nationalNo);
+    Task<Result<PersonDto>> GetPersonByNationalNoAsync(
+        string nationalNo);
 
-        // =========================
-        // CREATE
-        // =========================
+    // =========================
+    // CREATE
+    // =========================
 
-        Task<Result<int>> AddPersonAsync(
-            PersonCreateUpdateDto personDto);
+    Task<Result<int>> AddPersonAsync(
+        PersonCreateDto personDto);
 
-        // =========================
-        // UPDATE
-        // =========================
+    // =========================
+    // UPDATE
+    // =========================
 
-        Task<Result> UpdatePersonAsync(
-            int id,
-            PersonCreateUpdateDto personDto);
+    Task<Result> UpdatePersonAsync(
+        int id,
+        PersonUpdateDto personDto);
 
-        // =========================
-        // DELETE
-        // =========================
+    // =========================
+    // DELETE
+    // =========================
 
-        Task<Result> DeletePersonAsync(
-            int id);
+    Task<Result> DeletePersonAsync(
+        int id);
 
-        // =========================
-        // CHECKS
-        // =========================
+    // =========================
+    // CHECKS
+    // =========================
 
-        Task<bool> IsPersonExistsAsync(
-            int id);
-    }
+    Task<bool> IsPersonExistsAsync(
+        int id);
 }
+

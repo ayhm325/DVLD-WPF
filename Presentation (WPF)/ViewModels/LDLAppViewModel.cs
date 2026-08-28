@@ -1,4 +1,5 @@
-﻿using Application.DTOs.LocalDrivingLicenseApplicationDTO;
+﻿using Application.DTOs.LicenseDTO;
+using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -138,10 +139,23 @@ namespace Presentation.ViewModels
         [RelayCommand]
         private async Task ShowDetails()
         {
-            if (SelectedApplication == null) return;
-            var vm = _serviceProvider.GetRequiredService<LocalApplicationDetailsViewModel>();
-            await vm.LoadAsync(SelectedApplication.LocalDrivingLicenseApplicationID);
-            var window = new LocalApplicationDetailsWin(vm) { Owner = System.Windows.Application.Current.MainWindow };
+            if (SelectedApplication == null)
+                return;
+
+            var vm =
+                _serviceProvider
+                    .GetRequiredService<LocalApplicationDetailsViewModel>();
+
+            await vm.LoadAsync(
+                SelectedApplication.LocalDrivingLicenseApplicationID);
+
+            var window =
+                new LocalApplicationDetailsWin(vm)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
+
             window.ShowDialog();
         }
 
@@ -239,39 +253,122 @@ namespace Presentation.ViewModels
             RefreshCommands();
         }
 
-        // Show License
-        private bool CanShowLicense() => SelectedApplication != null && SelectedApplication.HasLicense;
+        // =========================================================
+        // SHOW LICENSE
+        // =========================================================
+
+        private bool CanShowLicense() =>
+            SelectedApplication != null &&
+            SelectedApplication.HasLicense;
 
         [RelayCommand(CanExecute = nameof(CanShowLicense))]
         private async Task ShowLicense()
         {
-            if (SelectedApplication == null) return;
-
-            var applicationIdResult = await _service.GetApplicationIdByLocalIdAsync(SelectedApplication.LocalDrivingLicenseApplicationID);
-            if (applicationIdResult.IsFailure)
-            {
-                MessageBox.Show(applicationIdResult.Error);
+            if (SelectedApplication is null)
                 return;
-            }
 
-            int applicationId = applicationIdResult.Value;
-            var result = await _licenseService.GetByApplicationIdAsync(applicationId);
-            if (result.IsFailure)
+            try
             {
-                MessageBox.Show(result.Error);
-                return;
-            }
+                // =====================================================
+                // SELECTED LOCAL APPLICATION
+                // =====================================================
 
-            var licenses = result.Value;
-            if (licenses is null || licenses.Count == 0)
+                int localApplicationId =
+                    SelectedApplication.LocalDrivingLicenseApplicationID;
+
+                int licenseClassId =
+                    SelectedApplication.LicenseClassID;
+
+                // =====================================================
+                // GET APPLICATION ID
+                // =====================================================
+
+                var applicationIdResult =
+                    await _service
+                        .GetApplicationIdByLocalIdAsync(
+                            localApplicationId);
+
+                if (applicationIdResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        applicationIdResult.Error,
+                        "License",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                int applicationId =
+                    applicationIdResult.Value;
+
+                // =====================================================
+                // GET LICENSES FOR THIS APPLICATION
+                // =====================================================
+
+                var licensesResult =
+                    await _licenseService
+                        .GetByApplicationIdAsync(
+                            applicationId);
+
+                if (licensesResult.IsFailure)
+                {
+                    MessageBox.Show(
+                        licensesResult.Error,
+                        "License",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                var licenses =
+                    licensesResult.Value
+                    ?? new List<LicenseDto>();
+
+                // =====================================================
+                // FIND LICENSE FOR SELECTED CLASS
+                // =====================================================
+
+                var license =
+                    licenses.FirstOrDefault(x =>
+                        x.LicenseClassID == licenseClassId);
+
+                if (license is null)
+                {
+                    MessageBox.Show(
+                        $"License for class " +
+                        $"{SelectedApplication.LicenseClassName} " +
+                        "was not found.",
+                        "License",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                // =====================================================
+                // SEND LICENSE ID TO LICENSE WINDOW
+                // =====================================================
+
+                var window =
+                    new DriverLicenseInfoWin(
+                        license.LicenseID)
+                    {
+                        Owner =
+                            System.Windows.Application.Current.MainWindow
+                    };
+
+                window.ShowDialog();
+            }
+            catch (Exception ex)
             {
-                MessageBox.Show("License not found");
-                return;
+                MessageBox.Show(
+                    ex.Message,
+                    "License Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
-            var license = licenses[0];
-
-            var window = new DriverLicenseInfoWin(license.LicenseID);
-            window.ShowDialog();
         }
 
         // License History

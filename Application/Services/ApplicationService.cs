@@ -1,22 +1,27 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.Interfaces;
+using Application.Mappers;
 using Application.Validators;
-using Domain.Entities;
 using Domain.Enums;
 
 namespace Application.Services;
 
-public class ApplicationService : IApplicationService
+public class ApplicationService
+    : IApplicationService
 {
     private readonly IApplicationRepository _repository;
+
 
     public ApplicationService(
         IApplicationRepository repository)
     {
-        _repository = repository
-            ?? throw new ArgumentNullException(nameof(repository));
+        _repository =
+            repository
+            ?? throw new ArgumentNullException(
+                nameof(repository));
     }
+
 
     // =========================================================
     // GET ALL
@@ -25,12 +30,14 @@ public class ApplicationService : IApplicationService
     public async Task<Result<List<ApplicationDto>>>
         GetAllApplicationsAsync()
     {
-        var apps = await _repository
-            .GetAllApplicationsAsync();
+        var entities =
+            await _repository
+                .GetAllApplicationsAsync();
 
-        var dtos = apps
-            .Select(MapToDto)
-            .ToList();
+        var dtos =
+            entities
+                .Select(ApplicationMapper.ToDto)
+                .ToList();
 
         return Result<List<ApplicationDto>>
             .Success(dtos);
@@ -45,57 +52,31 @@ public class ApplicationService : IApplicationService
         GetBasicInfoAsync(int id)
     {
         var validation =
-            ApplicationValidator.ValidateId(id);
+            ApplicationValidator
+                .ValidateId(id);
 
         if (validation.IsFailure)
         {
             return Result<ApplicationBasicInfoDto>
-                .FromFailure(validation.Error);
+                .FromValidationFailure(
+                    validation.Error);
         }
 
-        var app = await _repository
-            .GetApplicationByIdAsync(id);
+        var entity =
+            await _repository
+                .GetApplicationByIdAsync(id);
 
-        if (app is null)
+        if (entity is null)
         {
             return Result<ApplicationBasicInfoDto>
-                .FromFailure(
+                .FromNotFound(
                     "Application not found.");
         }
 
-        var dto = new ApplicationBasicInfoDto
-        {
-            ApplicationID = app.ApplicationID,
-
-            ApplicantPersonID =
-                app.ApplicantPersonID,
-
-            ApplicationStatus =
-                (AppStatus)app.ApplicationStatus,
-
-            PaidFees =
-                app.PaidFees,
-
-            ApplicationTypeName =
-                app.ApplicationType?.ApplicationTypeTitle,
-
-            ApplicantFullName =
-                app.Person is not null
-                    ? $"{app.Person.FirstName} {app.Person.LastName}"
-                    : null,
-
-            ApplicationDate =
-                app.ApplicationDate,
-
-            LastStatusDate =
-                app.LastStatusDate,
-
-            CreatedByUserName =
-                app.CreatedByUser?.UserName
-        };
-
         return Result<ApplicationBasicInfoDto>
-            .Success(dto);
+            .Success(
+                ApplicationMapper
+                    .ToBasicInfoDto(entity));
     }
 
 
@@ -107,26 +88,31 @@ public class ApplicationService : IApplicationService
         GetApplicationByIdAsync(int id)
     {
         var validation =
-            ApplicationValidator.ValidateId(id);
+            ApplicationValidator
+                .ValidateId(id);
 
         if (validation.IsFailure)
         {
             return Result<ApplicationDto>
-                .FromFailure(validation.Error);
+                .FromValidationFailure(
+                    validation.Error);
         }
 
-        var app = await _repository
-            .GetApplicationByIdAsync(id);
+        var entity =
+            await _repository
+                .GetApplicationByIdAsync(id);
 
-        if (app is null)
+        if (entity is null)
         {
             return Result<ApplicationDto>
-                .FromFailure(
+                .FromNotFound(
                     "Application not found.");
         }
 
         return Result<ApplicationDto>
-            .Success(MapToDto(app));
+            .Success(
+                ApplicationMapper
+                    .ToDto(entity));
     }
 
 
@@ -139,45 +125,35 @@ public class ApplicationService : IApplicationService
             CreateApplicationDto dto)
     {
         var validation =
-            ApplicationValidator.ValidateCreate(dto);
+            ApplicationValidator
+                .ValidateCreate(dto);
 
         if (validation.IsFailure)
         {
             return Result<int>
-                .FromFailure(validation.Error);
+                .FromValidationFailure(
+                    validation.Error);
         }
 
-        var entity = new ApplicationD
-        {
-            ApplicantPersonID =
-                dto.ApplicantPersonID,
 
-            ApplicationDate =
-                dto.ApplicationDate,
+        var entity =
+            ApplicationMapper
+                .ToEntity(dto);
 
-            ApplicationTypeID =
-                dto.ApplicationTypeID,
 
-            ApplicationStatus =
-                (byte)dto.ApplicationStatus,
+        var id =
+            await _repository
+                .AddNewApplicationAsync(
+                    entity);
 
-            LastStatusDate =
-                dto.LastStatusDate,
-
-            PaidFees =
-                dto.PaidFees,
-
-            CreatedByUserID =
-                dto.CreatedByUserID
-        };
-
-        var id = await _repository
-            .AddNewApplicationAsync(entity);
 
         if (id <= 0)
         {
-            return Result<int>.FromFailure("Failed to create application.");
+            return Result<int>
+                .FromFailure(
+                    "Failed to create application.");
         }
+
 
         return Result<int>
             .Success(id);
@@ -193,27 +169,60 @@ public class ApplicationService : IApplicationService
             UpdateApplicationDto dto)
     {
         var validation =
-            ApplicationValidator.ValidateUpdate(dto);
+            ApplicationValidator
+                .ValidateUpdate(dto);
 
         if (validation.IsFailure)
         {
             return Result
-                .Failure(validation.Error);
+                .ValidationFailure(
+                    validation.Error);
         }
 
-        var entity = await _repository
-            .GetApplicationByIdAsync(
-                dto.ApplicationID);
+
+        var entity =
+            await _repository
+                .GetApplicationByIdAsync(
+                    dto.ApplicationID);
 
         if (entity is null)
         {
             return Result
-                .Failure(
+                .NotFound(
                     "Application not found.");
         }
 
+
+        // =====================================================
+        // BUSINESS RULES
+        // =====================================================
+
+        if (entity.ApplicationStatus ==
+            AppStatus.Completed)
+        {
+            return Result
+                .Conflict(
+                    "Completed applications cannot be modified.");
+        }
+
+
+        if (entity.ApplicationStatus ==
+            AppStatus.Cancelled &&
+            dto.ApplicationStatus !=
+            AppStatus.Cancelled)
+        {
+            return Result
+                .Conflict(
+                    "Cancelled applications cannot be reactivated.");
+        }
+
+
+        // =====================================================
+        // UPDATE
+        // =====================================================
+
         entity.ApplicationStatus =
-            (byte)dto.ApplicationStatus;
+            dto.ApplicationStatus;
 
         entity.PaidFees =
             dto.PaidFees;
@@ -233,8 +242,12 @@ public class ApplicationService : IApplicationService
         entity.CreatedByUserID =
             dto.CreatedByUserID;
 
-        var updated = await _repository
-            .UpdateApplicationAsync(entity);
+
+        var updated =
+            await _repository
+                .UpdateApplicationAsync(
+                    entity);
+
 
         return updated
             ? Result.Success()
@@ -251,30 +264,50 @@ public class ApplicationService : IApplicationService
         DeleteApplicationAsync(int id)
     {
         var validation =
-            ApplicationValidator.ValidateId(id);
+            ApplicationValidator
+                .ValidateId(id);
 
         if (validation.IsFailure)
-            return validation;
-
-        var app = await _repository
-            .GetApplicationByIdAsync(id);
-
-        if (app is null)
         {
-            return Result.Failure(
-                "Application not found.");
+            return Result
+                .ValidationFailure(
+                    validation.Error);
         }
 
-        if (app.ApplicationStatus ==
-            (int)AppStatus.Completed)
+
+        var entity =
+            await _repository
+                .GetApplicationByIdAsync(id);
+
+        if (entity is null)
         {
-            return Result.Failure(
-                "Cannot delete completed application.");
+            return Result
+                .NotFound(
+                    "Application not found.");
         }
+
+
+        // =====================================================
+        // BUSINESS RULE
+        // =====================================================
+
+        if (entity.ApplicationStatus ==
+            AppStatus.Completed)
+        {
+            return Result
+                .Conflict(
+                    "Cannot delete completed application.");
+        }
+
+
+        // =====================================================
+        // DELETE
+        // =====================================================
 
         var deleted =
             await _repository
                 .DeleteApplicationAsync(id);
+
 
         return deleted
             ? Result.Success()
@@ -314,44 +347,68 @@ public class ApplicationService : IApplicationService
             int applicationId)
     {
         var validation =
-            ApplicationValidator.ValidateId(
-                applicationId);
+            ApplicationValidator
+                .ValidateId(applicationId);
 
         if (validation.IsFailure)
-            return validation;
-
-        var app = await _repository
-            .GetApplicationByIdAsync(applicationId);
-
-        if (app is null)
         {
-            return Result.Failure(
-                "Application not found.");
+            return Result
+                .ValidationFailure(
+                    validation.Error);
         }
 
-        if (app.ApplicationStatus ==
-            (int)AppStatus.Completed)
+
+        var entity =
+            await _repository
+                .GetApplicationByIdAsync(
+                    applicationId);
+
+        if (entity is null)
         {
-            return Result.Failure(
-                "Cannot cancel completed application.");
+            return Result
+                .NotFound(
+                    "Application not found.");
         }
 
-        if (app.ApplicationStatus ==
-            (int)AppStatus.Cancelled)
+
+        // =====================================================
+        // BUSINESS RULE
+        // =====================================================
+
+        if (entity.ApplicationStatus ==
+            AppStatus.Completed)
         {
-            return Result.Failure(
-                "Application already cancelled.");
+            return Result
+                .Conflict(
+                    "Cannot cancel completed application.");
         }
 
-        app.ApplicationStatus =
-            (byte)AppStatus.Cancelled;
 
-        app.LastStatusDate =
+        if (entity.ApplicationStatus ==
+            AppStatus.Cancelled)
+        {
+            return Result
+                .Conflict(
+                    "Application already cancelled.");
+        }
+
+
+        // =====================================================
+        // CANCEL
+        // =====================================================
+
+        entity.ApplicationStatus =
+            AppStatus.Cancelled;
+
+        entity.LastStatusDate =
             DateTime.UtcNow;
+
 
         var updated =
             await _repository
-                .UpdateApplicationAsync(app);
+                .UpdateApplicationAsync(
+                    entity);
+
 
         return updated
             ? Result.Success()
@@ -369,89 +426,72 @@ public class ApplicationService : IApplicationService
             int applicationId)
     {
         var validation =
-            ApplicationValidator.ValidateId(
-                applicationId);
+            ApplicationValidator
+                .ValidateId(applicationId);
 
         if (validation.IsFailure)
-            return validation;
-
-        var app = await _repository
-            .GetApplicationByIdAsync(
-                applicationId);
-
-        if (app is null)
         {
-            return Result.Failure(
-                "Application not found.");
+            return Result
+                .ValidationFailure(
+                    validation.Error);
         }
 
-        if (app.ApplicationStatus ==
-            (int)AppStatus.Completed)
+
+        var entity =
+            await _repository
+                .GetApplicationByIdAsync(
+                    applicationId);
+
+        if (entity is null)
         {
-            return Result.Failure(
-                "Application already completed.");
+            return Result
+                .NotFound(
+                    "Application not found.");
         }
 
-        if (app.ApplicationStatus ==
-            (int)AppStatus.Cancelled)
+
+        // =====================================================
+        // BUSINESS RULES
+        // =====================================================
+
+        if (entity.ApplicationStatus ==
+            AppStatus.Completed)
         {
-            return Result.Failure(
-                "Cannot complete cancelled application.");
+            return Result
+                .Conflict(
+                    "Application already completed.");
         }
 
-        app.ApplicationStatus =
-            (byte)AppStatus.Completed;
 
-        app.LastStatusDate =
+        if (entity.ApplicationStatus ==
+            AppStatus.Cancelled)
+        {
+            return Result
+                .Conflict(
+                    "Cannot complete cancelled application.");
+        }
+
+
+        // =====================================================
+        // COMPLETE
+        // =====================================================
+
+        entity.ApplicationStatus =
+            AppStatus.Completed;
+
+        entity.LastStatusDate =
             DateTime.UtcNow;
+
 
         var updated =
             await _repository
-                .UpdateApplicationAsync(app);
+                .UpdateApplicationAsync(
+                    entity);
+
 
         return updated
             ? Result.Success()
             : Result.Failure(
                 "Complete application failed.");
-    }
-
-
-    // =========================================================
-    // MAPPING
-    // =========================================================
-
-    private static ApplicationDto MapToDto(
-        ApplicationD entity)
-    {
-        return new ApplicationDto
-        {
-            ApplicationID =
-                entity.ApplicationID,
-
-            ApplicantPersonID =
-                entity.ApplicantPersonID,
-
-            ApplicationDate =
-                entity.ApplicationDate,
-
-            ApplicationTypeID =
-                entity.ApplicationTypeID,
-
-            ApplicationStatus =
-                (AppStatus)entity.ApplicationStatus,
-
-            LastStatusDate =
-                entity.LastStatusDate,
-
-            PaidFees =
-                entity.PaidFees,
-
-            CreatedByUserID =
-                entity.CreatedByUserID,
-
-            CreatedByUserName =
-                entity.CreatedByUser?.UserName
-                ?? string.Empty
-        };
     }
 }

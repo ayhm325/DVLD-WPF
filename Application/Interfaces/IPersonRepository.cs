@@ -1,50 +1,59 @@
-﻿using Domain.Entities;
+﻿
+using Domain.Entities;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IPersonRepository
 {
-    public interface IPersonRepository
-    {
-        // =========================
-        // GET
-        // =========================
+    // =========================
+    // GET
+    // =========================
 
-        Task<Person?> GetPersonByIdAsync(int id);
+    Task<Person?> GetPersonByIdAsync(int id);
 
-        Task<Person?> GetPersonByNationalNoAsync(
-            string nationalNo);
+    Task<Person?> GetPersonByNationalNoAsync(
+        string nationalNo);
 
-        Task<List<Person>> GetAllPersonsAsync();
+    Task<List<Person>> GetAllPersonsAsync();
 
-        // =========================
-        // CHECKS
-        // =========================
+    // =========================
+    // GET FOR UPDATE
+    // =========================
 
-        Task<bool> IsPersonExistsByIdAsync(
-            int id);
+    Task<Person?> GetPersonForUpdateAsync(
+        int id);
 
-        Task<bool> IsNationalNoDuplicatedAsync(
-            string nationalNo,
-            int personId);
+    // =========================
+    // CHECKS
+    // =========================
 
-        // =========================
-        // CREATE
-        // =========================
+    Task<bool> IsPersonExistsByIdAsync(
+        int id);
 
-        Task<int> AddPersonAsync(
-            Person person);
+    Task<bool> IsNationalNoDuplicatedAsync(
+        string nationalNo,
+        int personId);
 
-        // =========================
-        // UPDATE
-        // =========================
+    Task<bool> HasApplicationsAsync(int personId);
 
-        Task<bool> UpdatePersonAsync(
-            Person person);
+    // =========================
+    // CREATE
+    // =========================
 
-        // =========================
-        // DELETE
-        // =========================
+    Task<int> AddPersonAsync(
+        Person person);
 
-        Task<bool> DeletePersonAsync(
-            int id);
-    }
+    // =========================
+    // UPDATE
+    // =========================
+
+    Task<bool> UpdatePersonAsync(
+        Person person);
+
+    // =========================
+    // DELETE
+    // =========================
+
+    Task<bool> DeletePersonAsync(
+        int id);
 }

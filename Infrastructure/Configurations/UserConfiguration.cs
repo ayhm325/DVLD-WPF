@@ -2,48 +2,62 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Infrastructure.Configurations
+namespace Infrastructure.Configurations;
+
+public class UserConfiguration
+    : IEntityTypeConfiguration<User>
 {
-    public class UserConfiguration
-        : IEntityTypeConfiguration<User>
+    public void Configure(
+        EntityTypeBuilder<User> builder)
     {
-        public void Configure(EntityTypeBuilder<User> builder)
-        {
-            // =========================
-            // PRIMARY KEY
-            // =========================
+        // =========================================================
+        // PRIMARY KEY
+        // =========================================================
 
-            builder.HasKey(u => u.UserId);
+        builder.HasKey(u => u.UserId);
 
-            // =========================
-            // USERNAME
-            // =========================
 
-            builder.Property(u => u.UserName)
-                .HasMaxLength(50)
-                .IsRequired();
+        // =========================================================
+        // USERNAME
+        // =========================================================
 
-            builder.HasIndex(u => u.UserName)
-                .IsUnique();
+        builder.Property(u => u.UserName)
+            .HasMaxLength(50)
+            .IsRequired();
 
-            // =========================
-            // PASSWORD
-            // =========================
+        builder.HasIndex(u => u.UserName)
+            .IsUnique();
 
-            // BCrypt hash is stored here.
-            // The plain-text password is never stored.
-            builder.Property(u => u.Password)
-                .HasMaxLength(200)
-                .IsRequired();
 
-            // =========================
-            // PERSON RELATIONSHIP
-            // =========================
+        // =========================================================
+        // PASSWORD
+        // =========================================================
 
-            builder.HasOne(u => u.Person)
-                .WithOne()
-                .HasForeignKey<User>(u => u.PersonId)
-                .OnDelete(DeleteBehavior.Restrict);
-        }
+        // BCrypt hash
+        // Never store plain-text passwords.
+
+        builder.Property(u => u.Password)
+            .HasMaxLength(200)
+            .IsRequired();
+
+
+        // =========================================================
+        // ACTIVE
+        // =========================================================
+
+        builder.Property(u => u.IsActive)
+            .IsRequired();
+
+
+        // =========================================================
+        // PERSON
+        // One Person -> One User
+        // =========================================================
+
+        builder.HasOne(u => u.Person)
+            .WithOne()
+            .HasForeignKey<User>(
+                u => u.PersonId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

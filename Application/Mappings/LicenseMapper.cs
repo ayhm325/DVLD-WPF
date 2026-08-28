@@ -1,0 +1,95 @@
+﻿using Application.DTOs;
+using Application.DTOs.DriverDTO;
+using Application.DTOs.LicenseDTO;
+using Domain.Entities;
+using Domain.Enums;
+
+namespace Application.Mappers;
+
+public static class LicenseMapper
+{
+    // ENTITY -> DTO
+    public static LicenseDto ToDto(License license)
+    {
+        return new LicenseDto
+        {
+            LicenseID = license.LicenseID,
+            ApplicationID = license.ApplicationID,
+            ApplicationInfo = license.Application is not null
+                ? $"App #{license.ApplicationID}"
+                : null,
+
+            DriverID = license.DriverID,
+            DriverName = license.Driver?.Person?.FullName,
+
+            Driver = license.Driver is null
+                ? null
+                : new DriverDto
+                {
+                    DriverID = license.Driver.DriverID,
+                    PersonID = license.Driver.PersonID,
+                    FullName = license.Driver.Person?.FullName ?? string.Empty,
+                    NationalNo = license.Driver.Person?.NationalNo ?? string.Empty,
+                    DateOfBirth = license.Driver.Person?.DateOfBirth ?? DateTime.MinValue,
+                    Gender = license.Driver.Person?.Gender ?? Gender.Male,
+                    ImagePath = license.Driver.Person?.ImagePath,
+                    ActiveLicenses = license.Driver.Licenses?.Count(l => l.IsActive) ?? 0,
+                    CreatedByUserID = license.Driver.CreatedByUserID,
+                    CreatedByUserName = license.Driver.CreatedByUser?.UserName ?? string.Empty,
+                    CreatedDate = license.Driver.CreatedDate
+                },
+
+            LicenseClassID = license.LicenseClass,
+            LicenseClassName = license.LicenseClassInfo?.ClassName,
+            IssueDate = license.IssueDate,
+            ExpirationDate = license.ExpirationDate,
+            Notes = license.Notes,
+            PaidFees = license.PaidFees,
+            IsActive = license.IsActive,
+            IssueReason = license.IssueReason,
+            IssueReasonText = ((IssueReason)license.IssueReason).ToString(),
+            CreatedByUserID = license.CreatedByUserID,
+            CreatedByUserName = license.CreatedByUser?.UserName ?? "Unknown"
+        };
+    }
+
+    // CREATE DTO -> ENTITY
+    public static License ToEntity(CreateLicenseDto dto)
+    {
+        return new License
+        {
+            ApplicationID = dto.ApplicationID,
+            DriverID = dto.DriverID,
+            LicenseClass = dto.LicenseClassID,
+            IssueDate = dto.IssueDate,
+            ExpirationDate = dto.ExpirationDate,
+            Notes = string.IsNullOrWhiteSpace(dto.Notes)
+                ? null
+                : dto.Notes.Trim(),
+            PaidFees = dto.PaidFees,
+            IsActive = dto.IsActive,
+            IssueReason = dto.IssueReason,
+            CreatedByUserID = dto.CreatedByUserID
+        };
+    }
+
+    // UPDATE DTO -> ENTITY
+    public static License ToEntity(UpdateLicenseDto dto)
+    {
+        return new License
+        {
+            LicenseID = dto.LicenseID,
+            ApplicationID = dto.ApplicationID,
+            DriverID = dto.DriverID,
+            LicenseClass = dto.LicenseClassID,
+            IssueDate = dto.IssueDate,
+            ExpirationDate = dto.ExpirationDate,
+            Notes = string.IsNullOrWhiteSpace(dto.Notes)
+                ? null
+                : dto.Notes.Trim(),
+            PaidFees = dto.PaidFees,
+            IsActive = dto.IsActive,
+            IssueReason = dto.IssueReason
+        };
+    }
+}

@@ -1,25 +1,21 @@
-﻿namespace Domain.Entities
+﻿
+namespace Domain.Entities;
+
+public class User
 {
-    public class User
-    {
-        public int UserId { get; set; }
+    public int UserId { get; set; }
 
+    public int PersonId { get; set; }
 
-        public int PersonId { get; set; }
+    public string UserName { get; set; } = string.Empty;
 
+    public string Password { get; set; } = string.Empty;
 
-        public string UserName { get; set; } = null!;
+    public bool IsActive { get; set; }
 
+    // =========================================================
+    // NAVIGATION
+    // =========================================================
 
-        public string Password { get; set; } = null!;
-
-
-        public bool IsActive { get; set; }
-
-
-
-        // Navigation Property
-
-        public virtual Person Person { get; set; } = null!;
-    }
+    public virtual Person Person { get; set; } = null!;
 }

@@ -1,11 +1,10 @@
-﻿using Domain.Enums;
+﻿
+using Domain.Enums;
 
 namespace Application.DTOs.PersonDTO;
 
-public class PersonDto
+public class PersonUpdateDto
 {
-    public int PersonId { get; set; }
-
     public string NationalNo { get; set; } = null!;
 
     public string FirstName { get; set; } = null!;
@@ -15,8 +14,6 @@ public class PersonDto
     public string? ThirdName { get; set; }
 
     public string LastName { get; set; } = null!;
-
-    public string FullName { get; set; } = null!;
 
     public DateTime DateOfBirth { get; set; }
 
@@ -29,8 +26,6 @@ public class PersonDto
     public string? Email { get; set; }
 
     public int NationalityCountryID { get; set; }
-
-    public string? CountryName { get; set; }
 
     public string? ImagePath { get; set; }
 }

@@ -1,48 +1,71 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IApplicationRepository
 {
-    public interface IApplicationRepository
-    {
-        Task<ApplicationD?> GetApplicationByIdAsync(int id);
+    // =========================================================
+    // GET
+    // =========================================================
 
-        Task<List<ApplicationD>> GetAllApplicationsAsync();
+    Task<ApplicationD?> GetApplicationByIdAsync(
+        int id);
 
-        Task<List<ApplicationD>> GetApplicationsByPersonIdAsync(int personId);
+    Task<List<ApplicationD>> GetAllApplicationsAsync();
 
-        Task<List<ApplicationD>> GetApplicationsByApplicationTypeIdAsync(int applicationTypeId);
+    Task<List<ApplicationD>> GetApplicationsByPersonIdAsync(
+        int personId);
 
-        Task<List<ApplicationD>> GetApplicationsByUserIdAsync(int userId);
+    Task<List<ApplicationD>> GetApplicationsByApplicationTypeIdAsync(
+        int applicationTypeId);
 
-        Task<List<ApplicationD>> GetApplicationsByStatusAsync(int status);
+    Task<List<ApplicationD>> GetApplicationsByUserIdAsync(
+        int userId);
 
-
-        Task<bool> IsApplicationExistsByIdAsync(int id);
-
-        Task<bool> IsPersonHasActiveApplicationAsync(int personId);
-
-        Task<bool> IsPersonHasActiveApplicationOfTypeAsync(
-            int personId,
-            int applicationTypeId);
+    Task<List<ApplicationD>> GetApplicationsByStatusAsync(
+        AppStatus status);
 
 
-        Task<int?> HasDuplicateApplicationAsync(
-            int personId,
-            int licenseClassId);
+    // =========================================================
+    // CHECKS
+    // =========================================================
+
+    Task<bool> IsApplicationExistsByIdAsync(
+        int id);
+
+    Task<bool> IsPersonHasActiveApplicationAsync(
+        int personId);
+
+    Task<bool> IsPersonHasActiveApplicationOfTypeAsync(
+        int personId,
+        int applicationTypeId);
+
+    Task<int?> HasDuplicateApplicationAsync(
+        int personId,
+        int licenseClassId);
 
 
-        Task<int> AddNewApplicationAsync(ApplicationD application);
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    Task<int> AddNewApplicationAsync(
+        ApplicationD application);
 
 
-        Task<bool> UpdateApplicationAsync(ApplicationD application);
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    Task<bool> UpdateApplicationAsync(
+        ApplicationD application);
 
 
-        Task<bool> DeleteApplicationAsync(int id);
+    // =========================================================
+    // DELETE
+    // =========================================================
 
-
-        Task<bool> CompleteApplicationAsync(int applicationId);
-
-
-        Task<bool> CancelApplicationAsync(int applicationId);
-    }
+    Task<bool> DeleteApplicationAsync(
+        int id);
 }

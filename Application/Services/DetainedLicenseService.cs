@@ -1,8 +1,8 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.DetainedLicenseDTO;
 using Application.Interfaces;
+using Application.Mappers;
 using Application.Validators;
-using Domain.Entities;
 
 namespace Application.Services;
 
@@ -30,7 +30,7 @@ public class DetainedLicenseService : IDetainedLicenseService
 
         var dtos =
             entities
-                .Select(MapToDto)
+                .Select(DetainedLicenseMapper.ToDto)
                 .ToList();
 
         return Result<List<DetainedLicenseDto>>
@@ -49,8 +49,11 @@ public class DetainedLicenseService : IDetainedLicenseService
             DetainedLicenseValidator.ValidateId(id);
 
         if (validation.IsFailure)
+        {
             return Result<DetainedLicenseDto>
-                .FromFailure(validation.Error);
+                .FromValidationFailure(
+                    validation.Error);
+        }
 
         var entity =
             await _repository.GetByIdAsync(id);
@@ -58,12 +61,13 @@ public class DetainedLicenseService : IDetainedLicenseService
         if (entity is null)
         {
             return Result<DetainedLicenseDto>
-                .FromFailure(
+                .FromNotFound(
                     "Detained license not found.");
         }
 
         return Result<DetainedLicenseDto>
-            .Success(MapToDto(entity));
+            .Success(
+                DetainedLicenseMapper.ToDto(entity));
     }
 
 
@@ -82,7 +86,8 @@ public class DetainedLicenseService : IDetainedLicenseService
         if (validation.IsFailure)
         {
             return Result<DetainedLicenseDto>
-                .FromFailure(validation.Error);
+                .FromValidationFailure(
+                    validation.Error);
         }
 
         var entity =
@@ -93,12 +98,13 @@ public class DetainedLicenseService : IDetainedLicenseService
         if (entity is null)
         {
             return Result<DetainedLicenseDto>
-                .FromFailure(
+                .FromNotFound(
                     "No active detention found for this license.");
         }
 
         return Result<DetainedLicenseDto>
-            .Success(MapToDto(entity));
+            .Success(
+                DetainedLicenseMapper.ToDto(entity));
     }
 
 
@@ -133,11 +139,15 @@ public class DetainedLicenseService : IDetainedLicenseService
         if (validation.IsFailure)
         {
             return Result<DetainedLicenseDto>
-                .FromFailure(validation.Error);
+                .FromValidationFailure(
+                    validation.Error);
         }
 
 
-        // Prevent multiple active detentions
+        // -----------------------------------------------------
+        // Prevent duplicate active detention
+        // -----------------------------------------------------
+
         var alreadyDetained =
             await _repository
                 .IsLicenseDetainedAsync(
@@ -146,47 +156,62 @@ public class DetainedLicenseService : IDetainedLicenseService
         if (alreadyDetained)
         {
             return Result<DetainedLicenseDto>
-                .FromFailure(
+                .FromConflict(
                     "License already detained.");
         }
 
 
+        // -----------------------------------------------------
         // DTO -> Entity
-        var entity = new DetainedLicense
-        {
-            LicenseID = dto.LicenseID,
-            DetainDate = dto.DetainDate,
-            FineFees = dto.FineFees,
-            CreatedByUserID = dto.CreatedByUserID,
+        // -----------------------------------------------------
 
-            IsReleased = false,
-            ReleaseDate = null,
-            ReleasedByUserID = null,
-            ReleaseApplicationID = null
-        };
+        var entity =
+            DetainedLicenseMapper
+                .ToEntity(dto);
 
 
-        // Repository works with Entity
+        // -----------------------------------------------------
+        // CREATE
+        // -----------------------------------------------------
+
         var created =
-            await _repository.AddAsync(entity);
+            await _repository
+                .AddAsync(entity);
+
+        if (created is null ||
+            created.DetainID <= 0)
+        {
+            return Result<DetainedLicenseDto>
+                .FromFailure(
+                    "Failed to create detained license.");
+        }
 
 
+        // -----------------------------------------------------
         // Reload entity with navigation properties
+        // -----------------------------------------------------
+
         var savedEntity =
             await _repository
-                .GetByIdAsync(created.DetainID);
+                .GetByIdAsync(
+                    created.DetainID);
 
         if (savedEntity is null)
         {
             return Result<DetainedLicenseDto>
-                .FromFailure(
+                .FromNotFound(
                     "Unable to retrieve created detained license.");
         }
 
 
+        // -----------------------------------------------------
         // Entity -> DTO
+        // -----------------------------------------------------
+
         return Result<DetainedLicenseDto>
-            .Success(MapToDto(savedEntity));
+            .Success(
+                DetainedLicenseMapper
+                    .ToDto(savedEntity));
     }
 
 
@@ -203,38 +228,55 @@ public class DetainedLicenseService : IDetainedLicenseService
                 .ValidateUpdate(dto);
 
         if (validation.IsFailure)
-            return Result.Failure(validation.Error);
+        {
+            return Result
+                .ValidationFailure(
+                    validation.Error);
+        }
 
 
         var entity =
             await _repository
-                .GetByIdAsync(dto.DetainID);
+                .GetByIdAsync(
+                    dto.DetainID);
 
         if (entity is null)
         {
-            return Result.Failure(
-                "Detained license not found.");
+            return Result
+                .NotFound(
+                    "Detained license not found.");
         }
 
 
+        // -----------------------------------------------------
         // Released detention cannot become active again
+        // -----------------------------------------------------
+
         if (entity.IsReleased &&
             !dto.IsReleased)
         {
-            return Result.Failure(
-                "A released license cannot be changed back to active detention.");
+            return Result
+                .Conflict(
+                    "A released license cannot be changed back to active detention.");
         }
 
 
+        // -----------------------------------------------------
         // Update basic data
+        // -----------------------------------------------------
+
         entity.FineFees =
             dto.FineFees;
 
 
+        // -----------------------------------------------------
         // Update release information
+        // -----------------------------------------------------
+
         if (dto.IsReleased)
         {
-            entity.IsReleased = true;
+            entity.IsReleased =
+                true;
 
             entity.ReleaseDate =
                 dto.ReleaseDate;
@@ -246,6 +288,10 @@ public class DetainedLicenseService : IDetainedLicenseService
                 dto.ReleaseApplicationID;
         }
 
+
+        // -----------------------------------------------------
+        // UPDATE
+        // -----------------------------------------------------
 
         await _repository
             .UpdateAsync(entity);
@@ -267,32 +313,43 @@ public class DetainedLicenseService : IDetainedLicenseService
                 .ValidateRelease(dto);
 
         if (validation.IsFailure)
-            return Result.Failure(
-                validation.Error);
+        {
+            return Result
+                .ValidationFailure(
+                    validation.Error);
+        }
 
 
         var entity =
             await _repository
-                .GetByIdAsync(dto.DetainID);
+                .GetByIdAsync(
+                    dto.DetainID);
 
         if (entity is null)
         {
-            return Result.Failure(
-                "Detained license not found.");
+            return Result
+                .NotFound(
+                    "Detained license not found.");
         }
 
 
         if (entity.IsReleased)
         {
-            return Result.Failure(
-                "License already released.");
+            return Result
+                .Conflict(
+                    "License already released.");
         }
 
 
-        entity.IsReleased = true;
+        // -----------------------------------------------------
+        // Release
+        // -----------------------------------------------------
+
+        entity.IsReleased =
+            true;
 
         entity.ReleaseDate =
-            DateTime.Now;
+            DateTime.UtcNow;
 
         entity.ReleasedByUserID =
             dto.ReleasedByUserID;
@@ -301,72 +358,13 @@ public class DetainedLicenseService : IDetainedLicenseService
             dto.ReleaseApplicationID;
 
 
+        // -----------------------------------------------------
+        // UPDATE
+        // -----------------------------------------------------
+
         await _repository
             .UpdateAsync(entity);
 
         return Result.Success();
-    }
-
-
-    // =========================================================
-    // MAPPING
-    // =========================================================
-
-    private static DetainedLicenseDto
-        MapToDto(
-            DetainedLicense entity)
-    {
-        var person =
-            entity.License?
-                .Driver?
-                .Person;
-
-        return new DetainedLicenseDto
-        {
-            DetainID =
-                entity.DetainID,
-
-            LicenseID =
-                entity.LicenseID,
-
-            PersonID =
-                person?.PersonId ?? 0,
-
-            ApplicantPersonID =
-                person?.PersonId ?? 0,
-
-            DetainDate =
-                entity.DetainDate,
-
-            FineFees =
-                entity.FineFees,
-
-            CreatedByUserID =
-                entity.CreatedByUserID,
-
-            CreatedByUserName =
-                entity.CreatedByUser?.UserName
-                ?? string.Empty,
-
-            IsReleased =
-                entity.IsReleased,
-
-            ReleaseDate =
-                entity.ReleaseDate,
-
-            ReleasedByUserID =
-                entity.ReleasedByUserID,
-
-            ReleaseApplicationID =
-                entity.ReleaseApplicationID,
-
-            NationalNo =
-                person?.NationalNo
-                ?? string.Empty,
-
-            FullName =
-                person?.FullName
-                ?? string.Empty
-        };
     }
 }

@@ -20,13 +20,22 @@ public class ApplicationDto
 
     public int CreatedByUserID { get; set; }
 
-    public string CreatedByUserName { get; set; } = string.Empty;
+    public string CreatedByUserName { get; set; }
+        = string.Empty;
 
-    public string StatusText => ApplicationStatus switch
-    {
-        AppStatus.New => "New",
-        AppStatus.Cancelled => "Cancelled",
-        AppStatus.Completed => "Completed",
-        _ => "Unknown"
-    };
+    public string StatusText =>
+        ApplicationStatus switch
+        {
+            AppStatus.New =>
+                "New",
+
+            AppStatus.Cancelled =>
+                "Cancelled",
+
+            AppStatus.Completed =>
+                "Completed",
+
+            _ =>
+                "Unknown"
+        };
 }

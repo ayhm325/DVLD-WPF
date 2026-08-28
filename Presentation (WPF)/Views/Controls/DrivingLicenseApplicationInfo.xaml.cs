@@ -13,6 +13,10 @@ namespace Presentation.Views.Controls
             InitializeComponent();
         }
 
+        // =====================================================
+        // LOCAL DRIVING LICENSE APPLICATION ID
+        // =====================================================
+
         #region DrivingLicenseApplicationId
 
         public int DrivingLicenseApplicationId
@@ -29,6 +33,31 @@ namespace Presentation.Views.Controls
                 new PropertyMetadata(0));
 
         #endregion
+
+        // =====================================================
+        // LICENSE ID
+        // =====================================================
+
+        #region LicenseId
+
+        public int LicenseId
+        {
+            get => (int)GetValue(LicenseIdProperty);
+            set => SetValue(LicenseIdProperty, value);
+        }
+
+        public static readonly DependencyProperty LicenseIdProperty =
+            DependencyProperty.Register(
+                nameof(LicenseId),
+                typeof(int),
+                typeof(DrivingLicenseApplicationInfo),
+                new PropertyMetadata(0));
+
+        #endregion
+
+        // =====================================================
+        // PASSED TESTS
+        // =====================================================
 
         #region PassedTests
 
@@ -47,6 +76,10 @@ namespace Presentation.Views.Controls
 
         #endregion
 
+        // =====================================================
+        // TOTAL TESTS
+        // =====================================================
+
         #region TotalTests
 
         public int TotalTests
@@ -63,6 +96,10 @@ namespace Presentation.Views.Controls
                 new PropertyMetadata(0));
 
         #endregion
+
+        // =====================================================
+        // LICENSE CLASS NAME
+        // =====================================================
 
         #region LicenseClassName
 
@@ -81,12 +118,22 @@ namespace Presentation.Views.Controls
 
         #endregion
 
-        private void LicenseInfoButton_Click(object sender, RoutedEventArgs e)
+        // =====================================================
+        // LICENSE INFO BUTTON
+        // =====================================================
+
+        private void LicenseInfoButton_Click(
+            object sender,
+            RoutedEventArgs e)
         {
-            if (DrivingLicenseApplicationId == 0)
+            // مهم:
+            // لا نرسل LocalApplicationId
+            // نرسل LicenseId الحقيقي.
+
+            if (LicenseId <= 0)
                 return;
 
-            OpenLicenseRequested?.Invoke(DrivingLicenseApplicationId);
+            OpenLicenseRequested?.Invoke(LicenseId);
         }
     }
 }

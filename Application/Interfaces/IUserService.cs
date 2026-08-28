@@ -1,84 +1,98 @@
-﻿using Application.Common.Results;
+﻿
+using Application.Common.Results;
 using Application.DTOs.UserDTO;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IUserService
 {
-    public interface IUserService
-    {
-        // =========================
-        // GET OPERATIONS
-        // =========================
+    // =========================================================
+    // GET
+    // =========================================================
 
-        Task<Result<List<UserDto>>> GetAllUsersAsync();
+    Task<Result<List<UserDto>>>
+        GetAllUsersAsync();
 
-        Task<Result<UserDto>> GetUserByIdAsync(int id);
+    Task<Result<UserDto>>
+        GetUserByIdAsync(
+            int id);
 
-        Task<Result<UserDto>> GetUserByPersonIdAsync(int id);
+    Task<Result<UserDto>>
+        GetUserByPersonIdAsync(
+            int personId);
 
-        Task<Result<UserDto>> GetUserByUsernameAsync(
+    Task<Result<UserDto>>
+        GetUserByUsernameAsync(
             string username);
 
 
-        // =========================
-        // CREATE
-        // =========================
+    // =========================================================
+    // CREATE
+    // =========================================================
 
-        Task<Result<int>> AddUserAsync(
+    Task<Result<int>>
+        AddUserAsync(
             CreateUserDto dto);
 
 
-        // =========================
-        // UPDATE
-        // =========================
+    // =========================================================
+    // UPDATE
+    // =========================================================
 
-        Task<Result> UpdateUserAsync(
+    Task<Result>
+        UpdateUserAsync(
             int id,
             UpdateUserDto dto);
 
 
-        // =========================
-        // DELETE
-        // =========================
+    // =========================================================
+    // DELETE
+    // =========================================================
 
-        Task<Result> DeleteUserAsync(
+    Task<Result>
+        DeleteUserAsync(
             int id);
 
 
-        // =========================
-        // CHECKS
-        // =========================
+    // =========================================================
+    // CHECKS
+    // =========================================================
 
-        Task<bool> IsUserExistsByIdAsync(
+    Task<bool>
+        IsUserExistsByIdAsync(
             int id);
 
-        Task<bool> IsUsernameTakenForAnotherUserAsync(
+    Task<bool>
+        IsUsernameTakenForAnotherUserAsync(
             string username,
             int userId);
 
 
-        // =========================
-        // AUTHENTICATION
-        // =========================
+    // =========================================================
+    // AUTHENTICATION
+    // =========================================================
 
-        Task<bool> AuthenticateUserAsync(
+    Task<bool>
+        AuthenticateUserAsync(
             string username,
             string password);
 
 
-        // =========================
-        // CHANGE PASSWORD
-        // =========================
+    // =========================================================
+    // CHANGE PASSWORD
+    // =========================================================
 
-        Task<Result> ChangePasswordAsync(
+    Task<Result>
+        ChangePasswordAsync(
             int userId,
             ChangePasswordDto dto);
 
 
-        // =========================
-        // LOGIN
-        // =========================
+    // =========================================================
+    // LOGIN
+    // =========================================================
 
-        Task<Result<UserDto>> LoginAsync(
+    Task<Result<UserDto>>
+        LoginAsync(
             LoginRequestDto dto);
-    }
 }

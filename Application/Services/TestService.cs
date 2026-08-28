@@ -1,8 +1,8 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.TestDTO;
 using Application.Interfaces;
+using Application.Mappers;
 using Application.Validators;
-using Domain.Entities;
 
 namespace Application.Services;
 
@@ -17,143 +17,351 @@ public class TestService : ITestService
         ITestAppointmentRepository appointmentRepository,
         ICurrentUserService currentUserService)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
-        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _repository =
+            repository
+            ?? throw new ArgumentNullException(nameof(repository));
+
+        _appointmentRepository =
+            appointmentRepository
+            ?? throw new ArgumentNullException(nameof(appointmentRepository));
+
+        _currentUserService =
+            currentUserService
+            ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
-    // GET
-    public async Task<Result<TestDto>> GetByIdAsync(int id)
-    {
-        var validation = TestValidator.ValidateId(id);
-        if (validation.IsFailure)
-            return Result<TestDto>.FromFailure(validation.Error);
 
-        var entity = await _repository.GetByIdAsync(id);
+    // =========================================================
+    // GET BY ID
+    // =========================================================
+
+    public async Task<Result<TestDto>>
+        GetByIdAsync(int id)
+    {
+        var validation =
+            TestValidator.ValidateId(id);
+
+        if (validation.IsFailure)
+        {
+            return Result<TestDto>
+                .FromValidationFailure(
+                    validation.Error);
+        }
+
+        var entity =
+            await _repository.GetByIdAsync(id);
+
         if (entity is null)
-            return Result<TestDto>.FromFailure("Test not found.");
+        {
+            return Result<TestDto>
+                .FromNotFound(
+                    "Test not found.");
+        }
 
-        return Result<TestDto>.Success(MapToDto(entity));
+        return Result<TestDto>
+            .Success(
+                TestMapper.ToDto(entity));
     }
 
-    public async Task<Result<List<TestDto>>> GetAllAsync()
+
+    // =========================================================
+    // GET ALL
+    // =========================================================
+
+    public async Task<Result<List<TestDto>>>
+        GetAllAsync()
     {
-        var list = await _repository.GetAllAsync();
-        return Result<List<TestDto>>.Success(list.Select(MapToDto).ToList());
+        var entities =
+            await _repository.GetAllAsync();
+
+        var dtos =
+            entities
+                .Select(TestMapper.ToDto)
+                .ToList();
+
+        return Result<List<TestDto>>
+            .Success(dtos);
     }
 
-    public async Task<Result<List<TestDto>>> GetByTestAppointmentIdAsync(int appointmentId)
+
+    // =========================================================
+    // GET BY TEST APPOINTMENT ID
+    // =========================================================
+
+    public async Task<Result<List<TestDto>>>
+        GetByTestAppointmentIdAsync(
+            int appointmentId)
     {
-        var validation = TestValidator.ValidateAppointmentId(appointmentId);
+        var validation =
+            TestValidator
+                .ValidateAppointmentId(
+                    appointmentId);
+
         if (validation.IsFailure)
-            return Result<List<TestDto>>.FromFailure(validation.Error);
+        {
+            return Result<List<TestDto>>
+                .FromValidationFailure(
+                    validation.Error);
+        }
 
-        var list = await _repository.GetByTestAppointmentIdAsync(appointmentId);
-        return Result<List<TestDto>>.Success(list.Select(MapToDto).ToList());
+        var entities =
+            await _repository
+                .GetByTestAppointmentIdAsync(
+                    appointmentId);
+
+        var dtos =
+            entities
+                .Select(TestMapper.ToDto)
+                .ToList();
+
+        return Result<List<TestDto>>
+            .Success(dtos);
     }
 
-    public async Task<Result<List<TestDto>>> GetByUserIdAsync(int userId)
+
+    // =========================================================
+    // GET BY USER ID
+    // =========================================================
+
+    public async Task<Result<List<TestDto>>>
+        GetByUserIdAsync(int userId)
     {
-        var validation = TestValidator.ValidateUserId(userId);
-        if (validation.IsFailure)
-            return Result<List<TestDto>>.FromFailure(validation.Error);
+        var validation =
+            TestValidator.ValidateUserId(userId);
 
-        var list = await _repository.GetByUserIdAsync(userId);
-        return Result<List<TestDto>>.Success(list.Select(MapToDto).ToList());
+        if (validation.IsFailure)
+        {
+            return Result<List<TestDto>>
+                .FromValidationFailure(
+                    validation.Error);
+        }
+
+        var entities =
+            await _repository
+                .GetByUserIdAsync(userId);
+
+        var dtos =
+            entities
+                .Select(TestMapper.ToDto)
+                .ToList();
+
+        return Result<List<TestDto>>
+            .Success(dtos);
     }
 
+
+    // =========================================================
     // CHECKS
-    public async Task<bool> IsTestExistsAsync(int id)
+    // =========================================================
+
+    public async Task<bool>
+        IsTestExistsAsync(int id)
     {
-        var validation = TestValidator.ValidateId(id);
-        if (validation.IsFailure) return false;
-        return await _repository.IsTestExistsAsync(id);
+        var validation =
+            TestValidator.ValidateId(id);
+
+        if (validation.IsFailure)
+            return false;
+
+        return await _repository
+            .IsTestExistsAsync(id);
     }
 
-    public async Task<bool> IsTestAlreadyTakenAsync(int appointmentId)
+
+    public async Task<bool>
+        IsTestAlreadyTakenAsync(
+            int appointmentId)
     {
-        var validation = TestValidator.ValidateAppointmentId(appointmentId);
-        if (validation.IsFailure) return false;
-        return await _repository.IsTestAlreadyTakenAsync(appointmentId);
+        var validation =
+            TestValidator
+                .ValidateAppointmentId(
+                    appointmentId);
+
+        if (validation.IsFailure)
+            return false;
+
+        return await _repository
+            .IsTestAlreadyTakenAsync(
+                appointmentId);
     }
 
+
+    // =========================================================
     // CREATE
-    public async Task<Result<int>> AddAsync(TestDto dto)
-    {
-        var validation = TestValidator.ValidateCreate(dto);
-        if (validation.IsFailure)
-            return Result<int>.FromFailure(validation.Error);
+    // =========================================================
 
-        var appointment = await _appointmentRepository.GetByIdAsync(dto.TestAppointmentID);
+    public async Task<Result<int>>
+        AddAsync(TestDto dto)
+    {
+        var validation =
+            TestValidator.ValidateCreate(dto);
+
+        if (validation.IsFailure)
+        {
+            return Result<int>
+                .FromValidationFailure(
+                    validation.Error);
+        }
+
+
+        // -----------------------------------------------------
+        // Appointment must exist
+        // -----------------------------------------------------
+
+        var appointment =
+            await _appointmentRepository
+                .GetByIdAsync(
+                    dto.TestAppointmentID);
+
         if (appointment is null)
-            return Result<int>.FromFailure("Test appointment not found.");
-
-        if (await _repository.IsTestAlreadyTakenAsync(dto.TestAppointmentID))
-            return Result<int>.FromFailure("A result already exists for this appointment.");
-
-        var entity = new Test
         {
-            TestAppointmentID = dto.TestAppointmentID,
-            TestResult = dto.TestResult,
-            Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
-            CreatedByUserID = _currentUserService.UserId
-        };
+            return Result<int>
+                .FromNotFound(
+                    "Test appointment not found.");
+        }
 
-        var id = await _repository.AddAsync(entity);
+
+        // -----------------------------------------------------
+        // Prevent duplicate test result
+        // -----------------------------------------------------
+
+        if (await _repository
+            .IsTestAlreadyTakenAsync(
+                dto.TestAppointmentID))
+        {
+            return Result<int>
+                .FromConflict(
+                    "A result already exists for this appointment.");
+        }
+
+
+        // -----------------------------------------------------
+        // DTO -> Entity
+        // -----------------------------------------------------
+
+        var entity =
+            TestMapper.ToEntity(
+                dto,
+                _currentUserService.UserId);
+
+
+        // -----------------------------------------------------
+        // CREATE
+        // -----------------------------------------------------
+
+        var id =
+            await _repository.AddAsync(entity);
+
         if (id <= 0)
-            return Result<int>.FromFailure("Failed to add test.");
-
-        return Result<int>.Success(id);
-    }
-
-    // UPDATE
-    public async Task<Result> UpdateAsync(TestDto dto)
-    {
-        var validation = TestValidator.ValidateUpdate(dto);
-        if (validation.IsFailure)
-            return validation;
-
-        var entity = await _repository.GetByIdAsync(dto.TestID);
-        if (entity is null)
-            return Result.Failure("Test not found.");
-
-        if (entity.TestAppointmentID != dto.TestAppointmentID)
-            return Result.Failure("Cannot change the linked appointment of a test result.");
-
-        entity.TestResult = dto.TestResult;
-        entity.Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim();
-
-        var isSuccess = await _repository.UpdateAsync(entity);
-        return isSuccess ? Result.Success() : Result.Failure("Failed to update test.");
-    }
-
-    // DELETE
-    public async Task<Result> DeleteAsync(int id)
-    {
-        var validation = TestValidator.ValidateId(id);
-        if (validation.IsFailure)
-            return validation;
-
-        if (!await _repository.IsTestExistsAsync(id))
-            return Result.Failure("Test not found.");
-
-        var isSuccess = await _repository.DeleteAsync(id);
-        return isSuccess ? Result.Success() : Result.Failure("Failed to delete test.");
-    }
-
-    // MAPPING
-    private static TestDto MapToDto(Test entity)
-    {
-        return new TestDto
         {
-            TestID = entity.TestID,
-            TestAppointmentID = entity.TestAppointmentID,
-            TestResult = entity.TestResult,
-            Notes = entity.Notes,
-            CreatedByUserID = entity.CreatedByUserID,
-            CreatedByUserName = entity.User?.UserName,
-            TestTypeName = entity.TestAppointment?.TestType?.TestTypeTitle,
-            AppointmentDate = entity.TestAppointment?.AppointmentDate
-        };
+            return Result<int>
+                .FromFailure(
+                    "Failed to add test.");
+        }
+
+        return Result<int>
+            .Success(id);
+    }
+
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    public async Task<Result>
+        UpdateAsync(TestDto dto)
+    {
+        var validation =
+            TestValidator.ValidateUpdate(dto);
+
+        if (validation.IsFailure)
+        {
+            return Result
+                .ValidationFailure(
+                    validation.Error);
+        }
+
+
+        var entity =
+            await _repository
+                .GetByIdAsync(
+                    dto.TestID);
+
+        if (entity is null)
+        {
+            return Result
+                .NotFound(
+                    "Test not found.");
+        }
+
+
+        // -----------------------------------------------------
+        // Appointment cannot be changed
+        // -----------------------------------------------------
+
+        if (entity.TestAppointmentID !=
+            dto.TestAppointmentID)
+        {
+            return Result
+                .Conflict(
+                    "Cannot change the linked appointment of a test result.");
+        }
+
+
+        // -----------------------------------------------------
+        // Update entity
+        // -----------------------------------------------------
+
+        TestMapper.UpdateEntity(
+            entity,
+            dto);
+
+
+        var updated =
+            await _repository
+                .UpdateAsync(entity);
+
+        return updated
+            ? Result.Success()
+            : Result.Failure(
+                "Failed to update test.");
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    public async Task<Result>
+        DeleteAsync(int id)
+    {
+        var validation =
+            TestValidator.ValidateId(id);
+
+        if (validation.IsFailure)
+        {
+            return Result
+                .ValidationFailure(
+                    validation.Error);
+        }
+
+
+        if (!await _repository
+            .IsTestExistsAsync(id))
+        {
+            return Result
+                .NotFound(
+                    "Test not found.");
+        }
+
+
+        var deleted =
+            await _repository
+                .DeleteAsync(id);
+
+        return deleted
+            ? Result.Success()
+            : Result.Failure(
+                "Failed to delete test.");
     }
 }

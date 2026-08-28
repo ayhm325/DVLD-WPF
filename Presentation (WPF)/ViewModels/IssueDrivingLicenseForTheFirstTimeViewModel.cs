@@ -8,7 +8,7 @@ namespace Presentation.ViewModels
 {
     public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObject
     {
-        private readonly ILicenseService _licenseService;
+        private readonly ILicenseIssuanceService _licenseIssuanceService;
         private readonly ILocalDrivingLicenseApplicationService _localAppService;
         private readonly IApplicationService _applicationService;
         private readonly int _localAppId;
@@ -42,13 +42,13 @@ namespace Presentation.ViewModels
         public IssueDrivingLicenseForTheFirstTimeViewModel(
             int localAppId,
             Window window,
-            ILicenseService licenseService,
+           ILicenseIssuanceService licenseIssuanceService,
             ILocalDrivingLicenseApplicationService localAppService,
             IApplicationService applicationService)
         {
             _localAppId = localAppId;
             _window = window;
-            _licenseService = licenseService;
+            _licenseIssuanceService = licenseIssuanceService;
             _localAppService = localAppService;
             _applicationService = applicationService;
             DrivingLicenseApplicationId = localAppId;
@@ -106,7 +106,7 @@ namespace Presentation.ViewModels
             {
                 IsBusy = true;
 
-                var result = await _licenseService.IssueFirstLicenseAsync(_localAppId, Notes);
+                var result = await _licenseIssuanceService.IssueFirstLicenseAsync(_localAppId,Notes);
 
                 if (result.IsFailure)
                 {
