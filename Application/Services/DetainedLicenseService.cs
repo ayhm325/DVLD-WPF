@@ -132,7 +132,7 @@ public class DetainedLicenseService : IDetainedLicenseService
     }
 
     // =========================================================
-    // ADD
+    // CREATE
     // =========================================================
 
     public async Task<Result<DetainedLicenseDto>>
@@ -140,7 +140,7 @@ public class DetainedLicenseService : IDetainedLicenseService
             CreateDetainedLicenseDto dto)
     {
         // -----------------------------------------------------
-        // Validation
+        // VALIDATION
         // -----------------------------------------------------
 
         var validation =
@@ -155,7 +155,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Prevent duplicate active detention
+        // PREVENT DUPLICATE ACTIVE DETENTION
         // -----------------------------------------------------
 
         var alreadyDetained =
@@ -171,7 +171,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // DTO -> Entity
+        // MAP DTO -> ENTITY
         // -----------------------------------------------------
 
         var entity =
@@ -179,17 +179,20 @@ public class DetainedLicenseService : IDetainedLicenseService
                 .ToEntity(dto);
 
         // -----------------------------------------------------
-        // CREATE
+        // ADD
+        //
+        // Repository only tracks the entity.
+        // It does NOT save changes.
         // -----------------------------------------------------
 
         await _repository
             .AddAsync(entity);
 
         // -----------------------------------------------------
-        // COMMIT
+        // SAVE
         //
-        // Repository only changes the DbContext.
-        // UnitOfWork is responsible for persistence.
+        // Database-generated DetainID is available
+        // after SaveChangesAsync().
         // -----------------------------------------------------
 
         var saved =
@@ -204,7 +207,13 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Reload entity with navigation properties
+        // RELOAD
+        //
+        // Get the complete entity including:
+        // License -> Driver -> Person
+        // CreatedByUser
+        // ReleasedByUser
+        // ReleaseApplication
         // -----------------------------------------------------
 
         var savedEntity =
@@ -218,10 +227,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                 .FromNotFound(
                     "Unable to retrieve created detained license.");
         }
-
-        // -----------------------------------------------------
-        // Entity -> DTO
-        // -----------------------------------------------------
 
         return Result<DetainedLicenseDto>
             .Success(
@@ -238,7 +243,7 @@ public class DetainedLicenseService : IDetainedLicenseService
             UpdateDetainedLicenseDto dto)
     {
         // -----------------------------------------------------
-        // Validation
+        // VALIDATION
         // -----------------------------------------------------
 
         var validation =
@@ -253,7 +258,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Get existing detention
+        // LOAD EXISTING ENTITY
         // -----------------------------------------------------
 
         var entity =
@@ -269,7 +274,9 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Released detention cannot become active again
+        // BUSINESS RULE
+        //
+        // A released detention cannot be reopened.
         // -----------------------------------------------------
 
         if (entity.IsReleased &&
@@ -281,14 +288,14 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Update basic data
+        // UPDATE FINE
         // -----------------------------------------------------
 
         entity.FineFees =
             dto.FineFees;
 
         // -----------------------------------------------------
-        // Update release information
+        // UPDATE RELEASE INFORMATION
         // -----------------------------------------------------
 
         if (dto.IsReleased)
@@ -314,7 +321,7 @@ public class DetainedLicenseService : IDetainedLicenseService
             .UpdateAsync(entity);
 
         // -----------------------------------------------------
-        // COMMIT
+        // SAVE
         // -----------------------------------------------------
 
         var saved =
@@ -340,7 +347,7 @@ public class DetainedLicenseService : IDetainedLicenseService
             ReleaseDetainedLicenseDto dto)
     {
         // -----------------------------------------------------
-        // Validation
+        // VALIDATION
         // -----------------------------------------------------
 
         var validation =
@@ -355,7 +362,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Get detention
+        // LOAD DETENTION
         // -----------------------------------------------------
 
         var entity =
@@ -371,7 +378,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Prevent duplicate release
+        // PREVENT DUPLICATE RELEASE
         // -----------------------------------------------------
 
         if (entity.IsReleased)
@@ -382,7 +389,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         }
 
         // -----------------------------------------------------
-        // Release
+        // RELEASE
         // -----------------------------------------------------
 
         entity.IsReleased =
@@ -405,7 +412,7 @@ public class DetainedLicenseService : IDetainedLicenseService
             .UpdateAsync(entity);
 
         // -----------------------------------------------------
-        // COMMIT
+        // SAVE
         // -----------------------------------------------------
 
         var saved =

@@ -154,7 +154,9 @@ public class DriverService : IDriverService
             int driverId)
     {
         if (driverId <= 0)
+        {
             return false;
+        }
 
         return await _repository
             .ExistsByIdAsync(
@@ -170,7 +172,9 @@ public class DriverService : IDriverService
             int personId)
     {
         if (personId <= 0)
+        {
             return false;
+        }
 
         return await _repository
             .ExistsByPersonIdAsync(
@@ -178,13 +182,17 @@ public class DriverService : IDriverService
     }
 
     // =========================================================
-    // ADD
+    // CREATE
     // =========================================================
 
     public async Task<Result<int>>
         AddAsync(
             CreateDriverDto dto)
     {
+        // -----------------------------------------------------
+        // VALIDATION
+        // -----------------------------------------------------
+
         var validation =
             DriverValidator
                 .ValidateCreate(dto);
@@ -197,13 +205,17 @@ public class DriverService : IDriverService
         }
 
         // -----------------------------------------------------
-        // Business rule:
+        // BUSINESS RULE
+        //
         // One person can have only one Driver record.
         // -----------------------------------------------------
 
-        if (await _repository
+        var alreadyDriver =
+            await _repository
                 .ExistsByPersonIdAsync(
-                    dto.PersonID))
+                    dto.PersonID);
+
+        if (alreadyDriver)
         {
             return Result<int>
                 .FromFailure(
@@ -211,21 +223,21 @@ public class DriverService : IDriverService
         }
 
         // -----------------------------------------------------
-        // Map
+        // MAP
         // -----------------------------------------------------
 
         var entity =
             DriverMapper.ToEntity(dto);
 
         // -----------------------------------------------------
-        // Add to current DbContext
+        // ADD TO CURRENT CONTEXT
         // -----------------------------------------------------
 
         await _repository
             .AddAsync(entity);
 
         // -----------------------------------------------------
-        // Persist through UnitOfWork
+        // PERSIST
         // -----------------------------------------------------
 
         var saved =
@@ -253,18 +265,26 @@ public class DriverService : IDriverService
         UpdateAsync(
             UpdateDriverDto dto)
     {
+        // -----------------------------------------------------
+        // VALIDATION
+        // -----------------------------------------------------
+
         var validation =
             DriverValidator
                 .ValidateUpdate(dto);
 
         if (validation.IsFailure)
         {
-            return Result.Failure(
-                validation.Error);
+            return Result
+                .Failure(
+                    validation.Error);
         }
 
         // -----------------------------------------------------
-        // Load tracked entity
+        // LOAD TRACKED ENTITY
+        //
+        // DriverRepository.GetByIdAsync()
+        // intentionally returns a tracked entity.
         // -----------------------------------------------------
 
         var existing =
@@ -274,26 +294,37 @@ public class DriverService : IDriverService
 
         if (existing is null)
         {
-            return Result.Failure(
-                "Driver not found.");
+            return Result
+                .Failure(
+                    "Driver not found.");
         }
 
         // -----------------------------------------------------
-        // Business rule:
-        // Person cannot belong to another driver.
+        // BUSINESS RULE
+        //
+        // A person cannot belong to another driver.
         // -----------------------------------------------------
 
-        if (existing.PersonID != dto.PersonID &&
-            await _repository
-                .ExistsByPersonIdAsync(
-                    dto.PersonID))
+        if (existing.PersonID != dto.PersonID)
         {
-            return Result.Failure(
-                "This person is already registered as another driver.");
+            var alreadyDriver =
+                await _repository
+                    .ExistsByPersonIdAsync(
+                        dto.PersonID);
+
+            if (alreadyDriver)
+            {
+                return Result
+                    .Failure(
+                        "This person is already registered as another driver.");
+            }
         }
 
         // -----------------------------------------------------
-        // Apply update
+        // APPLY CHANGES
+        //
+        // Entity is tracked by EF Core.
+        // No repository UpdateAsync is required.
         // -----------------------------------------------------
 
         DriverMapper.UpdateEntity(
@@ -301,17 +332,21 @@ public class DriverService : IDriverService
             dto);
 
         // -----------------------------------------------------
-        // Persist through UnitOfWork
+        // PERSIST
         // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
                 .SaveChangesAsync();
 
-        return saved > 0
-            ? Result.Success()
-            : Result.Failure(
-                "No driver changes were saved.");
+        if (saved <= 0)
+        {
+            return Result
+                .Failure(
+                    "No driver changes were saved.");
+        }
+
+        return Result.Success();
     }
 
     // =========================================================
@@ -319,35 +354,48 @@ public class DriverService : IDriverService
     // =========================================================
 
     public async Task<Result>
-        DeleteAsync(int id)
+        DeleteAsync(
+            int id)
     {
+        // -----------------------------------------------------
+        // VALIDATION
+        // -----------------------------------------------------
+
         var validation =
             DriverValidator
                 .ValidateId(id);
 
         if (validation.IsFailure)
         {
-            return Result.Failure(
-                validation.Error);
+            return Result
+                .Failure(
+                    validation.Error);
         }
 
-        if (!await _repository
-                .ExistsByIdAsync(id))
-        {
-            return Result.Failure(
-                "Driver not found.");
-        }
+        // -----------------------------------------------------
+        // DELETE
+        //
+        // Repository safely ignores a missing entity.
+        // -----------------------------------------------------
 
         await _repository
             .DeleteAsync(id);
+
+        // -----------------------------------------------------
+        // PERSIST
+        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
                 .SaveChangesAsync();
 
-        return saved > 0
-            ? Result.Success()
-            : Result.Failure(
-                "Failed to delete driver.");
+        if (saved <= 0)
+        {
+            return Result
+                .Failure(
+                    "Driver not found or no changes were saved.");
+        }
+
+        return Result.Success();
     }
 }

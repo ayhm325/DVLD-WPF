@@ -9,10 +9,12 @@ namespace Application.Services;
 public class LicenseService : ILicenseService
 {
     private readonly ILicenseRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public LicenseService(ILicenseRepository repository)
+    public LicenseService(ILicenseRepository repository, IUnitOfWork unitOfWork)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
     // =========================================================
@@ -45,7 +47,6 @@ public class LicenseService : ILicenseService
     public async Task<Result<List<LicenseDto>>> GetAllAsync()
     {
         var licenses = await _repository.GetAllLicensesAsync();
-
         var dtos = licenses.Select(LicenseMapper.ToDto).ToList();
 
         return Result<List<LicenseDto>>.Success(dtos);
@@ -185,14 +186,18 @@ public class LicenseService : ILicenseService
         }
 
         var entity = LicenseMapper.ToEntity(dto);
-        var id = await _repository.AddLicenseAsync(entity);
 
-        if (id <= 0)
+        await _repository.AddLicenseAsync(entity);
+
+        // IMPORTANT: Repository only stages the entity. UnitOfWork persists it.
+        var saved = await _unitOfWork.SaveChangesAsync();
+
+        if (saved <= 0 || entity.LicenseID <= 0)
         {
             return Result<int>.FromFailure("Failed to create license.");
         }
 
-        return Result<int>.Success(id);
+        return Result<int>.Success(entity.LicenseID);
     }
 
     // =========================================================
@@ -220,9 +225,20 @@ public class LicenseService : ILicenseService
         var entity = LicenseMapper.ToEntity(dto);
         var updated = await _repository.UpdateLicenseAsync(entity);
 
-        return updated
-            ? Result.Success()
-            : Result.Failure("Failed to update license.");
+        if (!updated)
+        {
+            return Result.Failure("Failed to update license.");
+        }
+
+        // PERSIST THROUGH UNIT OF WORK
+        var saved = await _unitOfWork.SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result.Failure("No license changes were saved.");
+        }
+
+        return Result.Success();
     }
 
     // =========================================================
@@ -247,8 +263,19 @@ public class LicenseService : ILicenseService
 
         var deleted = await _repository.DeleteLicenseAsync(id);
 
-        return deleted
-            ? Result.Success()
-            : Result.Failure("Failed to delete license.");
+        if (!deleted)
+        {
+            return Result.Failure("Failed to delete license.");
+        }
+
+        // PERSIST THROUGH UNIT OF WORK
+        var saved = await _unitOfWork.SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result.Failure("Failed to save license deletion.");
+        }
+
+        return Result.Success();
     }
 }

@@ -8,7 +8,6 @@ public class UserRepository : IUserRepository
 {
     private readonly DVLDDbContext _context;
 
-
     public UserRepository(
         DVLDDbContext context)
     {
@@ -18,9 +17,10 @@ public class UserRepository : IUserRepository
                 nameof(context));
     }
 
-
     // =========================================================
     // BASE QUERY
+    //
+    // Read-only queries use NoTracking.
     // =========================================================
 
     private IQueryable<User> Query()
@@ -29,7 +29,6 @@ public class UserRepository : IUserRepository
             .AsNoTracking()
             .Include(u => u.Person);
     }
-
 
     // =========================================================
     // GET BY ID
@@ -48,7 +47,6 @@ public class UserRepository : IUserRepository
                     u.UserId == id);
     }
 
-
     // =========================================================
     // GET BY PERSON ID
     // =========================================================
@@ -66,7 +64,6 @@ public class UserRepository : IUserRepository
                     u.PersonId == personId);
     }
 
-
     // =========================================================
     // GET BY USERNAME
     // =========================================================
@@ -78,14 +75,15 @@ public class UserRepository : IUserRepository
         if (string.IsNullOrWhiteSpace(username))
             return null;
 
-        username = username.Trim();
+        var normalizedUsername =
+            username.Trim();
 
         return await Query()
             .FirstOrDefaultAsync(
                 u =>
-                    u.UserName == username);
+                    u.UserName ==
+                    normalizedUsername);
     }
-
 
     // =========================================================
     // GET ALL
@@ -95,9 +93,10 @@ public class UserRepository : IUserRepository
         GetAllUsersAsync()
     {
         return await Query()
+            .OrderBy(
+                u => u.UserId)
             .ToListAsync();
     }
-
 
     // =========================================================
     // CHECK USERNAME
@@ -110,15 +109,16 @@ public class UserRepository : IUserRepository
         if (string.IsNullOrWhiteSpace(username))
             return false;
 
-        username = username.Trim();
+        var normalizedUsername =
+            username.Trim();
 
         return await _context.Users
             .AsNoTracking()
             .AnyAsync(
                 u =>
-                    u.UserName == username);
+                    u.UserName ==
+                    normalizedUsername);
     }
-
 
     // =========================================================
     // CHECK USERNAME FOR ANOTHER USER
@@ -135,16 +135,17 @@ public class UserRepository : IUserRepository
             return false;
         }
 
-        username = username.Trim();
+        var normalizedUsername =
+            username.Trim();
 
         return await _context.Users
             .AsNoTracking()
             .AnyAsync(
                 u =>
-                    u.UserName == username &&
+                    u.UserName ==
+                    normalizedUsername &&
                     u.UserId != userId);
     }
-
 
     // =========================================================
     // CHECK USER EXISTS
@@ -164,7 +165,6 @@ public class UserRepository : IUserRepository
                     u.UserId == id);
     }
 
-
     // =========================================================
     // CHECK PERSON HAS USER
     // =========================================================
@@ -183,7 +183,6 @@ public class UserRepository : IUserRepository
                     u.PersonId == personId);
     }
 
-
     // =========================================================
     // CREATE
     // =========================================================
@@ -198,24 +197,16 @@ public class UserRepository : IUserRepository
         await _context.Users
             .AddAsync(user);
 
-        // =====================================================
+        // -----------------------------------------------------
         // IMPORTANT
-        // =====================================================
-        // لا يوجد SaveChangesAsync هنا.
         //
-        // الـ UnitOfWork هو المسؤول عن الحفظ.
+        // No SaveChangesAsync here.
         //
-        // بعد SaveChangesAsync من الـ UnitOfWork
-        // سيتم توليد UserId من قاعدة البيانات.
-        //
-        // إذا كان الـ Service يحتاج الـ ID مباشرة،
-        // يجب تنفيذ SaveChangesAsync في تلك العملية
-        // قبل استخدام الـ ID في Entity أخرى.
-        // =====================================================
+        // UnitOfWork owns persistence.
+        // -----------------------------------------------------
 
         return user.UserId;
     }
-
 
     // =========================================================
     // UPDATE
@@ -231,20 +222,23 @@ public class UserRepository : IUserRepository
         if (user.UserId <= 0)
             return false;
 
+        // -----------------------------------------------------
+        // LOAD TRACKED ENTITY
+        // -----------------------------------------------------
 
         var existingUser =
             await _context.Users
                 .FirstOrDefaultAsync(
                     u =>
-                        u.UserId == user.UserId);
+                        u.UserId ==
+                        user.UserId);
 
         if (existingUser is null)
             return false;
 
-
-        // =====================================================
-        // UPDATE VALUES
-        // =====================================================
+        // -----------------------------------------------------
+        // APPLY CHANGES
+        // -----------------------------------------------------
 
         existingUser.PersonId =
             user.PersonId;
@@ -258,18 +252,16 @@ public class UserRepository : IUserRepository
         existingUser.IsActive =
             user.IsActive;
 
-
-        // =====================================================
+        // -----------------------------------------------------
         // IMPORTANT
-        // =====================================================
-        // لا يوجد SaveChangesAsync هنا.
         //
-        // الـ UnitOfWork سيقوم بالحفظ.
-        // =====================================================
+        // No SaveChangesAsync here.
+        //
+        // UnitOfWork owns persistence.
+        // -----------------------------------------------------
 
         return true;
     }
-
 
     // =========================================================
     // DELETE
@@ -282,7 +274,6 @@ public class UserRepository : IUserRepository
         if (id <= 0)
             return false;
 
-
         var user =
             await _context.Users
                 .FirstOrDefaultAsync(
@@ -292,24 +283,17 @@ public class UserRepository : IUserRepository
         if (user is null)
             return false;
 
-
         _context.Users
             .Remove(user);
 
-
-        // =====================================================
+        // -----------------------------------------------------
         // IMPORTANT
-        // =====================================================
-        // لا يوجد SaveChangesAsync هنا.
         //
-        // لا نحاول التقاط DbUpdateException هنا أيضًا،
-        // لأن الخطأ سيحدث فعليًا عند:
+        // No SaveChangesAsync here.
         //
-        //     UnitOfWork.SaveChangesAsync()
-        //
-        // وبالتالي الـ Service / Transaction هو المكان
-        // الصحيح لمعالجة فشل عملية الحفظ.
-        // =====================================================
+        // Foreign-key violations, if any, will surface when
+        // UnitOfWork.SaveChangesAsync() is executed.
+        // -----------------------------------------------------
 
         return true;
     }

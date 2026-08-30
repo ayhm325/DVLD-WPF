@@ -9,17 +9,22 @@ namespace Application.Services;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
-
+    private readonly IUnitOfWork _unitOfWork;
 
     public UserService(
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork)
     {
         _userRepository =
             userRepository
             ?? throw new ArgumentNullException(
                 nameof(userRepository));
-    }
 
+        _unitOfWork =
+            unitOfWork
+            ?? throw new ArgumentNullException(
+                nameof(unitOfWork));
+    }
 
     // =========================================================
     // GET ALL
@@ -40,7 +45,6 @@ public class UserService : IUserService
         return Result<List<UserDto>>
             .Success(dtos);
     }
-
 
     // =========================================================
     // GET BY ID
@@ -73,7 +77,6 @@ public class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
-
     // =========================================================
     // GET BY PERSON ID
     // =========================================================
@@ -105,7 +108,6 @@ public class UserService : IUserService
             .Success(
                 UserMapper.ToDto(user));
     }
-
 
     // =========================================================
     // GET BY USERNAME
@@ -142,7 +144,6 @@ public class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
-
     // =========================================================
     // CHECK USER EXISTS
     // =========================================================
@@ -157,7 +158,6 @@ public class UserService : IUserService
         return await _userRepository
             .IsUserExistsByIdAsync(id);
     }
-
 
     // =========================================================
     // CHECK USERNAME
@@ -180,7 +180,6 @@ public class UserService : IUserService
                 userId);
     }
 
-
     // =========================================================
     // CREATE
     // =========================================================
@@ -189,6 +188,10 @@ public class UserService : IUserService
         AddUserAsync(
             CreateUserDto dto)
     {
+        // -----------------------------------------------------
+        // VALIDATION
+        // -----------------------------------------------------
+
         if (dto is null)
         {
             return Result<int>
@@ -210,9 +213,8 @@ public class UserService : IUserService
         var username =
             dto.UserName.Trim();
 
-
         // -----------------------------------------------------
-        // Username uniqueness
+        // USERNAME UNIQUENESS
         // -----------------------------------------------------
 
         if (await _userRepository
@@ -223,9 +225,8 @@ public class UserService : IUserService
                     "Username is already in use.");
         }
 
-
         // -----------------------------------------------------
-        // One user per person
+        // ONE USER PER PERSON
         // -----------------------------------------------------
 
         if (await _userRepository
@@ -237,28 +238,37 @@ public class UserService : IUserService
                     "This person is already associated with a user account.");
         }
 
-
         // -----------------------------------------------------
-        // Hash password
+        // MAP + HASH PASSWORD
         // -----------------------------------------------------
 
         var hashedPassword =
             BCrypt.Net.BCrypt
-                .HashPassword(dto.Password);
-
+                .HashPassword(
+                    dto.Password);
 
         var user =
             UserMapper.ToEntity(
                 dto,
                 hashedPassword);
 
+        // -----------------------------------------------------
+        // ADD TO CURRENT DbContext
+        // -----------------------------------------------------
 
-        var userId =
-            await _userRepository
-                .AddUserAsync(user);
+        await _userRepository
+            .AddUserAsync(user);
 
+        // -----------------------------------------------------
+        // PERSIST THROUGH UNIT OF WORK
+        // -----------------------------------------------------
 
-        if (userId <= 0)
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0 ||
+            user.UserId <= 0)
         {
             return Result<int>
                 .FromFailure(
@@ -266,9 +276,9 @@ public class UserService : IUserService
         }
 
         return Result<int>
-            .Success(userId);
+            .Success(
+                user.UserId);
     }
-
 
     // =========================================================
     // UPDATE
@@ -279,11 +289,19 @@ public class UserService : IUserService
             int id,
             UpdateUserDto dto)
     {
+        // -----------------------------------------------------
+        // VALIDATE ID
+        // -----------------------------------------------------
+
         if (id <= 0)
         {
             return Result.ValidationFailure(
                 "Invalid user ID.");
         }
+
+        // -----------------------------------------------------
+        // VALIDATE DTO
+        // -----------------------------------------------------
 
         if (dto is null)
         {
@@ -301,6 +319,10 @@ public class UserService : IUserService
                 validation.Error);
         }
 
+        // -----------------------------------------------------
+        // GET EXISTING USER
+        // -----------------------------------------------------
+
         var user =
             await _userRepository
                 .GetUserByUserIdAsync(id);
@@ -314,9 +336,8 @@ public class UserService : IUserService
         var username =
             dto.UserName.Trim();
 
-
         // -----------------------------------------------------
-        // Username uniqueness
+        // USERNAME UNIQUENESS
         // -----------------------------------------------------
 
         if (await _userRepository
@@ -328,9 +349,8 @@ public class UserService : IUserService
                 "Username is already in use by another user.");
         }
 
-
         // -----------------------------------------------------
-        // Person uniqueness
+        // PERSON UNIQUENESS
         // -----------------------------------------------------
 
         if (user.PersonId != dto.PersonId &&
@@ -342,9 +362,11 @@ public class UserService : IUserService
                 "This person is already associated with another user account.");
         }
 
-
         // -----------------------------------------------------
-        // Update
+        // UPDATE
+        //
+        // Password is intentionally not changed here.
+        // Password changes have their own workflow.
         // -----------------------------------------------------
 
         user.UserName =
@@ -356,21 +378,36 @@ public class UserService : IUserService
         user.IsActive =
             dto.IsActive;
 
+        // -----------------------------------------------------
+        // APPLY TO DbContext
+        // -----------------------------------------------------
 
-        // IMPORTANT:
-        // Password is intentionally NOT changed here.
-
-
-        var success =
+        var updated =
             await _userRepository
                 .UpdateUserAsync(user);
 
-        return success
-            ? Result.Success()
-            : Result.Failure(
+        if (!updated)
+        {
+            return Result.Failure(
                 "Failed to update user data.");
-    }
+        }
 
+        // -----------------------------------------------------
+        // PERSIST
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result.Failure(
+                "No user changes were saved.");
+        }
+
+        return Result.Success();
+    }
 
     // =========================================================
     // DELETE
@@ -380,11 +417,19 @@ public class UserService : IUserService
         DeleteUserAsync(
             int id)
     {
+        // -----------------------------------------------------
+        // VALIDATION
+        // -----------------------------------------------------
+
         if (id <= 0)
         {
             return Result.ValidationFailure(
                 "Invalid user ID.");
         }
+
+        // -----------------------------------------------------
+        // EXISTS
+        // -----------------------------------------------------
 
         var exists =
             await _userRepository
@@ -396,20 +441,36 @@ public class UserService : IUserService
                 "User not found.");
         }
 
+        // -----------------------------------------------------
+        // DELETE
+        // -----------------------------------------------------
 
-        var success =
+        var deleted =
             await _userRepository
                 .DeleteUserAsync(id);
 
-        if (!success)
+        if (!deleted)
         {
             return Result.Conflict(
                 "This user cannot be deleted because it is referenced by existing records. Deactivate the user instead.");
         }
 
+        // -----------------------------------------------------
+        // PERSIST
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result.Failure(
+                "Failed to save user deletion.");
+        }
+
         return Result.Success();
     }
-
 
     // =========================================================
     // AUTHENTICATE
@@ -446,7 +507,6 @@ public class UserService : IUserService
                 user.Password);
     }
 
-
     // =========================================================
     // CHANGE PASSWORD
     // =========================================================
@@ -456,6 +516,10 @@ public class UserService : IUserService
             int userId,
             ChangePasswordDto dto)
     {
+        // -----------------------------------------------------
+        // VALIDATION
+        // -----------------------------------------------------
+
         if (userId <= 0)
         {
             return Result.ValidationFailure(
@@ -478,6 +542,10 @@ public class UserService : IUserService
                 validation.Error);
         }
 
+        // -----------------------------------------------------
+        // GET USER
+        // -----------------------------------------------------
+
         var user =
             await _userRepository
                 .GetUserByUserIdAsync(
@@ -489,9 +557,8 @@ public class UserService : IUserService
                 "User not found.");
         }
 
-
         // -----------------------------------------------------
-        // Verify current password
+        // VERIFY CURRENT PASSWORD
         // -----------------------------------------------------
 
         var currentPasswordValid =
@@ -506,9 +573,8 @@ public class UserService : IUserService
                 "Current password is incorrect.");
         }
 
-
         // -----------------------------------------------------
-        // Hash new password
+        // HASH NEW PASSWORD
         // -----------------------------------------------------
 
         user.Password =
@@ -516,17 +582,36 @@ public class UserService : IUserService
                 .HashPassword(
                     dto.NewPassword);
 
+        // -----------------------------------------------------
+        // UPDATE
+        // -----------------------------------------------------
 
-        var success =
+        var updated =
             await _userRepository
                 .UpdateUserAsync(user);
 
-        return success
-            ? Result.Success()
-            : Result.Failure(
+        if (!updated)
+        {
+            return Result.Failure(
                 "Failed to update password.");
-    }
+        }
 
+        // -----------------------------------------------------
+        // PERSIST
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result.Failure(
+                "Failed to save password change.");
+        }
+
+        return Result.Success();
+    }
 
     // =========================================================
     // LOGIN
@@ -536,6 +621,10 @@ public class UserService : IUserService
         LoginAsync(
             LoginRequestDto dto)
     {
+        // -----------------------------------------------------
+        // VALIDATION
+        // -----------------------------------------------------
+
         if (dto is null)
         {
             return Result<UserDto>
@@ -557,6 +646,10 @@ public class UserService : IUserService
         var username =
             dto.UserName.Trim();
 
+        // -----------------------------------------------------
+        // GET USER
+        // -----------------------------------------------------
+
         var user =
             await _userRepository
                 .GetUserByUsernameAsync(
@@ -569,12 +662,20 @@ public class UserService : IUserService
                     "Invalid username or password.");
         }
 
+        // -----------------------------------------------------
+        // ACTIVE CHECK
+        // -----------------------------------------------------
+
         if (!user.IsActive)
         {
             return Result<UserDto>
                 .FromFailure(
                     "This user account is inactive.");
         }
+
+        // -----------------------------------------------------
+        // PASSWORD VERIFICATION
+        // -----------------------------------------------------
 
         var passwordValid =
             BCrypt.Net.BCrypt
