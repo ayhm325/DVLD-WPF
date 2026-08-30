@@ -13,6 +13,7 @@ namespace Application.Services;
 
 public class InternationalService : IInternationalService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IInternationalRepository _repository;
     private readonly ILicenseService _licenseService;
     private readonly IApplicationService _applicationService;
@@ -20,26 +21,42 @@ public class InternationalService : IInternationalService
     private readonly ICurrentUserService _currentUserService;
 
     public InternationalService(
-        IInternationalRepository repository,
-        ILicenseService licenseService,
-        IApplicationService applicationService,
-        IApplicationTypeService applicationTypeService,
-        ICurrentUserService currentUserService)
+    IInternationalRepository repository,
+    ILicenseService licenseService,
+    IApplicationService applicationService,
+    IApplicationTypeService applicationTypeService,
+    ICurrentUserService currentUserService,
+    IUnitOfWork unitOfWork)
     {
-        _repository = repository
-            ?? throw new ArgumentNullException(nameof(repository));
+        _repository =
+            repository
+            ?? throw new ArgumentNullException(
+                nameof(repository));
 
-        _licenseService = licenseService
-            ?? throw new ArgumentNullException(nameof(licenseService));
+        _licenseService =
+            licenseService
+            ?? throw new ArgumentNullException(
+                nameof(licenseService));
 
-        _applicationService = applicationService
-            ?? throw new ArgumentNullException(nameof(applicationService));
+        _applicationService =
+            applicationService
+            ?? throw new ArgumentNullException(
+                nameof(applicationService));
 
-        _applicationTypeService = applicationTypeService
-            ?? throw new ArgumentNullException(nameof(applicationTypeService));
+        _applicationTypeService =
+            applicationTypeService
+            ?? throw new ArgumentNullException(
+                nameof(applicationTypeService));
 
-        _currentUserService = currentUserService
-            ?? throw new ArgumentNullException(nameof(currentUserService));
+        _currentUserService =
+            currentUserService
+            ?? throw new ArgumentNullException(
+                nameof(currentUserService));
+
+        _unitOfWork =
+            unitOfWork
+            ?? throw new ArgumentNullException(
+                nameof(unitOfWork));
     }
 
 
@@ -250,7 +267,14 @@ public class InternationalService : IInternationalService
                 "Failed to create international license.");
         }
 
-        return Result.Success();
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        return saved > 0
+            ? Result.Success()
+            : Result.Failure(
+                "Failed to save international license.");
     }
 
 
@@ -321,10 +345,20 @@ public class InternationalService : IInternationalService
             await _repository
                 .UpdateAsync(existing);
 
-        return updated
+        if (!updated)
+        {
+            return Result.Failure(
+                "Failed to update international license.");
+        }
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
-                "Failed to update international license.");
+                "Failed to save international license changes.");
     }
 
 
@@ -356,13 +390,24 @@ public class InternationalService : IInternationalService
         }
 
         var deleted =
-            await _repository
-                .DeleteAsync(internationalLicenseId);
+    await _repository
+        .DeleteAsync(
+            internationalLicenseId);
 
-        return deleted
+        if (!deleted)
+        {
+            return Result.Failure(
+                "Failed to delete international license.");
+        }
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
-                "Failed to delete international license.");
+                "Failed to save international license deletion.");
     }
 
 

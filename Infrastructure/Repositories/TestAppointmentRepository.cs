@@ -9,145 +9,151 @@ namespace Infrastructure.Repositories;
 public class TestAppointmentRepository
     : ITestAppointmentRepository
 {
-    private readonly IDbContextFactory<DVLDDbContext>
-        _contextFactory;
+    private readonly DVLDDbContext _context;
 
     public TestAppointmentRepository(
-        IDbContextFactory<DVLDDbContext> contextFactory)
+        DVLDDbContext context)
     {
-        _contextFactory =
-            contextFactory
+        _context =
+            context
             ?? throw new ArgumentNullException(
-                nameof(contextFactory));
+                nameof(context));
     }
-
 
     // =========================================================
     // BASE QUERY
     // =========================================================
 
     private IQueryable<TestAppointment>
-        Query(DVLDDbContext context)
+        Query()
     {
-        return context.TestAppointments
+        return _context.TestAppointments
             .Include(x => x.TestType)
-            .Include(x => x.LocalDrivingLicenseApplication)
+            .Include(x =>
+                x.LocalDrivingLicenseApplication)
             .Include(x => x.User)
             .Include(x => x.Test)
             .Include(x => x.RetakeTestApplication);
     }
 
-
     // =========================================================
-    // GET
+    // GET BY ID
     // =========================================================
 
     public async Task<TestAppointment?>
         GetByIdAsync(int id)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (id <= 0)
+            return null;
 
-        return await Query(context)
+        return await Query()
             .FirstOrDefaultAsync(
-                x => x.TestAppointmentID == id);
+                x =>
+                    x.TestAppointmentID == id);
     }
 
+    // =========================================================
+    // GET ALL
+    // =========================================================
 
     public async Task<List<TestAppointment>>
         GetAllAsync()
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
+            .AsNoTracking()
             .ToListAsync();
     }
 
+    // =========================================================
+    // GET BY APPLICATION
+    // =========================================================
 
     public async Task<List<TestAppointment>>
         GetByApplicationIdAsync(
             int applicationId)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (applicationId <= 0)
+            return [];
 
-        return await Query(context)
-            .Where(x =>
-                x.LocalDrivingLicenseApplicationID ==
-                applicationId)
+        return await Query()
+            .AsNoTracking()
+            .Where(
+                x =>
+                    x.LocalDrivingLicenseApplicationID ==
+                    applicationId)
             .ToListAsync();
     }
 
+    // =========================================================
+    // GET BY TEST TYPE
+    // =========================================================
 
     public async Task<List<TestAppointment>>
         GetByTestTypeIdAsync(
             TestTypeEnum testType)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await Query(context)
-            .Where(x =>
-                x.TestTypeID == (int)testType)
+        return await Query()
+            .AsNoTracking()
+            .Where(
+                x =>
+                    x.TestTypeID ==
+                    (int)testType)
             .ToListAsync();
     }
 
+    // =========================================================
+    // GET BY USER
+    // =========================================================
 
     public async Task<List<TestAppointment>>
         GetByCreatedUserIdAsync(
             int userId)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (userId <= 0)
+            return [];
 
-        return await Query(context)
-            .Where(x =>
-                x.CreatedByUserID == userId)
+        return await Query()
+            .AsNoTracking()
+            .Where(
+                x =>
+                    x.CreatedByUserID ==
+                    userId)
             .ToListAsync();
     }
 
+    // =========================================================
+    // GET SCHEDULE INFO
+    // =========================================================
 
     public async Task<TestAppointment?>
         GetScheduleInfoAsync(
             int testAppointmentId)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (testAppointmentId <= 0)
+            return null;
 
-        return await context.TestAppointments
-
+        return await _context.TestAppointments
+            .AsNoTracking()
             .Include(x => x.TestType)
-
             .Include(x =>
                 x.LocalDrivingLicenseApplication)
                 .ThenInclude(x => x.Application)
-                .ThenInclude(a => a.Person)
-
+                    .ThenInclude(a => a.Person)
             .Include(x =>
                 x.LocalDrivingLicenseApplication)
                 .ThenInclude(x => x.Application)
-                .ThenInclude(a => a.ApplicationType)
-
+                    .ThenInclude(a => a.ApplicationType)
             .Include(x =>
                 x.LocalDrivingLicenseApplication)
                 .ThenInclude(x => x.LicenseClass)
-
             .FirstOrDefaultAsync(
                 x =>
                     x.TestAppointmentID ==
                     testAppointmentId);
     }
 
-
     // =========================================================
-    // CHECKS
+    // EXISTS
     // =========================================================
 
     public async Task<bool>
@@ -155,170 +161,184 @@ public class TestAppointmentRepository
             Expression<Func<TestAppointment, bool>>
                 predicate)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        ArgumentNullException.ThrowIfNull(
+            predicate);
 
-        return await context.TestAppointments
+        return await _context.TestAppointments
             .AsNoTracking()
             .AnyAsync(predicate);
     }
 
+    // =========================================================
+    // CONFLICT
+    // =========================================================
 
-    public async Task<bool> HasConflictAsync(
-        int localAppId,int testTypeId,
-        DateTime dateTime,int? excludeAppointmentId = null)
+    public async Task<bool>
+        HasConflictAsync(
+            int localAppId,
+            int testTypeId,
+            DateTime dateTime,
+            int? excludeAppointmentId = null)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (localAppId <= 0 ||
+            testTypeId <= 0)
+        {
+            return false;
+        }
 
         var query =
-            context.TestAppointments
+            _context.TestAppointments
                 .AsNoTracking()
-                .Where(x =>
-                    x.LocalDrivingLicenseApplicationID == localAppId &&
-                    x.TestTypeID == testTypeId &&
-                    x.AppointmentDate == dateTime);
+                .Where(
+                    x =>
+                        x.LocalDrivingLicenseApplicationID ==
+                        localAppId &&
+                        x.TestTypeID ==
+                        testTypeId &&
+                        x.AppointmentDate ==
+                        dateTime);
 
         if (excludeAppointmentId.HasValue)
         {
-            query = query.Where(x =>
-                x.TestAppointmentID !=
-                excludeAppointmentId.Value);
+            query =
+                query.Where(
+                    x =>
+                        x.TestAppointmentID !=
+                        excludeAppointmentId.Value);
         }
 
         return await query.AnyAsync();
     }
 
+    // =========================================================
+    // USER CONFLICT
+    // =========================================================
 
     public async Task<bool>
         HasUserConflictAsync(
             int userId,
             DateTime dateTime)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (userId <= 0)
+            return false;
 
-        return await context.TestAppointments
-            .AnyAsync(x =>
-                x.CreatedByUserID == userId &&
-                x.AppointmentDate == dateTime);
+        return await _context.TestAppointments
+            .AsNoTracking()
+            .AnyAsync(
+                x =>
+                    x.CreatedByUserID ==
+                    userId &&
+                    x.AppointmentDate ==
+                    dateTime);
     }
 
+    // =========================================================
+    // APPLICATION CONFLICT
+    // =========================================================
 
     public async Task<bool>
         HasApplicationConflictAsync(
             int applicationId,
             DateTime dateTime)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (applicationId <= 0)
+            return false;
 
-        return await context.TestAppointments
-            .AnyAsync(x =>
-                x.LocalDrivingLicenseApplicationID ==
-                applicationId &&
-                x.AppointmentDate == dateTime);
+        return await _context.TestAppointments
+            .AsNoTracking()
+            .AnyAsync(
+                x =>
+                    x.LocalDrivingLicenseApplicationID ==
+                    applicationId &&
+                    x.AppointmentDate ==
+                    dateTime);
     }
 
+    // =========================================================
+    // ALREADY SCHEDULED
+    // =========================================================
 
     public async Task<bool>
         IsAppointmentAlreadyScheduledAsync(
             int localAppId,
             int testTypeId)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-
-        // -----------------------------------------------------
-        // OPEN APPOINTMENT
-        // -----------------------------------------------------
+        if (localAppId <= 0 ||
+            testTypeId <= 0)
+        {
+            return false;
+        }
 
         var hasPendingAppointment =
-            await context.TestAppointments
-                .AnyAsync(a =>
-                    a.LocalDrivingLicenseApplicationID ==
+            await _context.TestAppointments
+                .AsNoTracking()
+                .AnyAsync(
+                    a =>
+                        a.LocalDrivingLicenseApplicationID ==
                         localAppId &&
-
-                    a.TestTypeID ==
+                        a.TestTypeID ==
                         testTypeId &&
-
-                    !a.IsLocked);
+                        !a.IsLocked);
 
         if (hasPendingAppointment)
             return true;
 
-
-        // -----------------------------------------------------
-        // PREVIOUS PASSED TEST
-        // -----------------------------------------------------
-
-        var hasPassed =
-            await context.Tests
-                .AnyAsync(t =>
+        return await _context.Tests
+            .AsNoTracking()
+            .AnyAsync(
+                t =>
                     t.TestAppointment != null &&
-
                     t.TestAppointment
                         .LocalDrivingLicenseApplicationID ==
                         localAppId &&
-
-                    t.TestAppointment.TestTypeID ==
+                    t.TestAppointment
+                        .TestTypeID ==
                         testTypeId &&
-
                     t.TestResult);
-
-        return hasPassed;
     }
-
 
     // =========================================================
     // CREATE
     // =========================================================
 
-    public async Task<bool> AddAsync(TestAppointment appointment)
+    public async Task<bool>
+        AddAsync(
+            TestAppointment appointment)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        ArgumentNullException.ThrowIfNull(
+            appointment);
 
-        await context.TestAppointments
+        await _context.TestAppointments
             .AddAsync(appointment);
 
-        return await context
-            .SaveChangesAsync() > 0;
-    }
+        // No SaveChangesAsync.
 
+        return true;
+    }
 
     // =========================================================
     // UPDATE
     // =========================================================
 
-    public async Task<bool>UpdateAsync(TestAppointment appointment)
+    public async Task<bool>
+        UpdateAsync(
+            TestAppointment appointment)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        ArgumentNullException.ThrowIfNull(
+            appointment);
+
+        if (appointment.TestAppointmentID <= 0)
+            return false;
 
         var existing =
-            await context.TestAppointments
+            await _context.TestAppointments
                 .FirstOrDefaultAsync(
                     x =>
                         x.TestAppointmentID ==
                         appointment.TestAppointmentID);
 
         if (existing is null)
-        {
-            throw new InvalidOperationException(
-                $"Test appointment with ID " +
-                $"{appointment.TestAppointmentID} " +
-                $"was not found.");
-        }
-
+            return false;
 
         existing.TestTypeID =
             appointment.TestTypeID;
@@ -341,33 +361,34 @@ public class TestAppointmentRepository
         existing.RetakeTestApplicationID =
             appointment.RetakeTestApplicationID;
 
-
-        await context.SaveChangesAsync();
+        // No SaveChangesAsync.
 
         return true;
     }
-
 
     // =========================================================
     // DELETE
     // =========================================================
 
-    public async Task DeleteAsync(int id)
+    public async Task
+        DeleteAsync(int id)
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        if (id <= 0)
+            return;
 
         var entity =
-            await context.TestAppointments
-                .FindAsync(id);
+            await _context.TestAppointments
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.TestAppointmentID ==
+                        id);
 
         if (entity is null)
             return;
 
-        context.TestAppointments
+        _context.TestAppointments
             .Remove(entity);
 
-        await context.SaveChangesAsync();
+        // No SaveChangesAsync.
     }
 }

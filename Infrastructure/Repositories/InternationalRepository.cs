@@ -4,41 +4,33 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public class InternationalRepository : IInternationalRepository
+public class InternationalRepository
+    : IInternationalRepository
 {
-    private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+    private readonly DVLDDbContext _context;
 
     public InternationalRepository(
-        IDbContextFactory<DVLDDbContext> contextFactory)
+        DVLDDbContext context)
     {
-        _contextFactory = contextFactory
-            ?? throw new ArgumentNullException(nameof(contextFactory));
+        _context =
+            context
+            ?? throw new ArgumentNullException(
+                nameof(context));
     }
-
 
     // =========================================================
     // BASE QUERY
     // =========================================================
 
-    private static IQueryable<InternationalLicense> Query(
-        DVLDDbContext context)
+    private IQueryable<InternationalLicense>
+        Query()
     {
-        return context.InternationalLicenses
-
-            // Application
+        return _context.InternationalLicenses
             .Include(i => i.Application)
-
-            // Driver -> Person
             .Include(i => i.Driver)
                 .ThenInclude(d => d.Person)
-
-            // Local License
-            .Include(i => i.IssuedUsingLocalLicense)
-
-            // Created By User
-            .Include(i => i.CreatedByUser);
+            .Include(i => i.IssuedUsingLocalLicense);
     }
-
 
     // =========================================================
     // GET ALL
@@ -47,14 +39,12 @@ public class InternationalRepository : IInternationalRepository
     public async Task<List<InternationalLicense>>
         GetAllAsync()
     {
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .AsNoTracking()
+            .OrderByDescending(
+                i => i.InternationalLicenseID)
             .ToListAsync();
     }
-
 
     // =========================================================
     // GET BY ID
@@ -67,16 +57,13 @@ public class InternationalRepository : IInternationalRepository
         if (internationalLicenseId <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                i => i.InternationalLicenseID ==
-                     internationalLicenseId);
+                i =>
+                    i.InternationalLicenseID ==
+                    internationalLicenseId);
     }
-
 
     // =========================================================
     // GET BY DRIVER ID
@@ -89,15 +76,13 @@ public class InternationalRepository : IInternationalRepository
         if (driverId <= 0)
             return [];
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .AsNoTracking()
-            .Where(i => i.DriverID == driverId)
+            .Where(
+                i =>
+                    i.DriverID == driverId)
             .ToListAsync();
     }
-
 
     // =========================================================
     // GET BY APPLICATION ID
@@ -110,16 +95,13 @@ public class InternationalRepository : IInternationalRepository
         if (applicationId <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                i => i.ApplicationID ==
-                     applicationId);
+                i =>
+                    i.ApplicationID ==
+                    applicationId);
     }
-
 
     // =========================================================
     // GET BY LOCAL LICENSE ID
@@ -132,20 +114,17 @@ public class InternationalRepository : IInternationalRepository
         if (localLicenseId <= 0)
             return [];
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .AsNoTracking()
-            .Where(i =>
-                i.IssuedUsingLocalLicenseID ==
-                localLicenseId)
+            .Where(
+                i =>
+                    i.IssuedUsingLocalLicenseID ==
+                    localLicenseId)
             .ToListAsync();
     }
 
-
     // =========================================================
-    // CHECK - EXISTS BY LOCAL LICENSE
+    // CHECK
     // =========================================================
 
     public async Task<bool>
@@ -155,19 +134,17 @@ public class InternationalRepository : IInternationalRepository
         if (localLicenseId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await context.InternationalLicenses
+        return await _context
+            .InternationalLicenses
             .AsNoTracking()
-            .AnyAsync(i =>
-                i.IssuedUsingLocalLicenseID ==
-                localLicenseId);
+            .AnyAsync(
+                i =>
+                    i.IssuedUsingLocalLicenseID ==
+                    localLicenseId);
     }
 
-
     // =========================================================
-    // CHECK - ACTIVE INTERNATIONAL LICENSE
+    // CHECK ACTIVE
     // =========================================================
 
     public async Task<bool>
@@ -177,16 +154,14 @@ public class InternationalRepository : IInternationalRepository
         if (driverId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await context.InternationalLicenses
+        return await _context
+            .InternationalLicenses
             .AsNoTracking()
-            .AnyAsync(i =>
-                i.DriverID == driverId &&
-                i.IsActive);
+            .AnyAsync(
+                i =>
+                    i.DriverID == driverId &&
+                    i.IsActive);
     }
-
 
     // =========================================================
     // CREATE
@@ -196,19 +171,18 @@ public class InternationalRepository : IInternationalRepository
         AddAsync(
             InternationalLicense entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(
+            entity);
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        await context.InternationalLicenses
+        await _context
+            .InternationalLicenses
             .AddAsync(entity);
 
-        await context.SaveChangesAsync();
+        // No SaveChangesAsync.
+        // UnitOfWork owns persistence.
 
         return entity.InternationalLicenseID;
     }
-
 
     // =========================================================
     // UPDATE
@@ -218,30 +192,48 @@ public class InternationalRepository : IInternationalRepository
         UpdateAsync(
             InternationalLicense entity)
     {
-        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(
+            entity);
 
         if (entity.InternationalLicenseID <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var existing =
-            await context.InternationalLicenses
-                .FirstOrDefaultAsync(i =>
-                    i.InternationalLicenseID ==
-                    entity.InternationalLicenseID);
+            await _context
+                .InternationalLicenses
+                .FirstOrDefaultAsync(
+                    i =>
+                        i.InternationalLicenseID ==
+                        entity.InternationalLicenseID);
 
         if (existing is null)
             return false;
 
-        context.Entry(existing)
-            .CurrentValues
-            .SetValues(entity);
+        existing.ApplicationID =
+            entity.ApplicationID;
 
-        return await context.SaveChangesAsync() > 0;
+        existing.DriverID =
+            entity.DriverID;
+
+        existing.IssuedUsingLocalLicenseID =
+            entity.IssuedUsingLocalLicenseID;
+
+        existing.IssueDate =
+            entity.IssueDate;
+
+        existing.ExpirationDate =
+            entity.ExpirationDate;
+
+        existing.IsActive =
+            entity.IsActive;
+
+        existing.CreatedByUserID =
+            entity.CreatedByUserID;
+
+        // No SaveChangesAsync.
+
+        return true;
     }
-
 
     // =========================================================
     // DELETE
@@ -254,21 +246,23 @@ public class InternationalRepository : IInternationalRepository
         if (internationalLicenseId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var entity =
-            await context.InternationalLicenses
-                .FirstOrDefaultAsync(i =>
-                    i.InternationalLicenseID ==
-                    internationalLicenseId);
+            await _context
+                .InternationalLicenses
+                .FirstOrDefaultAsync(
+                    i =>
+                        i.InternationalLicenseID ==
+                        internationalLicenseId);
 
         if (entity is null)
             return false;
 
-        context.InternationalLicenses
+        _context
+            .InternationalLicenses
             .Remove(entity);
 
-        return await context.SaveChangesAsync() > 0;
+        // No SaveChangesAsync.
+
+        return true;
     }
 }

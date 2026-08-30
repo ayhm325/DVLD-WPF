@@ -1,5 +1,4 @@
-﻿
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using Application.Mappings;
@@ -10,14 +9,21 @@ namespace Application.Services;
 public class PersonService : IPersonService
 {
     private readonly IPersonRepository _personRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
     public PersonService(
-        IPersonRepository personRepository)
+        IPersonRepository personRepository,
+        IUnitOfWork unitOfWork)
     {
         _personRepository =
             personRepository
             ?? throw new ArgumentNullException(
                 nameof(personRepository));
+
+        _unitOfWork =
+            unitOfWork
+            ?? throw new ArgumentNullException(
+                nameof(unitOfWork));
     }
 
     // =========================================================
@@ -144,11 +150,12 @@ public class PersonService : IPersonService
         }
 
         // -----------------------------------------------------
-        // 1. Validate input
+        // 1. Validate
         // -----------------------------------------------------
 
         var validation =
-            PersonValidator.Validate(personDto);
+            PersonValidator.Validate(
+                personDto);
 
         if (validation.IsFailure)
         {
@@ -162,10 +169,11 @@ public class PersonService : IPersonService
         // -----------------------------------------------------
 
         var person =
-            PersonMapper.ToEntity(personDto);
+            PersonMapper.ToEntity(
+                personDto);
 
         // -----------------------------------------------------
-        // 3. Check NationalNo uniqueness
+        // 3. Check National Number
         // -----------------------------------------------------
 
         var duplicated =
@@ -182,24 +190,31 @@ public class PersonService : IPersonService
         }
 
         // -----------------------------------------------------
-        // 4. Persist
+        // 4. Add to DbContext
         // -----------------------------------------------------
 
-        try
-        {
-            var personId =
-                await _personRepository
-                    .AddPersonAsync(person);
+        await _personRepository
+            .AddPersonAsync(person);
 
-            return Result<int>
-                .Success(personId);
-        }
-        catch (Exception)
+        // -----------------------------------------------------
+        // 5. Persist through UnitOfWork
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0 ||
+            person.PersonId <= 0)
         {
-            // We will later replace this with a more specific
-            // database exception handler for the unique index.
-            throw;
+            return Result<int>
+                .FromFailure(
+                    "Failed to create person.");
         }
+
+        return Result<int>
+            .Success(
+                person.PersonId);
     }
 
     // =========================================================
@@ -232,7 +247,8 @@ public class PersonService : IPersonService
         }
 
         var validation =
-            PersonValidator.Validate(personDto);
+            PersonValidator.Validate(
+                personDto);
 
         if (validation.IsFailure)
         {
@@ -241,7 +257,7 @@ public class PersonService : IPersonService
         }
 
         // -----------------------------------------------------
-        // 3. Load existing tracked entity
+        // 3. Load tracked entity
         // -----------------------------------------------------
 
         var existingPerson =
@@ -255,7 +271,7 @@ public class PersonService : IPersonService
         }
 
         // -----------------------------------------------------
-        // 4. Check NationalNo uniqueness
+        // 4. Check National Number uniqueness
         // -----------------------------------------------------
 
         var normalizedNationalNo =
@@ -274,7 +290,7 @@ public class PersonService : IPersonService
         }
 
         // -----------------------------------------------------
-        // 5. Apply DTO to existing entity
+        // 5. Apply update to tracked entity
         // -----------------------------------------------------
 
         PersonMapper.ApplyUpdate(
@@ -282,48 +298,66 @@ public class PersonService : IPersonService
             existingPerson);
 
         // -----------------------------------------------------
-        // 6. Persist
+        // 6. Persist through UnitOfWork
         // -----------------------------------------------------
 
-        var success =
-            await _personRepository
-                .UpdatePersonAsync(
-                    existingPerson);
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
 
-        return success
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
-                "Failed to update person.");
+                "No changes were saved.");
     }
 
     // =========================================================
     // DELETE
     // =========================================================
 
-    public async Task<Result> DeletePersonAsync(int id)
+    public async Task<Result>
+        DeletePersonAsync(int id)
     {
         if (id <= 0)
+        {
             return Result.ValidationFailure(
                 "Invalid person ID.");
+        }
 
-        if (!await _personRepository.IsPersonExistsByIdAsync(id))
+        if (!await _personRepository
+                .IsPersonExistsByIdAsync(id))
+        {
             return Result.NotFound(
                 "Person not found.");
+        }
 
-        // Person cannot be deleted if he/she
-        // has any application.
-        if (await _personRepository.HasApplicationsAsync(id))
+        // Person cannot be deleted if they have
+        // one or more applications.
+
+        if (await _personRepository
+                .HasApplicationsAsync(id))
         {
             return Result.Conflict(
                 "Cannot delete this person because they have one or more applications.");
         }
 
-        var success =
-            await _personRepository.DeletePersonAsync(id);
+        var removed =
+            await _personRepository
+                .DeletePersonAsync(id);
 
-        return success
+        if (!removed)
+        {
+            return Result.Failure(
+                "Failed to delete person.");
+        }
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
-                "Failed to delete person.");
+                "Failed to save person deletion.");
     }
 }

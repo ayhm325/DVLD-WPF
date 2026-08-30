@@ -2,30 +2,32 @@
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Repositories
+namespace Infrastructure.Repositories;
+
+public class CountryRepository
+    : ICountryRepository
 {
-    public class CountryRepository : ICountryRepository
+    private readonly DVLDDbContext _context;
+
+    public CountryRepository(
+        DVLDDbContext context)
     {
-        private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+        _context =
+            context
+            ?? throw new ArgumentNullException(
+                nameof(context));
+    }
 
+    // =========================================================
+    // GET ALL COUNTRIES
+    // =========================================================
 
-        public CountryRepository(
-            IDbContextFactory<DVLDDbContext> contextFactory)
-        {
-            _contextFactory = contextFactory
-                ?? throw new ArgumentNullException(nameof(contextFactory));
-        }
-
-
-
-        public async Task<List<Country>> GetAllCountriesAsync()
-        {
-            using var context = await _contextFactory.CreateDbContextAsync();
-
-            return await context.Countries
-                .AsNoTracking()
-                .OrderBy(c => c.CountryName)
-                .ToListAsync();
-        }
+    public async Task<List<Country>>
+        GetAllCountriesAsync()
+    {
+        return await _context.Countries
+            .AsNoTracking()
+            .OrderBy(c => c.CountryName)
+            .ToListAsync();
     }
 }

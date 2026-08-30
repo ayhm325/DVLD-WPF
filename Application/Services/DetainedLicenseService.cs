@@ -9,14 +9,22 @@ namespace Application.Services;
 public class DetainedLicenseService : IDetainedLicenseService
 {
     private readonly IDetainedLicenseRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
 
     public DetainedLicenseService(
-        IDetainedLicenseRepository repository)
+        IDetainedLicenseRepository repository,
+        IUnitOfWork unitOfWork)
     {
-        _repository = repository
-            ?? throw new ArgumentNullException(nameof(repository));
-    }
+        _repository =
+            repository
+            ?? throw new ArgumentNullException(
+                nameof(repository));
 
+        _unitOfWork =
+            unitOfWork
+            ?? throw new ArgumentNullException(
+                nameof(unitOfWork));
+    }
 
     // =========================================================
     // GET ALL
@@ -37,7 +45,6 @@ public class DetainedLicenseService : IDetainedLicenseService
             .Success(dtos);
     }
 
-
     // =========================================================
     // GET BY ID
     // =========================================================
@@ -46,7 +53,8 @@ public class DetainedLicenseService : IDetainedLicenseService
         GetByIdAsync(int id)
     {
         var validation =
-            DetainedLicenseValidator.ValidateId(id);
+            DetainedLicenseValidator
+                .ValidateId(id);
 
         if (validation.IsFailure)
         {
@@ -69,7 +77,6 @@ public class DetainedLicenseService : IDetainedLicenseService
             .Success(
                 DetainedLicenseMapper.ToDto(entity));
     }
-
 
     // =========================================================
     // GET ACTIVE DETAIN
@@ -107,7 +114,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                 DetainedLicenseMapper.ToDto(entity));
     }
 
-
     // =========================================================
     // CHECK
     // =========================================================
@@ -117,12 +123,13 @@ public class DetainedLicenseService : IDetainedLicenseService
             int licenseId)
     {
         if (licenseId <= 0)
+        {
             return false;
+        }
 
         return await _repository
             .IsLicenseDetainedAsync(licenseId);
     }
-
 
     // =========================================================
     // ADD
@@ -132,6 +139,10 @@ public class DetainedLicenseService : IDetainedLicenseService
         AddAsync(
             CreateDetainedLicenseDto dto)
     {
+        // -----------------------------------------------------
+        // Validation
+        // -----------------------------------------------------
+
         var validation =
             DetainedLicenseValidator
                 .ValidateCreate(dto);
@@ -142,7 +153,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                 .FromValidationFailure(
                     validation.Error);
         }
-
 
         // -----------------------------------------------------
         // Prevent duplicate active detention
@@ -160,7 +170,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                     "License already detained.");
         }
 
-
         // -----------------------------------------------------
         // DTO -> Entity
         // -----------------------------------------------------
@@ -169,23 +178,30 @@ public class DetainedLicenseService : IDetainedLicenseService
             DetainedLicenseMapper
                 .ToEntity(dto);
 
-
         // -----------------------------------------------------
         // CREATE
         // -----------------------------------------------------
 
-        var created =
-            await _repository
-                .AddAsync(entity);
+        await _repository
+            .AddAsync(entity);
 
-        if (created is null ||
-            created.DetainID <= 0)
+        // -----------------------------------------------------
+        // COMMIT
+        //
+        // Repository only changes the DbContext.
+        // UnitOfWork is responsible for persistence.
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0)
         {
             return Result<DetainedLicenseDto>
                 .FromFailure(
-                    "Failed to create detained license.");
+                    "Failed to save detained license.");
         }
-
 
         // -----------------------------------------------------
         // Reload entity with navigation properties
@@ -194,7 +210,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         var savedEntity =
             await _repository
                 .GetByIdAsync(
-                    created.DetainID);
+                    entity.DetainID);
 
         if (savedEntity is null)
         {
@@ -202,7 +218,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                 .FromNotFound(
                     "Unable to retrieve created detained license.");
         }
-
 
         // -----------------------------------------------------
         // Entity -> DTO
@@ -214,7 +229,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                     .ToDto(savedEntity));
     }
 
-
     // =========================================================
     // UPDATE
     // =========================================================
@@ -223,6 +237,10 @@ public class DetainedLicenseService : IDetainedLicenseService
         UpdateAsync(
             UpdateDetainedLicenseDto dto)
     {
+        // -----------------------------------------------------
+        // Validation
+        // -----------------------------------------------------
+
         var validation =
             DetainedLicenseValidator
                 .ValidateUpdate(dto);
@@ -234,6 +252,9 @@ public class DetainedLicenseService : IDetainedLicenseService
                     validation.Error);
         }
 
+        // -----------------------------------------------------
+        // Get existing detention
+        // -----------------------------------------------------
 
         var entity =
             await _repository
@@ -247,7 +268,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                     "Detained license not found.");
         }
 
-
         // -----------------------------------------------------
         // Released detention cannot become active again
         // -----------------------------------------------------
@@ -260,14 +280,12 @@ public class DetainedLicenseService : IDetainedLicenseService
                     "A released license cannot be changed back to active detention.");
         }
 
-
         // -----------------------------------------------------
         // Update basic data
         // -----------------------------------------------------
 
         entity.FineFees =
             dto.FineFees;
-
 
         // -----------------------------------------------------
         // Update release information
@@ -288,7 +306,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                 dto.ReleaseApplicationID;
         }
 
-
         // -----------------------------------------------------
         // UPDATE
         // -----------------------------------------------------
@@ -296,9 +313,23 @@ public class DetainedLicenseService : IDetainedLicenseService
         await _repository
             .UpdateAsync(entity);
 
+        // -----------------------------------------------------
+        // COMMIT
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result
+                .Failure(
+                    "Failed to save detained license changes.");
+        }
+
         return Result.Success();
     }
-
 
     // =========================================================
     // RELEASE
@@ -308,6 +339,10 @@ public class DetainedLicenseService : IDetainedLicenseService
         ReleaseAsync(
             ReleaseDetainedLicenseDto dto)
     {
+        // -----------------------------------------------------
+        // Validation
+        // -----------------------------------------------------
+
         var validation =
             DetainedLicenseValidator
                 .ValidateRelease(dto);
@@ -319,6 +354,9 @@ public class DetainedLicenseService : IDetainedLicenseService
                     validation.Error);
         }
 
+        // -----------------------------------------------------
+        // Get detention
+        // -----------------------------------------------------
 
         var entity =
             await _repository
@@ -332,6 +370,9 @@ public class DetainedLicenseService : IDetainedLicenseService
                     "Detained license not found.");
         }
 
+        // -----------------------------------------------------
+        // Prevent duplicate release
+        // -----------------------------------------------------
 
         if (entity.IsReleased)
         {
@@ -339,7 +380,6 @@ public class DetainedLicenseService : IDetainedLicenseService
                 .Conflict(
                     "License already released.");
         }
-
 
         // -----------------------------------------------------
         // Release
@@ -357,13 +397,27 @@ public class DetainedLicenseService : IDetainedLicenseService
         entity.ReleaseApplicationID =
             dto.ReleaseApplicationID;
 
-
         // -----------------------------------------------------
         // UPDATE
         // -----------------------------------------------------
 
         await _repository
             .UpdateAsync(entity);
+
+        // -----------------------------------------------------
+        // COMMIT
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result
+                .Failure(
+                    "Failed to save license release.");
+        }
 
         return Result.Success();
     }

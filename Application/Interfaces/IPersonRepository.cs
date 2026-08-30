@@ -1,13 +1,12 @@
-﻿
-using Domain.Entities;
+﻿using Domain.Entities;
 
 namespace Application.Interfaces;
 
 public interface IPersonRepository
 {
-    // =========================
+    // =========================================================
     // GET
-    // =========================
+    // =========================================================
 
     Task<Person?> GetPersonByIdAsync(int id);
 
@@ -16,19 +15,17 @@ public interface IPersonRepository
 
     Task<List<Person>> GetAllPersonsAsync();
 
-    // =========================
+    // =========================================================
     // GET FOR UPDATE
-    // =========================
+    // =========================================================
 
-    Task<Person?> GetPersonForUpdateAsync(
-        int id);
+    Task<Person?> GetPersonForUpdateAsync(int id);
 
-    // =========================
+    // =========================================================
     // CHECKS
-    // =========================
+    // =========================================================
 
-    Task<bool> IsPersonExistsByIdAsync(
-        int id);
+    Task<bool> IsPersonExistsByIdAsync(int id);
 
     Task<bool> IsNationalNoDuplicatedAsync(
         string nationalNo,
@@ -36,24 +33,21 @@ public interface IPersonRepository
 
     Task<bool> HasApplicationsAsync(int personId);
 
-    // =========================
+    // =========================================================
     // CREATE
-    // =========================
+    // =========================================================
 
-    Task<int> AddPersonAsync(
-        Person person);
+    Task<int> AddPersonAsync(Person person);
 
-    // =========================
+    // =========================================================
     // UPDATE
-    // =========================
+    // =========================================================
 
-    Task<bool> UpdatePersonAsync(
-        Person person);
+    Task<bool> UpdatePersonAsync(Person person);
 
-    // =========================
+    // =========================================================
     // DELETE
-    // =========================
+    // =========================================================
 
-    Task<bool> DeletePersonAsync(
-        int id);
+    Task<bool> DeletePersonAsync(int id);
 }

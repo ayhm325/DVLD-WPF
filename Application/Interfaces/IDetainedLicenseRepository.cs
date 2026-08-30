@@ -9,8 +9,7 @@ public interface IDetainedLicenseRepository
     // =========================================================
 
     Task<DetainedLicense?>
-        GetByIdAsync(
-            int id);
+        GetByIdAsync(int id);
 
     Task<List<DetainedLicense>>
         GetAllAsync();
@@ -19,7 +18,6 @@ public interface IDetainedLicenseRepository
         GetActiveDetainByLicenseIdAsync(
             int licenseId);
 
-
     // =========================================================
     // CHECKS
     // =========================================================
@@ -27,7 +25,6 @@ public interface IDetainedLicenseRepository
     Task<bool>
         IsLicenseDetainedAsync(
             int licenseId);
-
 
     // =========================================================
     // COMMANDS

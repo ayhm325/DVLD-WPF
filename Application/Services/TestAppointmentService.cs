@@ -9,19 +9,25 @@ namespace Application.Services;
 
 public class TestAppointmentService : ITestAppointmentService
 {
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITestAppointmentRepository _repository;
     private readonly ITestTypeRepository _testTypeRepository;
     private readonly ITestRepository _testRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly ITestWorkflowService _workflowService;
 
-    public TestAppointmentService(
+    public TestAppointmentService(IUnitOfWork unitOfWork,
         ITestAppointmentRepository repository,
         ITestTypeRepository testTypeRepository,
         ITestRepository testRepository,
         ICurrentUserService currentUserService,
         ITestWorkflowService workflowService)
     {
+        _unitOfWork =
+    unitOfWork
+    ?? throw new ArgumentNullException(
+        nameof(unitOfWork));
+
         _repository =
             repository
             ?? throw new ArgumentNullException(
@@ -411,9 +417,20 @@ public class TestAppointmentService : ITestAppointmentService
 
 
         var isSuccess =
-            await _repository.AddAsync(entity);
+    await _repository
+        .AddAsync(entity);
 
-        return isSuccess
+        if (!isSuccess)
+        {
+            return Result.Failure(
+                "Failed to prepare appointment.");
+        }
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
                 "Failed to book appointment.");
@@ -487,10 +504,20 @@ public class TestAppointmentService : ITestAppointmentService
             dto.AppointmentDate;
 
         var isSuccess =
-            await _repository
-                .UpdateAsync(entity);
+     await _repository
+         .UpdateAsync(entity);
 
-        return isSuccess
+        if (!isSuccess)
+        {
+            return Result.Failure(
+                "Failed to prepare appointment update.");
+        }
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
                 "Failed to update appointment.");
@@ -532,9 +559,17 @@ public class TestAppointmentService : ITestAppointmentService
         }
 
 
-        await _repository.DeleteAsync(id);
+        await _repository
+     .DeleteAsync(id);
 
-        return Result.Success();
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+        return saved > 0
+            ? Result.Success()
+            : Result.Failure(
+                "Failed to delete appointment.");
     }
 
 
@@ -543,8 +578,8 @@ public class TestAppointmentService : ITestAppointmentService
     // =========================================================
 
     public async Task<Result>
-        SaveTestResultAsync(
-            SaveTestResultDto dto)
+    SaveTestResultAsync(
+        SaveTestResultDto dto)
     {
         var validation =
             TestAppointmentValidator
@@ -556,14 +591,12 @@ public class TestAppointmentService : ITestAppointmentService
                 validation.Error);
         }
 
-
         if (!_currentUserService.IsLoggedIn ||
             _currentUserService.UserId <= 0)
         {
             return Result.ValidationFailure(
                 "You must be logged in first.");
         }
-
 
         var appointment =
             await _repository
@@ -576,62 +609,107 @@ public class TestAppointmentService : ITestAppointmentService
                 "Test appointment not found.");
         }
 
-
         if (appointment.IsLocked)
         {
             return Result.Conflict(
                 "A result has already been saved for this test.");
         }
 
+        // =========================================================
+        // BEGIN TRANSACTION
+        // =========================================================
 
-        var testEntity =
-            new Domain.Entities.Test
+        await using var transaction =
+            await _unitOfWork
+                .BeginTransactionAsync();
+
+        try
+        {
+            // -----------------------------------------------------
+            // CREATE TEST RESULT
+            // -----------------------------------------------------
+
+            var testEntity =
+                new Domain.Entities.Test
+                {
+                    TestAppointmentID =
+                        dto.TestAppointmentID,
+
+                    TestResult =
+                        dto.TestResult,
+
+                    Notes =
+                        string.IsNullOrWhiteSpace(
+                            dto.Notes)
+                                ? null
+                                : dto.Notes.Trim(),
+
+                    CreatedByUserID =
+                        _currentUserService.UserId
+                };
+
+            var newTestId =
+                await _testRepository
+                    .AddAsync(testEntity);
+
+            if (newTestId <= 0)
             {
-                TestAppointmentID =
-                    dto.TestAppointmentID,
+                await transaction.RollbackAsync();
 
-                TestResult =
-                    dto.TestResult,
+                return Result.Failure(
+                    "Failed to prepare test result.");
+            }
 
-                Notes =
-                    string.IsNullOrWhiteSpace(dto.Notes)
-                        ? null
-                        : dto.Notes.Trim(),
+            // -----------------------------------------------------
+            // LOCK APPOINTMENT
+            // -----------------------------------------------------
 
-                CreatedByUserID =
-                    _currentUserService.UserId
-            };
+            appointment.IsLocked = true;
 
+            var appointmentUpdated =
+                await _repository
+                    .UpdateAsync(
+                        appointment);
 
-        var newTestId =
-            await _testRepository
-                .AddAsync(testEntity);
+            if (!appointmentUpdated)
+            {
+                await transaction.RollbackAsync();
 
-        if (newTestId <= 0)
-        {
-            return Result.Failure(
-                "Failed to save test result.");
+                return Result.Failure(
+                    "Failed to lock appointment.");
+            }
+
+            // -----------------------------------------------------
+            // SAVE BOTH CHANGES
+            // -----------------------------------------------------
+
+            var saved =
+                await _unitOfWork
+                    .SaveChangesAsync();
+
+            if (saved <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result.Failure(
+                    "Failed to save test result.");
+            }
+
+            // -----------------------------------------------------
+            // COMMIT
+            // -----------------------------------------------------
+
+            await transaction.CommitAsync();
+
+            return Result.Success();
         }
-
-
-        appointment.IsLocked =
-            true;
-
-
-        var isSuccess =
-            await _repository
-                .UpdateAsync(appointment);
-
-        if (!isSuccess)
+        catch
         {
-            return Result.Failure(
-                "Failed to lock appointment after saving result.");
+            await transaction.RollbackAsync();
+
+            throw;
         }
-
-
-        return Result.Success();
     }
-
 
     // =========================================================
     // GET TRIAL COUNT

@@ -4,108 +4,266 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public class LocalDrivingLicenseApplicationRepository : ILocalDrivingLicenseApplicationRepository
+public class LocalDrivingLicenseApplicationRepository
+    : ILocalDrivingLicenseApplicationRepository
 {
-    private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+    private readonly DVLDDbContext _context;
 
-    public LocalDrivingLicenseApplicationRepository(IDbContextFactory<DVLDDbContext> contextFactory)
+    public LocalDrivingLicenseApplicationRepository(
+        DVLDDbContext context)
     {
-        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+        _context =
+            context
+            ?? throw new ArgumentNullException(
+                nameof(context));
     }
 
+    // =========================================================
     // BASE QUERY
-    private IQueryable<LocalDrivingLicenseApplication> Query(DVLDDbContext context)
+    // =========================================================
+
+    private IQueryable<LocalDrivingLicenseApplication>
+        Query()
     {
-        return context.LocalDrivingLicenseApplications
+        return _context
+            .LocalDrivingLicenseApplications
             .AsNoTracking()
-            .Include(a => a.Application).ThenInclude(app => app.Person)
-            .Include(a => a.LicenseClass);
+            .Include(a =>
+                a.Application)
+                .ThenInclude(app =>
+                    app.Person)
+            .Include(a =>
+                a.LicenseClass);
     }
 
-    // GET
-    public async Task<List<LocalDrivingLicenseApplication>> GetAllAsync()
+    // =========================================================
+    // GET ALL
+    // =========================================================
+
+    public async Task<
+        List<LocalDrivingLicenseApplication>>
+        GetAllAsync()
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await Query(context).ToListAsync();
+        return await Query()
+            .ToListAsync();
     }
 
-    public async Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id)
+    // =========================================================
+    // GET BY ID
+    // =========================================================
+
+    public async Task<
+        LocalDrivingLicenseApplication?>
+        GetByIdAsync(
+            int id)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.LocalDrivingLicenseApplications
-            .Include(a => a.Application).ThenInclude(app => app.Person)
-            .Include(a => a.LicenseClass)
-            .AsTracking()
-            .FirstOrDefaultAsync(t => t.LocalDrivingLicenseApplicationID == id);
+        if (id <= 0)
+            return null;
+
+        return await _context
+            .LocalDrivingLicenseApplications
+            .Include(a =>
+                a.Application)
+                .ThenInclude(app =>
+                    app.Person)
+            .Include(a =>
+                a.LicenseClass)
+            .FirstOrDefaultAsync(
+                a =>
+                    a.LocalDrivingLicenseApplicationID ==
+                    id);
     }
 
-    public async Task<List<LocalDrivingLicenseApplication>> GetByPersonIdAsync(int personId)
+    // =========================================================
+    // GET BY PERSON
+    // =========================================================
+
+    public async Task<
+        List<LocalDrivingLicenseApplication>>
+        GetByPersonIdAsync(
+            int personId)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await Query(context).Where(a => a.Application.ApplicantPersonID == personId).ToListAsync();
+        if (personId <= 0)
+            return [];
+
+        return await Query()
+            .Where(a =>
+                a.Application
+                    .ApplicantPersonID ==
+                personId)
+            .ToListAsync();
     }
 
-    public async Task<List<LocalDrivingLicenseApplication>> GetByApplicationIdAsync(int applicationId)
+    // =========================================================
+    // GET BY APPLICATION
+    // =========================================================
+
+    public async Task<
+        List<LocalDrivingLicenseApplication>>
+        GetByApplicationIdAsync(
+            int applicationId)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await Query(context).Where(a => a.ApplicationID == applicationId).ToListAsync();
+        if (applicationId <= 0)
+            return [];
+
+        return await Query()
+            .Where(a =>
+                a.ApplicationID ==
+                applicationId)
+            .ToListAsync();
     }
 
-    public async Task<List<LocalDrivingLicenseApplication>> GetByLicenseClassIdAsync(int licenseClassId)
+    // =========================================================
+    // GET BY LICENSE CLASS
+    // =========================================================
+
+    public async Task<
+        List<LocalDrivingLicenseApplication>>
+        GetByLicenseClassIdAsync(
+            int licenseClassId)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await Query(context).Where(a => a.LicenseClassID == licenseClassId).ToListAsync();
+        if (licenseClassId <= 0)
+            return [];
+
+        return await Query()
+            .Where(a =>
+                a.LicenseClassID ==
+                licenseClassId)
+            .ToListAsync();
     }
 
-    // EXTRA QUERIES
-    public async Task<int> GetPassedTestCountAsync(int localAppId)
+    // =========================================================
+    // GET PASSED TEST COUNT
+    // =========================================================
+
+    public async Task<int>
+        GetPassedTestCountAsync(
+            int localAppId)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Tests.CountAsync(t =>
-            t.TestAppointment != null &&
-            t.TestAppointment.LocalDrivingLicenseApplicationID == localAppId &&
-            t.TestResult == true);
+        if (localAppId <= 0)
+            return 0;
+
+        return await _context.Tests
+            .CountAsync(t =>
+                t.TestAppointment != null &&
+                t.TestAppointment
+                    .LocalDrivingLicenseApplicationID ==
+                    localAppId &&
+                t.TestResult == true);
     }
 
-    public async Task<int?> GetApplicationIdByLocalIdAsync(int localId)
+    // =========================================================
+    // GET APPLICATION ID
+    // =========================================================
+
+    public async Task<int?>
+        GetApplicationIdByLocalIdAsync(
+            int localId)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.LocalDrivingLicenseApplications
-            .Where(x => x.LocalDrivingLicenseApplicationID == localId)
-            .Select(x => x.ApplicationID)
-            .FirstOrDefaultAsync();
+        if (localId <= 0)
+            return null;
+
+        var applicationId =
+            await _context
+                .LocalDrivingLicenseApplications
+                .Where(x =>
+                    x.LocalDrivingLicenseApplicationID ==
+                    localId)
+                .Select(x =>
+                    (int?)x.ApplicationID)
+                .FirstOrDefaultAsync();
+
+        return applicationId;
     }
 
+    // =========================================================
     // CREATE
-    public async Task<int> CreateLocalDrivingLicenseApplicationAsync(LocalDrivingLicenseApplication LDLApp)
+    // =========================================================
+
+    public async Task<int>
+        CreateLocalDrivingLicenseApplicationAsync(
+            LocalDrivingLicenseApplication entity)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        await context.LocalDrivingLicenseApplications.AddAsync(LDLApp);
-        await context.SaveChangesAsync();
-        return LDLApp.LocalDrivingLicenseApplicationID;
+        ArgumentNullException.ThrowIfNull(
+            entity);
+
+        await _context
+            .LocalDrivingLicenseApplications
+            .AddAsync(entity);
+
+        // IMPORTANT:
+        // Do NOT call SaveChangesAsync here.
+        //
+        // UnitOfWork owns persistence.
+        //
+        // The generated ID will be available
+        // after UnitOfWork.SaveChangesAsync().
+
+        return entity.LocalDrivingLicenseApplicationID;
     }
 
+    // =========================================================
     // UPDATE
-    public async Task<bool> UpdateAsync(LocalDrivingLicenseApplication entity)
+    // =========================================================
+
+    public async Task<bool>
+        UpdateAsync(
+            LocalDrivingLicenseApplication entity)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
+        ArgumentNullException.ThrowIfNull(
+            entity);
 
-        var existing = await context.LocalDrivingLicenseApplications.FindAsync(entity.LocalDrivingLicenseApplicationID);
-        if (existing == null) return false;
+        if (entity.LocalDrivingLicenseApplicationID <= 0)
+            return false;
 
-        context.Entry(existing).CurrentValues.SetValues(entity);
-        return await context.SaveChangesAsync() > 0;
+        var existing =
+            await _context
+                .LocalDrivingLicenseApplications
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.LocalDrivingLicenseApplicationID ==
+                        entity.LocalDrivingLicenseApplicationID);
+
+        if (existing is null)
+            return false;
+
+        _context.Entry(existing)
+            .CurrentValues
+            .SetValues(entity);
+
+        // No SaveChangesAsync here.
+
+        return true;
     }
 
+    // =========================================================
     // DELETE
-    public async Task<bool> DeleteAsync(int id)
+    // =========================================================
+
+    public async Task<bool>
+        DeleteAsync(
+            int id)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
+        if (id <= 0)
+            return false;
 
-        var existing = await context.LocalDrivingLicenseApplications.FindAsync(id);
-        if (existing == null) return false;
+        var existing =
+            await _context
+                .LocalDrivingLicenseApplications
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.LocalDrivingLicenseApplicationID ==
+                        id);
 
-        context.LocalDrivingLicenseApplications.Remove(existing);
-        return await context.SaveChangesAsync() > 0;
+        if (existing is null)
+            return false;
+
+        _context
+            .LocalDrivingLicenseApplications
+            .Remove(existing);
+
+        // No SaveChangesAsync here.
+
+        return true;
     }
 }

@@ -1,5 +1,4 @@
-﻿
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,24 +6,23 @@ namespace Infrastructure.Repositories;
 
 public class PersonRepository : IPersonRepository
 {
-    private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+    private readonly DVLDDbContext _context;
 
     public PersonRepository(
-        IDbContextFactory<DVLDDbContext> contextFactory)
+        DVLDDbContext context)
     {
-        _contextFactory =
-            contextFactory
-            ?? throw new ArgumentNullException(nameof(contextFactory));
+        _context = context
+            ?? throw new ArgumentNullException(
+                nameof(context));
     }
 
     // =========================================================
     // BASE QUERY - READ ONLY
     // =========================================================
 
-    private static IQueryable<Person> Query(
-        DVLDDbContext context)
+    private IQueryable<Person> Query()
     {
-        return context.People
+        return _context.People
             .AsNoTracking()
             .Include(p => p.Country);
     }
@@ -38,65 +36,61 @@ public class PersonRepository : IPersonRepository
         if (id <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
-            .FirstOrDefaultAsync(p => p.PersonId == id);
+        return await Query()
+            .FirstOrDefaultAsync(
+                p => p.PersonId == id);
     }
 
     // =========================================================
     // GET BY NATIONAL NUMBER
     // =========================================================
 
-    public async Task<Person?> GetPersonByNationalNoAsync(
-        string nationalNo)
+    public async Task<Person?>
+        GetPersonByNationalNoAsync(
+            string nationalNo)
     {
         if (string.IsNullOrWhiteSpace(nationalNo))
             return null;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var normalizedNationalNo =
             nationalNo.Trim();
 
-        return await Query(context)
+        return await Query()
             .FirstOrDefaultAsync(
-                p => p.NationalNo == normalizedNationalNo);
+                p =>
+                    p.NationalNo ==
+                    normalizedNationalNo);
     }
 
     // =========================================================
     // GET ALL
     // =========================================================
 
-    public async Task<List<Person>> GetAllPersonsAsync()
+    public async Task<List<Person>>
+        GetAllPersonsAsync()
     {
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
+            .OrderBy(p => p.PersonId)
             .ToListAsync();
     }
 
     // =========================================================
     // GET FOR UPDATE
+    //
+    // IMPORTANT:
+    // This query MUST be tracked.
+    //
+    // The returned entity belongs to the same DbContext
+    // instance used by UnitOfWork.
     // =========================================================
 
-    public async Task<Person?> GetPersonForUpdateAsync(
-        int id)
+    public async Task<Person?>
+        GetPersonForUpdateAsync(int id)
     {
         if (id <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        // IMPORTANT:
-        // No AsNoTracking here.
-        // The entity must be tracked so changes can be
-        // detected and persisted by SaveChangesAsync().
-        return await context.People
+        return await _context.People
             .FirstOrDefaultAsync(
                 p => p.PersonId == id);
     }
@@ -105,76 +99,80 @@ public class PersonRepository : IPersonRepository
     // EXISTS
     // =========================================================
 
-    public async Task<bool> IsPersonExistsByIdAsync(
-        int id)
+    public async Task<bool>
+        IsPersonExistsByIdAsync(int id)
     {
         if (id <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await context.People
+        return await _context.People
             .AsNoTracking()
-            .AnyAsync(p => p.PersonId == id);
+            .AnyAsync(
+                p => p.PersonId == id);
     }
 
     // =========================================================
     // NATIONAL NUMBER DUPLICATE
     // =========================================================
 
-    public async Task<bool> IsNationalNoDuplicatedAsync(
-        string nationalNo,
-        int personId)
+    public async Task<bool>
+        IsNationalNoDuplicatedAsync(
+            string nationalNo,
+            int personId)
     {
         if (string.IsNullOrWhiteSpace(nationalNo))
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var normalizedNationalNo =
             nationalNo.Trim();
 
-        return await context.People
+        return await _context.People
             .AsNoTracking()
-            .AnyAsync(p =>
-                p.NationalNo == normalizedNationalNo &&
-                p.PersonId != personId);
+            .AnyAsync(
+                p =>
+                    p.NationalNo ==
+                    normalizedNationalNo
+                    &&
+                    p.PersonId != personId);
     }
 
     // =========================================================
     // HAS APPLICATIONS
     // =========================================================
 
-    public async Task<bool> HasApplicationsAsync(int personId)
+    public async Task<bool>
+        HasApplicationsAsync(int personId)
     {
         if (personId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await context.Applications
+        return await _context.Applications
             .AsNoTracking()
-            .AnyAsync(a =>
-                a.ApplicantPersonID == personId);
+            .AnyAsync(
+                a =>
+                    a.ApplicantPersonID ==
+                    personId);
     }
+
     // =========================================================
     // CREATE
     // =========================================================
 
-    public async Task<int> AddPersonAsync(
-        Person person)
+    public async Task<int>
+        AddPersonAsync(Person person)
     {
         ArgumentNullException.ThrowIfNull(person);
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
+        await _context.People
+            .AddAsync(person);
 
-        await context.People.AddAsync(person);
-
-        await context.SaveChangesAsync();
+        // IMPORTANT:
+        // No SaveChangesAsync here.
+        //
+        // UnitOfWork owns persistence.
+        //
+        // PersonId will be generated by EF/database
+        // when UnitOfWork.SaveChangesAsync() is called.
 
         return person.PersonId;
     }
@@ -183,27 +181,27 @@ public class PersonRepository : IPersonRepository
     // UPDATE
     // =========================================================
 
-    public async Task<bool> UpdatePersonAsync(
-        Person person)
+    public async Task<bool>
+        UpdatePersonAsync(Person person)
     {
         ArgumentNullException.ThrowIfNull(person);
 
         if (person.PersonId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var existing =
-            await context.People
+            await _context.People
                 .FirstOrDefaultAsync(
-                    p => p.PersonId == person.PersonId);
+                    p =>
+                        p.PersonId ==
+                        person.PersonId);
 
         if (existing is null)
             return false;
 
-        // Explicitly copy the allowed scalar values.
-        // We do NOT attach the incoming entity graph.
+        // Copy only scalar properties.
+        // Do not attach the incoming entity graph.
+
         existing.NationalNo =
             person.NationalNo;
 
@@ -240,32 +238,36 @@ public class PersonRepository : IPersonRepository
         existing.ImagePath =
             person.ImagePath;
 
-        return await context.SaveChangesAsync() > 0;
+        // IMPORTANT:
+        // No SaveChangesAsync here.
+
+        return true;
     }
 
     // =========================================================
     // DELETE
     // =========================================================
 
-    public async Task<bool> DeletePersonAsync(
-        int id)
+    public async Task<bool>
+        DeletePersonAsync(int id)
     {
         if (id <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var person =
-            await context.People
+            await _context.People
                 .FirstOrDefaultAsync(
-                    p => p.PersonId == id);
+                    p =>
+                        p.PersonId == id);
 
         if (person is null)
             return false;
 
-        context.People.Remove(person);
+        _context.People.Remove(person);
 
-        return await context.SaveChangesAsync() > 0;
+        // IMPORTANT:
+        // No SaveChangesAsync here.
+
+        return true;
     }
 }

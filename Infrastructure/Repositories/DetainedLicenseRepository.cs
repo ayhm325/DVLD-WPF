@@ -2,107 +2,178 @@
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
+namespace Infrastructure.Repositories;
 
-namespace Infrastructure.Repositories
+public class DetainedLicenseRepository
+    : IDetainedLicenseRepository
 {
-    public class DetainedLicenseRepository : IDetainedLicenseRepository
+    private readonly DVLDDbContext _context;
+
+    public DetainedLicenseRepository(
+        DVLDDbContext context)
     {
-        private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+        _context =
+            context
+            ?? throw new ArgumentNullException(
+                nameof(context));
+    }
 
-        public DetainedLicenseRepository(
-            IDbContextFactory<DVLDDbContext> contextFactory)
-        {
-            _contextFactory = contextFactory
-                ?? throw new ArgumentNullException(nameof(contextFactory));
-        }
+    // =========================================================
+    // GET BY ID
+    // =========================================================
 
-        public async Task<DetainedLicense?> GetByIdAsync(int id)
-        {
-            using var context =
-                await _contextFactory.CreateDbContextAsync();
+    public async Task<DetainedLicense?>
+        GetByIdAsync(int id)
+    {
+        if (id <= 0)
+            return null;
 
-            return await context.DetainedLicenses
-                .AsNoTracking()
-                .Include(d => d.License)
-                    .ThenInclude(l => l.Driver)
-                        .ThenInclude(dr => dr.Person)
-                .Include(d => d.CreatedByUser)
-                .Include(d => d.ReleasedByUser)
-                .Include(d => d.ReleaseApplication)
-                .FirstOrDefaultAsync(d => d.DetainID == id);
-        }
+        return await _context.DetainedLicenses
+            .AsNoTracking()
+            .Include(d => d.License)
+                .ThenInclude(l => l.Driver)
+                    .ThenInclude(dr => dr.Person)
+            .Include(d => d.CreatedByUser)
+            .Include(d => d.ReleasedByUser)
+            .Include(d => d.ReleaseApplication)
+            .FirstOrDefaultAsync(
+                d => d.DetainID == id);
+    }
 
-        public async Task<List<DetainedLicense>> GetAllAsync()
-        {
-            using var context =
-                await _contextFactory.CreateDbContextAsync();
+    // =========================================================
+    // GET ALL
+    // =========================================================
 
-            return await context.DetainedLicenses
-                .AsNoTracking()
-                .Include(d => d.License)
-                    .ThenInclude(l => l.Driver)
-                        .ThenInclude(dr => dr.Person)
-                .Include(d => d.CreatedByUser)
-                .Include(d => d.ReleasedByUser)
-                .Include(d => d.ReleaseApplication)
-                .OrderByDescending(d => d.DetainDate)
-                .ToListAsync();
-        }
+    public async Task<List<DetainedLicense>>
+        GetAllAsync()
+    {
+        return await _context.DetainedLicenses
+            .AsNoTracking()
+            .Include(d => d.License)
+                .ThenInclude(l => l.Driver)
+                    .ThenInclude(dr => dr.Person)
+            .Include(d => d.CreatedByUser)
+            .Include(d => d.ReleasedByUser)
+            .Include(d => d.ReleaseApplication)
+            .OrderByDescending(
+                d => d.DetainDate)
+            .ToListAsync();
+    }
 
-        public async Task<DetainedLicense> AddAsync(
-            DetainedLicense entity)
-        {
-            using var context =
-                await _contextFactory.CreateDbContextAsync();
+    // =========================================================
+    // CHECK ACTIVE DETENTION
+    // =========================================================
 
-            await context.DetainedLicenses.AddAsync(entity);
-
-            await context.SaveChangesAsync();
-
-            return entity;
-        }
-
-        public async Task UpdateAsync(
-            DetainedLicense entity)
-        {
-            using var context =
-                await _contextFactory.CreateDbContextAsync();
-
-            context.DetainedLicenses.Update(entity);
-
-            await context.SaveChangesAsync();
-        }
-
-        public async Task<bool> IsLicenseDetainedAsync(
+    public async Task<bool>
+        IsLicenseDetainedAsync(
             int licenseId)
-        {
-            using var context =
-                await _contextFactory.CreateDbContextAsync();
+    {
+        if (licenseId <= 0)
+            return false;
 
-            return await context.DetainedLicenses
-                .AsNoTracking()
-                .AnyAsync(d =>
+        return await _context.DetainedLicenses
+            .AsNoTracking()
+            .AnyAsync(
+                d =>
                     d.LicenseID == licenseId &&
                     !d.IsReleased);
-        }
+    }
 
-        public async Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(
+    // =========================================================
+    // GET ACTIVE DETENTION
+    // =========================================================
+
+    public async Task<DetainedLicense?>
+        GetActiveDetainByLicenseIdAsync(
             int licenseId)
-        {
-            using var context =
-                await _contextFactory.CreateDbContextAsync();
+    {
+        if (licenseId <= 0)
+            return null;
 
-            return await context.DetainedLicenses
-                .AsNoTracking()
-                .Include(d => d.License)
-                    .ThenInclude(l => l.Driver)
-                        .ThenInclude(dr => dr.Person)
-                .Include(d => d.CreatedByUser)
-                .Include(d => d.ReleasedByUser)
-                .Include(d => d.ReleaseApplication)
-                .FirstOrDefaultAsync(d =>
+        return await _context.DetainedLicenses
+            .AsNoTracking()
+            .Include(d => d.License)
+                .ThenInclude(l => l.Driver)
+                    .ThenInclude(dr => dr.Person)
+            .Include(d => d.CreatedByUser)
+            .Include(d => d.ReleasedByUser)
+            .Include(d => d.ReleaseApplication)
+            .FirstOrDefaultAsync(
+                d =>
                     d.LicenseID == licenseId &&
                     !d.IsReleased);
+    }
+
+    // =========================================================
+    // CREATE
+    // =========================================================
+
+    public async Task<DetainedLicense>
+        AddAsync(
+            DetainedLicense entity)
+    {
+        ArgumentNullException.ThrowIfNull(
+            entity);
+
+        await _context.DetainedLicenses
+            .AddAsync(entity);
+
+        // IMPORTANT:
+        // No SaveChangesAsync here.
+        //
+        // UnitOfWork owns persistence.
+
+        return entity;
+    }
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    public async Task
+        UpdateAsync(
+            DetainedLicense entity)
+    {
+        ArgumentNullException.ThrowIfNull(
+            entity);
+
+        if (entity.DetainID <= 0)
+        {
+            throw new ArgumentException(
+                "Detain ID must be greater than zero.",
+                nameof(entity));
         }
+
+        var existing =
+            await _context.DetainedLicenses
+                .FirstOrDefaultAsync(
+                    d =>
+                        d.DetainID ==
+                        entity.DetainID);
+
+        if (existing is null)
+        {
+            throw new InvalidOperationException(
+                $"Detained license with ID " +
+                $"{entity.DetainID} was not found.");
+        }
+
+        existing.FineFees =
+            entity.FineFees;
+
+        existing.IsReleased =
+            entity.IsReleased;
+
+        existing.ReleaseDate =
+            entity.ReleaseDate;
+
+        existing.ReleasedByUserID =
+            entity.ReleasedByUserID;
+
+        existing.ReleaseApplicationID =
+            entity.ReleaseApplicationID;
+
+        // IMPORTANT:
+        // No SaveChangesAsync here.
     }
 }
