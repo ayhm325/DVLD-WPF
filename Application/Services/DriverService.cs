@@ -11,8 +11,7 @@ public class DriverService : IDriverService
 {
     private readonly IDriverRepository _repository;
 
-    public DriverService(
-        IDriverRepository repository)
+    public DriverService(IDriverRepository repository)
     {
         _repository = repository
             ?? throw new ArgumentNullException(nameof(repository));
@@ -87,15 +86,13 @@ public class DriverService : IDriverService
     public async Task<Result<List<DriverDto>>>
         GetByCreatedUserIdAsync(int userId)
     {
-        var validation =
-            DriverValidator.ValidateCreatedUserId(userId);
+        var validation = DriverValidator.ValidateCreatedUserId(userId);
 
         if (validation.IsFailure)
             return Result<List<DriverDto>>.FromFailure(
                 validation.Error);
 
-        var entities =
-            await _repository.GetByCreatedUserIdAsync(userId);
+        var entities = await _repository.GetByCreatedUserIdAsync(userId);
 
         return Result<List<DriverDto>>.Success(
             DriverMapper.ToDtoList(entities));
@@ -144,24 +141,16 @@ public class DriverService : IDriverService
         var entity =
             DriverMapper.ToEntity(dto);
 
-        try
-        {
-            await _repository.AddAsync(entity);
+        await _repository.AddAsync(entity);
 
-            if (entity.DriverID <= 0)
-            {
-                return Result<int>.FromFailure(
-                    "Failed to create driver.");
-            }
-
-            return Result<int>.Success(
-                entity.DriverID);
-        }
-        catch (Exception ex)
+        if (entity.DriverID <= 0)
         {
             return Result<int>.FromFailure(
-                ex.Message);
+                "Failed to create driver.");
         }
+
+        return Result<int>.Success(
+            entity.DriverID);
     }
 
     // =========================================================
@@ -196,17 +185,9 @@ public class DriverService : IDriverService
             existing,
             dto);
 
-        try
-        {
-            await _repository.UpdateAsync(existing);
+        await _repository.UpdateAsync(existing);
 
-            return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            return Result.Failure(
-                ex.Message);
-        }
+        return Result.Success();
     }
 
     // =========================================================
@@ -228,16 +209,8 @@ public class DriverService : IDriverService
                 "Driver not found.");
         }
 
-        try
-        {
-            await _repository.DeleteAsync(id);
+        await _repository.DeleteAsync(id);
 
-            return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            return Result.Failure(
-                ex.Message);
-        }
+        return Result.Success();
     }
 }

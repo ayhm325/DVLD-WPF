@@ -6,99 +6,280 @@ using CommunityToolkit.Mvvm.Input;
 using Presentation.Views.Windows;
 using System.Windows;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class ReplacementDamagedLicenseViewModel
+    : ObservableObject
 {
-    public partial class ReplacementDamagedLicenseViewModel
-        : ObservableObject
+    private readonly ILicenseService _licenseService;
+    private readonly ILicenseQueryService _licenseQueryService;
+    private readonly ILicenseReplacementService _licenseReplacementService;
+    private readonly IApplicationTypeService _applicationTypeService;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IPersonService _personService;
+    private readonly IDriverService _driverService;
+    private readonly IInternationalService _internationalService;
+
+
+    public ReplacementDamagedLicenseViewModel(
+        ILicenseService licenseService,
+        ILicenseQueryService licenseQueryService,
+        ILicenseReplacementService licenseReplacementService,
+        IApplicationTypeService applicationTypeService,
+        ICurrentUserService currentUserService,
+        IPersonService personService,
+        IDriverService driverService,
+        IInternationalService internationalService)
     {
-        private readonly ILicenseService _licenseService;
-        private readonly ILicenseReplacementService _licenseReplacementService;
-        private readonly IApplicationTypeService _applicationTypeService;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IPersonService _personService;
-        private readonly IDriverService _driverService;
-        private readonly IInternationalService _internationalService;
+        _licenseService =
+            licenseService
+            ?? throw new ArgumentNullException(
+                nameof(licenseService));
 
-        public ReplacementDamagedLicenseViewModel(
-            ILicenseService licenseService,
-            ILicenseReplacementService licenseReplacementService,
-            IApplicationTypeService applicationTypeService,
-            ICurrentUserService currentUserService,
-            IPersonService personService,
-            IDriverService driverService,
-            IInternationalService internationalService)
+        _licenseQueryService =
+            licenseQueryService
+            ?? throw new ArgumentNullException(
+                nameof(licenseQueryService));
+
+        _licenseReplacementService =
+            licenseReplacementService
+            ?? throw new ArgumentNullException(
+                nameof(licenseReplacementService));
+
+        _applicationTypeService =
+            applicationTypeService
+            ?? throw new ArgumentNullException(
+                nameof(applicationTypeService));
+
+        _currentUserService =
+            currentUserService
+            ?? throw new ArgumentNullException(
+                nameof(currentUserService));
+
+        _personService =
+            personService
+            ?? throw new ArgumentNullException(
+                nameof(personService));
+
+        _driverService =
+            driverService
+            ?? throw new ArgumentNullException(
+                nameof(driverService));
+
+        _internationalService =
+            internationalService
+            ?? throw new ArgumentNullException(
+                nameof(internationalService));
+    }
+
+
+    // =========================================================
+    // PROPERTIES
+    // =========================================================
+
+    [ObservableProperty]
+    private string licenseIdText = string.Empty;
+
+    [ObservableProperty]
+    private DriverLicenseInfoDto? licenseInfo;
+
+    [ObservableProperty]
+    private ApplicationReplacementInfoDto? replacementInfo;
+
+    [ObservableProperty]
+    private bool isLicenseIssued;
+
+    [ObservableProperty]
+    private int applicationTypeId = 4;
+
+    [ObservableProperty]
+    private string replacementReason = "Damaged License";
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    [RelayCommand]
+    private async Task Search()
+    {
+        if (!int.TryParse(
+                LicenseIdText,
+                out int licenseId))
         {
-            _licenseService =
-                licenseService
-                ?? throw new ArgumentNullException(
-                    nameof(licenseService));
+            MessageBox.Show(
+                "Please enter a valid License ID",
+                "Replacement License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
 
-            _licenseReplacementService =
-                licenseReplacementService
-                ?? throw new ArgumentNullException(
-                    nameof(licenseReplacementService));
-
-            _applicationTypeService =
-                applicationTypeService
-                ?? throw new ArgumentNullException(
-                    nameof(applicationTypeService));
-
-            _currentUserService =
-                currentUserService
-                ?? throw new ArgumentNullException(
-                    nameof(currentUserService));
-
-            _personService =
-                personService
-                ?? throw new ArgumentNullException(
-                    nameof(personService));
-
-            _driverService =
-                driverService
-                ?? throw new ArgumentNullException(
-                    nameof(driverService));
-
-            _internationalService =
-                internationalService
-                ?? throw new ArgumentNullException(
-                    nameof(internationalService));
+            return;
         }
 
-        // =========================================================
-        // PROPERTIES
-        // =========================================================
 
-        [ObservableProperty]
-        private string licenseIdText = string.Empty;
+        // =====================================================
+        // GET LICENSE
+        // =====================================================
 
-        [ObservableProperty]
-        private DriverLicenseInfoDto? licenseInfo;
+        var licenseResult =
+            await _licenseQueryService
+                .GetLicenseDetailsByIdAsync(
+                    licenseId);
 
-        [ObservableProperty]
-        private ApplicationReplacementInfoDto? replacementInfo;
 
-        [ObservableProperty]
-        private bool isLicenseIssued;
-
-        [ObservableProperty]
-        private int applicationTypeId = 4;
-
-        [ObservableProperty]
-        private string replacementReason = "Damaged License";
-
-        // =========================================================
-        // SEARCH
-        // =========================================================
-
-        [RelayCommand]
-        private async Task Search()
+        if (licenseResult.IsFailure)
         {
-            if (!int.TryParse(
-                    LicenseIdText,
-                    out int licenseId))
+            MessageBox.Show(
+                licenseResult.Error,
+                "Warning",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            ClearLicenseData();
+
+            return;
+        }
+
+
+        LicenseInfo =
+            licenseResult.Value;
+
+
+        if (LicenseInfo == null)
+        {
+            MessageBox.Show(
+                "License information was not found.",
+                "Warning",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            ClearLicenseData();
+
+            return;
+        }
+
+
+        // =====================================================
+        // MUST BE ACTIVE
+        // =====================================================
+
+        if (!LicenseInfo.IsActive)
+        {
+            MessageBox.Show(
+                "This license is not active.",
+                "Warning",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            ClearLicenseData();
+
+            return;
+        }
+
+
+        // =====================================================
+        // GET APPLICATION TYPE
+        // =====================================================
+
+        var applicationTypeResult =
+            await _applicationTypeService
+                .GetApplicationTypeByIdAsync(
+                    ApplicationTypeId);
+
+
+        if (applicationTypeResult.IsFailure)
+        {
+            MessageBox.Show(
+                applicationTypeResult.Error,
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+
+        var applicationType =
+            applicationTypeResult.Value;
+
+
+        if (applicationType == null)
+        {
+            MessageBox.Show(
+                "Application type was not found.",
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+
+        // =====================================================
+        // BUILD DISPLAY INFO
+        // =====================================================
+
+        ReplacementInfo =
+            new ApplicationReplacementInfoDto
+            {
+                OldLicenseID =
+                    LicenseInfo.LicenseId,
+
+                ApplicationDate =
+                    DateTime.Now,
+
+                ApplicationFees =
+                    applicationType.ApplicationTypeFees,
+
+                ReplacementReason =
+                    ReplacementReason,
+
+                CreatedByUserName =
+                    _currentUserService.Username
+            };
+
+
+        IsLicenseIssued = false;
+    }
+
+
+    // =========================================================
+    // ISSUE REPLACEMENT LICENSE
+    // =========================================================
+
+    [RelayCommand]
+    private async Task Issue()
+    {
+        if (LicenseInfo == null)
+        {
+            MessageBox.Show(
+                "Please search for a license first",
+                "Replacement License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+
+        try
+        {
+            // =================================================
+            // REPLACEMENT SERVICE
+            // =================================================
+
+            var replaceResult =
+                await _licenseReplacementService
+                    .ReplaceLicenseAsync(
+                        LicenseInfo.LicenseId,
+                        ReplacementReason,
+                        ApplicationTypeId);
+
+
+            if (replaceResult.IsFailure)
             {
                 MessageBox.Show(
-                    "Please enter a valid License ID",
+                    replaceResult.Error,
                     "Replacement License",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -106,320 +287,216 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            // =====================================================
-            // GET LICENSE
-            // =====================================================
+
+            int newLicenseId =
+                replaceResult.Value;
+
+
+            // =================================================
+            // GET NEW LICENSE
+            // =================================================
 
             var licenseResult =
                 await _licenseService
-                    .GetLicenseDetailsByIdAsync(
-                        licenseId);
+                    .GetByIdAsync(
+                        newLicenseId);
+
 
             if (licenseResult.IsFailure)
             {
                 MessageBox.Show(
                     licenseResult.Error,
-                    "Warning",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                ClearLicenseData();
-
-                return;
-            }
-
-            LicenseInfo =
-                licenseResult.Value!;
-
-            // =====================================================
-            // MUST BE ACTIVE
-            // =====================================================
-
-            if (!LicenseInfo.IsActive)
-            {
-                MessageBox.Show(
-                    "This license is not active.",
-                    "Warning",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                ClearLicenseData();
-
-                return;
-            }
-
-            // =====================================================
-            // GET APPLICATION TYPE
-            // =====================================================
-
-            var applicationTypeResult =
-                await _applicationTypeService
-                    .GetApplicationTypeByIdAsync(
-                        ApplicationTypeId);
-
-            if (applicationTypeResult.IsFailure)
-            {
-                MessageBox.Show(
-                    applicationTypeResult.Error,
                     "Error",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    MessageBoxImage.Error);
 
                 return;
             }
 
-            var applicationType =
-                applicationTypeResult.Value!;
 
-            // =====================================================
-            // BUILD DISPLAY INFO
-            // =====================================================
+            var newLicense =
+                licenseResult.Value;
+
+
+            if (newLicense == null)
+            {
+                MessageBox.Show(
+                    "The new license could not be found.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+
+            // =================================================
+            // PRESERVE APPLICATION FEES
+            // =================================================
+
+            var applicationFees =
+                ReplacementInfo?.ApplicationFees ?? 0;
+
+
+            // =================================================
+            // BUILD FINAL DISPLAY INFO
+            // =================================================
 
             ReplacementInfo =
                 new ApplicationReplacementInfoDto
                 {
+                    ReplacementApplicationID =
+                        newLicense.ApplicationID,
+
+                    ReplacementLicenseID =
+                        newLicense.LicenseID,
+
                     OldLicenseID =
                         LicenseInfo.LicenseId,
 
                     ApplicationDate =
-                        DateTime.Now,
+                        newLicense.IssueDate,
 
                     ApplicationFees =
-                        applicationType.ApplicationTypeFees,
+                        applicationFees,
+
+                    LicenseFees =
+                        newLicense.PaidFees,
 
                     ReplacementReason =
                         ReplacementReason,
 
                     CreatedByUserName =
-                        _currentUserService.Username
+                        newLicense.CreatedByUserName
+                        ?? "Unknown"
                 };
 
-            IsLicenseIssued = false;
+
+            IsLicenseIssued = true;
+
+
+            MessageBox.Show(
+                $"License replaced successfully.\n" +
+                $"New License ID: {newLicenseId}",
+                "Success",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
-
-        // =========================================================
-        // ISSUE REPLACEMENT LICENSE
-        // =========================================================
-
-        [RelayCommand]
-        private async Task Issue()
+        catch (Exception ex)
         {
-            if (LicenseInfo == null)
-            {
-                MessageBox.Show(
-                    "Please search for a license first",
-                    "Replacement License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            try
-            {
-                // =================================================
-                // REPLACEMENT SERVICE
-                // =================================================
-
-                var replaceResult =
-                    await _licenseReplacementService
-                        .ReplaceLicenseAsync(
-                            LicenseInfo.LicenseId,
-                            ReplacementReason,
-                            ApplicationTypeId);
-
-                if (replaceResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        replaceResult.Error,
-                        "Replacement License",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    return;
-                }
-
-                int newLicenseId =
-                    replaceResult.Value;
-
-                // =================================================
-                // GET NEW LICENSE
-                // =================================================
-
-                var licenseResult =
-                    await _licenseService
-                        .GetByIdAsync(
-                            newLicenseId);
-
-                if (licenseResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        licenseResult.Error,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-
-                    return;
-                }
-
-                var newLicense =
-                    licenseResult.Value!;
-
-                // =================================================
-                // PRESERVE APPLICATION FEES
-                // =================================================
-
-                var applicationFees =
-                    ReplacementInfo?.ApplicationFees ?? 0;
-
-                // =================================================
-                // BUILD FINAL DISPLAY INFO
-                // =================================================
-
-                ReplacementInfo =
-                    new ApplicationReplacementInfoDto
-                    {
-                        ReplacementApplicationID =
-                            newLicense.ApplicationID,
-
-                        ReplacementLicenseID =
-                            newLicense.LicenseID,
-
-                        OldLicenseID =
-                            LicenseInfo.LicenseId,
-
-                        ApplicationDate =
-                            newLicense.IssueDate,
-
-                        ApplicationFees =
-                            applicationFees,
-
-                        LicenseFees =
-                            newLicense.PaidFees,
-
-                        ReplacementReason =
-                            ReplacementReason,
-
-                        CreatedByUserName =
-                            newLicense.CreatedByUserName
-                            ?? "Unknown"
-                    };
-
-                IsLicenseIssued = true;
-
-                MessageBox.Show(
-                    $"License replaced successfully.\n" +
-                    $"New License ID: {newLicenseId}",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    ex.Message,
-                    "Replacement License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
+            MessageBox.Show(
+                ex.Message,
+                "Replacement License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
+    }
 
-        // =========================================================
-        // SELECT LOST
-        // =========================================================
 
-        [RelayCommand]
-        private void SelectLost()
+    // =========================================================
+    // SELECT LOST
+    // =========================================================
+
+    [RelayCommand]
+    private void SelectLost()
+    {
+        ReplacementReason =
+            "Lost License";
+
+        ApplicationTypeId = 3;
+
+
+        if (ReplacementInfo != null)
         {
-            ReplacementReason =
-                "Lost License";
-
-            ApplicationTypeId = 3;
-
-            if (ReplacementInfo != null)
-            {
-                ReplacementInfo.ReplacementReason =
-                    ReplacementReason;
-            }
+            ReplacementInfo.ReplacementReason =
+                ReplacementReason;
         }
+    }
 
-        // =========================================================
-        // SELECT DAMAGED
-        // =========================================================
 
-        [RelayCommand]
-        private void SelectDamaged()
+    // =========================================================
+    // SELECT DAMAGED
+    // =========================================================
+
+    [RelayCommand]
+    private void SelectDamaged()
+    {
+        ReplacementReason =
+            "Damaged License";
+
+        ApplicationTypeId = 4;
+
+
+        if (ReplacementInfo != null)
         {
-            ReplacementReason =
-                "Damaged License";
-
-            ApplicationTypeId = 4;
-
-            if (ReplacementInfo != null)
-            {
-                ReplacementInfo.ReplacementReason =
-                    ReplacementReason;
-            }
+            ReplacementInfo.ReplacementReason =
+                ReplacementReason;
         }
+    }
 
-        // =========================================================
-        // LICENSE HISTORY
-        // =========================================================
 
-        [RelayCommand]
-        private void ShowLicensesHistory()
+    // =========================================================
+    // LICENSE HISTORY
+    // =========================================================
+
+    [RelayCommand]
+    private void ShowLicensesHistory()
+    {
+        if (LicenseInfo == null)
+            return;
+
+
+        var vm =
+            new LicenseHistoryViewModel(
+                _personService,
+                _driverService,
+                _licenseService,
+                _internationalService);
+
+
+        new LicenseHistoryWin(
+            vm,
+            LicenseInfo.PersonID)
+            .ShowDialog();
+    }
+
+
+    // =========================================================
+    // NEW LICENSE INFO
+    // =========================================================
+
+    [RelayCommand]
+    private void ShowLicensesInfo()
+    {
+        if (!IsLicenseIssued ||
+            ReplacementInfo?.ReplacementLicenseID == null)
         {
-            if (LicenseInfo == null)
-                return;
+            MessageBox.Show(
+                "License not issued yet",
+                "Replacement License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
 
-            var vm =
-                new LicenseHistoryViewModel(
-                    _personService,
-                    _driverService,
-                    _licenseService,
-                    _internationalService);
-
-            new LicenseHistoryWin(
-                vm,
-                LicenseInfo.PersonID)
-                .ShowDialog();
+            return;
         }
 
-        // =========================================================
-        // NEW LICENSE INFO
-        // =========================================================
 
-        [RelayCommand]
-        private void ShowLicensesInfo()
-        {
-            if (!IsLicenseIssued ||
-                ReplacementInfo?.ReplacementLicenseID == null)
-            {
-                MessageBox.Show(
-                    "License not issued yet",
-                    "Replacement License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+        new DriverLicenseInfoWin(
+            ReplacementInfo
+                .ReplacementLicenseID
+                .Value)
+            .ShowDialog();
+    }
 
-                return;
-            }
 
-            new DriverLicenseInfoWin(
-                ReplacementInfo
-                    .ReplacementLicenseID
-                    .Value)
-                .ShowDialog();
-        }
+    // =========================================================
+    // CLEAR
+    // =========================================================
 
-        // =========================================================
-        // CLEAR
-        // =========================================================
-
-        private void ClearLicenseData()
-        {
-            LicenseInfo = null;
-            ReplacementInfo = null;
-            IsLicenseIssued = false;
-        }
+    private void ClearLicenseData()
+    {
+        LicenseInfo = null;
+        ReplacementInfo = null;
+        IsLicenseIssued = false;
     }
 }

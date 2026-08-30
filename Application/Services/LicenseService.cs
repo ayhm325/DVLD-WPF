@@ -1,61 +1,21 @@
 ﻿using Application.Common.Results;
-using Application.DTOs.DriverDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using Application.Mappers;
 using Application.Validators;
-using Domain.Enums;
 
 namespace Application.Services;
 
 public class LicenseService : ILicenseService
 {
     private readonly ILicenseRepository _repository;
-    private readonly ILocalDrivingLicenseApplicationService
-        _localDrivingLicenseApplicationService;
-    private readonly IApplicationService _applicationService;
-    private readonly IDriverService _driverService;
-    private readonly IPersonService _personService;
-    private readonly IDetainedLicenseService _detainedLicenseService;
 
     public LicenseService(
-        ILicenseRepository repository,
-        ILocalDrivingLicenseApplicationService
-            localDrivingLicenseApplicationService,
-        IApplicationService applicationService,
-        IDriverService driverService,
-        IPersonService personService,
-        IDetainedLicenseService detainedLicenseService)
+        ILicenseRepository repository)
     {
         _repository = repository
             ?? throw new ArgumentNullException(nameof(repository));
-
-        _localDrivingLicenseApplicationService =
-            localDrivingLicenseApplicationService
-            ?? throw new ArgumentNullException(
-                nameof(localDrivingLicenseApplicationService));
-
-        _applicationService =
-            applicationService
-            ?? throw new ArgumentNullException(
-                nameof(applicationService));
-
-        _driverService =
-            driverService
-            ?? throw new ArgumentNullException(
-                nameof(driverService));
-
-        _personService =
-            personService
-            ?? throw new ArgumentNullException(
-                nameof(personService));
-
-        _detainedLicenseService =
-            detainedLicenseService
-            ?? throw new ArgumentNullException(
-                nameof(detainedLicenseService));
     }
-
 
     // =========================================================
     // GET BY ID
@@ -216,306 +176,6 @@ public class LicenseService : ILicenseService
 
 
     // =========================================================
-    // GET DETAILS BY LOCAL APPLICATION ID
-    // =========================================================
-
-    public async Task<Result<DriverLicenseInfoDto>>
-     GetDetailsAsync(int localAppId)
-    {
-        if (localAppId <= 0)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromValidationFailure(
-                    "Invalid local application ID.");
-        }
-
-        // =========================================================
-        // GET LOCAL DRIVING LICENSE APPLICATION
-        // =========================================================
-
-        var localAppResult =
-            await _localDrivingLicenseApplicationService
-                .GetLocalDrivingLicenseApplicationByIdAsync(
-                    localAppId);
-
-        if (localAppResult.IsFailure)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromFailure(
-                    localAppResult.Error);
-        }
-
-        var localApplication =
-            localAppResult.Value!;
-
-        // =========================================================
-        // GET APPLICATION ID
-        // =========================================================
-
-        var applicationIdResult =
-            await _localDrivingLicenseApplicationService
-                .GetApplicationIdByLocalIdAsync(
-                    localAppId);
-
-        if (applicationIdResult.IsFailure)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromFailure(
-                    applicationIdResult.Error);
-        }
-
-        var applicationId =
-            applicationIdResult.Value;
-
-        // =========================================================
-        // GET APPLICATION
-        // =========================================================
-
-        var applicationResult =
-            await _applicationService
-                .GetApplicationByIdAsync(
-                    applicationId);
-
-        if (applicationResult.IsFailure)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromFailure(
-                    applicationResult.Error);
-        }
-
-        var application =
-            applicationResult.Value!;
-
-        // =========================================================
-        // GET PERSON
-        // =========================================================
-
-        var personResult =
-            await _personService
-                .GetPersonByIdAsync(
-                    application.ApplicantPersonID);
-
-        if (personResult.IsFailure)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromFailure(
-                    personResult.Error);
-        }
-
-        var person =
-            personResult.Value!;
-
-        // =========================================================
-        // GET LICENSES FOR THIS APPLICATION
-        // =========================================================
-
-        var licenses =
-            await _repository
-                .GetLicensesByApplicationIdAsync(
-                    applicationId);
-
-        // =========================================================
-        // GET LICENSE FOR THE SELECTED LICENSE CLASS
-        // =========================================================
-
-        var license =
-            licenses.FirstOrDefault(x =>
-                x.LicenseClassInfo != null &&
-                x.LicenseClassInfo.LicenseClassID ==
-                localApplication.LicenseClassID);
-
-        if (license is null)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromNotFound(
-                    "License for the selected license class was not found.");
-        }
-
-        // =========================================================
-        // GET DRIVER
-        // =========================================================
-
-        var driverResult =
-            await _driverService
-                .GetByPersonIdAsync(
-                    person.PersonId);
-
-        var driverId =
-            driverResult.IsSuccess
-                ? driverResult.Value!.DriverID
-                : 0;
-
-        // =========================================================
-        // CHECK DETAINED
-        // =========================================================
-
-        var isDetained =
-            await _detainedLicenseService
-                .IsLicenseDetainedAsync(
-                    license.LicenseID);
-
-        // =========================================================
-        // RETURN
-        // =========================================================
-
-        return Result<DriverLicenseInfoDto>.Success(
-            new DriverLicenseInfoDto
-            {
-                LicenseId =
-                    license.LicenseID,
-
-                LicenseClass =
-                    license.LicenseClassInfo?.ClassName
-                    ?? "Unknown",
-
-                IssueDate =
-                    license.IssueDate,
-
-                ExpirationDate =
-                    license.ExpirationDate,
-
-                IsActive =
-                    license.IsActive,
-
-                IsDetained =
-                    isDetained,
-
-                IssueReason =
-                    ((IssueReason)license.IssueReason)
-                        .ToString(),
-
-                Notes =
-                    license.Notes,
-
-                LicenseClassFees =
-                    license.LicenseClassInfo?.ClassFees
-                    ?? 0,
-
-                DriverId =
-                    driverId,
-
-                PersonID =
-                    person.PersonId,
-
-                FullName =
-                    person.FullName,
-
-                NationalNo =
-                    person.NationalNo,
-
-                DateOfBirth =
-                    person.DateOfBirth,
-
-                Gender =
-                    person.Gender.ToString(),
-
-                ImagePath =
-                    person.ImagePath
-            });
-    }
-
-    // =========================================================
-    // GET LICENSE DETAILS BY LICENSE ID
-    // =========================================================
-
-    public async Task<Result<DriverLicenseInfoDto>>
-        GetLicenseDetailsByIdAsync(int licenseId)
-    {
-        var validation =
-            LicenseValidator.ValidateId(licenseId);
-
-        if (validation.IsFailure)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromValidationFailure(
-                    validation.Error);
-        }
-
-        var license =
-            await _repository
-                .GetLicenseByIdAsync(
-                    licenseId);
-
-        if (license is null)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromNotFound(
-                    "License not found.");
-        }
-
-        var person =
-            license.Driver?.Person;
-
-        if (person is null)
-        {
-            return Result<DriverLicenseInfoDto>
-                .FromNotFound(
-                    "Person information not found.");
-        }
-
-        var isDetained =
-            await _detainedLicenseService
-                .IsLicenseDetainedAsync(
-                    license.LicenseID);
-
-        return Result<DriverLicenseInfoDto>.Success(
-            new DriverLicenseInfoDto
-            {
-                LicenseId =
-                    license.LicenseID,
-
-                LicenseClass =
-                    license.LicenseClassInfo?.ClassName
-                    ?? "Unknown",
-
-                IssueDate =
-                    license.IssueDate,
-
-                ExpirationDate =
-                    license.ExpirationDate,
-
-                IsActive =
-                    license.IsActive,
-
-                IsDetained =
-                    isDetained,
-
-                IssueReason =
-                    ((IssueReason)license.IssueReason)
-                    .ToString(),
-
-                Notes =
-                    license.Notes,
-
-                LicenseClassFees =
-                    license.LicenseClassInfo?.ClassFees
-                    ?? 0,
-
-                DriverId =
-                    license.DriverID,
-
-                PersonID =
-                    person.PersonId,
-
-                FullName =
-                    person.FullName,
-
-                NationalNo =
-                    person.NationalNo,
-
-                DateOfBirth =
-                    person.DateOfBirth,
-
-                Gender =
-                    person.Gender.ToString(),
-
-                ImagePath =
-                    person.ImagePath
-            });
-    }
-
-
-    // =========================================================
     // CHECKS
     // =========================================================
 
@@ -547,16 +207,14 @@ public class LicenseService : ILicenseService
 
         var exists =
             await _repository
-                .IsDriverHasLicenseAsync(
-                    driverId);
+                .IsDriverHasLicenseAsync(driverId);
 
         return Result<bool>.Success(exists);
     }
 
 
     public async Task<Result<bool>>
-        IsApplicationHasLicenseAsync(
-            int applicationId)
+        IsApplicationHasLicenseAsync(int applicationId)
     {
         if (applicationId <= 0)
         {
@@ -566,8 +224,7 @@ public class LicenseService : ILicenseService
 
         var exists =
             await _repository
-                .IsApplicationHasLicenseAsync(
-                    applicationId);
+                .IsApplicationHasLicenseAsync(applicationId);
 
         return Result<bool>.Success(exists);
     }

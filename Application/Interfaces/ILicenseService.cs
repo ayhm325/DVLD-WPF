@@ -24,14 +24,7 @@ public interface ILicenseService
 
     Task<Result<List<LicenseDto>>> GetLicensesByPersonIdAsync(
         int personId);
-
-    Task<Result<DriverLicenseInfoDto>> GetDetailsAsync(
-        int localAppId);
-
-    Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(
-        int licenseId);
-
-
+    
     // =========================================================
     // CHECKS
     // =========================================================

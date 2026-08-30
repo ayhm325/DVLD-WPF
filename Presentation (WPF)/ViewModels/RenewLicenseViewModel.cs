@@ -6,105 +6,353 @@ using CommunityToolkit.Mvvm.Input;
 using Presentation.Views.Windows;
 using System.Windows;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class RenewLicenseViewModel : ObservableObject
 {
-    public partial class RenewLicenseViewModel : ObservableObject
+    private readonly ILicenseService _licenseService;
+    private readonly ILicenseQueryService _licenseQueryService;
+    private readonly ILicenseRenewalService _licenseRenewalService;
+    private readonly IApplicationTypeService _applicationTypeService;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IPersonService _personService;
+    private readonly IDriverService _driverService;
+    private readonly IInternationalService _internationalService;
+
+    private const int RenewLicenseApplicationTypeId = 2;
+
+
+    public RenewLicenseViewModel(
+        ILicenseService licenseService,
+        ILicenseQueryService licenseQueryService,
+        ILicenseRenewalService licenseRenewalService,
+        IApplicationTypeService applicationTypeService,
+        ICurrentUserService currentUserService,
+        IPersonService personService,
+        IDriverService driverService,
+        IInternationalService internationalService)
     {
-        private readonly ILicenseService _licenseService;
-        private readonly ILicenseRenewalService _licenseRenewalService;
-        private readonly IApplicationTypeService _applicationTypeService;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IPersonService _personService;
-        private readonly IDriverService _driverService;
-        private readonly IInternationalService _internationalService;
+        _licenseService =
+            licenseService
+            ?? throw new ArgumentNullException(
+                nameof(licenseService));
 
-        private const int RenewLicenseApplicationTypeId = 2;
+        _licenseQueryService =
+            licenseQueryService
+            ?? throw new ArgumentNullException(
+                nameof(licenseQueryService));
 
-        public RenewLicenseViewModel(
-            ILicenseService licenseService,
-            ILicenseRenewalService licenseRenewalService,
-            IApplicationTypeService applicationTypeService,
-            ICurrentUserService currentUserService,
-            IPersonService personService,
-            IDriverService driverService,
-            IInternationalService internationalService)
+        _licenseRenewalService =
+            licenseRenewalService
+            ?? throw new ArgumentNullException(
+                nameof(licenseRenewalService));
+
+        _applicationTypeService =
+            applicationTypeService
+            ?? throw new ArgumentNullException(
+                nameof(applicationTypeService));
+
+        _currentUserService =
+            currentUserService
+            ?? throw new ArgumentNullException(
+                nameof(currentUserService));
+
+        _personService =
+            personService
+            ?? throw new ArgumentNullException(
+                nameof(personService));
+
+        _driverService =
+            driverService
+            ?? throw new ArgumentNullException(
+                nameof(driverService));
+
+        _internationalService =
+            internationalService
+            ?? throw new ArgumentNullException(
+                nameof(internationalService));
+    }
+
+
+    // =========================================================
+    // PROPERTIES
+    // =========================================================
+
+    [ObservableProperty]
+    private string licenseIdText = string.Empty;
+
+    [ObservableProperty]
+    private DriverLicenseInfoDto? licenseInfo;
+
+    [ObservableProperty]
+    private ApplicationNewLicenseInfoDto? newLicenseInfo;
+
+    [ObservableProperty]
+    private ApplicationDto? applicationInfo;
+
+    [ObservableProperty]
+    private bool isLicenseIssued;
+
+    [ObservableProperty]
+    private int? renewedLicenseId;
+
+
+    public bool CanSearch =>
+        int.TryParse(
+            LicenseIdText,
+            out _);
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    [RelayCommand]
+    private async Task Search()
+    {
+        if (!int.TryParse(
+                LicenseIdText,
+                out int licenseId))
         {
-            _licenseService =
-                licenseService
-                ?? throw new ArgumentNullException(
-                    nameof(licenseService));
+            MessageBox.Show(
+                "Please enter a valid License ID",
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
 
-            _licenseRenewalService =
-                licenseRenewalService
-                ?? throw new ArgumentNullException(
-                    nameof(licenseRenewalService));
-
-            _applicationTypeService =
-                applicationTypeService
-                ?? throw new ArgumentNullException(
-                    nameof(applicationTypeService));
-
-            _currentUserService =
-                currentUserService
-                ?? throw new ArgumentNullException(
-                    nameof(currentUserService));
-
-            _personService =
-                personService
-                ?? throw new ArgumentNullException(
-                    nameof(personService));
-
-            _driverService =
-                driverService
-                ?? throw new ArgumentNullException(
-                    nameof(driverService));
-
-            _internationalService =
-                internationalService
-                ?? throw new ArgumentNullException(
-                    nameof(internationalService));
+            return;
         }
 
-        // =========================================================
-        // PROPERTIES
-        // =========================================================
 
-        [ObservableProperty]
-        private string licenseIdText = string.Empty;
+        // =====================================================
+        // GET LICENSE DETAILS
+        // =====================================================
 
-        [ObservableProperty]
-        private DriverLicenseInfoDto? licenseInfo;
+        var licenseResult =
+            await _licenseQueryService
+                .GetLicenseDetailsByIdAsync(
+                    licenseId);
 
-        [ObservableProperty]
-        private ApplicationNewLicenseInfoDto? newLicenseInfo;
 
-        [ObservableProperty]
-        private ApplicationDto? applicationInfo;
-
-        [ObservableProperty]
-        private bool isLicenseIssued;
-
-        [ObservableProperty]
-        private int? renewedLicenseId;
-
-        public bool CanSearch =>
-            int.TryParse(
-                LicenseIdText,
-                out _);
-
-        // =========================================================
-        // SEARCH
-        // =========================================================
-
-        [RelayCommand]
-        private async Task Search()
+        if (licenseResult.IsFailure)
         {
-            if (!int.TryParse(
-                    LicenseIdText,
-                    out int licenseId))
+            MessageBox.Show(
+                licenseResult.Error,
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            ClearLicenseData();
+
+            return;
+        }
+
+
+        LicenseInfo =
+            licenseResult.Value;
+
+
+        if (LicenseInfo == null)
+        {
+            ClearLicenseData();
+
+            return;
+        }
+
+
+        // =====================================================
+        // MUST BE EXPIRED
+        // =====================================================
+
+        if (LicenseInfo.ExpirationDate > DateTime.Now)
+        {
+            MessageBox.Show(
+                "This license has not expired yet. " +
+                "Renewal is not allowed.",
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            ClearLicenseData();
+
+            return;
+        }
+
+
+        // =====================================================
+        // MUST BE ACTIVE
+        // =====================================================
+
+        if (!LicenseInfo.IsActive)
+        {
+            MessageBox.Show(
+                "This license is not active and cannot be renewed.",
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            ClearLicenseData();
+
+            return;
+        }
+
+
+        // =====================================================
+        // GET APPLICATION TYPE
+        // =====================================================
+
+        var applicationTypeResult =
+            await _applicationTypeService
+                .GetApplicationTypeByIdAsync(
+                    RenewLicenseApplicationTypeId);
+
+
+        if (applicationTypeResult.IsFailure)
+        {
+            MessageBox.Show(
+                applicationTypeResult.Error,
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+
+        var applicationType =
+            applicationTypeResult.Value;
+
+
+        if (applicationType == null)
+        {
+            MessageBox.Show(
+                "Renewal application type was not found.",
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+
+        // =====================================================
+        // BUILD DISPLAY INFO
+        // =====================================================
+
+        NewLicenseInfo =
+            new ApplicationNewLicenseInfoDto
+            {
+                OldLicenseID =
+                    LicenseInfo.LicenseId,
+
+                ApplicationDate =
+                    DateTime.Now,
+
+                IssueDate =
+                    LicenseInfo.IssueDate,
+
+                ExpirationDate =
+                    LicenseInfo.ExpirationDate,
+
+                ApplicationFees =
+                    applicationType.ApplicationTypeFees,
+
+                LicenseFees =
+                    LicenseInfo.LicenseClassFees,
+
+                IssueReason =
+                    (byte)Domain.Enums.IssueReason.Renew,
+
+                CreatedByUserName =
+                    _currentUserService.Username
+            };
+
+
+        // =====================================================
+        // BUILD APPLICATION INFO
+        // =====================================================
+
+        ApplicationInfo =
+            new ApplicationDto
+            {
+                ApplicantPersonID =
+                    LicenseInfo.PersonID,
+
+                ApplicationTypeID =
+                    RenewLicenseApplicationTypeId,
+
+                ApplicationDate =
+                    DateTime.Now,
+
+                ApplicationStatus =
+                    Domain.Enums.AppStatus.New,
+
+                LastStatusDate =
+                    DateTime.Now,
+
+                PaidFees =
+                    applicationType.ApplicationTypeFees,
+
+                CreatedByUserID =
+                    _currentUserService.UserId,
+
+                CreatedByUserName =
+                    _currentUserService.Username
+            };
+
+
+        // =====================================================
+        // RESET PREVIOUS STATE
+        // =====================================================
+
+        RenewedLicenseId = null;
+        IsLicenseIssued = false;
+
+
+        MessageBox.Show(
+            "License found successfully",
+            "Renew License",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+
+    // =========================================================
+    // ISSUE / RENEW LICENSE
+    // =========================================================
+
+    [RelayCommand]
+    private async Task Issue()
+    {
+        if (LicenseInfo == null)
+        {
+            MessageBox.Show(
+                "Please search for a license first",
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+
+        try
+        {
+            // =================================================
+            // RENEWAL SERVICE
+            // =================================================
+
+            var renewResult =
+                await _licenseRenewalService
+                    .RenewLicenseAsync(
+                        LicenseInfo.LicenseId,
+                        NewLicenseInfo?.Notes);
+
+
+            if (renewResult.IsFailure)
             {
                 MessageBox.Show(
-                    "Please enter a valid License ID",
+                    renewResult.Error,
                     "Renew License",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -112,347 +360,179 @@ namespace Presentation.ViewModels
                 return;
             }
 
+
+            int newLicenseId =
+                renewResult.Value;
+
+
+            RenewedLicenseId =
+                newLicenseId;
+
+
+            // =================================================
+            // GET NEW LICENSE
+            // =================================================
+
             var licenseResult =
                 await _licenseService
-                    .GetLicenseDetailsByIdAsync(
-                        licenseId);
+                    .GetByIdAsync(
+                        newLicenseId);
+
 
             if (licenseResult.IsFailure)
             {
                 MessageBox.Show(
                     licenseResult.Error,
-                    "Renew License",
+                    "Error",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    MessageBoxImage.Error);
 
-                ClearLicenseData();
                 return;
             }
 
-            LicenseInfo =
-                licenseResult.Value!;
 
-            // =====================================================
-            // MUST BE EXPIRED
-            // =====================================================
+            var newLicense =
+                licenseResult.Value;
 
-            if (LicenseInfo.ExpirationDate > DateTime.Now)
+
+            if (newLicense == null)
             {
                 MessageBox.Show(
-                    "This license has not expired yet. " +
-                    "Renewal is not allowed.",
-                    "Renew License",
+                    "The renewed license could not be found.",
+                    "Error",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                ClearLicenseData();
-                return;
-            }
-
-            // =====================================================
-            // MUST BE ACTIVE
-            // =====================================================
-
-            if (!LicenseInfo.IsActive)
-            {
-                MessageBox.Show(
-                    "This license is not active and cannot be renewed.",
-                    "Renew License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                ClearLicenseData();
-                return;
-            }
-
-            // =====================================================
-            // GET APPLICATION TYPE
-            // =====================================================
-
-            var applicationTypeResult =
-                await _applicationTypeService
-                    .GetApplicationTypeByIdAsync(
-                        RenewLicenseApplicationTypeId);
-
-            if (applicationTypeResult.IsFailure)
-            {
-                MessageBox.Show(
-                    applicationTypeResult.Error,
-                    "Renew License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    MessageBoxImage.Error);
 
                 return;
             }
 
-            var applicationType =
-                applicationTypeResult.Value!;
 
-            // =====================================================
-            // BUILD DISPLAY INFO
-            // =====================================================
+            // =================================================
+            // BUILD FINAL DISPLAY INFO
+            // =================================================
 
             NewLicenseInfo =
                 new ApplicationNewLicenseInfoDto
                 {
+                    RenewedLicenseApplicationID =
+                        newLicense.ApplicationID,
+
+                    RenewedLicenseID =
+                        newLicense.LicenseID,
+
                     OldLicenseID =
                         LicenseInfo.LicenseId,
 
                     ApplicationDate =
-                        DateTime.Now,
+                        newLicense.IssueDate,
 
                     IssueDate =
-                        LicenseInfo.IssueDate,
+                        newLicense.IssueDate,
 
                     ExpirationDate =
-                        LicenseInfo.ExpirationDate,
+                        newLicense.ExpirationDate,
 
                     ApplicationFees =
-                        applicationType.ApplicationTypeFees,
+                        ApplicationInfo?.PaidFees ?? 0,
 
                     LicenseFees =
-                        LicenseInfo.LicenseClassFees,
-
-                    IssueReason =
-                        (byte)Domain.Enums.IssueReason.Renew,
+                        newLicense.PaidFees,
 
                     CreatedByUserName =
-                        _currentUserService.Username
+                        newLicense.CreatedByUserName
+                        ?? "Unknown"
                 };
 
-            // =====================================================
-            // BUILD APPLICATION INFO
-            // =====================================================
 
-            ApplicationInfo =
-                new ApplicationDto
-                {
-                    ApplicantPersonID =
-                        LicenseInfo.PersonID,
+            IsLicenseIssued = true;
 
-                    ApplicationTypeID =
-                        RenewLicenseApplicationTypeId,
-
-                    ApplicationDate =
-                        DateTime.Now,
-
-                    ApplicationStatus =
-                        Domain.Enums.AppStatus.New,
-
-                    LastStatusDate =
-                        DateTime.Now,
-
-                    PaidFees =
-                        applicationType.ApplicationTypeFees,
-
-                    CreatedByUserID =
-                        _currentUserService.UserId,
-
-                    CreatedByUserName =
-                        _currentUserService.Username
-                };
-
-            // =====================================================
-            // RESET PREVIOUS STATE
-            // =====================================================
-
-            RenewedLicenseId = null;
-            IsLicenseIssued = false;
 
             MessageBox.Show(
-                "License found successfully",
-                "Renew License",
+                $"License renewed successfully.\n" +
+                $"New License ID: {newLicenseId}",
+                "Success",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
-
-        // =========================================================
-        // ISSUE / RENEW LICENSE
-        // =========================================================
-
-        [RelayCommand]
-        private async Task Issue()
+        catch (Exception ex)
         {
-            if (LicenseInfo == null)
-            {
-                MessageBox.Show(
-                    "Please search for a license first",
-                    "Renew License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+            MessageBox.Show(
+                ex.Message,
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
 
-                return;
-            }
 
-            try
-            {
-                // =================================================
-                // RENEWAL SERVICE
-                // =================================================
+    // =========================================================
+    // LICENSE HISTORY
+    // =========================================================
 
-                var renewResult =
-                    await _licenseRenewalService
-                        .RenewLicenseAsync(
-                            LicenseInfo.LicenseId,
-                            NewLicenseInfo?.Notes);
+    [RelayCommand]
+    private void ShowLicensesHistory()
+    {
+        if (LicenseInfo == null)
+            return;
 
-                if (renewResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        renewResult.Error,
-                        "Renew License",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
 
-                    return;
-                }
+        var vm =
+            new LicenseHistoryViewModel(
+                _personService,
+                _driverService,
+                _licenseService,
+                _internationalService);
 
-                int newLicenseId =
-                    renewResult.Value;
 
-                RenewedLicenseId =
-                    newLicenseId;
+        var win =
+            new LicenseHistoryWin(
+                vm,
+                LicenseInfo.PersonID);
 
-                // =================================================
-                // GET NEW LICENSE
-                // =================================================
 
-                var licenseResult =
-                    await _licenseService
-                        .GetByIdAsync(
-                            newLicenseId);
+        win.ShowDialog();
+    }
 
-                if (licenseResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        licenseResult.Error,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
 
-                    return;
-                }
+    // =========================================================
+    // NEW LICENSE INFO
+    // =========================================================
 
-                var newLicense =
-                    licenseResult.Value!;
+    [RelayCommand]
+    private void ShowLicensesInfo()
+    {
+        if (!IsLicenseIssued ||
+            RenewedLicenseId == null)
+        {
+            MessageBox.Show(
+                "License not issued yet",
+                "Renew License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
 
-                // =================================================
-                // BUILD FINAL DISPLAY INFO
-                // =================================================
-
-                NewLicenseInfo =
-                    new ApplicationNewLicenseInfoDto
-                    {
-                        RenewedLicenseApplicationID =
-                            newLicense.ApplicationID,
-
-                        RenewedLicenseID =
-                            newLicense.LicenseID,
-
-                        OldLicenseID =
-                            LicenseInfo.LicenseId,
-
-                        ApplicationDate =
-                            newLicense.IssueDate,
-
-                        IssueDate =
-                            newLicense.IssueDate,
-
-                        ExpirationDate =
-                            newLicense.ExpirationDate,
-
-                        ApplicationFees =
-                            ApplicationInfo?.PaidFees ?? 0,
-
-                        LicenseFees =
-                            newLicense.PaidFees,
-
-                        CreatedByUserName =
-                            newLicense.CreatedByUserName
-                            ?? "Unknown"
-                    };
-
-                IsLicenseIssued = true;
-
-                MessageBox.Show(
-                    $"License renewed successfully.\n" +
-                    $"New License ID: {newLicenseId}",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    ex.Message,
-                    "Renew License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
+            return;
         }
 
-        // =========================================================
-        // LICENSE HISTORY
-        // =========================================================
 
-        [RelayCommand]
-        private void ShowLicensesHistory()
-        {
-            if (LicenseInfo == null)
-                return;
+        var win =
+            new DriverLicenseInfoWin(
+                RenewedLicenseId.Value);
 
-            var vm =
-                new LicenseHistoryViewModel(
-                    _personService,
-                    _driverService,
-                    _licenseService,
-                    _internationalService);
 
-            var win =
-                new LicenseHistoryWin(
-                    vm,
-                    LicenseInfo.PersonID);
+        win.ShowDialog();
+    }
 
-            win.ShowDialog();
-        }
 
-        // =========================================================
-        // NEW LICENSE INFO
-        // =========================================================
+    // =========================================================
+    // CLEAR
+    // =========================================================
 
-        [RelayCommand]
-        private void ShowLicensesInfo()
-        {
-            if (!IsLicenseIssued ||
-                RenewedLicenseId == null)
-            {
-                MessageBox.Show(
-                    "License not issued yet",
-                    "Renew License",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            var win =
-                new DriverLicenseInfoWin(
-                    RenewedLicenseId.Value);
-
-            win.ShowDialog();
-        }
-
-        // =========================================================
-        // CLEAR
-        // =========================================================
-
-        private void ClearLicenseData()
-        {
-            LicenseInfo = null;
-            NewLicenseInfo = null;
-            ApplicationInfo = null;
-            RenewedLicenseId = null;
-            IsLicenseIssued = false;
-        }
+    private void ClearLicenseData()
+    {
+        LicenseInfo = null;
+        NewLicenseInfo = null;
+        ApplicationInfo = null;
+        RenewedLicenseId = null;
+        IsLicenseIssued = false;
     }
 }

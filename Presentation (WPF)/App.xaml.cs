@@ -85,6 +85,8 @@ namespace DVLD_WPF
             services.AddScoped<ILicenseReplacementService,LicenseReplacementService>();
             //=========================================================
             services.AddScoped<ITestWorkflowService, TestWorkflowService>();
+            // ========================================================
+            services.AddScoped<ILicenseQueryService, LicenseQueryService>();
 
 
             // 4. ViewModels
