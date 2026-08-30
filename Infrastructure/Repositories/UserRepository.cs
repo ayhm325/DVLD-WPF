@@ -6,17 +6,16 @@ namespace Infrastructure.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly IDbContextFactory<DVLDDbContext>
-        _contextFactory;
+    private readonly DVLDDbContext _context;
 
 
     public UserRepository(
-        IDbContextFactory<DVLDDbContext> contextFactory)
+        DVLDDbContext context)
     {
-        _contextFactory =
-            contextFactory
+        _context =
+            context
             ?? throw new ArgumentNullException(
-                nameof(contextFactory));
+                nameof(context));
     }
 
 
@@ -24,10 +23,9 @@ public class UserRepository : IUserRepository
     // BASE QUERY
     // =========================================================
 
-    private static IQueryable<User> Query(
-        DVLDDbContext context)
+    private IQueryable<User> Query()
     {
-        return context.Users
+        return _context.Users
             .AsNoTracking()
             .Include(u => u.Person);
     }
@@ -37,19 +35,17 @@ public class UserRepository : IUserRepository
     // GET BY ID
     // =========================================================
 
-    public async Task<User?> GetUserByUserIdAsync(
-        int id)
+    public async Task<User?>
+        GetUserByUserIdAsync(
+            int id)
     {
         if (id <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .FirstOrDefaultAsync(
-                u => u.UserId == id);
+                u =>
+                    u.UserId == id);
     }
 
 
@@ -57,19 +53,17 @@ public class UserRepository : IUserRepository
     // GET BY PERSON ID
     // =========================================================
 
-    public async Task<User?> GetUserByPersonIdAsync(
-        int personId)
+    public async Task<User?>
+        GetUserByPersonIdAsync(
+            int personId)
     {
         if (personId <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .FirstOrDefaultAsync(
-                u => u.PersonId == personId);
+                u =>
+                    u.PersonId == personId);
     }
 
 
@@ -77,21 +71,19 @@ public class UserRepository : IUserRepository
     // GET BY USERNAME
     // =========================================================
 
-    public async Task<User?> GetUserByUsernameAsync(
-        string username)
+    public async Task<User?>
+        GetUserByUsernameAsync(
+            string username)
     {
         if (string.IsNullOrWhiteSpace(username))
             return null;
 
         username = username.Trim();
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .FirstOrDefaultAsync(
-                u => u.UserName == username);
+                u =>
+                    u.UserName == username);
     }
 
 
@@ -102,11 +94,7 @@ public class UserRepository : IUserRepository
     public async Task<List<User>>
         GetAllUsersAsync()
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .ToListAsync();
     }
 
@@ -124,14 +112,11 @@ public class UserRepository : IUserRepository
 
         username = username.Trim();
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await context.Users
+        return await _context.Users
             .AsNoTracking()
             .AnyAsync(
-                u => u.UserName == username);
+                u =>
+                    u.UserName == username);
     }
 
 
@@ -152,11 +137,7 @@ public class UserRepository : IUserRepository
 
         username = username.Trim();
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await context.Users
+        return await _context.Users
             .AsNoTracking()
             .AnyAsync(
                 u =>
@@ -176,14 +157,11 @@ public class UserRepository : IUserRepository
         if (id <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await context.Users
+        return await _context.Users
             .AsNoTracking()
             .AnyAsync(
-                u => u.UserId == id);
+                u =>
+                    u.UserId == id);
     }
 
 
@@ -198,14 +176,11 @@ public class UserRepository : IUserRepository
         if (personId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await context.Users
+        return await _context.Users
             .AsNoTracking()
             .AnyAsync(
-                u => u.PersonId == personId);
+                u =>
+                    u.PersonId == personId);
     }
 
 
@@ -217,15 +192,26 @@ public class UserRepository : IUserRepository
         AddUserAsync(
             User user)
     {
-        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(
+            user);
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
+        await _context.Users
+            .AddAsync(user);
 
-        await context.Users.AddAsync(user);
-
-        await context.SaveChangesAsync();
+        // =====================================================
+        // IMPORTANT
+        // =====================================================
+        // لا يوجد SaveChangesAsync هنا.
+        //
+        // الـ UnitOfWork هو المسؤول عن الحفظ.
+        //
+        // بعد SaveChangesAsync من الـ UnitOfWork
+        // سيتم توليد UserId من قاعدة البيانات.
+        //
+        // إذا كان الـ Service يحتاج الـ ID مباشرة،
+        // يجب تنفيذ SaveChangesAsync في تلك العملية
+        // قبل استخدام الـ ID في Entity أخرى.
+        // =====================================================
 
         return user.UserId;
     }
@@ -239,22 +225,26 @@ public class UserRepository : IUserRepository
         UpdateUserAsync(
             User user)
     {
-        ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(
+            user);
 
         if (user.UserId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
 
         var existingUser =
-            await context.Users
+            await _context.Users
                 .FirstOrDefaultAsync(
-                    u => u.UserId == user.UserId);
+                    u =>
+                        u.UserId == user.UserId);
 
         if (existingUser is null)
             return false;
+
+
+        // =====================================================
+        // UPDATE VALUES
+        // =====================================================
 
         existingUser.PersonId =
             user.PersonId;
@@ -268,7 +258,16 @@ public class UserRepository : IUserRepository
         existingUser.IsActive =
             user.IsActive;
 
-        return await context.SaveChangesAsync() > 0;
+
+        // =====================================================
+        // IMPORTANT
+        // =====================================================
+        // لا يوجد SaveChangesAsync هنا.
+        //
+        // الـ UnitOfWork سيقوم بالحفظ.
+        // =====================================================
+
+        return true;
     }
 
 
@@ -283,29 +282,35 @@ public class UserRepository : IUserRepository
         if (id <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
 
         var user =
-            await context.Users
+            await _context.Users
                 .FirstOrDefaultAsync(
-                    u => u.UserId == id);
+                    u =>
+                        u.UserId == id);
 
         if (user is null)
             return false;
 
-        context.Users.Remove(user);
 
-        try
-        {
-            return await context.SaveChangesAsync() > 0;
-        }
-        catch (DbUpdateException)
-        {
-            // The user is referenced by another table.
-            // The database correctly prevents the delete.
-            return false;
-        }
+        _context.Users
+            .Remove(user);
+
+
+        // =====================================================
+        // IMPORTANT
+        // =====================================================
+        // لا يوجد SaveChangesAsync هنا.
+        //
+        // لا نحاول التقاط DbUpdateException هنا أيضًا،
+        // لأن الخطأ سيحدث فعليًا عند:
+        //
+        //     UnitOfWork.SaveChangesAsync()
+        //
+        // وبالتالي الـ Service / Transaction هو المكان
+        // الصحيح لمعالجة فشل عملية الحفظ.
+        // =====================================================
+
+        return true;
     }
 }

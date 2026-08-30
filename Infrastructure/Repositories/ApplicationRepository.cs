@@ -8,16 +8,16 @@ namespace Infrastructure.Repositories;
 public class ApplicationRepository
     : IApplicationRepository
 {
-    private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
+    private readonly DVLDDbContext _context;
 
 
     public ApplicationRepository(
-        IDbContextFactory<DVLDDbContext> contextFactory)
+        DVLDDbContext context)
     {
-        _contextFactory =
-            contextFactory
+        _context =
+            context
             ?? throw new ArgumentNullException(
-                nameof(contextFactory));
+                nameof(context));
     }
 
 
@@ -25,10 +25,9 @@ public class ApplicationRepository
     // BASE QUERY
     // =========================================================
 
-    private static IQueryable<ApplicationD> Query(
-        DVLDDbContext context)
+    private IQueryable<ApplicationD> Query()
     {
-        return context.Applications
+        return _context.Applications
             .AsNoTracking()
             .Include(a => a.Person)
             .Include(a => a.ApplicationType)
@@ -41,17 +40,16 @@ public class ApplicationRepository
     // =========================================================
 
     public async Task<ApplicationD?>
-        GetApplicationByIdAsync(int id)
+        GetApplicationByIdAsync(
+            int id)
     {
         if (id <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .FirstOrDefaultAsync(
-                a => a.ApplicationID == id);
+                a =>
+                    a.ApplicationID == id);
     }
 
 
@@ -62,10 +60,7 @@ public class ApplicationRepository
     public async Task<List<ApplicationD>>
         GetAllApplicationsAsync()
     {
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .ToListAsync();
     }
 
@@ -79,12 +74,9 @@ public class ApplicationRepository
             int personId)
     {
         if (personId <= 0)
-            return new List<ApplicationD>();
+            return [];
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .Where(a =>
                 a.ApplicantPersonID == personId)
             .ToListAsync();
@@ -100,14 +92,12 @@ public class ApplicationRepository
             int applicationTypeId)
     {
         if (applicationTypeId <= 0)
-            return new List<ApplicationD>();
+            return [];
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .Where(a =>
-                a.ApplicationTypeID == applicationTypeId)
+                a.ApplicationTypeID ==
+                applicationTypeId)
             .ToListAsync();
     }
 
@@ -121,12 +111,9 @@ public class ApplicationRepository
             int userId)
     {
         if (userId <= 0)
-            return new List<ApplicationD>();
+            return [];
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .Where(a =>
                 a.CreatedByUserID == userId)
             .ToListAsync();
@@ -142,12 +129,9 @@ public class ApplicationRepository
             AppStatus status)
     {
         if (!Enum.IsDefined(status))
-            return new List<ApplicationD>();
+            return [];
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await Query(context)
+        return await Query()
             .Where(a =>
                 a.ApplicationStatus == status)
             .ToListAsync();
@@ -159,15 +143,13 @@ public class ApplicationRepository
     // =========================================================
 
     public async Task<bool>
-        IsApplicationExistsByIdAsync(int id)
+        IsApplicationExistsByIdAsync(
+            int id)
     {
         if (id <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await context.Applications
+        return await _context.Applications
             .AsNoTracking()
             .AnyAsync(a =>
                 a.ApplicationID == id);
@@ -185,14 +167,12 @@ public class ApplicationRepository
         if (personId <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await context.Applications
+        return await _context.Applications
             .AsNoTracking()
             .AnyAsync(a =>
                 a.ApplicantPersonID == personId &&
-                a.ApplicationStatus == AppStatus.New);
+                a.ApplicationStatus ==
+                    AppStatus.New);
     }
 
 
@@ -211,15 +191,14 @@ public class ApplicationRepository
             return false;
         }
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        return await context.Applications
+        return await _context.Applications
             .AsNoTracking()
             .AnyAsync(a =>
                 a.ApplicantPersonID == personId &&
-                a.ApplicationTypeID == applicationTypeId &&
-                a.ApplicationStatus == AppStatus.New);
+                a.ApplicationTypeID ==
+                    applicationTypeId &&
+                a.ApplicationStatus ==
+                    AppStatus.New);
     }
 
 
@@ -238,26 +217,26 @@ public class ApplicationRepository
             return null;
         }
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var applicationId =
-            await context
+            await _context
                 .LocalDrivingLicenseApplications
                 .AsNoTracking()
                 .Where(ldla =>
-                    ldla.Application.ApplicantPersonID ==
-                        personId &&
+                    ldla.Application
+                        .ApplicantPersonID ==
+                            personId &&
 
                     ldla.LicenseClassID ==
                         licenseClassId &&
 
                     (
-                        ldla.Application.ApplicationStatus ==
-                            AppStatus.New ||
+                        ldla.Application
+                            .ApplicationStatus ==
+                                AppStatus.New ||
 
-                        ldla.Application.ApplicationStatus ==
-                            AppStatus.Completed
+                        ldla.Application
+                            .ApplicationStatus ==
+                                AppStatus.Completed
                     ))
                 .Select(ldla =>
                     ldla.ApplicationID)
@@ -273,22 +252,21 @@ public class ApplicationRepository
     // CREATE
     // =========================================================
 
-    public async Task<int>
-        AddNewApplicationAsync(
-            ApplicationD application)
+    public async Task AddNewApplicationAsync(
+        ApplicationD application)
     {
         ArgumentNullException.ThrowIfNull(
             application);
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
-        await context.Applications
+        await _context.Applications
             .AddAsync(application);
 
-        await context.SaveChangesAsync();
-
-        return application.ApplicationID;
+        // No SaveChanges here.
+        //
+        // UnitOfWork controls persistence.
+        //
+        // application.ApplicationID
+        // will be generated after SaveChangesAsync().
     }
 
 
@@ -306,11 +284,8 @@ public class ApplicationRepository
         if (application.ApplicationID <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var existing =
-            await context.Applications
+            await _context.Applications
                 .FirstOrDefaultAsync(
                     a =>
                         a.ApplicationID ==
@@ -319,11 +294,12 @@ public class ApplicationRepository
         if (existing is null)
             return false;
 
-        context.Entry(existing)
+        _context.Entry(existing)
             .CurrentValues
             .SetValues(application);
 
-        return await context.SaveChangesAsync() > 0;
+        // No SaveChanges here.
+        return true;
     }
 
 
@@ -332,16 +308,14 @@ public class ApplicationRepository
     // =========================================================
 
     public async Task<bool>
-        DeleteApplicationAsync(int id)
+        DeleteApplicationAsync(
+            int id)
     {
         if (id <= 0)
             return false;
 
-        await using var context =
-            await _contextFactory.CreateDbContextAsync();
-
         var application =
-            await context.Applications
+            await _context.Applications
                 .FirstOrDefaultAsync(
                     a =>
                         a.ApplicationID == id);
@@ -349,9 +323,10 @@ public class ApplicationRepository
         if (application is null)
             return false;
 
-        context.Applications.Remove(
-            application);
+        _context.Applications
+            .Remove(application);
 
-        return await context.SaveChangesAsync() > 0;
+        // No SaveChanges here.
+        return true;
     }
 }

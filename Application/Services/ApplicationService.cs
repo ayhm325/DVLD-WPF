@@ -11,15 +11,22 @@ public class ApplicationService
     : IApplicationService
 {
     private readonly IApplicationRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
 
 
     public ApplicationService(
-        IApplicationRepository repository)
+        IApplicationRepository repository,
+        IUnitOfWork unitOfWork)
     {
         _repository =
             repository
             ?? throw new ArgumentNullException(
                 nameof(repository));
+
+        _unitOfWork =
+            unitOfWork
+            ?? throw new ArgumentNullException(
+                nameof(unitOfWork));
     }
 
 
@@ -49,7 +56,8 @@ public class ApplicationService
     // =========================================================
 
     public async Task<Result<ApplicationBasicInfoDto>>
-        GetBasicInfoAsync(int id)
+        GetBasicInfoAsync(
+            int id)
     {
         var validation =
             ApplicationValidator
@@ -62,6 +70,7 @@ public class ApplicationService
                     validation.Error);
         }
 
+
         var entity =
             await _repository
                 .GetApplicationByIdAsync(id);
@@ -72,6 +81,7 @@ public class ApplicationService
                 .FromNotFound(
                     "Application not found.");
         }
+
 
         return Result<ApplicationBasicInfoDto>
             .Success(
@@ -85,7 +95,8 @@ public class ApplicationService
     // =========================================================
 
     public async Task<Result<ApplicationDto>>
-        GetApplicationByIdAsync(int id)
+        GetApplicationByIdAsync(
+            int id)
     {
         var validation =
             ApplicationValidator
@@ -98,6 +109,7 @@ public class ApplicationService
                     validation.Error);
         }
 
+
         var entity =
             await _repository
                 .GetApplicationByIdAsync(id);
@@ -108,6 +120,7 @@ public class ApplicationService
                 .FromNotFound(
                     "Application not found.");
         }
+
 
         return Result<ApplicationDto>
             .Success(
@@ -141,13 +154,26 @@ public class ApplicationService
                 .ToEntity(dto);
 
 
-        var id =
-            await _repository
-                .AddNewApplicationAsync(
-                    entity);
+        // -----------------------------------------------------
+        // ADD
+        // -----------------------------------------------------
+
+        await _repository
+            .AddNewApplicationAsync(entity);
 
 
-        if (id <= 0)
+        // -----------------------------------------------------
+        // SAVE
+        // -----------------------------------------------------
+        // EF Core generates ApplicationID here.
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+
+        if (saved <= 0 ||
+            entity.ApplicationID <= 0)
         {
             return Result<int>
                 .FromFailure(
@@ -156,7 +182,8 @@ public class ApplicationService
 
 
         return Result<int>
-            .Success(id);
+            .Success(
+                entity.ApplicationID);
     }
 
 
@@ -179,6 +206,10 @@ public class ApplicationService
                     validation.Error);
         }
 
+
+        // -----------------------------------------------------
+        // GET EXISTING APPLICATION
+        // -----------------------------------------------------
 
         var entity =
             await _repository
@@ -207,9 +238,9 @@ public class ApplicationService
 
 
         if (entity.ApplicationStatus ==
-            AppStatus.Cancelled &&
+                AppStatus.Cancelled &&
             dto.ApplicationStatus !=
-            AppStatus.Cancelled)
+                AppStatus.Cancelled)
         {
             return Result
                 .Conflict(
@@ -218,7 +249,7 @@ public class ApplicationService
 
 
         // =====================================================
-        // UPDATE
+        // UPDATE ENTITY
         // =====================================================
 
         entity.ApplicationStatus =
@@ -243,13 +274,33 @@ public class ApplicationService
             dto.CreatedByUserID;
 
 
+        // -----------------------------------------------------
+        // MARK UPDATE
+        // -----------------------------------------------------
+
         var updated =
             await _repository
                 .UpdateApplicationAsync(
                     entity);
 
+        if (!updated)
+        {
+            return Result
+                .Failure(
+                    "Application update failed.");
+        }
 
-        return updated
+
+        // -----------------------------------------------------
+        // SAVE
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
                 "Application update failed.");
@@ -261,7 +312,8 @@ public class ApplicationService
     // =========================================================
 
     public async Task<Result>
-        DeleteApplicationAsync(int id)
+        DeleteApplicationAsync(
+            int id)
     {
         var validation =
             ApplicationValidator
@@ -274,6 +326,10 @@ public class ApplicationService
                     validation.Error);
         }
 
+
+        // -----------------------------------------------------
+        // GET APPLICATION
+        // -----------------------------------------------------
 
         var entity =
             await _repository
@@ -300,16 +356,32 @@ public class ApplicationService
         }
 
 
-        // =====================================================
+        // -----------------------------------------------------
         // DELETE
-        // =====================================================
+        // -----------------------------------------------------
 
         var deleted =
             await _repository
                 .DeleteApplicationAsync(id);
 
+        if (!deleted)
+        {
+            return Result
+                .Failure(
+                    "Delete application failed.");
+        }
 
-        return deleted
+
+        // -----------------------------------------------------
+        // SAVE
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
                 "Delete application failed.");
@@ -330,6 +402,7 @@ public class ApplicationService
         {
             return null;
         }
+
 
         return await _repository
             .HasDuplicateApplicationAsync(
@@ -358,6 +431,10 @@ public class ApplicationService
         }
 
 
+        // -----------------------------------------------------
+        // GET APPLICATION
+        // -----------------------------------------------------
+
         var entity =
             await _repository
                 .GetApplicationByIdAsync(
@@ -372,7 +449,7 @@ public class ApplicationService
 
 
         // =====================================================
-        // BUSINESS RULE
+        // BUSINESS RULES
         // =====================================================
 
         if (entity.ApplicationStatus ==
@@ -404,13 +481,33 @@ public class ApplicationService
             DateTime.UtcNow;
 
 
+        // -----------------------------------------------------
+        // UPDATE
+        // -----------------------------------------------------
+
         var updated =
             await _repository
                 .UpdateApplicationAsync(
                     entity);
 
+        if (!updated)
+        {
+            return Result
+                .Failure(
+                    "Cancel application failed.");
+        }
 
-        return updated
+
+        // -----------------------------------------------------
+        // SAVE
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
                 "Cancel application failed.");
@@ -436,6 +533,10 @@ public class ApplicationService
                     validation.Error);
         }
 
+
+        // -----------------------------------------------------
+        // GET APPLICATION
+        // -----------------------------------------------------
 
         var entity =
             await _repository
@@ -483,13 +584,33 @@ public class ApplicationService
             DateTime.UtcNow;
 
 
+        // -----------------------------------------------------
+        // UPDATE
+        // -----------------------------------------------------
+
         var updated =
             await _repository
                 .UpdateApplicationAsync(
                     entity);
 
+        if (!updated)
+        {
+            return Result
+                .Failure(
+                    "Complete application failed.");
+        }
 
-        return updated
+
+        // -----------------------------------------------------
+        // SAVE
+        // -----------------------------------------------------
+
+        var saved =
+            await _unitOfWork
+                .SaveChangesAsync();
+
+
+        return saved > 0
             ? Result.Success()
             : Result.Failure(
                 "Complete application failed.");

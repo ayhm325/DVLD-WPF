@@ -1,115 +1,175 @@
-﻿
-using Application.DTOs;
+﻿using Application.DTOs;
 using Application.Interfaces;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Repositories
+namespace Infrastructure.Repositories;
+
+public class DashboardRepository
+    : IDashboardRepository
 {
-    public class DashboardRepository : IDashboardRepository
+    private readonly IDbContextFactory<DVLDDbContext>
+        _contextFactory;
+
+
+    public DashboardRepository(
+        IDbContextFactory<DVLDDbContext> contextFactory)
     {
-        private readonly IDbContextFactory<DVLDDbContext> _factory;
+        _contextFactory =
+            contextFactory
+            ?? throw new ArgumentNullException(
+                nameof(contextFactory));
+    }
 
-        public DashboardRepository(
-            IDbContextFactory<DVLDDbContext> factory)
+
+    // =========================================================
+    // GET DASHBOARD STATISTICS
+    // =========================================================
+
+    public async Task<DashboardDto>
+        GetStatisticsAsync()
+    {
+        await using var context =
+            await _contextFactory
+                .CreateDbContextAsync();
+
+
+        // =====================================================
+        // PEOPLE
+        // =====================================================
+
+        var totalPeople =
+            await context.People
+                .AsNoTracking()
+                .CountAsync();
+
+
+        // =====================================================
+        // DRIVERS
+        // =====================================================
+
+        var totalDrivers =
+            await context.Drivers
+                .AsNoTracking()
+                .CountAsync();
+
+
+        // =====================================================
+        // ACTIVE LICENSES
+        // =====================================================
+
+        var activeLicenses =
+            await context.Licenses
+                .AsNoTracking()
+                .CountAsync(
+                    x => x.IsActive);
+
+
+        // =====================================================
+        // PENDING APPLICATIONS
+        // =====================================================
+        //
+        // New       = Pending
+        // Completed = Not Pending
+        // Cancelled = Not Pending
+        //
+        // =====================================================
+
+        var pendingApplications =
+            await context.Applications
+                .AsNoTracking()
+                .CountAsync(
+                    x =>
+                        x.ApplicationStatus ==
+                        AppStatus.New);
+
+
+        // =====================================================
+        // LOCAL DRIVING LICENSE APPLICATIONS
+        // =====================================================
+
+        var localDrivingLicenseApplications =
+            await context
+                .LocalDrivingLicenseApplications
+                .AsNoTracking()
+                .CountAsync();
+
+
+        // =====================================================
+        // INTERNATIONAL LICENSES
+        // =====================================================
+
+        var internationalLicenses =
+            await context
+                .InternationalLicenses
+                .AsNoTracking()
+                .CountAsync();
+
+
+        // =====================================================
+        // DETAINED LICENSES
+        // =====================================================
+        //
+        // IsReleased = false
+        // means the license is currently detained.
+        //
+        // =====================================================
+
+        var detainedLicenses =
+            await context
+                .DetainedLicenses
+                .AsNoTracking()
+                .CountAsync(
+                    x => !x.IsReleased);
+
+
+        // =====================================================
+        // UPCOMING TESTS
+        // =====================================================
+        //
+        // Today and future appointments.
+        //
+        // =====================================================
+
+        var upcomingTests =
+            await context
+                .TestAppointments
+                .AsNoTracking()
+                .CountAsync(
+                    x =>
+                        x.AppointmentDate >=
+                        DateTime.Today);
+
+
+        // =====================================================
+        // RETURN DASHBOARD DTO
+        // =====================================================
+
+        return new DashboardDto
         {
-            _factory = factory
-                ?? throw new ArgumentNullException(nameof(factory));
-        }
+            TotalPeople =
+                totalPeople,
 
+            TotalDrivers =
+                totalDrivers,
 
-        // =========================================================
-        // GET DASHBOARD STATISTICS
-        // =========================================================
+            ActiveLicenses =
+                activeLicenses,
 
-        public async Task<DashboardDto> GetStatisticsAsync()
-        {
-            await using var context =
-                await _factory.CreateDbContextAsync();
+            PendingApplications =
+                pendingApplications,
 
+            LocalDrivingLicenseApplications =
+                localDrivingLicenseApplications,
 
-            return new DashboardDto
-            {
-                // -------------------------------------------------
-                // PEOPLE
-                // -------------------------------------------------
+            InternationalLicenses =
+                internationalLicenses,
 
-                TotalPeople =
-                    await context.People
-                        .CountAsync(),
+            DetainedLicenses =
+                detainedLicenses,
 
-
-                // -------------------------------------------------
-                // DRIVERS
-                // -------------------------------------------------
-
-                TotalDrivers =
-                    await context.Drivers
-                        .CountAsync(),
-
-
-                // -------------------------------------------------
-                // ACTIVE LICENSES
-                // -------------------------------------------------
-
-                ActiveLicenses =
-                    await context.Licenses
-                        .CountAsync(x => x.IsActive),
-
-
-                // -------------------------------------------------
-                // PENDING APPLICATIONS
-                // -------------------------------------------------
-                // Pending means New only.
-                //
-                // New        = Pending
-                // Cancelled  = Not Pending
-                // Completed  = Not Pending
-                // -------------------------------------------------
-
-                PendingApplications =
-                    await context.Applications
-                        .CountAsync(x =>
-                            x.ApplicationStatus ==
-                            AppStatus.New),
-
-
-                // -------------------------------------------------
-                // LOCAL DRIVING LICENSE APPLICATIONS
-                // -------------------------------------------------
-
-                LocalDrivingLicenseApplications =
-                    await context.LocalDrivingLicenseApplications
-                        .CountAsync(),
-
-
-                // -------------------------------------------------
-                // INTERNATIONAL LICENSES
-                // -------------------------------------------------
-
-                InternationalLicenses =
-                    await context.InternationalLicenses
-                        .CountAsync(),
-
-
-                // -------------------------------------------------
-                // DETAINED LICENSES
-                // -------------------------------------------------
-
-                DetainedLicenses =
-                    await context.DetainedLicenses
-                        .CountAsync(x => !x.IsReleased),
-
-
-                // -------------------------------------------------
-                // UPCOMING TESTS
-                // -------------------------------------------------
-
-                UpcomingTests =
-                    await context.TestAppointments
-                        .CountAsync(x =>
-                            x.AppointmentDate >= DateTime.Today)
-            };
-        }
+            UpcomingTests =
+                upcomingTests
+        };
     }
 }

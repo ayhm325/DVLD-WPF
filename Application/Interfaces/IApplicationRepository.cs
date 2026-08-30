@@ -50,7 +50,7 @@ public interface IApplicationRepository
     // CREATE
     // =========================================================
 
-    Task<int> AddNewApplicationAsync(
+    Task AddNewApplicationAsync(
         ApplicationD application);
 
 
