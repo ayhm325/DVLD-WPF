@@ -577,9 +577,7 @@ public class TestAppointmentService : ITestAppointmentService
     // SAVE TEST RESULT
     // =========================================================
 
-    public async Task<Result>
-    SaveTestResultAsync(
-        SaveTestResultDto dto)
+    public async Task<Result> SaveTestResultAsync(SaveTestResultDto dto)
     {
         var validation =
             TestAppointmentValidator
@@ -613,6 +611,26 @@ public class TestAppointmentService : ITestAppointmentService
         {
             return Result.Conflict(
                 "A result has already been saved for this test.");
+        }
+
+        var canTakeTestResult =
+        await _workflowService
+            .CanTakeTestAsync(dto.TestAppointmentID);
+
+        if (canTakeTestResult.IsFailure)
+        {
+            return canTakeTestResult;
+        }
+
+        var isTestAlreadyTaken =
+            await _testRepository
+                .IsTestAlreadyTakenAsync(
+                    dto.TestAppointmentID);
+
+        if (isTestAlreadyTaken)
+        {
+            return Result.Conflict(
+               "A result has already been saved for this test.");
         }
 
         // =========================================================

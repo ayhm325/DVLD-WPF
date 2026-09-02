@@ -37,7 +37,7 @@ public class DriverRepository : IDriverRepository
     // Tracking is intentional.
     //
     // DriverService.UpdateAsync()
-    // modifies this entity directly.
+    // loads this entity and modifies it directly.
     // =========================================================
 
     public async Task<Driver?>
@@ -45,9 +45,7 @@ public class DriverRepository : IDriverRepository
             int id)
     {
         if (id <= 0)
-        {
             return null;
-        }
 
         return await Query()
             .FirstOrDefaultAsync(
@@ -78,15 +76,14 @@ public class DriverRepository : IDriverRepository
             int personId)
     {
         if (personId <= 0)
-        {
             return null;
-        }
 
         return await Query()
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 d =>
-                    d.PersonID == personId);
+                    d.PersonID ==
+                    personId);
     }
 
     // =========================================================
@@ -98,9 +95,7 @@ public class DriverRepository : IDriverRepository
             int userId)
     {
         if (userId <= 0)
-        {
             return [];
-        }
 
         return await Query()
             .AsNoTracking()
@@ -137,9 +132,7 @@ public class DriverRepository : IDriverRepository
             int driverId)
     {
         if (driverId <= 0)
-        {
             return false;
-        }
 
         return await _context.Drivers
             .AsNoTracking()
@@ -158,9 +151,7 @@ public class DriverRepository : IDriverRepository
             int personId)
     {
         if (personId <= 0)
-        {
             return false;
-        }
 
         return await _context.Drivers
             .AsNoTracking()
@@ -172,6 +163,9 @@ public class DriverRepository : IDriverRepository
 
     // =========================================================
     // CREATE
+    //
+    // Repository only stages the entity.
+    // UnitOfWork owns persistence.
     // =========================================================
 
     public async Task
@@ -183,14 +177,13 @@ public class DriverRepository : IDriverRepository
 
         await _context.Drivers
             .AddAsync(driver);
-
-        // No SaveChangesAsync.
-        //
-        // UnitOfWork owns persistence.
     }
 
     // =========================================================
     // UPDATE
+    //
+    // Repository only stages the update.
+    // UnitOfWork owns persistence.
     // =========================================================
 
     public async Task
@@ -223,14 +216,13 @@ public class DriverRepository : IDriverRepository
         _context.Entry(existing)
             .CurrentValues
             .SetValues(driver);
-
-        // No SaveChangesAsync.
-        //
-        // UnitOfWork owns persistence.
     }
 
     // =========================================================
     // DELETE
+    //
+    // Repository only stages the deletion.
+    // UnitOfWork owns persistence.
     // =========================================================
 
     public async Task
@@ -238,26 +230,19 @@ public class DriverRepository : IDriverRepository
             int id)
     {
         if (id <= 0)
-        {
             return;
-        }
 
         var driver =
             await _context.Drivers
                 .FirstOrDefaultAsync(
                     d =>
-                        d.DriverID == id);
+                        d.DriverID ==
+                        id);
 
         if (driver is null)
-        {
             return;
-        }
 
         _context.Drivers
             .Remove(driver);
-
-        // No SaveChangesAsync.
-        //
-        // UnitOfWork owns persistence.
     }
 }

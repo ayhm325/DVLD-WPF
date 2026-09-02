@@ -33,16 +33,13 @@ public class DetainedLicenseService : IDetainedLicenseService
     public async Task<Result<List<DetainedLicenseDto>>>
         GetAllAsync()
     {
-        var entities =
-            await _repository.GetAllAsync();
+        var entities = await _repository.GetAllAsync();
 
-        var dtos =
-            entities
+        var dtos = entities
                 .Select(DetainedLicenseMapper.ToDto)
                 .ToList();
 
-        return Result<List<DetainedLicenseDto>>
-            .Success(dtos);
+        return Result<List<DetainedLicenseDto>>.Success(dtos);
     }
 
     // =========================================================
@@ -216,10 +213,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         // ReleaseApplication
         // -----------------------------------------------------
 
-        var savedEntity =
-            await _repository
-                .GetByIdAsync(
-                    entity.DetainID);
+        var savedEntity = await _repository.GetByIdAsync(entity.DetainID);
 
         if (savedEntity is null)
         {
@@ -238,9 +232,7 @@ public class DetainedLicenseService : IDetainedLicenseService
     // UPDATE
     // =========================================================
 
-    public async Task<Result>
-        UpdateAsync(
-            UpdateDetainedLicenseDto dto)
+    public async Task<Result> UpdateAsync(UpdateDetainedLicenseDto dto)
     {
         // -----------------------------------------------------
         // VALIDATION
@@ -317,8 +309,7 @@ public class DetainedLicenseService : IDetainedLicenseService
         // UPDATE
         // -----------------------------------------------------
 
-        await _repository
-            .UpdateAsync(entity);
+        await _repository.UpdateAsync(entity);
 
         // -----------------------------------------------------
         // SAVE
@@ -342,9 +333,7 @@ public class DetainedLicenseService : IDetainedLicenseService
     // RELEASE
     // =========================================================
 
-    public async Task<Result>
-        ReleaseAsync(
-            ReleaseDetainedLicenseDto dto)
+    public async Task<Result> ReleaseAsync(ReleaseDetainedLicenseDto dto)
     {
         // -----------------------------------------------------
         // VALIDATION
@@ -392,17 +381,13 @@ public class DetainedLicenseService : IDetainedLicenseService
         // RELEASE
         // -----------------------------------------------------
 
-        entity.IsReleased =
-            true;
+        entity.IsReleased = true;
 
-        entity.ReleaseDate =
-            DateTime.UtcNow;
+        entity.ReleaseDate = DateTime.Now;
 
-        entity.ReleasedByUserID =
-            dto.ReleasedByUserID;
+        entity.ReleasedByUserID = dto.ReleasedByUserID;
 
-        entity.ReleaseApplicationID =
-            dto.ReleaseApplicationID;
+        entity.ReleaseApplicationID = dto.ReleaseApplicationID;
 
         // -----------------------------------------------------
         // UPDATE
@@ -415,15 +400,12 @@ public class DetainedLicenseService : IDetainedLicenseService
         // SAVE
         // -----------------------------------------------------
 
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync();
 
         if (saved <= 0)
         {
             return Result
-                .Failure(
-                    "Failed to save license release.");
+                .Failure("Failed to save license release.");
         }
 
         return Result.Success();

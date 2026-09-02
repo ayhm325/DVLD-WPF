@@ -36,9 +36,12 @@ public interface IDriverRepository
     // COMMAND
     // =========================================================
 
-    Task AddAsync(Driver driver);
+    Task AddAsync(
+        Driver driver);
 
-    Task UpdateAsync(Driver driver);
+    Task UpdateAsync(
+        Driver driver);
 
-    Task DeleteAsync(int id);
+    Task DeleteAsync(
+        int id);
 }

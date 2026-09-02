@@ -3,12 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
 
-public class DVLDDbContext
-    : DbContext
+public class DVLDDbContext : DbContext
 {
-    public DVLDDbContext(
-        DbContextOptions<DVLDDbContext> options)
-        : base(options)
+    public DVLDDbContext(DbContextOptions<DVLDDbContext> options): base(options)
     {
     }
 
@@ -38,8 +35,7 @@ public class DVLDDbContext
     // APPLICATION TYPES
     // =========================================================
 
-    public DbSet<ApplicationType>
-        ApplicationTypes
+    public DbSet<ApplicationType> ApplicationTypes
     { get; set; } = null!;
 
 
@@ -47,8 +43,7 @@ public class DVLDDbContext
     // TEST TYPES
     // =========================================================
 
-    public DbSet<TestType>
-        TestTypes
+    public DbSet<TestType> TestTypes
     { get; set; } = null!;
 
 
@@ -56,8 +51,7 @@ public class DVLDDbContext
     // LICENSE CLASSES
     // =========================================================
 
-    public DbSet<LicenseClass>
-        LicenseClasses
+    public DbSet<LicenseClass>  LicenseClasses
     { get; set; } = null!;
 
 
@@ -137,11 +131,9 @@ public class DVLDDbContext
     // MODEL CONFIGURATION
     // =========================================================
 
-    protected override void OnModelCreating(
-        ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(
-            modelBuilder);
+        base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(DVLDDbContext).Assembly);

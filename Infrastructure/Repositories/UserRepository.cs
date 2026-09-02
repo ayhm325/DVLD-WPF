@@ -8,13 +8,9 @@ public class UserRepository : IUserRepository
 {
     private readonly DVLDDbContext _context;
 
-    public UserRepository(
-        DVLDDbContext context)
+    public UserRepository(DVLDDbContext context)
     {
-        _context =
-            context
-            ?? throw new ArgumentNullException(
-                nameof(context));
+        _context =context ?? throw new ArgumentNullException(nameof(context));
     }
 
     // =========================================================
@@ -169,18 +165,14 @@ public class UserRepository : IUserRepository
     // CHECK PERSON HAS USER
     // =========================================================
 
-    public async Task<bool>
-        IsUserExistsByPersonIdAsync(
-            int personId)
+    public async Task<bool> IsUserExistsByPersonIdAsync(int personId)
     {
         if (personId <= 0)
             return false;
 
         return await _context.Users
             .AsNoTracking()
-            .AnyAsync(
-                u =>
-                    u.PersonId == personId);
+            .AnyAsync(u => u.PersonId == personId);
     }
 
     // =========================================================
@@ -240,17 +232,13 @@ public class UserRepository : IUserRepository
         // APPLY CHANGES
         // -----------------------------------------------------
 
-        existingUser.PersonId =
-            user.PersonId;
+        existingUser.PersonId = user.PersonId;
 
-        existingUser.UserName =
-            user.UserName;
+        existingUser.UserName = user.UserName;
 
-        existingUser.Password =
-            user.Password;
+        existingUser.Password = user.Password;
 
-        existingUser.IsActive =
-            user.IsActive;
+        existingUser.IsActive = user.IsActive;
 
         // -----------------------------------------------------
         // IMPORTANT

@@ -10,7 +10,6 @@ public class TestRepository
 {
     private readonly DVLDDbContext _context;
 
-
     public TestRepository(
         DVLDDbContext context)
     {
@@ -19,7 +18,6 @@ public class TestRepository
             ?? throw new ArgumentNullException(
                 nameof(context));
     }
-
 
     // =========================================================
     // BASE QUERY
@@ -44,7 +42,6 @@ public class TestRepository
                 t.User);
     }
 
-
     // =========================================================
     // GET BY ID
     // =========================================================
@@ -62,7 +59,6 @@ public class TestRepository
                     t.TestID == id);
     }
 
-
     // =========================================================
     // GET ALL
     // =========================================================
@@ -73,7 +69,6 @@ public class TestRepository
         return await Query()
             .ToListAsync();
     }
-
 
     // =========================================================
     // GET BY TEST APPOINTMENT ID
@@ -87,12 +82,12 @@ public class TestRepository
             return [];
 
         return await Query()
-            .Where(t =>
-                t.TestAppointmentID ==
-                appointmentId)
+            .Where(
+                t =>
+                    t.TestAppointmentID ==
+                    appointmentId)
             .ToListAsync();
     }
-
 
     // =========================================================
     // GET BY USER ID
@@ -106,12 +101,12 @@ public class TestRepository
             return [];
 
         return await Query()
-            .Where(t =>
-                t.CreatedByUserID ==
-                userId)
+            .Where(
+                t =>
+                    t.CreatedByUserID ==
+                    userId)
             .ToListAsync();
     }
-
 
     // =========================================================
     // GET TRIAL COUNT BY APPLICATION ID
@@ -126,12 +121,12 @@ public class TestRepository
 
         return await _context.Tests
             .AsNoTracking()
-            .CountAsync(t =>
-                t.TestAppointment
-                    .LocalDrivingLicenseApplicationID ==
-                localDrivingLicenseApplicationId);
+            .CountAsync(
+                t =>
+                    t.TestAppointment
+                        .LocalDrivingLicenseApplicationID ==
+                    localDrivingLicenseApplicationId);
     }
-
 
     // =========================================================
     // CHECK TEST EXISTS
@@ -146,29 +141,27 @@ public class TestRepository
 
         return await _context.Tests
             .AsNoTracking()
-            .AnyAsync(t =>
-                t.TestID == id);
+            .AnyAsync(
+                t =>
+                    t.TestID == id);
     }
-
 
     // =========================================================
     // CHECK TEST ALREADY TAKEN
     // =========================================================
 
-    public async Task<bool>
-        IsTestAlreadyTakenAsync(
-            int appointmentId)
+    public async Task<bool> IsTestAlreadyTakenAsync(int appointmentId)
     {
         if (appointmentId <= 0)
             return false;
 
         return await _context.Tests
             .AsNoTracking()
-            .AnyAsync(t =>
-                t.TestAppointmentID ==
-                appointmentId);
+            .AnyAsync(
+                t =>
+                    t.TestAppointmentID ==
+                    appointmentId);
     }
-
 
     // =========================================================
     // CREATE
@@ -184,23 +177,20 @@ public class TestRepository
         await _context.Tests
             .AddAsync(test);
 
-        // =====================================================
-        // IMPORTANT
-        // =====================================================
-        // لا يوجد SaveChangesAsync هنا.
+        // -----------------------------------------------------
+        // IMPORTANT:
         //
-        // الـ UnitOfWork مسؤول عن الحفظ.
+        // No SaveChangesAsync() here.
         //
-        // بعد:
+        // UnitOfWork owns persistence.
         //
-        //     await _unitOfWork.SaveChangesAsync();
+        // The generated TestID becomes reliable after:
         //
-        // يصبح TestID متاحًا.
-        // =====================================================
+        // await _unitOfWork.SaveChangesAsync();
+        // -----------------------------------------------------
 
         return test.TestID;
     }
-
 
     // =========================================================
     // UPDATE
@@ -216,7 +206,6 @@ public class TestRepository
         if (test.TestID <= 0)
             return false;
 
-
         var existing =
             await _context.Tests
                 .FirstOrDefaultAsync(
@@ -227,19 +216,17 @@ public class TestRepository
         if (existing is null)
             return false;
 
-
         _context.Entry(existing)
             .CurrentValues
             .SetValues(test);
 
-
-        // =====================================================
-        // لا يوجد SaveChangesAsync هنا.
-        // =====================================================
+        // -----------------------------------------------------
+        // No SaveChangesAsync().
+        // UnitOfWork owns persistence.
+        // -----------------------------------------------------
 
         return true;
     }
-
 
     // =========================================================
     // DELETE
@@ -252,7 +239,6 @@ public class TestRepository
         if (id <= 0)
             return false;
 
-
         var entity =
             await _context.Tests
                 .FirstOrDefaultAsync(
@@ -262,20 +248,16 @@ public class TestRepository
         if (entity is null)
             return false;
 
-
         _context.Tests
             .Remove(entity);
 
-
-        // =====================================================
-        // لا يوجد SaveChangesAsync هنا.
-        //
-        // الـ UnitOfWork سيحفظ عملية الحذف.
-        // =====================================================
+        // -----------------------------------------------------
+        // No SaveChangesAsync().
+        // UnitOfWork owns persistence.
+        // -----------------------------------------------------
 
         return true;
     }
-
 
     // =========================================================
     // COUNT

@@ -74,13 +74,13 @@ namespace DVLD_WPF
             // =====================================================
             // 4. APPLICATION SERVICES
             // =====================================================
-
-            services.AddScoped<IDashboardService, DashboardService>();
             services.AddSingleton<IWindowService, WindowService>();
+            services.AddSingleton<ICurrentUserService, CurrentUserService>();
+
+            services.AddScoped<IDashboardService, DashboardService>();           
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
-            services.AddScoped<ICountryService, CountryService>();
-            services.AddSingleton<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<ICountryService, CountryService>();           
             services.AddScoped<IDetainedLicenseService, DetainedLicenseService>();
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<ILicenseClassService, LicenseClassService>();

@@ -8,12 +8,9 @@ public class PersonRepository : IPersonRepository
 {
     private readonly DVLDDbContext _context;
 
-    public PersonRepository(
-        DVLDDbContext context)
+    public PersonRepository(DVLDDbContext context)
     {
-        _context =
-            context
-            ?? throw new ArgumentNullException(
+        _context = context ?? throw new ArgumentNullException(
                 nameof(context));
     }
 
@@ -32,29 +29,25 @@ public class PersonRepository : IPersonRepository
     // GET BY ID
     // =========================================================
 
-    public async Task<Person?> GetPersonByIdAsync(
-        int id)
+    public async Task<Person?> GetPersonByIdAsync(int id)
     {
         if (id <= 0)
             return null;
 
         return await Query()
-            .FirstOrDefaultAsync(
-                p => p.PersonId == id);
+            .FirstOrDefaultAsync(p => p.PersonId == id);
     }
 
     // =========================================================
     // GET BY NATIONAL NUMBER
     // =========================================================
 
-    public async Task<Person?> GetPersonByNationalNoAsync(
-        string nationalNo)
+    public async Task<Person?> GetPersonByNationalNoAsync(string nationalNo)
     {
         if (string.IsNullOrWhiteSpace(nationalNo))
             return null;
 
-        var normalizedNationalNo =
-            nationalNo.Trim();
+        var normalizedNationalNo = nationalNo.Trim();
 
         return await Query()
             .FirstOrDefaultAsync(
