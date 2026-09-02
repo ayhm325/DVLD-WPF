@@ -20,6 +20,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
     private readonly ICurrentUserService _currentUserService;
     private readonly ILicenseClassService _licenseClassService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITestWorkflowService _testWorkflowService;
 
     public LicenseIssuanceService(IUnitOfWork unitOfWork,
         ILicenseRepository repository,
@@ -28,7 +29,8 @@ public class LicenseIssuanceService : ILicenseIssuanceService
         IDriverService driverService,
         IPersonService personService,
         ICurrentUserService currentUserService,
-        ILicenseClassService licenseClassService)
+        ILicenseClassService licenseClassService,
+        ITestWorkflowService testWorkflowService)
     {
         _unitOfWork = unitOfWork
             ?? throw new ArgumentNullException(nameof(unitOfWork));
@@ -55,6 +57,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
 
         _licenseClassService = licenseClassService
             ?? throw new ArgumentNullException(nameof(licenseClassService));
+        _testWorkflowService = testWorkflowService;
     }
 
     // =========================================================
@@ -109,10 +112,12 @@ public class LicenseIssuanceService : ILicenseIssuanceService
         // 4. VALIDATE TESTS
         // =========================================================
 
-        if (localApp.PassedTest < 3)
+        var hasPassedAllTests = await _testWorkflowService.HasPassedAllTestsAsync(localAppId);
+
+        if (!hasPassedAllTests)
         {
             return Result<int>.FromConflict(
-                "All required tests must be passed before issuing the license.");
+                "The applicant has not passed all required tests.");
         }
 
         // =========================================================
@@ -253,8 +258,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
 
         if (driverResult.IsSuccess)
         {
-            var driver =
-                driverResult.Value;
+            var driver = driverResult.Value;
 
             if (driver is null)
             {
@@ -262,11 +266,16 @@ public class LicenseIssuanceService : ILicenseIssuanceService
                     "Driver information was returned incorrectly.");
             }
 
-            driverId =
-                driver.DriverID;
+            driverId = driver.DriverID;
         }
         else
         {
+            if (driverResult.Error != "Driver not found.")
+            {
+                return Result<int>.FromFailure(
+                    driverResult.Error);
+            }
+
             var createDriverDto =
                 new CreateDriverDto
                 {
@@ -287,8 +296,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
                     createDriverResult.Error);
             }
 
-            driverId =
-                createDriverResult.Value;
+            driverId = createDriverResult.Value;
         }
 
         // =========================================================
