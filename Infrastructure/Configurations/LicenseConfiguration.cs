@@ -12,6 +12,10 @@ namespace Infrastructure.Configurations
             // Primary Key
             builder.HasKey(l => l.LicenseID);
 
+            // Unique Application → License
+            builder.HasIndex(l => l.ApplicationID)
+                .IsUnique();
+
 
 
             // Properties
