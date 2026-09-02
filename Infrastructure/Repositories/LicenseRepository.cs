@@ -175,14 +175,11 @@ public class LicenseRepository : ILicenseRepository
     // CREATE
     // =========================================================
 
-    public async Task<int> AddLicenseAsync(License license)
+    public async Task AddLicenseAsync(License license)
     {
         ArgumentNullException.ThrowIfNull(license);
 
-        await _context.Licenses.AddAsync(license);
-
-        // DO NOT SAVE HERE — IUnitOfWork owns persistence.
-        return license.LicenseID;
+        await _context.Licenses.AddAsync(license);       
     }
 
     // =========================================================

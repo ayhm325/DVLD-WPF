@@ -19,8 +19,9 @@ public class LicenseIssuanceService : ILicenseIssuanceService
     private readonly IPersonService _personService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILicenseClassService _licenseClassService;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public LicenseIssuanceService(
+    public LicenseIssuanceService(IUnitOfWork unitOfWork,
         ILicenseRepository repository,
         ILocalDrivingLicenseApplicationService localDrivingLicenseApplicationService,
         IApplicationService applicationService,
@@ -29,6 +30,9 @@ public class LicenseIssuanceService : ILicenseIssuanceService
         ICurrentUserService currentUserService,
         ILicenseClassService licenseClassService)
     {
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
+
         _repository = repository
             ?? throw new ArgumentNullException(nameof(repository));
 
@@ -363,16 +367,16 @@ public class LicenseIssuanceService : ILicenseIssuanceService
         // 18. CREATE LICENSE
         // =========================================================
 
-        var newLicenseId =
-            await _repository
-                .AddLicenseAsync(
-                    license);
 
-        if (newLicenseId <= 0)
+        await _repository.AddLicenseAsync(license);
+        var saveResult = await _unitOfWork.SaveChangesAsync();
+
+        if (saveResult <= 0 || license.LicenseID <= 0)
         {
             return Result<int>.FromFailure(
-                "Failed to create the driving license.");
+                "Failed to save the driving license.");
         }
+
 
         // =========================================================
         // 19. COMPLETE APPLICATION
@@ -393,7 +397,6 @@ public class LicenseIssuanceService : ILicenseIssuanceService
         // 20. SUCCESS
         // =========================================================
 
-        return Result<int>.Success(
-            newLicenseId);
+        return Result<int>.Success(license.LicenseID);
     }
 }

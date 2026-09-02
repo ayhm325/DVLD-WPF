@@ -10,16 +10,19 @@ namespace Application.Services;
 
 public class LicenseReplacementService : ILicenseReplacementService
 {
+
     private readonly ILicenseRepository _licenseRepository;
     private readonly IApplicationService _applicationService;
     private readonly IApplicationTypeService _applicationTypeService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public LicenseReplacementService(
         ILicenseRepository licenseRepository,
         IApplicationService applicationService,
         IApplicationTypeService applicationTypeService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IUnitOfWork unitOfWork)
     {
         _licenseRepository =
             licenseRepository
@@ -36,6 +39,7 @@ public class LicenseReplacementService : ILicenseReplacementService
         _currentUserService =
             currentUserService
             ?? throw new ArgumentNullException(nameof(currentUserService));
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<int>> ReplaceLicenseAsync(
@@ -277,15 +281,14 @@ public class LicenseReplacementService : ILicenseReplacementService
             LicenseMapper.ToEntity(
                 createLicenseDto);
 
-        var newLicenseId =
-            await _licenseRepository
-                .AddLicenseAsync(
-                    newLicense);
 
-        if (newLicenseId <= 0)
+        await _licenseRepository.AddLicenseAsync(newLicense);
+        var saveResult = await _unitOfWork.SaveChangesAsync();
+
+        if (saveResult <= 0 || newLicense.LicenseID <= 0)
         {
             return Result<int>.FromFailure(
-                "Failed to create replacement license.");
+                "Failed to save the replacement license.");
         }
 
         // =========================================================
@@ -325,6 +328,6 @@ public class LicenseReplacementService : ILicenseReplacementService
         // =========================================================
 
         return Result<int>.Success(
-            newLicenseId);
+    newLicense.LicenseID);
     }
 }

@@ -26,7 +26,7 @@ namespace Application.Interfaces
         Task<bool> IsApplicationHasLicenseAsync(int applicationId);
 
 
-        Task<int> AddLicenseAsync(License license);
+        Task AddLicenseAsync(License license);
 
         Task<bool> UpdateLicenseAsync(License license);
 

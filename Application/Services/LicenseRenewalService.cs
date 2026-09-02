@@ -14,13 +14,15 @@ public class LicenseRenewalService : ILicenseRenewalService
     private readonly IApplicationService _applicationService;
     private readonly IApplicationTypeService _applicationTypeService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUnitOfWork _unitOfWork;
 
 
-public LicenseRenewalService(
+    public LicenseRenewalService(
     ILicenseRepository repository,
     IApplicationService applicationService,
     IApplicationTypeService applicationTypeService,
-    ICurrentUserService currentUserService)
+    ICurrentUserService currentUserService,
+    IUnitOfWork unitOfWork)
     {
         _repository = repository
             ?? throw new ArgumentNullException(nameof(repository));
@@ -33,6 +35,7 @@ public LicenseRenewalService(
 
         _currentUserService = currentUserService
             ?? throw new ArgumentNullException(nameof(currentUserService));
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<int>> RenewLicenseAsync(
@@ -193,14 +196,15 @@ public LicenseRenewalService(
             LicenseMapper.ToEntity(
                 createLicenseDto);
 
-        var newLicenseId =
-            await _repository.AddLicenseAsync(
-                newLicense);
 
-        if (newLicenseId <= 0)
+        await _repository.AddLicenseAsync(newLicense);
+
+        var saveResult = await _unitOfWork.SaveChangesAsync();
+
+        if (saveResult <= 0 || newLicense.LicenseID <= 0)
         {
             return Result<int>.FromFailure(
-                "Failed to create renewed license.");
+                "Failed to save the replacement license.");
         }
 
         // =========================================================
@@ -238,7 +242,6 @@ public LicenseRenewalService(
         // SUCCESS
         // =========================================================
 
-        return Result<int>.Success(
-            newLicenseId);
+        return Result<int>.Success(newLicense.LicenseID);
     }
 }
