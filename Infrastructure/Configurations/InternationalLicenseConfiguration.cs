@@ -9,7 +9,8 @@ public class InternationalLicenseConfiguration
 {
     public void Configure(EntityTypeBuilder<InternationalLicense> builder)
     {
-        builder.HasKey(i => i.InternationalLicenseID);
+        builder.HasIndex(x => x.IssuedUsingLocalLicenseID)
+            .IsUnique();
 
 
         builder.HasOne(i => i.Application)

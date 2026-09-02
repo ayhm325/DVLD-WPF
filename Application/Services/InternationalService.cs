@@ -21,42 +21,19 @@ public class InternationalService : IInternationalService
     private readonly ICurrentUserService _currentUserService;
 
     public InternationalService(
-    IInternationalRepository repository,
-    ILicenseService licenseService,
-    IApplicationService applicationService,
-    IApplicationTypeService applicationTypeService,
-    ICurrentUserService currentUserService,
-    IUnitOfWork unitOfWork)
+        IInternationalRepository repository,
+        ILicenseService licenseService,
+        IApplicationService applicationService,
+        IApplicationTypeService applicationTypeService,
+        ICurrentUserService currentUserService,
+        IUnitOfWork unitOfWork)
     {
-        _repository =
-            repository
-            ?? throw new ArgumentNullException(
-                nameof(repository));
-
-        _licenseService =
-            licenseService
-            ?? throw new ArgumentNullException(
-                nameof(licenseService));
-
-        _applicationService =
-            applicationService
-            ?? throw new ArgumentNullException(
-                nameof(applicationService));
-
-        _applicationTypeService =
-            applicationTypeService
-            ?? throw new ArgumentNullException(
-                nameof(applicationTypeService));
-
-        _currentUserService =
-            currentUserService
-            ?? throw new ArgumentNullException(
-                nameof(currentUserService));
-
-        _unitOfWork =
-            unitOfWork
-            ?? throw new ArgumentNullException(
-                nameof(unitOfWork));
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
+        _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
+        _applicationTypeService = applicationTypeService ?? throw new ArgumentNullException(nameof(applicationTypeService));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
 
@@ -64,19 +41,15 @@ public class InternationalService : IInternationalService
     // GET ALL
     // =========================================================
 
-    public async Task<Result<List<InternationalDto>>>
-        GetAllAsync()
+    public async Task<Result<List<InternationalDto>>> GetAllAsync()
     {
-        var entities =
-            await _repository.GetAllAsync();
+        var entities = await _repository.GetAllAsync();
 
-        var dtos =
-            entities
-                .Select(InternationalLicenseMapper.ToDto)
-                .ToList();
+        var dtos = entities
+            .Select(InternationalLicenseMapper.ToDto)
+            .ToList();
 
-        return Result<List<InternationalDto>>
-            .Success(dtos);
+        return Result<List<InternationalDto>>.Success(dtos);
     }
 
 
@@ -84,33 +57,23 @@ public class InternationalService : IInternationalService
     // GET BY ID
     // =========================================================
 
-    public async Task<Result<InternationalDto>>
-        GetByIdAsync(int internationalLicenseId)
+    public async Task<Result<InternationalDto>> GetByIdAsync(int internationalLicenseId)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateId(internationalLicenseId);
+        var validation = InternationalLicenseValidator.ValidateId(internationalLicenseId);
 
         if (validation.IsFailure)
         {
-            return Result<InternationalDto>
-                .FromValidationFailure(validation.Error);
+            return Result<InternationalDto>.FromValidationFailure(validation.Error);
         }
 
-        var entity =
-            await _repository
-                .GetByIdAsync(internationalLicenseId);
+        var entity = await _repository.GetByIdAsync(internationalLicenseId);
 
         if (entity is null)
         {
-            return Result<InternationalDto>
-                .FromNotFound(
-                    "International license not found.");
+            return Result<InternationalDto>.FromNotFound("International license not found.");
         }
 
-        return Result<InternationalDto>
-            .Success(
-                InternationalLicenseMapper.ToDto(entity));
+        return Result<InternationalDto>.Success(InternationalLicenseMapper.ToDto(entity));
     }
 
 
@@ -118,31 +81,22 @@ public class InternationalService : IInternationalService
     // GET BY DRIVER ID
     // =========================================================
 
-    public async Task<Result<List<InternationalDto>>>
-        GetByDriverIdAsync(int driverId)
+    public async Task<Result<List<InternationalDto>>> GetByDriverIdAsync(int driverId)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateDriverId(driverId);
+        var validation = InternationalLicenseValidator.ValidateDriverId(driverId);
 
         if (validation.IsFailure)
         {
-            return Result<List<InternationalDto>>
-                .FromValidationFailure(
-                    validation.Error);
+            return Result<List<InternationalDto>>.FromValidationFailure(validation.Error);
         }
 
-        var entities =
-            await _repository
-                .GetByDriverIdAsync(driverId);
+        var entities = await _repository.GetByDriverIdAsync(driverId);
 
-        var dtos =
-            entities
-                .Select(InternationalLicenseMapper.ToDto)
-                .ToList();
+        var dtos = entities
+            .Select(InternationalLicenseMapper.ToDto)
+            .ToList();
 
-        return Result<List<InternationalDto>>
-            .Success(dtos);
+        return Result<List<InternationalDto>>.Success(dtos);
     }
 
 
@@ -150,34 +104,23 @@ public class InternationalService : IInternationalService
     // GET BY APPLICATION ID
     // =========================================================
 
-    public async Task<Result<InternationalDto>>
-        GetByApplicationIdAsync(int applicationId)
+    public async Task<Result<InternationalDto>> GetByApplicationIdAsync(int applicationId)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateApplicationId(applicationId);
+        var validation = InternationalLicenseValidator.ValidateApplicationId(applicationId);
 
         if (validation.IsFailure)
         {
-            return Result<InternationalDto>
-                .FromValidationFailure(
-                    validation.Error);
+            return Result<InternationalDto>.FromValidationFailure(validation.Error);
         }
 
-        var entity =
-            await _repository
-                .GetByApplicationIdAsync(applicationId);
+        var entity = await _repository.GetByApplicationIdAsync(applicationId);
 
         if (entity is null)
         {
-            return Result<InternationalDto>
-                .FromNotFound(
-                    "International license not found.");
+            return Result<InternationalDto>.FromNotFound("International license not found.");
         }
 
-        return Result<InternationalDto>
-            .Success(
-                InternationalLicenseMapper.ToDto(entity));
+        return Result<InternationalDto>.Success(InternationalLicenseMapper.ToDto(entity));
     }
 
 
@@ -185,31 +128,22 @@ public class InternationalService : IInternationalService
     // GET BY LOCAL LICENSE ID
     // =========================================================
 
-    public async Task<Result<List<InternationalDto>>>
-        GetByLocalLicenseIdAsync(int localLicenseId)
+    public async Task<Result<List<InternationalDto>>> GetByLocalLicenseIdAsync(int localLicenseId)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateLocalLicenseId(localLicenseId);
+        var validation = InternationalLicenseValidator.ValidateLocalLicenseId(localLicenseId);
 
         if (validation.IsFailure)
         {
-            return Result<List<InternationalDto>>
-                .FromValidationFailure(
-                    validation.Error);
+            return Result<List<InternationalDto>>.FromValidationFailure(validation.Error);
         }
 
-        var entities =
-            await _repository
-                .GetByLocalLicenseIdAsync(localLicenseId);
+        var entities = await _repository.GetByLocalLicenseIdAsync(localLicenseId);
 
-        var dtos =
-            entities
-                .Select(InternationalLicenseMapper.ToDto)
-                .ToList();
+        var dtos = entities
+            .Select(InternationalLicenseMapper.ToDto)
+            .ToList();
 
-        return Result<List<InternationalDto>>
-            .Success(dtos);
+        return Result<List<InternationalDto>>.Success(dtos);
     }
 
 
@@ -217,14 +151,14 @@ public class InternationalService : IInternationalService
     // CHECK ACTIVE
     // =========================================================
 
-    public async Task<bool>
-        HasActiveInternationalLicenseAsync(int driverId)
+    public async Task<bool> HasActiveInternationalLicenseAsync(int driverId)
     {
         if (driverId <= 0)
+        {
             return false;
+        }
 
-        return await _repository
-            .HasActiveInternationalLicenseAsync(driverId);
+        return await _repository.HasActiveInternationalLicenseAsync(driverId);
     }
 
 
@@ -232,49 +166,32 @@ public class InternationalService : IInternationalService
     // ADD
     // =========================================================
 
-    public async Task<Result>
-        AddAsync(CreateInternationalLicenseDto dto)
+    public async Task<Result> AddAsync(CreateInternationalLicenseDto dto)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateCreate(dto);
+        var validation = InternationalLicenseValidator.ValidateCreate(dto);
 
         if (validation.IsFailure)
         {
-            return Result.ValidationFailure(
-                validation.Error);
+            return Result.ValidationFailure(validation.Error);
         }
 
-        if (await _repository
-            .ExistsByLocalLicenseAsync(
-                dto.IssuedUsingLocalLicenseID))
+        if (await _repository.ExistsByLocalLicenseAsync(dto.IssuedUsingLocalLicenseID))
         {
-            return Result.Conflict(
-                "An international license already exists for this local license.");
+            return Result.Conflict("An international license already exists for this local license.");
         }
 
-        var entity =
-            InternationalLicenseMapper
-                .ToEntity(dto);
+        var entity = InternationalLicenseMapper.ToEntity(dto);
 
-        var id =
-            await _repository
-                .AddAsync(entity);
+        await _repository.AddAsync(entity);
 
-        if (id <= 0)
+        var saved = await _unitOfWork.SaveChangesAsync();
+
+        if (saved <= 0 || entity.InternationalLicenseID <= 0)
         {
-            return Result.Failure(
-                "Failed to create international license.");
+            return Result.Failure("Failed to save international license.");
         }
 
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
-
-        return saved > 0
-            ? Result.Success()
-            : Result.Failure(
-                "Failed to save international license.");
+        return Result.Success();
     }
 
 
@@ -282,83 +199,53 @@ public class InternationalService : IInternationalService
     // UPDATE
     // =========================================================
 
-    public async Task<Result>
-        UpdateAsync(UpdateInternationalLicenseDto dto)
+    public async Task<Result> UpdateAsync(UpdateInternationalLicenseDto dto)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateUpdate(dto);
+        var validation = InternationalLicenseValidator.ValidateUpdate(dto);
 
         if (validation.IsFailure)
         {
-            return Result.ValidationFailure(
-                validation.Error);
+            return Result.ValidationFailure(validation.Error);
         }
 
-        var existing =
-            await _repository
-                .GetByIdAsync(
-                    dto.InternationalLicenseID);
+        var existing = await _repository.GetByIdAsync(dto.InternationalLicenseID);
 
         if (existing is null)
         {
-            return Result.NotFound(
-                "International license not found.");
+            return Result.NotFound("International license not found.");
         }
 
         // Prevent assigning another international
         // license to the same local license.
-        if (existing.IssuedUsingLocalLicenseID !=
-            dto.IssuedUsingLocalLicenseID)
+        if (existing.IssuedUsingLocalLicenseID != dto.IssuedUsingLocalLicenseID)
         {
-            var exists =
-                await _repository
-                    .ExistsByLocalLicenseAsync(
-                        dto.IssuedUsingLocalLicenseID);
+            var exists = await _repository.ExistsByLocalLicenseAsync(dto.IssuedUsingLocalLicenseID);
 
             if (exists)
             {
-                return Result.Conflict(
-                    "An international license already exists for this local license.");
+                return Result.Conflict("An international license already exists for this local license.");
             }
         }
 
-        existing.ApplicationID =
-            dto.ApplicationID;
+        existing.ApplicationID = dto.ApplicationID;
+        existing.DriverID = dto.DriverID;
+        existing.IssuedUsingLocalLicenseID = dto.IssuedUsingLocalLicenseID;
+        existing.IssueDate = dto.IssueDate;
+        existing.ExpirationDate = dto.ExpirationDate;
+        existing.IsActive = dto.IsActive;
 
-        existing.DriverID =
-            dto.DriverID;
-
-        existing.IssuedUsingLocalLicenseID =
-            dto.IssuedUsingLocalLicenseID;
-
-        existing.IssueDate =
-            dto.IssueDate;
-
-        existing.ExpirationDate =
-            dto.ExpirationDate;
-
-        existing.IsActive =
-            dto.IsActive;
-
-        var updated =
-            await _repository
-                .UpdateAsync(existing);
+        var updated = await _repository.UpdateAsync(existing);
 
         if (!updated)
         {
-            return Result.Failure(
-                "Failed to update international license.");
+            return Result.Failure("Failed to update international license.");
         }
 
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()
-            : Result.Failure(
-                "Failed to save international license changes.");
+            : Result.Failure("Failed to save international license changes.");
     }
 
 
@@ -366,48 +253,34 @@ public class InternationalService : IInternationalService
     // DELETE
     // =========================================================
 
-    public async Task<Result>
-        DeleteAsync(int internationalLicenseId)
+    public async Task<Result> DeleteAsync(int internationalLicenseId)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateId(internationalLicenseId);
+        var validation = InternationalLicenseValidator.ValidateId(internationalLicenseId);
 
         if (validation.IsFailure)
         {
-            return Result.ValidationFailure(
-                validation.Error);
+            return Result.ValidationFailure(validation.Error);
         }
 
-        var existing =
-            await _repository
-                .GetByIdAsync(internationalLicenseId);
+        var existing = await _repository.GetByIdAsync(internationalLicenseId);
 
         if (existing is null)
         {
-            return Result.NotFound(
-                "International license not found.");
+            return Result.NotFound("International license not found.");
         }
 
-        var deleted =
-    await _repository
-        .DeleteAsync(
-            internationalLicenseId);
+        var deleted = await _repository.DeleteAsync(internationalLicenseId);
 
         if (!deleted)
         {
-            return Result.Failure(
-                "Failed to delete international license.");
+            return Result.Failure("Failed to delete international license.");
         }
 
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()
-            : Result.Failure(
-                "Failed to save international license deletion.");
+            : Result.Failure("Failed to save international license deletion.");
     }
 
 
@@ -415,24 +288,17 @@ public class InternationalService : IInternationalService
     // ISSUE INTERNATIONAL LICENSE
     // =========================================================
 
-    public async Task<Result<int>>
-        IssueInternationalLicenseAsync(
-            int localLicenseId)
+    public async Task<Result<int>> IssueInternationalLicenseAsync(int localLicenseId)
     {
         // -----------------------------------------------------
         // 1. Validate local license ID
         // -----------------------------------------------------
 
-        var idValidation =
-            InternationalLicenseValidator
-                .ValidateLocalLicenseId(
-                    localLicenseId);
+        var idValidation = InternationalLicenseValidator.ValidateLocalLicenseId(localLicenseId);
 
         if (idValidation.IsFailure)
         {
-            return Result<int>
-                .FromValidationFailure(
-                    idValidation.Error);
+            return Result<int>.FromValidationFailure(idValidation.Error);
         }
 
 
@@ -440,26 +306,19 @@ public class InternationalService : IInternationalService
         // 2. Get local license
         // -----------------------------------------------------
 
-        var licenseResult =
-            await _licenseService
-                .GetByIdAsync(localLicenseId);
+        var licenseResult = await _licenseService.GetByIdAsync(localLicenseId);
 
         if (licenseResult.IsFailure)
         {
-            return Result<int>
-                .FromFailure(
-                    licenseResult.Error);
+            return Result<int>.FromFailure(licenseResult.Error);
         }
 
         if (licenseResult.Value is null)
         {
-            return Result<int>
-                .FromNotFound(
-                    "Local license not found.");
+            return Result<int>.FromNotFound("Local license not found.");
         }
 
-        var license =
-            licenseResult.Value;
+        var license = licenseResult.Value;
 
 
         // -----------------------------------------------------
@@ -468,9 +327,7 @@ public class InternationalService : IInternationalService
 
         if (license.LicenseClassID != 3)
         {
-            return Result<int>
-                .FromValidationFailure(
-                    "Only class 3 licenses can be issued internationally.");
+            return Result<int>.FromValidationFailure("Only class 3 licenses can be issued internationally.");
         }
 
 
@@ -480,9 +337,7 @@ public class InternationalService : IInternationalService
 
         if (!license.IsActive)
         {
-            return Result<int>
-                .FromConflict(
-                    "License is not active.");
+            return Result<int>.FromConflict("License is not active.");
         }
 
 
@@ -492,9 +347,7 @@ public class InternationalService : IInternationalService
 
         if (license.ExpirationDate <= DateTime.UtcNow)
         {
-            return Result<int>
-                .FromConflict(
-                    "License is expired.");
+            return Result<int>.FromConflict("License is expired.");
         }
 
 
@@ -502,12 +355,9 @@ public class InternationalService : IInternationalService
         // 6. One international license per local license
         // -----------------------------------------------------
 
-        if (await _repository
-            .ExistsByLocalLicenseAsync(localLicenseId))
+        if (await _repository.ExistsByLocalLicenseAsync(localLicenseId))
         {
-            return Result<int>
-                .FromConflict(
-                    "An international license already exists.");
+            return Result<int>.FromConflict("An international license already exists.");
         }
 
 
@@ -517,27 +367,19 @@ public class InternationalService : IInternationalService
 
         const int internationalApplicationTypeId = 6;
 
-        var applicationTypeResult =
-            await _applicationTypeService
-                .GetApplicationTypeByIdAsync(
-                    internationalApplicationTypeId);
+        var applicationTypeResult = await _applicationTypeService.GetApplicationTypeByIdAsync(internationalApplicationTypeId);
 
         if (applicationTypeResult.IsFailure)
         {
-            return Result<int>
-                .FromFailure(
-                    applicationTypeResult.Error);
+            return Result<int>.FromFailure(applicationTypeResult.Error);
         }
 
         if (applicationTypeResult.Value is null)
         {
-            return Result<int>
-                .FromNotFound(
-                    "International application type not found.");
+            return Result<int>.FromNotFound("International application type not found.");
         }
 
-        var applicationType =
-            applicationTypeResult.Value;
+        var applicationType = applicationTypeResult.Value;
 
 
         // -----------------------------------------------------
@@ -546,135 +388,125 @@ public class InternationalService : IInternationalService
 
         if (license.Driver is null)
         {
-            return Result<int>
-                .FromNotFound(
-                    "Driver information is not available.");
+            return Result<int>.FromNotFound("Driver information is not available.");
         }
 
-        var now =
-            DateTime.UtcNow;
+        var now = DateTime.UtcNow;
 
 
         // -----------------------------------------------------
-        // 9. Create application
+        // 9. Atomic operation
         // -----------------------------------------------------
 
-        var application =
-            new CreateApplicationDto
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+            // -------------------------------------------------
+            // Create application
+            // -------------------------------------------------
+
+            var application = new CreateApplicationDto
             {
-                ApplicantPersonID =
-                    license.Driver.PersonID,
-
-                ApplicationDate =
-                    now,
-
-                ApplicationTypeID =
-                    applicationType.ApplicationTypeId,
-
-                ApplicationStatus =
-                    AppStatus.New,
-
-                LastStatusDate =
-                    now,
-
-                PaidFees =
-                    applicationType.ApplicationTypeFees,
-
-                CreatedByUserID =
-                    _currentUserService.UserId
+                ApplicantPersonID = license.Driver.PersonID,
+                ApplicationDate = now,
+                ApplicationTypeID = applicationType.ApplicationTypeId,
+                ApplicationStatus = AppStatus.New,
+                LastStatusDate = now,
+                PaidFees = applicationType.ApplicationTypeFees,
+                CreatedByUserID = _currentUserService.UserId
             };
 
-        var applicationResult =
-            await _applicationService
-                .AddNewApplicationAsync(
-                    application);
+            var applicationResult = await _applicationService.AddNewApplicationAsync(application);
 
-        if (applicationResult.IsFailure)
-        {
-            return Result<int>
-                .FromFailure(
-                    applicationResult.Error);
-        }
-
-        if (applicationResult.Value <= 0)
-        {
-            return Result<int>
-                .FromFailure(
-                    "Failed to create international application.");
-        }
-
-
-        // -----------------------------------------------------
-        // 10. Create international license entity
-        // -----------------------------------------------------
-
-        var internationalLicense =
-            new InternationalLicense
+            if (applicationResult.IsFailure)
             {
-                ApplicationID =
-                    applicationResult.Value,
+                await transaction.RollbackAsync();
+                return Result<int>.FromFailure(applicationResult.Error);
+            }
 
-                DriverID =
-                    license.DriverID,
+            if (applicationResult.Value <= 0)
+            {
+                await transaction.RollbackAsync();
+                return Result<int>.FromFailure("Failed to create international application.");
+            }
 
-                IssuedUsingLocalLicenseID =
-                    license.LicenseID,
 
-                IssueDate =
-                    now,
+            // -------------------------------------------------
+            // Create international license
+            // -------------------------------------------------
 
-                ExpirationDate =
-                    now.AddYears(1),
-
-                IsActive =
-                    true,
-
-                CreatedByUserID =
-                    _currentUserService.UserId
+            var internationalLicense = new InternationalLicense
+            {
+                ApplicationID = applicationResult.Value,
+                DriverID = license.DriverID,
+                IssuedUsingLocalLicenseID = license.LicenseID,
+                IssueDate = now,
+                ExpirationDate = now.AddYears(1),
+                IsActive = true,
+                CreatedByUserID = _currentUserService.UserId
             };
 
+            await _repository.AddAsync(internationalLicense);
 
-        // -----------------------------------------------------
-        // 11. Add international license
-        // -----------------------------------------------------
 
-        var internationalLicenseId =
-            await _repository
-                .AddAsync(
-                    internationalLicense);
+            // -------------------------------------------------
+            // Save international license
+            // -------------------------------------------------
 
-        if (internationalLicenseId <= 0)
-        {
-            return Result<int>
-                .FromFailure(
-                    "Failed to create international license.");
+            var licenseSaved = await _unitOfWork.SaveChangesAsync();
+
+            if (licenseSaved <= 0 || internationalLicense.InternationalLicenseID <= 0)
+            {
+                await transaction.RollbackAsync();
+                return Result<int>.FromFailure("Failed to create international license.");
+            }
+
+
+            // -------------------------------------------------
+            // Complete application
+            // -------------------------------------------------
+
+            var completeResult = await _applicationService.CompleteApplicationAsync(applicationResult.Value);
+
+            if (completeResult.IsFailure)
+            {
+                await transaction.RollbackAsync();
+                return Result<int>.FromFailure(completeResult.Error);
+            }
+
+
+            // -------------------------------------------------
+            // Persist final application state
+            // -------------------------------------------------
+
+            var completedSaved = await _unitOfWork.SaveChangesAsync();
+
+            if (completedSaved <= 0)
+            {
+                await transaction.RollbackAsync();
+                return Result<int>.FromFailure("Failed to complete international application.");
+            }
+
+
+            // -------------------------------------------------
+            // Commit transaction
+            // -------------------------------------------------
+
+            await transaction.CommitAsync();
+
+
+            // -------------------------------------------------
+            // Return generated ID
+            // -------------------------------------------------
+
+            return Result<int>.Success(internationalLicense.InternationalLicenseID);
         }
-
-
-        // -----------------------------------------------------
-        // 12. Complete application
-        // -----------------------------------------------------
-
-        var completeResult =
-            await _applicationService
-                .CompleteApplicationAsync(
-                    applicationResult.Value);
-
-        if (completeResult.IsFailure)
+        catch (Exception ex)
         {
-            return Result<int>
-                .FromFailure(
-                    completeResult.Error);
+            await transaction.RollbackAsync();
+            return Result<int>.FromFailure($"Failed to issue international license: {ex.Message}");
         }
-
-
-        // -----------------------------------------------------
-        // 13. Return ID
-        // -----------------------------------------------------
-
-        return Result<int>
-            .Success(
-                internationalLicenseId);
     }
 
 
@@ -682,41 +514,28 @@ public class InternationalService : IInternationalService
     // GET LOCAL LICENSE INFO
     // =========================================================
 
-    public async Task<Result<DriverLicenseInfoDto>>
-        GetLocalLicenseInfoAsync(int licenseId)
+    public async Task<Result<DriverLicenseInfoDto>> GetLocalLicenseInfoAsync(int licenseId)
     {
-        var validation =
-            InternationalLicenseValidator
-                .ValidateLocalLicenseId(licenseId);
+        var validation = InternationalLicenseValidator.ValidateLocalLicenseId(licenseId);
 
         if (validation.IsFailure)
         {
-            return Result<DriverLicenseInfoDto>
-                .FromValidationFailure(
-                    validation.Error);
+            return Result<DriverLicenseInfoDto>.FromValidationFailure(validation.Error);
         }
 
-
-        var licenseResult =
-            await _licenseService
-                .GetByIdAsync(licenseId);
+        var licenseResult = await _licenseService.GetByIdAsync(licenseId);
 
         if (licenseResult.IsFailure)
         {
-            return Result<DriverLicenseInfoDto>
-                .FromFailure(
-                    licenseResult.Error);
+            return Result<DriverLicenseInfoDto>.FromFailure(licenseResult.Error);
         }
 
         if (licenseResult.Value is null)
         {
-            return Result<DriverLicenseInfoDto>
-                .FromNotFound(
-                    "License not found.");
+            return Result<DriverLicenseInfoDto>.FromNotFound("License not found.");
         }
 
-        var license =
-            licenseResult.Value;
+        var license = licenseResult.Value;
 
 
         // -----------------------------------------------------
@@ -725,9 +544,7 @@ public class InternationalService : IInternationalService
 
         if (license.LicenseClassID != 3)
         {
-            return Result<DriverLicenseInfoDto>
-                .FromValidationFailure(
-                    "Only class 3 licenses can be converted.");
+            return Result<DriverLicenseInfoDto>.FromValidationFailure("Only class 3 licenses can be converted.");
         }
 
 
@@ -737,9 +554,7 @@ public class InternationalService : IInternationalService
 
         if (license.Driver is null)
         {
-            return Result<DriverLicenseInfoDto>
-                .FromNotFound(
-                    "Driver information is not available.");
+            return Result<DriverLicenseInfoDto>.FromNotFound("Driver information is not available.");
         }
 
 
@@ -747,12 +562,8 @@ public class InternationalService : IInternationalService
         // Map using Mapper
         // -----------------------------------------------------
 
-        var dto =
-            InternationalLicenseMapper
-                .ToDriverLicenseInfoDto(
-                    license);
+        var dto = InternationalLicenseMapper.ToDriverLicenseInfoDto(license);
 
-        return Result<DriverLicenseInfoDto>
-            .Success(dto);
+        return Result<DriverLicenseInfoDto>.Success(dto);
     }
 }

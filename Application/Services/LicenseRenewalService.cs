@@ -16,35 +16,46 @@ public class LicenseRenewalService : ILicenseRenewalService
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
 
-
     public LicenseRenewalService(
-    ILicenseRepository repository,
-    IApplicationService applicationService,
-    IApplicationTypeService applicationTypeService,
-    ICurrentUserService currentUserService,
-    IUnitOfWork unitOfWork)
+        ILicenseRepository repository,
+        IApplicationService applicationService,
+        IApplicationTypeService applicationTypeService,
+        ICurrentUserService currentUserService,
+        IUnitOfWork unitOfWork)
     {
-        _repository = repository
+        _repository =
+            repository
             ?? throw new ArgumentNullException(nameof(repository));
 
-        _applicationService = applicationService
+        _applicationService =
+            applicationService
             ?? throw new ArgumentNullException(nameof(applicationService));
 
-        _applicationTypeService = applicationTypeService
+        _applicationTypeService =
+            applicationTypeService
             ?? throw new ArgumentNullException(nameof(applicationTypeService));
 
-        _currentUserService = currentUserService
+        _currentUserService =
+            currentUserService
             ?? throw new ArgumentNullException(nameof(currentUserService));
-        _unitOfWork = unitOfWork;
+
+        _unitOfWork =
+            unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
+
+
+    // =========================================================
+    // RENEW LICENSE
+    // =========================================================
 
     public async Task<Result<int>> RenewLicenseAsync(
         int oldLicenseId,
         string? notes)
     {
-        // =========================================================
-        // VALIDATE LICENSE ID
-        // =========================================================
+        // -----------------------------------------------------
+        // 1. Validate license ID
+        // -----------------------------------------------------
 
         var validation =
             LicenseValidator.ValidateId(oldLicenseId);
@@ -55,9 +66,10 @@ public class LicenseRenewalService : ILicenseRenewalService
                 validation.Error);
         }
 
-        // =========================================================
-        // GET OLD LICENSE
-        // =========================================================
+
+        // -----------------------------------------------------
+        // 2. Get old license
+        // -----------------------------------------------------
 
         var oldLicense =
             await _repository.GetLicenseByIdAsync(
@@ -69,9 +81,10 @@ public class LicenseRenewalService : ILicenseRenewalService
                 "Old license not found.");
         }
 
-        // =========================================================
-        // VALIDATE LICENSE STATUS
-        // =========================================================
+
+        // -----------------------------------------------------
+        // 3. Validate old license
+        // -----------------------------------------------------
 
         if (!oldLicense.IsActive)
         {
@@ -85,9 +98,22 @@ public class LicenseRenewalService : ILicenseRenewalService
                 "Cannot renew before expiration date.");
         }
 
-        // =========================================================
-        // RENEWAL APPLICATION TYPE
-        // =========================================================
+        if (oldLicense.Driver is null)
+        {
+            return Result<int>.FromNotFound(
+                "Driver information is not available.");
+        }
+
+        if (oldLicense.LicenseClassInfo is null)
+        {
+            return Result<int>.FromNotFound(
+                "License class information is not available.");
+        }
+
+
+        // -----------------------------------------------------
+        // 4. Renewal application type
+        // -----------------------------------------------------
 
         const int renewalApplicationTypeId = 2;
 
@@ -102,146 +128,262 @@ public class LicenseRenewalService : ILicenseRenewalService
                 applicationTypeResult.Error);
         }
 
-        var applicationType =
-            applicationTypeResult.Value!;
-
-        // =========================================================
-        // CREATE APPLICATION
-        // =========================================================
-
-        var now = DateTime.UtcNow;
-
-        var createApplicationDto =
-            new CreateApplicationDto
-            {
-                ApplicantPersonID =
-                    oldLicense.Driver.PersonID,
-
-                ApplicationDate = now,
-
-                ApplicationTypeID =
-                    renewalApplicationTypeId,
-
-                ApplicationStatus =
-                    AppStatus.New,
-
-                LastStatusDate = now,
-
-                PaidFees =
-                    applicationType.ApplicationTypeFees,
-
-                CreatedByUserID =
-                    _currentUserService.UserId
-            };
-
-        var applicationResult =
-            await _applicationService
-                .AddNewApplicationAsync(
-                    createApplicationDto);
-
-        if (applicationResult.IsFailure)
+        if (applicationTypeResult.Value is null)
         {
-            return Result<int>.FromFailure(
-                applicationResult.Error);
+            return Result<int>.FromNotFound(
+                "Renewal application type not found.");
         }
 
-        var applicationId =
-            applicationResult.Value;
+        var applicationType =
+            applicationTypeResult.Value;
 
-        // =========================================================
-        // CREATE NEW LICENSE
-        // =========================================================
 
-        var createLicenseDto =
-            new CreateLicenseDto
+        // -----------------------------------------------------
+        // 5. Current date/user
+        // -----------------------------------------------------
+
+        var now =
+            DateTime.UtcNow;
+
+        var currentUserId =
+            _currentUserService.UserId;
+
+
+        // -----------------------------------------------------
+        // 6. Begin transaction
+        // -----------------------------------------------------
+
+        await using var transaction =
+            await _unitOfWork
+                .BeginTransactionAsync();
+
+        try
+        {
+            // -------------------------------------------------
+            // 7. Create renewal application
+            // -------------------------------------------------
+
+            var createApplicationDto =
+                new CreateApplicationDto
+                {
+                    ApplicantPersonID =
+                        oldLicense.Driver.PersonID,
+
+                    ApplicationDate =
+                        now,
+
+                    ApplicationTypeID =
+                        renewalApplicationTypeId,
+
+                    ApplicationStatus =
+                        AppStatus.New,
+
+                    LastStatusDate =
+                        now,
+
+                    PaidFees =
+                        applicationType.ApplicationTypeFees,
+
+                    CreatedByUserID =
+                        currentUserId
+                };
+
+            var applicationResult =
+                await _applicationService
+                    .AddNewApplicationAsync(
+                        createApplicationDto);
+
+            if (applicationResult.IsFailure)
             {
-                ApplicationID =
-                    applicationId,
+                await transaction.RollbackAsync();
 
-                DriverID =
-                    oldLicense.DriverID,
+                return Result<int>.FromFailure(
+                    applicationResult.Error);
+            }
 
-                LicenseClassID =
-                    oldLicense.LicenseClass,
+            if (applicationResult.Value <= 0)
+            {
+                await transaction.RollbackAsync();
 
-                IssueDate =
-                    now,
+                return Result<int>.FromFailure(
+                    "Failed to create renewal application.");
+            }
 
-                ExpirationDate =
-                    now.AddYears(
+            var applicationId =
+                applicationResult.Value;
+
+
+            // -------------------------------------------------
+            // 8. Create new license
+            // -------------------------------------------------
+
+            var createLicenseDto =
+                new CreateLicenseDto
+                {
+                    ApplicationID =
+                        applicationId,
+
+                    DriverID =
+                        oldLicense.DriverID,
+
+                    LicenseClassID =
+                        oldLicense.LicenseClass,
+
+                    IssueDate =
+                        now,
+
+                    ExpirationDate =
+                        now.AddYears(
+                            oldLicense
+                                .LicenseClassInfo
+                                .DefaultValidityLength),
+
+                    PaidFees =
                         oldLicense
                             .LicenseClassInfo
-                            .DefaultValidityLength),
+                            .ClassFees,
 
-                PaidFees =
-                    oldLicense
-                        .LicenseClassInfo
-                        .ClassFees,
+                    Notes =
+                        string.IsNullOrWhiteSpace(notes)
+                            ? null
+                            : notes.Trim(),
 
-                Notes =
-                    string.IsNullOrWhiteSpace(notes)
-                        ? null
-                        : notes.Trim(),
+                    IsActive =
+                        true,
 
-                IsActive = true,
+                    IssueReason =
+                        (byte)IssueReason.Renew,
 
-                IssueReason =
-                    (byte)IssueReason.Renew,
+                    CreatedByUserID =
+                        currentUserId
+                };
 
-                CreatedByUserID =
-                    _currentUserService.UserId
-            };
-
-        var newLicense =
-            LicenseMapper.ToEntity(
-                createLicenseDto);
+            var newLicense =
+                LicenseMapper.ToEntity(
+                    createLicenseDto);
 
 
-        await _repository.AddLicenseAsync(newLicense);
+            // -------------------------------------------------
+            // 9. Add new license
+            // -------------------------------------------------
 
-        var saveResult = await _unitOfWork.SaveChangesAsync();
-
-        if (saveResult <= 0 || newLicense.LicenseID <= 0)
-        {
-            return Result<int>.FromFailure(
-                "Failed to save the replacement license.");
-        }
-
-        // =========================================================
-        // DEACTIVATE OLD LICENSE
-        // =========================================================
-
-        oldLicense.IsActive = false;
-
-        var deactivateResult =
             await _repository
-                .UpdateLicenseAsync(oldLicense);
+                .AddLicenseAsync(
+                    newLicense);
 
-        if (!deactivateResult)
-        {
-            return Result<int>.FromFailure(
-                "Failed to deactivate old license.");
+
+            // -------------------------------------------------
+            // 10. Save new license
+            // -------------------------------------------------
+
+            var licenseSaved =
+                await _unitOfWork
+                    .SaveChangesAsync();
+
+            if (licenseSaved <= 0 ||
+                newLicense.LicenseID <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to save the replacement license.");
+            }
+
+
+            // -------------------------------------------------
+            // 11. Deactivate old license
+            // -------------------------------------------------
+
+            oldLicense.IsActive = false;
+
+            var deactivateResult =
+                await _repository
+                    .UpdateLicenseAsync(
+                        oldLicense);
+
+            if (!deactivateResult)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to deactivate old license.");
+            }
+
+
+            // -------------------------------------------------
+            // 12. Save old license state
+            // -------------------------------------------------
+
+            var oldLicenseSaved =
+                await _unitOfWork
+                    .SaveChangesAsync();
+
+            if (oldLicenseSaved <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to save old license changes.");
+            }
+
+
+            // -------------------------------------------------
+            // 13. Complete application
+            // -------------------------------------------------
+
+            var completeResult =
+                await _applicationService
+                    .CompleteApplicationAsync(
+                        applicationId);
+
+            if (completeResult.IsFailure)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    completeResult.Error);
+            }
+
+
+            // -------------------------------------------------
+            // 14. Save completed application
+            // -------------------------------------------------
+
+            var applicationSaved =
+                await _unitOfWork
+                    .SaveChangesAsync();
+
+            if (applicationSaved <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to complete renewal application.");
+            }
+
+
+            // -------------------------------------------------
+            // 15. Commit transaction
+            // -------------------------------------------------
+
+            await transaction
+                .CommitAsync();
+
+
+            // -------------------------------------------------
+            // 16. Return new license ID
+            // -------------------------------------------------
+
+            return Result<int>.Success(
+                newLicense.LicenseID);
         }
-
-        // =========================================================
-        // COMPLETE APPLICATION
-        // =========================================================
-
-        var completeResult =
-            await _applicationService
-                .CompleteApplicationAsync(
-                    applicationId);
-
-        if (completeResult.IsFailure)
+        catch (Exception ex)
         {
+            await transaction
+                .RollbackAsync();
+
             return Result<int>.FromFailure(
-                completeResult.Error);
+                $"Failed to renew license: {ex.Message}");
         }
-
-        // =========================================================
-        // SUCCESS
-        // =========================================================
-
-        return Result<int>.Success(newLicense.LicenseID);
     }
 }
