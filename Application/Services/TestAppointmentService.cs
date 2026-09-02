@@ -666,17 +666,7 @@ public class TestAppointmentService : ITestAppointmentService
                         _currentUserService.UserId
                 };
 
-            var newTestId =
-                await _testRepository
-                    .AddAsync(testEntity);
-
-            if (newTestId <= 0)
-            {
-                await transaction.RollbackAsync();
-
-                return Result.Failure(
-                    "Failed to prepare test result.");
-            }
+            await _testRepository.AddAsync(testEntity);
 
             // -----------------------------------------------------
             // LOCK APPOINTMENT

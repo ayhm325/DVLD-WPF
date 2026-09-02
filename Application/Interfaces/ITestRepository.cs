@@ -38,8 +38,7 @@ namespace Application.Interfaces
         // CREATE
         // =========================
 
-        Task<int> AddAsync(
-            Test test);
+        Task AddAsync(Test test);
 
 
         // =========================

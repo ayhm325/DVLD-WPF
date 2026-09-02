@@ -167,29 +167,11 @@ public class TestRepository
     // CREATE
     // =========================================================
 
-    public async Task<int>
-        AddAsync(
-            Test test)
+    public async Task AddAsync(Test test)
     {
-        ArgumentNullException.ThrowIfNull(
-            test);
+        ArgumentNullException.ThrowIfNull(test);
 
-        await _context.Tests
-            .AddAsync(test);
-
-        // -----------------------------------------------------
-        // IMPORTANT:
-        //
-        // No SaveChangesAsync() here.
-        //
-        // UnitOfWork owns persistence.
-        //
-        // The generated TestID becomes reliable after:
-        //
-        // await _unitOfWork.SaveChangesAsync();
-        // -----------------------------------------------------
-
-        return test.TestID;
+        await _context.Tests.AddAsync(test);
     }
 
     // =========================================================
