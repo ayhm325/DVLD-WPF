@@ -16,231 +16,179 @@ public class TestAppointmentService : ITestAppointmentService
     private readonly ICurrentUserService _currentUserService;
     private readonly ITestWorkflowService _workflowService;
 
-    public TestAppointmentService(IUnitOfWork unitOfWork,
+    public TestAppointmentService(
+        IUnitOfWork unitOfWork,
         ITestAppointmentRepository repository,
         ITestTypeRepository testTypeRepository,
         ITestRepository testRepository,
         ICurrentUserService currentUserService,
         ITestWorkflowService workflowService)
     {
-        _unitOfWork =
-    unitOfWork
-    ?? throw new ArgumentNullException(
-        nameof(unitOfWork));
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
 
-        _repository =
-            repository
-            ?? throw new ArgumentNullException(
-                nameof(repository));
+        _repository = repository
+            ?? throw new ArgumentNullException(nameof(repository));
 
-        _testTypeRepository =
-            testTypeRepository
-            ?? throw new ArgumentNullException(
-                nameof(testTypeRepository));
+        _testTypeRepository = testTypeRepository
+            ?? throw new ArgumentNullException(nameof(testTypeRepository));
 
-        _testRepository =
-            testRepository
-            ?? throw new ArgumentNullException(
-                nameof(testRepository));
+        _testRepository = testRepository
+            ?? throw new ArgumentNullException(nameof(testRepository));
 
-        _currentUserService =
-            currentUserService
-            ?? throw new ArgumentNullException(
-                nameof(currentUserService));
+        _currentUserService = currentUserService
+            ?? throw new ArgumentNullException(nameof(currentUserService));
 
-        _workflowService =
-            workflowService
-            ?? throw new ArgumentNullException(
-                nameof(workflowService));
+        _workflowService = workflowService
+            ?? throw new ArgumentNullException(nameof(workflowService));
     }
-
 
     // =========================================================
     // GET BY ID
     // =========================================================
 
-    public async Task<Result<TestAppointmentDto>>
-        GetByIdAsync(int id)
+    public async Task<Result<TestAppointmentDto>> GetByIdAsync(int id)
     {
-        var validation =
-            TestAppointmentValidator.ValidateId(id);
+        var validation = TestAppointmentValidator.ValidateId(id);
 
         if (validation.IsFailure)
         {
             return Result<TestAppointmentDto>
-                .FromValidationFailure(
-                    validation.Error);
+                .FromValidationFailure(validation.Error);
         }
 
-        var entity =
-            await _repository.GetByIdAsync(id);
+        var entity = await _repository.GetByIdAsync(id);
 
         if (entity is null)
         {
             return Result<TestAppointmentDto>
-                .FromNotFound(
-                    "Appointment not found.");
+                .FromNotFound("Appointment not found.");
         }
 
         return Result<TestAppointmentDto>
-            .Success(
-                TestAppointmentMapper.ToDto(entity));
+            .Success(TestAppointmentMapper.ToDto(entity));
     }
-
 
     // =========================================================
     // GET ALL
     // =========================================================
 
-    public async Task<Result<List<TestAppointmentDto>>>
-        GetAllAsync()
+    public async Task<Result<List<TestAppointmentDto>>> GetAllAsync()
     {
-        var entities =
-            await _repository.GetAllAsync();
+        var entities = await _repository.GetAllAsync();
 
-        var dtos =
-            entities
-                .Select(TestAppointmentMapper.ToDto)
-                .ToList();
+        var dtos = entities
+            .Select(TestAppointmentMapper.ToDto)
+            .ToList();
 
         return Result<List<TestAppointmentDto>>
             .Success(dtos);
     }
-
 
     // =========================================================
     // GET BY APPLICATION
     // =========================================================
 
     public async Task<Result<List<TestAppointmentDto>>>
-        GetByApplicationIdAsync(
-            int applicationId)
+        GetByApplicationIdAsync(int applicationId)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateApplicationId(
-                    applicationId);
+            TestAppointmentValidator.ValidateApplicationId(applicationId);
 
         if (validation.IsFailure)
         {
             return Result<List<TestAppointmentDto>>
-                .FromValidationFailure(
-                    validation.Error);
+                .FromValidationFailure(validation.Error);
         }
 
         var entities =
-            await _repository
-                .GetByApplicationIdAsync(
-                    applicationId);
+            await _repository.GetByApplicationIdAsync(applicationId);
 
-        var dtos =
-            entities
-                .Select(TestAppointmentMapper.ToDto)
-                .ToList();
+        var dtos = entities
+            .Select(TestAppointmentMapper.ToDto)
+            .ToList();
 
         return Result<List<TestAppointmentDto>>
             .Success(dtos);
     }
-
 
     // =========================================================
     // GET BY TEST TYPE
     // =========================================================
 
     public async Task<Result<List<TestAppointmentDto>>>
-        GetByTestTypeIdAsync(
-            TestTypeEnum testType)
+        GetByTestTypeIdAsync(TestTypeEnum testType)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateTestTypeId(
-                    (int)testType);
+            TestAppointmentValidator.ValidateTestTypeId((int)testType);
 
         if (validation.IsFailure)
         {
             return Result<List<TestAppointmentDto>>
-                .FromValidationFailure(
-                    validation.Error);
+                .FromValidationFailure(validation.Error);
         }
 
         var entities =
-            await _repository
-                .GetByTestTypeIdAsync(
-                    testType);
+            await _repository.GetByTestTypeIdAsync(testType);
 
-        var dtos =
-            entities
-                .Select(TestAppointmentMapper.ToDto)
-                .ToList();
+        var dtos = entities
+            .Select(TestAppointmentMapper.ToDto)
+            .ToList();
 
         return Result<List<TestAppointmentDto>>
             .Success(dtos);
     }
-
 
     // =========================================================
     // GET BY CREATED USER
     // =========================================================
 
     public async Task<Result<List<TestAppointmentDto>>>
-        GetByCreatedUserIdAsync(
-            int userId)
+        GetByCreatedUserIdAsync(int userId)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateUserId(userId);
+            TestAppointmentValidator.ValidateUserId(userId);
 
         if (validation.IsFailure)
         {
             return Result<List<TestAppointmentDto>>
-                .FromValidationFailure(
-                    validation.Error);
+                .FromValidationFailure(validation.Error);
         }
 
         var entities =
-            await _repository
-                .GetByCreatedUserIdAsync(
-                    userId);
+            await _repository.GetByCreatedUserIdAsync(userId);
 
-        var dtos =
-            entities
-                .Select(TestAppointmentMapper.ToDto)
-                .ToList();
+        var dtos = entities
+            .Select(TestAppointmentMapper.ToDto)
+            .ToList();
 
         return Result<List<TestAppointmentDto>>
             .Success(dtos);
     }
-
 
     // =========================================================
     // GET SCHEDULE INFO
     // =========================================================
 
     public async Task<Result<ScheduleTestDto>>
-        GetScheduleInfoAsync(
-            int testAppointmentId)
+        GetScheduleInfoAsync(int testAppointmentId)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateId(testAppointmentId);
+            TestAppointmentValidator.ValidateId(testAppointmentId);
 
         if (validation.IsFailure)
         {
             return Result<ScheduleTestDto>
-                .FromValidationFailure(
-                    validation.Error);
+                .FromValidationFailure(validation.Error);
         }
 
         var entity =
-            await _repository
-                .GetScheduleInfoAsync(
-                    testAppointmentId);
+            await _repository.GetScheduleInfoAsync(testAppointmentId);
 
         if (entity is null)
         {
             return Result<ScheduleTestDto>
-                .FromNotFound(
-                    "Appointment data not found.");
+                .FromNotFound("Appointment data not found.");
         }
 
         var trial =
@@ -257,88 +205,78 @@ public class TestAppointmentService : ITestAppointmentService
             .Success(dto);
     }
 
-
     // =========================================================
     // BUSINESS HELPERS
     // =========================================================
 
-    public async Task<bool>
-    HasConflictAsync(
+    public async Task<bool> HasConflictAsync(
         int localAppId,
         int testTypeId,
         DateTime dateTime,
         int? excludeAppointmentId = null)
     {
-        return await _repository
-            .HasConflictAsync(
-                localAppId,
-                testTypeId,
-                dateTime,
-                excludeAppointmentId);
+        return await _repository.HasConflictAsync(
+            localAppId,
+            testTypeId,
+            dateTime,
+            excludeAppointmentId);
     }
 
-
-    public async Task<bool>
-    HasUserConflictAsync(
+    public async Task<bool> HasUserConflictAsync(
         int userId,
         DateTime dateTime,
         int? excludeAppointmentId = null)
     {
-        return await _repository
-            .HasUserConflictAsync(
-                userId,
-                dateTime,
-                excludeAppointmentId);
+        return await _repository.HasUserConflictAsync(
+            userId,
+            dateTime,
+            excludeAppointmentId);
     }
 
-
-    public async Task<bool>
-    HasApplicationConflictAsync(
+    public async Task<bool> HasApplicationConflictAsync(
         int applicationId,
         DateTime dateTime,
         int? excludeAppointmentId = null)
     {
-        return await _repository
-            .HasApplicationConflictAsync(
-                applicationId,
-                dateTime,
-                excludeAppointmentId);
+        return await _repository.HasApplicationConflictAsync(
+            applicationId,
+            dateTime,
+            excludeAppointmentId);
     }
 
-
-    public async Task<bool>
-        IsAppointmentAlreadyScheduledAsync(
-            int localAppId,
-            int testTypeId)
+    public async Task<bool> IsAppointmentAlreadyScheduledAsync(
+        int localAppId,
+        int testTypeId)
     {
-        return await _repository
-            .IsAppointmentAlreadyScheduledAsync(
-                localAppId,
-                testTypeId);
+        return await _repository.IsAppointmentAlreadyScheduledAsync(
+            localAppId,
+            testTypeId);
     }
-
 
     // =========================================================
     // CREATE
     // =========================================================
 
     public async Task<Result> AddAsync(
-     CreateTestAppointmentDto dto)
+        CreateTestAppointmentDto dto)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateCreate(dto);
+            TestAppointmentValidator.ValidateCreate(dto);
 
         if (validation.IsFailure)
         {
-            return Result.ValidationFailure(
-                validation.Error);
+            return Result.ValidationFailure(validation.Error);
         }
 
+        if (!_currentUserService.IsLoggedIn ||
+            _currentUserService.UserId <= 0)
+        {
+            return Result.ValidationFailure(
+                "You must be logged in first.");
+        }
 
         // -----------------------------------------------------
-        // WORKFLOW
-        // Theory -> Written -> Practical
+        // TEST TYPE
         // -----------------------------------------------------
 
         if (!Enum.IsDefined(
@@ -349,29 +287,29 @@ public class TestAppointmentService : ITestAppointmentService
                 "Invalid test type.");
         }
 
+        // -----------------------------------------------------
+        // WORKFLOW
+        // Theory -> Written -> Practical
+        // -----------------------------------------------------
 
         var workflowResult =
-            await _workflowService
-                .CanScheduleTestAsync(
-                    dto.LocalDrivingLicenseApplicationID,
-                    (TestTypeEnum)dto.TestTypeID);
+            await _workflowService.CanScheduleTestAsync(
+                dto.LocalDrivingLicenseApplicationID,
+                (TestTypeEnum)dto.TestTypeID);
 
         if (workflowResult.IsFailure)
         {
-            return Result.Conflict(
-                workflowResult.Error);
+            return Result.Conflict(workflowResult.Error);
         }
-
 
         // -----------------------------------------------------
         // DUPLICATE / PASSED TEST
         // -----------------------------------------------------
 
         var alreadyScheduled =
-            await _repository
-                .IsAppointmentAlreadyScheduledAsync(
-                    dto.LocalDrivingLicenseApplicationID,
-                    dto.TestTypeID);
+            await _repository.IsAppointmentAlreadyScheduledAsync(
+                dto.LocalDrivingLicenseApplicationID,
+                dto.TestTypeID);
 
         if (alreadyScheduled)
         {
@@ -380,15 +318,13 @@ public class TestAppointmentService : ITestAppointmentService
                 "or the test has already been passed.");
         }
 
-
         // -----------------------------------------------------
-        // TEST TYPE
+        // TEST TYPE EXISTS
         // -----------------------------------------------------
 
         var testType =
-            await _testTypeRepository
-                .GetTestTypeByIdAsync(
-                    dto.TestTypeID);
+            await _testTypeRepository.GetTestTypeByIdAsync(
+                dto.TestTypeID);
 
         if (testType is null)
         {
@@ -396,56 +332,37 @@ public class TestAppointmentService : ITestAppointmentService
                 "Test type not found.");
         }
 
-
-        // -----------------------------------------------------
-        // USER
-        // -----------------------------------------------------
-
-        if (!_currentUserService.IsLoggedIn ||
-            _currentUserService.UserId <= 0)
-        {
-            return Result.ValidationFailure(
-                "You must be logged in first.");
-        }
-
-
         // -----------------------------------------------------
         // APPLICATION CONFLICT
-        // Same application cannot have two appointments
-        // at the same date/time.
         // -----------------------------------------------------
 
         var hasApplicationConflict =
-            await _repository
-                .HasApplicationConflictAsync(
-                    dto.LocalDrivingLicenseApplicationID,
-                    dto.AppointmentDate);
+            await _repository.HasApplicationConflictAsync(
+                dto.LocalDrivingLicenseApplicationID,
+                dto.AppointmentDate);
 
         if (hasApplicationConflict)
         {
             return Result.Conflict(
-                "This application already has an appointment at this date and time.");
+                "This application already has an appointment " +
+                "at this date and time.");
         }
-
 
         // -----------------------------------------------------
         // USER CONFLICT
-        // Same user cannot create two appointments
-        // at the same date/time.
         // -----------------------------------------------------
 
         var hasUserConflict =
-            await _repository
-                .HasUserConflictAsync(
-                    _currentUserService.UserId,
-                    dto.AppointmentDate);
+            await _repository.HasUserConflictAsync(
+                _currentUserService.UserId,
+                dto.AppointmentDate);
 
         if (hasUserConflict)
         {
             return Result.Conflict(
-                "The current user already has an appointment at this date and time.");
+                "The current user already has an appointment " +
+                "at this date and time.");
         }
-
 
         // -----------------------------------------------------
         // CREATE ENTITY
@@ -457,10 +374,8 @@ public class TestAppointmentService : ITestAppointmentService
                 testType.TestTypeFees,
                 _currentUserService.UserId);
 
-
         var isSuccess =
-            await _repository
-                .AddAsync(entity);
+            await _repository.AddAsync(entity);
 
         if (!isSuccess)
         {
@@ -468,14 +383,12 @@ public class TestAppointmentService : ITestAppointmentService
                 "Failed to prepare appointment.");
         }
 
-
         // -----------------------------------------------------
         // SAVE
         // -----------------------------------------------------
 
         var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()
@@ -488,34 +401,40 @@ public class TestAppointmentService : ITestAppointmentService
     // =========================================================
 
     public async Task<Result> UpdateAsync(
-      UpdateTestAppointmentDto dto)
+        UpdateTestAppointmentDto dto)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateUpdate(dto);
+            TestAppointmentValidator.ValidateUpdate(dto);
 
         if (validation.IsFailure)
         {
-            return Result.ValidationFailure(
-                validation.Error);
+            return Result.ValidationFailure(validation.Error);
         }
 
+        // -----------------------------------------------------
+        // CURRENT USER
+        // -----------------------------------------------------
+
+        if (!_currentUserService.IsLoggedIn ||
+            _currentUserService.UserId <= 0)
+        {
+            return Result.ValidationFailure(
+                "You must be logged in first.");
+        }
 
         // -----------------------------------------------------
         // GET EXISTING APPOINTMENT
         // -----------------------------------------------------
 
         var entity =
-            await _repository
-                .GetByIdAsync(
-                    dto.TestAppointmentID);
+            await _repository.GetByIdAsync(
+                dto.TestAppointmentID);
 
         if (entity is null)
         {
             return Result.NotFound(
                 "Appointment not found.");
         }
-
 
         // -----------------------------------------------------
         // LOCKED APPOINTMENT
@@ -527,10 +446,39 @@ public class TestAppointmentService : ITestAppointmentService
                 "Cannot modify a locked appointment.");
         }
 
+        // -----------------------------------------------------
+        // TEST TYPE
+        // -----------------------------------------------------
+
+        if (!Enum.IsDefined(
+                typeof(TestTypeEnum),
+                entity.TestTypeID))
+        {
+            return Result.ValidationFailure(
+                "Invalid test type.");
+        }
+
+        // -----------------------------------------------------
+        // WORKFLOW
+        //
+        // Re-check the workflow even during UPDATE.
+        // This prevents an old appointment from being modified
+        // after the application workflow has changed.
+        // -----------------------------------------------------
+
+        var workflowResult =
+            await _workflowService.CanScheduleTestAsync(
+                entity.LocalDrivingLicenseApplicationID,
+                (TestTypeEnum)entity.TestTypeID);
+
+        if (workflowResult.IsFailure)
+        {
+            return Result.Conflict(
+                workflowResult.Error);
+        }
 
         // -----------------------------------------------------
         // SAME DATE/TIME
-        // Nothing to update.
         // -----------------------------------------------------
 
         if (entity.AppointmentDate ==
@@ -539,11 +487,8 @@ public class TestAppointmentService : ITestAppointmentService
             return Result.Success();
         }
 
-
         // -----------------------------------------------------
         // TEST APPOINTMENT CONFLICT
-        // Same Application + Same Test Type + Same Date/Time
-        // Exclude current appointment because this is an update.
         // -----------------------------------------------------
 
         var hasConflict =
@@ -559,11 +504,8 @@ public class TestAppointmentService : ITestAppointmentService
                 "The new date is already booked for another test.");
         }
 
-
         // -----------------------------------------------------
         // APPLICATION CONFLICT
-        // Same application + same date/time.
-        // Exclude current appointment.
         // -----------------------------------------------------
 
         var hasApplicationConflict =
@@ -575,14 +517,12 @@ public class TestAppointmentService : ITestAppointmentService
         if (hasApplicationConflict)
         {
             return Result.Conflict(
-                "This application already has another appointment at this date and time.");
+                "This application already has another appointment " +
+                "at this date and time.");
         }
-
 
         // -----------------------------------------------------
         // USER CONFLICT
-        // Same user + same date/time.
-        // Exclude current appointment.
         // -----------------------------------------------------
 
         var hasUserConflict =
@@ -594,9 +534,9 @@ public class TestAppointmentService : ITestAppointmentService
         if (hasUserConflict)
         {
             return Result.Conflict(
-                "The current user already has another appointment at this date and time.");
+                "The current user already has another appointment " +
+                "at this date and time.");
         }
-
 
         // -----------------------------------------------------
         // UPDATE ENTITY
@@ -605,10 +545,8 @@ public class TestAppointmentService : ITestAppointmentService
         entity.AppointmentDate =
             dto.AppointmentDate;
 
-
         var isSuccess =
-            await _repository
-                .UpdateAsync(entity);
+            await _repository.UpdateAsync(entity);
 
         if (!isSuccess)
         {
@@ -616,14 +554,12 @@ public class TestAppointmentService : ITestAppointmentService
                 "Failed to prepare appointment update.");
         }
 
-
         // -----------------------------------------------------
         // SAVE
         // -----------------------------------------------------
 
         var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()
@@ -635,12 +571,10 @@ public class TestAppointmentService : ITestAppointmentService
     // DELETE
     // =========================================================
 
-    public async Task<Result>
-        DeleteAsync(int id)
+    public async Task<Result> DeleteAsync(int id)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateId(id);
+            TestAppointmentValidator.ValidateId(id);
 
         if (validation.IsFailure)
         {
@@ -648,10 +582,15 @@ public class TestAppointmentService : ITestAppointmentService
                 validation.Error);
         }
 
+        if (!_currentUserService.IsLoggedIn ||
+            _currentUserService.UserId <= 0)
+        {
+            return Result.ValidationFailure(
+                "You must be logged in first.");
+        }
 
         var entity =
-            await _repository
-                .GetByIdAsync(id);
+            await _repository.GetByIdAsync(id);
 
         if (entity is null)
         {
@@ -659,20 +598,16 @@ public class TestAppointmentService : ITestAppointmentService
                 "Appointment not found.");
         }
 
-
         if (entity.IsLocked)
         {
             return Result.Conflict(
                 "Cannot delete a locked appointment.");
         }
 
-
-        await _repository
-     .DeleteAsync(id);
+        await _repository.DeleteAsync(id);
 
         var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()
@@ -680,16 +615,15 @@ public class TestAppointmentService : ITestAppointmentService
                 "Failed to delete appointment.");
     }
 
-
     // =========================================================
     // SAVE TEST RESULT
     // =========================================================
 
-    public async Task<Result> SaveTestResultAsync(SaveTestResultDto dto)
+    public async Task<Result> SaveTestResultAsync(
+        SaveTestResultDto dto)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateSaveTestResult(dto);
+            TestAppointmentValidator.ValidateSaveTestResult(dto);
 
         if (validation.IsFailure)
         {
@@ -705,9 +639,8 @@ public class TestAppointmentService : ITestAppointmentService
         }
 
         var appointment =
-            await _repository
-                .GetByIdAsync(
-                    dto.TestAppointmentID);
+            await _repository.GetByIdAsync(
+                dto.TestAppointmentID);
 
         if (appointment is null)
         {
@@ -721,39 +654,45 @@ public class TestAppointmentService : ITestAppointmentService
                 "A result has already been saved for this test.");
         }
 
+        // -----------------------------------------------------
+        // WORKFLOW
+        // -----------------------------------------------------
+
         var canTakeTestResult =
-        await _workflowService
-            .CanTakeTestAsync(dto.TestAppointmentID);
+            await _workflowService.CanTakeTestAsync(
+                dto.TestAppointmentID);
 
         if (canTakeTestResult.IsFailure)
         {
             return canTakeTestResult;
         }
 
+        // -----------------------------------------------------
+        // DUPLICATE RESULT
+        // -----------------------------------------------------
+
         var isTestAlreadyTaken =
-            await _testRepository
-                .IsTestAlreadyTakenAsync(
-                    dto.TestAppointmentID);
+            await _testRepository.IsTestAlreadyTakenAsync(
+                dto.TestAppointmentID);
 
         if (isTestAlreadyTaken)
         {
             return Result.Conflict(
-               "A result has already been saved for this test.");
+                "A result has already been saved for this test.");
         }
 
-        // =========================================================
-        // BEGIN TRANSACTION
-        // =========================================================
+        // -----------------------------------------------------
+        // TRANSACTION
+        // -----------------------------------------------------
 
         await using var transaction =
-            await _unitOfWork
-                .BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync();
 
         try
         {
-            // -----------------------------------------------------
+            // -------------------------------------------------
             // CREATE TEST RESULT
-            // -----------------------------------------------------
+            // -------------------------------------------------
 
             var testEntity =
                 new Domain.Entities.Test
@@ -765,27 +704,26 @@ public class TestAppointmentService : ITestAppointmentService
                         dto.TestResult,
 
                     Notes =
-                        string.IsNullOrWhiteSpace(
-                            dto.Notes)
-                                ? null
-                                : dto.Notes.Trim(),
+                        string.IsNullOrWhiteSpace(dto.Notes)
+                            ? null
+                            : dto.Notes.Trim(),
 
                     CreatedByUserID =
                         _currentUserService.UserId
                 };
 
-            await _testRepository.AddAsync(testEntity);
+            await _testRepository.AddAsync(
+                testEntity);
 
-            // -----------------------------------------------------
+            // -------------------------------------------------
             // LOCK APPOINTMENT
-            // -----------------------------------------------------
+            // -------------------------------------------------
 
             appointment.IsLocked = true;
 
             var appointmentUpdated =
-                await _repository
-                    .UpdateAsync(
-                        appointment);
+                await _repository.UpdateAsync(
+                    appointment);
 
             if (!appointmentUpdated)
             {
@@ -795,13 +733,12 @@ public class TestAppointmentService : ITestAppointmentService
                     "Failed to lock appointment.");
             }
 
-            // -----------------------------------------------------
+            // -------------------------------------------------
             // SAVE BOTH CHANGES
-            // -----------------------------------------------------
+            // -------------------------------------------------
 
             var saved =
-                await _unitOfWork
-                    .SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
 
             if (saved <= 0)
             {
@@ -811,9 +748,9 @@ public class TestAppointmentService : ITestAppointmentService
                     "Failed to save test result.");
             }
 
-            // -----------------------------------------------------
+            // -------------------------------------------------
             // COMMIT
-            // -----------------------------------------------------
+            // -------------------------------------------------
 
             await transaction.CommitAsync();
 
@@ -822,7 +759,6 @@ public class TestAppointmentService : ITestAppointmentService
         catch
         {
             await transaction.RollbackAsync();
-
             throw;
         }
     }
@@ -831,28 +767,27 @@ public class TestAppointmentService : ITestAppointmentService
     // GET TRIAL COUNT
     // =========================================================
 
-    public async Task<int>
-        GetTrialCountAsync(
-            int localAppId,
-            int testTypeId)
+    public async Task<int> GetTrialCountAsync(
+        int localAppId,
+        int testTypeId)
     {
         var appValidation =
-            TestAppointmentValidator
-                .ValidateApplicationId(
-                    localAppId);
+            TestAppointmentValidator.ValidateApplicationId(
+                localAppId);
 
         if (appValidation.IsFailure)
+        {
             return 0;
-
+        }
 
         var typeValidation =
-            TestAppointmentValidator
-                .ValidateTestTypeId(
-                    testTypeId);
+            TestAppointmentValidator.ValidateTestTypeId(
+                testTypeId);
 
         if (typeValidation.IsFailure)
+        {
             return 0;
-
+        }
 
         var appointmentsResult =
             await GetByApplicationIdAsync(
@@ -864,34 +799,29 @@ public class TestAppointmentService : ITestAppointmentService
             return 0;
         }
 
-
         return appointmentsResult.Value
-            .Count(x =>
-                x.TestTypeID == testTypeId);
+            .Count(x => x.TestTypeID == testTypeId);
     }
-
 
     // =========================================================
     // GET TEST TYPE FEES
     // =========================================================
 
-    public async Task<decimal>
-        GetTestTypeFeesAsync(
-            int testTypeId)
+    public async Task<decimal> GetTestTypeFeesAsync(
+        int testTypeId)
     {
         var validation =
-            TestAppointmentValidator
-                .ValidateTestTypeId(
-                    testTypeId);
+            TestAppointmentValidator.ValidateTestTypeId(
+                testTypeId);
 
         if (validation.IsFailure)
+        {
             return 0;
-
+        }
 
         var type =
-            await _testTypeRepository
-                .GetTestTypeByIdAsync(
-                    testTypeId);
+            await _testTypeRepository.GetTestTypeByIdAsync(
+                testTypeId);
 
         return type?.TestTypeFees ?? 0;
     }

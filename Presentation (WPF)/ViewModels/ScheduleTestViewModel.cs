@@ -21,6 +21,7 @@ namespace Presentation.ViewModels
         private readonly ICurrentUserService _currentUserService;
         private readonly IApplicationTypeService _applicationTypeService;
         private readonly IApplicationService _appService;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ScheduleTestViewModel(
             ITestAppointmentService service,
@@ -28,7 +29,8 @@ namespace Presentation.ViewModels
             ITestTypeService testTypeService,
             ICurrentUserService currentUserService,
             IApplicationTypeService applicationTypeService,
-            IApplicationService appService)
+            IApplicationService appService,
+            IUnitOfWork unitOfWork)
         {
             _service = service
                 ?? throw new ArgumentNullException(nameof(service));
@@ -47,6 +49,9 @@ namespace Presentation.ViewModels
 
             _appService = appService
                 ?? throw new ArgumentNullException(nameof(appService));
+
+            _unitOfWork = unitOfWork
+                ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         // =========================================================
@@ -335,16 +340,13 @@ namespace Presentation.ViewModels
             if (Schedule is null)
                 return;
 
+            await using var transaction =
+                await _unitOfWork.BeginTransactionAsync();
+
             try
             {
                 // =================================================
-                // RETAKE
-                //
-                // Create Retake Application only when:
-                //
-                // 1. This is a Retake
-                // 2. This is a new appointment
-                // 3. No Retake Application exists yet
+                // RETAKE APPLICATION
                 // =================================================
 
                 if (IsRetake &&
@@ -357,15 +359,33 @@ namespace Presentation.ViewModels
                                 _applicationId);
 
                     if (applicationResult.IsFailure)
-                        throw new Exception(
-                            applicationResult.Error);
+                    {
+                        await transaction.RollbackAsync();
+
+                        MessageBox.Show(
+                            applicationResult.Error,
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+
+                        return;
+                    }
 
                     var originalApplication =
                         applicationResult.Value;
 
                     if (originalApplication is null)
-                        throw new Exception(
-                            "Original application was not found.");
+                    {
+                        await transaction.RollbackAsync();
+
+                        MessageBox.Show(
+                            "Original application was not found.",
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+
+                        return;
+                    }
 
                     // -------------------------------------------------
                     // Create Retake Application DTO
@@ -405,8 +425,17 @@ namespace Presentation.ViewModels
                                 createApplication);
 
                     if (retakeResult.IsFailure)
-                        throw new Exception(
-                            retakeResult.Error);
+                    {
+                        await transaction.RollbackAsync();
+
+                        MessageBox.Show(
+                            retakeResult.Error,
+                            "Save Failed",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+
+                        return;
+                    }
 
                     Schedule.RetakeTestApplicationID =
                         retakeResult.Value;
@@ -468,30 +497,51 @@ namespace Presentation.ViewModels
                 }
 
                 // =================================================
-                // RESULT
+                // APPOINTMENT FAILED
                 // =================================================
 
-                if (saveResult.IsSuccess)
+                if (saveResult.IsFailure)
                 {
-                    MessageBox.Show(
-                        "Appointment saved successfully.",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    await transaction.RollbackAsync();
 
-                    Close();
-                }
-                else
-                {
                     MessageBox.Show(
                         saveResult.Error,
                         "Save Failed",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
+
+                    return;
                 }
+
+                // =================================================
+                // COMMIT
+                // =================================================
+
+                await transaction.CommitAsync();
+
+                // =================================================
+                // SUCCESS
+                // =================================================
+
+                MessageBox.Show(
+                    "Appointment saved successfully.",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                Close();
             }
             catch (Exception ex)
             {
+                try
+                {
+                    await transaction.RollbackAsync();
+                }
+                catch
+                {
+                    // Preserve the original exception.
+                }
+
                 MessageBox.Show(
                     ex.Message,
                     "Error",
