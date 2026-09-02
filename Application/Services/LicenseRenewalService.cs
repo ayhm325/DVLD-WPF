@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+﻿
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
@@ -346,24 +347,7 @@ public class LicenseRenewalService : ILicenseRenewalService
 
 
             // -------------------------------------------------
-            // 14. Save completed application
-            // -------------------------------------------------
-
-            var applicationSaved =
-                await _unitOfWork
-                    .SaveChangesAsync();
-
-            if (applicationSaved <= 0)
-            {
-                await transaction.RollbackAsync();
-
-                return Result<int>.FromFailure(
-                    "Failed to complete renewal application.");
-            }
-
-
-            // -------------------------------------------------
-            // 15. Commit transaction
+            // 14. Commit transaction
             // -------------------------------------------------
 
             await transaction
@@ -371,7 +355,7 @@ public class LicenseRenewalService : ILicenseRenewalService
 
 
             // -------------------------------------------------
-            // 16. Return new license ID
+            // 15. Return new license ID
             // -------------------------------------------------
 
             return Result<int>.Success(

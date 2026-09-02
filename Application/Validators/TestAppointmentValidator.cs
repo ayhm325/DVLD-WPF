@@ -19,16 +19,28 @@ public static class TestAppointmentValidator
                 "Test appointment data is required.");
         }
 
-
         var errors = new List<string>();
 
+        // -----------------------------------------------------
+        // TEST TYPE
+        // -----------------------------------------------------
 
         if (dto.TestTypeID <= 0)
         {
             errors.Add(
                 "Test type is required.");
         }
+        else if (!Enum.IsDefined(
+                     typeof(TestTypeEnum),
+                     dto.TestTypeID))
+        {
+            errors.Add(
+                "Invalid test type.");
+        }
 
+        // -----------------------------------------------------
+        // LOCAL APPLICATION
+        // -----------------------------------------------------
 
         if (dto.LocalDrivingLicenseApplicationID <= 0)
         {
@@ -36,6 +48,9 @@ public static class TestAppointmentValidator
                 "Local driving license application is required.");
         }
 
+        // -----------------------------------------------------
+        // APPOINTMENT DATE
+        // -----------------------------------------------------
 
         if (dto.AppointmentDate == default)
         {
@@ -48,6 +63,9 @@ public static class TestAppointmentValidator
                 "Appointment date must be in the future.");
         }
 
+        // -----------------------------------------------------
+        // RETAKE APPLICATION
+        // -----------------------------------------------------
 
         if (dto.RetakeTestApplicationID.HasValue &&
             dto.RetakeTestApplicationID.Value <= 0)
@@ -55,7 +73,6 @@ public static class TestAppointmentValidator
             errors.Add(
                 "Invalid retake test application ID.");
         }
-
 
         return CreateResult(errors);
     }
@@ -74,9 +91,11 @@ public static class TestAppointmentValidator
                 "Test appointment data is required.");
         }
 
-
         var errors = new List<string>();
 
+        // -----------------------------------------------------
+        // APPOINTMENT ID
+        // -----------------------------------------------------
 
         if (dto.TestAppointmentID <= 0)
         {
@@ -84,6 +103,9 @@ public static class TestAppointmentValidator
                 "Invalid test appointment ID.");
         }
 
+        // -----------------------------------------------------
+        // APPOINTMENT DATE
+        // -----------------------------------------------------
 
         if (dto.AppointmentDate == default)
         {
@@ -95,7 +117,6 @@ public static class TestAppointmentValidator
             errors.Add(
                 "Appointment date must be in the future.");
         }
-
 
         return CreateResult(errors);
     }
@@ -114,9 +135,11 @@ public static class TestAppointmentValidator
                 "Test result data is required.");
         }
 
-
         var errors = new List<string>();
 
+        // -----------------------------------------------------
+        // APPOINTMENT ID
+        // -----------------------------------------------------
 
         if (dto.TestAppointmentID <= 0)
         {
@@ -124,6 +147,9 @@ public static class TestAppointmentValidator
                 "Invalid test appointment ID.");
         }
 
+        // -----------------------------------------------------
+        // NOTES
+        // -----------------------------------------------------
 
         if (!string.IsNullOrWhiteSpace(dto.Notes) &&
             dto.Notes.Trim().Length > 500)
@@ -131,7 +157,6 @@ public static class TestAppointmentValidator
             errors.Add(
                 "Test notes cannot exceed 500 characters.");
         }
-
 
         return CreateResult(errors);
     }
@@ -141,7 +166,8 @@ public static class TestAppointmentValidator
     // ID
     // =========================================================
 
-    public static Result ValidateId(int id)
+    public static Result ValidateId(
+        int id)
     {
         return id > 0
             ? Result.Success()
@@ -184,7 +210,8 @@ public static class TestAppointmentValidator
     // USER ID
     // =========================================================
 
-    public static Result ValidateUserId(int userId)
+    public static Result ValidateUserId(
+        int userId)
     {
         return userId > 0
             ? Result.Success()
