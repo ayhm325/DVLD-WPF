@@ -480,13 +480,13 @@ public class InternationalService : IInternationalService
             // Persist final application state
             // -------------------------------------------------
 
-            var completedSaved = await _unitOfWork.SaveChangesAsync();
+            //var completedSaved = await _unitOfWork.SaveChangesAsync();
 
-            if (completedSaved <= 0)
-            {
-                await transaction.RollbackAsync();
-                return Result<int>.FromFailure("Failed to complete international application.");
-            }
+            //if (completedSaved <= 0)
+            //{
+            //    await transaction.RollbackAsync();
+            //    return Result<int>.FromFailure("Failed to complete international application.");
+            //}
 
 
             // -------------------------------------------------

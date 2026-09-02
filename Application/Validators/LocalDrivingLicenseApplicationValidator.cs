@@ -18,10 +18,7 @@ public static class LocalDrivingLicenseApplicationValidator
                 "Local driving license application data is required.");
         }
 
-        var errors = new List<string>();
-
-        //if (dto.ApplicationID <= 0)
-        //    errors.Add("A valid application is required.");
+        var errors = new List<string>();      
 
         if (dto.LicenseClassID <= 0)
             errors.Add("A valid license class is required.");
