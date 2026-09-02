@@ -152,7 +152,7 @@ namespace DVLD_WPF
             services.AddTransient<UpdateApplicationTypeViewModel>();
             services.AddTransient<UpdateTestTypeViewModel>();
             services.AddTransient<UsersViewModel>();
-            services.AddTransient<IssueDrivingLicenseForTheFirstTimeViewModel>();
+            //services.AddTransient<IssueDrivingLicenseForTheFirstTimeViewModel>();
             services.AddTransient<LicenseHistoryViewModel>();
             services.AddTransient<DriversViewModel>();
             services.AddTransient<InternationalViewModel>();
@@ -186,8 +186,8 @@ namespace DVLD_WPF
             services.AddTransient<TestAppointmentWin>();
             services.AddTransient<ScheduleTestWin>();
             services.AddTransient<TakeTestWin>();
-            services.AddTransient<IssueDrivingLicenseForTheFirstTimeWin>();
-            services.AddTransient<LicenseHistoryWin>();
+            //services.AddTransient<IssueDrivingLicenseForTheFirstTimeWin>();
+            //services.AddTransient<LicenseHistoryWin>();
             services.AddTransient<NewInternationalLicenseApplicationWin>();
             services.AddTransient<InterLAppPage>();
             services.AddTransient<RenewLicenseApplicationWin>();
