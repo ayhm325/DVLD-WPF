@@ -51,10 +51,16 @@ namespace Presentation.ViewModels
         }
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
         private PersonDto? person;
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
         private LicenseClassDto? selectedLicenseClass;
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+        private bool hasDuplicateApplication;
 
         [ObservableProperty]
         private int applicationId;
@@ -81,6 +87,54 @@ namespace Presentation.ViewModels
 
         public int SelectedLicenseClassId =>
             SelectedLicenseClass?.LicenseClassID ?? 0;
+
+        private bool CanSave()
+        {
+            return Person != null
+                   && SelectedLicenseClass != null
+                   && _ldlApplicationType != null
+                   && !HasDuplicateApplication;
+        }
+
+        private async Task CheckDuplicateApplicationAsync()
+        {
+            HasDuplicateApplication = false;
+
+            if (Person == null || SelectedLicenseClass == null)
+            {
+                SaveCommand.NotifyCanExecuteChanged();
+                return;
+            }
+
+            try
+            {
+                int? existingApplicationId =
+                    await _applicationService.HasDuplicateApplicationAsync(
+                        Person.PersonId,
+                        SelectedLicenseClass.LicenseClassID);
+
+                HasDuplicateApplication =
+                    existingApplicationId.HasValue &&
+                    existingApplicationId.Value > 0;
+            }
+            catch
+            {
+                // لا نسمح بالحفظ إذا فشل التحقق.
+                HasDuplicateApplication = true;
+            }
+
+            SaveCommand.NotifyCanExecuteChanged();
+        }
+
+        partial void OnPersonChanged(PersonDto? value)
+        {
+            _ = CheckDuplicateApplicationAsync();
+        }
+
+        partial void OnSelectedLicenseClassChanged(LicenseClassDto? value)
+        {
+            _ = CheckDuplicateApplicationAsync();
+        }
 
         public async Task InitializeAsync()
         {
@@ -172,7 +226,7 @@ namespace Presentation.ViewModels
             }
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanSave))]
         private async Task Save()
         {
             if (Person == null)

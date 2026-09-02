@@ -4,18 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public class LicenseClassRepository
-    : ILicenseClassRepository
+public class LicenseClassRepository : ILicenseClassRepository
 {
-    private readonly DVLDDbContext _context;
+    private readonly IDbContextFactory<DVLDDbContext> _contextFactory;
 
     public LicenseClassRepository(
-        DVLDDbContext context)
+        IDbContextFactory<DVLDDbContext> contextFactory)
     {
-        _context =
-            context
+        _contextFactory =
+            contextFactory
             ?? throw new ArgumentNullException(
-                nameof(context));
+                nameof(contextFactory));
     }
 
     // =========================================================
@@ -25,7 +24,10 @@ public class LicenseClassRepository
     public async Task<List<LicenseClass>>
         GetAllLicenseClassAsync()
     {
-        return await _context.LicenseClasses
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        return await context.LicenseClasses
             .AsNoTracking()
             .ToListAsync();
     }
@@ -41,7 +43,10 @@ public class LicenseClassRepository
         if (id <= 0)
             return null;
 
-        return await _context.LicenseClasses
+        await using var context =
+            await _contextFactory.CreateDbContextAsync();
+
+        return await context.LicenseClasses
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x =>

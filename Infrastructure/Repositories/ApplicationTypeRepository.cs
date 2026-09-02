@@ -9,13 +9,22 @@ public class ApplicationTypeRepository
 {
     private readonly DVLDDbContext _context;
 
+    private readonly IDbContextFactory<DVLDDbContext>
+        _contextFactory;
+
     public ApplicationTypeRepository(
-        DVLDDbContext context)
+        DVLDDbContext context,
+        IDbContextFactory<DVLDDbContext> contextFactory)
     {
         _context =
             context
             ?? throw new ArgumentNullException(
                 nameof(context));
+
+        _contextFactory =
+            contextFactory
+            ?? throw new ArgumentNullException(
+                nameof(contextFactory));
     }
 
     // =========================================================
@@ -25,7 +34,11 @@ public class ApplicationTypeRepository
     public async Task<List<ApplicationType>>
         GetAllApplicationTypesAsync()
     {
-        return await _context.ApplicationTypes
+        await using var context =
+            await _contextFactory
+                .CreateDbContextAsync();
+
+        return await context.ApplicationTypes
             .AsNoTracking()
             .OrderBy(x => x.ApplicationTypeId)
             .ToListAsync();
@@ -41,10 +54,15 @@ public class ApplicationTypeRepository
         if (id <= 0)
             return null;
 
-        return await _context.ApplicationTypes
+        await using var context =
+            await _contextFactory
+                .CreateDbContextAsync();
+
+        return await context.ApplicationTypes
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                x => x.ApplicationTypeId == id);
+                x =>
+                    x.ApplicationTypeId == id);
     }
 
     // =========================================================
