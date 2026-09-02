@@ -1,5 +1,6 @@
 ﻿
 using Application.DTOs.PersonDTO;
+using Application.DTOs.CountryDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -74,7 +75,7 @@ namespace Presentation.ViewModels
 
 
         [ObservableProperty]
-        private Country? _selectedCountry;
+        private CountryDto? _selectedCountry;
 
 
         [ObservableProperty]
@@ -147,8 +148,7 @@ namespace Presentation.ViewModels
         // COUNTRIES
         // =========================================================
 
-        public ObservableCollection<Country> Countries { get; } =
-            new();
+        public ObservableCollection<CountryDto> Countries { get; } = new();
 
 
         // =========================================================
@@ -247,7 +247,7 @@ namespace Presentation.ViewModels
 
 
         partial void OnSelectedCountryChanged(
-            Country? value)
+            CountryDto? value)
         {
             OnPropertyChanged(
                 nameof(CountryName));

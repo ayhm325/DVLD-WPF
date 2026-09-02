@@ -1,12 +1,9 @@
 ﻿using Application.Common.Results;
-using Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Application.DTOs.CountryDTO;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface ICountryService
 {
-    public interface ICountryService
-    {
-        Task<Result<List<Country>>> GetAllCountriesAsync();
-    }
+    Task<Result<List<CountryDto>>> GetAllCountriesAsync();
 }
