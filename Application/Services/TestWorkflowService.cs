@@ -39,9 +39,35 @@ public class TestWorkflowService : ITestWorkflowService
         }
 
 
+        // -----------------------------------------------------
+        // APPLICATION STATUS
+        // Only New applications can schedule tests.
+        // -----------------------------------------------------
+
+        var applicationStatus =
+            await _appointmentRepository
+                .GetApplicationStatusAsync(localAppId);
+
+        if (applicationStatus is null)
+        {
+            return Result.NotFound(
+                "Local driving license application not found.");
+        }
+
+        if (applicationStatus != AppStatus.New)
+        {
+            return Result.Conflict(
+                "Tests can only be scheduled for an active application.");
+        }
+
+
+        // -----------------------------------------------------
+        // WORKFLOW
+        // Theory -> Written -> Practical
+        // -----------------------------------------------------
+
         var nextTestResult =
             await GetNextTestTypeAsync(localAppId);
-
 
         if (nextTestResult.IsFailure)
         {
@@ -143,7 +169,7 @@ public class TestWorkflowService : ITestWorkflowService
 
 
         // -----------------------------------------------------
-        // Get appointment
+        // GET APPOINTMENT
         // -----------------------------------------------------
 
         var appointment =
@@ -159,7 +185,7 @@ public class TestWorkflowService : ITestWorkflowService
 
 
         // -----------------------------------------------------
-        // Locked appointment
+        // LOCKED APPOINTMENT
         // -----------------------------------------------------
 
         if (appointment.IsLocked)
@@ -170,7 +196,7 @@ public class TestWorkflowService : ITestWorkflowService
 
 
         // -----------------------------------------------------
-        // Appointment date
+        // APPOINTMENT DATE
         // -----------------------------------------------------
 
         if (appointment.AppointmentDate > DateTime.Now)
@@ -181,11 +207,33 @@ public class TestWorkflowService : ITestWorkflowService
 
 
         // -----------------------------------------------------
-        // Get local application
+        // GET LOCAL APPLICATION
         // -----------------------------------------------------
 
         var localAppId =
             appointment.LocalDrivingLicenseApplicationID;
+
+
+        // -----------------------------------------------------
+        // APPLICATION STATUS
+        // Only New applications can take tests.
+        // -----------------------------------------------------
+
+        var applicationStatus =
+            await _appointmentRepository
+                .GetApplicationStatusAsync(localAppId);
+
+        if (applicationStatus is null)
+        {
+            return Result.NotFound(
+                "Local driving license application not found.");
+        }
+
+        if (applicationStatus != AppStatus.New)
+        {
+            return Result.Conflict(
+                "Tests can only be taken for an active application.");
+        }
 
 
         var testType =
@@ -193,7 +241,7 @@ public class TestWorkflowService : ITestWorkflowService
 
 
         // -----------------------------------------------------
-        // Validate test type
+        // VALIDATE TEST TYPE
         // -----------------------------------------------------
 
         if (!Enum.IsDefined(testType))
@@ -204,7 +252,7 @@ public class TestWorkflowService : ITestWorkflowService
 
 
         // -----------------------------------------------------
-        // Make sure this is the correct test
+        // MAKE SURE THIS IS THE CORRECT TEST
         // -----------------------------------------------------
 
         var nextTestResult =

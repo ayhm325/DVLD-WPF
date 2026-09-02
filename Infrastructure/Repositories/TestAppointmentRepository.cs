@@ -163,32 +163,54 @@ public class TestAppointmentRepository : ITestAppointmentRepository
     // USER CONFLICT
     // =========================================================
 
-    public async Task<bool> HasUserConflictAsync(int userId, DateTime dateTime)
+    public async Task<bool> HasUserConflictAsync(
+    int userId,
+    DateTime dateTime,
+    int? excludeAppointmentId = null)
     {
         if (userId <= 0)
             return false;
 
-        return await _context.TestAppointments
+        var query = _context.TestAppointments
             .AsNoTracking()
-            .AnyAsync(x =>
+            .Where(x =>
                 x.CreatedByUserID == userId &&
                 x.AppointmentDate == dateTime);
+
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x =>
+                x.TestAppointmentID != excludeAppointmentId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 
     // =========================================================
     // APPLICATION CONFLICT
     // =========================================================
 
-    public async Task<bool> HasApplicationConflictAsync(int applicationId, DateTime dateTime)
+    public async Task<bool> HasApplicationConflictAsync(
+    int applicationId,
+    DateTime dateTime,
+    int? excludeAppointmentId = null)
     {
         if (applicationId <= 0)
             return false;
 
-        return await _context.TestAppointments
+        var query = _context.TestAppointments
             .AsNoTracking()
-            .AnyAsync(x =>
+            .Where(x =>
                 x.LocalDrivingLicenseApplicationID == applicationId &&
                 x.AppointmentDate == dateTime);
+
+        if (excludeAppointmentId.HasValue)
+        {
+            query = query.Where(x =>
+                x.TestAppointmentID != excludeAppointmentId.Value);
+        }
+
+        return await query.AnyAsync();
     }
 
     // =========================================================
@@ -282,5 +304,22 @@ public class TestAppointmentRepository : ITestAppointmentRepository
         _context.TestAppointments.Remove(entity);
 
         // Repository does NOT save — UnitOfWork owns persistence.
+    }
+
+    // =========================================================
+    // GET APPLICATION STATUS
+    // =========================================================
+
+    public async Task<AppStatus?> GetApplicationStatusAsync(int localAppId)
+    {
+        if (localAppId <= 0)
+            return null;
+
+        return await _context.LocalDrivingLicenseApplications
+            .Where(x =>
+                x.LocalDrivingLicenseApplicationID == localAppId)
+            .Select(x =>
+                (AppStatus?)x.Application.ApplicationStatus)
+            .FirstOrDefaultAsync();
     }
 }

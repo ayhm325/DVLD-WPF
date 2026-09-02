@@ -46,21 +46,22 @@ public interface ITestAppointmentRepository
          DateTime dateTime,
          int? excludeAppointmentId = null);
 
-    Task<bool>
-        HasUserConflictAsync(
-            int userId,
-            DateTime dateTime);
+    Task<bool> HasUserConflictAsync(
+     int userId,
+     DateTime dateTime,
+     int? excludeAppointmentId = null);
 
-    Task<bool>
-        HasApplicationConflictAsync(
-            int applicationId,
-            DateTime dateTime);
+    Task<bool> HasApplicationConflictAsync(
+        int applicationId,
+        DateTime dateTime,
+        int? excludeAppointmentId = null);
 
     Task<bool>
         IsAppointmentAlreadyScheduledAsync(
             int localAppId,
             int testTypeId);
 
+    Task<AppStatus?> GetApplicationStatusAsync(int localAppId);
 
     // =========================================================
     // CREATE

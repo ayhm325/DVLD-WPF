@@ -279,26 +279,30 @@ public class TestAppointmentService : ITestAppointmentService
 
 
     public async Task<bool>
-        HasUserConflictAsync(
-            int userId,
-            DateTime dateTime)
+    HasUserConflictAsync(
+        int userId,
+        DateTime dateTime,
+        int? excludeAppointmentId = null)
     {
         return await _repository
             .HasUserConflictAsync(
                 userId,
-                dateTime);
+                dateTime,
+                excludeAppointmentId);
     }
 
 
     public async Task<bool>
-        HasApplicationConflictAsync(
-            int applicationId,
-            DateTime dateTime)
+    HasApplicationConflictAsync(
+        int applicationId,
+        DateTime dateTime,
+        int? excludeAppointmentId = null)
     {
         return await _repository
             .HasApplicationConflictAsync(
                 applicationId,
-                dateTime);
+                dateTime,
+                excludeAppointmentId);
     }
 
 
@@ -318,9 +322,8 @@ public class TestAppointmentService : ITestAppointmentService
     // CREATE
     // =========================================================
 
-    public async Task<Result>
-        AddAsync(
-            CreateTestAppointmentDto dto)
+    public async Task<Result> AddAsync(
+     CreateTestAppointmentDto dto)
     {
         var validation =
             TestAppointmentValidator
@@ -345,6 +348,7 @@ public class TestAppointmentService : ITestAppointmentService
             return Result.ValidationFailure(
                 "Invalid test type.");
         }
+
 
         var workflowResult =
             await _workflowService
@@ -406,6 +410,44 @@ public class TestAppointmentService : ITestAppointmentService
 
 
         // -----------------------------------------------------
+        // APPLICATION CONFLICT
+        // Same application cannot have two appointments
+        // at the same date/time.
+        // -----------------------------------------------------
+
+        var hasApplicationConflict =
+            await _repository
+                .HasApplicationConflictAsync(
+                    dto.LocalDrivingLicenseApplicationID,
+                    dto.AppointmentDate);
+
+        if (hasApplicationConflict)
+        {
+            return Result.Conflict(
+                "This application already has an appointment at this date and time.");
+        }
+
+
+        // -----------------------------------------------------
+        // USER CONFLICT
+        // Same user cannot create two appointments
+        // at the same date/time.
+        // -----------------------------------------------------
+
+        var hasUserConflict =
+            await _repository
+                .HasUserConflictAsync(
+                    _currentUserService.UserId,
+                    dto.AppointmentDate);
+
+        if (hasUserConflict)
+        {
+            return Result.Conflict(
+                "The current user already has an appointment at this date and time.");
+        }
+
+
+        // -----------------------------------------------------
         // CREATE ENTITY
         // -----------------------------------------------------
 
@@ -417,14 +459,19 @@ public class TestAppointmentService : ITestAppointmentService
 
 
         var isSuccess =
-    await _repository
-        .AddAsync(entity);
+            await _repository
+                .AddAsync(entity);
 
         if (!isSuccess)
         {
             return Result.Failure(
                 "Failed to prepare appointment.");
         }
+
+
+        // -----------------------------------------------------
+        // SAVE
+        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
@@ -436,12 +483,12 @@ public class TestAppointmentService : ITestAppointmentService
                 "Failed to book appointment.");
     }
 
-
     // =========================================================
     // UPDATE
     // =========================================================
 
-    public async Task<Result> UpdateAsync(UpdateTestAppointmentDto dto)
+    public async Task<Result> UpdateAsync(
+      UpdateTestAppointmentDto dto)
     {
         var validation =
             TestAppointmentValidator
@@ -452,6 +499,11 @@ public class TestAppointmentService : ITestAppointmentService
             return Result.ValidationFailure(
                 validation.Error);
         }
+
+
+        // -----------------------------------------------------
+        // GET EXISTING APPOINTMENT
+        // -----------------------------------------------------
 
         var entity =
             await _repository
@@ -464,24 +516,35 @@ public class TestAppointmentService : ITestAppointmentService
                 "Appointment not found.");
         }
 
+
+        // -----------------------------------------------------
+        // LOCKED APPOINTMENT
+        // -----------------------------------------------------
+
         if (entity.IsLocked)
         {
             return Result.Conflict(
                 "Cannot modify a locked appointment.");
         }
 
-        // Same date/time → nothing to update
+
+        // -----------------------------------------------------
+        // SAME DATE/TIME
+        // Nothing to update.
+        // -----------------------------------------------------
+
         if (entity.AppointmentDate ==
             dto.AppointmentDate)
         {
             return Result.Success();
         }
 
-        // =========================================================
-        // CHECK CONFLICT
-        // Same Local Application + Same Test Type + Same Date/Time
-        // Exclude the current appointment because this is an Edit.
-        // =========================================================
+
+        // -----------------------------------------------------
+        // TEST APPOINTMENT CONFLICT
+        // Same Application + Same Test Type + Same Date/Time
+        // Exclude current appointment because this is an update.
+        // -----------------------------------------------------
 
         var hasConflict =
             await HasConflictAsync(
@@ -496,22 +559,67 @@ public class TestAppointmentService : ITestAppointmentService
                 "The new date is already booked for another test.");
         }
 
-        // =========================================================
-        // UPDATE
-        // =========================================================
+
+        // -----------------------------------------------------
+        // APPLICATION CONFLICT
+        // Same application + same date/time.
+        // Exclude current appointment.
+        // -----------------------------------------------------
+
+        var hasApplicationConflict =
+            await HasApplicationConflictAsync(
+                entity.LocalDrivingLicenseApplicationID,
+                dto.AppointmentDate,
+                entity.TestAppointmentID);
+
+        if (hasApplicationConflict)
+        {
+            return Result.Conflict(
+                "This application already has another appointment at this date and time.");
+        }
+
+
+        // -----------------------------------------------------
+        // USER CONFLICT
+        // Same user + same date/time.
+        // Exclude current appointment.
+        // -----------------------------------------------------
+
+        var hasUserConflict =
+            await HasUserConflictAsync(
+                entity.CreatedByUserID,
+                dto.AppointmentDate,
+                entity.TestAppointmentID);
+
+        if (hasUserConflict)
+        {
+            return Result.Conflict(
+                "The current user already has another appointment at this date and time.");
+        }
+
+
+        // -----------------------------------------------------
+        // UPDATE ENTITY
+        // -----------------------------------------------------
 
         entity.AppointmentDate =
             dto.AppointmentDate;
 
+
         var isSuccess =
-     await _repository
-         .UpdateAsync(entity);
+            await _repository
+                .UpdateAsync(entity);
 
         if (!isSuccess)
         {
             return Result.Failure(
                 "Failed to prepare appointment update.");
         }
+
+
+        // -----------------------------------------------------
+        // SAVE
+        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
