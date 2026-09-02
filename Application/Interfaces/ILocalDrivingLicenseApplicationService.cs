@@ -1,4 +1,5 @@
 ﻿using Application.Common.Results;
+using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 
 namespace Application.Interfaces;
@@ -32,6 +33,9 @@ public interface ILocalDrivingLicenseApplicationService
     // =========================================================
     // COMMANDS
     // =========================================================
+
+    Task<Result<int>> CreateLocalDrivingLicenseApplicationAsync(
+    CreateApplicationDto applicationDto,CreateLocalDrivingLicenseApplicationDto localApplicationDto);
 
     Task<Result<int>>
         AddLocalDrivingLicenseApplicationAsync(
