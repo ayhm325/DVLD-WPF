@@ -42,10 +42,11 @@ public class LicenseReplacementService : ILicenseReplacementService
         _unitOfWork = unitOfWork;
     }
 
+
     public async Task<Result<int>> ReplaceLicenseAsync(
-        int oldLicenseId,
-        string replacementReason,
-        int applicationTypeId)
+    int oldLicenseId,
+    string replacementReason,
+    int applicationTypeId)
     {
         // =========================================================
         // 1. VALIDATE LICENSE ID
@@ -187,147 +188,205 @@ public class LicenseReplacementService : ILicenseReplacementService
         var now = DateTime.UtcNow;
 
         // =========================================================
-        // 10. CREATE REPLACEMENT APPLICATION
+        // 10. BEGIN TRANSACTION
         // =========================================================
 
-        var createApplicationDto =
-            new CreateApplicationDto
+        await using var transaction =
+            await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+            // =====================================================
+            // 11. CREATE REPLACEMENT APPLICATION
+            // =====================================================
+
+            var createApplicationDto =
+                new CreateApplicationDto
+                {
+                    ApplicantPersonID =
+                        oldLicense.Driver.PersonID,
+
+                    ApplicationDate =
+                        now,
+
+                    ApplicationTypeID =
+                        applicationTypeId,
+
+                    ApplicationStatus =
+                        AppStatus.New,
+
+                    LastStatusDate =
+                        now,
+
+                    PaidFees =
+                        applicationType.ApplicationTypeFees,
+
+                    CreatedByUserID =
+                        _currentUserService.UserId
+                };
+
+            var applicationResult =
+                await _applicationService
+                    .AddNewApplicationAsync(
+                        createApplicationDto);
+
+            if (applicationResult.IsFailure)
             {
-                ApplicantPersonID =
-                    oldLicense.Driver.PersonID,
+                await transaction.RollbackAsync();
 
-                ApplicationDate =
-                    now,
+                return Result<int>.FromFailure(
+                    applicationResult.Error);
+            }
 
-                ApplicationTypeID =
-                    applicationTypeId,
+            var applicationId =
+                applicationResult.Value;
 
-                ApplicationStatus =
-                    AppStatus.New,
-
-                LastStatusDate =
-                    now,
-
-                PaidFees =
-                    applicationType.ApplicationTypeFees,
-
-                CreatedByUserID =
-                    _currentUserService.UserId
-            };
-
-        var applicationResult =
-            await _applicationService
-                .AddNewApplicationAsync(
-                    createApplicationDto);
-
-        if (applicationResult.IsFailure)
-        {
-            return Result<int>.FromFailure(
-                applicationResult.Error);
-        }
-
-        var applicationId =
-            applicationResult.Value;
-
-        if (applicationId <= 0)
-        {
-            return Result<int>.FromFailure(
-                "Failed to create replacement application.");
-        }
-
-        // =========================================================
-        // 11. CREATE NEW LICENSE
-        // =========================================================
-
-        var createLicenseDto =
-            new CreateLicenseDto
+            if (applicationId <= 0)
             {
-                ApplicationID =
-                    applicationId,
+                await transaction.RollbackAsync();
 
-                DriverID =
-                    oldLicense.DriverID,
+                return Result<int>.FromFailure(
+                    "Failed to create replacement application.");
+            }
 
-                LicenseClassID =
-                    oldLicense.LicenseClass,
+            // =====================================================
+            // 12. CREATE NEW LICENSE
+            // =====================================================
 
-                IssueDate =
-                    now,
+            var createLicenseDto =
+                new CreateLicenseDto
+                {
+                    ApplicationID =
+                        applicationId,
 
-                // Replacement does NOT extend validity.
-                // It keeps the original expiration date.
-                ExpirationDate =
-                    oldLicense.ExpirationDate,
+                    DriverID =
+                        oldLicense.DriverID,
 
-                PaidFees =
-                    oldLicense
-                        .LicenseClassInfo
-                        .ClassFees,
+                    LicenseClassID =
+                        oldLicense.LicenseClass,
 
-                Notes =
-                    normalizedReason,
+                    IssueDate =
+                        now,
 
-                IsActive =
-                    true,
+                    // Replacement does NOT extend validity.
+                    // It keeps the original expiration date.
+                    ExpirationDate =
+                        oldLicense.ExpirationDate,
 
-                IssueReason =
-                    (byte)issueReason,
+                    PaidFees =
+                        oldLicense
+                            .LicenseClassInfo
+                            .ClassFees,
 
-                CreatedByUserID =
-                    _currentUserService.UserId
-            };
+                    Notes =
+                        normalizedReason,
 
-        var newLicense =
-            LicenseMapper.ToEntity(
-                createLicenseDto);
+                    IsActive =
+                        true,
 
+                    IssueReason =
+                        (byte)issueReason,
 
-        await _licenseRepository.AddLicenseAsync(newLicense);
-        var saveResult = await _unitOfWork.SaveChangesAsync();
+                    CreatedByUserID =
+                        _currentUserService.UserId
+                };
 
-        if (saveResult <= 0 || newLicense.LicenseID <= 0)
-        {
-            return Result<int>.FromFailure(
-                "Failed to save the replacement license.");
-        }
+            var newLicense =
+                LicenseMapper.ToEntity(
+                    createLicenseDto);
 
-        // =========================================================
-        // 12. DEACTIVATE OLD LICENSE
-        // =========================================================
-
-        oldLicense.IsActive = false;
-
-        var deactivateResult =
             await _licenseRepository
-                .UpdateLicenseAsync(
-                    oldLicense);
+                .AddLicenseAsync(newLicense);
 
-        if (!deactivateResult)
-        {
-            return Result<int>.FromFailure(
-                "Failed to deactivate the old license.");
+            var saveResult =
+                await _unitOfWork
+                    .SaveChangesAsync();
+
+            if (saveResult <= 0 ||
+                newLicense.LicenseID <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to save the replacement license.");
+            }
+
+            // =====================================================
+            // 13. DEACTIVATE OLD LICENSE
+            // =====================================================
+
+            oldLicense.IsActive = false;
+
+            var deactivateResult =
+                await _licenseRepository
+                    .UpdateLicenseAsync(
+                        oldLicense);
+
+            if (!deactivateResult)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to deactivate the old license.");
+            }
+
+            // Persist the deactivation before completing
+            // the application, while still inside the transaction.
+            var deactivateSaveResult =
+                await _unitOfWork
+                    .SaveChangesAsync();
+
+            if (deactivateSaveResult <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to save the old license status.");
+            }
+
+            // =====================================================
+            // 14. COMPLETE APPLICATION
+            // =====================================================
+
+            var completeResult =
+                await _applicationService
+                    .CompleteApplicationAsync(
+                        applicationId);
+
+            if (completeResult.IsFailure)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    completeResult.Error);
+            }
+
+            // =====================================================
+            // 15. COMMIT
+            // =====================================================
+
+            await transaction.CommitAsync();
+
+            // =====================================================
+            // 16. SUCCESS
+            // =====================================================
+
+            return Result<int>.Success(
+                newLicense.LicenseID);
         }
-
-        // =========================================================
-        // 13. COMPLETE APPLICATION
-        // =========================================================
-
-        var completeResult =
-            await _applicationService
-                .CompleteApplicationAsync(
-                    applicationId);
-
-        if (completeResult.IsFailure)
+        catch (Exception ex)
         {
+            try
+            {
+                await transaction.RollbackAsync();
+            }
+            catch
+            {
+                // Preserve the original exception/result.
+            }
+
             return Result<int>.FromFailure(
-                completeResult.Error);
+                $"Failed to replace license: {ex.Message}");
         }
-
-        // =========================================================
-        // 14. SUCCESS
-        // =========================================================
-
-        return Result<int>.Success(
-    newLicense.LicenseID);
     }
 }
