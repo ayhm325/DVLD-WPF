@@ -90,6 +90,9 @@ public class LicenseIssuanceService : ILicenseIssuanceService
         if (licenseClass.DefaultValidityLength <= 0) return Result<int>.FromValidationFailure("License class has an invalid validity period.");
         if (licenseClass.LicenseClassFees < 0) return Result<int>.FromValidationFailure("License class has invalid fees.");
 
+        // BEGIN TRANSACTION
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+
         // 6. Get or Create Driver
         int driverId;
         var driverResult = await _driverService.GetByPersonIdAsync(personResult.Value.PersonId);
@@ -137,8 +140,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
         var licenseValidation = LicenseValidator.ValidateCreate(createLicenseDto);
         if (licenseValidation.IsFailure) return Result<int>.FromValidationFailure(licenseValidation.Error);
 
-        // 8. Transaction: Create License & Complete Application
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        // 8. Transaction: Create License & Complete Application       
         try
         {
             var license = LicenseMapper.ToEntity(createLicenseDto);

@@ -317,53 +317,10 @@ namespace Presentation.ViewModels
 
                 if (passedAllTests)
                 {
-                    // ---------------------------------------------
-                    // GET APPLICATION ID
-                    // ---------------------------------------------
-
-                    var applicationIdResult =
-                        await _localService
-                            .GetApplicationIdByLocalIdAsync(
-                                localAppId);
-
-                    if (applicationIdResult.IsFailure)
-                    {
-                        MessageBox.Show(
-                            applicationIdResult.Error,
-                            "Test Result",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
-
-                        return;
-                    }
-
-                    var applicationId =
-                        applicationIdResult.Value;
-
-                    // ---------------------------------------------
-                    // COMPLETE APPLICATION
-                    // ---------------------------------------------
-
-                    var completeResult =
-                        await _applicationService
-                            .CompleteApplicationAsync(
-                                applicationId);
-
-                    if (completeResult.IsFailure)
-                    {
-                        MessageBox.Show(
-                            completeResult.Error,
-                            "Test Result",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
-
-                        return;
-                    }
-
                     MessageBox.Show(
                         "Test passed successfully.\n\n" +
                         "All three tests have been passed.\n" +
-                        "The application is now completed.",
+                        "The application is ready for license issuance.",
                         "Success",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);

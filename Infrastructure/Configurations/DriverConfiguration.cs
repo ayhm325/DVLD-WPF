@@ -22,7 +22,8 @@ public class DriverConfiguration
             .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes
-        builder.HasIndex(d => d.PersonID);
+        builder.HasIndex(d => d.PersonID)
+            .IsUnique();
         builder.HasIndex(d => d.CreatedByUserID);
     }
 }
