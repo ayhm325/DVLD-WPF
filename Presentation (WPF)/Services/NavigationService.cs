@@ -1,18 +1,22 @@
-﻿using System.Windows.Controls;
+﻿using System;
+using System.Windows.Controls;
 
 namespace Presentation.Services
 {
-    public class NavigationService : INavigationService
+    public sealed class NavigationService : INavigationService
     {
         private readonly Frame _frame;
 
         public NavigationService(Frame frame)
         {
-            _frame = frame;
+            _frame = frame ?? throw new ArgumentNullException(nameof(frame));
         }
 
         public void Navigate(Page page)
         {
+            if (page is null)
+                throw new ArgumentNullException(nameof(page));
+
             _frame.Navigate(page);
         }
 

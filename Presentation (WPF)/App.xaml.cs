@@ -23,6 +23,9 @@ namespace DVLD_WPF
         private const string ConnectionString =
             "Server=.;Database=DVLDf;Trusted_Connection=True;TrustServerCertificate=True";
 
+        private IServiceProvider _rootServiceProvider = null!;
+        private IServiceScope _applicationScope = null!;
+
         public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
         protected override void OnStartup(StartupEventArgs e)
@@ -30,12 +33,34 @@ namespace DVLD_WPF
             base.OnStartup(e);
 
             var services = new ServiceCollection();
+
             ConfigureServices(services);
 
-            ServiceProvider = services.BuildServiceProvider();
+            _rootServiceProvider = services.BuildServiceProvider(
+                new ServiceProviderOptions
+                {
+                    ValidateScopes = true,
+                    ValidateOnBuild = true
+                });
 
-            var loginWindow = ServiceProvider.GetRequiredService<LoginWindow>();
+            // Create a scope for the WPF application.
+            _applicationScope = _rootServiceProvider.CreateScope();
+
+            // Expose the scoped provider to the Presentation layer.
+            ServiceProvider = _applicationScope.ServiceProvider;
+
+            var loginWindow =
+                ServiceProvider.GetRequiredService<LoginWindow>();
+
             loginWindow.Show();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            _applicationScope?.Dispose();
+            (_rootServiceProvider as IDisposable)?.Dispose();
+
+            base.OnExit(e);
         }
 
         private void ConfigureServices(IServiceCollection services)
@@ -44,7 +69,10 @@ namespace DVLD_WPF
             // 1. DATABASE
             // =====================================================
 
-            services.AddDbContextFactory<DVLDDbContext>(options => options.UseSqlServer(ConnectionString));
+            services.AddDbContextFactory<DVLDDbContext>(
+                options =>
+                    options.UseSqlServer(ConnectionString));
+
             // =====================================================
             // 2. UNIT OF WORK
             // =====================================================
@@ -74,13 +102,14 @@ namespace DVLD_WPF
             // =====================================================
             // 4. APPLICATION SERVICES
             // =====================================================
+
             services.AddSingleton<IWindowService, WindowService>();
             services.AddSingleton<ICurrentUserService, CurrentUserService>();
 
-            services.AddScoped<IDashboardService, DashboardService>();           
+            services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
-            services.AddScoped<ICountryService, CountryService>();           
+            services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IDetainedLicenseService, DetainedLicenseService>();
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<ILicenseClassService, LicenseClassService>();
@@ -167,11 +196,7 @@ namespace DVLD_WPF
             services.AddTransient<DetainLicenseWin>();
             services.AddTransient<ReleaseDetainedLicenseWin>();
 
-            // =====================================================
-            // 8. NAVIGATION
-            // =====================================================
-
-            services.AddSingleton<INavigationService, NavigationService>();
+            
         }
     }
 }
