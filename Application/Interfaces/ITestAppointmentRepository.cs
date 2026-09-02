@@ -6,84 +6,27 @@ namespace Application.Interfaces;
 
 public interface ITestAppointmentRepository
 {
-    // =========================================================
-    // GET
-    // =========================================================
+    // ===== GET =====
 
     Task<TestAppointment?> GetByIdAsync(int id);
-
     Task<List<TestAppointment>> GetAllAsync();
+    Task<List<TestAppointment>> GetByLocalDrivingLicenseApplicationIdAsync(int localDrivingLicenseApplicationId);
+    Task<List<TestAppointment>> GetByTestTypeIdAsync(TestTypeEnum testType);
+    Task<List<TestAppointment>> GetByCreatedUserIdAsync(int userId);
+    Task<TestAppointment?> GetScheduleInfoAsync(int testAppointmentId);
 
-    Task<List<TestAppointment>>
-        GetByApplicationIdAsync(
-            int applicationId);
+    // ===== CHECKS =====
 
-    Task<List<TestAppointment>>
-        GetByTestTypeIdAsync(
-            TestTypeEnum testType);
-
-    Task<List<TestAppointment>>
-        GetByCreatedUserIdAsync(
-            int userId);
-
-    Task<TestAppointment?>
-        GetScheduleInfoAsync(
-            int testAppointmentId);
-
-
-    // =========================================================
-    // CHECK
-    // =========================================================
-
-    Task<bool>
-        ExistsAsync(
-            Expression<Func<TestAppointment, bool>> predicate);
-
-    Task<bool>
-     HasConflictAsync(
-         int localAppId,
-         int testTypeId,
-         DateTime dateTime,
-         int? excludeAppointmentId = null);
-
-    Task<bool> HasUserConflictAsync(
-     int userId,
-     DateTime dateTime,
-     int? excludeAppointmentId = null);
-
-    Task<bool> HasApplicationConflictAsync(
-        int applicationId,
-        DateTime dateTime,
-        int? excludeAppointmentId = null);
-
-    Task<bool>
-        IsAppointmentAlreadyScheduledAsync(
-            int localAppId,
-            int testTypeId);
-
+    Task<bool> ExistsAsync(Expression<Func<TestAppointment, bool>> predicate);
+    Task<bool> HasConflictAsync(int localAppId, int testTypeId, DateTime dateTime, int? excludeAppointmentId = null);
+    Task<bool> HasUserConflictAsync(int userId, DateTime dateTime, int? excludeAppointmentId = null);
+    Task<bool> HasLocalApplicationConflictAsync(int localAppId, DateTime dateTime, int? excludeAppointmentId = null);
+    Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId);
     Task<AppStatus?> GetApplicationStatusAsync(int localAppId);
 
-    // =========================================================
-    // CREATE
-    // =========================================================
+    // ===== CREATE / UPDATE / DELETE =====
 
-    Task<bool>
-        AddAsync(
-            TestAppointment appointment);
-
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
-    Task<bool>
-        UpdateAsync(
-            TestAppointment appointment);
-
-
-    // =========================================================
-    // DELETE
-    // =========================================================
-
+    Task<bool> AddAsync(TestAppointment appointment);
+    Task<bool> UpdateAsync(TestAppointment appointment);
     Task DeleteAsync(int id);
 }

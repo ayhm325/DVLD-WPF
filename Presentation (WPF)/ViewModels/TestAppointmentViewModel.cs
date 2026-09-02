@@ -286,9 +286,9 @@ namespace Presentation.ViewModels
             AppointmentsList.Clear();
 
             var result =
-                await _testAppointmentService
-                    .GetByApplicationIdAsync(
-                        _localApplicationId);
+    await _testAppointmentService
+        .GetByLocalDrivingLicenseApplicationIdAsync(
+            _localApplicationId);
 
             if (result.IsFailure)
             {

@@ -324,8 +324,8 @@ public class TestWorkflowService : ITestWorkflowService
         TestTypeEnum testType)
     {
         var appointments =
-            await _appointmentRepository
-                .GetByApplicationIdAsync(localAppId);
+    await _appointmentRepository
+        .GetByLocalDrivingLicenseApplicationIdAsync(localAppId);
 
 
         return appointments.Any(a =>

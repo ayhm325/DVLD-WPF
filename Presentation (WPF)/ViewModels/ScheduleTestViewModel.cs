@@ -131,12 +131,13 @@ namespace Presentation.ViewModels
             // Get previous appointments
             //
             // IMPORTANT:
-            // GetByApplicationIdAsync expects ApplicationID,
-            // not LocalDrivingLicenseApplicationID.
+            // This method expects LocalDrivingLicenseApplicationID.
             // -----------------------------------------------------
 
             var appointmentsResult =
-                await _service.GetByApplicationIdAsync(_applicationId);
+                await _service
+                    .GetByLocalDrivingLicenseApplicationIdAsync(
+                        _localAppId);
 
             if (appointmentsResult.IsFailure)
                 throw new Exception(appointmentsResult.Error);
@@ -265,34 +266,18 @@ namespace Presentation.ViewModels
             data.AppointmentID = appointmentId;
 
             // -----------------------------------------------------
-            // Get all appointments for the application
+            // Get all appointments for the Local Driving License
+            // Application.
             //
-            // ScheduleTestDto contains LocalApplicationID,
-            // so first resolve its ApplicationID.
+            // IMPORTANT:
+            // We already have LocalDrivingLicenseApplicationID.
+            // There is no reason to convert it to ApplicationID.
             // -----------------------------------------------------
-
-            var applicationIdResult =
-                await _lDLAppService
-                    .GetApplicationIdByLocalIdAsync(
-                        data.LocalDrivingLicenseApplicationID);
-
-            if (applicationIdResult.IsFailure)
-            {
-                MessageBox.Show(
-                    applicationIdResult.Error,
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
-            var applicationId =
-                applicationIdResult.Value;
 
             var allAppointmentsResult =
                 await _service
-                    .GetByApplicationIdAsync(applicationId);
+                    .GetByLocalDrivingLicenseApplicationIdAsync(
+                        data.LocalDrivingLicenseApplicationID);
 
             if (allAppointmentsResult.IsFailure)
             {

@@ -15,264 +15,151 @@ public class TestAppointmentRepository : ITestAppointmentRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    // =========================================================
-    // BASE QUERY
-    // =========================================================
+    // ===== BASE QUERY =====
 
-    private IQueryable<TestAppointment> Query()
-    {
-        return _context.TestAppointments
-            .Include(x => x.TestType)
-            .Include(x => x.LocalDrivingLicenseApplication)
-            .Include(x => x.User)
-            .Include(x => x.Test)
-            .Include(x => x.RetakeTestApplication);
-    }
+    private IQueryable<TestAppointment> Query() => _context.TestAppointments
+        .Include(x => x.TestType)
+        .Include(x => x.LocalDrivingLicenseApplication)
+        .Include(x => x.User)
+        .Include(x => x.Test)
+        .Include(x => x.RetakeTestApplication);
 
-    // =========================================================
-    // GET BY ID
-    // =========================================================
+    // ===== GET =====
 
     public async Task<TestAppointment?> GetByIdAsync(int id)
     {
-        if (id <= 0)
-            return null;
-
-        return await Query()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.TestAppointmentID == id);
+        if (id <= 0) return null;
+        return await Query().AsNoTracking().FirstOrDefaultAsync(x => x.TestAppointmentID == id);
     }
 
-    // =========================================================
-    // GET ALL
-    // =========================================================
+    public async Task<List<TestAppointment>> GetAllAsync() =>
+        await Query().AsNoTracking().ToListAsync();
 
-    public async Task<List<TestAppointment>> GetAllAsync()
+    public async Task<List<TestAppointment>> GetByLocalDrivingLicenseApplicationIdAsync(int localDrivingLicenseApplicationId)
     {
-        return await Query()
-            .AsNoTracking()
+        if (localDrivingLicenseApplicationId <= 0) return [];
+        return await Query().AsNoTracking()
+            .Where(x => x.LocalDrivingLicenseApplicationID == localDrivingLicenseApplicationId)
             .ToListAsync();
     }
-
-    // =========================================================
-    // GET BY APPLICATION
-    // =========================================================
-
-    public async Task<List<TestAppointment>> GetByApplicationIdAsync(int applicationId)
-    {
-        if (applicationId <= 0)
-            return [];
-
-        return await Query()
-            .AsNoTracking()
-            .Where(x => x.LocalDrivingLicenseApplicationID == applicationId)
-            .ToListAsync();
-    }
-
-    // =========================================================
-    // GET BY TEST TYPE
-    // =========================================================
 
     public async Task<List<TestAppointment>> GetByTestTypeIdAsync(TestTypeEnum testType)
     {
-        if (!Enum.IsDefined(testType))
-            return [];
-
-        return await Query()
-            .AsNoTracking()
+        if (!Enum.IsDefined(testType)) return [];
+        return await Query().AsNoTracking()
             .Where(x => x.TestTypeID == (int)testType)
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET BY USER
-    // =========================================================
-
     public async Task<List<TestAppointment>> GetByCreatedUserIdAsync(int userId)
     {
-        if (userId <= 0)
-            return [];
-
-        return await Query()
-            .AsNoTracking()
+        if (userId <= 0) return [];
+        return await Query().AsNoTracking()
             .Where(x => x.CreatedByUserID == userId)
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET SCHEDULE INFO
-    // =========================================================
-
     public async Task<TestAppointment?> GetScheduleInfoAsync(int testAppointmentId)
     {
-        if (testAppointmentId <= 0)
-            return null;
+        if (testAppointmentId <= 0) return null;
 
-        return await _context.TestAppointments
-            .AsNoTracking()
+        return await _context.TestAppointments.AsNoTracking()
             .Include(x => x.TestType)
-            .Include(x => x.LocalDrivingLicenseApplication)
-                .ThenInclude(x => x.Application)
-                .ThenInclude(a => a.Person)
-            .Include(x => x.LocalDrivingLicenseApplication)
-                .ThenInclude(x => x.Application)
-                .ThenInclude(a => a.ApplicationType)
-            .Include(x => x.LocalDrivingLicenseApplication)
-                .ThenInclude(x => x.LicenseClass)
+            .Include(x => x.LocalDrivingLicenseApplication).ThenInclude(x => x.Application).ThenInclude(a => a.Person)
+            .Include(x => x.LocalDrivingLicenseApplication).ThenInclude(x => x.Application).ThenInclude(a => a.ApplicationType)
+            .Include(x => x.LocalDrivingLicenseApplication).ThenInclude(x => x.LicenseClass)
             .FirstOrDefaultAsync(x => x.TestAppointmentID == testAppointmentId);
     }
 
-    // =========================================================
-    // EXISTS
-    // =========================================================
+    // ===== CHECKS =====
 
     public async Task<bool> ExistsAsync(Expression<Func<TestAppointment, bool>> predicate)
     {
         ArgumentNullException.ThrowIfNull(predicate);
-
-        return await _context.TestAppointments
-            .AsNoTracking()
-            .AnyAsync(predicate);
+        return await _context.TestAppointments.AsNoTracking().AnyAsync(predicate);
     }
-
-    // =========================================================
-    // CONFLICT
-    // =========================================================
 
     public async Task<bool> HasConflictAsync(int localAppId, int testTypeId, DateTime dateTime, int? excludeAppointmentId = null)
     {
-        if (localAppId <= 0 || testTypeId <= 0)
-            return false;
+        if (localAppId <= 0 || testTypeId <= 0) return false;
 
-        var query = _context.TestAppointments
-            .AsNoTracking()
-            .Where(x =>
+        return await _context.TestAppointments.AsNoTracking()
+            .AnyAsync(x =>
                 x.LocalDrivingLicenseApplicationID == localAppId &&
                 x.TestTypeID == testTypeId &&
-                x.AppointmentDate == dateTime);
-
-        if (excludeAppointmentId.HasValue)
-        {
-            query = query.Where(x => x.TestAppointmentID != excludeAppointmentId.Value);
-        }
-
-        return await query.AnyAsync();
+                x.AppointmentDate == dateTime &&
+                !x.IsLocked &&
+                (!excludeAppointmentId.HasValue || x.TestAppointmentID != excludeAppointmentId.Value));
     }
 
-    // =========================================================
-    // USER CONFLICT
-    // =========================================================
-
-    public async Task<bool> HasUserConflictAsync(
-    int userId,
-    DateTime dateTime,
-    int? excludeAppointmentId = null)
+    public async Task<bool> HasUserConflictAsync(int userId, DateTime dateTime, int? excludeAppointmentId = null)
     {
-        if (userId <= 0)
-            return false;
+        if (userId <= 0) return false;
 
-        var query = _context.TestAppointments
-            .AsNoTracking()
-            .Where(x =>
+        return await _context.TestAppointments.AsNoTracking()
+            .AnyAsync(x =>
                 x.CreatedByUserID == userId &&
-                x.AppointmentDate == dateTime);
-
-        if (excludeAppointmentId.HasValue)
-        {
-            query = query.Where(x =>
-                x.TestAppointmentID != excludeAppointmentId.Value);
-        }
-
-        return await query.AnyAsync();
+                x.AppointmentDate == dateTime &&
+                !x.IsLocked &&
+                (!excludeAppointmentId.HasValue || x.TestAppointmentID != excludeAppointmentId.Value));
     }
 
-    // =========================================================
-    // APPLICATION CONFLICT
-    // =========================================================
-
-    public async Task<bool> HasApplicationConflictAsync(
-    int applicationId,
-    DateTime dateTime,
-    int? excludeAppointmentId = null)
+    public async Task<bool> HasLocalApplicationConflictAsync(int localAppId, DateTime dateTime, int? excludeAppointmentId = null)
     {
-        if (applicationId <= 0)
-            return false;
+        if (localAppId <= 0) return false;
 
-        var query = _context.TestAppointments
-            .AsNoTracking()
-            .Where(x =>
-                x.LocalDrivingLicenseApplicationID == applicationId &&
-                x.AppointmentDate == dateTime);
-
-        if (excludeAppointmentId.HasValue)
-        {
-            query = query.Where(x =>
-                x.TestAppointmentID != excludeAppointmentId.Value);
-        }
-
-        return await query.AnyAsync();
+        return await _context.TestAppointments.AsNoTracking()
+            .AnyAsync(x =>
+                x.LocalDrivingLicenseApplicationID == localAppId &&
+                x.AppointmentDate == dateTime &&
+                !x.IsLocked &&
+                (!excludeAppointmentId.HasValue || x.TestAppointmentID != excludeAppointmentId.Value));
     }
-
-    // =========================================================
-    // ALREADY SCHEDULED
-    // =========================================================
 
     public async Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId)
     {
-        if (localAppId <= 0 || testTypeId <= 0)
-            return false;
+        if (localAppId <= 0 || testTypeId <= 0) return false;
 
-        // Check pending appointment
-        var hasPendingAppointment = await _context.TestAppointments
-            .AsNoTracking()
-            .AnyAsync(a =>
-                a.LocalDrivingLicenseApplicationID == localAppId &&
-                a.TestTypeID == testTypeId &&
-                !a.IsLocked);
+        // Check for pending (unlocked) appointments
+        var hasPending = await _context.TestAppointments.AsNoTracking()
+            .AnyAsync(a => a.LocalDrivingLicenseApplicationID == localAppId && a.TestTypeID == testTypeId && !a.IsLocked);
 
-        if (hasPendingAppointment)
-            return true;
+        if (hasPending) return true;
 
-        // Check already passed test
-        return await _context.Tests
-            .AsNoTracking()
-            .AnyAsync(t =>
-                t.TestAppointment != null &&
-                t.TestAppointment.LocalDrivingLicenseApplicationID == localAppId &&
-                t.TestAppointment.TestTypeID == testTypeId &&
-                t.TestResult);
+        // Check if already passed
+        return await _context.Tests.AsNoTracking()
+            .AnyAsync(t => t.TestAppointment != null &&
+                           t.TestAppointment.LocalDrivingLicenseApplicationID == localAppId &&
+                           t.TestAppointment.TestTypeID == testTypeId &&
+                           t.TestResult);
     }
 
-    // =========================================================
-    // CREATE
-    // =========================================================
+    public async Task<AppStatus?> GetApplicationStatusAsync(int localAppId)
+    {
+        if (localAppId <= 0) return null;
+
+        return await _context.LocalDrivingLicenseApplications
+            .Where(x => x.LocalDrivingLicenseApplicationID == localAppId)
+            .Select(x => (AppStatus?)x.Application.ApplicationStatus)
+            .FirstOrDefaultAsync();
+    }
+
+    // ===== COMMANDS =====
 
     public async Task<bool> AddAsync(TestAppointment appointment)
     {
         ArgumentNullException.ThrowIfNull(appointment);
-
         await _context.TestAppointments.AddAsync(appointment);
-
-        // Repository does NOT save — UnitOfWork owns persistence.
-        return true;
+        return true; // Save handled by UnitOfWork
     }
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
 
     public async Task<bool> UpdateAsync(TestAppointment appointment)
     {
         ArgumentNullException.ThrowIfNull(appointment);
+        if (appointment.TestAppointmentID <= 0) return false;
 
-        if (appointment.TestAppointmentID <= 0)
-            return false;
-
-        var existing = await _context.TestAppointments
-            .FirstOrDefaultAsync(x => x.TestAppointmentID == appointment.TestAppointmentID);
-
-        if (existing is null)
-            return false;
+        var existing = await _context.TestAppointments.FirstOrDefaultAsync(x => x.TestAppointmentID == appointment.TestAppointmentID);
+        if (existing is null) return false;
 
         existing.TestTypeID = appointment.TestTypeID;
         existing.LocalDrivingLicenseApplicationID = appointment.LocalDrivingLicenseApplicationID;
@@ -282,44 +169,17 @@ public class TestAppointmentRepository : ITestAppointmentRepository
         existing.IsLocked = appointment.IsLocked;
         existing.RetakeTestApplicationID = appointment.RetakeTestApplicationID;
 
-        // Repository does NOT save — UnitOfWork owns persistence.
-        return true;
+        return true; // Save handled by UnitOfWork
     }
-
-    // =========================================================
-    // DELETE
-    // =========================================================
 
     public async Task DeleteAsync(int id)
     {
-        if (id <= 0)
-            return;
+        if (id <= 0) return;
 
-        var entity = await _context.TestAppointments
-            .FirstOrDefaultAsync(x => x.TestAppointmentID == id);
-
-        if (entity is null)
-            return;
+        var entity = await _context.TestAppointments.FirstOrDefaultAsync(x => x.TestAppointmentID == id);
+        if (entity is null) return;
 
         _context.TestAppointments.Remove(entity);
-
-        // Repository does NOT save — UnitOfWork owns persistence.
-    }
-
-    // =========================================================
-    // GET APPLICATION STATUS
-    // =========================================================
-
-    public async Task<AppStatus?> GetApplicationStatusAsync(int localAppId)
-    {
-        if (localAppId <= 0)
-            return null;
-
-        return await _context.LocalDrivingLicenseApplications
-            .Where(x =>
-                x.LocalDrivingLicenseApplicationID == localAppId)
-            .Select(x =>
-                (AppStatus?)x.Application.ApplicationStatus)
-            .FirstOrDefaultAsync();
+        // Save handled by UnitOfWork
     }
 }
