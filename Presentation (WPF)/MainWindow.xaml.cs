@@ -43,7 +43,7 @@ namespace DVLD_WPF
         private Border? _activeNavItem;
 
         // ═══════ متغيرات تحكم عامة ═══════
-        private bool _isFirstLoad = true;
+        //private bool _isFirstLoad = true;
 
         public MainWindow(
             ICurrentUserService currentUserService,
