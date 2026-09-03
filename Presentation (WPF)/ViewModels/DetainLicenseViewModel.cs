@@ -242,10 +242,9 @@ public partial class DetainLicenseViewModel : ObservableObject
                     DateTime.Now,
 
                 FineFees =
-                    FineFees,
+                    FineFees
 
-                CreatedByUserID =
-                    _currentUserService.UserId
+               
             };
 
 

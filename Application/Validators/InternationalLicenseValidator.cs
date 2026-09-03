@@ -48,9 +48,7 @@ public static class InternationalLicenseValidator
                 "Expiration date must be after issue date.");
         }
 
-        if (dto.CreatedByUserID <= 0)
-            errors.Add(
-                "A valid creating user is required.");
+        
 
         return CreateResult(errors);
     }

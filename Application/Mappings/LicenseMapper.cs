@@ -56,6 +56,8 @@ public static class LicenseMapper
     // CREATE DTO -> ENTITY
     public static License ToEntity(CreateLicenseDto dto)
     {
+        ArgumentNullException.ThrowIfNull(dto);
+
         return new License
         {
             ApplicationID = dto.ApplicationID,
@@ -68,8 +70,7 @@ public static class LicenseMapper
                 : dto.Notes.Trim(),
             PaidFees = dto.PaidFees,
             IsActive = dto.IsActive,
-            IssueReason = dto.IssueReason,
-            CreatedByUserID = dto.CreatedByUserID
+            IssueReason = dto.IssueReason
         };
     }
 

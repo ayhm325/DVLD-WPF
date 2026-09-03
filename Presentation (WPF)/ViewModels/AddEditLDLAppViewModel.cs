@@ -308,8 +308,7 @@ private async Task Save()
                     PaidFees =
                         _ldlApplicationType.ApplicationTypeFees,
 
-                    CreatedByUserID =
-                        CreatedByUserID,
+                   
 
                     LastStatusDate =
                         DateTime.Now

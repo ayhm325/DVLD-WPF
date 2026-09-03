@@ -10,11 +10,16 @@ public class LicenseService : ILicenseService
 {
     private readonly ILicenseRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
 
-    public LicenseService(ILicenseRepository repository, IUnitOfWork unitOfWork)
+    public LicenseService(
+        ILicenseRepository repository,
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
     // =========================================================
@@ -181,21 +186,21 @@ public class LicenseService : ILicenseService
         var validation = LicenseValidator.ValidateCreate(dto);
 
         if (validation.IsFailure)
-        {
             return Result<int>.FromValidationFailure(validation.Error);
-        }
+
+        if (!_currentUserService.IsLoggedIn ||
+            _currentUserService.UserId <= 0)
+            return Result<int>.FromFailure("Authenticated user is required.");
 
         var entity = LicenseMapper.ToEntity(dto);
+        entity.CreatedByUserID = _currentUserService.UserId;
 
         await _repository.AddLicenseAsync(entity);
 
-        // IMPORTANT: Repository only stages the entity. UnitOfWork persists it.
         var saved = await _unitOfWork.SaveChangesAsync();
 
         if (saved <= 0 || entity.LicenseID <= 0)
-        {
             return Result<int>.FromFailure("Failed to create license.");
-        }
 
         return Result<int>.Success(entity.LicenseID);
     }

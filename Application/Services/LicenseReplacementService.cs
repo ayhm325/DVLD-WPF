@@ -219,10 +219,9 @@ public class LicenseReplacementService : ILicenseReplacementService
                         now,
 
                     PaidFees =
-                        applicationType.ApplicationTypeFees,
+                        applicationType.ApplicationTypeFees
 
-                    CreatedByUserID =
-                        _currentUserService.UserId
+                    
                 };
 
             var applicationResult =
@@ -285,10 +284,9 @@ public class LicenseReplacementService : ILicenseReplacementService
                         true,
 
                     IssueReason =
-                        (byte)issueReason,
+                        (byte)issueReason
 
-                    CreatedByUserID =
-                        _currentUserService.UserId
+                   
                 };
 
             var newLicense =

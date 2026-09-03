@@ -36,10 +36,7 @@ public static class DetainedLicenseValidator
             errors.Add(
                 "Fine fees exceed the allowed value.");
 
-        if (dto.CreatedByUserID <= 0)
-            errors.Add(
-                "A valid creating user is required.");
-
+      
         return CreateResult(errors);
     }
 

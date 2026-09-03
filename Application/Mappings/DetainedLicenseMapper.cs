@@ -73,37 +73,20 @@ public static class DetainedLicenseMapper
     // CREATE DTO -> ENTITY
     // =========================================================
 
-    public static DetainedLicense
-        ToEntity(
-            CreateDetainedLicenseDto dto)
+    public static DetainedLicense ToEntity(
+     CreateDetainedLicenseDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
         return new DetainedLicense
         {
-            LicenseID =
-                dto.LicenseID,
-
-            DetainDate =
-                dto.DetainDate,
-
-            FineFees =
-                dto.FineFees,
-
-            CreatedByUserID =
-                dto.CreatedByUserID,
-
-            IsReleased =
-                false,
-
-            ReleaseDate =
-                null,
-
-            ReleasedByUserID =
-                null,
-
-            ReleaseApplicationID =
-                null
+            LicenseID = dto.LicenseID,
+            DetainDate = dto.DetainDate,
+            FineFees = dto.FineFees,
+            IsReleased = false,
+            ReleaseDate = null,
+            ReleasedByUserID = null,
+            ReleaseApplicationID = null
         };
     }
 }

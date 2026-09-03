@@ -332,10 +332,9 @@ public partial class ReleaseDetainedViewModel : ObservableObject
                         DateTime.Now,
 
                     PaidFees =
-                        ApplicationFees,
+                        ApplicationFees
 
-                    CreatedByUserID =
-                        _currentUserService.UserId
+                    
                 };
 
 

@@ -183,10 +183,9 @@ public class LicenseRenewalService : ILicenseRenewalService
                         now,
 
                     PaidFees =
-                        applicationType.ApplicationTypeFees,
+                        applicationType.ApplicationTypeFees
 
-                    CreatedByUserID =
-                        currentUserId
+                   
                 };
 
             var applicationResult =
@@ -253,10 +252,9 @@ public class LicenseRenewalService : ILicenseRenewalService
                         true,
 
                     IssueReason =
-                        (byte)IssueReason.Renew,
+                        (byte)IssueReason.Renew
 
-                    CreatedByUserID =
-                        currentUserId
+                    
                 };
 
             var newLicense =

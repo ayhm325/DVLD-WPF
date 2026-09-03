@@ -117,10 +117,9 @@ public static class ApplicationMapper
                 dto.LastStatusDate,
 
             PaidFees =
-                dto.PaidFees,
+                dto.PaidFees
 
-            CreatedByUserID =
-                dto.CreatedByUserID
+            
         };
     }
 }

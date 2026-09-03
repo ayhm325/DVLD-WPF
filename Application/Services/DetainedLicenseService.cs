@@ -11,26 +11,25 @@ public class DetainedLicenseService : IDetainedLicenseService
     private readonly IDetainedLicenseRepository _repository;
     private readonly ILicenseRepository _licenseRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
 
     public DetainedLicenseService(
-        IDetainedLicenseRepository repository,
-        ILicenseRepository licenseRepository,
-        IUnitOfWork unitOfWork)
+    IDetainedLicenseRepository repository,
+    ILicenseRepository licenseRepository,
+    IUnitOfWork unitOfWork,
+    ICurrentUserService currentUserService)
     {
-        _repository =
-            repository
-            ?? throw new ArgumentNullException(
-                nameof(repository));
+        _repository = repository
+            ?? throw new ArgumentNullException(nameof(repository));
 
-        _licenseRepository =
-            licenseRepository
-            ?? throw new ArgumentNullException(
-                nameof(licenseRepository));
+        _licenseRepository = licenseRepository
+            ?? throw new ArgumentNullException(nameof(licenseRepository));
 
-        _unitOfWork =
-            unitOfWork
-            ?? throw new ArgumentNullException(
-                nameof(unitOfWork));
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
+
+        _currentUserService = currentUserService
+            ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
     // =========================================================
@@ -143,9 +142,7 @@ public class DetainedLicenseService : IDetainedLicenseService
     // CREATE DETENTION
     // =========================================================
 
-    public async Task<Result<DetainedLicenseDto>>
-        AddAsync(
-            CreateDetainedLicenseDto dto)
+    public async Task<Result<DetainedLicenseDto>>AddAsync(CreateDetainedLicenseDto dto)
     {
         // -----------------------------------------------------
         // VALIDATION
@@ -205,6 +202,13 @@ public class DetainedLicenseService : IDetainedLicenseService
                     "License already detained.");
         }
 
+
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
+        {
+            return Result<DetainedLicenseDto>
+                .FromFailure("Authenticated user is required.");
+        }
+
         // -----------------------------------------------------
         // BEGIN TRANSACTION
         //
@@ -226,12 +230,11 @@ public class DetainedLicenseService : IDetainedLicenseService
             // CREATE DETENTION
             // -------------------------------------------------
 
-            var entity =
-                DetainedLicenseMapper
-                    .ToEntity(dto);
+            var entity = DetainedLicenseMapper.ToEntity(dto);
 
-            await _repository
-                .AddAsync(entity);
+            entity.CreatedByUserID = _currentUserService.UserId;
+
+            await _repository.AddAsync(entity);
 
             // -------------------------------------------------
             // DEACTIVATE LICENSE

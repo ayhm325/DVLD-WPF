@@ -81,32 +81,18 @@ public static class InternationalLicenseMapper
     // =========================================================
 
     public static InternationalLicense ToEntity(
-        CreateInternationalLicenseDto dto)
+    CreateInternationalLicenseDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
         return new InternationalLicense
         {
-            ApplicationID =
-                dto.ApplicationID,
-
-            DriverID =
-                dto.DriverID,
-
-            IssuedUsingLocalLicenseID =
-                dto.IssuedUsingLocalLicenseID,
-
-            IssueDate =
-                dto.IssueDate,
-
-            ExpirationDate =
-                dto.ExpirationDate,
-
-            IsActive =
-                dto.IsActive,
-
-            CreatedByUserID =
-                dto.CreatedByUserID
+            ApplicationID = dto.ApplicationID,
+            DriverID = dto.DriverID,
+            IssuedUsingLocalLicenseID = dto.IssuedUsingLocalLicenseID,
+            IssueDate = dto.IssueDate,
+            ExpirationDate = dto.ExpirationDate,
+            IsActive = dto.IsActive
         };
     }
 

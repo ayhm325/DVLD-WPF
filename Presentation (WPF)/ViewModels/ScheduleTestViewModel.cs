@@ -394,10 +394,9 @@ namespace Presentation.ViewModels
                                 DateTime.Now,
 
                             PaidFees =
-                                TotalFees,
+                                TotalFees
 
-                            CreatedByUserID =
-                                _currentUserService.UserId
+                           
                         };
 
                     // -------------------------------------------------

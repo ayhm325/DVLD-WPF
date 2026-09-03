@@ -64,9 +64,7 @@ public static class LicenseValidator
                 "Invalid license issue reason.");
         }
 
-        if (dto.CreatedByUserID <= 0)
-            errors.Add(
-                "A valid creating user is required.");
+        
 
         return CreateResult(errors);
     }

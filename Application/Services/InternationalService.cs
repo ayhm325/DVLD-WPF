@@ -168,27 +168,39 @@ public class InternationalService : IInternationalService
 
     public async Task<Result> AddAsync(CreateInternationalLicenseDto dto)
     {
-        var validation = InternationalLicenseValidator.ValidateCreate(dto);
+        var validation =
+            InternationalLicenseValidator.ValidateCreate(dto);
 
         if (validation.IsFailure)
-        {
             return Result.ValidationFailure(validation.Error);
-        }
 
-        if (await _repository.ExistsByLocalLicenseAsync(dto.IssuedUsingLocalLicenseID))
+        if (!_currentUserService.IsLoggedIn ||
+            _currentUserService.UserId <= 0)
+            return Result.Failure("Authenticated user is required.");
+
+        if (await _repository
+            .ExistsByLocalLicenseAsync(dto.IssuedUsingLocalLicenseID))
         {
-            return Result.Conflict("An international license already exists for this local license.");
+            return Result.Conflict(
+                "An international license already exists for this local license.");
         }
 
-        var entity = InternationalLicenseMapper.ToEntity(dto);
+        var entity =
+            InternationalLicenseMapper.ToEntity(dto);
+
+        entity.CreatedByUserID =
+            _currentUserService.UserId;
 
         await _repository.AddAsync(entity);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved =
+            await _unitOfWork.SaveChangesAsync();
 
-        if (saved <= 0 || entity.InternationalLicenseID <= 0)
+        if (saved <= 0 ||
+            entity.InternationalLicenseID <= 0)
         {
-            return Result.Failure("Failed to save international license.");
+            return Result.Failure(
+                "Failed to save international license.");
         }
 
         return Result.Success();
@@ -413,8 +425,8 @@ public class InternationalService : IInternationalService
                 ApplicationTypeID = applicationType.ApplicationTypeId,
                 ApplicationStatus = AppStatus.New,
                 LastStatusDate = now,
-                PaidFees = applicationType.ApplicationTypeFees,
-                CreatedByUserID = _currentUserService.UserId
+                PaidFees = applicationType.ApplicationTypeFees
+               
             };
 
             var applicationResult = await _applicationService.AddNewApplicationAsync(application);
@@ -443,8 +455,7 @@ public class InternationalService : IInternationalService
                 IssuedUsingLocalLicenseID = license.LicenseID,
                 IssueDate = now,
                 ExpirationDate = now.AddYears(1),
-                IsActive = true,
-                CreatedByUserID = _currentUserService.UserId
+                IsActive = true                
             };
 
             await _repository.AddAsync(internationalLicense);
@@ -569,4 +580,6 @@ public class InternationalService : IInternationalService
 
         return Result<DriverLicenseInfoDto>.Success(dto);
     }
+
+
 }

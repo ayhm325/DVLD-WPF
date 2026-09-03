@@ -16,5 +16,5 @@ public class CreateApplicationDto
 
     public decimal PaidFees { get; set; }
 
-    public int CreatedByUserID { get; set; }
+    
 }
