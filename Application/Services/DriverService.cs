@@ -119,6 +119,12 @@ public class DriverService : IDriverService
         if (validation.IsFailure)
             return Result.Failure(validation.Error);
 
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
+        {
+            return Result.ValidationFailure(
+                "You must be logged in first.");
+        }
+
         var existing = await _repository.GetByIdAsync(dto.DriverID);
 
         if (existing is null)
@@ -149,6 +155,12 @@ public class DriverService : IDriverService
 
         if (validation.IsFailure)
             return Result.ValidationFailure(validation.Error);
+
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
+        {
+            return Result.ValidationFailure(
+                "You must be logged in first.");
+        }
 
         if (!await _repository.ExistsByIdAsync(id))
             return Result.NotFound("Driver not found.");

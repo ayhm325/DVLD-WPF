@@ -200,8 +200,12 @@ public class TestAppointmentService : ITestAppointmentService
             return Result.ValidationFailure("You must be logged in first.");
 
         var entity = await _repository.GetByIdAsync(dto.TestAppointmentID);
+
         if (entity is null)
             return Result.NotFound("Appointment not found.");
+
+        if (entity.CreatedByUserID != _currentUserService.UserId)
+            return Result.Forbidden("You are not allowed to modify this appointment.");
 
         if (entity.IsLocked)
             return Result.Conflict("Cannot modify a locked appointment.");
@@ -257,6 +261,9 @@ public class TestAppointmentService : ITestAppointmentService
         var entity = await _repository.GetByIdAsync(id);
         if (entity is null)
             return Result.NotFound("Appointment not found.");
+
+        if (entity.CreatedByUserID != _currentUserService.UserId)
+            return Result.Forbidden("You are not allowed to delete this appointment.");
 
         if (entity.IsLocked)
             return Result.Conflict("Cannot delete a locked appointment.");

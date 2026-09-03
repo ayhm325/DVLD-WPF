@@ -253,10 +253,9 @@ namespace Presentation.ViewModels
                     Notes =
                         string.IsNullOrWhiteSpace(Notes)
                             ? null
-                            : Notes.Trim(),
+                            : Notes.Trim()
 
-                    CreatedByUserID =
-                        _currentUser.UserId
+                    
                 };
 
             try

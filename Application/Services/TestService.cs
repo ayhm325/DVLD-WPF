@@ -472,6 +472,14 @@ public TestService(
                     "Test appointment not found.");
         }
 
+        var canTakeTestResult = await _workflowService
+            .CanTakeTestAsync(entity.TestAppointmentID);
+
+        if (canTakeTestResult.IsFailure)
+        {
+            return Result.Conflict(canTakeTestResult.Error);
+        }
+
         // -----------------------------------------------------
         // LOCKED RESULT
         // -----------------------------------------------------

@@ -380,9 +380,7 @@ public class DetainedLicenseService : IDetainedLicenseService
 
             entity.ReleaseDate =
                 dto.ReleaseDate;
-
-            entity.ReleasedByUserID =
-                dto.ReleasedByUserID;
+           
 
             entity.ReleaseApplicationID =
                 dto.ReleaseApplicationID;
@@ -416,162 +414,62 @@ public class DetainedLicenseService : IDetainedLicenseService
     // =========================================================
     // RELEASE
     // =========================================================
-
-    public async Task<Result>
-        ReleaseAsync(
-            ReleaseDetainedLicenseDto dto)
+   
+    public async Task<Result> ReleaseAsync(ReleaseDetainedLicenseDto dto)
     {
-        // -----------------------------------------------------
-        // VALIDATION
-        // -----------------------------------------------------
-
-        var validation =
-            DetainedLicenseValidator
-                .ValidateRelease(dto);
-
+        var validation = DetainedLicenseValidator.ValidateRelease(dto);
         if (validation.IsFailure)
-        {
-            return Result
-                .ValidationFailure(
-                    validation.Error);
-        }
+            return Result.ValidationFailure(validation.Error);
 
-        // -----------------------------------------------------
-        // LOAD DETENTION
-        // -----------------------------------------------------
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
+            return Result.Failure("Authenticated user is required.");
 
-        var entity =
-            await _repository
-                .GetByIdAsync(
-                    dto.DetainID);
+        var entity = await _repository.GetByIdAsync(dto.DetainID);
 
         if (entity is null)
-        {
-            return Result
-                .NotFound(
-                    "Detained license not found.");
-        }
-
-        // -----------------------------------------------------
-        // PREVENT DUPLICATE RELEASE
-        // -----------------------------------------------------
+            return Result.NotFound("Detained license not found.");
 
         if (entity.IsReleased)
-        {
-            return Result
-                .Conflict(
-                    "License already released.");
-        }
+            return Result.Conflict("License already released.");
 
-        // -----------------------------------------------------
-        // LOAD LICENSE
-        // -----------------------------------------------------
-
-        var license =
-            await _licenseRepository
-                .GetLicenseByIdAsync(
-                    entity.LicenseID);
+        var license = await _licenseRepository.GetLicenseByIdAsync(entity.LicenseID);
 
         if (license is null)
-        {
-            return Result
-                .NotFound(
-                    "Associated license not found.");
-        }
+            return Result.NotFound("Associated license not found.");
 
-        // -----------------------------------------------------
-        // BEGIN TRANSACTION
-        //
-        // Both operations must succeed together:
-        //
-        // 1. Mark detention as released
-        // 2. Restore license active state
-        //
-        // If either fails -> rollback both.
-        // -----------------------------------------------------
-
-        await using var transaction =
-            await _unitOfWork
-                .BeginTransactionAsync();
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
 
         try
         {
-            // -------------------------------------------------
-            // RELEASE DETENTION
-            // -------------------------------------------------
-
             entity.IsReleased = true;
+            entity.ReleaseDate = DateTime.UtcNow;
 
-            entity.ReleaseDate =
-                DateTime.Now;
+            // Server-controlled: never trust the client.
+            entity.ReleasedByUserID = _currentUserService.UserId;
+            entity.ReleaseApplicationID = dto.ReleaseApplicationID;
 
-            entity.ReleasedByUserID =
-                dto.ReleasedByUserID;
+            await _repository.UpdateAsync(entity);
 
-            entity.ReleaseApplicationID =
-                dto.ReleaseApplicationID;
+            license.IsActive = license.ExpirationDate >= DateTime.UtcNow;
 
-            await _repository
-                .UpdateAsync(entity);
+            if (!await _licenseRepository.UpdateLicenseAsync(license))
+                return Result.Failure(
+                    "Failed to restore the license active state.");
 
-            // -------------------------------------------------
-            // RESTORE LICENSE ACTIVE STATE
-            //
-            // If the license is still valid -> active.
-            // If it expired while detained -> remain inactive.
-            // -------------------------------------------------
+            if (await _unitOfWork.SaveChangesAsync() <= 0)
+                return Result.Failure("Failed to save license release.");
 
-            license.IsActive =
-                license.ExpirationDate >= DateTime.Now;
-
-            var licenseUpdated =
-                await _licenseRepository
-                    .UpdateLicenseAsync(
-                        license);
-
-            if (!licenseUpdated)
-            {
-                await transaction
-                    .RollbackAsync();
-
-                return Result
-                    .Failure(
-                        "Failed to restore the license active state.");
-            }
-
-            // -------------------------------------------------
-            // SAVE BOTH CHANGES
-            // -------------------------------------------------
-
-            var saved =
-                await _unitOfWork
-                    .SaveChangesAsync();
-
-            if (saved <= 0)
-            {
-                await transaction
-                    .RollbackAsync();
-
-                return Result
-                    .Failure(
-                        "Failed to save license release.");
-            }
-
-            // -------------------------------------------------
-            // COMMIT
-            // -------------------------------------------------
-
-            await transaction
-                .CommitAsync();
+            await transaction.CommitAsync();
 
             return Result.Success();
         }
-        catch
+        catch (Exception ex)
         {
-            await transaction
-                .RollbackAsync();
+            try { await transaction.RollbackAsync(); }
+            catch { }
 
-            throw;
+            return Result.Failure(
+                $"Failed to release detained license: {ex.Message}");
         }
     }
 }

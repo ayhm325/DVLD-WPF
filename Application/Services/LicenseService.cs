@@ -215,6 +215,12 @@ public class LicenseService : ILicenseService
 
         var validation = LicenseValidator.ValidateUpdate(dto);
 
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
+        {
+            return Result.ValidationFailure(
+                "You must be logged in first.");
+        }
+
         if (validation.IsFailure)
         {
             return Result.ValidationFailure(validation.Error);
@@ -257,6 +263,12 @@ public class LicenseService : ILicenseService
         if (validation.IsFailure)
         {
             return Result.ValidationFailure(validation.Error);
+        }
+
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
+        {
+            return Result.ValidationFailure(
+                "You must be logged in first.");
         }
 
         var exists = await _repository.IsLicenseExistsAsync(id);

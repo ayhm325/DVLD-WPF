@@ -164,8 +164,7 @@ public class TestAppointmentRepository : ITestAppointmentRepository
         existing.TestTypeID = appointment.TestTypeID;
         existing.LocalDrivingLicenseApplicationID = appointment.LocalDrivingLicenseApplicationID;
         existing.AppointmentDate = appointment.AppointmentDate;
-        existing.PaidFees = appointment.PaidFees;
-        existing.CreatedByUserID = appointment.CreatedByUserID;
+        existing.PaidFees = appointment.PaidFees;       
         existing.IsLocked = appointment.IsLocked;
         existing.RetakeTestApplicationID = appointment.RetakeTestApplicationID;
 

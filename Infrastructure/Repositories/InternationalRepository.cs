@@ -188,9 +188,7 @@ public class InternationalRepository
     // UPDATE
     // =========================================================
 
-    public async Task<bool>
-        UpdateAsync(
-            InternationalLicense entity)
+    public async Task<bool> UpdateAsync(InternationalLicense entity)
     {
         ArgumentNullException.ThrowIfNull(
             entity);
@@ -226,11 +224,7 @@ public class InternationalRepository
 
         existing.IsActive =
             entity.IsActive;
-
-        existing.CreatedByUserID =
-            entity.CreatedByUserID;
-
-        // No SaveChangesAsync.
+        
 
         return true;
     }

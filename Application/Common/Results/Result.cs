@@ -47,6 +47,9 @@ public class Result
             error,
             ErrorType.NotFound);
 
+    public static Result Forbidden(string error)
+         => new(false, error, ErrorType.Forbidden);
+
     public static Result Conflict(
         string error)
         => new(

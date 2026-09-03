@@ -380,10 +380,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
                 new ReleaseDetainedLicenseDto
                 {
                     DetainID =
-                        Release.DetainID,
-
-                    ReleasedByUserID =
-                        _currentUserService.UserId,
+                        Release.DetainID,                    
 
                     ReleaseApplicationID =
                         newApplicationId

@@ -1,11 +1,13 @@
 using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DVLD.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class PeopleController : ControllerBase
 {
@@ -99,9 +101,12 @@ public class PeopleController : ControllerBase
             ErrorType.Conflict =>
                 Conflict(new { error = result.Error }),
 
+            ErrorType.Forbidden =>
+                StatusCode(StatusCodes.Status403Forbidden,
+                    new { error = result.Error }),
+
             _ =>
-                StatusCode(
-                    StatusCodes.Status500InternalServerError,
+                StatusCode(StatusCodes.Status500InternalServerError,
                     new { error = result.Error })
         };
     }

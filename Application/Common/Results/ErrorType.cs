@@ -1,10 +1,9 @@
-﻿namespace Application.Common.Results;
-
-public enum ErrorType
+﻿public enum ErrorType
 {
     None,
     Validation,
     NotFound,
     Conflict,
+    Forbidden,
     Failure
 }
