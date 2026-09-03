@@ -1,4 +1,6 @@
-﻿namespace Application.Interfaces;
+﻿using System.Data;
+
+namespace Application.Interfaces;
 
 public interface IUnitOfWork
 {
@@ -6,5 +8,9 @@ public interface IUnitOfWork
         CancellationToken cancellationToken = default);
 
     Task<IUnitOfWorkTransaction> BeginTransactionAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<IUnitOfWorkTransaction> BeginTransactionAsync(
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default);
 }

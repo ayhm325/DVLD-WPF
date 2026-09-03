@@ -268,12 +268,8 @@ public partial class ReplacementDamagedLicenseViewModel
             // REPLACEMENT SERVICE
             // =================================================
 
-            var replaceResult =
-                await _licenseReplacementService
-                    .ReplaceLicenseAsync(
-                        LicenseInfo.LicenseId,
-                        ReplacementReason,
-                        ApplicationTypeId);
+            var replaceResult = await _licenseReplacementService
+                .ReplaceLicenseAsync( LicenseInfo.LicenseId,ReplacementReason);
 
 
             if (replaceResult.IsFailure)

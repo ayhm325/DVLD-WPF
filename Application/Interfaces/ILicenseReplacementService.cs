@@ -5,7 +5,6 @@ namespace Application.Interfaces;
 public interface ILicenseReplacementService
 {
     Task<Result<int>> ReplaceLicenseAsync(
-    int oldLicenseId,
-    string replacementReason,
-    int applicationTypeId);
+        int oldLicenseId,
+        string replacementReason);
 }
