@@ -158,6 +158,25 @@ public class LicenseRepository : ILicenseRepository
     }
 
     // =========================================================
+    // ACTIVE LICENSE EXISTS
+    // =========================================================
+
+    public async Task<bool> IsActiveLicenseExistsAsync(
+    int driverId,
+    int licenseClassId)
+    {
+        if (driverId <= 0 || licenseClassId <= 0)
+            return false;
+
+        return await _context.Licenses
+            .AsNoTracking()
+            .AnyAsync(l =>
+                l.DriverID == driverId &&
+                l.LicenseClass == licenseClassId &&
+                l.IsActive);
+    }
+
+    // =========================================================
     // APPLICATION HAS LICENSE
     // =========================================================
 

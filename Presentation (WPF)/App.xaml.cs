@@ -102,6 +102,8 @@ namespace DVLD_WPF
             // =====================================================
             // 4. APPLICATION SERVICES
             // =====================================================
+            services.AddScoped<IAuthService, AuthService>();
+           
 
             services.AddSingleton<IWindowService, WindowService>();
             services.AddSingleton<ICurrentUserService, CurrentUserService>();

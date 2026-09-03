@@ -16,7 +16,10 @@ namespace Infrastructure.Configurations
             builder.HasIndex(l => l.ApplicationID)
                 .IsUnique();
 
-
+            // Unique Driver → LicenseClass (Active Licenses Only)
+            builder.HasIndex(l => new { l.DriverID, l.LicenseClass })
+                .HasFilter("[IsActive] = 1")
+                .IsUnique();
 
             // Properties
 

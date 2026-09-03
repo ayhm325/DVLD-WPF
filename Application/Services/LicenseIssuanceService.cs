@@ -150,6 +150,13 @@ public class LicenseIssuanceService : ILicenseIssuanceService
             if (driverValidation.IsFailure)
                 return Result<int>.FromValidationFailure(driverValidation.Error);
 
+            var activeLicenseExists = await _repository.IsActiveLicenseExistsAsync(
+                driverId,localApp.LicenseClassID);
+
+            if (activeLicenseExists)
+                return Result<int>.FromConflict(
+                    "The driver already has an active license for this license class.");
+
             var now = DateTime.UtcNow;
             var createLicenseDto = new CreateLicenseDto
             {

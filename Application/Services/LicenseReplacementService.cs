@@ -36,6 +36,7 @@ public class LicenseReplacementService : ILicenseReplacementService
         int applicationTypeId)
     {
         var validation = LicenseValidator.ValidateId(oldLicenseId);
+
         if (validation.IsFailure)
             return Result<int>.FromValidationFailure(validation.Error);
 
@@ -52,6 +53,7 @@ public class LicenseReplacementService : ILicenseReplacementService
         var normalizedReason = replacementReason.Trim();
 
         var oldLicense = await _licenseRepository.GetLicenseByIdAsync(oldLicenseId);
+
         if (oldLicense is null)
             return Result<int>.FromNotFound("License not found.");
 
@@ -59,30 +61,45 @@ public class LicenseReplacementService : ILicenseReplacementService
             return Result<int>.FromConflict("Cannot replace an inactive license.");
 
         if (oldLicense.Driver is null)
-            return Result<int>.FromFailure("The license is not associated with a valid driver.");
+            return Result<int>.FromFailure(
+                "The license is not associated with a valid driver.");
 
         if (oldLicense.LicenseClassInfo is null)
-            return Result<int>.FromFailure("The license is not associated with a valid license class.");
+            return Result<int>.FromFailure(
+                "The license is not associated with a valid license class.");
 
-        var issueReason = normalizedReason.Equals("Lost License", StringComparison.OrdinalIgnoreCase)
-            ? IssueReason.ReplacementForLost
-            : normalizedReason.Equals("Damaged License", StringComparison.OrdinalIgnoreCase)
-                ? IssueReason.ReplacementForDamaged
-                : (IssueReason?)null;
+        var issueReason =
+            normalizedReason.Equals(
+                "Lost License",
+                StringComparison.OrdinalIgnoreCase)
+                ? IssueReason.ReplacementForLost
+                : normalizedReason.Equals(
+                    "Damaged License",
+                    StringComparison.OrdinalIgnoreCase)
+                    ? IssueReason.ReplacementForDamaged
+                    : (IssueReason?)null;
 
         if (issueReason is null)
+        {
             return Result<int>.FromValidationFailure(
                 "Invalid replacement reason. Allowed reasons are Lost License or Damaged License.");
+        }
 
-        var applicationTypeResult = await _applicationTypeService.GetApplicationTypeByIdAsync(applicationTypeId);
+        var applicationTypeResult =
+            await _applicationTypeService.GetApplicationTypeByIdAsync(
+                applicationTypeId);
+
         if (applicationTypeResult.IsFailure)
             return Result<int>.FromFailure(applicationTypeResult.Error);
 
         if (applicationTypeResult.Value is null)
             return Result<int>.FromNotFound("Application type not found.");
 
+        var applicationType = applicationTypeResult.Value;
         var now = DateTime.UtcNow;
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+
+        await using var transaction =
+            await _unitOfWork.BeginTransactionAsync();
 
         try
         {
@@ -93,16 +110,36 @@ public class LicenseReplacementService : ILicenseReplacementService
                 ApplicationTypeID = applicationTypeId,
                 ApplicationStatus = AppStatus.New,
                 LastStatusDate = now,
-                PaidFees = applicationTypeResult.Value.ApplicationTypeFees
+                PaidFees = applicationType.ApplicationTypeFees
             };
 
-            var applicationResult = await _applicationService.AddNewApplicationAsync(createApplicationDto);
+            var applicationResult =
+                await _applicationService.AddNewApplicationAsync(
+                    createApplicationDto);
 
             if (applicationResult.IsFailure)
                 return Result<int>.FromFailure(applicationResult.Error);
 
             if (applicationResult.Value <= 0)
-                return Result<int>.FromFailure("Failed to create replacement application.");
+                return Result<int>.FromFailure(
+                    "Failed to create replacement application.");
+
+            // Deactivate the old license first.
+            // The database allows only one active license
+            // per Driver + LicenseClass.
+            oldLicense.IsActive = false;
+
+            if (!await _licenseRepository.UpdateLicenseAsync(oldLicense))
+            {
+                return Result<int>.FromFailure(
+                    "Failed to deactivate the old license.");
+            }
+
+            if (await _unitOfWork.SaveChangesAsync() <= 0)
+            {
+                return Result<int>.FromFailure(
+                    "Failed to save the old license status.");
+            }
 
             var createLicenseDto = new CreateLicenseDto
             {
@@ -117,40 +154,50 @@ public class LicenseReplacementService : ILicenseReplacementService
                 IssueReason = (byte)issueReason.Value
             };
 
-            var licenseValidation = LicenseValidator.ValidateCreate(createLicenseDto);
+            var licenseValidation =
+                LicenseValidator.ValidateCreate(createLicenseDto);
+
             if (licenseValidation.IsFailure)
-                return Result<int>.FromValidationFailure(licenseValidation.Error);
+            {
+                return Result<int>.FromValidationFailure(
+                    licenseValidation.Error);
+            }
 
             var newLicense = LicenseMapper.ToEntity(createLicenseDto);
             newLicense.CreatedByUserID = currentUserId;
 
             await _licenseRepository.AddLicenseAsync(newLicense);
 
-            if (await _unitOfWork.SaveChangesAsync() <= 0 || newLicense.LicenseID <= 0)
-                return Result<int>.FromFailure("Failed to save the replacement license.");
+            if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                newLicense.LicenseID <= 0)
+            {
+                return Result<int>.FromFailure(
+                    "Failed to save the replacement license.");
+            }
 
-            oldLicense.IsActive = false;
-
-            if (!await _licenseRepository.UpdateLicenseAsync(oldLicense))
-                return Result<int>.FromFailure("Failed to deactivate the old license.");
-
-            if (await _unitOfWork.SaveChangesAsync() <= 0)
-                return Result<int>.FromFailure("Failed to save the old license status.");
-
-            var completeResult = await _applicationService.CompleteApplicationAsync(applicationResult.Value);
+            var completeResult =
+                await _applicationService.CompleteApplicationAsync(
+                    applicationResult.Value);
 
             if (completeResult.IsFailure)
                 return Result<int>.FromFailure(completeResult.Error);
 
             await transaction.CommitAsync();
+
             return Result<int>.Success(newLicense.LicenseID);
         }
         catch (Exception ex)
         {
-            try { await transaction.RollbackAsync(); }
-            catch { }
+            try
+            {
+                await transaction.RollbackAsync();
+            }
+            catch
+            {
+            }
 
-            return Result<int>.FromFailure($"Failed to replace license: {ex.Message}");
+            return Result<int>.FromFailure(
+                $"Failed to replace license: {ex.Message}");
         }
     }
 }
