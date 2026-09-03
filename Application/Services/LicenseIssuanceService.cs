@@ -159,6 +159,13 @@ public class LicenseIssuanceService : ILicenseIssuanceService
                 return Result<int>.FromFailure(completeResult.Error);
             }
 
+            if (await _unitOfWork.SaveChangesAsync() <= 0)
+            {
+                await transaction.RollbackAsync();
+                return Result<int>.FromFailure(
+                    "Failed to complete the application.");
+            }
+
             await transaction.CommitAsync();
             return Result<int>.Success(license.LicenseID);
         }

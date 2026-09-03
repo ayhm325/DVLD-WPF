@@ -361,6 +361,19 @@ public class LicenseReplacementService : ILicenseReplacementService
                     completeResult.Error);
             }
 
+            var completedSaved =
+    await _unitOfWork.SaveChangesAsync();
+
+            if (completedSaved <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure(
+                    "Failed to complete replacement application.");
+            }
+
+           
+
             // =====================================================
             // 15. COMMIT
             // =====================================================

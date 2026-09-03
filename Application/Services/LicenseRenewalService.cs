@@ -332,17 +332,21 @@ public class LicenseRenewalService : ILicenseRenewalService
             // 13. Complete application
             // -------------------------------------------------
 
-            var completeResult =
-                await _applicationService
-                    .CompleteApplicationAsync(
-                        applicationId);
+            var completeResult = await _applicationService.CompleteApplicationAsync(applicationId);
 
             if (completeResult.IsFailure)
             {
                 await transaction.RollbackAsync();
 
-                return Result<int>.FromFailure(
-                    completeResult.Error);
+                return Result<int>.FromFailure(completeResult.Error);
+            }
+            var completedSaved = await _unitOfWork.SaveChangesAsync();
+
+            if (completedSaved <= 0)
+            {
+                await transaction.RollbackAsync();
+
+                return Result<int>.FromFailure("Failed to complete renewal application.");
             }
 
 
@@ -350,24 +354,20 @@ public class LicenseRenewalService : ILicenseRenewalService
             // 14. Commit transaction
             // -------------------------------------------------
 
-            await transaction
-                .CommitAsync();
+            await transaction.CommitAsync();
 
 
             // -------------------------------------------------
             // 15. Return new license ID
             // -------------------------------------------------
 
-            return Result<int>.Success(
-                newLicense.LicenseID);
+            return Result<int>.Success(newLicense.LicenseID);
         }
         catch (Exception ex)
         {
-            await transaction
-                .RollbackAsync();
+            await transaction.RollbackAsync();
 
-            return Result<int>.FromFailure(
-                $"Failed to renew license: {ex.Message}");
+            return Result<int>.FromFailure($"Failed to renew license: {ex.Message}");
         }
     }
 }

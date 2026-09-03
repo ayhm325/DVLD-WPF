@@ -518,9 +518,7 @@ public class ApplicationService
     // COMPLETE
     // =========================================================
 
-    public async Task<Result>
-        CompleteApplicationAsync(
-            int applicationId)
+    public async Task<Result> CompleteApplicationAsync(int applicationId)
     {
         var validation =
             ApplicationValidator
@@ -605,14 +603,6 @@ public class ApplicationService
         // SAVE
         // -----------------------------------------------------
 
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
-
-
-        return saved > 0
-            ? Result.Success()
-            : Result.Failure(
-                "Complete application failed.");
+        return Result.Success();
     }
 }

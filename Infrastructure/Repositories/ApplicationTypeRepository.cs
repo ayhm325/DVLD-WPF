@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,22 +9,13 @@ public class ApplicationTypeRepository
 {
     private readonly DVLDDbContext _context;
 
-    private readonly IDbContextFactory<DVLDDbContext>
-        _contextFactory;
-
     public ApplicationTypeRepository(
-        DVLDDbContext context,
-        IDbContextFactory<DVLDDbContext> contextFactory)
+        DVLDDbContext context)
     {
         _context =
             context
             ?? throw new ArgumentNullException(
                 nameof(context));
-
-        _contextFactory =
-            contextFactory
-            ?? throw new ArgumentNullException(
-                nameof(contextFactory));
     }
 
     // =========================================================
@@ -34,11 +25,7 @@ public class ApplicationTypeRepository
     public async Task<List<ApplicationType>>
         GetAllApplicationTypesAsync()
     {
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await context.ApplicationTypes
+        return await _context.ApplicationTypes
             .AsNoTracking()
             .OrderBy(x => x.ApplicationTypeId)
             .ToListAsync();
@@ -54,11 +41,7 @@ public class ApplicationTypeRepository
         if (id <= 0)
             return null;
 
-        await using var context =
-            await _contextFactory
-                .CreateDbContextAsync();
-
-        return await context.ApplicationTypes
+        return await _context.ApplicationTypes
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x =>
@@ -93,9 +76,7 @@ public class ApplicationTypeRepository
             .CurrentValues
             .SetValues(appType);
 
-        // IMPORTANT:
-        // No SaveChangesAsync here.
-        // UnitOfWork owns persistence.
+        // UnitOfWork owns SaveChangesAsync.
 
         return true;
     }

@@ -11,7 +11,7 @@ var connectionString = builder.Configuration.GetConnectionString("DVLDConnection
     ?? throw new InvalidOperationException(
         "Connection string 'DVLDConnection' was not found.");
 
-builder.Services.AddDbContextFactory<DVLDDbContext>(options =>
+builder.Services.AddDbContext<DVLDDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 // Repositories
