@@ -15,21 +15,21 @@ public class InternationalService : IInternationalService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IInternationalRepository _repository;
-    private readonly ILicenseService _licenseService;
+    private readonly ILicenseQueryService _licenseQueryService;
     private readonly IApplicationService _applicationService;
     private readonly IApplicationTypeService _applicationTypeService;
     private readonly ICurrentUserService _currentUserService;
 
     public InternationalService(
         IInternationalRepository repository,
-        ILicenseService licenseService,
+        ILicenseQueryService licenseQueryService,
         IApplicationService applicationService,
         IApplicationTypeService applicationTypeService,
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _licenseService = licenseService ?? throw new ArgumentNullException(nameof(licenseService));
+        _licenseQueryService = licenseQueryService ?? throw new ArgumentNullException(nameof(licenseQueryService));
         _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
         _applicationTypeService = applicationTypeService ?? throw new ArgumentNullException(nameof(applicationTypeService));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -310,7 +310,7 @@ public class InternationalService : IInternationalService
 
         var currentUserId = _currentUserService.UserId;
 
-        var licenseResult = await _licenseService.GetByIdAsync(localLicenseId);
+        var licenseResult = await _licenseQueryService.GetByIdAsync(localLicenseId);
         if (licenseResult.IsFailure)
             return Result<int>.FromFailure(licenseResult.Error);
 
@@ -432,7 +432,7 @@ public class InternationalService : IInternationalService
             return Result<DriverLicenseInfoDto>.FromValidationFailure(validation.Error);
         }
 
-        var licenseResult = await _licenseService.GetByIdAsync(licenseId);
+        var licenseResult = await _licenseQueryService.GetByIdAsync(licenseId);
 
         if (licenseResult.IsFailure)
         {

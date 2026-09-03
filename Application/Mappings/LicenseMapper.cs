@@ -74,23 +74,6 @@ public static class LicenseMapper
         };
     }
 
-    // UPDATE DTO -> ENTITY
-    public static License ToEntity(UpdateLicenseDto dto)
-    {
-        return new License
-        {
-            LicenseID = dto.LicenseID,
-            ApplicationID = dto.ApplicationID,
-            DriverID = dto.DriverID,
-            LicenseClass = dto.LicenseClassID,
-            IssueDate = dto.IssueDate,
-            ExpirationDate = dto.ExpirationDate,
-            Notes = string.IsNullOrWhiteSpace(dto.Notes)
-                ? null
-                : dto.Notes.Trim(),
-            PaidFees = dto.PaidFees,
-            IsActive = dto.IsActive,
-            IssueReason = dto.IssueReason
-        };
-    }
+    
+    
 }

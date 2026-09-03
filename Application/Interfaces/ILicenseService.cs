@@ -5,11 +5,8 @@ namespace Application.Interfaces;
 
 public interface ILicenseService
 {
-    // =========================================================
-    // GET
-    // =========================================================
+    Task<Result<LicenseDto>> GetByIdAsync(int licenseId);
 
-    Task<Result<LicenseDto>> GetByIdAsync(int id);
 
     Task<Result<List<LicenseDto>>> GetAllAsync();
 
@@ -24,13 +21,8 @@ public interface ILicenseService
 
     Task<Result<List<LicenseDto>>> GetLicensesByPersonIdAsync(
         int personId);
-    
-    // =========================================================
-    // CHECKS
-    // =========================================================
 
-    Task<Result<bool>> IsLicenseExistsAsync(
-        int id);
+    Task<Result<bool>> IsLicenseExistsAsync(int licenseId);
 
     Task<Result<bool>> IsDriverHasLicenseAsync(
         int driverId);
@@ -38,17 +30,4 @@ public interface ILicenseService
     Task<Result<bool>> IsApplicationHasLicenseAsync(
         int applicationId);
 
-
-    // =========================================================
-    // CRUD
-    // =========================================================
-
-    Task<Result<int>> AddAsync(
-        CreateLicenseDto dto);
-
-    Task<Result> UpdateAsync(
-        UpdateLicenseDto dto);
-
-    Task<Result> DeleteAsync(
-        int id);
 }
