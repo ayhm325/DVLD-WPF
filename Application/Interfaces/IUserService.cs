@@ -68,14 +68,7 @@ public interface IUserService
             int userId);
 
 
-    // =========================================================
-    // AUTHENTICATION
-    // =========================================================
-
-    Task<bool>
-        AuthenticateUserAsync(
-            string username,
-            string password);
+  
 
 
     // =========================================================
@@ -88,11 +81,5 @@ public interface IUserService
             ChangePasswordDto dto);
 
 
-    // =========================================================
-    // LOGIN
-    // =========================================================
-
-    Task<Result<UserDto>>
-        LoginAsync(
-            LoginRequestDto dto);
+   
 }

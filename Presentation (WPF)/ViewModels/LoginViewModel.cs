@@ -14,17 +14,17 @@ namespace Presentation.ViewModels
 {
     public partial class LoginViewModel : ObservableObject
     {
-        private readonly IUserService _userService;
+        private readonly IAuthService _authService;
         private readonly ICurrentUserService _currentUser;
         private readonly IServiceProvider _serviceProvider;
 
         public LoginViewModel(
-            IUserService userService,
-            ICurrentUserService currentUser,
-            IServiceProvider serviceProvider)
+    IAuthService authService,
+    ICurrentUserService currentUser,
+    IServiceProvider serviceProvider)
         {
-            _userService = userService
-                ?? throw new ArgumentNullException(nameof(userService));
+            _authService = authService
+                ?? throw new ArgumentNullException(nameof(authService));
 
             _currentUser = currentUser
                 ?? throw new ArgumentNullException(nameof(currentUser));
@@ -96,18 +96,17 @@ namespace Presentation.ViewModels
                 // LOGIN
                 // =========================
 
-                var userResult =
-                    await _userService.LoginAsync(loginDto);
+                var loginResult =await _authService.LoginAsync(loginDto);
 
 
                 // =========================
                 // LOGIN FAILED
                 // =========================
 
-                if (userResult.IsFailure)
+                if (loginResult.IsFailure)
                 {
                     MessageBox.Show(
-                        userResult.Error,
+                       loginResult.Error,
                         "Login Failed",
                         MessageBoxButton.OK,
                         MessageBoxImage.Warning);
@@ -120,7 +119,7 @@ namespace Presentation.ViewModels
                 // GET USER
                 // =========================
 
-                var user = userResult.Value!;
+                var user = loginResult.Value!;
 
 
                 // =========================
