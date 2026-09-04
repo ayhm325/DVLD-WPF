@@ -4,20 +4,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public class UserRepository : IUserRepository
+public sealed class UserRepository : IUserRepository
 {
     private readonly DVLDDbContext _context;
 
     public UserRepository(DVLDDbContext context)
     {
-        _context =context ?? throw new ArgumentNullException(nameof(context));
+        _context = context
+            ?? throw new ArgumentNullException(nameof(context));
     }
-
-    // =========================================================
-    // BASE QUERY
-    //
-    // Read-only queries use NoTracking.
-    // =========================================================
 
     private IQueryable<User> Query()
     {
@@ -26,263 +21,83 @@ public class UserRepository : IUserRepository
             .Include(u => u.Person);
     }
 
-    // =========================================================
-    // GET BY ID
-    // =========================================================
-
-    public async Task<User?>
-        GetUserByUserIdAsync(
-            int id)
+    public Task<User?> GetUserByUserIdAsync(int id)
     {
-        if (id <= 0)
-            return null;
-
-        return await Query()
+        return Query()
             .FirstOrDefaultAsync(
-                u =>
-                    u.UserId == id);
+                u => u.UserId == id);
     }
 
-    // =========================================================
-    // GET BY PERSON ID
-    // =========================================================
-
-    public async Task<User?>
-        GetUserByPersonIdAsync(
-            int personId)
+    public Task<User?> GetUserByPersonIdAsync(int personId)
     {
-        if (personId <= 0)
-            return null;
-
-        return await Query()
+        return Query()
             .FirstOrDefaultAsync(
-                u =>
-                    u.PersonId == personId);
+                u => u.PersonId == personId);
     }
 
-    // =========================================================
-    // GET BY USERNAME
-    // =========================================================
-
-    public async Task<User?>
-        GetUserByUsernameAsync(
-            string username)
+    public Task<User?> GetUserByUsernameAsync(
+        string username)
     {
-        if (string.IsNullOrWhiteSpace(username))
-            return null;
-
-        var normalizedUsername =
-            username.Trim();
-
-        return await Query()
+        return Query()
             .FirstOrDefaultAsync(
-                u =>
-                    u.UserName ==
-                    normalizedUsername);
+                u => u.UserName == username);
     }
 
-    // =========================================================
-    // GET ALL
-    // =========================================================
-
-    public async Task<List<User>>
-        GetAllUsersAsync()
+    public Task<List<User>> GetAllUsersAsync()
     {
-        return await Query()
-            .OrderBy(
-                u => u.UserId)
+        return Query()
+            .OrderBy(u => u.UserId)
             .ToListAsync();
     }
 
-    // =========================================================
-    // CHECK USERNAME
-    // =========================================================
-
-    public async Task<bool>
-        IsUsernameTakenAsync(
-            string username)
+    public Task<User?> GetUserForUpdateAsync(int id)
     {
-        if (string.IsNullOrWhiteSpace(username))
-            return false;
-
-        var normalizedUsername =
-            username.Trim();
-
-        return await _context.Users
-            .AsNoTracking()
-            .AnyAsync(
-                u =>
-                    u.UserName ==
-                    normalizedUsername);
+        return _context.Users
+            .FirstOrDefaultAsync(
+                u => u.UserId == id);
     }
 
-    // =========================================================
-    // CHECK USERNAME FOR ANOTHER USER
-    // =========================================================
-
-    public async Task<bool>
-        IsUsernameTakenForAnotherUserAsync(
-            string username,
-            int userId)
+    public Task<bool> IsUsernameTakenAsync(
+        string username)
     {
-        if (string.IsNullOrWhiteSpace(username) ||
-            userId <= 0)
-        {
-            return false;
-        }
+        return _context.Users
+            .AsNoTracking()
+            .AnyAsync(
+                u => u.UserName == username);
+    }
 
-        var normalizedUsername =
-            username.Trim();
-
-        return await _context.Users
+    public Task<bool> IsUsernameTakenForAnotherUserAsync(
+        string username,
+        int userId)
+    {
+        return _context.Users
             .AsNoTracking()
             .AnyAsync(
                 u =>
-                    u.UserName ==
-                    normalizedUsername &&
+                    u.UserName == username &&
                     u.UserId != userId);
     }
 
-    // =========================================================
-    // CHECK USER EXISTS
-    // =========================================================
-
-    public async Task<bool>
-        IsUserExistsByIdAsync(
-            int id)
+    public Task<bool> IsUserExistsByPersonIdAsync(
+        int personId)
     {
-        if (id <= 0)
-            return false;
-
-        return await _context.Users
+        return _context.Users
             .AsNoTracking()
             .AnyAsync(
-                u =>
-                    u.UserId == id);
+                u => u.PersonId == personId);
     }
 
-    // =========================================================
-    // CHECK PERSON HAS USER
-    // =========================================================
-
-    public async Task<bool> IsUserExistsByPersonIdAsync(int personId)
+    public async Task AddUserAsync(User user)
     {
-        if (personId <= 0)
-            return false;
+        ArgumentNullException.ThrowIfNull(user);
 
-        return await _context.Users
-            .AsNoTracking()
-            .AnyAsync(u => u.PersonId == personId);
+        await _context.Users.AddAsync(user);
     }
 
-    // =========================================================
-    // CREATE
-    // =========================================================
-
-    public async Task<int>
-        AddUserAsync(
-            User user)
+    public void DeleteUser(User user)
     {
-        ArgumentNullException.ThrowIfNull(
-            user);
+        ArgumentNullException.ThrowIfNull(user);
 
-        await _context.Users
-            .AddAsync(user);
-
-        // -----------------------------------------------------
-        // IMPORTANT
-        //
-        // No SaveChangesAsync here.
-        //
-        // UnitOfWork owns persistence.
-        // -----------------------------------------------------
-
-        return user.UserId;
-    }
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
-    public async Task<bool>
-        UpdateUserAsync(
-            User user)
-    {
-        ArgumentNullException.ThrowIfNull(
-            user);
-
-        if (user.UserId <= 0)
-            return false;
-
-        // -----------------------------------------------------
-        // LOAD TRACKED ENTITY
-        // -----------------------------------------------------
-
-        var existingUser =
-            await _context.Users
-                .FirstOrDefaultAsync(
-                    u =>
-                        u.UserId ==
-                        user.UserId);
-
-        if (existingUser is null)
-            return false;
-
-        // -----------------------------------------------------
-        // APPLY CHANGES
-        // -----------------------------------------------------
-
-        existingUser.PersonId = user.PersonId;
-
-        existingUser.UserName = user.UserName;
-
-        existingUser.Password = user.Password;
-
-        existingUser.IsActive = user.IsActive;
-
-        // -----------------------------------------------------
-        // IMPORTANT
-        //
-        // No SaveChangesAsync here.
-        //
-        // UnitOfWork owns persistence.
-        // -----------------------------------------------------
-
-        return true;
-    }
-
-    // =========================================================
-    // DELETE
-    // =========================================================
-
-    public async Task<bool>
-        DeleteUserAsync(
-            int id)
-    {
-        if (id <= 0)
-            return false;
-
-        var user =
-            await _context.Users
-                .FirstOrDefaultAsync(
-                    u =>
-                        u.UserId == id);
-
-        if (user is null)
-            return false;
-
-        _context.Users
-            .Remove(user);
-
-        // -----------------------------------------------------
-        // IMPORTANT
-        //
-        // No SaveChangesAsync here.
-        //
-        // Foreign-key violations, if any, will surface when
-        // UnitOfWork.SaveChangesAsync() is executed.
-        // -----------------------------------------------------
-
-        return true;
+        _context.Users.Remove(user);
     }
 }

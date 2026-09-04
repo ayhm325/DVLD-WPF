@@ -1,55 +1,30 @@
 ﻿using Domain.Entities;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IUserRepository
 {
-    public interface IUserRepository
-    {
-        // =========================
-        // GET OPERATIONS
-        // =========================
-
-        Task<User?> GetUserByUserIdAsync(int id);
-
-        Task<User?> GetUserByPersonIdAsync(int personId);
-
-        Task<User?> GetUserByUsernameAsync(string username);
-
-        Task<List<User>> GetAllUsersAsync();
+    Task<User?> GetUserByUserIdAsync(int id);
 
 
-        // =========================
-        // CHECK OPERATIONS
-        // =========================
+    Task<User?> GetUserByPersonIdAsync(int personId);
 
-        Task<bool> IsUsernameTakenAsync(string username);
+    Task<User?> GetUserByUsernameAsync(string username);
 
-        Task<bool> IsUsernameTakenForAnotherUserAsync(
-            string username,
-            int userId);
+    Task<List<User>> GetAllUsersAsync();
 
-        Task<bool> IsUserExistsByIdAsync(int id);
+    Task<User?> GetUserForUpdateAsync(int id);
 
-        Task<bool> IsUserExistsByPersonIdAsync(int personId);
+    Task<bool> IsUsernameTakenAsync(string username);
 
+    Task<bool> IsUsernameTakenForAnotherUserAsync(
+        string username,
+        int userId);
 
-        // =========================
-        // CREATE
-        // =========================
+    Task<bool> IsUserExistsByPersonIdAsync(int personId);
 
-        Task<int> AddUserAsync(User user);
+    Task AddUserAsync(User user);
 
+    void DeleteUser(User user);
 
-        // =========================
-        // UPDATE
-        // =========================
-
-        Task<bool> UpdateUserAsync(User user);
-
-
-        // =========================
-        // DELETE
-        // =========================
-
-        Task<bool> DeleteUserAsync(int id);
-    }
 }

@@ -1,85 +1,37 @@
-﻿
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.UserDTO;
 
 namespace Application.Interfaces;
 
 public interface IUserService
 {
-    // =========================================================
-    // GET
-    // =========================================================
-
-    Task<Result<List<UserDto>>>
-        GetAllUsersAsync();
-
-    Task<Result<UserDto>>
-        GetUserByIdAsync(
-            int id);
-
-    Task<Result<UserDto>>
-        GetUserByPersonIdAsync(
-            int personId);
-
-    Task<Result<UserDto>>
-        GetUserByUsernameAsync(
-            string username);
+    Task<Result<List<UserDto>>> GetAllUsersAsync();
 
 
-    // =========================================================
-    // CREATE
-    // =========================================================
+    Task<Result<UserDto>> GetUserByIdAsync(
+    int id);
 
-    Task<Result<int>>
-        AddUserAsync(
-            CreateUserDto dto);
+    Task<Result<UserDto>> GetUserByPersonIdAsync(
+        int personId);
 
+    Task<Result<UserDto>> GetUserByUsernameAsync(
+        string username);
 
-    // =========================================================
-    // UPDATE
-    // =========================================================
+    Task<Result<int>> AddUserAsync(
+        CreateUserDto dto);
 
-    Task<Result>
-        UpdateUserAsync(
-            int id,
-            UpdateUserDto dto);
+    Task<Result> UpdateUserAsync(
+        int id,
+        UpdateUserDto dto);
 
+    Task<Result> DeleteUserAsync(
+        int id);
 
-    // =========================================================
-    // DELETE
-    // =========================================================
+    Task<bool> IsUsernameTakenForAnotherUserAsync(
+        string username,
+        int userId);
 
-    Task<Result>
-        DeleteUserAsync(
-            int id);
-
-
-    // =========================================================
-    // CHECKS
-    // =========================================================
-
-    Task<bool>
-        IsUserExistsByIdAsync(
-            int id);
-
-    Task<bool>
-        IsUsernameTakenForAnotherUserAsync(
-            string username,
-            int userId);
-
-
-  
-
-
-    // =========================================================
-    // CHANGE PASSWORD
-    // =========================================================
-
-    Task<Result>
-        ChangePasswordAsync(
-            int userId,
-            ChangePasswordDto dto);
-
-
-   
+    Task<Result> ChangePasswordAsync(
+        int userId,
+        ChangePasswordDto dto);
 }

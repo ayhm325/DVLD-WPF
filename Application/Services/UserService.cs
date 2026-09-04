@@ -6,14 +6,14 @@ using Application.Validators;
 
 namespace Application.Services;
 
-public class UserService : IUserService
+public sealed class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public UserService(
-        IUserRepository userRepository,
-        IUnitOfWork unitOfWork)
+    IUserRepository userRepository,
+    IUnitOfWork unitOfWork)
     {
         _userRepository =
             userRepository
@@ -25,10 +25,6 @@ public class UserService : IUserService
             ?? throw new ArgumentNullException(
                 nameof(unitOfWork));
     }
-
-    // =========================================================
-    // GET ALL
-    // =========================================================
 
     public async Task<Result<List<UserDto>>>
         GetAllUsersAsync()
@@ -46,13 +42,8 @@ public class UserService : IUserService
             .Success(dtos);
     }
 
-    // =========================================================
-    // GET BY ID
-    // =========================================================
-
     public async Task<Result<UserDto>>
-        GetUserByIdAsync(
-            int id)
+        GetUserByIdAsync(int id)
     {
         if (id <= 0)
         {
@@ -77,13 +68,8 @@ public class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
-    // =========================================================
-    // GET BY PERSON ID
-    // =========================================================
-
     public async Task<Result<UserDto>>
-        GetUserByPersonIdAsync(
-            int personId)
+        GetUserByPersonIdAsync(int personId)
     {
         if (personId <= 0)
         {
@@ -94,8 +80,7 @@ public class UserService : IUserService
 
         var user =
             await _userRepository
-                .GetUserByPersonIdAsync(
-                    personId);
+                .GetUserByPersonIdAsync(personId);
 
         if (user is null)
         {
@@ -109,13 +94,8 @@ public class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
-    // =========================================================
-    // GET BY USERNAME
-    // =========================================================
-
     public async Task<Result<UserDto>>
-        GetUserByUsernameAsync(
-            string username)
+        GetUserByUsernameAsync(string username)
     {
         if (string.IsNullOrWhiteSpace(username))
         {
@@ -124,13 +104,13 @@ public class UserService : IUserService
                     "Username is required.");
         }
 
-        username =
+        var normalizedUsername =
             username.Trim();
 
         var user =
             await _userRepository
                 .GetUserByUsernameAsync(
-                    username);
+                    normalizedUsername);
 
         if (user is null)
         {
@@ -144,26 +124,7 @@ public class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
-    // =========================================================
-    // CHECK USER EXISTS
-    // =========================================================
-
-    public async Task<bool>
-        IsUserExistsByIdAsync(
-            int id)
-    {
-        if (id <= 0)
-            return false;
-
-        return await _userRepository
-            .IsUserExistsByIdAsync(id);
-    }
-
-    // =========================================================
-    // CHECK USERNAME
-    // =========================================================
-
-    public async Task<bool>
+    public Task<bool>
         IsUsernameTakenForAnotherUserAsync(
             string username,
             int userId)
@@ -171,27 +132,18 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(username) ||
             userId <= 0)
         {
-            return false;
+            return Task.FromResult(false);
         }
 
-        return await _userRepository
+        return _userRepository
             .IsUsernameTakenForAnotherUserAsync(
                 username.Trim(),
                 userId);
     }
 
-    // =========================================================
-    // CREATE
-    // =========================================================
-
     public async Task<Result<int>>
-        AddUserAsync(
-            CreateUserDto dto)
+        AddUserAsync(CreateUserDto dto)
     {
-        // -----------------------------------------------------
-        // VALIDATION
-        // -----------------------------------------------------
-
         if (dto is null)
         {
             return Result<int>
@@ -213,34 +165,22 @@ public class UserService : IUserService
         var username =
             dto.UserName.Trim();
 
-        // -----------------------------------------------------
-        // USERNAME UNIQUENESS
-        // -----------------------------------------------------
-
         if (await _userRepository
-            .IsUsernameTakenAsync(username))
+                .IsUsernameTakenAsync(username))
         {
             return Result<int>
                 .FromConflict(
                     "Username is already in use.");
         }
 
-        // -----------------------------------------------------
-        // ONE USER PER PERSON
-        // -----------------------------------------------------
-
         if (await _userRepository
-            .IsUserExistsByPersonIdAsync(
-                dto.PersonId))
+                .IsUserExistsByPersonIdAsync(
+                    dto.PersonId))
         {
             return Result<int>
                 .FromConflict(
                     "This person is already associated with a user account.");
         }
-
-        // -----------------------------------------------------
-        // MAP + HASH PASSWORD
-        // -----------------------------------------------------
 
         var hashedPassword =
             BCrypt.Net.BCrypt
@@ -252,16 +192,8 @@ public class UserService : IUserService
                 dto,
                 hashedPassword);
 
-        // -----------------------------------------------------
-        // ADD TO CURRENT DbContext
-        // -----------------------------------------------------
-
         await _userRepository
             .AddUserAsync(user);
-
-        // -----------------------------------------------------
-        // PERSIST THROUGH UNIT OF WORK
-        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
@@ -280,28 +212,16 @@ public class UserService : IUserService
                 user.UserId);
     }
 
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
     public async Task<Result>
         UpdateUserAsync(
             int id,
             UpdateUserDto dto)
     {
-        // -----------------------------------------------------
-        // VALIDATE ID
-        // -----------------------------------------------------
-
         if (id <= 0)
         {
             return Result.ValidationFailure(
                 "Invalid user ID.");
         }
-
-        // -----------------------------------------------------
-        // VALIDATE DTO
-        // -----------------------------------------------------
 
         if (dto is null)
         {
@@ -319,13 +239,9 @@ public class UserService : IUserService
                 validation.Error);
         }
 
-        // -----------------------------------------------------
-        // GET EXISTING USER
-        // -----------------------------------------------------
-
         var user =
             await _userRepository
-                .GetUserByUserIdAsync(id);
+                .GetUserForUpdateAsync(id);
 
         if (user is null)
         {
@@ -336,22 +252,14 @@ public class UserService : IUserService
         var username =
             dto.UserName.Trim();
 
-        // -----------------------------------------------------
-        // USERNAME UNIQUENESS
-        // -----------------------------------------------------
-
         if (await _userRepository
-            .IsUsernameTakenForAnotherUserAsync(
-                username,
-                id))
+                .IsUsernameTakenForAnotherUserAsync(
+                    username,
+                    id))
         {
             return Result.Conflict(
                 "Username is already in use by another user.");
         }
-
-        // -----------------------------------------------------
-        // PERSON UNIQUENESS
-        // -----------------------------------------------------
 
         if (user.PersonId != dto.PersonId &&
             await _userRepository
@@ -362,13 +270,6 @@ public class UserService : IUserService
                 "This person is already associated with another user account.");
         }
 
-        // -----------------------------------------------------
-        // UPDATE
-        //
-        // Password is intentionally not changed here.
-        // Password changes have their own workflow.
-        // -----------------------------------------------------
-
         user.UserName =
             username;
 
@@ -377,24 +278,6 @@ public class UserService : IUserService
 
         user.IsActive =
             dto.IsActive;
-
-        // -----------------------------------------------------
-        // APPLY TO DbContext
-        // -----------------------------------------------------
-
-        var updated =
-            await _userRepository
-                .UpdateUserAsync(user);
-
-        if (!updated)
-        {
-            return Result.Failure(
-                "Failed to update user data.");
-        }
-
-        // -----------------------------------------------------
-        // PERSIST
-        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
@@ -409,117 +292,54 @@ public class UserService : IUserService
         return Result.Success();
     }
 
-    // =========================================================
-    // DELETE
-    // =========================================================
-
     public async Task<Result>
-        DeleteUserAsync(
-            int id)
+        DeleteUserAsync(int id)
     {
-        // -----------------------------------------------------
-        // VALIDATION
-        // -----------------------------------------------------
-
         if (id <= 0)
         {
             return Result.ValidationFailure(
                 "Invalid user ID.");
         }
 
-        // -----------------------------------------------------
-        // EXISTS
-        // -----------------------------------------------------
-
-        var exists =
+        var user =
             await _userRepository
-                .IsUserExistsByIdAsync(id);
+                .GetUserForUpdateAsync(id);
 
-        if (!exists)
+        if (user is null)
         {
             return Result.NotFound(
                 "User not found.");
         }
 
-        // -----------------------------------------------------
-        // DELETE
-        // -----------------------------------------------------
+        _userRepository
+            .DeleteUser(user);
 
-        var deleted =
-            await _userRepository
-                .DeleteUserAsync(id);
+        try
+        {
+            var saved =
+                await _unitOfWork
+                    .SaveChangesAsync();
 
-        if (!deleted)
+            if (saved <= 0)
+            {
+                return Result.Failure(
+                    "Failed to save user deletion.");
+            }
+
+            return Result.Success();
+        }
+        catch
         {
             return Result.Conflict(
                 "This user cannot be deleted because it is referenced by existing records. Deactivate the user instead.");
         }
-
-        // -----------------------------------------------------
-        // PERSIST
-        // -----------------------------------------------------
-
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
-
-        if (saved <= 0)
-        {
-            return Result.Failure(
-                "Failed to save user deletion.");
-        }
-
-        return Result.Success();
     }
-
-    // =========================================================
-    // AUTHENTICATE
-    // =========================================================
-
-    public async Task<bool>
-        AuthenticateUserAsync(
-            string username,
-            string password)
-    {
-        if (string.IsNullOrWhiteSpace(username) ||
-            string.IsNullOrWhiteSpace(password))
-        {
-            return false;
-        }
-
-        username =
-            username.Trim();
-
-        var user =
-            await _userRepository
-                .GetUserByUsernameAsync(
-                    username);
-
-        if (user is null ||
-            !user.IsActive)
-        {
-            return false;
-        }
-
-        return BCrypt.Net.BCrypt
-            .Verify(
-                password,
-                user.Password);
-    }
-
-    // =========================================================
-    // CHANGE PASSWORD
-    // =========================================================
 
     public async Task<Result>
         ChangePasswordAsync(
             int userId,
             ChangePasswordDto dto)
     {
-        // -----------------------------------------------------
-        // VALIDATION
-        // -----------------------------------------------------
-
         if (userId <= 0)
         {
             return Result.ValidationFailure(
@@ -542,24 +362,15 @@ public class UserService : IUserService
                 validation.Error);
         }
 
-        // -----------------------------------------------------
-        // GET USER
-        // -----------------------------------------------------
-
         var user =
             await _userRepository
-                .GetUserByUserIdAsync(
-                    userId);
+                .GetUserForUpdateAsync(userId);
 
         if (user is null)
         {
             return Result.NotFound(
                 "User not found.");
         }
-
-        // -----------------------------------------------------
-        // VERIFY CURRENT PASSWORD
-        // -----------------------------------------------------
 
         var currentPasswordValid =
             BCrypt.Net.BCrypt
@@ -573,32 +384,10 @@ public class UserService : IUserService
                 "Current password is incorrect.");
         }
 
-        // -----------------------------------------------------
-        // HASH NEW PASSWORD
-        // -----------------------------------------------------
-
         user.Password =
             BCrypt.Net.BCrypt
                 .HashPassword(
                     dto.NewPassword);
-
-        // -----------------------------------------------------
-        // UPDATE
-        // -----------------------------------------------------
-
-        var updated =
-            await _userRepository
-                .UpdateUserAsync(user);
-
-        if (!updated)
-        {
-            return Result.Failure(
-                "Failed to update password.");
-        }
-
-        // -----------------------------------------------------
-        // PERSIST
-        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
@@ -613,85 +402,4 @@ public class UserService : IUserService
         return Result.Success();
     }
 
-    // =========================================================
-    // LOGIN
-    // =========================================================
-
-    public async Task<Result<UserDto>>
-        LoginAsync(
-            LoginRequestDto dto)
-    {
-        // -----------------------------------------------------
-        // VALIDATION
-        // -----------------------------------------------------
-
-        if (dto is null)
-        {
-            return Result<UserDto>
-                .FromValidationFailure(
-                    "Login data is required.");
-        }
-
-        var validation =
-            UserValidator
-                .ValidateLogin(dto);
-
-        if (validation.IsFailure)
-        {
-            return Result<UserDto>
-                .FromValidationFailure(
-                    validation.Error);
-        }
-
-        var username =
-            dto.UserName.Trim();
-
-        // -----------------------------------------------------
-        // GET USER
-        // -----------------------------------------------------
-
-        var user =
-            await _userRepository
-                .GetUserByUsernameAsync(
-                    username);
-
-        if (user is null)
-        {
-            return Result<UserDto>
-                .FromFailure(
-                    "Invalid username or password.");
-        }
-
-        // -----------------------------------------------------
-        // ACTIVE CHECK
-        // -----------------------------------------------------
-
-        if (!user.IsActive)
-        {
-            return Result<UserDto>
-                .FromFailure(
-                    "This user account is inactive.");
-        }
-
-        // -----------------------------------------------------
-        // PASSWORD VERIFICATION
-        // -----------------------------------------------------
-
-        var passwordValid =
-            BCrypt.Net.BCrypt
-                .Verify(
-                    dto.Password,
-                    user.Password);
-
-        if (!passwordValid)
-        {
-            return Result<UserDto>
-                .FromFailure(
-                    "Invalid username or password.");
-        }
-
-        return Result<UserDto>
-            .Success(
-                UserMapper.ToDto(user));
-    }
 }
