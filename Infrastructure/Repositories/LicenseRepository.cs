@@ -8,73 +8,46 @@ public class LicenseRepository : ILicenseRepository
 {
     private readonly DVLDDbContext _context;
 
-    public LicenseRepository(DVLDDbContext context)
-    {
+    public LicenseRepository(DVLDDbContext context) =>
         _context = context ?? throw new ArgumentNullException(nameof(context));
-    }
 
-    // =========================================================
-    // BASE QUERY
-    // =========================================================
-
-    private IQueryable<License> Query()
-    {
-        return _context.Licenses
+    private IQueryable<License> Query() =>
+        _context.Licenses
             .Include(l => l.Application)
             .Include(l => l.Driver)
                 .ThenInclude(d => d.Person)
             .Include(l => l.LicenseClassInfo)
             .Include(l => l.CreatedByUser);
-    }
-
-    // =========================================================
-    // GET BY ID
-    // =========================================================
 
     public async Task<License?> GetLicenseByIdAsync(int id)
     {
-        if (id <= 0)
-            return null;
+        if (id <= 0) return null;
 
         return await Query()
             .AsNoTracking()
             .FirstOrDefaultAsync(l => l.LicenseID == id);
     }
 
-    // =========================================================
-    // GET BY DRIVER
-    // =========================================================
-
     public async Task<License?> GetByDriverIdAsync(int driverId)
     {
-        if (driverId <= 0)
-            return null;
+        if (driverId <= 0) return null;
 
         return await Query()
             .AsNoTracking()
-            .FirstOrDefaultAsync(l => l.DriverID == driverId);
+            .Where(l => l.DriverID == driverId)
+            .OrderByDescending(l => l.IssueDate)
+            .FirstOrDefaultAsync();
     }
 
-    // =========================================================
-    // GET ALL
-    // =========================================================
-
-    public async Task<List<License>> GetAllLicensesAsync()
-    {
-        return await Query()
+    public async Task<List<License>> GetAllLicensesAsync() =>
+        await Query()
             .AsNoTracking()
             .OrderByDescending(l => l.IssueDate)
             .ToListAsync();
-    }
-
-    // =========================================================
-    // GET BY DRIVER (LIST)
-    // =========================================================
 
     public async Task<List<License>> GetLicensesByDriverIdAsync(int driverId)
     {
-        if (driverId <= 0)
-            return [];
+        if (driverId <= 0) return [];
 
         return await Query()
             .AsNoTracking()
@@ -83,14 +56,9 @@ public class LicenseRepository : ILicenseRepository
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET BY APPLICATION
-    // =========================================================
-
     public async Task<List<License>> GetLicensesByApplicationIdAsync(int applicationId)
     {
-        if (applicationId <= 0)
-            return [];
+        if (applicationId <= 0) return [];
 
         return await Query()
             .AsNoTracking()
@@ -98,14 +66,9 @@ public class LicenseRepository : ILicenseRepository
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET BY LICENSE CLASS
-    // =========================================================
-
     public async Task<List<License>> GetLicensesByLicenseClassIdAsync(int licenseClassId)
     {
-        if (licenseClassId <= 0)
-            return [];
+        if (licenseClassId <= 0) return [];
 
         return await Query()
             .AsNoTracking()
@@ -113,14 +76,9 @@ public class LicenseRepository : ILicenseRepository
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET BY PERSON
-    // =========================================================
-
     public async Task<List<License>> GetLicensesByPersonIdAsync(int personId)
     {
-        if (personId <= 0)
-            return [];
+        if (personId <= 0) return [];
 
         return await Query()
             .AsNoTracking()
@@ -129,119 +87,62 @@ public class LicenseRepository : ILicenseRepository
             .ToListAsync();
     }
 
-    // =========================================================
-    // EXISTS BY LICENSE ID
-    // =========================================================
-
-    public async Task<bool> IsLicenseExistsAsync(int id)
-    {
-        if (id <= 0)
-            return false;
-
-        return await _context.Licenses
+    public async Task<bool> IsLicenseExistsAsync(int id) =>
+        id > 0 && await _context.Licenses
             .AsNoTracking()
             .AnyAsync(l => l.LicenseID == id);
-    }
 
-    // =========================================================
-    // DRIVER HAS LICENSE
-    // =========================================================
-
-    public async Task<bool> IsDriverHasLicenseAsync(int driverId)
-    {
-        if (driverId <= 0)
-            return false;
-
-        return await _context.Licenses
+    public async Task<bool> IsDriverHasLicenseAsync(int driverId) =>
+        driverId > 0 && await _context.Licenses
             .AsNoTracking()
             .AnyAsync(l => l.DriverID == driverId);
-    }
 
-    // =========================================================
-    // ACTIVE LICENSE EXISTS
-    // =========================================================
-
-    public async Task<bool> IsActiveLicenseExistsAsync(
-    int driverId,
-    int licenseClassId)
-    {
-        if (driverId <= 0 || licenseClassId <= 0)
-            return false;
-
-        return await _context.Licenses
+    public async Task<bool> IsActiveLicenseExistsAsync(int driverId, int licenseClassId) =>
+        driverId > 0 &&
+        licenseClassId > 0 &&
+        await _context.Licenses
             .AsNoTracking()
             .AnyAsync(l =>
                 l.DriverID == driverId &&
                 l.LicenseClass == licenseClassId &&
                 l.IsActive);
-    }
 
-    // =========================================================
-    // APPLICATION HAS LICENSE
-    // =========================================================
-
-    public async Task<bool> IsApplicationHasLicenseAsync(int applicationId)
-    {
-        if (applicationId <= 0)
-            return false;
-
-        return await _context.Licenses
+    public async Task<bool> IsApplicationHasLicenseAsync(int applicationId) =>
+        applicationId > 0 &&
+        await _context.Licenses
             .AsNoTracking()
             .AnyAsync(l => l.ApplicationID == applicationId);
-    }
-
-    // =========================================================
-    // CREATE
-    // =========================================================
 
     public async Task AddLicenseAsync(License license)
     {
         ArgumentNullException.ThrowIfNull(license);
-
-        await _context.Licenses.AddAsync(license);       
+        await _context.Licenses.AddAsync(license);
     }
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
 
     public async Task<bool> UpdateLicenseAsync(License license)
     {
         ArgumentNullException.ThrowIfNull(license);
-
-        if (license.LicenseID <= 0)
-            return false;
+        if (license.LicenseID <= 0) return false;
 
         var existing = await _context.Licenses
             .FirstOrDefaultAsync(l => l.LicenseID == license.LicenseID);
 
-        if (existing is null)
-            return false;
+        if (existing is null) return false;
 
         _context.Entry(existing).CurrentValues.SetValues(license);
-
-        // DO NOT SAVE HERE — IUnitOfWork owns persistence.
         return true;
     }
 
-    // =========================================================
-    // DELETE
-    // =========================================================
-
     public async Task<bool> DeleteLicenseAsync(int id)
     {
-        if (id <= 0)
-            return false;
+        if (id <= 0) return false;
 
         var license = await _context.Licenses
             .FirstOrDefaultAsync(l => l.LicenseID == id);
 
-        if (license is null)
-            return false;
+        if (license is null) return false;
 
         _context.Licenses.Remove(license);
-
-        // DO NOT SAVE HERE — IUnitOfWork owns persistence.
         return true;
     }
 }

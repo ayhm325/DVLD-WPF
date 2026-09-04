@@ -54,17 +54,15 @@ public class LicenseIssuanceService : ILicenseIssuanceService
 
     public async Task<Result<int>> IssueFirstLicenseAsync(int localAppId, string? notes)
     {
-        var idValidation = LicenseValidator.ValidateId(localAppId);
-
-        if (idValidation.IsFailure)
-            return Result<int>.FromValidationFailure(idValidation.Error);
+        var validation = LicenseValidator.ValidateId(localAppId);
+        if (validation.IsFailure)
+            return Result<int>.FromValidationFailure(validation.Error);
 
         if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
             return Result<int>.FromFailure("Authenticated user is required.");
 
-        var localAppResult =
-            await _localDrivingLicenseApplicationService
-                .GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
+        var localAppResult = await _localDrivingLicenseApplicationService
+            .GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
 
         if (localAppResult.IsFailure)
             return Result<int>.FromFailure(localAppResult.Error);
@@ -83,9 +81,8 @@ public class LicenseIssuanceService : ILicenseIssuanceService
             return Result<int>.FromConflict(
                 "The applicant has not passed all required tests.");
 
-        var applicationIdResult =
-            await _localDrivingLicenseApplicationService
-                .GetApplicationIdByLocalIdAsync(localAppId);
+        var applicationIdResult = await _localDrivingLicenseApplicationService
+            .GetApplicationIdByLocalIdAsync(localAppId);
 
         if (applicationIdResult.IsFailure)
             return Result<int>.FromFailure(applicationIdResult.Error);
@@ -96,8 +93,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
             LicenseValidator.ValidateApplicationId(applicationId);
 
         if (applicationIdValidation.IsFailure)
-            return Result<int>.FromValidationFailure(
-                applicationIdValidation.Error);
+            return Result<int>.FromValidationFailure(applicationIdValidation.Error);
 
         var applicationResult =
             await _applicationService.GetApplicationByIdAsync(applicationId);
@@ -123,8 +119,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
                 "The application does not have a valid applicant.");
 
         var personResult =
-            await _personService.GetPersonByIdAsync(
-                application.ApplicantPersonID);
+            await _personService.GetPersonByIdAsync(application.ApplicantPersonID);
 
         if (personResult.IsFailure)
             return Result<int>.FromFailure(personResult.Error);
@@ -139,8 +134,7 @@ public class LicenseIssuanceService : ILicenseIssuanceService
             return Result<int>.FromValidationFailure(classValidation.Error);
 
         var licenseClassResult =
-            await _licenseClassService.GetLicenseClassByIdAsync(
-                localApp.LicenseClassID);
+            await _licenseClassService.GetLicenseClassByIdAsync(localApp.LicenseClassID);
 
         if (licenseClassResult.IsFailure)
             return Result<int>.FromFailure(licenseClassResult.Error);
@@ -158,20 +152,17 @@ public class LicenseIssuanceService : ILicenseIssuanceService
             return Result<int>.FromValidationFailure(
                 "License class has invalid fees.");
 
-        await using var transaction = await _unitOfWork.BeginTransactionAsync();
+        await using var transaction =
+            await _unitOfWork.BeginTransactionAsync();
 
         try
         {
-            var applicationHasLicense =
-                await _repository.IsApplicationHasLicenseAsync(applicationId);
-
-            if (applicationHasLicense)
+            if (await _repository.IsApplicationHasLicenseAsync(applicationId))
                 return Result<int>.FromConflict(
                     "A license has already been issued for this application.");
 
             var driverResult =
-                await _driverService.GetByPersonIdAsync(
-                    personResult.Value.PersonId);
+                await _driverService.GetByPersonIdAsync(personResult.Value.PersonId);
 
             int driverId;
 
@@ -185,13 +176,8 @@ public class LicenseIssuanceService : ILicenseIssuanceService
             }
             else
             {
-                if (!string.Equals(
-                        driverResult.Error,
-                        "Driver not found.",
-                        StringComparison.Ordinal))
-                {
+                if (driverResult.ErrorType != ErrorType.NotFound)
                     return Result<int>.FromFailure(driverResult.Error);
-                }
 
                 var createDriverResult =
                     await _driverService.AddAsync(
@@ -210,15 +196,10 @@ public class LicenseIssuanceService : ILicenseIssuanceService
                 LicenseValidator.ValidateDriverId(driverId);
 
             if (driverValidation.IsFailure)
-                return Result<int>.FromValidationFailure(
-                    driverValidation.Error);
+                return Result<int>.FromValidationFailure(driverValidation.Error);
 
-            var activeLicenseExists =
-                await _repository.IsActiveLicenseExistsAsync(
-                    driverId,
-                    localApp.LicenseClassID);
-
-            if (activeLicenseExists)
+            if (await _repository.IsActiveLicenseExistsAsync(
+                    driverId, localApp.LicenseClassID))
                 return Result<int>.FromConflict(
                     "The driver already has an active license for this license class.");
 
@@ -230,7 +211,8 @@ public class LicenseIssuanceService : ILicenseIssuanceService
                 DriverID = driverId,
                 LicenseClassID = localApp.LicenseClassID,
                 IssueDate = now,
-                ExpirationDate = now.AddYears(licenseClass.DefaultValidityLength),
+                ExpirationDate =
+                    now.AddYears(licenseClass.DefaultValidityLength),
                 PaidFees = licenseClass.LicenseClassFees,
                 Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                 IsActive = true,
@@ -249,7 +231,8 @@ public class LicenseIssuanceService : ILicenseIssuanceService
 
             await _repository.AddLicenseAsync(license);
 
-            if (await _unitOfWork.SaveChangesAsync() <= 0 || license.LicenseID <= 0)
+            if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                license.LicenseID <= 0)
                 return Result<int>.FromFailure(
                     "Failed to save the driving license.");
 
@@ -271,9 +254,11 @@ public class LicenseIssuanceService : ILicenseIssuanceService
             }
             catch
             {
+                // Preserve the original exception.
             }
 
-            return Result<int>.FromFailure(BuildLicenseIssuanceError(ex));
+            return Result<int>.FromFailure(
+                BuildLicenseIssuanceError(ex));
         }
     }
 

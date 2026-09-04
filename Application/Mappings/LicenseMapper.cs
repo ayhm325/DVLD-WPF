@@ -8,20 +8,16 @@ namespace Application.Mappers;
 
 public static class LicenseMapper
 {
-    // ENTITY -> DTO
-    public static LicenseDto ToDto(License license)
-    {
-        return new LicenseDto
+    public static LicenseDto ToDto(License license) =>
+        new()
         {
             LicenseID = license.LicenseID,
             ApplicationID = license.ApplicationID,
             ApplicationInfo = license.Application is not null
                 ? $"App #{license.ApplicationID}"
                 : null,
-
             DriverID = license.DriverID,
             DriverName = license.Driver?.Person?.FullName,
-
             Driver = license.Driver is null
                 ? null
                 : new DriverDto
@@ -38,7 +34,6 @@ public static class LicenseMapper
                     CreatedByUserName = license.Driver.CreatedByUser?.UserName ?? string.Empty,
                     CreatedDate = license.Driver.CreatedDate
                 },
-
             LicenseClassID = license.LicenseClass,
             LicenseClassName = license.LicenseClassInfo?.ClassName,
             IssueDate = license.IssueDate,
@@ -51,9 +46,7 @@ public static class LicenseMapper
             CreatedByUserID = license.CreatedByUserID,
             CreatedByUserName = license.CreatedByUser?.UserName ?? "Unknown"
         };
-    }
 
-    // CREATE DTO -> ENTITY
     public static License ToEntity(CreateLicenseDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
@@ -65,15 +58,10 @@ public static class LicenseMapper
             LicenseClass = dto.LicenseClassID,
             IssueDate = dto.IssueDate,
             ExpirationDate = dto.ExpirationDate,
-            Notes = string.IsNullOrWhiteSpace(dto.Notes)
-                ? null
-                : dto.Notes.Trim(),
+            Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
             PaidFees = dto.PaidFees,
             IsActive = dto.IsActive,
             IssueReason = dto.IssueReason
         };
     }
-
-    
-    
 }
