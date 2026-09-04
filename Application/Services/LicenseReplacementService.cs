@@ -10,7 +10,8 @@ namespace Application.Services;
 
 public class LicenseReplacementService : ILicenseReplacementService
 {
-    private const int ReplacementApplicationTypeId = 4;
+    private const int LostReplacementApplicationTypeId = 3;
+    private const int DamagedReplacementApplicationTypeId = 4;
 
     private readonly ILicenseRepository _licenseRepository;
     private readonly IApplicationService _applicationService;
@@ -66,9 +67,10 @@ public class LicenseReplacementService : ILicenseReplacementService
         var currentUserId = _currentUserService.UserId;
         var normalizedReason = replacementReason.Trim();
 
-        var issueReason = GetReplacementIssueReason(normalizedReason);
+        var replacementInfo =
+            GetReplacementInfo(normalizedReason);
 
-        if (issueReason is null)
+        if (replacementInfo is null)
         {
             return Result<int>.FromValidationFailure(
                 "Invalid replacement reason. " +
@@ -102,7 +104,7 @@ public class LicenseReplacementService : ILicenseReplacementService
         var applicationTypeResult =
             await _applicationTypeService
                 .GetApplicationTypeByIdAsync(
-                    ReplacementApplicationTypeId);
+                    replacementInfo.Value.ApplicationTypeId);
 
         if (applicationTypeResult.IsFailure)
         {
@@ -130,15 +132,17 @@ public class LicenseReplacementService : ILicenseReplacementService
                     ApplicantPersonID =
                         oldLicense.Driver.PersonID,
 
-                    ApplicationDate = now,
+                    ApplicationDate =
+                        now,
 
                     ApplicationTypeID =
-                        ReplacementApplicationTypeId,
+                        replacementInfo.Value.ApplicationTypeId,
 
                     ApplicationStatus =
                         AppStatus.New,
 
-                    LastStatusDate = now,
+                    LastStatusDate =
+                        now,
 
                     PaidFees =
                         applicationType.ApplicationTypeFees
@@ -212,7 +216,7 @@ public class LicenseReplacementService : ILicenseReplacementService
                         true,
 
                     IssueReason =
-                        (byte)issueReason.Value
+                        (byte)replacementInfo.Value.IssueReason
                 };
 
             var licenseValidation =
@@ -279,21 +283,27 @@ public class LicenseReplacementService : ILicenseReplacementService
         }
     }
 
-    private static IssueReason? GetReplacementIssueReason(
-        string replacementReason)
+    private static (
+        int ApplicationTypeId,
+        IssueReason IssueReason)?
+        GetReplacementInfo(string replacementReason)
     {
         if (replacementReason.Equals(
                 "Lost License",
                 StringComparison.OrdinalIgnoreCase))
         {
-            return IssueReason.ReplacementForLost;
+            return (
+                LostReplacementApplicationTypeId,
+                IssueReason.ReplacementForLost);
         }
 
         if (replacementReason.Equals(
                 "Damaged License",
                 StringComparison.OrdinalIgnoreCase))
         {
-            return IssueReason.ReplacementForDamaged;
+            return (
+                DamagedReplacementApplicationTypeId,
+                IssueReason.ReplacementForDamaged);
         }
 
         return null;
