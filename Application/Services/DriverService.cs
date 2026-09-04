@@ -10,15 +10,18 @@ namespace Application.Services;
 public class DriverService : IDriverService
 {
     private readonly IDriverRepository _repository;
+    private readonly IPersonRepository _personRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
     public DriverService(
         IDriverRepository repository,
+        IPersonRepository personRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
@@ -31,10 +34,9 @@ public class DriverService : IDriverService
 
         var entity = await _repository.GetByIdAsync(id);
 
-        if (entity is null)
-            return Result<DriverDto>.FromNotFound("Driver not found.");
-
-        return Result<DriverDto>.Success(DriverMapper.ToDto(entity));
+        return entity is null
+            ? Result<DriverDto>.FromNotFound("Driver not found.")
+            : Result<DriverDto>.Success(DriverMapper.ToDto(entity));
     }
 
     public async Task<Result<List<DriverDto>>> GetAllAsync()
@@ -51,51 +53,40 @@ public class DriverService : IDriverService
 
         var entity = await _repository.GetByPersonIdAsync(personId);
 
-        if (entity is null)
-            return Result<DriverDto>.FromNotFound("Driver not found.");
-
-        return Result<DriverDto>.Success(DriverMapper.ToDto(entity));
+        return entity is null
+            ? Result<DriverDto>.FromNotFound("Driver not found.")
+            : Result<DriverDto>.Success(DriverMapper.ToDto(entity));
     }
 
     public async Task<Result<List<DriverDto>>> GetByCreatedUserIdAsync(int userId)
     {
         var validation = DriverValidator.ValidateCreatedUserId(userId);
-
         if (validation.IsFailure)
             return Result<List<DriverDto>>.FromFailure(validation.Error);
 
         var entities = await _repository.GetByCreatedUserIdAsync(userId);
-
         return Result<List<DriverDto>>.Success(DriverMapper.ToDtoList(entities));
     }
 
-    public async Task<bool> ExistsByIdAsync(int driverId)
-    {
-        return driverId > 0 &&
-               await _repository.ExistsByIdAsync(driverId);
-    }
+    public async Task<bool> ExistsByIdAsync(int driverId) =>
+    driverId > 0 && await _repository.ExistsByIdAsync(driverId);
 
-    public async Task<bool> ExistsByPersonIdAsync(int personId)
-    {
-        return personId > 0 &&
-               await _repository.ExistsByPersonIdAsync(personId);
-    }
+    public async Task<bool> ExistsByPersonIdAsync(int personId) =>
+        personId > 0 && await _repository.ExistsByPersonIdAsync(personId);
 
     public async Task<Result<int>> AddAsync(CreateDriverDto dto)
     {
         var validation = DriverValidator.ValidateCreate(dto);
-
         if (validation.IsFailure)
             return Result<int>.FromValidationFailure(validation.Error);
 
-        if (!_currentUserService.IsLoggedIn ||
-            _currentUserService.UserId <= 0)
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
             return Result<int>.FromFailure("Authenticated user is required.");
 
-        var alreadyDriver =
-            await _repository.ExistsByPersonIdAsync(dto.PersonID);
+        if (!await _personRepository.IsPersonExistsByIdAsync(dto.PersonID))
+            return Result<int>.FromNotFound("Person not found.");
 
-        if (alreadyDriver)
+        if (await _repository.ExistsByPersonIdAsync(dto.PersonID))
             return Result<int>.FromConflict(
                 "This person is already registered as a driver.");
 
@@ -104,9 +95,7 @@ public class DriverService : IDriverService
 
         await _repository.AddAsync(entity);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
-
-        if (saved <= 0 || entity.DriverID <= 0)
+        if (await _unitOfWork.SaveChangesAsync() <= 0 || entity.DriverID <= 0)
             return Result<int>.FromFailure("Failed to create driver.");
 
         return Result<int>.Success(entity.DriverID);
@@ -115,36 +104,27 @@ public class DriverService : IDriverService
     public async Task<Result> UpdateAsync(UpdateDriverDto dto)
     {
         var validation = DriverValidator.ValidateUpdate(dto);
-
         if (validation.IsFailure)
             return Result.Failure(validation.Error);
 
         if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
-        {
-            return Result.ValidationFailure(
-                "You must be logged in first.");
-        }
+            return Result.ValidationFailure("You must be logged in first.");
 
         var existing = await _repository.GetByIdAsync(dto.DriverID);
-
         if (existing is null)
             return Result.NotFound("Driver not found.");
 
-        if (existing.PersonID != dto.PersonID)
-        {
-            var alreadyDriver =
-                await _repository.ExistsByPersonIdAsync(dto.PersonID);
+        if (!await _personRepository.IsPersonExistsByIdAsync(dto.PersonID))
+            return Result.NotFound("Person not found.");
 
-            if (alreadyDriver)
-                return Result.Conflict(
-                    "This person is already registered as another driver.");
-        }
+        if (existing.PersonID != dto.PersonID &&
+            await _repository.ExistsByPersonIdAsync(dto.PersonID))
+            return Result.Conflict(
+                "This person is already registered as another driver.");
 
         DriverMapper.UpdateEntity(existing, dto);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
-
-        return saved > 0
+        return await _unitOfWork.SaveChangesAsync() > 0
             ? Result.Success()
             : Result.Failure("No driver changes were saved.");
     }
@@ -152,24 +132,26 @@ public class DriverService : IDriverService
     public async Task<Result> DeleteAsync(int id)
     {
         var validation = DriverValidator.ValidateId(id);
-
         if (validation.IsFailure)
             return Result.ValidationFailure(validation.Error);
 
         if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
-        {
-            return Result.ValidationFailure(
-                "You must be logged in first.");
-        }
+            return Result.ValidationFailure("You must be logged in first.");
 
-        if (!await _repository.ExistsByIdAsync(id))
+        var driver = await _repository.GetByIdAsync(id);
+        if (driver is null)
             return Result.NotFound("Driver not found.");
+
+        if (driver.Licenses.Any())
+            return Result.Conflict("Cannot delete a driver with existing licenses.");
+
+        if (driver.InternationalLicenses.Any())
+            return Result.Conflict(
+                "Cannot delete a driver with an existing international license.");
 
         await _repository.DeleteAsync(id);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
-
-        return saved > 0
+        return await _unitOfWork.SaveChangesAsync() > 0
             ? Result.Success()
             : Result.Failure("Failed to delete driver.");
     }

@@ -9,240 +9,108 @@ public class DriverRepository : IDriverRepository
 {
     private readonly DVLDDbContext _context;
 
-    public DriverRepository(
-        DVLDDbContext context)
+    public DriverRepository(DVLDDbContext context)
     {
-        _context =
-            context
-            ?? throw new ArgumentNullException(
-                nameof(context));
+        _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    // =========================================================
-    // BASE QUERY
-    // =========================================================
+    // ============ Base Query ============
 
-    private IQueryable<Driver>
-        Query()
+    private IQueryable<Driver> Query()
     {
         return _context.Drivers
             .Include(d => d.Person)
             .Include(d => d.CreatedByUser)
-            .Include(d => d.Licenses);
+            .Include(d => d.Licenses)
+            .Include(d => d.InternationalLicenses);
     }
 
-    // =========================================================
-    // GET BY ID
-    //
-    // Tracking is intentional.
-    //
-    // DriverService.UpdateAsync()
-    // loads this entity and modifies it directly.
-    // =========================================================
+    // ============ Queries ============
 
-    public async Task<Driver?>
-        GetByIdAsync(
-            int id)
+    // Tracking is intentional for DriverService.UpdateAsync() modifications
+    public async Task<Driver?> GetByIdAsync(int id)
     {
-        if (id <= 0)
-            return null;
+        if (id <= 0) return null;
 
         return await Query()
-            .FirstOrDefaultAsync(
-                d =>
-                    d.DriverID == id);
+            .FirstOrDefaultAsync(d => d.DriverID == id);
     }
 
-    // =========================================================
-    // GET ALL
-    // =========================================================
-
-    public async Task<List<Driver>>
-        GetAllAsync()
+    public async Task<List<Driver>> GetAllAsync()
     {
         return await Query()
             .AsNoTracking()
-            .OrderBy(
-                d => d.DriverID)
+            .OrderBy(d => d.DriverID)
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET BY PERSON ID
-    // =========================================================
-
-    public async Task<Driver?>
-        GetByPersonIdAsync(
-            int personId)
+    public async Task<Driver?> GetByPersonIdAsync(int personId)
     {
-        if (personId <= 0)
-            return null;
+        if (personId <= 0) return null;
 
         return await Query()
             .AsNoTracking()
-            .FirstOrDefaultAsync(
-                d =>
-                    d.PersonID ==
-                    personId);
+            .FirstOrDefaultAsync(d => d.PersonID == personId);
     }
 
-    // =========================================================
-    // GET BY CREATED USER ID
-    // =========================================================
-
-    public async Task<List<Driver>>
-        GetByCreatedUserIdAsync(
-            int userId)
+    public async Task<List<Driver>> GetByCreatedUserIdAsync(int userId)
     {
-        if (userId <= 0)
-            return [];
+        if (userId <= 0) return [];
 
         return await Query()
             .AsNoTracking()
-            .Where(
-                d =>
-                    d.CreatedByUserID ==
-                    userId)
+            .Where(d => d.CreatedByUserID == userId)
             .ToListAsync();
     }
 
-    // =========================================================
-    // EXISTS
-    // =========================================================
-
-    public async Task<bool>
-        ExistsAsync(
-            Expression<Func<Driver, bool>>
-                predicate)
+    public async Task<bool> ExistsAsync(Expression<Func<Driver, bool>> predicate)
     {
-        ArgumentNullException.ThrowIfNull(
-            predicate);
-
-        return await _context.Drivers
-            .AsNoTracking()
-            .AnyAsync(predicate);
+        ArgumentNullException.ThrowIfNull(predicate);
+        return await _context.Drivers.AsNoTracking().AnyAsync(predicate);
     }
 
-    // =========================================================
-    // EXISTS BY ID
-    // =========================================================
-
-    public async Task<bool>
-        ExistsByIdAsync(
-            int driverId)
+    public async Task<bool> ExistsByIdAsync(int driverId)
     {
-        if (driverId <= 0)
-            return false;
-
-        return await _context.Drivers
-            .AsNoTracking()
-            .AnyAsync(
-                d =>
-                    d.DriverID ==
-                    driverId);
+        if (driverId <= 0) return false;
+        return await _context.Drivers.AsNoTracking().AnyAsync(d => d.DriverID == driverId);
     }
 
-    // =========================================================
-    // EXISTS BY PERSON ID
-    // =========================================================
-
-    public async Task<bool>
-        ExistsByPersonIdAsync(
-            int personId)
+    public async Task<bool> ExistsByPersonIdAsync(int personId)
     {
-        if (personId <= 0)
-            return false;
-
-        return await _context.Drivers
-            .AsNoTracking()
-            .AnyAsync(
-                d =>
-                    d.PersonID ==
-                    personId);
+        if (personId <= 0) return false;
+        return await _context.Drivers.AsNoTracking().AnyAsync(d => d.PersonID == personId);
     }
 
-    // =========================================================
-    // CREATE
-    //
-    // Repository only stages the entity.
-    // UnitOfWork owns persistence.
-    // =========================================================
+    // ============ Mutations ============
 
-    public async Task
-        AddAsync(
-            Driver driver)
+    // Repository only stages the entity; UnitOfWork owns persistence
+    public async Task AddAsync(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(
-            driver);
-
-        await _context.Drivers
-            .AddAsync(driver);
+        ArgumentNullException.ThrowIfNull(driver);
+        await _context.Drivers.AddAsync(driver);
     }
 
-    // =========================================================
-    // UPDATE
-    //
-    // Repository only stages the update.
-    // UnitOfWork owns persistence.
-    // =========================================================
-
-    public async Task
-        UpdateAsync(
-            Driver driver)
+    public async Task UpdateAsync(Driver driver)
     {
-        ArgumentNullException.ThrowIfNull(
-            driver);
+        ArgumentNullException.ThrowIfNull(driver);
 
         if (driver.DriverID <= 0)
-        {
-            throw new ArgumentException(
-                "Driver ID must be greater than zero.",
-                nameof(driver));
-        }
+            throw new ArgumentException("Driver ID must be greater than zero.", nameof(driver));
 
-        var existing =
-            await _context.Drivers
-                .FirstOrDefaultAsync(
-                    d =>
-                        d.DriverID ==
-                        driver.DriverID);
-
+        var existing = await _context.Drivers.FirstOrDefaultAsync(d => d.DriverID == driver.DriverID);
         if (existing is null)
-        {
-            throw new InvalidOperationException(
-                "Driver not found.");
-        }
+            throw new InvalidOperationException("Driver not found.");
 
-        _context.Entry(existing)
-            .CurrentValues
-            .SetValues(driver);
+        _context.Entry(existing).CurrentValues.SetValues(driver);
     }
 
-    // =========================================================
-    // DELETE
-    //
-    // Repository only stages the deletion.
-    // UnitOfWork owns persistence.
-    // =========================================================
-
-    public async Task
-        DeleteAsync(
-            int id)
+    public async Task DeleteAsync(int id)
     {
-        if (id <= 0)
-            return;
+        if (id <= 0) return;
 
-        var driver =
-            await _context.Drivers
-                .FirstOrDefaultAsync(
-                    d =>
-                        d.DriverID ==
-                        id);
+        var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.DriverID == id);
+        if (driver is null) return;
 
-        if (driver is null)
-            return;
-
-        _context.Drivers
-            .Remove(driver);
+        _context.Drivers.Remove(driver);
     }
 }
