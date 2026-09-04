@@ -8,228 +8,119 @@ public class TestWorkflowService : ITestWorkflowService
 {
     private readonly ITestAppointmentRepository _appointmentRepository;
 
-    public TestWorkflowService(
-        ITestAppointmentRepository appointmentRepository)
+    public TestWorkflowService(ITestAppointmentRepository appointmentRepository)
     {
-        _appointmentRepository =
-            appointmentRepository ??
-            throw new ArgumentNullException(
-                nameof(appointmentRepository));
+        _appointmentRepository = appointmentRepository
+            ?? throw new ArgumentNullException(nameof(appointmentRepository));
     }
 
-    public async Task<Result> CanScheduleTestAsync(
-        int localAppId,
-        TestTypeEnum testType)
+    public async Task<Result> CanScheduleTestAsync(int localAppId, TestTypeEnum testType)
     {
         if (localAppId <= 0)
-        {
-            return Result.ValidationFailure(
-                "Invalid local driving license application ID.");
-        }
+            return Result.ValidationFailure("Invalid local driving license application ID.");
 
         if (!Enum.IsDefined(testType))
-        {
-            return Result.ValidationFailure(
-                "Invalid test type.");
-        }
+            return Result.ValidationFailure("Invalid test type.");
 
-        var applicationStatus =
-            await _appointmentRepository
-                .GetApplicationStatusAsync(
-                    localAppId);
+        var status = await _appointmentRepository.GetApplicationStatusAsync(localAppId);
 
-        if (applicationStatus is null)
-        {
-            return Result.NotFound(
-                "Local driving license application not found.");
-        }
+        if (status is null)
+            return Result.NotFound("Local driving license application not found.");
 
-        if (applicationStatus != AppStatus.New)
-        {
-            return Result.Conflict(
-                "Tests can only be scheduled for an active application.");
-        }
+        if (status != AppStatus.New)
+            return Result.Conflict("Tests can only be scheduled for an active application.");
 
-        var nextTestResult =
-            await GetNextTestTypeAsync(
-                localAppId);
+        var nextTestResult = await GetNextTestTypeAsync(localAppId);
 
         if (nextTestResult.IsFailure)
-        {
-            return Result.Conflict(
-                nextTestResult.Error);
-        }
+            return Result.Conflict(nextTestResult.Error);
 
-        var nextTest =
-            nextTestResult.Value;
+        var nextTest = nextTestResult.Value;
 
-        if (testType != nextTest)
-        {
-            return Result.Conflict(
+        return testType != nextTest
+            ? Result.Conflict(
                 $"The {GetTestName(testType)} test cannot be scheduled yet. " +
-                $"The next required test is {GetTestName(nextTest)}.");
-        }
-
-        return Result.Success();
+                $"The next required test is {GetTestName(nextTest)}.")
+            : Result.Success();
     }
 
-    public async Task<Result<TestTypeEnum>>
-        GetNextTestTypeAsync(
-            int localAppId)
+    public async Task<Result<TestTypeEnum>> GetNextTestTypeAsync(int localAppId)
     {
         if (localAppId <= 0)
-        {
-            return Result<TestTypeEnum>
-                .FromValidationFailure(
-                    "Invalid local driving license application ID.");
-        }
+            return Result<TestTypeEnum>.FromValidationFailure(
+                "Invalid local driving license application ID.");
 
-        if (!await HasPassedTestAsync(
-                localAppId,
-                TestTypeEnum.Theory))
-        {
-            return Result<TestTypeEnum>.Success(
-                TestTypeEnum.Theory);
-        }
+        if (!await HasPassedTestAsync(localAppId, TestTypeEnum.Theory))
+            return Result<TestTypeEnum>.Success(TestTypeEnum.Theory);
 
-        if (!await HasPassedTestAsync(
-                localAppId,
-                TestTypeEnum.Written))
-        {
-            return Result<TestTypeEnum>.Success(
-                TestTypeEnum.Written);
-        }
+        if (!await HasPassedTestAsync(localAppId, TestTypeEnum.Written))
+            return Result<TestTypeEnum>.Success(TestTypeEnum.Written);
 
-        if (!await HasPassedTestAsync(
-                localAppId,
-                TestTypeEnum.Practical))
-        {
-            return Result<TestTypeEnum>.Success(
-                TestTypeEnum.Practical);
-        }
+        if (!await HasPassedTestAsync(localAppId, TestTypeEnum.Practical))
+            return Result<TestTypeEnum>.Success(TestTypeEnum.Practical);
 
         return Result<TestTypeEnum>.FromConflict(
             "All required tests have already been passed.");
     }
 
-    public async Task<Result> CanTakeTestAsync(
-        int testAppointmentId)
+    public async Task<Result> CanTakeTestAsync(int testAppointmentId)
     {
         if (testAppointmentId <= 0)
-        {
-            return Result.ValidationFailure(
-                "Invalid test appointment ID.");
-        }
+            return Result.ValidationFailure("Invalid test appointment ID.");
 
-        var appointment =
-            await _appointmentRepository
-                .GetByIdAsync(
-                    testAppointmentId);
+        var appointment = await _appointmentRepository.GetByIdAsync(testAppointmentId);
 
         if (appointment is null)
-        {
-            return Result.NotFound(
-                "Test appointment not found.");
-        }
+            return Result.NotFound("Test appointment not found.");
 
         if (appointment.IsLocked)
-        {
-            return Result.Conflict(
-                "This appointment is already locked.");
-        }
+            return Result.Conflict("This appointment is already locked.");
 
-        if (appointment.AppointmentDate >
-            DateTime.UtcNow)
-        {
-            return Result.Conflict(
-                "The appointment date has not arrived yet.");
-        }
+        if (appointment.AppointmentDate > DateTime.Now)
+            return Result.Conflict("The appointment date has not arrived yet.");
 
-        var localAppId =
-            appointment.LocalDrivingLicenseApplicationID;
+        var localAppId = appointment.LocalDrivingLicenseApplicationID;
+        var status = await _appointmentRepository.GetApplicationStatusAsync(localAppId);
 
-        var applicationStatus =
-            await _appointmentRepository
-                .GetApplicationStatusAsync(
-                    localAppId);
+        if (status is null)
+            return Result.NotFound("Local driving license application not found.");
 
-        if (applicationStatus is null)
-        {
-            return Result.NotFound(
-                "Local driving license application not found.");
-        }
+        if (status != AppStatus.New)
+            return Result.Conflict("Tests can only be taken for an active application.");
 
-        if (applicationStatus != AppStatus.New)
-        {
-            return Result.Conflict(
-                "Tests can only be taken for an active application.");
-        }
-
-        var testType =
-            (TestTypeEnum)appointment.TestTypeID;
+        var testType = (TestTypeEnum)appointment.TestTypeID;
 
         if (!Enum.IsDefined(testType))
-        {
-            return Result.ValidationFailure(
-                "Invalid test type.");
-        }
+            return Result.ValidationFailure("Invalid test type.");
 
-        var nextTestResult =
-            await GetNextTestTypeAsync(
-                localAppId);
+        var nextTestResult = await GetNextTestTypeAsync(localAppId);
 
         if (nextTestResult.IsFailure)
-        {
-            return Result.Conflict(
-                nextTestResult.Error);
-        }
+            return Result.Conflict(nextTestResult.Error);
 
-        var nextTest =
-            nextTestResult.Value;
+        var nextTest = nextTestResult.Value;
 
-        if (testType != nextTest)
-        {
-            return Result.Conflict(
+        return testType != nextTest
+            ? Result.Conflict(
                 $"The {GetTestName(testType)} test cannot be taken yet. " +
-                $"The next required test is {GetTestName(nextTest)}.");
-        }
-
-        return Result.Success();
+                $"The next required test is {GetTestName(nextTest)}.")
+            : Result.Success();
     }
 
-    public async Task<bool> HasPassedAllTestsAsync(
-        int localAppId)
+    public async Task<bool> HasPassedAllTestsAsync(int localAppId)
     {
         if (localAppId <= 0)
             return false;
 
-        if (!await HasPassedTestAsync(
-                localAppId,
-                TestTypeEnum.Theory))
-        {
-            return false;
-        }
-
-        if (!await HasPassedTestAsync(
-                localAppId,
-                TestTypeEnum.Written))
-        {
-            return false;
-        }
-
-        return await HasPassedTestAsync(
-            localAppId,
-            TestTypeEnum.Practical);
+        return await HasPassedTestAsync(localAppId, TestTypeEnum.Theory) &&
+               await HasPassedTestAsync(localAppId, TestTypeEnum.Written) &&
+               await HasPassedTestAsync(localAppId, TestTypeEnum.Practical);
     }
 
-    private async Task<bool> HasPassedTestAsync(
-        int localAppId,
-        TestTypeEnum testType)
+    private async Task<bool> HasPassedTestAsync(int localAppId, TestTypeEnum testType)
     {
-        var appointments =
-            await _appointmentRepository
-                .GetByLocalDrivingLicenseApplicationIdAsync(
-                    localAppId);
+        var appointments = await _appointmentRepository
+            .GetByLocalDrivingLicenseApplicationIdAsync(localAppId);
 
         return appointments.Any(a =>
             a.TestTypeID == (int)testType &&
@@ -237,15 +128,12 @@ public class TestWorkflowService : ITestWorkflowService
             a.Test.TestResult);
     }
 
-    private static string GetTestName(
-        TestTypeEnum testType)
-    {
-        return testType switch
+    private static string GetTestName(TestTypeEnum testType) =>
+        testType switch
         {
             TestTypeEnum.Theory => "Theory",
             TestTypeEnum.Written => "Written",
             TestTypeEnum.Practical => "Practical",
             _ => "Unknown"
         };
-    }
 }
