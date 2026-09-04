@@ -1,15 +1,10 @@
-﻿
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 
 namespace Application.Interfaces;
 
 public interface IPersonService
 {
-    // =========================
-    // GET
-    // =========================
-
     Task<Result<List<PersonDto>>> GetAllPeopleAsync();
 
     Task<Result<PersonDto>> GetPersonByIdAsync(
@@ -18,33 +13,16 @@ public interface IPersonService
     Task<Result<PersonDto>> GetPersonByNationalNoAsync(
         string nationalNo);
 
-    // =========================
-    // CREATE
-    // =========================
-
     Task<Result<int>> AddPersonAsync(
         PersonCreateDto personDto);
-
-    // =========================
-    // UPDATE
-    // =========================
 
     Task<Result> UpdatePersonAsync(
         int id,
         PersonUpdateDto personDto);
 
-    // =========================
-    // DELETE
-    // =========================
-
     Task<Result> DeletePersonAsync(
         int id);
-
-    // =========================
-    // CHECKS
-    // =========================
 
     Task<bool> IsPersonExistsAsync(
         int id);
 }
-

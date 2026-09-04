@@ -6,7 +6,7 @@ using Application.Validators;
 
 namespace Application.Services;
 
-public class PersonService : IPersonService
+public sealed class PersonService : IPersonService
 {
     private readonly IPersonRepository _personRepository;
     private readonly IUnitOfWork _unitOfWork;
@@ -26,10 +26,6 @@ public class PersonService : IPersonService
                 nameof(unitOfWork));
     }
 
-    // =========================================================
-    // GET ALL
-    // =========================================================
-
     public async Task<Result<List<PersonDto>>>
         GetAllPeopleAsync()
     {
@@ -37,22 +33,17 @@ public class PersonService : IPersonService
             await _personRepository
                 .GetAllPersonsAsync();
 
-        var result =
+        var peopleDto =
             people
                 .Select(PersonMapper.ToDto)
                 .ToList();
 
         return Result<List<PersonDto>>
-            .Success(result);
+            .Success(peopleDto);
     }
 
-    // =========================================================
-    // GET BY ID
-    // =========================================================
-
     public async Task<Result<PersonDto>>
-        GetPersonByIdAsync(
-            int id)
+        GetPersonByIdAsync(int id)
     {
         if (id <= 0)
         {
@@ -76,10 +67,6 @@ public class PersonService : IPersonService
             .Success(
                 PersonMapper.ToDto(person));
     }
-
-    // =========================================================
-    // GET BY NATIONAL NUMBER
-    // =========================================================
 
     public async Task<Result<PersonDto>>
         GetPersonByNationalNoAsync(
@@ -121,44 +108,20 @@ public class PersonService : IPersonService
                 PersonMapper.ToDto(person));
     }
 
-    // =========================================================
-    // EXISTS
-    // =========================================================
-
-    public async Task<bool>
-        IsPersonExistsAsync(
-            int id)
+    public Task<bool>
+        IsPersonExistsAsync(int id)
     {
         if (id <= 0)
-            return false;
+            return Task.FromResult(false);
 
-        return await _personRepository
+        return _personRepository
             .IsPersonExistsByIdAsync(id);
     }
-
-    // =========================================================
-    // CREATE
-    // =========================================================
 
     public async Task<Result<int>>
         AddPersonAsync(
             PersonCreateDto personDto)
     {
-        // -----------------------------------------------------
-        // VALIDATE INPUT
-        // -----------------------------------------------------
-
-        if (personDto is null)
-        {
-            return Result<int>
-                .FromValidationFailure(
-                    "Person data is required.");
-        }
-
-        // -----------------------------------------------------
-        // VALIDATE DTO
-        // -----------------------------------------------------
-
         var validation =
             PersonValidator.Validate(
                 personDto);
@@ -170,17 +133,9 @@ public class PersonService : IPersonService
                     validation.Error);
         }
 
-        // -----------------------------------------------------
-        // MAP DTO -> ENTITY
-        // -----------------------------------------------------
-
         var person =
             PersonMapper.ToEntity(
-                personDto);
-
-        // -----------------------------------------------------
-        // CHECK NATIONAL NUMBER
-        // -----------------------------------------------------
+                personDto!);
 
         var duplicated =
             await _personRepository
@@ -195,16 +150,8 @@ public class PersonService : IPersonService
                     "The national number is already registered.");
         }
 
-        // -----------------------------------------------------
-        // ADD TO CURRENT DbContext
-        // -----------------------------------------------------
-
         await _personRepository
             .AddPersonAsync(person);
-
-        // -----------------------------------------------------
-        // PERSIST THROUGH UOW
-        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
@@ -223,35 +170,15 @@ public class PersonService : IPersonService
                 person.PersonId);
     }
 
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
     public async Task<Result>
         UpdatePersonAsync(
             int id,
             PersonUpdateDto personDto)
     {
-        // -----------------------------------------------------
-        // VALIDATE ID
-        // -----------------------------------------------------
-
         if (id <= 0)
         {
-            return Result
-                .ValidationFailure(
-                    "Invalid person ID.");
-        }
-
-        // -----------------------------------------------------
-        // VALIDATE DTO
-        // -----------------------------------------------------
-
-        if (personDto is null)
-        {
-            return Result
-                .ValidationFailure(
-                    "Person data is required.");
+            return Result.ValidationFailure(
+                "Invalid person ID.");
         }
 
         var validation =
@@ -259,15 +186,7 @@ public class PersonService : IPersonService
                 personDto);
 
         if (validation.IsFailure)
-        {
-            return Result
-                .ValidationFailure(
-                    validation.Error);
-        }
-
-        // -----------------------------------------------------
-        // LOAD TRACKED ENTITY
-        // -----------------------------------------------------
+            return validation;
 
         var existingPerson =
             await _personRepository
@@ -275,17 +194,12 @@ public class PersonService : IPersonService
 
         if (existingPerson is null)
         {
-            return Result
-                .NotFound(
-                    "Person not found.");
+            return Result.NotFound(
+                "Person not found.");
         }
 
-        // -----------------------------------------------------
-        // CHECK NATIONAL NUMBER UNIQUENESS
-        // -----------------------------------------------------
-
         var normalizedNationalNo =
-            personDto.NationalNo.Trim();
+            personDto!.NationalNo.Trim();
 
         var duplicated =
             await _personRepository
@@ -295,22 +209,13 @@ public class PersonService : IPersonService
 
         if (duplicated)
         {
-            return Result
-                .Conflict(
-                    "The national number is already registered to another person.");
+            return Result.Conflict(
+                "The national number is already registered to another person.");
         }
-
-        // -----------------------------------------------------
-        // APPLY CHANGES TO TRACKED ENTITY
-        // -----------------------------------------------------
 
         PersonMapper.ApplyUpdate(
             personDto,
             existingPerson);
-
-        // -----------------------------------------------------
-        // PERSIST THROUGH UOW
-        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
@@ -318,62 +223,38 @@ public class PersonService : IPersonService
 
         if (saved <= 0)
         {
-            return Result
-                .Failure(
-                    "No changes were saved.");
+            return Result.Failure(
+                "No changes were saved.");
         }
 
         return Result.Success();
     }
 
-    // =========================================================
-    // DELETE
-    // =========================================================
-
     public async Task<Result>
-        DeletePersonAsync(
-            int id)
+        DeletePersonAsync(int id)
     {
-        // -----------------------------------------------------
-        // VALIDATE ID
-        // -----------------------------------------------------
-
         if (id <= 0)
         {
-            return Result
-                .ValidationFailure(
-                    "Invalid person ID.");
+            return Result.ValidationFailure(
+                "Invalid person ID.");
         }
 
-        // -----------------------------------------------------
-        // CHECK PERSON EXISTS
-        // -----------------------------------------------------
+        var person =
+            await _personRepository
+                .GetPersonForUpdateAsync(id);
 
-        if (!await _personRepository
-                .IsPersonExistsByIdAsync(id))
+        if (person is null)
         {
-            return Result
-                .NotFound(
-                    "Person not found.");
+            return Result.NotFound(
+                "Person not found.");
         }
-
-        // -----------------------------------------------------
-        // BUSINESS RULE
-        //
-        // Person cannot be deleted when applications exist.
-        // -----------------------------------------------------
 
         if (await _personRepository
                 .HasApplicationsAsync(id))
         {
-            return Result
-                .Conflict(
-                    "Cannot delete this person because they have one or more applications.");
+            return Result.Conflict(
+                "Cannot delete this person because they have one or more applications.");
         }
-
-        // -----------------------------------------------------
-        // DELETE FROM DbContext
-        // -----------------------------------------------------
 
         var removed =
             await _personRepository
@@ -381,14 +262,9 @@ public class PersonService : IPersonService
 
         if (!removed)
         {
-            return Result
-                .Failure(
-                    "Failed to delete person.");
+            return Result.Failure(
+                "Failed to delete person.");
         }
-
-        // -----------------------------------------------------
-        // PERSIST THROUGH UOW
-        // -----------------------------------------------------
 
         var saved =
             await _unitOfWork
@@ -396,9 +272,8 @@ public class PersonService : IPersonService
 
         if (saved <= 0)
         {
-            return Result
-                .Failure(
-                    "Failed to save person deletion.");
+            return Result.Failure(
+                "Failed to save person deletion.");
         }
 
         return Result.Success();

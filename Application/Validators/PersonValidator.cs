@@ -22,63 +22,51 @@ public static class PersonValidator
             @"^(077|078|079)\d{7}$",
             RegexOptions.Compiled);
 
-    // =========================================================
-    // CREATE
-    // =========================================================
-
-    public static Result Validate(
-        PersonCreateDto? person)
+    public static Result Validate(PersonCreateDto? person)
     {
         if (person is null)
-            return Result.Failure(
+        {
+            return Result.ValidationFailure(
                 "Person data is required.");
+        }
 
-        var errors = ValidateCommon(
-            person.NationalNo,
-            person.FirstName,
-            person.SecondName,
-            person.ThirdName,
-            person.LastName,
-            person.DateOfBirth,
-            person.Gender,
-            person.Address,
-            person.Phone,
-            person.Email,
-            person.NationalityCountryID);
-
-        return BuildResult(errors);
+        return BuildResult(
+            ValidateCommon(
+                person.NationalNo,
+                person.FirstName,
+                person.SecondName,
+                person.ThirdName,
+                person.LastName,
+                person.DateOfBirth,
+                person.Gender,
+                person.Address,
+                person.Phone,
+                person.Email,
+                person.NationalityCountryID));
     }
 
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
-    public static Result Validate(
-        PersonUpdateDto? person)
+    public static Result Validate(PersonUpdateDto? person)
     {
         if (person is null)
-            return Result.Failure(
+        {
+            return Result.ValidationFailure(
                 "Person data is required.");
+        }
 
-        var errors = ValidateCommon(
-            person.NationalNo,
-            person.FirstName,
-            person.SecondName,
-            person.ThirdName,
-            person.LastName,
-            person.DateOfBirth,
-            person.Gender,
-            person.Address,
-            person.Phone,
-            person.Email,
-            person.NationalityCountryID);
-
-        return BuildResult(errors);
+        return BuildResult(
+            ValidateCommon(
+                person.NationalNo,
+                person.FirstName,
+                person.SecondName,
+                person.ThirdName,
+                person.LastName,
+                person.DateOfBirth,
+                person.Gender,
+                person.Address,
+                person.Phone,
+                person.Email,
+                person.NationalityCountryID));
     }
-
-    // =========================================================
-    // COMMON VALIDATION
-    // =========================================================
 
     private static List<string> ValidateCommon(
         string? nationalNo,
@@ -95,12 +83,7 @@ public static class PersonValidator
     {
         var errors = new List<string>();
 
-        // =====================================================
-        // NATIONAL NUMBER
-        // =====================================================
-
-        nationalNo =
-            nationalNo?.Trim() ?? string.Empty;
+        nationalNo = nationalNo?.Trim();
 
         if (string.IsNullOrWhiteSpace(nationalNo))
         {
@@ -113,12 +96,7 @@ public static class PersonValidator
                 "National number must be exactly 10 digits.");
         }
 
-        // =====================================================
-        // FIRST NAME
-        // =====================================================
-
-        firstName =
-            firstName?.Trim() ?? string.Empty;
+        firstName = firstName?.Trim();
 
         if (string.IsNullOrWhiteSpace(firstName))
         {
@@ -131,12 +109,7 @@ public static class PersonValidator
                 "First name cannot exceed 50 characters.");
         }
 
-        // =====================================================
-        // SECOND NAME
-        // =====================================================
-
-        secondName =
-            secondName?.Trim() ?? string.Empty;
+        secondName = secondName?.Trim();
 
         if (string.IsNullOrWhiteSpace(secondName))
         {
@@ -149,12 +122,7 @@ public static class PersonValidator
                 "Second name cannot exceed 50 characters.");
         }
 
-        // =====================================================
-        // THIRD NAME
-        // =====================================================
-
-        thirdName =
-            thirdName?.Trim();
+        thirdName = thirdName?.Trim();
 
         if (!string.IsNullOrWhiteSpace(thirdName) &&
             thirdName.Length > 50)
@@ -163,12 +131,7 @@ public static class PersonValidator
                 "Third name cannot exceed 50 characters.");
         }
 
-        // =====================================================
-        // LAST NAME
-        // =====================================================
-
-        lastName =
-            lastName?.Trim() ?? string.Empty;
+        lastName = lastName?.Trim();
 
         if (string.IsNullOrWhiteSpace(lastName))
         {
@@ -181,12 +144,7 @@ public static class PersonValidator
                 "Last name cannot exceed 50 characters.");
         }
 
-        // =====================================================
-        // EMAIL
-        // =====================================================
-
-        email =
-            email?.Trim();
+        email = email?.Trim();
 
         if (!string.IsNullOrWhiteSpace(email))
         {
@@ -202,12 +160,7 @@ public static class PersonValidator
             }
         }
 
-        // =====================================================
-        // PHONE
-        // =====================================================
-
-        phone =
-            phone?.Trim() ?? string.Empty;
+        phone = phone?.Trim();
 
         if (string.IsNullOrWhiteSpace(phone))
         {
@@ -219,10 +172,6 @@ public static class PersonValidator
             errors.Add(
                 "Phone number must start with 077, 078, or 079 and contain exactly 10 digits.");
         }
-
-        // =====================================================
-        // DATE OF BIRTH
-        // =====================================================
 
         if (dateOfBirth == default)
         {
@@ -251,12 +200,7 @@ public static class PersonValidator
             }
         }
 
-        // =====================================================
-        // ADDRESS
-        // =====================================================
-
-        address =
-            address?.Trim() ?? string.Empty;
+        address = address?.Trim();
 
         if (string.IsNullOrWhiteSpace(address))
         {
@@ -269,10 +213,6 @@ public static class PersonValidator
                 "Address cannot exceed 200 characters.");
         }
 
-        // =====================================================
-        // GENDER
-        // =====================================================
-
         if (!Enum.IsDefined(
                 typeof(Gender),
                 gender))
@@ -280,10 +220,6 @@ public static class PersonValidator
             errors.Add(
                 "Invalid gender value.");
         }
-
-        // =====================================================
-        // NATIONALITY
-        // =====================================================
 
         if (nationalityCountryId <= 0)
         {
@@ -294,18 +230,14 @@ public static class PersonValidator
         return errors;
     }
 
-    // =========================================================
-    // RESULT
-    // =========================================================
-
     private static Result BuildResult(
-        List<string> errors)
+        IReadOnlyCollection<string> errors)
     {
-        return errors.Count > 0
-            ? Result.Failure(
+        return errors.Count == 0
+            ? Result.Success()
+            : Result.ValidationFailure(
                 string.Join(
                     Environment.NewLine,
-                    errors))
-            : Result.Success();
+                    errors));
     }
 }
