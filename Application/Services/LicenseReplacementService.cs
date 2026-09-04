@@ -154,45 +154,20 @@ public class LicenseReplacementService : ILicenseReplacementService
                         createApplicationDto);
 
             if (applicationResult.IsFailure)
-            {
-                await transaction.RollbackAsync();
-
                 return Result<int>.FromFailure(
                     applicationResult.Error);
-            }
 
-            if (applicationResult.Value <= 0)
-            {
-                await transaction.RollbackAsync();
+            var applicationId = applicationResult.Value;
 
+            if (applicationId <= 0)
                 return Result<int>.FromFailure(
                     "Failed to create replacement application.");
-            }
-
-            oldLicense.IsActive = false;
-
-            if (!await _licenseRepository
-                    .UpdateLicenseAsync(oldLicense))
-            {
-                await transaction.RollbackAsync();
-
-                return Result<int>.FromFailure(
-                    "Failed to deactivate the old license.");
-            }
-
-            if (await _unitOfWork.SaveChangesAsync() <= 0)
-            {
-                await transaction.RollbackAsync();
-
-                return Result<int>.FromFailure(
-                    "Failed to save the old license status.");
-            }
 
             var createLicenseDto =
                 new CreateLicenseDto
                 {
                     ApplicationID =
-                        applicationResult.Value,
+                        applicationId,
 
                     DriverID =
                         oldLicense.DriverID,
@@ -224,11 +199,22 @@ public class LicenseReplacementService : ILicenseReplacementService
                     createLicenseDto);
 
             if (licenseValidation.IsFailure)
-            {
-                await transaction.RollbackAsync();
-
                 return Result<int>.FromValidationFailure(
                     licenseValidation.Error);
+
+            oldLicense.IsActive = false;
+
+            if (!await _licenseRepository
+                    .UpdateLicenseAsync(oldLicense))
+            {
+                return Result<int>.FromFailure(
+                    "Failed to deactivate the old license.");
+            }
+
+            if (await _unitOfWork.SaveChangesAsync() <= 0)
+            {
+                return Result<int>.FromFailure(
+                    "Failed to save the old license status.");
             }
 
             var newLicense =
@@ -244,8 +230,6 @@ public class LicenseReplacementService : ILicenseReplacementService
             if (await _unitOfWork.SaveChangesAsync() <= 0 ||
                 newLicense.LicenseID <= 0)
             {
-                await transaction.RollbackAsync();
-
                 return Result<int>.FromFailure(
                     "Failed to save the replacement license.");
             }
@@ -253,12 +237,10 @@ public class LicenseReplacementService : ILicenseReplacementService
             var completeResult =
                 await _applicationService
                     .CompleteApplicationAsync(
-                        applicationResult.Value);
+                        applicationId);
 
             if (completeResult.IsFailure)
             {
-                await transaction.RollbackAsync();
-
                 return Result<int>.FromFailure(
                     completeResult.Error);
             }
