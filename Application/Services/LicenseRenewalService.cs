@@ -10,6 +10,8 @@ namespace Application.Services;
 
 public class LicenseRenewalService : ILicenseRenewalService
 {
+    private const int RenewalApplicationTypeId = 2;
+
     private readonly ILicenseRepository _repository;
     private readonly IApplicationService _applicationService;
     private readonly IApplicationTypeService _applicationTypeService;
@@ -23,14 +25,21 @@ public class LicenseRenewalService : ILicenseRenewalService
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
-        _applicationTypeService = applicationTypeService ?? throw new ArgumentNullException(nameof(applicationTypeService));
-        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _repository = repository
+            ?? throw new ArgumentNullException(nameof(repository));
+        _applicationService = applicationService
+            ?? throw new ArgumentNullException(nameof(applicationService));
+        _applicationTypeService = applicationTypeService
+            ?? throw new ArgumentNullException(nameof(applicationTypeService));
+        _currentUserService = currentUserService
+            ?? throw new ArgumentNullException(nameof(currentUserService));
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
-    public async Task<Result<int>> RenewLicenseAsync(int oldLicenseId, string? notes)
+    public async Task<Result<int>> RenewLicenseAsync(
+        int oldLicenseId,
+        string? notes)
     {
         var validation = LicenseValidator.ValidateId(oldLicenseId);
 
@@ -38,9 +47,8 @@ public class LicenseRenewalService : ILicenseRenewalService
             return Result<int>.FromValidationFailure(validation.Error);
 
         if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
-            return Result<int>.FromFailure("Authenticated user is required.");
-
-        var currentUserId = _currentUserService.UserId;
+            return Result<int>.FromFailure(
+                "Authenticated user is required.");
 
         var oldLicense = await _repository.GetLicenseByIdAsync(oldLicenseId);
 
@@ -48,32 +56,36 @@ public class LicenseRenewalService : ILicenseRenewalService
             return Result<int>.FromNotFound("Old license not found.");
 
         if (!oldLicense.IsActive)
-            return Result<int>.FromConflict("Cannot renew an inactive license.");
+            return Result<int>.FromConflict(
+                "Cannot renew an inactive license.");
 
-        if (oldLicense.ExpirationDate > DateTime.UtcNow)
-            return Result<int>.FromConflict("Cannot renew before expiration date.");
+        var now = DateTime.UtcNow;
+
+        if (oldLicense.ExpirationDate > now)
+            return Result<int>.FromConflict(
+                "Cannot renew before expiration date.");
 
         if (oldLicense.Driver is null)
-            return Result<int>.FromNotFound("Driver information is not available.");
+            return Result<int>.FromNotFound(
+                "Driver information is not available.");
 
         if (oldLicense.LicenseClassInfo is null)
-            return Result<int>.FromNotFound("License class information is not available.");
-
-        const int renewalApplicationTypeId = 2;
+            return Result<int>.FromNotFound(
+                "License class information is not available.");
 
         var applicationTypeResult =
-            await _applicationTypeService.GetApplicationTypeByIdAsync(
-                renewalApplicationTypeId);
+            await _applicationTypeService
+                .GetApplicationTypeByIdAsync(RenewalApplicationTypeId);
 
         if (applicationTypeResult.IsFailure)
-            return Result<int>.FromFailure(applicationTypeResult.Error);
+            return Result<int>.FromFailure(
+                applicationTypeResult.Error);
 
         if (applicationTypeResult.Value is null)
             return Result<int>.FromNotFound(
                 "Renewal application type not found.");
 
         var applicationType = applicationTypeResult.Value;
-        var now = DateTime.UtcNow;
 
         await using var transaction =
             await _unitOfWork.BeginTransactionAsync();
@@ -84,39 +96,29 @@ public class LicenseRenewalService : ILicenseRenewalService
             {
                 ApplicantPersonID = oldLicense.Driver.PersonID,
                 ApplicationDate = now,
-                ApplicationTypeID = renewalApplicationTypeId,
+                ApplicationTypeID = RenewalApplicationTypeId,
                 ApplicationStatus = AppStatus.New,
                 LastStatusDate = now,
                 PaidFees = applicationType.ApplicationTypeFees
             };
 
             var applicationResult =
-                await _applicationService.AddNewApplicationAsync(
-                    createApplicationDto);
+                await _applicationService
+                    .AddNewApplicationAsync(createApplicationDto);
 
             if (applicationResult.IsFailure)
-                return Result<int>.FromFailure(applicationResult.Error);
+                return Result<int>.FromFailure(
+                    applicationResult.Error);
 
-            if (applicationResult.Value <= 0)
+            var applicationId = applicationResult.Value;
+
+            if (applicationId <= 0)
                 return Result<int>.FromFailure(
                     "Failed to create renewal application.");
 
-            // Deactivate the old license first.
-            // This is required because the database allows only one
-            // active license per Driver + LicenseClass.
-            oldLicense.IsActive = false;
-
-            if (!await _repository.UpdateLicenseAsync(oldLicense))
-                return Result<int>.FromFailure(
-                    "Failed to deactivate old license.");
-
-            if (await _unitOfWork.SaveChangesAsync() <= 0)
-                return Result<int>.FromFailure(
-                    "Failed to save old license changes.");
-
             var createLicenseDto = new CreateLicenseDto
             {
-                ApplicationID = applicationResult.Value,
+                ApplicationID = applicationId,
                 DriverID = oldLicense.DriverID,
                 LicenseClassID = oldLicense.LicenseClass,
                 IssueDate = now,
@@ -137,8 +139,18 @@ public class LicenseRenewalService : ILicenseRenewalService
                 return Result<int>.FromValidationFailure(
                     licenseValidation.Error);
 
+            oldLicense.IsActive = false;
+
+            if (!await _repository.UpdateLicenseAsync(oldLicense))
+                return Result<int>.FromFailure(
+                    "Failed to deactivate old license.");
+
+            if (await _unitOfWork.SaveChangesAsync() <= 0)
+                return Result<int>.FromFailure(
+                    "Failed to save old license changes.");
+
             var newLicense = LicenseMapper.ToEntity(createLicenseDto);
-            newLicense.CreatedByUserID = currentUserId;
+            newLicense.CreatedByUserID = _currentUserService.UserId;
 
             await _repository.AddLicenseAsync(newLicense);
 
@@ -150,11 +162,12 @@ public class LicenseRenewalService : ILicenseRenewalService
             }
 
             var completeResult =
-                await _applicationService.CompleteApplicationAsync(
-                    applicationResult.Value);
+                await _applicationService
+                    .CompleteApplicationAsync(applicationId);
 
             if (completeResult.IsFailure)
-                return Result<int>.FromFailure(completeResult.Error);
+                return Result<int>.FromFailure(
+                    completeResult.Error);
 
             await transaction.CommitAsync();
 
