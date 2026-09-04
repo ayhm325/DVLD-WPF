@@ -16,6 +16,10 @@ public class LicenseRepository : ILicenseRepository
             .Include(l => l.Application)
             .Include(l => l.Driver)
                 .ThenInclude(d => d.Person)
+            .Include(l => l.Driver)
+                .ThenInclude(d => d.CreatedByUser)
+            .Include(l => l.Driver)
+                .ThenInclude(d => d.Licenses)
             .Include(l => l.LicenseClassInfo)
             .Include(l => l.CreatedByUser);
 
@@ -97,7 +101,8 @@ public class LicenseRepository : ILicenseRepository
             .AsNoTracking()
             .AnyAsync(l => l.DriverID == driverId);
 
-    public async Task<bool> IsActiveLicenseExistsAsync(int driverId, int licenseClassId) =>
+    public async Task<bool> IsActiveLicenseExistsAsync(
+        int driverId, int licenseClassId) =>
         driverId > 0 &&
         licenseClassId > 0 &&
         await _context.Licenses
