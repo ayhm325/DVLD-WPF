@@ -12,6 +12,9 @@ public interface IApplicationRepository
     Task<ApplicationD?> GetApplicationByIdAsync(
         int id);
 
+    Task<ApplicationD?> GetApplicationForUpdateAsync(
+        int id);
+
     Task<List<ApplicationD>> GetAllApplicationsAsync();
 
     Task<List<ApplicationD>> GetApplicationsByPersonIdAsync(
@@ -55,17 +58,9 @@ public interface IApplicationRepository
 
 
     // =========================================================
-    // UPDATE
-    // =========================================================
-
-    Task<bool> UpdateApplicationAsync(
-        ApplicationD application);
-
-
-    // =========================================================
     // DELETE
     // =========================================================
 
-    Task<bool> DeleteApplicationAsync(
-        int id);
+    void DeleteApplication(
+        ApplicationD application);
 }
