@@ -13,7 +13,9 @@ public sealed class DriverRepository(DVLDDbContext context)
     private IQueryable<Driver> QueryWithBasicInfo() =>
         _context.Drivers
             .Include(d => d.Person)
-            .Include(d => d.CreatedByUser);
+            .Include(d => d.CreatedByUser)
+            .Include(d => d.Licenses
+                .Where(l => l.IsActive));
 
     private IQueryable<Driver> QueryForDelete() =>
         _context.Drivers
@@ -24,55 +26,60 @@ public sealed class DriverRepository(DVLDDbContext context)
         id <= 0
             ? Task.FromResult<Driver?>(null)
             : QueryWithBasicInfo()
-                .FirstOrDefaultAsync(d => d.DriverID == id);
+                .FirstOrDefaultAsync(
+                    d => d.DriverID == id);
 
     public Task<Driver?> GetForDeleteAsync(int id) =>
         id <= 0
             ? Task.FromResult<Driver?>(null)
             : QueryForDelete()
-                .FirstOrDefaultAsync(d => d.DriverID == id);
+                .FirstOrDefaultAsync(
+                    d => d.DriverID == id);
 
     public Task<List<Driver>> GetAllAsync() =>
         QueryWithBasicInfo()
             .AsNoTracking()
+            .AsSplitQuery()
             .OrderBy(d => d.DriverID)
             .ToListAsync();
 
-    public Task<Driver?> GetByPersonIdAsync(int personId) =>
+    public Task<Driver?> GetByPersonIdAsync(
+        int personId) =>
         personId <= 0
             ? Task.FromResult<Driver?>(null)
             : QueryWithBasicInfo()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.PersonID == personId);
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(
+                    d => d.PersonID == personId);
 
-    public Task<List<Driver>> GetByCreatedUserIdAsync(int userId) =>
+    public Task<List<Driver>> GetByCreatedUserIdAsync(
+        int userId) =>
         userId <= 0
             ? Task.FromResult<List<Driver>>([])
             : QueryWithBasicInfo()
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Where(d => d.CreatedByUserID == userId)
                 .OrderBy(d => d.DriverID)
                 .ToListAsync();
 
-    public async Task<bool> ExistsByIdAsync(int driverId)
-    {
-        if (driverId <= 0)
-            return false;
+    public Task<bool> ExistsByIdAsync(int driverId) =>
+        driverId <= 0
+            ? Task.FromResult(false)
+            : _context.Drivers
+                .AsNoTracking()
+                .AnyAsync(
+                    d => d.DriverID == driverId);
 
-        return await _context.Drivers
-            .AsNoTracking()
-            .AnyAsync(d => d.DriverID == driverId);
-    }
-
-    public async Task<bool> ExistsByPersonIdAsync(int personId)
-    {
-        if (personId <= 0)
-            return false;
-
-        return await _context.Drivers
-            .AsNoTracking()
-            .AnyAsync(d => d.PersonID == personId);
-    }
+    public Task<bool> ExistsByPersonIdAsync(
+        int personId) =>
+        personId <= 0
+            ? Task.FromResult(false)
+            : _context.Drivers
+                .AsNoTracking()
+                .AnyAsync(
+                    d => d.PersonID == personId);
 
     public async Task AddAsync(Driver driver)
     {

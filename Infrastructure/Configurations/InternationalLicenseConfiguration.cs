@@ -4,36 +4,39 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Configurations;
 
-public class InternationalLicenseConfiguration
+public sealed class InternationalLicenseConfiguration
     : IEntityTypeConfiguration<InternationalLicense>
 {
-    public void Configure(EntityTypeBuilder<InternationalLicense> builder)
+    public void Configure(
+        EntityTypeBuilder<InternationalLicense> builder)
     {
+        builder.HasKey(x => x.InternationalLicenseID);
+
         builder.HasIndex(x => x.IssuedUsingLocalLicenseID)
             .IsUnique();
 
+        builder.HasIndex(x => x.DriverID)
+            .HasFilter("[IsActive] = 1")
+            .IsUnique();
 
-        builder.HasOne(i => i.Application)
+        builder.HasOne(x => x.Application)
             .WithMany()
-            .HasForeignKey(i => i.ApplicationID)
+            .HasForeignKey(x => x.ApplicationID)
             .OnDelete(DeleteBehavior.Restrict);
 
-
-        builder.HasOne(i => i.Driver)
-            .WithMany(d => d.InternationalLicenses)
-            .HasForeignKey(i => i.DriverID)
+        builder.HasOne(x => x.Driver)
+            .WithMany(x => x.InternationalLicenses)
+            .HasForeignKey(x => x.DriverID)
             .OnDelete(DeleteBehavior.Restrict);
 
-
-        builder.HasOne(i => i.IssuedUsingLocalLicense)
+        builder.HasOne(x => x.IssuedUsingLocalLicense)
             .WithMany()
-            .HasForeignKey(i => i.IssuedUsingLocalLicenseID)
+            .HasForeignKey(x => x.IssuedUsingLocalLicenseID)
             .OnDelete(DeleteBehavior.Restrict);
 
-
-        builder.HasOne(i => i.CreatedByUser)
+        builder.HasOne(x => x.CreatedByUser)
             .WithMany()
-            .HasForeignKey(i => i.CreatedByUserID)
+            .HasForeignKey(x => x.CreatedByUserID)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -18,6 +18,7 @@ public interface ILicenseRepository
     Task<bool> IsLicenseExistsAsync(int id);
     Task<bool> IsDriverHasLicenseAsync(int driverId);
     Task<bool> IsApplicationHasLicenseAsync(int applicationId);
+
     Task<bool> IsActiveLicenseExistsAsync(
         int driverId,
         int licenseClassId);
@@ -26,8 +27,8 @@ public interface ILicenseRepository
         IEnumerable<int> applicationIds);
 
     Task AddLicenseAsync(License license);
+
     Task<bool> DeactivateLicenseAsync(int licenseId);
-    Task<bool> DeleteLicenseAsync(int id);
 
     Task<bool> HasAnotherActiveLicenseAsync(
         int driverId,
