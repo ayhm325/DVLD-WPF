@@ -6,17 +6,20 @@ namespace Application.Interfaces;
 public interface ITestAppointmentRepository
 {
     Task<TestAppointment?> GetByIdAsync(int id);
+
     Task<TestAppointment?> GetForUpdateAsync(int id);
+
     Task<List<TestAppointment>> GetAllAsync();
 
-    Task<List<TestAppointment>> GetByLocalDrivingLicenseApplicationIdAsync(
-        int localAppId);
+    Task<List<TestAppointment>>
+        GetByLocalDrivingLicenseApplicationIdAsync(
+            int localAppId);
 
-    Task<List<TestAppointment>> GetByTestTypeIdAsync(
-        TestTypeEnum testType);
+    Task<List<TestAppointment>>
+        GetByTestTypeIdAsync(TestTypeEnum testType);
 
-    Task<List<TestAppointment>> GetByCreatedUserIdAsync(
-        int userId);
+    Task<List<TestAppointment>>
+        GetByCreatedUserIdAsync(int userId);
 
     Task<TestAppointment?> GetScheduleInfoAsync(
         int appointmentId);
@@ -46,5 +49,6 @@ public interface ITestAppointmentRepository
         int testTypeId);
 
     Task AddAsync(TestAppointment appointment);
+
     void Delete(TestAppointment appointment);
 }

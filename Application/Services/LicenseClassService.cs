@@ -6,40 +6,53 @@ using Domain.Entities;
 
 namespace Application.Services;
 
-public class LicenseClassService : ILicenseClassService
+public sealed class LicenseClassService(
+    ILicenseClassRepository licenseClassRepository)
+    : ILicenseClassService
 {
-    private readonly ILicenseClassRepository _licenseClassRepository;
+    private readonly ILicenseClassRepository _licenseClassRepository =
+        licenseClassRepository
+        ?? throw new ArgumentNullException(nameof(licenseClassRepository));
 
-    public LicenseClassService(ILicenseClassRepository licenseClassRepository)
+    public async Task<Result<List<LicenseClassDto>>>
+        GetAllLicenseClassesAsync()
     {
-        _licenseClassRepository = licenseClassRepository ?? throw new ArgumentNullException(nameof(licenseClassRepository));
+        var licenseClasses =
+            await _licenseClassRepository
+                .GetAllLicenseClassAsync();
+
+        return Result<List<LicenseClassDto>>.Success(
+            licenseClasses
+                .Select(MapToDto)
+                .ToList());
     }
 
-    // GET ALL
-    public async Task<Result<List<LicenseClassDto>>> GetAllLicenseClassesAsync()
+    public async Task<Result<LicenseClassDto>>
+        GetLicenseClassByIdAsync(int id)
     {
-        var licenseClasses = await _licenseClassRepository.GetAllLicenseClassAsync();
-        return Result<List<LicenseClassDto>>.Success([.. licenseClasses.Select(MapToDto)]);
-    }
+        var validation =
+            LicenseClassValidator.ValidateId(id);
 
-    // GET BY ID
-    public async Task<Result<LicenseClassDto>> GetLicenseClassByIdAsync(int id)
-    {
-        var validation = LicenseClassValidator.ValidateId(id);
         if (validation.IsFailure)
-            return Result<LicenseClassDto>.FromFailure(validation.Error);
+        {
+            return Result<LicenseClassDto>.FromValidationFailure(
+                validation.Error);
+        }
 
-        var licenseClass = await _licenseClassRepository.GetLicenseClassByIdAsync(id);
-        if (licenseClass is null)
-            return Result<LicenseClassDto>.FromFailure("License class not found.");
+        var licenseClass =
+            await _licenseClassRepository
+                .GetLicenseClassByIdAsync(id);
 
-        return Result<LicenseClassDto>.Success(MapToDto(licenseClass));
+        return licenseClass is null
+            ? Result<LicenseClassDto>.FromNotFound(
+                "License class not found.")
+            : Result<LicenseClassDto>.Success(
+                MapToDto(licenseClass));
     }
 
-    // MAPPING
-    private static LicenseClassDto MapToDto(LicenseClass licenseClass)
-    {
-        return new LicenseClassDto
+    private static LicenseClassDto MapToDto(
+        LicenseClass licenseClass) =>
+        new()
         {
             LicenseClassID = licenseClass.LicenseClassID,
             LicenseClassName = licenseClass.ClassName,
@@ -48,5 +61,4 @@ public class LicenseClassService : ILicenseClassService
             DefaultValidityLength = licenseClass.DefaultValidityLength,
             LicenseClassFees = licenseClass.ClassFees
         };
-    }
 }

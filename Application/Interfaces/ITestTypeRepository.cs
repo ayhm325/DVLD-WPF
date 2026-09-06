@@ -1,22 +1,10 @@
 ﻿using Domain.Entities;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface ITestTypeRepository
 {
-    public interface ITestTypeRepository
-    {
-        // =========================
-        // GET OPERATIONS
-        // =========================
+    Task<List<TestType>> GetAllAsync();
 
-        Task<List<TestType>> GetAllTestTypeAsync();
-
-        Task<TestType?> GetTestTypeByIdAsync(int id);
-
-
-        // =========================
-        // UPDATE OPERATION
-        // =========================
-
-        Task<bool> UpdateTestTypeAsync(TestType testtype);
-    }
+    Task<TestType?> GetByIdAsync(int id);
 }

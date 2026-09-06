@@ -20,40 +20,54 @@ public class Result
         ErrorType = errorType;
     }
 
-    public static Result Success()
-        => new(
+    public static Result Success() =>
+        new(
             true,
             string.Empty,
             ErrorType.None);
 
-    public static Result Failure(
-        string error)
-        => new(
+    public static Result Failure(string error) =>
+        new(
             false,
             error,
             ErrorType.Failure);
 
-    public static Result ValidationFailure(
-        string error)
-        => new(
+    public static Result ValidationFailure(string error) =>
+        new(
             false,
             error,
             ErrorType.Validation);
 
-    public static Result NotFound(
-        string error)
-        => new(
+    public static Result NotFound(string error) =>
+        new(
             false,
             error,
             ErrorType.NotFound);
 
-    public static Result Forbidden(string error)
-         => new(false, error, ErrorType.Forbidden);
-
-    public static Result Conflict(
-        string error)
-        => new(
+    public static Result Conflict(string error) =>
+        new(
             false,
             error,
             ErrorType.Conflict);
+
+    public static Result Forbidden(string error) =>
+        new(
+            false,
+            error,
+            ErrorType.Forbidden);
+
+    public static Result FromFailure(Result result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (result.IsSuccess)
+            throw new ArgumentException(
+                "Cannot convert a successful result to a failure result.",
+                nameof(result));
+
+        return new Result(
+            false,
+            result.Error,
+            result.ErrorType);
+    }
 }

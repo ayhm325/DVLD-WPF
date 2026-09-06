@@ -14,11 +14,6 @@ public sealed class Result<T> : Result
         Value = value;
     }
 
-
-    // =========================
-    // SUCCESS
-    // =========================
-
     public static Result<T> Success(T value)
         => new(
             true,
@@ -26,55 +21,38 @@ public sealed class Result<T> : Result
             string.Empty,
             ErrorType.None);
 
-
-    // =========================
-    // FAILURE
-    // =========================
-
-    public static Result<T> FromFailure(
-        string error)
+    public static Result<T> FromFailure(string error)
         => new(
             false,
             default,
             error,
             ErrorType.Failure);
 
-
-    // =========================
-    // VALIDATION
-    // =========================
-
-    public static Result<T> FromValidationFailure(
-        string error)
+    public static Result<T> FromValidationFailure(string error)
         => new(
             false,
             default,
             error,
             ErrorType.Validation);
 
-
-    // =========================
-    // NOT FOUND
-    // =========================
-
-    public static Result<T> FromNotFound(
-        string error)
+    public static Result<T> FromNotFound(string error)
         => new(
             false,
             default,
             error,
             ErrorType.NotFound);
 
-
-    // =========================
-    // CONFLICT
-    // =========================
-
-    public static Result<T> FromConflict(
-        string error)
+    public static Result<T> FromConflict(string error)
         => new(
             false,
             default,
             error,
             ErrorType.Conflict);
+
+    public static Result<T> FromForbidden(string error)
+        => new(
+            false,
+            default,
+            error,
+            ErrorType.Forbidden);
 }

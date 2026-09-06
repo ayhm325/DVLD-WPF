@@ -2,68 +2,93 @@
 using Application.DTOs.TestTypeDTO;
 using Application.Interfaces;
 using Application.Validators;
-using Domain.Entities;
 
 namespace Application.Services;
 
-public class TestTypeService : ITestTypeService
+public sealed class TestTypeService(
+    ITestTypeRepository repository,
+    IUnitOfWork unitOfWork) : ITestTypeService
 {
-    private readonly ITestTypeRepository _repository;
+    private readonly ITestTypeRepository _repository =
+        repository ?? throw new ArgumentNullException(nameof(repository));
 
-    public TestTypeService(ITestTypeRepository repository)
-    {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-    }
+    private readonly IUnitOfWork _unitOfWork =
+        unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
 
-    // GET ALL
     public async Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync()
     {
-        var testTypes = await _repository.GetAllTestTypeAsync();
-        return Result<List<TestTypeDto>>.Success(testTypes.Select(MapToDto).ToList());
+        var testTypes = await _repository.GetAllAsync();
+
+        return Result<List<TestTypeDto>>.Success(
+            testTypes.Select(MapToDto).ToList());
     }
 
-    // GET BY ID
     public async Task<Result<TestTypeDto>> GetTestTypeByIdAsync(int id)
     {
         var validation = TestTypeValidator.ValidateId(id);
+
         if (validation.IsFailure)
-            return Result<TestTypeDto>.FromFailure(validation.Error);
+        {
+            return Result<TestTypeDto>.FromValidationFailure(
+                validation.Error);
+        }
 
-        var testType = await _repository.GetTestTypeByIdAsync(id);
-        if (testType is null)
-            return Result<TestTypeDto>.FromFailure("Test type not found.");
+        var testType = await _repository.GetByIdAsync(id);
 
-        return Result<TestTypeDto>.Success(MapToDto(testType));
+        return testType is null
+            ? Result<TestTypeDto>.FromNotFound(
+                "Test type not found.")
+            : Result<TestTypeDto>.Success(
+                MapToDto(testType));
     }
 
-    // UPDATE
-    public async Task<Result> UpdateTestTypeAsync(int id, TestTypeDto dto)
+    public async Task<Result> UpdateTestTypeAsync(
+        int id,
+        TestTypeDto dto)
     {
-        var validation = TestTypeValidator.ValidateUpdate(id, dto);
+        var validation =
+            TestTypeValidator.ValidateUpdate(id, dto);
+
         if (validation.IsFailure)
-            return validation;
+        {
+            return Result.ValidationFailure(
+                validation.Error);
+        }
 
-        var testType = await _repository.GetTestTypeByIdAsync(id);
+        var testType =
+            await _repository.GetByIdAsync(id);
+
         if (testType is null)
-            return Result.Failure("Test type not found.");
+        {
+            return Result.NotFound(
+                "Test type not found.");
+        }
 
-        testType.TestTypeTitle = dto.TestTypeTitle.Trim();
-        testType.TestTypeDescription = dto.TestTypeDescription.Trim();
-        testType.TestTypeFees = dto.TestTypeFees;
+        testType.TestTypeTitle =
+            dto.TestTypeTitle.Trim();
 
-        var isSuccess = await _repository.UpdateTestTypeAsync(testType);
-        return isSuccess ? Result.Success() : Result.Failure("Failed to update test type.");
+        testType.TestTypeDescription =
+            dto.TestTypeDescription.Trim();
+
+        testType.TestTypeFees =
+            dto.TestTypeFees;
+
+        var saved =
+            await _unitOfWork.SaveChangesAsync();
+
+        return saved > 0
+            ? Result.Success()
+            : Result.Failure(
+                "Failed to update test type.");
     }
 
-    // MAPPING
-    private static TestTypeDto MapToDto(TestType entity)
-    {
-        return new TestTypeDto
+    private static TestTypeDto MapToDto(
+        Domain.Entities.TestType entity) =>
+        new()
         {
             TestTypeId = entity.TestTypeId,
             TestTypeTitle = entity.TestTypeTitle,
             TestTypeDescription = entity.TestTypeDescription,
             TestTypeFees = entity.TestTypeFees
         };
-    }
 }

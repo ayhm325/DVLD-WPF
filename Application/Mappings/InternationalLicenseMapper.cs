@@ -7,14 +7,12 @@ namespace Application.Mappers;
 
 public static class InternationalLicenseMapper
 {
-    // =========================================================
-    // ENTITY -> DTO
-    // =========================================================
-
     public static InternationalDto ToDto(
-        InternationalLicense entity)
+    InternationalLicense entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
+
+        var person = entity.Driver?.Person;
 
         return new InternationalDto
         {
@@ -43,63 +41,30 @@ public static class InternationalLicenseMapper
                 entity.CreatedByUserID,
 
             PersonID =
-                entity.Driver?.PersonID ?? 0,
+                person?.PersonId ?? 0,
 
             FullName =
-                entity.Driver?.Person?.FullName
-                ?? string.Empty,
+                person?.FullName ?? string.Empty,
 
             DateOfBirth =
-                entity.Driver?.Person?.DateOfBirth
-                ?? DateTime.MinValue,
+                person?.DateOfBirth ?? DateTime.MinValue,
 
             ImagePath =
-                entity.Driver?.Person?.ImagePath
-                ?? string.Empty,
+                person?.ImagePath ?? string.Empty,
 
             NationalNo =
-                entity.Driver?.Person?.NationalNo
-                ?? string.Empty,
+                person?.NationalNo ?? string.Empty,
 
             Gender =
-                entity.Driver?.Person?.Gender.ToString()
-                ?? string.Empty,
+                person?.Gender.ToString() ?? string.Empty,
 
             Fees =
-                entity.Application?.PaidFees
-                ?? 0m,
+                entity.Application?.PaidFees ?? 0m,
 
             CreatedByUserName =
-                entity.CreatedByUser?.UserName
-                ?? string.Empty
+                entity.CreatedByUser?.UserName ?? string.Empty
         };
     }
-
-
-    // =========================================================
-    // DTO -> ENTITY
-    // =========================================================
-
-    public static InternationalLicense ToEntity(
-    CreateInternationalLicenseDto dto)
-    {
-        ArgumentNullException.ThrowIfNull(dto);
-
-        return new InternationalLicense
-        {
-            ApplicationID = dto.ApplicationID,
-            DriverID = dto.DriverID,
-            IssuedUsingLocalLicenseID = dto.IssuedUsingLocalLicenseID,
-            IssueDate = dto.IssueDate,
-            ExpirationDate = dto.ExpirationDate,
-            IsActive = dto.IsActive
-        };
-    }
-
-
-    // =========================================================
-    // LICENSE DTO -> DRIVER LICENSE INFO DTO
-    // =========================================================
 
     public static DriverLicenseInfoDto ToDriverLicenseInfoDto(
         LicenseDto license)
@@ -117,19 +82,16 @@ public static class InternationalLicenseMapper
                 license.DriverID,
 
             LicenseClass =
-                license.LicenseClassName
-                ?? "Unknown",
+                license.LicenseClassName ?? "Unknown",
 
             PersonID =
                 driver?.PersonID ?? 0,
 
             FullName =
-                driver?.FullName
-                ?? string.Empty,
+                driver?.FullName ?? string.Empty,
 
             NationalNo =
-                driver?.NationalNo
-                ?? string.Empty,
+                driver?.NationalNo ?? string.Empty,
 
             Gender =
                 driver?.Gender == Gender.Male
@@ -137,8 +99,7 @@ public static class InternationalLicenseMapper
                     : "Female",
 
             DateOfBirth =
-                driver?.DateOfBirth
-                ?? DateTime.MinValue,
+                driver?.DateOfBirth ?? DateTime.MinValue,
 
             IssueDate =
                 license.IssueDate,
@@ -153,12 +114,10 @@ public static class InternationalLicenseMapper
                 license.Notes,
 
             IssueReason =
-                ((IssueReason)license.IssueReason)
-                .ToString(),
+                ((IssueReason)license.IssueReason).ToString(),
 
             ImagePath =
-                driver?.ImagePath
-                ?? string.Empty
+                driver?.ImagePath ?? string.Empty
         };
     }
 }

@@ -6,62 +6,44 @@ using Domain.Entities;
 
 namespace Application.Services;
 
-public class ApplicationTypeService
-    : IApplicationTypeService
+public sealed class ApplicationTypeService(
+    IApplicationTypeRepository applicationTypeRepository,
+    IUnitOfWork unitOfWork) : IApplicationTypeService
 {
-    private readonly IApplicationTypeRepository
-        _applicationTypeRepository;
+    private readonly IApplicationTypeRepository _applicationTypeRepository =
+        applicationTypeRepository
+        ?? throw new ArgumentNullException(nameof(applicationTypeRepository));
 
-    private readonly IUnitOfWork
-        _unitOfWork;
-
-    public ApplicationTypeService(
-        IApplicationTypeRepository applicationTypeRepository,
-        IUnitOfWork unitOfWork)
-    {
-        _applicationTypeRepository =
-            applicationTypeRepository
-            ?? throw new ArgumentNullException(
-                nameof(applicationTypeRepository));
-
-        _unitOfWork =
-            unitOfWork
-            ?? throw new ArgumentNullException(
-                nameof(unitOfWork));
-    }
+    private readonly IUnitOfWork _unitOfWork =
+        unitOfWork
+        ?? throw new ArgumentNullException(nameof(unitOfWork));
 
     // =========================================================
     // GET ALL
     // =========================================================
 
-    public async Task<
-        Result<List<ApplicationTypeDto>>>
+    public async Task<Result<List<ApplicationTypeDto>>>
         GetAllApplicationTypesAsync()
     {
         var appTypes =
             await _applicationTypeRepository
                 .GetAllApplicationTypesAsync();
 
-        return Result<List<ApplicationTypeDto>>
-            .Success(
-                [
-                    .. appTypes.Select(MapToDto)
-                ]);
+        return Result<List<ApplicationTypeDto>>.Success(
+            appTypes.Select(MapToDto).ToList());
     }
 
     // =========================================================
     // GET BY ID
     // =========================================================
 
-    public async Task<
-        Result<ApplicationTypeDto>>
+    public async Task<Result<ApplicationTypeDto>>
         GetApplicationTypeByIdAsync(int id)
     {
         if (id <= 0)
         {
-            return Result<ApplicationTypeDto>
-                .FromFailure(
-                    "Invalid application type ID.");
+            return Result<ApplicationTypeDto>.FromValidationFailure(
+                "Invalid application type ID.");
         }
 
         var appType =
@@ -70,35 +52,31 @@ public class ApplicationTypeService
 
         if (appType is null)
         {
-            return Result<ApplicationTypeDto>
-                .FromFailure(
-                    "Application type not found.");
+            return Result<ApplicationTypeDto>.FromNotFound(
+                "Application type not found.");
         }
 
-        return Result<ApplicationTypeDto>
-            .Success(
-                MapToDto(appType));
+        return Result<ApplicationTypeDto>.Success(
+            MapToDto(appType));
     }
 
     // =========================================================
     // UPDATE
     // =========================================================
 
-    public async Task<Result>
-        UpdateApplicationTypeAsync(
-            int id,
-            ApplicationTypeDto dto)
+    public async Task<Result> UpdateApplicationTypeAsync(
+        int id,
+        ApplicationTypeDto dto)
     {
         var validation =
-            ApplicationTypeValidator
-                .ValidateUpdate(
-                    id,
-                    dto);
+            ApplicationTypeValidator.ValidateUpdate(
+                id,
+                dto);
 
         if (validation.IsFailure)
         {
-            return Result
-                .Failure(validation.Error);
+            return Result.ValidationFailure(
+                validation.Error);
         }
 
         var appType =
@@ -107,9 +85,8 @@ public class ApplicationTypeService
 
         if (appType is null)
         {
-            return Result
-                .Failure(
-                    "Application type not found.");
+            return Result.NotFound(
+                "Application type not found.");
         }
 
         appType.ApplicationTypeTitle =
@@ -120,19 +97,16 @@ public class ApplicationTypeService
 
         var updated =
             await _applicationTypeRepository
-                .UpdateApplicationTypeAsync(
-                    appType);
+                .UpdateApplicationTypeAsync(appType);
 
         if (!updated)
         {
-            return Result
-                .Failure(
-                    "Failed to update application type.");
+            return Result.Failure(
+                "Failed to update application type.");
         }
 
         var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()
@@ -144,20 +118,14 @@ public class ApplicationTypeService
     // MAPPING
     // =========================================================
 
-    private static ApplicationTypeDto
-        MapToDto(
-            ApplicationType appType)
+    private static ApplicationTypeDto MapToDto(
+        ApplicationType appType)
     {
         return new ApplicationTypeDto
         {
-            ApplicationTypeId =
-                appType.ApplicationTypeId,
-
-            ApplicationTypeTitle =
-                appType.ApplicationTypeTitle,
-
-            ApplicationTypeFees =
-                appType.ApplicationFees
+            ApplicationTypeId = appType.ApplicationTypeId,
+            ApplicationTypeTitle = appType.ApplicationTypeTitle,
+            ApplicationTypeFees = appType.ApplicationFees
         };
     }
 }

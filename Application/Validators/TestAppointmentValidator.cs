@@ -6,41 +6,25 @@ namespace Application.Validators;
 
 public static class TestAppointmentValidator
 {
-    // =========================================================
-    // CREATE
-    // =========================================================
-
     public static Result ValidateCreate(
         CreateTestAppointmentDto? dto)
     {
         if (dto is null)
-        {
             return Result.ValidationFailure(
                 "Test appointment data is required.");
-        }
 
         var errors = new List<string>();
 
-        // -----------------------------------------------------
-        // TEST TYPE
-        // -----------------------------------------------------
-
         if (dto.TestTypeID <= 0)
         {
-            errors.Add(
-                "Test type is required.");
+            errors.Add("Test type is required.");
         }
         else if (!Enum.IsDefined(
                      typeof(TestTypeEnum),
                      dto.TestTypeID))
         {
-            errors.Add(
-                "Invalid test type.");
+            errors.Add("Invalid test type.");
         }
-
-        // -----------------------------------------------------
-        // LOCAL APPLICATION
-        // -----------------------------------------------------
 
         if (dto.LocalDrivingLicenseApplicationID <= 0)
         {
@@ -48,24 +32,15 @@ public static class TestAppointmentValidator
                 "Local driving license application is required.");
         }
 
-        // -----------------------------------------------------
-        // APPOINTMENT DATE
-        // -----------------------------------------------------
-
         if (dto.AppointmentDate == default)
         {
-            errors.Add(
-                "Appointment date is required.");
+            errors.Add("Appointment date is required.");
         }
-        else if (dto.AppointmentDate <= DateTime.Now)
+        else if (dto.AppointmentDate <= DateTime.UtcNow)
         {
             errors.Add(
                 "Appointment date must be in the future.");
         }
-
-        // -----------------------------------------------------
-        // RETAKE APPLICATION
-        // -----------------------------------------------------
 
         if (dto.RetakeTestApplicationID.HasValue &&
             dto.RetakeTestApplicationID.Value <= 0)
@@ -77,25 +52,14 @@ public static class TestAppointmentValidator
         return CreateResult(errors);
     }
 
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
     public static Result ValidateUpdate(
         UpdateTestAppointmentDto? dto)
     {
         if (dto is null)
-        {
             return Result.ValidationFailure(
                 "Test appointment data is required.");
-        }
 
         var errors = new List<string>();
-
-        // -----------------------------------------------------
-        // APPOINTMENT ID
-        // -----------------------------------------------------
 
         if (dto.TestAppointmentID <= 0)
         {
@@ -103,16 +67,11 @@ public static class TestAppointmentValidator
                 "Invalid test appointment ID.");
         }
 
-        // -----------------------------------------------------
-        // APPOINTMENT DATE
-        // -----------------------------------------------------
-
         if (dto.AppointmentDate == default)
         {
-            errors.Add(
-                "Appointment date is required.");
+            errors.Add("Appointment date is required.");
         }
-        else if (dto.AppointmentDate <= DateTime.Now)
+        else if (dto.AppointmentDate <= DateTime.UtcNow)
         {
             errors.Add(
                 "Appointment date must be in the future.");
@@ -121,79 +80,38 @@ public static class TestAppointmentValidator
         return CreateResult(errors);
     }
 
-    
-
-
-    // =========================================================
-    // ID
-    // =========================================================
-
-    public static Result ValidateId(
-        int id)
-    {
-        return id > 0
+    public static Result ValidateId(int id) =>
+        id > 0
             ? Result.Success()
             : Result.ValidationFailure(
                 "Invalid test appointment ID.");
-    }
 
-
-    // =========================================================
-    // TEST TYPE ID
-    // =========================================================
-
-    public static Result ValidateTestTypeId(
-        int testTypeId)
-    {
-        return Enum.IsDefined(
+    public static Result ValidateTestTypeId(int testTypeId) =>
+        Enum.IsDefined(
             typeof(TestTypeEnum),
             testTypeId)
             ? Result.Success()
             : Result.ValidationFailure(
                 "Invalid test type.");
-    }
 
-
-    // =========================================================
-    // APPLICATION ID
-    // =========================================================
-
-    public static Result ValidateApplicationId(
-        int applicationId)
-    {
-        return applicationId > 0
+    public static Result ValidateApplicationId(int applicationId) =>
+        applicationId > 0
             ? Result.Success()
             : Result.ValidationFailure(
                 "Invalid local driving license application ID.");
-    }
 
-
-    // =========================================================
-    // USER ID
-    // =========================================================
-
-    public static Result ValidateUserId(
-        int userId)
-    {
-        return userId > 0
+    public static Result ValidateUserId(int userId) =>
+        userId > 0
             ? Result.Success()
             : Result.ValidationFailure(
                 "Invalid user ID.");
-    }
-
-
-    // =========================================================
-    // RESULT
-    // =========================================================
 
     private static Result CreateResult(
-        List<string> errors)
-    {
-        return errors.Count == 0
+        List<string> errors) =>
+        errors.Count == 0
             ? Result.Success()
             : Result.ValidationFailure(
                 string.Join(
                     Environment.NewLine,
                     errors));
-    }
 }

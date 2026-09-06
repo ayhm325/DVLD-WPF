@@ -4,37 +4,16 @@ namespace Application.Interfaces;
 
 public interface IDetainedLicenseRepository
 {
-    // =========================================================
-    // GET
-    // =========================================================
+    Task<List<DetainedLicense>> GetAllAsync();
 
-    Task<DetainedLicense?>
-        GetByIdAsync(int id);
+    Task<DetainedLicense?> GetByIdAsync(int id);
 
-    Task<List<DetainedLicense>>
-        GetAllAsync();
+    Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(
+        int licenseId);
 
-    Task<DetainedLicense?>
-        GetActiveDetainByLicenseIdAsync(
-            int licenseId);
+    Task<bool> IsLicenseDetainedAsync(int licenseId);
 
-    // =========================================================
-    // CHECKS
-    // =========================================================
+    Task AddAsync(DetainedLicense entity);
 
-    Task<bool>
-        IsLicenseDetainedAsync(
-            int licenseId);
-
-    // =========================================================
-    // COMMANDS
-    // =========================================================
-
-    Task<DetainedLicense>
-        AddAsync(
-            DetainedLicense entity);
-
-    Task
-        UpdateAsync(
-            DetainedLicense entity);
+    Task<DetainedLicense?> GetByIdForUpdateAsync(int id);
 }

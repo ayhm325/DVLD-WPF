@@ -4,176 +4,63 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public class DetainedLicenseRepository
-    : IDetainedLicenseRepository
+public sealed class DetainedLicenseRepository(
+    DVLDDbContext context) : IDetainedLicenseRepository
 {
-    private readonly DVLDDbContext _context;
+    private readonly DVLDDbContext _context =
+        context ?? throw new ArgumentNullException(nameof(context));
 
-    public DetainedLicenseRepository(
-        DVLDDbContext context)
-    {
-        _context =
-            context
-            ?? throw new ArgumentNullException(
-                nameof(context));
-    }
-
-    // =========================================================
-    // GET BY ID
-    // =========================================================
-
-    public async Task<DetainedLicense?>
-        GetByIdAsync(int id)
-    {
-        if (id <= 0)
-            return null;
-
-        return await _context.DetainedLicenses
-            .AsNoTracking()
+    private IQueryable<DetainedLicense> Query() =>
+        _context.DetainedLicenses
             .Include(d => d.License)
                 .ThenInclude(l => l.Driver)
-                    .ThenInclude(dr => dr.Person)
+                    .ThenInclude(d => d.Person)
             .Include(d => d.CreatedByUser)
             .Include(d => d.ReleasedByUser)
-            .Include(d => d.ReleaseApplication)
-            .FirstOrDefaultAsync(
-                d => d.DetainID == id);
-    }
+            .Include(d => d.ReleaseApplication);
 
-    // =========================================================
-    // GET ALL
-    // =========================================================
-
-    public async Task<List<DetainedLicense>>
-        GetAllAsync()
-    {
-        return await _context.DetainedLicenses
+    public Task<List<DetainedLicense>> GetAllAsync() =>
+        Query()
             .AsNoTracking()
-            .Include(d => d.License)
-                .ThenInclude(l => l.Driver)
-                    .ThenInclude(dr => dr.Person)
-            .Include(d => d.CreatedByUser)
-            .Include(d => d.ReleasedByUser)
-            .Include(d => d.ReleaseApplication)
-            .OrderByDescending(
-                d => d.DetainDate)
+            .OrderByDescending(d => d.DetainDate)
             .ToListAsync();
-    }
 
-    // =========================================================
-    // CHECK ACTIVE DETENTION
-    // =========================================================
+    public Task<DetainedLicense?> GetByIdAsync(int id) =>
+        id <= 0
+            ? Task.FromResult<DetainedLicense?>(null)
+            : Query()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DetainID == id);
 
-    public async Task<bool>
-        IsLicenseDetainedAsync(
-            int licenseId)
-    {
-        if (licenseId <= 0)
-            return false;
-
-        return await _context.DetainedLicenses
-            .AsNoTracking()
-            .AnyAsync(
-                d =>
+    public Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(
+        int licenseId) =>
+        licenseId <= 0
+            ? Task.FromResult<DetainedLicense?>(null)
+            : Query()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d =>
                     d.LicenseID == licenseId &&
                     !d.IsReleased);
-    }
 
-    // =========================================================
-    // GET ACTIVE DETENTION
-    // =========================================================
-
-    public async Task<DetainedLicense?>
-        GetActiveDetainByLicenseIdAsync(
-            int licenseId)
-    {
-        if (licenseId <= 0)
-            return null;
-
-        return await _context.DetainedLicenses
-            .AsNoTracking()
-            .Include(d => d.License)
-                .ThenInclude(l => l.Driver)
-                    .ThenInclude(dr => dr.Person)
-            .Include(d => d.CreatedByUser)
-            .Include(d => d.ReleasedByUser)
-            .Include(d => d.ReleaseApplication)
-            .FirstOrDefaultAsync(
-                d =>
+    public Task<bool> IsLicenseDetainedAsync(int licenseId) =>
+        licenseId > 0
+            ? _context.DetainedLicenses
+                .AsNoTracking()
+                .AnyAsync(d =>
                     d.LicenseID == licenseId &&
-                    !d.IsReleased);
-    }
+                    !d.IsReleased)
+            : Task.FromResult(false);
 
-    // =========================================================
-    // CREATE
-    // =========================================================
-
-    public async Task<DetainedLicense>
-        AddAsync(
-            DetainedLicense entity)
+    public async Task AddAsync(DetainedLicense entity)
     {
-        ArgumentNullException.ThrowIfNull(
-            entity);
+        ArgumentNullException.ThrowIfNull(entity);
 
-        await _context.DetainedLicenses
-            .AddAsync(entity);
-
-        // IMPORTANT:
-        // No SaveChangesAsync here.
-        //
-        // UnitOfWork owns persistence.
-
-        return entity;
+        await _context.DetainedLicenses.AddAsync(entity);
     }
 
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
-    public async Task
-        UpdateAsync(
-            DetainedLicense entity)
-    {
-        ArgumentNullException.ThrowIfNull(
-            entity);
-
-        if (entity.DetainID <= 0)
-        {
-            throw new ArgumentException(
-                "Detain ID must be greater than zero.",
-                nameof(entity));
-        }
-
-        var existing =
-            await _context.DetainedLicenses
-                .FirstOrDefaultAsync(
-                    d =>
-                        d.DetainID ==
-                        entity.DetainID);
-
-        if (existing is null)
-        {
-            throw new InvalidOperationException(
-                $"Detained license with ID " +
-                $"{entity.DetainID} was not found.");
-        }
-
-        existing.FineFees =
-            entity.FineFees;
-
-        existing.IsReleased =
-            entity.IsReleased;
-
-        existing.ReleaseDate =
-            entity.ReleaseDate;
-
-        existing.ReleasedByUserID =
-            entity.ReleasedByUserID;
-
-        existing.ReleaseApplicationID =
-            entity.ReleaseApplicationID;
-
-        // IMPORTANT:
-        // No SaveChangesAsync here.
-    }
+    public Task<DetainedLicense?> GetByIdForUpdateAsync(int id) =>
+    id <= 0
+        ? Task.FromResult<DetainedLicense?>(null)
+        : Query().FirstOrDefaultAsync(
+            d => d.DetainID == id);
 }

@@ -5,43 +5,18 @@ namespace Application.Interfaces;
 
 public interface IDetainedLicenseService
 {
-    // =========================================================
-    // GET
-    // =========================================================
+    Task<Result<List<DetainedLicenseDto>>> GetAllAsync();
 
-    Task<Result<List<DetainedLicenseDto>>>
-        GetAllAsync();
+    Task<Result<DetainedLicenseDto>> GetByIdAsync(int id);
 
-    Task<Result<DetainedLicenseDto>>
-        GetByIdAsync(int id);
+    Task<Result<DetainedLicenseDto>> GetActiveDetainByLicenseIdAsync(
+        int licenseId);
 
-    Task<Result<DetainedLicenseDto>>
-        GetActiveDetainByLicenseIdAsync(
-            int licenseId);
+    Task<bool> IsLicenseDetainedAsync(int licenseId);
 
+    Task<Result<DetainedLicenseDto>> AddAsync(
+        CreateDetainedLicenseDto dto);
 
-    // =========================================================
-    // CHECKS
-    // =========================================================
-
-    Task<bool>
-        IsLicenseDetainedAsync(
-            int licenseId);
-
-
-    // =========================================================
-    // COMMANDS
-    // =========================================================
-
-    Task<Result<DetainedLicenseDto>>
-        AddAsync(
-            CreateDetainedLicenseDto dto);
-
-    Task<Result>
-        UpdateAsync(
-            UpdateDetainedLicenseDto dto);
-
-    Task<Result>
-        ReleaseAsync(
-            ReleaseDetainedLicenseDto dto);
+    Task<Result> ReleaseAsync(
+        ReleaseDetainedLicenseDto dto);
 }

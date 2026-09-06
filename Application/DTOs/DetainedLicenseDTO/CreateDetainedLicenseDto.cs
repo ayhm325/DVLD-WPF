@@ -1,8 +1,7 @@
 ﻿namespace Application.DTOs.DetainedLicenseDTO;
 
-public class CreateDetainedLicenseDto
+public sealed class CreateDetainedLicenseDto
 {
     public int LicenseID { get; set; }
-    public DateTime DetainDate { get; set; }
     public decimal FineFees { get; set; }
 }

@@ -8,7 +8,7 @@ public static class ApplicationValidator
     public static Result ValidateCreate(CreateApplicationDto? dto)
     {
         if (dto is null)
-            return Result.Failure("Application data is required.");
+            return Result.ValidationFailure("Application data is required.");
 
         var errors = new List<string>();
 
@@ -24,7 +24,7 @@ public static class ApplicationValidator
     public static Result ValidateUpdate(UpdateApplicationDto? dto)
     {
         if (dto is null)
-            return Result.Failure("Application data is required.");
+            return Result.ValidationFailure("Application data is required.");
 
         var errors = new List<string>();
 
@@ -45,5 +45,6 @@ public static class ApplicationValidator
     private static Result BuildResult(List<string> errors) =>
         errors.Count == 0
             ? Result.Success()
-            : Result.ValidationFailure(string.Join(Environment.NewLine, errors));
+            : Result.ValidationFailure(
+                string.Join(Environment.NewLine, errors));
 }

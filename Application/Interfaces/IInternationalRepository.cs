@@ -4,56 +4,26 @@ namespace Application.Interfaces;
 
 public interface IInternationalRepository
 {
-    // =========================================================
-    // GET
-    // =========================================================
+    Task<List<InternationalLicense>> GetAllAsync();
 
-    Task<List<InternationalLicense>>
-        GetAllAsync();
+    Task<InternationalLicense?> GetByIdAsync(
+    int internationalLicenseId);
 
-    Task<InternationalLicense?>
-        GetByIdAsync(
-            int internationalLicenseId);
+    Task<List<InternationalLicense>> GetByDriverIdAsync(
+        int driverId);
 
-    Task<List<InternationalLicense>>
-        GetByDriverIdAsync(
-            int driverId);
+    Task<InternationalLicense?> GetByApplicationIdAsync(
+        int applicationId);
 
-    Task<InternationalLicense?>
-        GetByApplicationIdAsync(
-            int applicationId);
+    Task<List<InternationalLicense>> GetByLocalLicenseIdAsync(
+        int localLicenseId);
 
-    Task<List<InternationalLicense>>
-        GetByLocalLicenseIdAsync(
-            int localLicenseId);
+    Task<bool> ExistsByLocalLicenseAsync(
+        int localLicenseId);
 
+    Task<bool> HasActiveInternationalLicenseAsync(
+        int driverId);
 
-    // =========================================================
-    // CHECKS
-    // =========================================================
-
-    Task<bool>
-        ExistsByLocalLicenseAsync(
-            int localLicenseId);
-
-    Task<bool>
-        HasActiveInternationalLicenseAsync(
-            int driverId);
-
-
-    // =========================================================
-    // COMMANDS
-    // =========================================================
-
-    Task<int>
-        AddAsync(
-            InternationalLicense entity);
-
-    Task<bool>
-        UpdateAsync(
-            InternationalLicense entity);
-
-    Task<bool>
-        DeleteAsync(
-            int internationalLicenseId);
+    Task AddAsync(
+        InternationalLicense entity);
 }
