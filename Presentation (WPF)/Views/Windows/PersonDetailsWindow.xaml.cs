@@ -1,125 +1,167 @@
 ﻿using Application.DTOs.PersonDTO;
-using Application.Interfaces;
 using Domain.Enums;
-using DVLD_WPF;
-using Microsoft.Extensions.DependencyInjection;
-using System;
+using Presentation.Services.Api;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
-namespace Presentation.Views.Windows
+namespace Presentation.Views.Windows;
+
+public partial class PersonDetailsWindow : Window
 {
-    public partial class PersonDetailsWindow : Window
+    private readonly int _personId;
+    private readonly IPeopleApiClient _peopleApiClient;
+
+    public PersonDetailsWindow(
+        int personId,
+        IPeopleApiClient peopleApiClient)
     {
-        private readonly int _personId;
-        private readonly IPersonService _personService;
+        InitializeComponent();
 
-        public PersonDetailsWindow(int personId)
+        if (personId <= 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(personId));
+
+        _personId = personId;
+
+        _peopleApiClient =
+            peopleApiClient
+            ?? throw new ArgumentNullException(
+                nameof(peopleApiClient));
+
+        Loaded += PersonDetailsWindow_Loaded;
+    }
+
+    private async void PersonDetailsWindow_Loaded(
+        object sender,
+        RoutedEventArgs e)
+    {
+        try
         {
-            InitializeComponent();
+            var result =
+                await _peopleApiClient.GetByIdAsync(
+                    _personId);
 
-            _personId = personId;
-
-            // الحصول على الخدمة من DI (بدون تمريرها من الخارج)
-            _personService = App.ServiceProvider.GetRequiredService<IPersonService>();
-
-            Loaded += PersonDetailsWindow_Loaded;
-        }
-
-        // ================= LOAD =================
-        private async void PersonDetailsWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var personResult =
-                    await _personService.GetPersonByIdAsync(_personId);                
-
-                if (personResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        $"Person ID = {_personId}\n\n" +
-                        $"Error = {personResult.Error}",
-                        "Person Loading Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    return;
-                }
-
-                var fullPersonDto = personResult.Value!;
-
-                LoadPersonData(fullPersonDto);
-            }
-            catch (Exception ex)
+            if (result.IsFailure)
             {
                 MessageBox.Show(
-                    $"Error loading person data: {ex.Message}",
-                    "Error",
+                    $"Person ID = {_personId}\n\n" +
+                    $"Error = {result.Error}",
+                    "Person Loading Error",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    MessageBoxImage.Warning);
+
+                return;
             }
+
+            LoadPersonData(
+                result.Value!);
         }
-
-        // ================= UI =================
-        private void LoadPersonData(PersonDto person)
+        catch (Exception ex)
         {
-            LblPersonId.Text = person.PersonId.ToString();
-            LblNationalNo.Text = person.NationalNo;
-            LblFullName.Text = person.FullName;
-            LblGender.Text = person.Gender.ToString();
-            LblDateOfBirth.Text = person.DateOfBirth.ToString("dd/MM/yyyy");
-            LblPhone.Text = person.Phone;
-            LblEmail.Text = string.IsNullOrEmpty(person.Email) ? "N/A" : person.Email;
-            LblAddress.Text = person.Address;
-            LblCountry.Text = string.IsNullOrEmpty(person.CountryName) ? "N/A" : person.CountryName;
-
-            LoadImage(person);
+            MessageBox.Show(
+                $"Error loading person data: {ex.Message}",
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
+    }
 
-        // ================= IMAGE =================
-        private void LoadImage(PersonDto person)
+    private void LoadPersonData(
+        PersonDto person)
+    {
+        LblPersonId.Text =
+            person.PersonId.ToString();
+
+        LblNationalNo.Text =
+            person.NationalNo;
+
+        LblFullName.Text =
+            person.FullName;
+
+        LblGender.Text =
+            person.Gender.ToString();
+
+        LblDateOfBirth.Text =
+            person.DateOfBirth.ToString("dd/MM/yyyy");
+
+        LblPhone.Text =
+            person.Phone;
+
+        LblEmail.Text =
+            string.IsNullOrEmpty(person.Email)
+                ? "N/A"
+                : person.Email;
+
+        LblAddress.Text =
+            person.Address;
+
+        LblCountry.Text =
+            string.IsNullOrEmpty(person.CountryName)
+                ? "N/A"
+                : person.CountryName;
+
+        LoadImage(person);
+    }
+
+    private void LoadImage(PersonDto person)
+    {
+        try
         {
-            try
+            var path =
+                person.ImagePath?.Trim();
+
+            if (!string.IsNullOrEmpty(path) &&
+                File.Exists(path))
             {
-                string? path = person.ImagePath?.Trim();
+                var bitmap =
+                    new BitmapImage();
 
-                if (!string.IsNullOrEmpty(path) && File.Exists(path))
-                {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(path, UriKind.Absolute);
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
-                    bitmap.Freeze();
+                bitmap.BeginInit();
 
-                    ImgPerson.Source = bitmap;
-                }
-                else
-                {
-                    LoadDefaultImage(person.Gender);
-                }
+                bitmap.UriSource =
+                    new Uri(
+                        path,
+                        UriKind.Absolute);
+
+                bitmap.CacheOption =
+                    BitmapCacheOption.OnLoad;
+
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                ImgPerson.Source = bitmap;
+
+                return;
             }
-            catch
-            {
-                LoadDefaultImage(person.Gender);
-            }
+
+            LoadDefaultImage(person.Gender);
         }
-
-        // ================= DEFAULT IMAGE =================
-        private void LoadDefaultImage(Gender gender)
+        catch
         {
-            string defaultImage = gender == Gender.Male
+            LoadDefaultImage(person.Gender);
+        }
+    }
+
+    private void LoadDefaultImage(
+        Gender gender)
+    {
+        var defaultImage =
+            gender == Gender.Male
                 ? "pack://application:,,,/Resources/Default_Male.png"
                 : "pack://application:,,,/Resources/Default_Female.png";
 
-            ImgPerson.Source = new BitmapImage(new Uri(defaultImage, UriKind.Absolute));
-        }
+        ImgPerson.Source =
+            new BitmapImage(
+                new Uri(
+                    defaultImage,
+                    UriKind.Absolute));
+    }
 
-        // ================= CLOSE =================
-        private void Close_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
+    private void Close_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        Close();
     }
 }

@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public sealed class LocalDrivingLicenseApplicationRepository
-    : ILocalDrivingLicenseApplicationRepository
+public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLicenseApplicationRepository
 {
     private readonly DVLDDbContext _context;
 
@@ -23,18 +22,20 @@ public sealed class LocalDrivingLicenseApplicationRepository
     public Task<List<LocalDrivingLicenseApplication>> GetAllAsync() =>
         Query().ToListAsync();
 
-    public async Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id)
-    {
-        if (id <= 0)
-            return null;
+    public Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id) =>
+        id <= 0
+            ? Task.FromResult<LocalDrivingLicenseApplication?>(null)
+            : Query()
+                .FirstOrDefaultAsync(
+                    x => x.LocalDrivingLicenseApplicationID == id);
 
-        return await _context.LocalDrivingLicenseApplications
-            .Include(x => x.Application)
-                .ThenInclude(x => x.Person)
-            .Include(x => x.LicenseClass)
-            .FirstOrDefaultAsync(x =>
-                x.LocalDrivingLicenseApplicationID == id);
-    }
+    public Task<LocalDrivingLicenseApplication?> GetForUpdateAsync(int id) =>
+        id <= 0
+            ? Task.FromResult<LocalDrivingLicenseApplication?>(null)
+            : _context.LocalDrivingLicenseApplications
+                .Include(x => x.Application)
+                .FirstOrDefaultAsync(
+                    x => x.LocalDrivingLicenseApplicationID == id);
 
     public Task<List<LocalDrivingLicenseApplication>> GetByPersonIdAsync(
         int personId)
@@ -70,7 +71,7 @@ public sealed class LocalDrivingLicenseApplicationRepository
     }
 
     public async Task<Dictionary<int, int>> GetPassedTestCountsAsync(
-    IEnumerable<int> localApplicationIds)
+        IEnumerable<int> localApplicationIds)
     {
         ArgumentNullException.ThrowIfNull(localApplicationIds);
 
@@ -107,7 +108,9 @@ public sealed class LocalDrivingLicenseApplicationRepository
             return null;
 
         return await _context.LocalDrivingLicenseApplications
-            .Where(x => x.LocalDrivingLicenseApplicationID == localId)
+            .AsNoTracking()
+            .Where(x =>
+                x.LocalDrivingLicenseApplicationID == localId)
             .Select(x => (int?)x.ApplicationID)
             .FirstOrDefaultAsync();
     }
@@ -120,6 +123,7 @@ public sealed class LocalDrivingLicenseApplicationRepository
             return null;
 
         return await _context.LocalDrivingLicenseApplications
+            .AsNoTracking()
             .Where(x =>
                 x.LicenseClassID == licenseClassId &&
                 x.Application.ApplicantPersonID == applicantPersonId &&
@@ -129,35 +133,13 @@ public sealed class LocalDrivingLicenseApplicationRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<int> CreateLocalDrivingLicenseApplicationAsync(
-        LocalDrivingLicenseApplication entity)
+    public Task AddAsync(LocalDrivingLicenseApplication entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        await _context.LocalDrivingLicenseApplications.AddAsync(entity);
-
-        return entity.LocalDrivingLicenseApplicationID;
-    }
-
-    public async Task<bool> UpdateAsync(
-        LocalDrivingLicenseApplication entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-
-        if (entity.LocalDrivingLicenseApplicationID <= 0)
-            return false;
-
-        var existing = await _context.LocalDrivingLicenseApplications
-            .FirstOrDefaultAsync(x =>
-                x.LocalDrivingLicenseApplicationID ==
-                entity.LocalDrivingLicenseApplicationID);
-
-        if (existing is null)
-            return false;
-
-        _context.Entry(existing).CurrentValues.SetValues(entity);
-
-        return true;
+        return _context.LocalDrivingLicenseApplications
+            .AddAsync(entity)
+            .AsTask();
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -165,9 +147,10 @@ public sealed class LocalDrivingLicenseApplicationRepository
         if (id <= 0)
             return false;
 
-        var existing = await _context.LocalDrivingLicenseApplications
-            .FirstOrDefaultAsync(x =>
-                x.LocalDrivingLicenseApplicationID == id);
+        var existing =
+            await _context.LocalDrivingLicenseApplications
+                .FirstOrDefaultAsync(
+                    x => x.LocalDrivingLicenseApplicationID == id);
 
         if (existing is null)
             return false;

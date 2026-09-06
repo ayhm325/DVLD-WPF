@@ -244,54 +244,6 @@ public sealed class ApplicationRepository
 
 
     // =========================================================
-    // CHECK DUPLICATE LOCAL DRIVING APPLICATION
-    // =========================================================
-
-    public async Task<int?>
-        HasDuplicateApplicationAsync(
-            int personId,
-            int licenseClassId)
-    {
-        if (personId <= 0 ||
-            licenseClassId <= 0)
-        {
-            return null;
-        }
-
-        var applicationId =
-            await _context
-                .LocalDrivingLicenseApplications
-                .AsNoTracking()
-                .Where(
-                    ldla =>
-                        ldla.Application
-                            .ApplicantPersonID ==
-                            personId &&
-
-                        ldla.LicenseClassID ==
-                            licenseClassId &&
-
-                        (
-                            ldla.Application
-                                .ApplicationStatus ==
-                                AppStatus.New ||
-
-                            ldla.Application
-                                .ApplicationStatus ==
-                                AppStatus.Completed
-                        ))
-                .Select(
-                    ldla =>
-                        ldla.ApplicationID)
-                .FirstOrDefaultAsync();
-
-        return applicationId == 0
-            ? null
-            : applicationId;
-    }
-
-
-    // =========================================================
     // CREATE
     // =========================================================
 

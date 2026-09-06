@@ -130,11 +130,14 @@ public sealed class DriverService(
         }
 
         var entity = DriverMapper.ToEntity(dto);
-        entity.CreatedByUserID = _currentUserService.UserId;
+
+        entity.CreatedByUserID =
+            _currentUserService.UserId;
 
         await _repository.AddAsync(entity);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved =
+            await _unitOfWork.SaveChangesAsync();
 
         return saved > 0 && entity.DriverID > 0
             ? Result<int>.Success(entity.DriverID)
@@ -160,7 +163,7 @@ public sealed class DriverService(
         }
 
         var existing =
-            await _repository.GetByIdAsync(dto.DriverID);
+            await _repository.GetForUpdateAsync(dto.DriverID);
 
         if (existing is null)
         {
@@ -183,7 +186,8 @@ public sealed class DriverService(
 
         DriverMapper.UpdateEntity(existing, dto);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved =
+            await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()
@@ -209,7 +213,7 @@ public sealed class DriverService(
         }
 
         var driver =
-            await _repository.GetByIdAsync(id);
+            await _repository.GetForDeleteAsync(id);
 
         if (driver is null)
         {
@@ -231,7 +235,8 @@ public sealed class DriverService(
 
         _repository.Delete(driver);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved =
+            await _unitOfWork.SaveChangesAsync();
 
         return saved > 0
             ? Result.Success()

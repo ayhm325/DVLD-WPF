@@ -26,8 +26,17 @@ public sealed class DriverRepository(DVLDDbContext context)
         id <= 0
             ? Task.FromResult<Driver?>(null)
             : QueryWithBasicInfo()
+                .AsNoTracking()
                 .FirstOrDefaultAsync(
                     d => d.DriverID == id);
+
+    public Task<Driver?> GetForUpdateAsync(int id) =>
+    id <= 0
+        ? Task.FromResult<Driver?>(null)
+        : QueryWithBasicInfo()
+            .FirstOrDefaultAsync(
+                d => d.DriverID == id);
+
 
     public Task<Driver?> GetForDeleteAsync(int id) =>
         id <= 0

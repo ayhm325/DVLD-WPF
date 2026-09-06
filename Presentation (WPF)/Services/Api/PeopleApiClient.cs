@@ -7,7 +7,8 @@ public sealed class PeopleApiClient(
     IApiClient apiClient) : IPeopleApiClient
 {
     private readonly IApiClient _apiClient =
-        apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        apiClient
+        ?? throw new ArgumentNullException(nameof(apiClient));
 
     public Task<Result<List<PersonDto>>> GetAllAsync(
         CancellationToken cancellationToken = default)
@@ -63,9 +64,18 @@ public sealed class PeopleApiClient(
                 dto,
                 cancellationToken);
 
-        return result.IsSuccess
-            ? Result<int>.Success(result.Value!.PersonId)
-            : Result<int>.FromResult(result);
+        if (result.IsFailure)
+            return Result<int>.FromResult(result);
+
+        if (result.Value is null ||
+            result.Value.PersonId <= 0)
+        {
+            return Result<int>.FromFailure(
+                "The API returned an invalid person ID.");
+        }
+
+        return Result<int>.Success(
+            result.Value.PersonId);
     }
 
     public Task<Result> UpdateAsync(

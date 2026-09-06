@@ -20,5 +20,6 @@ public sealed class TestTypeRepository(DVLDDbContext context)
         id <= 0
             ? Task.FromResult<TestType?>(null)
             : _context.TestTypes
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.TestTypeId == id);
 }

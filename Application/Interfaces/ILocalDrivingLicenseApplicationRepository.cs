@@ -8,6 +8,8 @@ public interface ILocalDrivingLicenseApplicationRepository
 
     Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id);
 
+    Task<LocalDrivingLicenseApplication?> GetForUpdateAsync(int id);
+
     Task<List<LocalDrivingLicenseApplication>> GetByPersonIdAsync(
         int personId);
 
@@ -18,7 +20,7 @@ public interface ILocalDrivingLicenseApplicationRepository
         int licenseClassId);
 
     Task<Dictionary<int, int>> GetPassedTestCountsAsync(
-    IEnumerable<int> localApplicationIds);
+        IEnumerable<int> localApplicationIds);
 
     Task<int?> GetApplicationIdByLocalIdAsync(int localId);
 
@@ -26,11 +28,7 @@ public interface ILocalDrivingLicenseApplicationRepository
         int applicantPersonId,
         int licenseClassId);
 
-    Task<int> CreateLocalDrivingLicenseApplicationAsync(
-        LocalDrivingLicenseApplication entity);
-
-    Task<bool> UpdateAsync(
-        LocalDrivingLicenseApplication entity);
+    Task AddAsync(LocalDrivingLicenseApplication entity);
 
     Task<bool> DeleteAsync(int id);
 }

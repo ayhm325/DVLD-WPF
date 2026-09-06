@@ -1,8 +1,7 @@
-﻿using Application.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
-using System;
 
 public class WindowService : IWindowService
 {
@@ -15,10 +14,13 @@ public class WindowService : IWindowService
 
     public void ShowPersonDetails(int personId)
     {
-        var personService =
-            _serviceProvider.GetRequiredService<IPersonService>();
+        var peopleApiClient =
+            _serviceProvider.GetRequiredService<IPeopleApiClient>();
 
-        var window = new PersonDetailsWindow(personId);
+        var window =
+            new PersonDetailsWindow(
+                personId,
+                peopleApiClient);
 
         window.ShowDialog();
     }

@@ -1,249 +1,308 @@
 ﻿using Application.DTOs.PersonDTO;
-using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Domain.Enums;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
-using Domain.Enums;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class PeopleViewModel : ObservableObject
 {
-    public partial class PeopleViewModel : ObservableObject
+    private readonly IPeopleApiClient _peopleApiClient;
+
+    private List<PersonDto> _allPeople = new();
+
+    [ObservableProperty]
+    private ObservableCollection<PersonDto> _filteredPeople = new();
+
+    [ObservableProperty]
+    private int _peopleCount;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private string _searchToolTip = "Search...";
+
+    [ObservableProperty]
+    private PersonDto? _selectedPerson;
+
+    [ObservableProperty]
+    private bool _isSearchTextVisible;
+
+    [ObservableProperty]
+    private bool _isGenderComboVisible;
+
+    public List<string> FilterTypes { get; } =
+        new()
+        {
+            "None",
+            "National No",
+            "Name",
+            "Gender"
+        };
+
+    public List<string> GenderOptions { get; } =
+        new()
+        {
+            "All",
+            "Male",
+            "Female"
+        };
+
+    private string _selectedFilterType = "None";
+
+    public string SelectedFilterType
     {
-        // 🟢 1. المتغيرات المعرفة في الكلاس
-        private readonly IPersonService _personService;
-        private List<PersonDto> _allPeople = new();
-
-        [ObservableProperty] private ObservableCollection<PersonDto> _filteredPeople = new();
-        [ObservableProperty] private int _peopleCount;
-        [ObservableProperty] private string _searchText = string.Empty;
-        [ObservableProperty] private string _searchToolTip = "Search...";
-        [ObservableProperty] private PersonDto? _selectedPerson;
-        [ObservableProperty] private bool _isSearchTextVisible;
-        [ObservableProperty] private bool _isGenderComboVisible;
-
-        public List<string> FilterTypes { get; } = new() { "None", "National No", "Name", "Gender" };
-        public List<string> GenderOptions { get; } = new() { "All", "Male", "Female" };
-
-        private string _selectedFilterType = "None";
-        public string SelectedFilterType
+        get => _selectedFilterType;
+        set
         {
-            get => _selectedFilterType;
-            set
-            {
-                if (SetProperty(ref _selectedFilterType, value))
-                {
-                    OnFilterTypeChanged();
-                }
-            }
+            if (SetProperty(ref _selectedFilterType, value))
+                OnFilterTypeChanged();
+        }
+    }
+
+    private string _selectedGender = "All";
+
+    public string SelectedGender
+    {
+        get => _selectedGender;
+        set
+        {
+            if (SetProperty(ref _selectedGender, value))
+                ApplyFilter();
+        }
+    }
+
+    public PeopleViewModel(IPeopleApiClient peopleApiClient)
+    {
+        _peopleApiClient =
+            peopleApiClient
+            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+    }
+
+    [RelayCommand]
+    public async Task LoadPeopleAsync()
+    {
+        var result =
+            await _peopleApiClient.GetAllAsync();
+
+        if (result.IsFailure)
+        {
+            MessageBox.Show(
+                result.Error,
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            return;
         }
 
-        private string _selectedGender = "All";
-        public string SelectedGender
-        {
-            get => _selectedGender;
-            set
-            {
-                if (SetProperty(ref _selectedGender, value))
-                {
-                    ApplyFilter();
-                }
-            }
-        }
+        _allPeople =
+            result.Value ?? new List<PersonDto>();
 
-        // 🟢 2. تحديث الـ Constructor ليقبل ويحقن الـ IPersonService تلقائياً
-        public PeopleViewModel( IPersonService personService)
-        {
-           
-            _personService = personService;
-        }
+        ApplyFilter();
+    }
 
-        [RelayCommand]
-        public async Task LoadPeopleAsync()
-        {
-            var result = await _personService.GetAllPeopleAsync();
+    partial void OnSearchTextChanged(string value)
+    {
+        ApplyFilter();
+    }
 
-            if (result.IsFailure)
-            {
-                MessageBox.Show(
-                    result.Error,
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+    private void OnFilterTypeChanged()
+    {
+        SearchText = string.Empty;
+        SelectedGender = "All";
 
-                return;
-            }
+        IsSearchTextVisible =
+            SelectedFilterType is "Name" or "National No";
 
-            _allPeople = result.Value!;
+        IsGenderComboVisible =
+            SelectedFilterType == "Gender";
 
-            ApplyFilter();
-        }
-
-        partial void OnSearchTextChanged(string value) => ApplyFilter();
-
-        private void OnFilterTypeChanged()
-        {
-            SearchText = string.Empty;
-            SelectedGender = "All";
-
-            IsSearchTextVisible = (SelectedFilterType == "Name" || SelectedFilterType == "National No");
-            IsGenderComboVisible = (SelectedFilterType == "Gender");
-
-            SearchToolTip = SelectedFilterType switch
+        SearchToolTip =
+            SelectedFilterType switch
             {
                 "Name" => "Search by Name...",
                 "National No" => "Search by National No...",
                 _ => "Search..."
             };
 
-            ApplyFilter();
-        }
+        ApplyFilter();
+    }
 
-        private void ApplyFilter()
+    private void ApplyFilter()
+    {
+        IEnumerable<PersonDto> query = _allPeople;
+
+        if (SelectedFilterType == "National No" &&
+            !string.IsNullOrWhiteSpace(SearchText))
         {
-            if (_allPeople == null) return;
-
-            var query = _allPeople.AsQueryable();
-
-            if (SelectedFilterType == "National No" && !string.IsNullOrWhiteSpace(SearchText))
-            {
-                query = query.Where(p => p.NationalNo != null && p.NationalNo.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase));
-            }
-            else if (SelectedFilterType == "Name" && !string.IsNullOrWhiteSpace(SearchText))
-            {
-                query = query.Where(p => p.FullName != null && p.FullName.ToLower(System.Globalization.CultureInfo.CurrentCulture).Contains(SearchText.ToLower()));
-            }
-            else if (SelectedFilterType == "Gender")
-            {
-                if (SelectedGender == "Male")
-                    query = query.Where(p => p.Gender == Gender.Male);
-                else if (SelectedGender == "Female")
-                    query = query.Where(p => p.Gender == Gender.Female);
-            }
-
-            var filteredList = query.ToList();
-
-            // 🟢 3. هنا تم إضافة حقل الـ ImagePath الضائع لحل مشكلة الفراغ!
-            var dtoList = filteredList.Select(p => new PersonDto
-            {
-                PersonId = p.PersonId,
-                NationalNo = p.NationalNo,
-                FullName = p.FullName,
-                DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender ,
-                Address = p.Address,
-                Phone = p.Phone,
-                Email = p.Email,
-                CountryName = p.CountryName ?? "N/A",
-
-                // ✅ السطر المفقود الذي تسبب بحجب الصور عن الـ DataGrid والواجهات:
-                ImagePath = p.ImagePath
-            }).ToList();
-
-            FilteredPeople = new ObservableCollection<PersonDto>(dtoList);
-            PeopleCount = dtoList.Count;
+            query = query.Where(
+                p =>
+                    !string.IsNullOrWhiteSpace(p.NationalNo) &&
+                    p.NationalNo.Contains(
+                        SearchText,
+                        StringComparison.CurrentCultureIgnoreCase));
         }
-
-        [RelayCommand]
-        private void ShowDetails(PersonDto Person)
+        else if (SelectedFilterType == "Name" &&
+                 !string.IsNullOrWhiteSpace(SearchText))
         {
-            if (Person == null) return;
-
-            // 🟢 4. الآن الكود سيتعرف على الـ _personService بنجاح تام وبدون أخطاء كومبايلر
-            Presentation.Views.Windows.PersonDetailsWindow detailsWindow =
-                new(Person.PersonId);
-
-            detailsWindow.Owner = System.Windows.Application.Current.MainWindow;
-            detailsWindow.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
-
-            detailsWindow.ShowDialog();
+            query = query.Where(
+                p =>
+                    !string.IsNullOrWhiteSpace(p.FullName) &&
+                    p.FullName.Contains(
+                        SearchText,
+                        StringComparison.CurrentCultureIgnoreCase));
         }
-
-        [RelayCommand]
-        private async Task AddNewPerson()
+        else if (SelectedFilterType == "Gender")
         {
-            if (App.ServiceProvider != null)
+            if (SelectedGender == "Male")
             {
-                var addEditVm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
-
-                // 🟢 الإضافة هنا: استدعِ التهيئة حتى عند الإضافة (null تعني Add Mode)
-                await addEditVm.InitializeAsync(null);
-                //MainWindow.Navigation.Navigate(new AddEditPersonPage(addEditVm));
-                var win = new AddEditPersonWin(addEditVm)
-                {
-                    Owner = System.Windows.Application.Current.MainWindow
-                };
-
-                win.ShowDialog();
-
-                await LoadPeopleAsync();
+                query = query.Where(
+                    p => p.Gender == Gender.Male);
+            }
+            else if (SelectedGender == "Female")
+            {
+                query = query.Where(
+                    p => p.Gender == Gender.Female);
             }
         }
 
-        [RelayCommand]
-        private async Task EditPerson(PersonDto Person)
-        {
-            if (Person == null) return;
+        var filteredList =
+            query.ToList();
 
-            // 1. طلب الـ ViewModel من الحاوية
-            var addEditVm = DVLD_WPF.App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
+        FilteredPeople =
+            new ObservableCollection<PersonDto>(
+                filteredList);
 
-            // 2. تحميل البيانات في هذه النسخة تحديداً
-            await addEditVm.InitializeAsync(Person.PersonId);
+        PeopleCount =
+            filteredList.Count;
+    }
 
-            // 3. الانتقال بالنسخة التي تحمل البيانات
-            //MainWindow.Navigation.Navigate(new AddEditPersonPage(addEditVm));
-            var win = new AddEditPersonWin(addEditVm)
+    [RelayCommand]
+    private void ShowDetails(PersonDto? person)
+    {
+        if (person is null)
+            return;
+
+        var apiClient =
+            App.ServiceProvider
+                .GetRequiredService<IPeopleApiClient>();
+
+        var detailsWindow =
+            new PersonDetailsWindow(
+                person.PersonId,
+                apiClient)
             {
-                Owner = System.Windows.Application.Current.MainWindow
+                Owner = System.Windows.Application.Current.MainWindow,
+                WindowStartupLocation =
+                    WindowStartupLocation.CenterOwner
             };
-            win.ShowDialog();
 
-            await LoadPeopleAsync();
-        }
+        detailsWindow.ShowDialog();
+    }
 
-        [RelayCommand]
-        private async Task DeletePersonAsync(PersonDto Person)
-        {
-            if (Person == null)
-                return;
+    [RelayCommand]
+    private async Task AddNewPerson()
+    {
+        var addEditViewModel =
+            App.ServiceProvider
+                .GetRequiredService<AddEditPersonViewModel>();
 
-            var confirmation = MessageBox.Show(
-                $"Are you sure you want to delete {Person.FullName}?",
+        await addEditViewModel.InitializeAsync(null);
+
+        var window =
+            new AddEditPersonWin(addEditViewModel)
+            {
+                Owner = System.Windows.Application.Current.MainWindow,
+                WindowStartupLocation =
+                    WindowStartupLocation.CenterOwner
+            };
+
+        window.ShowDialog();
+
+        await LoadPeopleAsync();
+    }
+
+    [RelayCommand]
+    private async Task EditPerson(PersonDto? person)
+    {
+        if (person is null)
+            return;
+
+        var addEditViewModel =
+            App.ServiceProvider
+                .GetRequiredService<AddEditPersonViewModel>();
+
+        await addEditViewModel.InitializeAsync(
+            person.PersonId);
+
+        var window =
+            new AddEditPersonWin(addEditViewModel)
+            {
+                Owner = System.Windows.Application.Current.MainWindow,
+                WindowStartupLocation =
+                    WindowStartupLocation.CenterOwner
+            };
+
+        window.ShowDialog();
+
+        await LoadPeopleAsync();
+    }
+
+    [RelayCommand]
+    private async Task DeletePersonAsync(PersonDto? person)
+    {
+        if (person is null)
+            return;
+
+        var confirmation =
+            MessageBox.Show(
+                $"Are you sure you want to delete {person.FullName}?",
                 "Confirm Delete",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
-            if (confirmation != MessageBoxResult.Yes)
-                return;
+        if (confirmation != MessageBoxResult.Yes)
+            return;
 
-            var result = await _personService.DeletePersonAsync(Person.PersonId);
+        var result =
+            await _peopleApiClient.DeleteAsync(
+                person.PersonId);
 
-            if (result.IsFailure)
-            {
-                MessageBox.Show(
-                    result.Error,
-                    "Delete Failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
-            await LoadPeopleAsync();
-
+        if (result.IsFailure)
+        {
             MessageBox.Show(
-                "Person deleted successfully.",
-                "Success",
+                result.Error,
+                "Delete Failed",
                 MessageBoxButton.OK,
-                MessageBoxImage.Information);
-        }
-        
+                MessageBoxImage.Error);
 
-        [RelayCommand] private void SendEmail(PersonDto Person) { }
-        [RelayCommand] private void PhoneCall(PersonDto Person) { }
+            return;
+        }
+
+        await LoadPeopleAsync();
+
+        MessageBox.Show(
+            "Person deleted successfully.",
+            "Success",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    [RelayCommand]
+    private void SendEmail(PersonDto? person)
+    {
+    }
+
+    [RelayCommand]
+    private void PhoneCall(PersonDto? person)
+    {
     }
 }
