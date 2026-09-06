@@ -18,7 +18,6 @@ public partial class DetainLicenseViewModel : ObservableObject
     private readonly IDriverService _driverService;
     private readonly IInternationalService _internationalService;
 
-
     [ObservableProperty]
     private string? licenseIdText;
 
@@ -34,7 +33,6 @@ public partial class DetainLicenseViewModel : ObservableObject
     [ObservableProperty]
     private bool isLicenseIssued;
 
-
     public DetainLicenseViewModel(
         ILicenseService licenseService,
         ILicenseQueryService licenseQueryService,
@@ -46,13 +44,11 @@ public partial class DetainLicenseViewModel : ObservableObject
     {
         _licenseService =
             licenseService
-            ?? throw new ArgumentNullException(
-                nameof(licenseService));
+            ?? throw new ArgumentNullException(nameof(licenseService));
 
         _licenseQueryService =
             licenseQueryService
-            ?? throw new ArgumentNullException(
-                nameof(licenseQueryService));
+            ?? throw new ArgumentNullException(nameof(licenseQueryService));
 
         _detainedLicenseService =
             detainedLicenseService
@@ -66,24 +62,17 @@ public partial class DetainLicenseViewModel : ObservableObject
 
         _personService =
             personService
-            ?? throw new ArgumentNullException(
-                nameof(personService));
+            ?? throw new ArgumentNullException(nameof(personService));
 
         _driverService =
             driverService
-            ?? throw new ArgumentNullException(
-                nameof(driverService));
+            ?? throw new ArgumentNullException(nameof(driverService));
 
         _internationalService =
             internationalService
             ?? throw new ArgumentNullException(
                 nameof(internationalService));
     }
-
-
-    // =========================================================
-    // SEARCH LICENSE
-    // =========================================================
 
     [RelayCommand]
     private async Task SearchAsync()
@@ -102,18 +91,15 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-
         LicenseInfo = null;
         DetainInfo = null;
         FineFees = 0;
         IsLicenseIssued = false;
 
-
         var result =
             await _licenseQueryService
                 .GetLicenseDetailsByIdAsync(
                     licenseId);
-
 
         if (result.IsFailure)
         {
@@ -126,11 +112,10 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
+        LicenseInfo =
+            result.Value;
 
-        LicenseInfo = result.Value;
-
-
-        if (LicenseInfo == null)
+        if (LicenseInfo is null)
         {
             MessageBox.Show(
                 "License information was not found.",
@@ -141,19 +126,12 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-
         IsLicenseIssued = true;
-
-
-        // =====================================================
-        // Check Existing Active Detention
-        // =====================================================
 
         var detentionResult =
             await _detainedLicenseService
                 .GetActiveDetainByLicenseIdAsync(
                     LicenseInfo.LicenseId);
-
 
         if (detentionResult.IsSuccess)
         {
@@ -170,15 +148,10 @@ public partial class DetainLicenseViewModel : ObservableObject
         }
     }
 
-
-    // =========================================================
-    // DETAIN LICENSE
-    // =========================================================
-
     [RelayCommand]
     private async Task IssueAsync()
     {
-        if (LicenseInfo == null)
+        if (LicenseInfo is null)
         {
             MessageBox.Show(
                 "Please search for a license first.",
@@ -189,16 +162,10 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-
-        // =====================================================
-        // Check Existing Active Detention
-        // =====================================================
-
         var alreadyDetained =
             await _detainedLicenseService
                 .IsLicenseDetainedAsync(
                     LicenseInfo.LicenseId);
-
 
         if (alreadyDetained)
         {
@@ -211,11 +178,6 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-
-        // =====================================================
-        // Validate Fine
-        // =====================================================
-
         if (FineFees < 0)
         {
             MessageBox.Show(
@@ -227,35 +189,19 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-
-        // =====================================================
-        // DTO FOR CREATE
-        // =====================================================
-
         var dto =
             new CreateDetainedLicenseDto
             {
                 LicenseID =
                     LicenseInfo.LicenseId,
 
-                DetainDate =
-                    DateTime.Now,
-
                 FineFees =
                     FineFees
-
-               
             };
-
-
-        // =====================================================
-        // Service
-        // =====================================================
 
         var result =
             await _detainedLicenseService
                 .AddAsync(dto);
-
 
         if (result.IsFailure)
         {
@@ -268,14 +214,8 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-
-        // =====================================================
-        // Update UI With Returned DTO
-        // =====================================================
-
         DetainInfo =
             result.Value;
-
 
         MessageBox.Show(
             "License detained successfully.",
@@ -284,17 +224,11 @@ public partial class DetainLicenseViewModel : ObservableObject
             MessageBoxImage.Information);
     }
 
-
-    // =========================================================
-    // LICENSE HISTORY
-    // =========================================================
-
     [RelayCommand]
     private void ShowLicensesHistory()
     {
-        if (LicenseInfo == null)
+        if (LicenseInfo is null)
             return;
-
 
         var vm =
             new LicenseHistoryViewModel(
@@ -303,12 +237,10 @@ public partial class DetainLicenseViewModel : ObservableObject
                 _licenseService,
                 _internationalService);
 
-
         var window =
             new LicenseHistoryWin(
                 vm,
                 LicenseInfo.PersonID);
-
 
         window.Owner =
             System.Windows.Application.Current.MainWindow;
@@ -316,22 +248,15 @@ public partial class DetainLicenseViewModel : ObservableObject
         window.ShowDialog();
     }
 
-
-    // =========================================================
-    // LICENSE INFO
-    // =========================================================
-
     [RelayCommand]
     private void ShowLicensesInfo()
     {
-        if (LicenseInfo == null)
+        if (LicenseInfo is null)
             return;
-
 
         var window =
             new DriverLicenseInfoWin(
                 LicenseInfo.LicenseId);
-
 
         window.Owner =
             System.Windows.Application.Current.MainWindow;

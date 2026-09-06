@@ -5,7 +5,8 @@ namespace Application.Validators;
 
 public static class TestValidator
 {
-    public static Result ValidateCreate(SaveTestResultDto? dto)
+    public static Result ValidateCreate(
+        SaveTestResultDto? dto)
     {
         if (dto is null)
             return Result.ValidationFailure(
@@ -19,7 +20,8 @@ public static class TestValidator
         if (!string.IsNullOrWhiteSpace(dto.Notes) &&
             dto.Notes.Trim().Length > 500)
         {
-            errors.Add("Test notes cannot exceed 500 characters.");
+            errors.Add(
+                "Test notes cannot exceed 500 characters.");
         }
 
         return errors.Count == 0
@@ -31,7 +33,8 @@ public static class TestValidator
     public static Result ValidateId(int id) =>
         id > 0
             ? Result.Success()
-            : Result.ValidationFailure("Invalid test ID.");
+            : Result.ValidationFailure(
+                "Invalid test ID.");
 
     public static Result ValidateAppointmentId(int id) =>
         id > 0
@@ -42,5 +45,6 @@ public static class TestValidator
     public static Result ValidateUserId(int id) =>
         id > 0
             ? Result.Success()
-            : Result.ValidationFailure("Invalid user ID.");
+            : Result.ValidationFailure(
+                "Invalid user ID.");
 }

@@ -1,4 +1,5 @@
-﻿namespace Domain.Entities
+﻿using Domain.Enums;
+namespace Domain.Entities
 {
     public class License
     {
@@ -30,7 +31,7 @@
         public bool IsActive { get; set; }
 
 
-        public byte IssueReason { get; set; }
+        public IssueReason IssueReason { get; set; }
 
 
         public int CreatedByUserID { get; set; }

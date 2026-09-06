@@ -1,5 +1,4 @@
-﻿using Application.DTOs.ApplicationDTO;
-using Application.DTOs.DetainedLicenseDTO;
+﻿using Application.DTOs.DetainedLicenseDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,8 +18,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
     private readonly IDriverService _driverService;
     private readonly IInternationalService _internationalService;
     private readonly IApplicationTypeService _applicationTypeService;
-    private readonly IApplicationService _applicationService;
-
 
     [ObservableProperty]
     private bool isLicenseIdReadOnly;
@@ -40,10 +37,9 @@ public partial class ReleaseDetainedViewModel : ObservableObject
     [ObservableProperty]
     private bool isLicenseIssued;
 
-
     public decimal TotalFees =>
-        ApplicationFees + (Release?.FineFees ?? 0);
-
+        ApplicationFees +
+        (Release?.FineFees ?? 0);
 
     public ReleaseDetainedViewModel(
         ILicenseService licenseService,
@@ -53,18 +49,15 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         IPersonService personService,
         IDriverService driverService,
         IInternationalService internationalService,
-        IApplicationTypeService applicationTypeService,
-        IApplicationService applicationService)
+        IApplicationTypeService applicationTypeService)
     {
         _licenseService =
             licenseService
-            ?? throw new ArgumentNullException(
-                nameof(licenseService));
+            ?? throw new ArgumentNullException(nameof(licenseService));
 
         _licenseQueryService =
             licenseQueryService
-            ?? throw new ArgumentNullException(
-                nameof(licenseQueryService));
+            ?? throw new ArgumentNullException(nameof(licenseQueryService));
 
         _detainedLicenseService =
             detainedLicenseService
@@ -78,13 +71,11 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         _personService =
             personService
-            ?? throw new ArgumentNullException(
-                nameof(personService));
+            ?? throw new ArgumentNullException(nameof(personService));
 
         _driverService =
             driverService
-            ?? throw new ArgumentNullException(
-                nameof(driverService));
+            ?? throw new ArgumentNullException(nameof(driverService));
 
         _internationalService =
             internationalService
@@ -95,17 +86,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             applicationTypeService
             ?? throw new ArgumentNullException(
                 nameof(applicationTypeService));
-
-        _applicationService =
-            applicationService
-            ?? throw new ArgumentNullException(
-                nameof(applicationService));
     }
-
-
-    // =========================================================
-    // PROPERTY CHANGES
-    // =========================================================
 
     partial void OnReleaseChanged(
         DetainedLicenseDto? value)
@@ -117,7 +98,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             nameof(TotalFees));
     }
 
-
     partial void OnApplicationFeesChanged(
         decimal value)
     {
@@ -125,47 +105,30 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             nameof(TotalFees));
     }
 
-
-    // =========================================================
-    // LOAD
-    // =========================================================
-
     public async Task LoadAsync(
         int licenseId)
     {
         IsLicenseIdReadOnly = true;
-
-        LicenseIdText =
-            licenseId.ToString();
+        LicenseIdText = licenseId.ToString();
 
         await SearchAsync();
     }
-
-
-    // =========================================================
-    // SEARCH
-    // =========================================================
 
     [RelayCommand]
     private async Task SearchAsync()
     {
         if (!int.TryParse(
                 LicenseIdText,
-                out int licenseId))
+                out int licenseId) ||
+            licenseId <= 0)
         {
             return;
         }
-
-
-        // -----------------------------------------------------
-        // Get License
-        // -----------------------------------------------------
 
         var licenseResult =
             await _licenseQueryService
                 .GetLicenseDetailsByIdAsync(
                     licenseId);
-
 
         if (licenseResult.IsFailure)
         {
@@ -182,29 +145,20 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
-
         LicenseInfo =
             licenseResult.Value;
 
-
-        if (LicenseInfo == null)
+        if (LicenseInfo is null)
         {
             Release = null;
             IsLicenseIssued = false;
-
             return;
         }
-
-
-        // -----------------------------------------------------
-        // Get Active Detention
-        // -----------------------------------------------------
 
         var releaseResult =
             await _detainedLicenseService
                 .GetActiveDetainByLicenseIdAsync(
                     licenseId);
-
 
         if (releaseResult.IsFailure)
         {
@@ -220,8 +174,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
-
-        if (releaseResult.Value == null)
+        if (releaseResult.Value is null)
         {
             Release = null;
             IsLicenseIssued = false;
@@ -235,21 +188,14 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
-
         Release =
             releaseResult.Value;
 
         IsLicenseIssued = true;
 
-
-        // -----------------------------------------------------
-        // Get Application Type
-        // -----------------------------------------------------
-
         var applicationTypeResult =
             await _applicationTypeService
                 .GetApplicationTypeByIdAsync(5);
-
 
         if (applicationTypeResult.IsFailure)
         {
@@ -262,12 +208,10 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
-
         var applicationType =
             applicationTypeResult.Value;
 
-
-        if (applicationType == null)
+        if (applicationType is null)
         {
             CustomMessageBox.Show(
                 "Application type was not found.",
@@ -278,7 +222,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
-
         ApplicationFees =
             applicationType.ApplicationTypeFees;
 
@@ -286,16 +229,11 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             nameof(TotalFees));
     }
 
-
-    // =========================================================
-    // RELEASE
-    // =========================================================
-
     [RelayCommand]
     private async Task ReleaseLicenseAsync()
     {
-        if (Release == null ||
-            LicenseInfo == null)
+        if (Release is null ||
+            LicenseInfo is null)
         {
             CustomMessageBox.Show(
                 "Please search for a detained license first.",
@@ -306,163 +244,90 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
+        if (!_currentUserService.IsLoggedIn ||
+            _currentUserService.UserId <= 0)
+        {
+            CustomMessageBox.Show(
+                "You must be logged in first.",
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
 
         try
         {
-            // -------------------------------------------------
-            // 1. Create Release Application
-            // -------------------------------------------------
-
-            var newApplication =
-                new CreateApplicationDto
-                {
-                    ApplicantPersonID =
-                        LicenseInfo.PersonID,
-
-                    ApplicationDate =
-                        DateTime.Now,
-
-                    ApplicationTypeID =
-                        5,
-
-                    ApplicationStatus =
-                        Domain.Enums.AppStatus.Completed,
-
-                    LastStatusDate =
-                        DateTime.Now,
-
-                    PaidFees =
-                        ApplicationFees
-
-                    
-                };
-
-
-            var applicationResult =
-                await _applicationService
-                    .AddNewApplicationAsync(
-                        newApplication);
-
-
-            if (applicationResult.IsFailure)
-            {
-                CustomMessageBox.Show(
-                    applicationResult.Error,
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
-
-            int newApplicationId =
-                applicationResult.Value;
-
-
-            if (newApplicationId <= 0)
-            {
-                CustomMessageBox.Show(
-                    "Failed to create the release application.",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
-
-            // -------------------------------------------------
-            // 2. Release Detained License
-            // -------------------------------------------------
-
             var releaseDto =
                 new ReleaseDetainedLicenseDto
                 {
                     DetainID =
-                        Release.DetainID,                    
-
-                    ReleaseApplicationID =
-                        newApplicationId
+                        Release.DetainID
                 };
 
-
-            var releaseResult =
+            var result =
                 await _detainedLicenseService
                     .ReleaseAsync(
                         releaseDto);
 
-
-            if (releaseResult.IsFailure)
+            if (result.IsFailure)
             {
                 CustomMessageBox.Show(
-                    releaseResult.Error,
+                    result.Error,
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
 
                 return;
             }
-
-
-            // -------------------------------------------------
-            // 3. Refresh UI
-            // -------------------------------------------------
 
             var refreshedResult =
                 await _detainedLicenseService
                     .GetByIdAsync(
                         Release.DetainID);
 
-
             if (refreshedResult.IsSuccess)
             {
                 Release =
                     refreshedResult.Value;
             }
-
+            else
+            {
+                Release = null;
+            }
 
             CustomMessageBox.Show(
-                "License released successfully. " +
-                "The application has been created.",
+                "License released successfully.",
                 "Success",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            string errorMessage =
+            var errorMessage =
                 ex.Message;
 
-
-            if (ex.InnerException != null)
+            if (ex.InnerException is not null)
             {
                 errorMessage +=
-                    Environment.NewLine +
+                    $"{Environment.NewLine}{Environment.NewLine}" +
+                    $"Inner Exception:{Environment.NewLine}" +
                     ex.InnerException.Message;
             }
 
-
             CustomMessageBox.Show(
-                $"An error occurred while processing the operation:" +
-                $"{Environment.NewLine}{errorMessage}",
+                errorMessage,
                 "Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
     }
 
-
-    // =========================================================
-    // LICENSE HISTORY
-    // =========================================================
-
     [RelayCommand]
     private void ShowLicensesHistory()
     {
-        if (LicenseInfo == null)
+        if (LicenseInfo is null)
             return;
-
 
         var vm =
             new LicenseHistoryViewModel(
@@ -471,62 +336,46 @@ public partial class ReleaseDetainedViewModel : ObservableObject
                 _licenseService,
                 _internationalService);
 
-
         var window =
             new LicenseHistoryWin(
                 vm,
                 LicenseInfo.PersonID);
 
-
         window.Owner =
             System.Windows.Application.Current.MainWindow;
-
 
         window.ShowDialog();
     }
 
-
-    // =========================================================
-    // LICENSE INFO
-    // =========================================================
-
     [RelayCommand]
     private void ShowLicensesInfo()
     {
-        if (LicenseInfo == null)
+        if (LicenseInfo is null)
             return;
-
 
         var window =
             new DriverLicenseInfoWin(
                 LicenseInfo.LicenseId);
 
-
         window.Owner =
             System.Windows.Application.Current.MainWindow;
-
 
         window.ShowDialog();
     }
 }
 
-
-// =============================================================
-// CUSTOM MESSAGE BOX
-// =============================================================
-
 public static class CustomMessageBox
 {
     public static MessageBoxResult Show(
-        string message,
-        string title,
-        MessageBoxButton button,
-        MessageBoxImage icon)
+    string message,
+    string title,
+    MessageBoxButton button,
+    MessageBoxImage icon)
     {
         return MessageBox.Show(
-            message,
-            title,
-            button,
-            icon);
+        message,
+        title,
+        button,
+        icon);
     }
 }

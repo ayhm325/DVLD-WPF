@@ -51,7 +51,7 @@ public static class LicenseMapper
             Notes = license.Notes,
             PaidFees = license.PaidFees,
             IsActive = license.IsActive,
-            IssueReason = license.IssueReason,
+            IssueReason = (byte)license.IssueReason,
             IssueReasonText =
                 ((IssueReason)license.IssueReason).ToString(),
             CreatedByUserID = license.CreatedByUserID,
@@ -76,7 +76,7 @@ public static class LicenseMapper
                 : dto.Notes.Trim(),
             PaidFees = dto.PaidFees,
             IsActive = dto.IsActive,
-            IssueReason = dto.IssueReason
+            IssueReason = (IssueReason)dto.IssueReason
         };
     }
 }

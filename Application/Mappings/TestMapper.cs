@@ -18,8 +18,10 @@ public static class TestMapper
             Notes = entity.Notes,
             CreatedByUserID = entity.CreatedByUserID,
             CreatedByUserName = entity.User?.UserName,
-            TestTypeName = entity.TestAppointment?.TestType?.TestTypeTitle,
-            AppointmentDate = entity.TestAppointment?.AppointmentDate
+            TestTypeName =
+                entity.TestAppointment?.TestType?.TestTypeTitle,
+            AppointmentDate =
+                entity.TestAppointment?.AppointmentDate
         };
     }
 
@@ -28,6 +30,10 @@ public static class TestMapper
         int createdByUserId)
     {
         ArgumentNullException.ThrowIfNull(dto);
+
+        if (createdByUserId <= 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(createdByUserId));
 
         return new Test
         {
@@ -39,5 +45,7 @@ public static class TestMapper
     }
 
     private static string? NormalizeNotes(string? notes) =>
-        string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        string.IsNullOrWhiteSpace(notes)
+            ? null
+            : notes.Trim();
 }

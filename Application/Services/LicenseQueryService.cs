@@ -237,11 +237,9 @@ public class LicenseQueryService : ILicenseQueryService
             ExpirationDate = license.ExpirationDate,
             IsActive = license.IsActive,
             IsDetained = isDetained,
-            IssueReason = Enum.IsDefined(
-                typeof(IssueReason),
-                license.IssueReason)
-                    ? ((IssueReason)license.IssueReason).ToString()
-                    : "Unknown",
+            IssueReason = Enum.IsDefined(license.IssueReason)
+    ? license.IssueReason.ToString()
+    : "Unknown",
             Notes = license.Notes,
             LicenseClassFees = license.LicenseClassInfo?.ClassFees ?? 0,
             DriverId = driverId,

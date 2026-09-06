@@ -11,16 +11,14 @@ public sealed class LicenseRepository(DVLDDbContext context)
         context ?? throw new ArgumentNullException(nameof(context));
 
     private IQueryable<License> Query() =>
-        _context.Licenses
-            .Include(l => l.Application)
-            .Include(l => l.Driver)
-                .ThenInclude(d => d.Person)
-            .Include(l => l.Driver)
-                .ThenInclude(d => d.CreatedByUser)
-            .Include(l => l.Driver)
-                .ThenInclude(d => d.Licenses)
-            .Include(l => l.LicenseClassInfo)
-            .Include(l => l.CreatedByUser);
+    _context.Licenses
+        .Include(l => l.Application)
+        .Include(l => l.Driver)
+            .ThenInclude(d => d.Person)
+        .Include(l => l.Driver)
+            .ThenInclude(d => d.CreatedByUser)
+        .Include(l => l.LicenseClassInfo)
+        .Include(l => l.CreatedByUser);
 
     public Task<License?> GetLicenseByIdAsync(int id) =>
         id <= 0

@@ -18,7 +18,6 @@ namespace Presentation.ViewModels
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILicenseClassService _licenseClassService;
-        private readonly IApplicationService _applicationService;
         private readonly IPersonService _personService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IApplicationTypeService _applicationTypeService;
@@ -27,17 +26,8 @@ namespace Presentation.ViewModels
 
         private ApplicationTypeDto? _ldlApplicationType;
 
-        // Prevent duplicate-check queries from running
-        // while the ViewModel is still initializing.
-        private bool _isInitializing;
-
-        // Used to make sure an older duplicate-check result
-        // cannot overwrite a newer result.
-        private int _duplicateCheckVersion;
-
         public AddEditLDLAppViewModel(
             ILicenseClassService licenseClassService,
-            IApplicationService applicationService,
             IPersonService personService,
             ICurrentUserService currentUserService,
             IApplicationTypeService applicationTypeService,
@@ -45,15 +35,34 @@ namespace Presentation.ViewModels
             LDLAppViewModel gridViewModel,
             IServiceProvider serviceProvider)
         {
-            _licenseClassService = licenseClassService;
-            _applicationService = applicationService;
-            _personService = personService;
-            _currentUserService = currentUserService;
-            _applicationTypeService = applicationTypeService;
+            _licenseClassService =
+                licenseClassService
+                ?? throw new ArgumentNullException(nameof(licenseClassService));
+
+            _personService =
+                personService
+                ?? throw new ArgumentNullException(nameof(personService));
+
+            _currentUserService =
+                currentUserService
+                ?? throw new ArgumentNullException(nameof(currentUserService));
+
+            _applicationTypeService =
+                applicationTypeService
+                ?? throw new ArgumentNullException(nameof(applicationTypeService));
+
             _localDrivingLicenseApplicationService =
-                localDrivingLicenseApplicationService;
-            _gridViewModel = gridViewModel;
-            _serviceProvider = serviceProvider;
+                localDrivingLicenseApplicationService
+                ?? throw new ArgumentNullException(
+                    nameof(localDrivingLicenseApplicationService));
+
+            _gridViewModel =
+                gridViewModel
+                ?? throw new ArgumentNullException(nameof(gridViewModel));
+
+            _serviceProvider =
+                serviceProvider
+                ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             CreatedByUserID = _currentUserService.UserId;
             CreatedBy = _currentUserService.Username;
@@ -66,10 +75,6 @@ namespace Presentation.ViewModels
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
         private LicenseClassDto? selectedLicenseClass;
-
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-        private bool hasDuplicateApplication;
 
         [ObservableProperty]
         private int applicationId;
@@ -101,76 +106,13 @@ namespace Presentation.ViewModels
         {
             return Person != null
                    && SelectedLicenseClass != null
-                   && _ldlApplicationType != null
-                   && !HasDuplicateApplication;
-        }
-
-        private async Task CheckDuplicateApplicationAsync()
-        {
-            int currentVersion = ++_duplicateCheckVersion;
-
-            if (Person == null || SelectedLicenseClass == null)
-            {
-                HasDuplicateApplication = false;
-                SaveCommand.NotifyCanExecuteChanged();
-                return;
-            }
-
-            try
-            {
-                int? existingApplicationId =
-                    await _applicationService
-                        .HasDuplicateApplicationAsync(
-                            Person.PersonId,
-                            SelectedLicenseClass.LicenseClassID);
-
-                // Ignore this result if another check started after it.
-                if (currentVersion != _duplicateCheckVersion)
-                    return;
-
-                HasDuplicateApplication =
-                    existingApplicationId.HasValue &&
-                    existingApplicationId.Value > 0;
-            }
-            catch
-            {
-                // If duplicate validation fails,
-                // do not allow the user to save.
-                if (currentVersion != _duplicateCheckVersion)
-                    return;
-
-                HasDuplicateApplication = true;
-            }
-
-            SaveCommand.NotifyCanExecuteChanged();
-        }
-
-        partial void OnPersonChanged(PersonDto? value)
-        {
-            if (_isInitializing)
-                return;
-
-            _ = CheckDuplicateApplicationAsync();
-        }
-
-        partial void OnSelectedLicenseClassChanged(LicenseClassDto? value)
-        {
-            if (_isInitializing)
-                return;
-
-            _ = CheckDuplicateApplicationAsync();
+                   && _ldlApplicationType != null;
         }
 
         public async Task InitializeAsync()
         {
             await LoadLicenseClassesAsync();
-
             await LoadApplicationTypeAsync();
-
-            if (Person != null && SelectedLicenseClass != null)
-            {
-                await CheckDuplicateApplicationAsync();
-            }
         }
 
         private async Task LoadLicenseClassesAsync()
@@ -202,14 +144,10 @@ namespace Presentation.ViewModels
                     }
                 }
 
-                if (LicenseClasses.Count > 0)
-                {
-                    SelectedLicenseClass = LicenseClasses[0];
-                }
-                else
-                {
-                    SelectedLicenseClass = null;
-                }
+                SelectedLicenseClass =
+                    LicenseClasses.Count > 0
+                        ? LicenseClasses[0]
+                        : null;
             }
             catch (Exception ex)
             {
@@ -296,55 +234,22 @@ namespace Presentation.ViewModels
 
             try
             {
-                int licenseClassId =
-                    SelectedLicenseClass.LicenseClassID;
-
-                // Final duplicate check before saving.
-                int? existingApplicationId =
-                    await _applicationService
-                        .HasDuplicateApplicationAsync(
+                var newApplication =
+                    new CreateApplicationDto
+                    {
+                        ApplicantPersonID =
                             Person.PersonId,
-                            licenseClassId);
 
-                if (existingApplicationId.HasValue &&
-                    existingApplicationId.Value > 0)
-                {
-                    MessageBox.Show(
-                        $"An active application already exists for this person.\n\n" +
-                        $"Application ID: {existingApplicationId.Value}\n" +
-                        $"Status: New or Completed\n\n" +
-                        $"You cannot create a duplicate application for the same license class.",
-                        "Duplicate Application Detected",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    return;
-                }
-
-                var newApplication = new CreateApplicationDto
-                {
-                    ApplicantPersonID = Person.PersonId,
-
-                    ApplicationDate = ApplicationDate,
-
-                    ApplicationTypeID =
-                        _ldlApplicationType.ApplicationTypeId,
-
-                    ApplicationStatus =
-                        Domain.Enums.AppStatus.New,
-
-                    PaidFees =
-                        _ldlApplicationType.ApplicationTypeFees,
-
-                    LastStatusDate =
-                        DateTime.Now
-                };
+                        ApplicationTypeID =
+                            _ldlApplicationType.ApplicationTypeId
+                    };
 
                 var newLDLApplication =
                     new CreateLocalDrivingLicenseApplicationDto
                     {
                         ApplicationID = 0,
-                        LicenseClassID = licenseClassId
+                        LicenseClassID =
+                            SelectedLicenseClass.LicenseClassID
                     };
 
                 var result =
@@ -464,7 +369,8 @@ namespace Presentation.ViewModels
                 _serviceProvider
                     .GetRequiredService<AddEditPersonWin>();
 
-            window.Owner = App.Current.MainWindow;
+            window.Owner =
+                App.Current.MainWindow;
 
             window.ShowDialog();
         }

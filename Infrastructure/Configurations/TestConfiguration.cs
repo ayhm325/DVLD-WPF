@@ -4,70 +4,36 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Configurations;
 
-public class TestConfiguration
+public sealed class TestConfiguration
     : IEntityTypeConfiguration<Test>
 {
     public void Configure(
         EntityTypeBuilder<Test> builder)
     {
-        // =========================================================
-        // PRIMARY KEY
-        // =========================================================
+        builder.HasKey(t => t.TestID);
 
-        builder.HasKey(t =>
-            t.TestID);
-
-
-        // =========================================================
-        // PROPERTIES
-        // =========================================================
-
-        builder.Property(t =>
-                t.TestAppointmentID)
+        builder.Property(t => t.TestResult)
             .IsRequired();
 
-
-        builder.Property(t =>
-                t.TestResult)
+        builder.Property(t => t.CreatedByUserID)
             .IsRequired();
 
-
-        builder.Property(t =>
-                t.CreatedByUserID)
-            .IsRequired();
-
-
-        builder.Property(t =>
-                t.Notes)
+        builder.Property(t => t.Notes)
             .HasMaxLength(500)
             .IsRequired(false);
 
-
-        // =========================================================
-        // TEST APPOINTMENT
-        // One Test <-> One TestAppointment
-        // =========================================================
-
-        builder.HasOne(t =>
-                t.TestAppointment)
-            .WithOne(a =>
-                a.Test)
+        builder.HasOne(t => t.TestAppointment)
+            .WithOne(a => a.Test)
             .HasForeignKey<Test>(
                 t => t.TestAppointmentID)
-            .OnDelete(
-                DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict);
 
-
-        // =========================================================
-        // CREATED BY USER
-        // =========================================================
-
-        builder.HasOne(t =>
-                t.User)
+        builder.HasOne(t => t.User)
             .WithMany()
-            .HasForeignKey(t =>
-                t.CreatedByUserID)
-            .OnDelete(
-                DeleteBehavior.Restrict);
+            .HasForeignKey(t => t.CreatedByUserID)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(t => t.TestAppointmentID);
+        builder.HasIndex(t => t.CreatedByUserID);
     }
 }

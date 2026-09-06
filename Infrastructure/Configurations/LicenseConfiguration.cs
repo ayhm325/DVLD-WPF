@@ -67,6 +67,10 @@ namespace Infrastructure.Configurations
                 .WithMany()
                 .HasForeignKey(l => l.CreatedByUserID)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(l => l.IssueReason)
+    .HasConversion<byte>()
+    .IsRequired();
         }
     }
 }
