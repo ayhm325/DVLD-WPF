@@ -1,6 +1,6 @@
 ﻿namespace Application.DTOs.TestAppointmentDTO;
 
-public class SaveTestResultDto
+public sealed class SaveTestResultDto
 {
     public int TestAppointmentID { get; set; }
     public bool TestResult { get; set; }

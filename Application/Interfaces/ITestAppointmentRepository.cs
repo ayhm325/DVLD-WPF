@@ -1,6 +1,5 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
-using System.Linq.Expressions;
 
 namespace Application.Interfaces;
 
@@ -11,21 +10,19 @@ public interface ITestAppointmentRepository
     Task<List<TestAppointment>> GetAllAsync();
 
     Task<List<TestAppointment>> GetByLocalDrivingLicenseApplicationIdAsync(
-        int localDrivingLicenseApplicationId);
+        int localAppId);
 
-    Task<List<TestAppointment>> GetByTestTypeIdAsync(TestTypeEnum testType);
-    Task<List<TestAppointment>> GetByCreatedUserIdAsync(int userId);
-    Task<TestAppointment?> GetScheduleInfoAsync(int testAppointmentId);
+    Task<List<TestAppointment>> GetByTestTypeIdAsync(
+        TestTypeEnum testType);
 
-    Task<HashSet<int>> GetPassedTestTypeIdsAsync(int localAppId);
+    Task<List<TestAppointment>> GetByCreatedUserIdAsync(
+        int userId);
 
-    Task<bool> ExistsAsync(Expression<Func<TestAppointment, bool>> predicate);
+    Task<TestAppointment?> GetScheduleInfoAsync(
+        int appointmentId);
 
-    Task<bool> HasConflictAsync(
-        int localAppId,
-        int testTypeId,
-        DateTime dateTime,
-        int? excludeAppointmentId = null);
+    Task<HashSet<int>> GetPassedTestTypeIdsAsync(
+        int localAppId);
 
     Task<bool> HasUserConflictAsync(
         int userId,
@@ -41,7 +38,13 @@ public interface ITestAppointmentRepository
         int localAppId,
         int testTypeId);
 
-   Task<AppStatus?> GetApplicationStatusAsync(int localAppId);
-   Task AddAsync(TestAppointment appointment);
-   void Delete(TestAppointment appointment);
+    Task<AppStatus?> GetApplicationStatusAsync(
+        int localAppId);
+
+    Task<int> GetTrialCountAsync(
+        int localAppId,
+        int testTypeId);
+
+    Task AddAsync(TestAppointment appointment);
+    void Delete(TestAppointment appointment);
 }

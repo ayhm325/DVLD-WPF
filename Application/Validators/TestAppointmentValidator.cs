@@ -121,45 +121,7 @@ public static class TestAppointmentValidator
         return CreateResult(errors);
     }
 
-
-    // =========================================================
-    // SAVE TEST RESULT
-    // =========================================================
-
-    public static Result ValidateSaveTestResult(
-        SaveTestResultDto? dto)
-    {
-        if (dto is null)
-        {
-            return Result.ValidationFailure(
-                "Test result data is required.");
-        }
-
-        var errors = new List<string>();
-
-        // -----------------------------------------------------
-        // APPOINTMENT ID
-        // -----------------------------------------------------
-
-        if (dto.TestAppointmentID <= 0)
-        {
-            errors.Add(
-                "Invalid test appointment ID.");
-        }
-
-        // -----------------------------------------------------
-        // NOTES
-        // -----------------------------------------------------
-
-        if (!string.IsNullOrWhiteSpace(dto.Notes) &&
-            dto.Notes.Trim().Length > 500)
-        {
-            errors.Add(
-                "Test notes cannot exceed 500 characters.");
-        }
-
-        return CreateResult(errors);
-    }
+    
 
 
     // =========================================================

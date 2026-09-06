@@ -2,12 +2,10 @@
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
-public sealed class TestAppointmentRepository
-    : ITestAppointmentRepository
+public sealed class TestAppointmentRepository : ITestAppointmentRepository
 {
     private readonly DVLDDbContext _context;
 
@@ -16,10 +14,6 @@ public sealed class TestAppointmentRepository
         _context = context
             ?? throw new ArgumentNullException(nameof(context));
     }
-
-    // =========================================================
-    // QUERIES
-    // =========================================================
 
     private IQueryable<TestAppointment> Query() =>
         _context.TestAppointments
@@ -41,10 +35,6 @@ public sealed class TestAppointmentRepository
             .Include(x => x.LocalDrivingLicenseApplication)
                 .ThenInclude(x => x.LicenseClass);
 
-    // =========================================================
-    // GET
-    // =========================================================
-
     public async Task<TestAppointment?> GetByIdAsync(int id)
     {
         if (id <= 0)
@@ -52,8 +42,7 @@ public sealed class TestAppointmentRepository
 
         return await Query()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.TestAppointmentID == id);
+            .FirstOrDefaultAsync(x => x.TestAppointmentID == id);
     }
 
     public async Task<TestAppointment?> GetForUpdateAsync(int id)
@@ -62,8 +51,7 @@ public sealed class TestAppointmentRepository
             return null;
 
         return await _context.TestAppointments
-            .FirstOrDefaultAsync(x =>
-                x.TestAppointmentID == id);
+            .FirstOrDefaultAsync(x => x.TestAppointmentID == id);
     }
 
     public Task<List<TestAppointment>> GetAllAsync() =>
@@ -71,91 +59,49 @@ public sealed class TestAppointmentRepository
             .AsNoTracking()
             .ToListAsync();
 
-    public Task<List<TestAppointment>>
-        GetByLocalDrivingLicenseApplicationIdAsync(
-            int localDrivingLicenseApplicationId)
+    public Task<List<TestAppointment>> GetByLocalDrivingLicenseApplicationIdAsync(
+        int localAppId)
     {
-        if (localDrivingLicenseApplicationId <= 0)
+        if (localAppId <= 0)
             return Task.FromResult<List<TestAppointment>>([]);
 
         return Query()
             .AsNoTracking()
-            .Where(x =>
-                x.LocalDrivingLicenseApplicationID ==
-                localDrivingLicenseApplicationId)
+            .Where(x => x.LocalDrivingLicenseApplicationID == localAppId)
             .ToListAsync();
     }
 
-    public Task<List<TestAppointment>>
-        GetByTestTypeIdAsync(TestTypeEnum testType)
+    public Task<List<TestAppointment>> GetByTestTypeIdAsync(
+        TestTypeEnum testType)
     {
         if (!Enum.IsDefined(testType))
             return Task.FromResult<List<TestAppointment>>([]);
 
         return Query()
             .AsNoTracking()
-            .Where(x =>
-                x.TestTypeID == (int)testType)
+            .Where(x => x.TestTypeID == (int)testType)
             .ToListAsync();
     }
 
-    public Task<List<TestAppointment>>
-        GetByCreatedUserIdAsync(int userId)
+    public Task<List<TestAppointment>> GetByCreatedUserIdAsync(int userId)
     {
         if (userId <= 0)
             return Task.FromResult<List<TestAppointment>>([]);
 
         return Query()
             .AsNoTracking()
-            .Where(x =>
-                x.CreatedByUserID == userId)
+            .Where(x => x.CreatedByUserID == userId)
             .ToListAsync();
     }
 
-    public async Task<TestAppointment?> GetScheduleInfoAsync(
-        int testAppointmentId)
+    public async Task<TestAppointment?> GetScheduleInfoAsync(int appointmentId)
     {
-        if (testAppointmentId <= 0)
+        if (appointmentId <= 0)
             return null;
 
         return await ScheduleInfoQuery()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.TestAppointmentID == testAppointmentId);
-    }
-
-    // =========================================================
-    // CHECKS
-    // =========================================================
-
-    public Task<bool> ExistsAsync(
-        Expression<Func<TestAppointment, bool>> predicate)
-    {
-        ArgumentNullException.ThrowIfNull(predicate);
-
-        return _context.TestAppointments
-            .AsNoTracking()
-            .AnyAsync(predicate);
-    }
-
-    public Task<bool> HasConflictAsync(
-        int localAppId,
-        int testTypeId,
-        DateTime dateTime,
-        int? excludeAppointmentId = null)
-    {
-        if (localAppId <= 0 || testTypeId <= 0)
-            return Task.FromResult(false);
-
-        return _context.TestAppointments
-            .AsNoTracking()
-            .AnyAsync(x =>
-                x.LocalDrivingLicenseApplicationID == localAppId &&
-                x.TestTypeID == testTypeId &&
-                x.AppointmentDate == dateTime &&
-                !x.IsLocked &&
-                (!excludeAppointmentId.HasValue ||
-                 x.TestAppointmentID != excludeAppointmentId.Value));
+            .FirstOrDefaultAsync(x => x.TestAppointmentID == appointmentId);
     }
 
     public Task<bool> HasUserConflictAsync(
@@ -194,45 +140,29 @@ public sealed class TestAppointmentRepository
                  x.TestAppointmentID != excludeAppointmentId.Value));
     }
 
-    public async Task<bool> IsAppointmentAlreadyScheduledAsync(
+    public Task<bool> IsAppointmentAlreadyScheduledAsync(
         int localAppId,
         int testTypeId)
     {
         if (localAppId <= 0 || testTypeId <= 0)
-            return false;
+            return Task.FromResult(false);
 
-        var hasPendingAppointment =
-            await _context.TestAppointments
-                .AsNoTracking()
-                .AnyAsync(x =>
-                    x.LocalDrivingLicenseApplicationID == localAppId &&
-                    x.TestTypeID == testTypeId &&
-                    !x.IsLocked);
-
-        if (hasPendingAppointment)
-            return true;
-
-        return await _context.Tests
+        return _context.TestAppointments
             .AsNoTracking()
             .AnyAsync(x =>
-                x.TestAppointment != null &&
-                x.TestAppointment.LocalDrivingLicenseApplicationID ==
-                    localAppId &&
-                x.TestAppointment.TestTypeID == testTypeId &&
-                x.TestResult);
+                x.LocalDrivingLicenseApplicationID == localAppId &&
+                x.TestTypeID == testTypeId &&
+                !x.IsLocked);
     }
 
-    public async Task<AppStatus?> GetApplicationStatusAsync(
-        int localAppId)
+    public async Task<AppStatus?> GetApplicationStatusAsync(int localAppId)
     {
         if (localAppId <= 0)
             return null;
 
         return await _context.LocalDrivingLicenseApplications
-            .Where(x =>
-                x.LocalDrivingLicenseApplicationID == localAppId)
-            .Select(x =>
-                (AppStatus?)x.Application.ApplicationStatus)
+            .Where(x => x.LocalDrivingLicenseApplicationID == localAppId)
+            .Select(x => (AppStatus?)x.Application.ApplicationStatus)
             .FirstOrDefaultAsync();
     }
 
@@ -253,21 +183,27 @@ public sealed class TestAppointmentRepository
         return testTypeIds.ToHashSet();
     }
 
-    // =========================================================
-    // COMMANDS
-    // =========================================================
+    public Task<int> GetTrialCountAsync(int localAppId, int testTypeId)
+    {
+        if (localAppId <= 0 || testTypeId <= 0)
+            return Task.FromResult(0);
+
+        return _context.TestAppointments
+            .AsNoTracking()
+            .CountAsync(x =>
+                x.LocalDrivingLicenseApplicationID == localAppId &&
+                x.TestTypeID == testTypeId);
+    }
 
     public async Task AddAsync(TestAppointment appointment)
     {
         ArgumentNullException.ThrowIfNull(appointment);
-
         await _context.TestAppointments.AddAsync(appointment);
     }
 
     public void Delete(TestAppointment appointment)
     {
         ArgumentNullException.ThrowIfNull(appointment);
-
         _context.TestAppointments.Remove(appointment);
     }
 }
