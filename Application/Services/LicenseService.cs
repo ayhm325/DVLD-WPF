@@ -4,72 +4,55 @@ using Application.Interfaces;
 
 namespace Application.Services;
 
-public class LicenseService : ILicenseService
-{
-    private readonly ILicenseQueryService _queryService;
-
-    public LicenseService(
+public sealed class LicenseService(
     ILicenseQueryService queryService)
-    {
-        _queryService = queryService
-            ?? throw new ArgumentNullException(nameof(queryService));
-    }
+    : ILicenseService
+{
+    private readonly ILicenseQueryService _queryService =
+        queryService
+        ?? throw new ArgumentNullException(nameof(queryService));
 
     public Task<Result<LicenseDto>> GetByIdAsync(
-        int licenseId)
-    {
-        return _queryService.GetByIdAsync(licenseId);
-    }
+        int licenseId) =>
+        _queryService.GetByIdAsync(licenseId);
 
-    public Task<Result<List<LicenseDto>>> GetAllAsync()
-    {
-        return _queryService.GetAllAsync();
-    }
+    public Task<Result<List<LicenseDto>>> GetAllAsync() =>
+        _queryService.GetAllAsync();
 
     public Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
-        int driverId)
-    {
-        return _queryService.GetByDriverIdAsync(driverId);
-    }
+        int driverId) =>
+        _queryService.GetByDriverIdAsync(driverId);
 
     public Task<Result<List<LicenseDto>>> GetByApplicationIdAsync(
-        int applicationId)
-    {
-        return _queryService.GetByApplicationIdAsync(
-            applicationId);
-    }
+        int applicationId) =>
+        _queryService.GetByApplicationIdAsync(applicationId);
 
     public Task<Result<List<LicenseDto>>> GetByLicenseClassIdAsync(
-        int licenseClassId)
-    {
-        return _queryService.GetByLicenseClassIdAsync(
-            licenseClassId);
-    }
+        int licenseClassId) =>
+        _queryService.GetByLicenseClassIdAsync(licenseClassId);
 
-    public Task<Result<List<LicenseDto>>>
-        GetLicensesByPersonIdAsync(int personId)
-    {
-        return _queryService.GetLicensesByPersonIdAsync(
-            personId);
-    }
+    public Task<Result<List<LicenseDto>>> GetLicensesByPersonIdAsync(
+        int personId) =>
+        _queryService.GetLicensesByPersonIdAsync(personId);
 
     public Task<Result<bool>> IsLicenseExistsAsync(
-        int licenseId)
-    {
-        return _queryService.IsLicenseExistsAsync(licenseId);
-    }
+        int licenseId) =>
+        _queryService.IsLicenseExistsAsync(licenseId);
 
     public Task<Result<bool>> IsDriverHasLicenseAsync(
-        int driverId)
-    {
-        return _queryService.IsDriverHasLicenseAsync(
-            driverId);
-    }
+        int driverId) =>
+        _queryService.IsDriverHasLicenseAsync(driverId);
 
     public Task<Result<bool>> IsApplicationHasLicenseAsync(
-        int applicationId)
-    {
-        return _queryService.IsApplicationHasLicenseAsync(
-            applicationId);
-    }
+        int applicationId) =>
+        _queryService.IsApplicationHasLicenseAsync(applicationId);
+
+    public Task<Result<DriverLicenseInfoDto>> GetDetailsAsync(
+        int localAppId) =>
+        _queryService.GetDetailsAsync(localAppId);
+
+    public Task<Result<DriverLicenseInfoDto>>
+        GetLicenseDetailsByIdAsync(
+            int licenseId) =>
+        _queryService.GetLicenseDetailsByIdAsync(licenseId);
 }

@@ -43,17 +43,7 @@ public sealed class TestRepository(DVLDDbContext context)
                 .Where(t => t.CreatedByUserID == userId)
                 .OrderByDescending(t => t.TestID)
                 .ToListAsync();
-
-    public Task<int> GetTrialCountByApplicationIdAsync(
-        int localDrivingLicenseApplicationId) =>
-        localDrivingLicenseApplicationId <= 0
-            ? Task.FromResult(0)
-            : _context.Tests
-                .AsNoTracking()
-                .CountAsync(t =>
-                    t.TestAppointment
-                        .LocalDrivingLicenseApplicationID ==
-                    localDrivingLicenseApplicationId);
+   
 
     public Task<bool> IsTestAlreadyTakenAsync(
         int appointmentId) =>

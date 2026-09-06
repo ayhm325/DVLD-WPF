@@ -189,8 +189,8 @@ public sealed class LicenseRenewalService : ILicenseRenewalService
                     ? null
                     : notes.Trim(),
                 PaidFees = licenseClass.ClassFees,
-                IsActive = true,
-                IssueReason = (byte)IssueReason.Renew
+
+                IssueReason = IssueReason.Renew
             };
 
             var licenseValidation =
@@ -201,10 +201,8 @@ public sealed class LicenseRenewalService : ILicenseRenewalService
                 return Result<int>.FromValidationFailure(
                     licenseValidation.Error);
 
-            oldLicense.IsActive = false;
 
-            if (!await _licenseRepository
-                    .UpdateLicenseAsync(oldLicense))
+            if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId))
             {
                 return Result<int>.FromFailure(
                     "Failed to deactivate old license.");

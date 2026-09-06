@@ -1,6 +1,4 @@
-﻿using Application.DTOs;
-using Application.DTOs.DriverDTO;
-using Application.DTOs.LicenseDTO;
+﻿using Application.DTOs.LicenseDTO;
 using Domain.Entities;
 using Domain.Enums;
 
@@ -18,49 +16,38 @@ public static class LicenseMapper
         {
             LicenseID = license.LicenseID,
             ApplicationID = license.ApplicationID,
-            ApplicationInfo = license.Application is not null
-                ? $"App #{license.ApplicationID}"
-                : null,
-
             DriverID = license.DriverID,
             DriverName = person?.FullName,
 
             Driver = license.Driver is null
                 ? null
-                : new DriverDto
-                {
-                    DriverID = license.Driver.DriverID,
-                    PersonID = license.Driver.PersonID,
-                    FullName = person?.FullName ?? string.Empty,
-                    NationalNo = person?.NationalNo ?? string.Empty,
-                    DateOfBirth = person?.DateOfBirth ?? DateTime.MinValue,
-                    Gender = person?.Gender ?? Gender.Male,
-                    ImagePath = person?.ImagePath,
-                    ActiveLicenses = license.Driver.Licenses?
-                        .Count(l => l.IsActive) ?? 0,
-                    CreatedByUserID = license.Driver.CreatedByUserID,
-                    CreatedByUserName =
-                        license.Driver.CreatedByUser?.UserName ?? string.Empty,
-                    CreatedDate = license.Driver.CreatedDate
-                },
+                : DriverMapper.ToDto(license.Driver),
 
             LicenseClassID = license.LicenseClass,
-            LicenseClassName = license.LicenseClassInfo?.ClassName,
+            LicenseClassName =
+                license.LicenseClassInfo?.ClassName,
+
             IssueDate = license.IssueDate,
             ExpirationDate = license.ExpirationDate,
             Notes = license.Notes,
             PaidFees = license.PaidFees,
             IsActive = license.IsActive,
+
             IssueReason = (byte)license.IssueReason,
+
             IssueReasonText =
-                ((IssueReason)license.IssueReason).ToString(),
+                Enum.IsDefined(license.IssueReason)
+                    ? license.IssueReason.ToString()
+                    : "Unknown",
+
             CreatedByUserID = license.CreatedByUserID,
             CreatedByUserName =
-                license.CreatedByUser?.UserName ?? "Unknown"
+                license.CreatedByUser?.UserName
         };
     }
 
-    public static License ToEntity(CreateLicenseDto dto)
+    public static License ToEntity(
+        CreateLicenseDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
@@ -71,12 +58,14 @@ public static class LicenseMapper
             LicenseClass = dto.LicenseClassID,
             IssueDate = dto.IssueDate,
             ExpirationDate = dto.ExpirationDate,
+
             Notes = string.IsNullOrWhiteSpace(dto.Notes)
                 ? null
                 : dto.Notes.Trim(),
+
             PaidFees = dto.PaidFees,
-            IsActive = dto.IsActive,
-            IssueReason = (IssueReason)dto.IssueReason
+            IsActive = true,
+            IssueReason = dto.IssueReason
         };
     }
 }

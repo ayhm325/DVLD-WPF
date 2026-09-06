@@ -34,5 +34,4 @@ public interface ILicenseQueryService
 
     Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(
         int licenseId);
-
 }

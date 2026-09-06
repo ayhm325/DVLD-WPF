@@ -1,12 +1,12 @@
 ﻿using Application.Common.Results;
 using Application.DTOs;
-using Application.DTOs.DriverDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using Application.Mappers;
 using Application.Validators;
 using Domain.Enums;
 using Microsoft.Extensions.Logging;
+using System.Data;
 
 namespace Application.Services;
 
@@ -38,49 +38,63 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
         ILogger<LicenseIssuanceService> logger)
     {
         _unitOfWork =
-            unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
 
         _licenseRepository =
-            licenseRepository ?? throw new ArgumentNullException(nameof(licenseRepository));
+            licenseRepository
+            ?? throw new ArgumentNullException(nameof(licenseRepository));
 
         _localApplicationService =
             localApplicationService
-            ?? throw new ArgumentNullException(nameof(localApplicationService));
+            ?? throw new ArgumentNullException(
+                nameof(localApplicationService));
 
         _applicationService =
             applicationService
-            ?? throw new ArgumentNullException(nameof(applicationService));
+            ?? throw new ArgumentNullException(
+                nameof(applicationService));
 
         _driverService =
-            driverService ?? throw new ArgumentNullException(nameof(driverService));
+            driverService
+            ?? throw new ArgumentNullException(nameof(driverService));
 
         _personService =
-            personService ?? throw new ArgumentNullException(nameof(personService));
+            personService
+            ?? throw new ArgumentNullException(nameof(personService));
 
         _currentUserService =
             currentUserService
-            ?? throw new ArgumentNullException(nameof(currentUserService));
+            ?? throw new ArgumentNullException(
+                nameof(currentUserService));
 
         _licenseClassService =
             licenseClassService
-            ?? throw new ArgumentNullException(nameof(licenseClassService));
+            ?? throw new ArgumentNullException(
+                nameof(licenseClassService));
 
         _testWorkflowService =
             testWorkflowService
-            ?? throw new ArgumentNullException(nameof(testWorkflowService));
+            ?? throw new ArgumentNullException(
+                nameof(testWorkflowService));
 
         _logger =
-            logger ?? throw new ArgumentNullException(nameof(logger));
+            logger
+            ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<Result<int>> IssueFirstLicenseAsync(
         int localAppId,
         string? notes)
     {
-        var validation = LicenseValidator.ValidateId(localAppId);
+        var validation =
+            LicenseValidator.ValidateId(localAppId);
 
         if (validation.IsFailure)
-            return Result<int>.FromValidationFailure(validation.Error);
+        {
+            return Result<int>.FromValidationFailure(
+                validation.Error);
+        }
 
         if (!_currentUserService.IsLoggedIn ||
             _currentUserService.UserId <= 0)
@@ -91,12 +105,17 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
 
         var localApplicationResult =
             await _localApplicationService
-                .GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
+                .GetLocalDrivingLicenseApplicationByIdAsync(
+                    localAppId);
 
         if (localApplicationResult.IsFailure)
-            return PropagateFailure<int>(localApplicationResult);
+        {
+            return PropagateFailure<int>(
+                localApplicationResult);
+        }
 
-        var localApplication = localApplicationResult.Value;
+        var localApplication =
+            localApplicationResult.Value;
 
         if (localApplication is null)
         {
@@ -122,12 +141,17 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
                 .GetApplicationIdByLocalIdAsync(localAppId);
 
         if (applicationIdResult.IsFailure)
-            return PropagateFailure<int>(applicationIdResult);
+        {
+            return PropagateFailure<int>(
+                applicationIdResult);
+        }
 
-        var applicationId = applicationIdResult.Value;
+        var applicationId =
+            applicationIdResult.Value;
 
         var applicationIdValidation =
-            LicenseValidator.ValidateApplicationId(applicationId);
+            LicenseValidator.ValidateApplicationId(
+                applicationId);
 
         if (applicationIdValidation.IsFailure)
         {
@@ -140,9 +164,13 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
                 .GetApplicationByIdAsync(applicationId);
 
         if (applicationResult.IsFailure)
-            return PropagateFailure<int>(applicationResult);
+        {
+            return PropagateFailure<int>(
+                applicationResult);
+        }
 
-        var application = applicationResult.Value;
+        var application =
+            applicationResult.Value;
 
         if (application is null)
         {
@@ -171,12 +199,17 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
 
         var personResult =
             await _personService
-                .GetPersonByIdAsync(application.ApplicantPersonID);
+                .GetPersonByIdAsync(
+                    application.ApplicantPersonID);
 
         if (personResult.IsFailure)
-            return PropagateFailure<int>(personResult);
+        {
+            return PropagateFailure<int>(
+                personResult);
+        }
 
-        var person = personResult.Value;
+        var person =
+            personResult.Value;
 
         if (person is null)
         {
@@ -200,9 +233,13 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
                     localApplication.LicenseClassID);
 
         if (licenseClassResult.IsFailure)
-            return PropagateFailure<int>(licenseClassResult);
+        {
+            return PropagateFailure<int>(
+                licenseClassResult);
+        }
 
-        var licenseClass = licenseClassResult.Value;
+        var licenseClass =
+            licenseClassResult.Value;
 
         if (licenseClass is null)
         {
@@ -223,12 +260,14 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
         }
 
         await using var transaction =
-            await _unitOfWork.BeginTransactionAsync();
+            await _unitOfWork.BeginTransactionAsync(
+                IsolationLevel.Serializable);
 
         try
         {
             if (await _licenseRepository
-                    .IsApplicationHasLicenseAsync(applicationId))
+                    .IsApplicationHasLicenseAsync(
+                        applicationId))
             {
                 return Result<int>.FromConflict(
                     "A license has already been issued for this application.");
@@ -236,42 +275,56 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
 
             var driverResult =
                 await _driverService
-                    .GetByPersonIdAsync(person.PersonId);
+                    .GetByPersonIdAsync(
+                        person.PersonId);
 
             int driverId;
 
             if (driverResult.IsSuccess)
             {
-                var driver = driverResult.Value;
+                var driver =
+                    driverResult.Value;
 
-                if (driver is null || driver.DriverID <= 0)
+                if (driver is null ||
+                    driver.DriverID <= 0)
                 {
                     return Result<int>.FromFailure(
                         "Driver information was returned incorrectly.");
                 }
 
-                driverId = driver.DriverID;
+                driverId =
+                    driver.DriverID;
             }
             else
             {
-                if (driverResult.ErrorType != ErrorType.NotFound)
-                    return PropagateFailure<int>(driverResult);
+                if (driverResult.ErrorType !=
+                    ErrorType.NotFound)
+                {
+                    return PropagateFailure<int>(
+                        driverResult);
+                }
 
                 var createDriverResult =
                     await _driverService.AddAsync(
                         new CreateDriverDto
                         {
-                            PersonID = person.PersonId
+                            PersonID =
+                                person.PersonId
                         });
 
                 if (createDriverResult.IsFailure)
-                    return PropagateFailure<int>(createDriverResult);
+                {
+                    return PropagateFailure<int>(
+                        createDriverResult);
+                }
 
-                driverId = createDriverResult.Value;
+                driverId =
+                    createDriverResult.Value;
             }
 
             var driverValidation =
-                LicenseValidator.ValidateDriverId(driverId);
+                LicenseValidator.ValidateDriverId(
+                    driverId);
 
             if (driverValidation.IsFailure)
             {
@@ -288,24 +341,34 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
                     "The driver already has an active license for this license class.");
             }
 
-            var issueDate = DateTime.UtcNow;
+            var issueDate =
+                DateTime.UtcNow;
 
-            var createLicenseDto = new CreateLicenseDto
-            {
-                ApplicationID = applicationId,
-                DriverID = driverId,
-                LicenseClassID = localApplication.LicenseClassID,
-                IssueDate = issueDate,
-                ExpirationDate =
-                    issueDate.AddYears(
-                        licenseClass.DefaultValidityLength),
-                Notes = string.IsNullOrWhiteSpace(notes)
-                    ? null
-                    : notes.Trim(),
-                PaidFees = licenseClass.LicenseClassFees,
-                IsActive = true,
-                IssueReason = (byte)IssueReason.FirstTime
-            };
+            var createLicenseDto =
+    new CreateLicenseDto
+    {
+        ApplicationID = applicationId,
+        DriverID = driverId,
+        LicenseClassID =
+            localApplication.LicenseClassID,
+
+        IssueDate = issueDate,
+
+        ExpirationDate =
+            issueDate.AddYears(
+                licenseClass.DefaultValidityLength),
+
+        Notes =
+            string.IsNullOrWhiteSpace(notes)
+                ? null
+                : notes.Trim(),
+
+        PaidFees =
+            licenseClass.LicenseClassFees,
+
+        IssueReason =
+            IssueReason.FirstTime
+    };
 
             var licenseValidation =
                 LicenseValidator.ValidateCreate(
@@ -318,17 +381,21 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
             }
 
             var license =
-                LicenseMapper.ToEntity(createLicenseDto);
+                LicenseMapper.ToEntity(
+                    createLicenseDto);
 
             license.CreatedByUserID =
                 _currentUserService.UserId;
 
-            await _licenseRepository.AddLicenseAsync(license);
+            await _licenseRepository
+                .AddLicenseAsync(license);
 
             var saved =
-                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork
+                    .SaveChangesAsync();
 
-            if (saved <= 0 || license.LicenseID <= 0)
+            if (saved <= 0 ||
+                license.LicenseID <= 0)
             {
                 return Result<int>.FromFailure(
                     "Failed to save the driving license.");
@@ -336,10 +403,14 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
 
             var completeResult =
                 await _applicationService
-                    .CompleteApplicationAsync(applicationId);
+                    .CompleteApplicationAsync(
+                        applicationId);
 
             if (completeResult.IsFailure)
-                return PropagateFailure<int>(completeResult);
+            {
+                return PropagateFailure<int>(
+                    completeResult);
+            }
 
             await transaction.CommitAsync();
 
@@ -376,19 +447,24 @@ public sealed class LicenseIssuanceService : ILicenseIssuanceService
         return source.ErrorType switch
         {
             ErrorType.Validation =>
-                Result<T>.FromValidationFailure(source.Error),
+                Result<T>.FromValidationFailure(
+                    source.Error),
 
             ErrorType.NotFound =>
-                Result<T>.FromNotFound(source.Error),
+                Result<T>.FromNotFound(
+                    source.Error),
 
             ErrorType.Conflict =>
-                Result<T>.FromConflict(source.Error),
+                Result<T>.FromConflict(
+                    source.Error),
 
             ErrorType.Forbidden =>
-                Result<T>.FromForbidden(source.Error),
+                Result<T>.FromForbidden(
+                    source.Error),
 
             _ =>
-                Result<T>.FromFailure(source.Error)
+                Result<T>.FromFailure(
+                    source.Error)
         };
     }
 }

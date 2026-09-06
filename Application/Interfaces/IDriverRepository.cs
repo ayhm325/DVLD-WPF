@@ -6,6 +6,8 @@ public interface IDriverRepository
 {
     Task<Driver?> GetByIdAsync(int id);
 
+    Task<Driver?> GetForDeleteAsync(int id);
+
     Task<List<Driver>> GetAllAsync();
 
     Task<Driver?> GetByPersonIdAsync(int personId);

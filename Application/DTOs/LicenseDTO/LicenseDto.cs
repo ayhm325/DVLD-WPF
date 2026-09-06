@@ -1,15 +1,12 @@
 ﻿using Application.DTOs.DriverDTO;
-using Domain.Enums;
 
 namespace Application.DTOs.LicenseDTO;
 
-public class LicenseDto
+public sealed class LicenseDto
 {
     public int LicenseID { get; set; }
 
     public int ApplicationID { get; set; }
-
-    public string? ApplicationInfo { get; set; }
 
     public int DriverID { get; set; }
 
@@ -29,11 +26,6 @@ public class LicenseDto
 
     public bool IsActive { get; set; }
 
-    public string Status =>
-        IsActive
-            ? "Active"
-            : "Inactive";
-
     public byte IssueReason { get; set; }
 
     public string? IssueReasonText { get; set; }
@@ -43,19 +35,4 @@ public class LicenseDto
     public string? CreatedByUserName { get; set; }
 
     public DriverDto? Driver { get; set; }
-
-    // =========================================================
-    // UI HELPERS
-    // =========================================================
-
-    public bool IsExpired =>
-        DateTime.Now > ExpirationDate;
-
-    public string ExpiryStatus =>
-        IsExpired
-            ? "Expired"
-            : "Valid";
-
-    public int RemainingDays =>
-        (ExpirationDate - DateTime.Now).Days;
 }

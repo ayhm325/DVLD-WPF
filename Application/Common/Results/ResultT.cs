@@ -28,6 +28,24 @@ public sealed class Result<T> : Result
             error,
             ErrorType.Failure);
 
+    public static Result<T> FromResult(Result result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (result.IsSuccess)
+        {
+            throw new ArgumentException(
+                "Cannot convert a successful result to a failure result.",
+                nameof(result));
+        }
+
+        return new(
+            false,
+            default,
+            result.Error,
+            result.ErrorType);
+    }
+
     public static Result<T> FromValidationFailure(string error)
         => new(
             false,

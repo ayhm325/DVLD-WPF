@@ -7,7 +7,6 @@ public interface ILicenseService
 {
     Task<Result<LicenseDto>> GetByIdAsync(int licenseId);
 
-
     Task<Result<List<LicenseDto>>> GetAllAsync();
 
     Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
@@ -30,4 +29,9 @@ public interface ILicenseService
     Task<Result<bool>> IsApplicationHasLicenseAsync(
         int applicationId);
 
+    Task<Result<DriverLicenseInfoDto>> GetDetailsAsync(
+        int localAppId);
+
+    Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(
+        int licenseId);
 }

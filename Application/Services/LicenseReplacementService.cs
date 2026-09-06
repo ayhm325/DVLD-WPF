@@ -196,10 +196,8 @@ public sealed class LicenseReplacementService
                     Notes =
                         replacementReason.Trim(),
 
-                    IsActive = true,
 
-                    IssueReason =
-                        (byte)replacementInfo.Value.IssueReason
+                    IssueReason = replacementInfo.Value.IssueReason
                 };
 
             var licenseValidation =
@@ -212,10 +210,7 @@ public sealed class LicenseReplacementService
                     licenseValidation.Error);
             }
 
-            oldLicense.IsActive = false;
-
-            if (!await _licenseRepository
-                    .UpdateLicenseAsync(oldLicense))
+            if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId))
             {
                 return Result<int>.FromFailure(
                     "Failed to deactivate the old license.");
@@ -241,14 +236,7 @@ public sealed class LicenseReplacementService
                     "Failed to save the replacement license.");
             }
 
-            if (await _licenseRepository
-                    .IsActiveLicenseExistsAsync(
-                        oldLicense.DriverID,
-                        oldLicense.LicenseClass))
-            {
-                return Result<int>.FromConflict(
-                    "The driver already has another active license for this license class.");
-            }
+           
 
             var completeResult =
                 await _applicationService

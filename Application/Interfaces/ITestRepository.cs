@@ -9,9 +9,7 @@ public interface ITestRepository
 
     Task<List<Test>> GetByTestAppointmentIdAsync(int appointmentId);
     Task<List<Test>> GetByUserIdAsync(int userId);
-
-    Task<int> GetTrialCountByApplicationIdAsync(
-        int localDrivingLicenseApplicationId);
+   
 
     Task<bool> IsTestAlreadyTakenAsync(int appointmentId);
 

@@ -175,9 +175,8 @@ public sealed class DetainedLicenseService(
 
             await _repository.AddAsync(entity);
 
-            license.IsActive = false;
-
-            if (!await _licenseRepository.UpdateLicenseAsync(license))
+            if (!await _licenseRepository
+        .DeactivateLicenseAsync(license.LicenseID))
             {
                 return Result<DetainedLicenseDto>.FromFailure(
                     "Failed to deactivate the license.");
@@ -319,16 +318,13 @@ public sealed class DetainedLicenseService(
                     license.LicenseClass,
                     license.LicenseID);
 
-            if (!hasAnotherActiveLicense)
+            if (!hasAnotherActiveLicense &&
+                license.ExpirationDate > DateTime.UtcNow &&
+                !await _licenseRepository
+                    .ActivateLicenseAsync(license.LicenseID))
             {
-                license.IsActive =
-                    license.ExpirationDate > DateTime.UtcNow;
-
-                if (!await _licenseRepository.UpdateLicenseAsync(license))
-                {
-                    return Result.Failure(
-                        "Failed to restore the license state.");
-                }
+                return Result.Failure(
+                    "Failed to restore the license state.");
             }
 
             var saved = await _unitOfWork.SaveChangesAsync();

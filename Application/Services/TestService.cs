@@ -45,8 +45,10 @@ public sealed class TestService(
         var validation = TestValidator.ValidateId(id);
 
         if (validation.IsFailure)
+        {
             return Result<TestDto>.FromValidationFailure(
                 validation.Error);
+        }
 
         var entity = await _repository.GetByIdAsync(id);
 
@@ -72,12 +74,14 @@ public sealed class TestService(
             TestValidator.ValidateAppointmentId(appointmentId);
 
         if (validation.IsFailure)
+        {
             return Result<List<TestDto>>.FromValidationFailure(
                 validation.Error);
+        }
 
         var tests =
-            await _repository
-                .GetByTestAppointmentIdAsync(appointmentId);
+            await _repository.GetByTestAppointmentIdAsync(
+                appointmentId);
 
         return Result<List<TestDto>>.Success(
             tests.Select(TestMapper.ToDto).ToList());
@@ -90,8 +94,10 @@ public sealed class TestService(
             TestValidator.ValidateUserId(userId);
 
         if (validation.IsFailure)
+        {
             return Result<List<TestDto>>.FromValidationFailure(
                 validation.Error);
+        }
 
         var tests =
             await _repository.GetByUserIdAsync(userId);
@@ -107,8 +113,10 @@ public sealed class TestService(
             TestValidator.ValidateCreate(dto);
 
         if (validation.IsFailure)
+        {
             return Result<int>.FromValidationFailure(
                 validation.Error);
+        }
 
         if (!_currentUserService.IsLoggedIn ||
             _currentUserService.UserId <= 0)
@@ -162,8 +170,7 @@ public sealed class TestService(
             {
                 await transaction.RollbackAsync();
 
-                return Result<int>.FromFailure(
-                    workflow.Error);
+                return Result<int>.FromResult(workflow);
             }
 
             var entity =

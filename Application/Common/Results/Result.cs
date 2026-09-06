@@ -61,9 +61,11 @@ public class Result
         ArgumentNullException.ThrowIfNull(result);
 
         if (result.IsSuccess)
+        {
             throw new ArgumentException(
                 "Cannot convert a successful result to a failure result.",
                 nameof(result));
+        }
 
         return new Result(
             false,
