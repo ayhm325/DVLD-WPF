@@ -1,4 +1,5 @@
-﻿using Application.DTOs.AuthDTO;
+﻿using Application.Common.Results;
+using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -9,52 +10,39 @@ namespace DVLD.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
-public sealed class AuthController : ControllerBase
+public sealed class AuthController(
+    IAuthService authService,
+    ICurrentUserService currentUserService) : ControllerBase
 {
-    private readonly IAuthService _authService;
-    private readonly ICurrentUserService _currentUserService;
-
-    public AuthController(
-        IAuthService authService,
-        ICurrentUserService currentUserService)
-    {
-        _authService = authService;
-        _currentUserService = currentUserService;
-    }
-
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequestDto dto)
     {
-        var result =
-            await _authService.LoginAsync(dto);
+        var result = await authService.LoginAsync(dto);
 
-        if (result.IsFailure)
+        if (result.IsSuccess)
+            return Ok(result.Value);
+
+        return result.ErrorType switch
         {
-            return Unauthorized(new
-            {
-                message = result.Error
-            });
-        }
-
-        return Ok(result.Value);
+            ErrorType.Validation => BadRequest(new { error = result.Error }),
+            ErrorType.Forbidden => Forbid(),
+            _ => Unauthorized(new { error = result.Error })
+        };
     }
 
     [HttpGet("me")]
-    [Authorize]
     public IActionResult Me()
     {
-        if (!_currentUserService.IsLoggedIn)
-        {
+        if (!currentUserService.IsLoggedIn)
             return Unauthorized();
-        }
 
         return Ok(new
         {
-            userId = _currentUserService.UserId,
-            username = _currentUserService.Username,
-            fullName = _currentUserService.FullName
+            userId = currentUserService.UserId,
+            username = currentUserService.Username,
+            fullName = currentUserService.FullName
         });
     }
 }

@@ -10,53 +10,25 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DVLD.Api.Security;
 
-public sealed class JwtTokenService : IJwtTokenService
+public sealed class JwtTokenService(IOptions<JwtOptions> options)
+    : IJwtTokenService
 {
-    private readonly JwtOptions _options;
-
-    public JwtTokenService(
-        IOptions<JwtOptions> options)
-    {
-        _options = options.Value;
-
-        if (string.IsNullOrWhiteSpace(_options.SecretKey))
-        {
-            throw new InvalidOperationException(
-                "JWT SecretKey is not configured.");
-        }
-
-        if (Encoding.UTF8.GetByteCount(_options.SecretKey) < 32)
-        {
-            throw new InvalidOperationException(
-                "JWT SecretKey must be at least 32 bytes long.");
-        }
-    }
+    private readonly JwtOptions _options =
+        options?.Value ?? throw new ArgumentNullException(nameof(options));
 
     public JwtTokenResult GenerateToken(UserDto user)
     {
         ArgumentNullException.ThrowIfNull(user);
 
         var expiresAtUtc =
-            DateTime.UtcNow.AddMinutes(
-                _options.ExpirationMinutes);
+            DateTime.UtcNow.AddMinutes(_options.ExpirationMinutes);
 
-        var claims = new List<Claim>
+        var claims = new[]
         {
-            new(
-                ClaimTypes.NameIdentifier,
-                user.UserId.ToString()),
-
-            new(
-                ClaimTypes.Name,
-                user.UserName),
-
-            new(
-                "FullName",
-                user.FullName),
-
-            new(
-                "PersonId",
-                user.PersonId.ToString())
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            new Claim(ClaimTypes.Name, user.UserName),
+            new Claim("FullName", user.FullName),
+            new Claim("PersonId", user.PersonId.ToString())
         };
 
         var key = new SymmetricSecurityKey(
@@ -73,13 +45,9 @@ public sealed class JwtTokenService : IJwtTokenService
             expires: expiresAtUtc,
             signingCredentials: credentials);
 
-        var accessToken =
-            new JwtSecurityTokenHandler()
-                .WriteToken(token);
-
         return new JwtTokenResult
         {
-            AccessToken = accessToken,
+            AccessToken = new JwtSecurityTokenHandler().WriteToken(token),
             ExpiresAtUtc = expiresAtUtc
         };
     }

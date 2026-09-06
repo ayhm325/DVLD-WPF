@@ -314,25 +314,11 @@ public sealed class UserService : IUserService
         _userRepository
             .DeleteUser(user);
 
-        try
-        {
-            var saved =
-                await _unitOfWork
-                    .SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync();
 
-            if (saved <= 0)
-            {
-                return Result.Failure(
-                    "Failed to save user deletion.");
-            }
-
-            return Result.Success();
-        }
-        catch
-        {
-            return Result.Conflict(
-                "This user cannot be deleted because it is referenced by existing records. Deactivate the user instead.");
-        }
+        return saved > 0
+            ? Result.Success()
+            : Result.Failure("Failed to save user deletion.");
     }
 
     public async Task<Result>
