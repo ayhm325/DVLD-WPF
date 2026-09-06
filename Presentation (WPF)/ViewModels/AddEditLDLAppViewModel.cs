@@ -12,7 +12,6 @@ using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
 
-
 namespace Presentation.ViewModels
 {
     public partial class AddEditLDLAppViewModel : ObservableObject
@@ -25,7 +24,16 @@ namespace Presentation.ViewModels
         private readonly IApplicationTypeService _applicationTypeService;
         private readonly ILocalDrivingLicenseApplicationService _localDrivingLicenseApplicationService;
         private readonly LDLAppViewModel _gridViewModel;
+
         private ApplicationTypeDto? _ldlApplicationType;
+
+        // Prevent duplicate-check queries from running
+        // while the ViewModel is still initializing.
+        private bool _isInitializing;
+
+        // Used to make sure an older duplicate-check result
+        // cannot overwrite a newer result.
+        private int _duplicateCheckVersion;
 
         public AddEditLDLAppViewModel(
             ILicenseClassService licenseClassService,
@@ -42,7 +50,8 @@ namespace Presentation.ViewModels
             _personService = personService;
             _currentUserService = currentUserService;
             _applicationTypeService = applicationTypeService;
-            _localDrivingLicenseApplicationService = localDrivingLicenseApplicationService;
+            _localDrivingLicenseApplicationService =
+                localDrivingLicenseApplicationService;
             _gridViewModel = gridViewModel;
             _serviceProvider = serviceProvider;
 
@@ -98,10 +107,11 @@ namespace Presentation.ViewModels
 
         private async Task CheckDuplicateApplicationAsync()
         {
-            HasDuplicateApplication = false;
+            int currentVersion = ++_duplicateCheckVersion;
 
             if (Person == null || SelectedLicenseClass == null)
             {
+                HasDuplicateApplication = false;
                 SaveCommand.NotifyCanExecuteChanged();
                 return;
             }
@@ -109,9 +119,14 @@ namespace Presentation.ViewModels
             try
             {
                 int? existingApplicationId =
-                    await _applicationService.HasDuplicateApplicationAsync(
-                        Person.PersonId,
-                        SelectedLicenseClass.LicenseClassID);
+                    await _applicationService
+                        .HasDuplicateApplicationAsync(
+                            Person.PersonId,
+                            SelectedLicenseClass.LicenseClassID);
+
+                // Ignore this result if another check started after it.
+                if (currentVersion != _duplicateCheckVersion)
+                    return;
 
                 HasDuplicateApplication =
                     existingApplicationId.HasValue &&
@@ -119,7 +134,11 @@ namespace Presentation.ViewModels
             }
             catch
             {
-                // لا نسمح بالحفظ إذا فشل التحقق.
+                // If duplicate validation fails,
+                // do not allow the user to save.
+                if (currentVersion != _duplicateCheckVersion)
+                    return;
+
                 HasDuplicateApplication = true;
             }
 
@@ -128,18 +147,30 @@ namespace Presentation.ViewModels
 
         partial void OnPersonChanged(PersonDto? value)
         {
+            if (_isInitializing)
+                return;
+
             _ = CheckDuplicateApplicationAsync();
         }
 
         partial void OnSelectedLicenseClassChanged(LicenseClassDto? value)
         {
+            if (_isInitializing)
+                return;
+
             _ = CheckDuplicateApplicationAsync();
         }
 
         public async Task InitializeAsync()
         {
             await LoadLicenseClassesAsync();
+
             await LoadApplicationTypeAsync();
+
+            if (Person != null && SelectedLicenseClass != null)
+            {
+                await CheckDuplicateApplicationAsync();
+            }
         }
 
         private async Task LoadLicenseClassesAsync()
@@ -147,7 +178,8 @@ namespace Presentation.ViewModels
             try
             {
                 var result =
-                    await _licenseClassService.GetAllLicenseClassesAsync();
+                    await _licenseClassService
+                        .GetAllLicenseClassesAsync();
 
                 if (result.IsFailure)
                 {
@@ -226,11 +258,8 @@ namespace Presentation.ViewModels
             }
         }
 
-
-      
- 
-[RelayCommand(CanExecute = nameof(CanSave))]
-private async Task Save()
+        [RelayCommand(CanExecute = nameof(CanSave))]
+        private async Task Save()
         {
             if (Person == null)
             {
@@ -270,7 +299,7 @@ private async Task Save()
                 int licenseClassId =
                     SelectedLicenseClass.LicenseClassID;
 
-                // Check for duplicate application
+                // Final duplicate check before saving.
                 int? existingApplicationId =
                     await _applicationService
                         .HasDuplicateApplicationAsync(
@@ -292,7 +321,6 @@ private async Task Save()
                     return;
                 }
 
-                // Create main Application DTO
                 var newApplication = new CreateApplicationDto
                 {
                     ApplicantPersonID = Person.PersonId,
@@ -308,14 +336,10 @@ private async Task Save()
                     PaidFees =
                         _ldlApplicationType.ApplicationTypeFees,
 
-                   
-
                     LastStatusDate =
                         DateTime.Now
                 };
 
-                // Create Local Driving License Application DTO
-                // ApplicationID will be generated by the service.
                 var newLDLApplication =
                     new CreateLocalDrivingLicenseApplicationDto
                     {
@@ -323,7 +347,6 @@ private async Task Save()
                         LicenseClassID = licenseClassId
                     };
 
-                // Create both records atomically
                 var result =
                     await _localDrivingLicenseApplicationService
                         .CreateLocalDrivingLicenseApplicationAsync(
@@ -341,8 +364,6 @@ private async Task Save()
                     return;
                 }
 
-                // The orchestration service returns the generated
-                // ApplicationID.
                 ApplicationId = result.Value;
 
                 if (ApplicationId <= 0)
@@ -375,7 +396,7 @@ private async Task Save()
                     MessageBoxImage.Error);
             }
         }
-        
+
         [RelayCommand]
         private async Task Search()
         {
@@ -444,6 +465,7 @@ private async Task Save()
                     .GetRequiredService<AddEditPersonWin>();
 
             window.Owner = App.Current.MainWindow;
+
             window.ShowDialog();
         }
     }

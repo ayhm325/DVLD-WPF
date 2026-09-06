@@ -29,31 +29,49 @@ public partial class App : System.Windows.Application
 
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        var services = new ServiceCollection();
+        try
+        {
+            var services = new ServiceCollection();
 
-        ConfigureServices(services);
+            ConfigureServices(services);
 
-        _rootServiceProvider = services.BuildServiceProvider(
-            new ServiceProviderOptions
-            {
-                ValidateScopes = true,
-                ValidateOnBuild = true
-            });
+            _rootServiceProvider = services.BuildServiceProvider(
+                new ServiceProviderOptions
+                {
+                    ValidateScopes = true,
+                    ValidateOnBuild = true
+                });
 
-        _applicationScope =
-            _rootServiceProvider.CreateScope();
+            _applicationScope =
+                _rootServiceProvider.CreateScope();
 
-        ServiceProvider =
-            _applicationScope.ServiceProvider;
+            ServiceProvider =
+                _applicationScope.ServiceProvider;
 
-        var loginWindow =
-            ServiceProvider.GetRequiredService<LoginWindow>();
+            var apiHostService =
+                ServiceProvider.GetRequiredService<IApiHostService>();
 
-        loginWindow.Show();
+            await apiHostService.EnsureApiRunningAsync();
+
+            var loginWindow =
+                ServiceProvider.GetRequiredService<LoginWindow>();
+
+            loginWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Failed to start the application.\n\n{ex.Message}",
+                "DVLD",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            Shutdown();
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -106,6 +124,7 @@ public partial class App : System.Windows.Application
 
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<IApiHostService, ApiHostService>();
 
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IApplicationService, ApplicationService>();
