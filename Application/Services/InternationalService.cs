@@ -246,11 +246,7 @@ public class InternationalService : IInternationalService
             var application = new CreateApplicationDto
             {
                 ApplicantPersonID = license.Driver.PersonID,
-                ApplicationDate = now,
-                ApplicationTypeID = applicationTypeResult.Value.ApplicationTypeId,
-                ApplicationStatus = AppStatus.New,
-                LastStatusDate = now,
-                PaidFees = applicationTypeResult.Value.ApplicationTypeFees
+                ApplicationTypeID = internationalApplicationTypeId
             };
 
             var applicationResult = await _applicationService.AddNewApplicationAsync(application);

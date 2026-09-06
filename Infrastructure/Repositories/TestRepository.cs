@@ -5,254 +5,116 @@ using System.Linq.Expressions;
 
 namespace Infrastructure.Repositories;
 
-public class TestRepository
-    : ITestRepository
+public sealed class TestRepository : ITestRepository
 {
     private readonly DVLDDbContext _context;
 
-    public TestRepository(
-        DVLDDbContext context)
+    public TestRepository(DVLDDbContext context)
     {
-        _context =
-            context
-            ?? throw new ArgumentNullException(
-                nameof(context));
+        _context = context
+            ?? throw new ArgumentNullException(nameof(context));
     }
 
-    // =========================================================
-    // BASE QUERY
-    // =========================================================
-
-    private IQueryable<Test> Query()
-    {
-        return _context.Tests
+    private IQueryable<Test> Query() =>
+        _context.Tests
             .AsNoTracking()
+            .Include(t => t.TestAppointment)
+                .ThenInclude(a => a.TestType)
+            .Include(t => t.TestAppointment)
+                .ThenInclude(a => a.LocalDrivingLicenseApplication)
+            .Include(t => t.User);
 
-            .Include(t =>
-                t.TestAppointment)
-                .ThenInclude(a =>
-                    a.TestType)
-
-            .Include(t =>
-                t.TestAppointment)
-                .ThenInclude(a =>
-                    a.LocalDrivingLicenseApplication)
-
-            .Include(t =>
-                t.User);
-    }
-
-    // =========================================================
-    // GET BY ID
-    // =========================================================
-
-    public async Task<Test?>
-        GetByIdAsync(
-            int id)
+    public Task<Test?> GetByIdAsync(int id)
     {
         if (id <= 0)
-            return null;
+            return Task.FromResult<Test?>(null);
 
-        return await Query()
-            .FirstOrDefaultAsync(
-                t =>
-                    t.TestID == id);
+        return Query().FirstOrDefaultAsync(t => t.TestID == id);
     }
 
-    // =========================================================
-    // GET ALL
-    // =========================================================
-
-    public async Task<List<Test>>
-        GetAllAsync()
+    public Task<Test?> GetForUpdateAsync(int id)
     {
-        return await Query()
-            .ToListAsync();
+        if (id <= 0)
+            return Task.FromResult<Test?>(null);
+
+        return _context.Tests
+            .FirstOrDefaultAsync(t => t.TestID == id);
     }
 
-    // =========================================================
-    // GET BY TEST APPOINTMENT ID
-    // =========================================================
+    public Task<List<Test>> GetAllAsync() =>
+        Query().ToListAsync();
 
-    public async Task<List<Test>>
-        GetByTestAppointmentIdAsync(
-            int appointmentId)
+    public Task<List<Test>> GetByTestAppointmentIdAsync(int appointmentId)
     {
         if (appointmentId <= 0)
-            return [];
+            return Task.FromResult<List<Test>>([]);
 
-        return await Query()
-            .Where(
-                t =>
-                    t.TestAppointmentID ==
-                    appointmentId)
+        return Query()
+            .Where(t => t.TestAppointmentID == appointmentId)
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET BY USER ID
-    // =========================================================
-
-    public async Task<List<Test>>
-        GetByUserIdAsync(
-            int userId)
+    public Task<List<Test>> GetByUserIdAsync(int userId)
     {
         if (userId <= 0)
-            return [];
+            return Task.FromResult<List<Test>>([]);
 
-        return await Query()
-            .Where(
-                t =>
-                    t.CreatedByUserID ==
-                    userId)
+        return Query()
+            .Where(t => t.CreatedByUserID == userId)
             .ToListAsync();
     }
 
-    // =========================================================
-    // GET TRIAL COUNT BY APPLICATION ID
-    // =========================================================
-
-    public async Task<int>
-        GetTrialCountByApplicationIdAsync(
-            int localDrivingLicenseApplicationId)
+    public async Task<int> GetTrialCountByApplicationIdAsync(
+        int localDrivingLicenseApplicationId)
     {
         if (localDrivingLicenseApplicationId <= 0)
             return 0;
 
         return await _context.Tests
             .AsNoTracking()
-            .CountAsync(
-                t =>
-                    t.TestAppointment
-                        .LocalDrivingLicenseApplicationID ==
-                    localDrivingLicenseApplicationId);
+            .CountAsync(t =>
+                t.TestAppointment.LocalDrivingLicenseApplicationID ==
+                localDrivingLicenseApplicationId);
     }
 
-    // =========================================================
-    // CHECK TEST EXISTS
-    // =========================================================
-
-    public async Task<bool>
-        IsTestExistsAsync(
-            int id)
+    public Task<bool> IsTestExistsAsync(int id)
     {
         if (id <= 0)
-            return false;
+            return Task.FromResult(false);
 
-        return await _context.Tests
+        return _context.Tests
             .AsNoTracking()
-            .AnyAsync(
-                t =>
-                    t.TestID == id);
+            .AnyAsync(t => t.TestID == id);
     }
 
-    // =========================================================
-    // CHECK TEST ALREADY TAKEN
-    // =========================================================
-
-    public async Task<bool> IsTestAlreadyTakenAsync(int appointmentId)
+    public Task<bool> IsTestAlreadyTakenAsync(int appointmentId)
     {
         if (appointmentId <= 0)
-            return false;
+            return Task.FromResult(false);
 
-        return await _context.Tests
+        return _context.Tests
             .AsNoTracking()
-            .AnyAsync(
-                t =>
-                    t.TestAppointmentID ==
-                    appointmentId);
+            .AnyAsync(t => t.TestAppointmentID == appointmentId);
     }
-
-    // =========================================================
-    // CREATE
-    // =========================================================
 
     public async Task AddAsync(Test test)
     {
         ArgumentNullException.ThrowIfNull(test);
-
         await _context.Tests.AddAsync(test);
     }
 
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
-    public async Task<bool>
-        UpdateAsync(
-            Test test)
+    public void Delete(Test test)
     {
-        ArgumentNullException.ThrowIfNull(
-            test);
-
-        if (test.TestID <= 0)
-            return false;
-
-        var existing =
-            await _context.Tests
-                .FirstOrDefaultAsync(
-                    t =>
-                        t.TestID ==
-                        test.TestID);
-
-        if (existing is null)
-            return false;
-
-        _context.Entry(existing)
-            .CurrentValues
-            .SetValues(test);
-
-        // -----------------------------------------------------
-        // No SaveChangesAsync().
-        // UnitOfWork owns persistence.
-        // -----------------------------------------------------
-
-        return true;
+        ArgumentNullException.ThrowIfNull(test);
+        _context.Tests.Remove(test);
     }
 
-    // =========================================================
-    // DELETE
-    // =========================================================
-
-    public async Task<bool>
-        DeleteAsync(
-            int id)
+    public Task<int> CountAsync(
+        Expression<Func<Test, bool>> predicate)
     {
-        if (id <= 0)
-            return false;
+        ArgumentNullException.ThrowIfNull(predicate);
 
-        var entity =
-            await _context.Tests
-                .FirstOrDefaultAsync(
-                    t =>
-                        t.TestID == id);
-
-        if (entity is null)
-            return false;
-
-        _context.Tests
-            .Remove(entity);
-
-        // -----------------------------------------------------
-        // No SaveChangesAsync().
-        // UnitOfWork owns persistence.
-        // -----------------------------------------------------
-
-        return true;
-    }
-
-    // =========================================================
-    // COUNT
-    // =========================================================
-
-    public async Task<int>
-        CountAsync(
-            Expression<Func<Test, bool>> predicate)
-    {
-        ArgumentNullException.ThrowIfNull(
-            predicate);
-
-        return await _context.Tests
+        return _context.Tests
             .AsNoTracking()
             .CountAsync(predicate);
     }

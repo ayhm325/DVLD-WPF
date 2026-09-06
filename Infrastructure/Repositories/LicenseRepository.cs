@@ -118,6 +118,30 @@ public class LicenseRepository : ILicenseRepository
             .AsNoTracking()
             .AnyAsync(l => l.ApplicationID == applicationId);
 
+
+    public async Task<HashSet<int>> GetApplicationIdsWithLicensesAsync(
+    IEnumerable<int> applicationIds)
+    {
+        ArgumentNullException.ThrowIfNull(applicationIds);
+
+        var ids = applicationIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (ids.Count == 0)
+            return [];
+
+        var result = await _context.Licenses
+            .AsNoTracking()
+            .Where(l => ids.Contains(l.ApplicationID))
+            .Select(l => l.ApplicationID)
+            .Distinct()
+            .ToListAsync();
+
+        return result.ToHashSet();
+    }
+
     public async Task AddLicenseAsync(License license)
     {
         ArgumentNullException.ThrowIfNull(license);

@@ -44,10 +44,7 @@ public interface IApplicationRepository
         int personId,
         int applicationTypeId);
 
-    Task<int?> HasDuplicateApplicationAsync(
-        int personId,
-        int licenseClassId);
-
+   
 
     // =========================================================
     // CREATE

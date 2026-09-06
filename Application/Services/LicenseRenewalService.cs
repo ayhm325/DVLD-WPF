@@ -85,8 +85,6 @@ public class LicenseRenewalService : ILicenseRenewalService
             return Result<int>.FromNotFound(
                 "Renewal application type not found.");
 
-        var applicationType = applicationTypeResult.Value;
-
         await using var transaction =
             await _unitOfWork.BeginTransactionAsync();
 
@@ -95,11 +93,7 @@ public class LicenseRenewalService : ILicenseRenewalService
             var createApplicationDto = new CreateApplicationDto
             {
                 ApplicantPersonID = oldLicense.Driver.PersonID,
-                ApplicationDate = now,
-                ApplicationTypeID = RenewalApplicationTypeId,
-                ApplicationStatus = AppStatus.New,
-                LastStatusDate = now,
-                PaidFees = applicationType.ApplicationTypeFees
+                ApplicationTypeID = RenewalApplicationTypeId
             };
 
             var applicationResult =

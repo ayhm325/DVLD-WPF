@@ -5,38 +5,25 @@ namespace Application.Validators;
 
 public static class TestValidator
 {
-    // =========================================================
-    // CREATE
-    // =========================================================
-
     public static Result ValidateCreate(TestDto? dto)
     {
         if (dto is null)
-            return Result.ValidationFailure(
-                "Test data is required.");
+            return Result.ValidationFailure("Test data is required.");
 
         var errors = new List<string>();
 
         if (dto.TestAppointmentID <= 0)
             errors.Add("Invalid test appointment ID.");
 
-        ValidateNotes(
-            dto.Notes,
-            errors);
+        ValidateNotes(dto.Notes, errors);
 
         return CreateResult(errors);
     }
 
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
     public static Result ValidateUpdate(TestDto? dto)
     {
         if (dto is null)
-            return Result.ValidationFailure(
-                "Test data is required.");
+            return Result.ValidationFailure("Test data is required.");
 
         var errors = new List<string>();
 
@@ -46,58 +33,26 @@ public static class TestValidator
         if (dto.TestAppointmentID <= 0)
             errors.Add("Invalid test appointment ID.");
 
-        ValidateNotes(
-            dto.Notes,
-            errors);
+        ValidateNotes(dto.Notes, errors);
 
         return CreateResult(errors);
     }
 
-
-    // =========================================================
-    // ID
-    // =========================================================
-
-    public static Result ValidateId(int id)
-    {
-        return id > 0
+    public static Result ValidateId(int id) =>
+        id > 0
             ? Result.Success()
-            : Result.ValidationFailure(
-                "Invalid test ID.");
-    }
+            : Result.ValidationFailure("Invalid test ID.");
 
-
-    // =========================================================
-    // APPOINTMENT ID
-    // =========================================================
-
-    public static Result ValidateAppointmentId(
-        int appointmentId)
-    {
-        return appointmentId > 0
+    public static Result ValidateAppointmentId(int appointmentId) =>
+        appointmentId > 0
             ? Result.Success()
             : Result.ValidationFailure(
                 "Invalid test appointment ID.");
-    }
 
-
-    // =========================================================
-    // USER ID
-    // =========================================================
-
-    public static Result ValidateUserId(
-        int userId)
-    {
-        return userId > 0
+    public static Result ValidateUserId(int userId) =>
+        userId > 0
             ? Result.Success()
-            : Result.ValidationFailure(
-                "Invalid user ID.");
-    }
-
-
-    // =========================================================
-    // NOTES
-    // =========================================================
+            : Result.ValidationFailure("Invalid user ID.");
 
     private static void ValidateNotes(
         string? notes,
@@ -111,19 +66,9 @@ public static class TestValidator
         }
     }
 
-
-    // =========================================================
-    // RESULT
-    // =========================================================
-
-    private static Result CreateResult(
-        List<string> errors)
-    {
-        return errors.Count == 0
+    private static Result CreateResult(List<string> errors) =>
+        errors.Count == 0
             ? Result.Success()
             : Result.ValidationFailure(
-                string.Join(
-                    Environment.NewLine,
-                    errors));
-    }
+                string.Join(Environment.NewLine, errors));
 }

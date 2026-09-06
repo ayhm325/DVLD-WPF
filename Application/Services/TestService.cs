@@ -6,7 +6,7 @@ using Application.Validators;
 
 namespace Application.Services;
 
-public class TestService : ITestService
+public sealed class TestService : ITestService
 {
     private readonly ITestRepository _repository;
     private readonly ITestAppointmentRepository _appointmentRepository;
@@ -14,513 +14,225 @@ public class TestService : ITestService
     private readonly ITestWorkflowService _workflowService;
     private readonly IUnitOfWork _unitOfWork;
 
-
-public TestService(
-    ITestRepository repository,
-    ITestAppointmentRepository appointmentRepository,
-    ICurrentUserService currentUserService,
-    ITestWorkflowService workflowService,
-    IUnitOfWork unitOfWork)
+    public TestService(
+        ITestRepository repository,
+        ITestAppointmentRepository appointmentRepository,
+        ICurrentUserService currentUserService,
+        ITestWorkflowService workflowService,
+        IUnitOfWork unitOfWork)
     {
-        _repository =
-            repository
+        _repository = repository
             ?? throw new ArgumentNullException(nameof(repository));
 
-        _appointmentRepository =
-            appointmentRepository
+        _appointmentRepository = appointmentRepository
             ?? throw new ArgumentNullException(nameof(appointmentRepository));
 
-        _currentUserService =
-            currentUserService
+        _currentUserService = currentUserService
             ?? throw new ArgumentNullException(nameof(currentUserService));
 
-        _workflowService =
-            workflowService
+        _workflowService = workflowService
             ?? throw new ArgumentNullException(nameof(workflowService));
 
-        _unitOfWork =
-            unitOfWork
+        _unitOfWork = unitOfWork
             ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
-    // =========================================================
-    // GET BY ID
-    // =========================================================
-
     public async Task<Result<TestDto>> GetByIdAsync(int id)
     {
-        var validation =
-            TestValidator.ValidateId(id);
+        var validation = TestValidator.ValidateId(id);
 
         if (validation.IsFailure)
-        {
-            return Result<TestDto>
-                .FromValidationFailure(validation.Error);
-        }
+            return Result<TestDto>.FromValidationFailure(validation.Error);
 
-        var entity =
-            await _repository.GetByIdAsync(id);
+        var entity = await _repository.GetByIdAsync(id);
 
-        if (entity is null)
-        {
-            return Result<TestDto>
-                .FromNotFound("Test not found.");
-        }
-
-        return Result<TestDto>
-            .Success(TestMapper.ToDto(entity));
+        return entity is null
+            ? Result<TestDto>.FromNotFound("Test not found.")
+            : Result<TestDto>.Success(TestMapper.ToDto(entity));
     }
-
-    // =========================================================
-    // GET ALL
-    // =========================================================
 
     public async Task<Result<List<TestDto>>> GetAllAsync()
     {
-        var entities =
-            await _repository.GetAllAsync();
+        var dtos = (await _repository.GetAllAsync())
+            .Select(TestMapper.ToDto)
+            .ToList();
 
-        var dtos =
-            entities
-                .Select(TestMapper.ToDto)
-                .ToList();
-
-        return Result<List<TestDto>>
-            .Success(dtos);
+        return Result<List<TestDto>>.Success(dtos);
     }
 
-    // =========================================================
-    // GET BY TEST APPOINTMENT ID
-    // =========================================================
-
-    public async Task<Result<List<TestDto>>>
-        GetByTestAppointmentIdAsync(int appointmentId)
+    public async Task<Result<List<TestDto>>> GetByTestAppointmentIdAsync(
+        int appointmentId)
     {
         var validation =
             TestValidator.ValidateAppointmentId(appointmentId);
 
         if (validation.IsFailure)
-        {
             return Result<List<TestDto>>
                 .FromValidationFailure(validation.Error);
-        }
 
-        var entities =
-            await _repository
-                .GetByTestAppointmentIdAsync(appointmentId);
+        var dtos = (await _repository
+                .GetByTestAppointmentIdAsync(appointmentId))
+            .Select(TestMapper.ToDto)
+            .ToList();
 
-        var dtos =
-            entities
-                .Select(TestMapper.ToDto)
-                .ToList();
-
-        return Result<List<TestDto>>
-            .Success(dtos);
+        return Result<List<TestDto>>.Success(dtos);
     }
 
-    // =========================================================
-    // GET BY USER ID
-    // =========================================================
-
-    public async Task<Result<List<TestDto>>>
-        GetByUserIdAsync(int userId)
+    public async Task<Result<List<TestDto>>> GetByUserIdAsync(int userId)
     {
-        var validation =
-            TestValidator.ValidateUserId(userId);
+        var validation = TestValidator.ValidateUserId(userId);
 
         if (validation.IsFailure)
-        {
             return Result<List<TestDto>>
                 .FromValidationFailure(validation.Error);
-        }
 
-        var entities =
-            await _repository
-                .GetByUserIdAsync(userId);
+        var dtos = (await _repository.GetByUserIdAsync(userId))
+            .Select(TestMapper.ToDto)
+            .ToList();
 
-        var dtos =
-            entities
-                .Select(TestMapper.ToDto)
-                .ToList();
-
-        return Result<List<TestDto>>
-            .Success(dtos);
+        return Result<List<TestDto>>.Success(dtos);
     }
 
-    // =========================================================
-    // CHECK TEST EXISTS
-    // =========================================================
+    public Task<bool> IsTestExistsAsync(int id) =>
+        TestValidator.ValidateId(id).IsFailure
+            ? Task.FromResult(false)
+            : _repository.IsTestExistsAsync(id);
 
-    public async Task<bool> IsTestExistsAsync(int id)
-    {
-        var validation =
-            TestValidator.ValidateId(id);
-
-        if (validation.IsFailure)
-            return false;
-
-        return await _repository
-            .IsTestExistsAsync(id);
-    }
-
-    // =========================================================
-    // CHECK TEST ALREADY TAKEN
-    // =========================================================
-
-    public async Task<bool>
-        IsTestAlreadyTakenAsync(int appointmentId)
-    {
-        var validation =
-            TestValidator.ValidateAppointmentId(appointmentId);
-
-        if (validation.IsFailure)
-            return false;
-
-        return await _repository
-            .IsTestAlreadyTakenAsync(appointmentId);
-    }
-
-    // =========================================================
-    // CREATE TEST RESULT
-    // =========================================================
+    public Task<bool> IsTestAlreadyTakenAsync(int appointmentId) =>
+        TestValidator.ValidateAppointmentId(appointmentId).IsFailure
+            ? Task.FromResult(false)
+            : _repository.IsTestAlreadyTakenAsync(appointmentId);
 
     public async Task<Result<int>> AddAsync(TestDto dto)
     {
-        var validation =
-            TestValidator.ValidateCreate(dto);
+        var validation = TestValidator.ValidateCreate(dto);
 
         if (validation.IsFailure)
-        {
-            return Result<int>
-                .FromValidationFailure(validation.Error);
-        }
+            return Result<int>.FromValidationFailure(validation.Error);
 
-        // -----------------------------------------------------
-        // CURRENT USER
-        // -----------------------------------------------------
-
-        if (!_currentUserService.IsLoggedIn ||
-            _currentUserService.UserId <= 0)
-        {
-            return Result<int>.FromValidationFailure("You must be logged in first.");
-        }
-
-        // -----------------------------------------------------
-        // APPOINTMENT
-        // -----------------------------------------------------
+        if (!IsAuthenticated())
+            return Result<int>.FromValidationFailure(
+                "You must be logged in first.");
 
         var appointment =
-            await _appointmentRepository
-                .GetByIdAsync(dto.TestAppointmentID);
+            await _appointmentRepository.GetByIdAsync(
+                dto.TestAppointmentID);
 
         if (appointment is null)
+            return Result<int>.FromNotFound(
+                "Test appointment not found.");
+
+        if (appointment.IsLocked)
+            return Result<int>.FromConflict(
+                "This appointment is already locked.");
+
+        if (await _repository.IsTestAlreadyTakenAsync(
+                dto.TestAppointmentID))
         {
-            return Result<int>
-                .FromNotFound(
-                    "Test appointment not found.");
+            return Result<int>.FromConflict(
+                "A result already exists for this appointment.");
         }
 
-        // -----------------------------------------------------
-        // PREVENT DUPLICATE RESULT
-        // -----------------------------------------------------
+        var canTakeTest =
+            await _workflowService.CanTakeTestAsync(
+                dto.TestAppointmentID);
 
-        if (await _repository
-            .IsTestAlreadyTakenAsync(dto.TestAppointmentID))
-        {
-            return Result<int>
-                .FromConflict(
-                    "A result already exists for this appointment.");
-        }
+        if (canTakeTest.IsFailure)
+            return Result<int>.FromConflict(
+                canTakeTest.Error);
 
-        // -----------------------------------------------------
-        // WORKFLOW
-        //
-        // This is the important protection.
-        //
-        // The test can only be taken when the appointment
-        // belongs to the currently allowed step:
-        //
-        // Theory -> Written -> Practical
-        // -----------------------------------------------------
+        var entity = TestMapper.ToEntity(
+            dto,
+            _currentUserService.UserId);
 
-        var canTakeTestResult =
-            await _workflowService
-                .CanTakeTestAsync(
-                    dto.TestAppointmentID);
+        await _repository.AddAsync(entity);
 
-        if (canTakeTestResult.IsFailure)
-        {
-            return Result<int>
-                .FromConflict(
-                    canTakeTestResult.Error);
-        }
+        appointment.IsLocked = true;
 
-        // -----------------------------------------------------
-        // CREATE ENTITY
-        // -----------------------------------------------------
+        var saved = await _unitOfWork.SaveChangesAsync();
 
-        var entity =
-            TestMapper.ToEntity(
-                dto,
-                _currentUserService.UserId);
+        if (saved <= 0 || entity.TestID <= 0)
+            return Result<int>.FromFailure(
+                "Failed to add test.");
 
-        // -----------------------------------------------------
-        // STAGE ENTITY
-        // -----------------------------------------------------
-
-        await _repository
-            .AddAsync(entity);
-
-        // -----------------------------------------------------
-        // SAVE
-        // -----------------------------------------------------
-
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
-
-        if (saved <= 0 ||
-            entity.TestID <= 0)
-        {
-            return Result<int>
-                .FromFailure(
-                    "Failed to add test.");
-        }
-
-        return Result<int>
-            .Success(entity.TestID);
+        return Result<int>.Success(entity.TestID);
     }
-
-    // =========================================================
-    // UPDATE TEST RESULT
-    // =========================================================
 
     public async Task<Result> UpdateAsync(TestDto dto)
     {
-        var validation =
-            TestValidator.ValidateUpdate(dto);
+        var validation = TestValidator.ValidateUpdate(dto);
 
         if (validation.IsFailure)
-        {
-            return Result
-                .ValidationFailure(validation.Error);
-        }
+            return Result.ValidationFailure(validation.Error);
 
-        // -----------------------------------------------------
-        // CURRENT USER
-        // -----------------------------------------------------
-
-        if (!_currentUserService.IsLoggedIn ||
-            _currentUserService.UserId <= 0)
-        {
-            return Result
-                .ValidationFailure(
-                    "You must be logged in first.");
-        }
-
-        // -----------------------------------------------------
-        // GET EXISTING TEST
-        // -----------------------------------------------------
+        if (!IsAuthenticated())
+            return Result.ValidationFailure(
+                "You must be logged in first.");
 
         var entity =
-            await _repository
-                .GetByIdAsync(dto.TestID);
+            await _repository.GetForUpdateAsync(dto.TestID);
 
         if (entity is null)
-        {
-            return Result
-                .NotFound("Test not found.");
-        }
+            return Result.NotFound("Test not found.");
 
-        // -----------------------------------------------------
-        // APPOINTMENT CANNOT CHANGE
-        // -----------------------------------------------------
-
-        if (entity.TestAppointmentID !=
-            dto.TestAppointmentID)
-        {
-            return Result
-                .Conflict(
-                    "Cannot change the linked appointment of a test result.");
-        }
-
-        // -----------------------------------------------------
-        // APPOINTMENT MUST EXIST
-        // -----------------------------------------------------
+        if (entity.TestAppointmentID != dto.TestAppointmentID)
+            return Result.Conflict(
+                "Cannot change the linked appointment of a test result.");
 
         var appointment =
-            await _appointmentRepository
-                .GetByIdAsync(
-                    entity.TestAppointmentID);
+            await _appointmentRepository.GetByIdAsync(
+                entity.TestAppointmentID);
 
         if (appointment is null)
-        {
-            return Result
-                .NotFound(
-                    "Test appointment not found.");
-        }
-
-        // -----------------------------------------------------
-        // LOCKED APPOINTMENT
-        // -----------------------------------------------------
+            return Result.NotFound(
+                "Test appointment not found.");
 
         if (appointment.IsLocked)
-        {
-            return Result
-                .Conflict(
-                    "Cannot modify a result for a locked appointment.");
-        }
+            return Result.Conflict(
+                "Cannot modify a result for a locked appointment.");
 
-        // -----------------------------------------------------
-        // WORKFLOW
-        //
-        // Prevent modifying a test result when the appointment
-        // is no longer valid according to the workflow.
-        // -----------------------------------------------------
+        TestMapper.UpdateEntity(entity, dto);
 
-        var canTakeTestResult =
-            await _workflowService
-                .CanTakeTestAsync(
-                    entity.TestAppointmentID);
-
-        if (canTakeTestResult.IsFailure)
-        {
-            return Result
-                .Conflict(
-                    canTakeTestResult.Error);
-        }
-
-        // -----------------------------------------------------
-        // UPDATE ENTITY
-        // -----------------------------------------------------
-
-        TestMapper.UpdateEntity(
-            entity,
-            dto);
-
-        var updated =
-            await _repository
-                .UpdateAsync(entity);
-
-        if (!updated)
-        {
-            return Result
-                .Failure(
-                    "Failed to update test.");
-        }
-
-        // -----------------------------------------------------
-        // SAVE
-        // -----------------------------------------------------
-
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
-
-        if (saved <= 0)
-        {
-            return Result
-                .Failure(
-                    "No test changes were saved.");
-        }
-
-        return Result.Success();
+        return await SaveAsync("Failed to update test.");
     }
-
-    // =========================================================
-    // DELETE
-    // =========================================================
 
     public async Task<Result> DeleteAsync(int id)
     {
-        var validation =
-            TestValidator.ValidateId(id);
+        var validation = TestValidator.ValidateId(id);
 
         if (validation.IsFailure)
-        {
-            return Result
-                .ValidationFailure(validation.Error);
-        }
+            return Result.ValidationFailure(validation.Error);
 
-        // -----------------------------------------------------
-        // GET TEST
-        // -----------------------------------------------------
-
-        var entity =
-            await _repository
-                .GetByIdAsync(id);
+        var entity = await _repository.GetForUpdateAsync(id);
 
         if (entity is null)
-        {
-            return Result
-                .NotFound("Test not found.");
-        }
-
-        // -----------------------------------------------------
-        // GET APPOINTMENT
-        // -----------------------------------------------------
+            return Result.NotFound("Test not found.");
 
         var appointment =
-            await _appointmentRepository
-                .GetByIdAsync(
-                    entity.TestAppointmentID);
+            await _appointmentRepository.GetByIdAsync(
+                entity.TestAppointmentID);
 
         if (appointment is null)
-        {
-            return Result
-                .NotFound(
-                    "Test appointment not found.");
-        }
-
-        var canTakeTestResult = await _workflowService
-            .CanTakeTestAsync(entity.TestAppointmentID);
-
-        if (canTakeTestResult.IsFailure)
-        {
-            return Result.Conflict(canTakeTestResult.Error);
-        }
-
-        // -----------------------------------------------------
-        // LOCKED RESULT
-        // -----------------------------------------------------
+            return Result.NotFound(
+                "Test appointment not found.");
 
         if (appointment.IsLocked)
-        {
-            return Result
-                .Conflict(
-                    "Cannot delete a result from a locked appointment.");
-        }
+            return Result.Conflict(
+                "Cannot delete a result from a locked appointment.");
 
-        // -----------------------------------------------------
-        // DELETE
-        // -----------------------------------------------------
+        _repository.Delete(entity);
 
-        var deleted =
-            await _repository
-                .DeleteAsync(id);
+        return await SaveAsync("Failed to delete test.");
+    }
 
-        if (!deleted)
-        {
-            return Result
-                .Failure(
-                    "Failed to delete test.");
-        }
+    private bool IsAuthenticated() =>
+        _currentUserService.IsLoggedIn &&
+        _currentUserService.UserId > 0;
 
-        // -----------------------------------------------------
-        // SAVE
-        // -----------------------------------------------------
-
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
-
-        if (saved <= 0)
-        {
-            return Result
-                .Failure(
-                    "Failed to save test deletion.");
-        }
-
-        return Result.Success();
+    private async Task<Result> SaveAsync(string errorMessage)
+    {
+        return await _unitOfWork.SaveChangesAsync() > 0
+            ? Result.Success()
+            : Result.Failure(errorMessage);
     }
 }

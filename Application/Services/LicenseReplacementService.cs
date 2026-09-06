@@ -127,26 +127,14 @@ public class LicenseReplacementService : ILicenseReplacementService
         try
         {
             var createApplicationDto =
-                new CreateApplicationDto
-                {
-                    ApplicantPersonID =
-                        oldLicense.Driver.PersonID,
+     new CreateApplicationDto
+     {
+         ApplicantPersonID =
+             oldLicense.Driver.PersonID,
 
-                    ApplicationDate =
-                        now,
-
-                    ApplicationTypeID =
-                        replacementInfo.Value.ApplicationTypeId,
-
-                    ApplicationStatus =
-                        AppStatus.New,
-
-                    LastStatusDate =
-                        now,
-
-                    PaidFees =
-                        applicationType.ApplicationTypeFees
-                };
+         ApplicationTypeID =
+             replacementInfo.Value.ApplicationTypeId
+     };
 
             var applicationResult =
                 await _applicationService

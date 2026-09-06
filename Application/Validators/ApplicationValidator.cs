@@ -1,6 +1,5 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
-using Domain.Enums;
 
 namespace Application.Validators;
 
@@ -13,12 +12,13 @@ public static class ApplicationValidator
 
         var errors = new List<string>();
 
-        ValidateCommonFields(
-            dto.ApplicantPersonID, dto.ApplicationTypeID,
-            dto.ApplicationStatus, dto.ApplicationDate,
-            dto.LastStatusDate, dto.PaidFees, errors);
+        if (dto.ApplicantPersonID <= 0)
+            errors.Add("A valid applicant person is required.");
 
-        return CreateResult(errors);
+        if (dto.ApplicationTypeID <= 0)
+            errors.Add("A valid application type is required.");
+
+        return BuildResult(errors);
     }
 
     public static Result ValidateUpdate(UpdateApplicationDto? dto)
@@ -31,46 +31,19 @@ public static class ApplicationValidator
         if (dto.ApplicationID <= 0)
             errors.Add("A valid application ID is required.");
 
-        ValidateCommonFields(
-            dto.ApplicantPersonID, dto.ApplicationTypeID,
-            dto.ApplicationStatus, dto.ApplicationDate,
-            dto.LastStatusDate, dto.PaidFees, errors);
+        if (dto.ApplicationTypeID <= 0)
+            errors.Add("A valid application type is required.");
 
-        return CreateResult(errors);
+        return BuildResult(errors);
     }
 
     public static Result ValidateId(int id) =>
         id > 0
             ? Result.Success()
-            : Result.Failure("Invalid application ID.");
+            : Result.ValidationFailure("Invalid application ID.");
 
-    private static void ValidateCommonFields(
-        int applicantPersonId, int applicationTypeId,
-        AppStatus applicationStatus, DateTime applicationDate,
-        DateTime lastStatusDate, decimal paidFees,
-        List<string> errors)
-    {
-        if (applicantPersonId <= 0)
-            errors.Add("A valid applicant person is required.");
-
-        if (applicationTypeId <= 0)
-            errors.Add("A valid application type is required.");
-
-        if (!Enum.IsDefined(applicationStatus))
-            errors.Add("Invalid application status.");
-
-        if (applicationDate == default)
-            errors.Add("Application date is required.");
-
-        if (lastStatusDate == default)
-            errors.Add("Last status date is required.");
-
-        if (paidFees < 0)
-            errors.Add("Paid fees cannot be negative.");
-    }
-
-    private static Result CreateResult(List<string> errors) =>
+    private static Result BuildResult(List<string> errors) =>
         errors.Count == 0
             ? Result.Success()
-            : Result.Failure(string.Join(Environment.NewLine, errors));
+            : Result.ValidationFailure(string.Join(Environment.NewLine, errors));
 }

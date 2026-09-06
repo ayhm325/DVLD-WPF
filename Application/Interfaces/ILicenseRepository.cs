@@ -25,6 +25,8 @@ namespace Application.Interfaces
 
         Task<bool> IsApplicationHasLicenseAsync(int applicationId);
 
+        Task<HashSet<int>> GetApplicationIdsWithLicensesAsync(IEnumerable<int> applicationIds);
+
         Task<bool> IsActiveLicenseExistsAsync(int driverId, int licenseClassId);
 
         Task AddLicenseAsync(License license);

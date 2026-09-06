@@ -1,67 +1,25 @@
 ﻿using Domain.Entities;
 using System.Linq.Expressions;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface ITestRepository
 {
-    public interface ITestRepository
-    {
-        // =========================
-        // GET
-        // =========================
+    Task<Test?> GetByIdAsync(int id);
+    Task<Test?> GetForUpdateAsync(int id);
+    Task<List<Test>> GetAllAsync();
 
-        Task<Test?> GetByIdAsync(int id);
+    Task<List<Test>> GetByTestAppointmentIdAsync(int appointmentId);
+    Task<List<Test>> GetByUserIdAsync(int userId);
 
-        Task<List<Test>> GetAllAsync();
+    Task<int> GetTrialCountByApplicationIdAsync(int ldlAppId);
 
-        Task<List<Test>> GetByTestAppointmentIdAsync(
-            int appointmentId);
+    Task<bool> IsTestExistsAsync(int id);
+    Task<bool> IsTestAlreadyTakenAsync(int appointmentId);
 
-        Task<List<Test>> GetByUserIdAsync(
-            int userId);
+    Task AddAsync(Test test);
+    void Delete(Test test);
 
-        Task<int> GetTrialCountByApplicationIdAsync(
-            int ldlAppId);
-
-
-        // =========================
-        // CHECKS
-        // =========================
-
-        Task<bool> IsTestExistsAsync(
-            int id);
-
-        Task<bool> IsTestAlreadyTakenAsync(
-            int appointmentId);
-
-
-        // =========================
-        // CREATE
-        // =========================
-
-        Task AddAsync(Test test);
-
-
-        // =========================
-        // UPDATE
-        // =========================
-
-        Task<bool> UpdateAsync(
-            Test test);
-
-
-        // =========================
-        // DELETE
-        // =========================
-
-        Task<bool> DeleteAsync(
-            int id);
-
-
-        // =========================
-        // EXTRA
-        // =========================
-
-        Task<int> CountAsync(
-            Expression<Func<Test, bool>> predicate);
-    }
+    Task<int> CountAsync(
+        Expression<Func<Test, bool>> predicate);
 }

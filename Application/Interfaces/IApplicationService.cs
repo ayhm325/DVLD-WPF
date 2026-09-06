@@ -44,10 +44,6 @@ public interface IApplicationService
     // BUSINESS
     // =========================================================
 
-    Task<int?>
-        HasDuplicateApplicationAsync(
-            int personId,
-            int licenseClassId);
 
     Task<Result>
         CompleteApplicationAsync(int id);
