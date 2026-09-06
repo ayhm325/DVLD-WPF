@@ -1,6 +1,7 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -20,6 +21,8 @@ public sealed class AuthApiClient : IAuthApiClient
     public async Task<Result<LoginResponseDto>> LoginAsync(
         LoginRequestDto dto)
     {
+        ArgumentNullException.ThrowIfNull(dto);
+
         try
         {
             using var response =
@@ -33,21 +36,32 @@ public sealed class AuthApiClient : IAuthApiClient
                     await response.Content
                         .ReadFromJsonAsync<LoginResponseDto>();
 
-                if (result is null)
-                {
-                    return Result<LoginResponseDto>.FromFailure(
-                        "The API returned an empty response.");
-                }
-
-                return Result<LoginResponseDto>.Success(result);
+                return result is null
+                    ? Result<LoginResponseDto>.FromFailure(
+                        "The API returned an empty response.")
+                    : Result<LoginResponseDto>.Success(result);
             }
 
             var error =
-                await response.Content.ReadAsStringAsync();
+                await ExtractErrorMessageAsync(response);
 
-            var message = ExtractErrorMessage(error);
+            return response.StatusCode switch
+            {
+                HttpStatusCode.BadRequest =>
+                    Result<LoginResponseDto>.FromValidationFailure(error),
 
-            return Result<LoginResponseDto>.FromFailure(message);
+                HttpStatusCode.Forbidden =>
+                    Result<LoginResponseDto>.FromForbidden(error),
+
+                HttpStatusCode.NotFound =>
+                    Result<LoginResponseDto>.FromNotFound(error),
+
+                HttpStatusCode.Conflict =>
+                    Result<LoginResponseDto>.FromConflict(error),
+
+                _ =>
+                    Result<LoginResponseDto>.FromFailure(error)
+            };
         }
         catch (HttpRequestException)
         {
@@ -59,22 +73,47 @@ public sealed class AuthApiClient : IAuthApiClient
             return Result<LoginResponseDto>.FromFailure(
                 "The request to the DVLD API timed out.");
         }
-        catch (Exception ex)
-        {
-            return Result<LoginResponseDto>.FromFailure(
-                $"An error occurred: {ex.Message}");
-        }
     }
 
-    private static string ExtractErrorMessage(string content)
+    private static async Task<string> ExtractErrorMessageAsync(
+        HttpResponseMessage response)
     {
+        var content =
+            await response.Content.ReadAsStringAsync();
+
         if (string.IsNullOrWhiteSpace(content))
-            return "The API request failed.";
+        {
+            return response.StatusCode switch
+            {
+                HttpStatusCode.Unauthorized =>
+                    "Authentication failed.",
+
+                HttpStatusCode.Forbidden =>
+                    "You are not authorized to perform this operation.",
+
+                HttpStatusCode.NotFound =>
+                    "The requested resource was not found.",
+
+                HttpStatusCode.Conflict =>
+                    "The operation conflicts with the current data.",
+
+                _ =>
+                    "The API request failed."
+            };
+        }
 
         try
         {
             using var document =
                 JsonDocument.Parse(content);
+
+            if (document.RootElement.TryGetProperty(
+                    "error",
+                    out var error))
+            {
+                return error.GetString()
+                    ?? "The API request failed.";
+            }
 
             if (document.RootElement.TryGetProperty(
                     "message",
@@ -83,9 +122,18 @@ public sealed class AuthApiClient : IAuthApiClient
                 return message.GetString()
                     ?? "The API request failed.";
             }
+
+            if (document.RootElement.TryGetProperty(
+                    "detail",
+                    out var detail))
+            {
+                return detail.GetString()
+                    ?? "The API request failed.";
+            }
         }
         catch (JsonException)
         {
+            // Return the raw response when it is not valid JSON.
         }
 
         return content;

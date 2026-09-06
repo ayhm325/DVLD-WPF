@@ -1,68 +1,56 @@
-﻿using System.Security.Claims;
-using Application.Interfaces;
-using Microsoft.AspNetCore.Http;
+﻿using Application.Interfaces;
+using System.Security.Claims;
 
 namespace DVLD.Api.Security;
 
-public sealed class ApiCurrentUserService : ICurrentUserService
+public sealed class ApiCurrentUserService(
+    IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextAccessor _httpContextAccessor =
+        httpContextAccessor
+        ?? throw new ArgumentNullException(nameof(httpContextAccessor));
 
-    public ApiCurrentUserService(
-        IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
+    public int UserId =>
+        int.TryParse(
+            GetClaim(ClaimTypes.NameIdentifier),
+            out var userId)
+            ? userId
+            : 0;
 
-    public int UserId
-    {
-        get
-        {
-            var value = _httpContextAccessor.HttpContext?
-                .User
-                .FindFirstValue(ClaimTypes.NameIdentifier);
+    public string Username =>
+        GetClaim(ClaimTypes.Name);
 
-            return int.TryParse(value, out var userId)
-                ? userId
-                : 0;
-        }
-        set => throw new NotSupportedException(
-            "UserId is read-only in the API.");
-    }
+    public string FullName =>
+        GetClaim("FullName");
 
-    public string Username
-    {
-        get =>
-            _httpContextAccessor.HttpContext?
-                .User
-                .FindFirstValue(ClaimTypes.Name)
-            ?? string.Empty;
-
-        set => throw new NotSupportedException(
-            "Username is read-only in the API.");
-    }
-
-    public string FullName
-    {
-        get =>
-            _httpContextAccessor.HttpContext?
-                .User
-                .FindFirstValue("FullName")
-            ?? string.Empty;
-
-        set => throw new NotSupportedException(
-            "FullName is read-only in the API.");
-    }
+    public string AccessToken =>
+        string.Empty;
 
     public bool IsLoggedIn =>
-        _httpContextAccessor.HttpContext?
-            .User
-            .Identity?
-            .IsAuthenticated
-        == true;
+        UserId > 0;
+
+    public void SetSession(
+        int userId,
+        string username,
+        string fullName,
+        string accessToken)
+    {
+        throw new NotSupportedException(
+            "The API current user is provided by the authenticated request.");
+    }
 
     public void Clear()
     {
-        // Authentication state is managed by the JWT/request pipeline.
+        throw new NotSupportedException(
+            "The API current user is provided by the authenticated request.");
+    }
+
+    private string GetClaim(string claimType)
+    {
+        return _httpContextAccessor.HttpContext?
+            .User
+            .FindFirst(claimType)?
+            .Value
+            ?? string.Empty;
     }
 }

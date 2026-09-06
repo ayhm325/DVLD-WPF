@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation;
 using Presentation.Services;
+using Presentation.Services.Api;
 using Presentation.ViewModels;
 using Presentation.Views;
 using Presentation.Views.Pages;
@@ -156,6 +157,16 @@ public partial class App : System.Windows.Application
         // 6. API CLIENTS
         // =====================================================
 
+        services.AddHttpClient<IApiClient, ApiClient>(
+            client =>
+            {
+                client.BaseAddress =
+                    new Uri("http://localhost:5260/");
+
+                client.Timeout =
+                    TimeSpan.FromSeconds(30);
+            });
+
         services.AddHttpClient<IAuthApiClient, AuthApiClient>(
             client =>
             {
@@ -165,6 +176,10 @@ public partial class App : System.Windows.Application
                 client.Timeout =
                     TimeSpan.FromSeconds(30);
             });
+
+        services.AddScoped<IPeopleApiClient, PeopleApiClient>();
+        services.AddScoped<ICountriesApiClient, CountriesApiClient>();
+        services.AddScoped<IApplicationTypesApiClient, ApplicationTypesApiClient>();
 
         // =====================================================
         // 7. VIEW MODELS
@@ -186,7 +201,9 @@ public partial class App : System.Windows.Application
         services.AddTransient<UpdateApplicationTypeViewModel>();
         services.AddTransient<UpdateTestTypeViewModel>();
         services.AddTransient<UsersViewModel>();
+
         // services.AddTransient<IssueDrivingLicenseForTheFirstTimeViewModel>();
+
         services.AddTransient<LicenseHistoryViewModel>();
         services.AddTransient<DriversViewModel>();
         services.AddTransient<InternationalViewModel>();
@@ -220,8 +237,10 @@ public partial class App : System.Windows.Application
         services.AddTransient<TestAppointmentWin>();
         services.AddTransient<ScheduleTestWin>();
         services.AddTransient<TakeTestWin>();
+
         // services.AddTransient<IssueDrivingLicenseForTheFirstTimeWin>();
         // services.AddTransient<LicenseHistoryWin>();
+
         services.AddTransient<NewInternationalLicenseApplicationWin>();
         services.AddTransient<InterLAppPage>();
         services.AddTransient<RenewLicenseApplicationWin>();

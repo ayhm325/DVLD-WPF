@@ -5,12 +5,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services;
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
-using Presentation.Services;
 
 namespace Presentation.ViewModels;
 
@@ -67,82 +66,62 @@ public partial class LoginViewModel : ObservableObject
             return;
         }
 
-        try
+        var loginDto = new LoginRequestDto
         {
-            var loginDto = new LoginRequestDto
-            {
-                UserName = Username.Trim(),
-                Password = Password
-            };
+            UserName = Username.Trim(),
+            Password = Password
+        };
 
-            var loginResult =
-                await _authApiClient.LoginAsync(loginDto);
+        var loginResult =
+            await _authApiClient.LoginAsync(loginDto);
 
-            if (loginResult.IsFailure)
-            {
-                MessageBox.Show(
-                    loginResult.Error,
-                    "Login Failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            var user = loginResult.Value!;
-
-            _currentUser.UserId = user.UserId;
-            _currentUser.Username = user.UserName;
-            _currentUser.FullName = user.FullName;
-
-            if (RememberMe)
-            {
-                Properties.Settings.Default.Username = Username;
-                Properties.Settings.Default.Password = Password;
-                Properties.Settings.Default.RememberMe = true;
-            }
-            else
-            {
-                Properties.Settings.Default.Username = string.Empty;
-                Properties.Settings.Default.Password = string.Empty;
-                Properties.Settings.Default.RememberMe = false;
-            }
-
-            Properties.Settings.Default.Save();
-
-            var mainWindow =
-                _serviceProvider.GetRequiredService<MainWindow>();
-
-            mainWindow.Show();
-
-            System.Windows.Application.Current.Windows
-                .OfType<LoginWindow>()
-                .FirstOrDefault()
-                ?.Close();
-        }
-        catch (HttpRequestException)
+        if (loginResult.IsFailure)
         {
             MessageBox.Show(
-                "Unable to connect to the DVLD API.",
-                "Connection Error",
+                loginResult.Error,
+                "Login Failed",
                 MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                MessageBoxImage.Warning);
+
+            return;
         }
-        catch (TaskCanceledException)
+
+        var user = loginResult.Value!;
+
+        _currentUser.SetSession(
+            user.UserId,
+            user.UserName,
+            user.FullName,
+            user.AccessToken);
+
+        SaveRememberMeSettings();
+
+        var mainWindow =
+            _serviceProvider.GetRequiredService<MainWindow>();
+
+        mainWindow.Show();
+
+        System.Windows.Application.Current.Windows
+            .OfType<LoginWindow>()
+            .FirstOrDefault()
+            ?.Close();
+    }
+
+    private void SaveRememberMeSettings()
+    {
+        if (RememberMe)
         {
-            MessageBox.Show(
-                "The request to the DVLD API timed out.",
-                "Connection Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            Properties.Settings.Default.Username = Username;
+            Properties.Settings.Default.Password = Password;
+            Properties.Settings.Default.RememberMe = true;
         }
-        catch (Exception ex)
+        else
         {
-            MessageBox.Show(
-                $"An error occurred during login: {ex.Message}",
-                "Login Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            Properties.Settings.Default.Username = string.Empty;
+            Properties.Settings.Default.Password = string.Empty;
+            Properties.Settings.Default.RememberMe = false;
         }
+
+        Properties.Settings.Default.Save();
     }
 }
