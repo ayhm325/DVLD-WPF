@@ -1,4 +1,6 @@
-﻿namespace Application.Interfaces;
+﻿using Domain.Enums;
+
+namespace Application.Interfaces;
 
 public interface ICurrentUserService
 {
@@ -8,6 +10,8 @@ public interface ICurrentUserService
 
     string FullName { get; }
 
+    UserRole Role { get; }
+
     string AccessToken { get; }
 
     bool IsLoggedIn { get; }
@@ -16,6 +20,7 @@ public interface ICurrentUserService
         int userId,
         string username,
         string fullName,
+        UserRole role,
         string accessToken);
 
     void Clear();

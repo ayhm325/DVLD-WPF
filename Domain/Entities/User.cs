@@ -1,4 +1,5 @@
-﻿
+﻿using Domain.Enums;
+
 namespace Domain.Entities;
 
 public class User
@@ -13,9 +14,7 @@ public class User
 
     public bool IsActive { get; set; }
 
-    // =========================================================
-    // NAVIGATION
-    // =========================================================
+    public UserRole Role { get; set; }
 
     public virtual Person Person { get; set; } = null!;
 }

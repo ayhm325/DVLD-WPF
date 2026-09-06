@@ -5,19 +5,18 @@ using Application.Mappers;
 using Application.Mappings;
 using Application.Validators;
 
-
 namespace Application.Services;
 
 public sealed class LicenseQueryService : ILicenseQueryService
 {
     private readonly ILicenseRepository _licenseRepository;
     private readonly ILocalDrivingLicenseApplicationService _localApplicationService;
-    private readonly IDetainedLicenseService _detainedLicenseService;
+    private readonly IDetainedLicenseRepository _detainedLicenseRepository;
 
     public LicenseQueryService(
         ILicenseRepository licenseRepository,
         ILocalDrivingLicenseApplicationService localApplicationService,
-        IDetainedLicenseService detainedLicenseService)
+        IDetainedLicenseRepository detainedLicenseRepository)
     {
         _licenseRepository =
             licenseRepository
@@ -28,10 +27,10 @@ public sealed class LicenseQueryService : ILicenseQueryService
             ?? throw new ArgumentNullException(
                 nameof(localApplicationService));
 
-        _detainedLicenseService =
-            detainedLicenseService
+        _detainedLicenseRepository =
+            detainedLicenseRepository
             ?? throw new ArgumentNullException(
-                nameof(detainedLicenseService));
+                nameof(detainedLicenseRepository));
     }
 
     public async Task<Result<LicenseDto>> GetByIdAsync(
@@ -283,7 +282,7 @@ public sealed class LicenseQueryService : ILicenseQueryService
                 license.Driver.Person);
 
         var isDetained =
-            await _detainedLicenseService
+            await _detainedLicenseRepository
                 .IsLicenseDetainedAsync(
                     license.LicenseID);
 
@@ -342,7 +341,7 @@ public sealed class LicenseQueryService : ILicenseQueryService
                 license.Driver.Person);
 
         var isDetained =
-            await _detainedLicenseService
+            await _detainedLicenseRepository
                 .IsLicenseDetainedAsync(
                     license.LicenseID);
 

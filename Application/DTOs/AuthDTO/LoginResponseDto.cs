@@ -1,4 +1,6 @@
-﻿namespace Application.DTOs.AuthDTO;
+﻿using Domain.Enums;
+
+namespace Application.DTOs.AuthDTO;
 
 public sealed class LoginResponseDto
 {
@@ -13,4 +15,6 @@ public sealed class LoginResponseDto
     public int PersonId { get; init; }
 
     public string FullName { get; init; } = string.Empty;
+
+    public UserRole Role { get; init; }
 }

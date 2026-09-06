@@ -14,11 +14,6 @@ public sealed class LicenseRepository(DVLDDbContext context)
         _context.Licenses
             .Include(l => l.Driver)
                 .ThenInclude(d => d.Person)
-            .Include(l => l.Driver)
-                .ThenInclude(d => d.CreatedByUser)
-            .Include(l => l.Driver)
-                .ThenInclude(d => d.Licenses
-                    .Where(x => x.IsActive))
             .Include(l => l.LicenseClassInfo)
             .Include(l => l.CreatedByUser);
 
@@ -28,8 +23,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
             : Query()
                 .AsNoTracking()
                 .AsSplitQuery()
-                .FirstOrDefaultAsync(
-                    l => l.LicenseID == id);
+                .FirstOrDefaultAsync(l => l.LicenseID == id);
 
     public Task<License?> GetByDriverIdAsync(int driverId) =>
         driverId <= 0
@@ -48,8 +42,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .OrderByDescending(l => l.IssueDate)
             .ToListAsync();
 
-    public Task<List<License>> GetLicensesByDriverIdAsync(
-        int driverId) =>
+    public Task<List<License>> GetLicensesByDriverIdAsync(int driverId) =>
         driverId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -59,8 +52,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .OrderByDescending(l => l.IssueDate)
                 .ToListAsync();
 
-    public Task<List<License>> GetLicensesByApplicationIdAsync(
-        int applicationId) =>
+    public Task<List<License>> GetLicensesByApplicationIdAsync(int applicationId) =>
         applicationId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -70,8 +62,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .OrderByDescending(l => l.IssueDate)
                 .ToListAsync();
 
-    public Task<List<License>> GetLicensesByLicenseClassIdAsync(
-        int licenseClassId) =>
+    public Task<List<License>> GetLicensesByLicenseClassIdAsync(int licenseClassId) =>
         licenseClassId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -81,8 +72,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .OrderByDescending(l => l.IssueDate)
                 .ToListAsync();
 
-    public Task<List<License>> GetLicensesByPersonIdAsync(
-        int personId) =>
+    public Task<List<License>> GetLicensesByPersonIdAsync(int personId) =>
         personId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -106,14 +96,12 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .AsNoTracking()
                 .AnyAsync(l => l.DriverID == driverId);
 
-    public Task<bool> IsApplicationHasLicenseAsync(
-        int applicationId) =>
+    public Task<bool> IsApplicationHasLicenseAsync(int applicationId) =>
         applicationId <= 0
             ? Task.FromResult(false)
             : _context.Licenses
                 .AsNoTracking()
-                .AnyAsync(
-                    l => l.ApplicationID == applicationId);
+                .AnyAsync(l => l.ApplicationID == applicationId);
 
     public Task<bool> IsActiveLicenseExistsAsync(
         int driverId,
@@ -127,9 +115,8 @@ public sealed class LicenseRepository(DVLDDbContext context)
                     l.LicenseClass == licenseClassId &&
                     l.IsActive);
 
-    public async Task<HashSet<int>>
-        GetApplicationIdsWithLicensesAsync(
-            IEnumerable<int> applicationIds)
+    public async Task<HashSet<int>> GetApplicationIdsWithLicensesAsync(
+        IEnumerable<int> applicationIds)
     {
         ArgumentNullException.ThrowIfNull(applicationIds);
 
@@ -160,21 +147,19 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .AsTask();
     }
 
-    public async Task<bool> DeactivateLicenseAsync(
-        int licenseId)
+    public async Task<bool> DeactivateLicenseAsync(int licenseId)
     {
         if (licenseId <= 0)
             return false;
 
-        var affectedRows =
-            await _context.Licenses
-                .Where(l =>
-                    l.LicenseID == licenseId &&
-                    l.IsActive)
-                .ExecuteUpdateAsync(setters =>
-                    setters.SetProperty(
-                        l => l.IsActive,
-                        false));
+        var affectedRows = await _context.Licenses
+            .Where(l =>
+                l.LicenseID == licenseId &&
+                l.IsActive)
+            .ExecuteUpdateAsync(setters =>
+                setters.SetProperty(
+                    l => l.IsActive,
+                    false));
 
         return affectedRows > 0;
     }
@@ -195,22 +180,20 @@ public sealed class LicenseRepository(DVLDDbContext context)
                     l.LicenseID != excludedLicenseId &&
                     l.IsActive);
 
-    public async Task<bool> ActivateLicenseAsync(
-        int licenseId)
+    public async Task<bool> ActivateLicenseAsync(int licenseId)
     {
         if (licenseId <= 0)
             return false;
 
-        var affectedRows =
-            await _context.Licenses
-                .Where(l =>
-                    l.LicenseID == licenseId &&
-                    !l.IsActive &&
-                    l.ExpirationDate > DateTime.UtcNow)
-                .ExecuteUpdateAsync(setters =>
-                    setters.SetProperty(
-                        l => l.IsActive,
-                        true));
+        var affectedRows = await _context.Licenses
+            .Where(l =>
+                l.LicenseID == licenseId &&
+                !l.IsActive &&
+                l.ExpirationDate > DateTime.UtcNow)
+            .ExecuteUpdateAsync(setters =>
+                setters.SetProperty(
+                    l => l.IsActive,
+                    true));
 
         return affectedRows > 0;
     }

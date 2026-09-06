@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/[controller]")]
 public sealed class UsersController(
     IUserService service) : ControllerBase
@@ -39,7 +39,8 @@ public sealed class UsersController(
         int personId)
     {
         var result =
-            await service.GetUserByPersonIdAsync(personId);
+            await service.GetUserByPersonIdAsync(
+                personId);
 
         return result.IsSuccess
             ? Ok(result.Value)
@@ -51,7 +52,8 @@ public sealed class UsersController(
         string username)
     {
         var result =
-            await service.GetUserByUsernameAsync(username);
+            await service.GetUserByUsernameAsync(
+                username);
 
         return result.IsSuccess
             ? Ok(result.Value)
@@ -80,7 +82,9 @@ public sealed class UsersController(
         [FromBody] UpdateUserDto dto)
     {
         var result =
-            await service.UpdateUserAsync(id, dto);
+            await service.UpdateUserAsync(
+                id,
+                dto);
 
         return result.IsSuccess
             ? NoContent()
@@ -98,20 +102,8 @@ public sealed class UsersController(
             : HandleFailure(result);
     }
 
-    [HttpPost("{id:int}/change-password")]
-    public async Task<IActionResult> ChangePassword(
-        int id,
-        [FromBody] ChangePasswordDto dto)
-    {
-        var result =
-            await service.ChangePasswordAsync(id, dto);
-
-        return result.IsSuccess
-            ? NoContent()
-            : HandleFailure(result);
-    }
-
-    private static IActionResult HandleFailure(Result result)
+    private static IActionResult HandleFailure(
+        Result result)
     {
         return result.ErrorType switch
         {
@@ -128,15 +120,19 @@ public sealed class UsersController(
                     new { error = result.Error }),
 
             ErrorType.Forbidden =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status403Forbidden
+                    StatusCode =
+                        StatusCodes.Status403Forbidden
                 },
 
             _ =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status500InternalServerError
+                    StatusCode =
+                        StatusCodes.Status500InternalServerError
                 }
         };
     }

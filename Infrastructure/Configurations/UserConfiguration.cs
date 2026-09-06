@@ -1,25 +1,15 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Configurations;
 
-public class UserConfiguration
-    : IEntityTypeConfiguration<User>
+public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 {
-    public void Configure(
-        EntityTypeBuilder<User> builder)
+    public void Configure(EntityTypeBuilder<User> builder)
     {
-        // =========================================================
-        // PRIMARY KEY
-        // =========================================================
-
         builder.HasKey(u => u.UserId);
-
-
-        // =========================================================
-        // USERNAME
-        // =========================================================
 
         builder.Property(u => u.UserName)
             .HasMaxLength(50)
@@ -28,36 +18,21 @@ public class UserConfiguration
         builder.HasIndex(u => u.UserName)
             .IsUnique();
 
-
-        // =========================================================
-        // PASSWORD
-        // =========================================================
-
-        // BCrypt hash
-        // Never store plain-text passwords.
-
         builder.Property(u => u.Password)
             .HasMaxLength(200)
             .IsRequired();
 
-
-        // =========================================================
-        // ACTIVE
-        // =========================================================
-
         builder.Property(u => u.IsActive)
             .IsRequired();
 
-
-        // =========================================================
-        // PERSON
-        // One Person -> One User
-        // =========================================================
+        builder.Property(u => u.Role)
+            .HasConversion<int>()
+            .HasDefaultValue(UserRole.Staff)
+            .IsRequired();
 
         builder.HasOne(u => u.Person)
             .WithOne()
-            .HasForeignKey<User>(
-                u => u.PersonId)
+            .HasForeignKey<User>(u => u.PersonId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
