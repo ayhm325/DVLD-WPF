@@ -1,24 +1,24 @@
-﻿using Application.Common.Results;
+﻿using Presentation.Services.Results;
 
 namespace Presentation.Services.Api;
 
 public interface IApiClient
 {
-    Task<Result<T>> GetAsync<T>(
+    Task<ApiResult<T>> GetAsync<T>(
         string requestUri,
         CancellationToken cancellationToken = default);
 
-    Task<Result<TResponse>> PostAsync<TRequest, TResponse>(
-        string requestUri,
-        TRequest request,
-        CancellationToken cancellationToken = default);
-
-    Task<Result> PutAsync<TRequest>(
+    Task<ApiResult<TResponse>> PostAsync<TRequest, TResponse>(
         string requestUri,
         TRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<Result> DeleteAsync(
+    Task<ApiResult> PutAsync<TRequest>(
+        string requestUri,
+        TRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResult> DeleteAsync(
         string requestUri,
         CancellationToken cancellationToken = default);
 }

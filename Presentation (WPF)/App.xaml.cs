@@ -124,7 +124,7 @@ public partial class App : System.Windows.Application
         // =====================================================
 
         services.AddSingleton<IWindowService, WindowService>();
-        services.AddSingleton<ICurrentUserService, CurrentUserService>();
+        services.AddSingleton<ICurrentUserSession, CurrentUserService>();
         services.AddSingleton<IApiHostService, ApiHostService>();
 
         services.AddScoped<IDashboardService, DashboardService>();

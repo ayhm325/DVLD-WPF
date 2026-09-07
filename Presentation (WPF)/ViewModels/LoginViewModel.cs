@@ -92,6 +92,7 @@ public partial class LoginViewModel : ObservableObject
             user.UserId,
             user.UserName,
             user.FullName,
+            user.Role,
             user.AccessToken);
 
         SaveRememberMeSettings();

@@ -1,9 +1,6 @@
-﻿using Application.Interfaces;
-using Domain.Enums;
+﻿namespace Presentation.Services;
 
-namespace Presentation.Services;
-
-public sealed class CurrentUserService : ICurrentUserService
+public sealed class CurrentUserService : ICurrentUserSession
 {
     public int UserId { get; private set; }
 
@@ -11,7 +8,7 @@ public sealed class CurrentUserService : ICurrentUserService
 
     public string FullName { get; private set; } = string.Empty;
 
-    public UserRole Role { get; private set; }
+    public string Role { get; private set; } = string.Empty;
 
     public string AccessToken { get; private set; } = string.Empty;
 
@@ -23,7 +20,7 @@ public sealed class CurrentUserService : ICurrentUserService
         int userId,
         string username,
         string fullName,
-        UserRole role,
+        string role,
         string accessToken)
     {
         if (userId <= 0)
@@ -37,7 +34,7 @@ public sealed class CurrentUserService : ICurrentUserService
         UserId = userId;
         Username = username?.Trim() ?? string.Empty;
         FullName = fullName?.Trim() ?? string.Empty;
-        Role = role;
+        Role = role?.Trim() ?? string.Empty;
         AccessToken = accessToken;
     }
 
@@ -46,7 +43,7 @@ public sealed class CurrentUserService : ICurrentUserService
         UserId = 0;
         Username = string.Empty;
         FullName = string.Empty;
-        Role = default;
+        Role = string.Empty;
         AccessToken = string.Empty;
     }
 }

@@ -3,110 +3,159 @@ using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class DriversViewModel : ObservableObject
 {
-    public partial class DriversViewModel : ObservableObject
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IDriverService _driverService;
+    private readonly IPeopleApiClient _peopleApiClient;
+
+    private List<DriverDto> _allDrivers = new();
+
+    public DriversViewModel(
+        IDriverService driverService,
+        IServiceProvider serviceProvider,
+        IPeopleApiClient peopleApiClient)
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IDriverService _driverService;
-        private List<DriverDto> _allDrivers = new();
+        _driverService = driverService
+            ?? throw new ArgumentNullException(nameof(driverService));
 
-        public DriversViewModel(IDriverService driverService, IServiceProvider serviceProvider)
+        _serviceProvider = serviceProvider
+            ?? throw new ArgumentNullException(nameof(serviceProvider));
+
+        _peopleApiClient = peopleApiClient
+            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+    }
+
+    [ObservableProperty]
+    private DriverDto? selectedDriver;
+
+    public ObservableCollection<DriverDto> Drivers { get; set; } = new();
+
+    private int _driversCount;
+
+    public int DriversCount
+    {
+        get => _driversCount;
+        set => SetProperty(ref _driversCount, value);
+    }
+
+    public async Task LoadAsync()
+    {
+        var result =
+            await _driverService.GetAllAsync();
+
+        if (result.IsFailure)
         {
-            _driverService = driverService;
-            _serviceProvider = serviceProvider;           
-        }
-
-        [ObservableProperty]
-        private DriverDto? selectedDriver;
-
-        public ObservableCollection<DriverDto> Drivers { get; set; } = new();
-
-
-        private int _driversCount;
-        public int DriversCount
-        {
-            get => _driversCount;
-            set => SetProperty(ref _driversCount, value);
-        }
-
-
-        public async Task LoadAsync()
-        {
-            var result = await _driverService.GetAllAsync();
-
-            if (result.IsFailure)
-            {
-                _allDrivers = new List<DriverDto>();
-                return;
-            }
-
-            _allDrivers = result.Value ?? new List<DriverDto>();
-
-            FilterDrivers(string.Empty, "None");
-        }
-
-        public void FilterDrivers(string filterValue, string filterBy)
-        {
-            IEnumerable<DriverDto> filtered = _allDrivers;
-
-            if (!string.IsNullOrWhiteSpace(filterValue))
-            {
-                string val = filterValue.ToLower(); // لجعل البحث غير حساس لحالة الأحرف
-
-                if (filterBy == "Driver ID")
-                    filtered = _allDrivers.Where(d => d.DriverID.ToString().Contains(val));
-
-                else if (filterBy == "Person ID")
-                    filtered = _allDrivers.Where(d => d.PersonID.ToString().Contains(val));
-
-                else if (filterBy == "Full Name") // إضافة شرط الاسم
-                    filtered = _allDrivers.Where(d => d.FullName.ToLower().Contains(val));
-            }
-
+            _allDrivers = new List<DriverDto>();
             Drivers.Clear();
-            foreach (var item in filtered)
-                Drivers.Add(item);
-
-            DriversCount = Drivers.Count;
+            DriversCount = 0;
+            return;
         }
 
-        [RelayCommand]
-        private async Task ShowLicenseHistory()
+        _allDrivers =
+            result.Value ?? new List<DriverDto>();
+
+        FilterDrivers(
+            string.Empty,
+            "None");
+    }
+
+    public void FilterDrivers(
+        string filterValue,
+        string filterBy)
+    {
+        IEnumerable<DriverDto> filtered =
+            _allDrivers;
+
+        if (!string.IsNullOrWhiteSpace(filterValue))
         {
-            if (SelectedDriver == null)
-                return;
+            string val =
+                filterValue.ToLower();
 
-            int personId = SelectedDriver.PersonID;
-
-            var vm = _serviceProvider.GetRequiredService<LicenseHistoryViewModel>();
-
-            await vm.LoadAsync(personId);
-
-            var window = new LicenseHistoryWin(vm, personId)
+            if (filterBy == "Driver ID")
             {
-                Owner = System.Windows.Application.Current.MainWindow
+                filtered =
+                    _allDrivers.Where(d =>
+                        d.DriverID
+                            .ToString()
+                            .Contains(val));
+            }
+            else if (filterBy == "Person ID")
+            {
+                filtered =
+                    _allDrivers.Where(d =>
+                        d.PersonID
+                            .ToString()
+                            .Contains(val));
+            }
+            else if (filterBy == "Full Name")
+            {
+                filtered =
+                    _allDrivers.Where(d =>
+                        d.FullName
+                            .ToLower()
+                            .Contains(val));
+            }
+        }
+
+        Drivers.Clear();
+
+        foreach (var item in filtered)
+        {
+            Drivers.Add(item);
+        }
+
+        DriversCount = Drivers.Count;
+    }
+
+    [RelayCommand]
+    private async Task ShowLicenseHistory()
+    {
+        if (SelectedDriver == null)
+            return;
+
+        int personId =
+            SelectedDriver.PersonID;
+
+        var vm =
+            _serviceProvider
+                .GetRequiredService<LicenseHistoryViewModel>();
+
+        await vm.LoadAsync(personId);
+
+        var window =
+            new LicenseHistoryWin(
+                vm,
+                personId)
+            {
+                Owner =
+                    System.Windows.Application.Current.MainWindow
             };
 
-            window.ShowDialog();
-        }
+        window.ShowDialog();
+    }
 
-        [RelayCommand]
-        private void ShowPersonInfo()
-        {
-            if (SelectedDriver == null)
-                return;
+    [RelayCommand]
+    private void ShowPersonInfo()
+    {
+        if (SelectedDriver == null)
+            return;
 
-            var window = new PersonDetailsWindow(SelectedDriver.PersonID)
+        var window =
+            new PersonDetailsWindow(
+                SelectedDriver.PersonID,
+                _peopleApiClient)
             {
-                Owner = System.Windows.Application.Current.MainWindow
+                Owner =
+                    System.Windows.Application.Current.MainWindow
             };
 
-
-            window.ShowDialog();
-        }
+        window.ShowDialog();
     }
 }

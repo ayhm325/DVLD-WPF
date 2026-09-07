@@ -1,31 +1,31 @@
-﻿using Application.Common.Results;
-using Application.DTOs.PersonDTO;
+﻿using Presentation.Services.Results;
+using ContractPerson = DVLD.Contracts.Person;
 
 namespace Presentation.Services.Api;
 
 public interface IPeopleApiClient
 {
-    Task<Result<List<PersonDto>>> GetAllAsync(
+    Task<ApiResult<List<ContractPerson.PersonResponse>>> GetAllAsync(
         CancellationToken cancellationToken = default);
 
-    Task<Result<PersonDto>> GetByIdAsync(
+    Task<ApiResult<ContractPerson.PersonResponse>> GetByIdAsync(
         int id,
         CancellationToken cancellationToken = default);
 
-    Task<Result<PersonDto>> GetByNationalNoAsync(
+    Task<ApiResult<ContractPerson.PersonResponse>> GetByNationalNoAsync(
         string nationalNo,
         CancellationToken cancellationToken = default);
 
-    Task<Result<int>> CreateAsync(
-        PersonCreateDto dto,
+    Task<ApiResult<int>> CreateAsync(
+        ContractPerson.CreatePersonRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<Result> UpdateAsync(
+    Task<ApiResult> UpdateAsync(
         int id,
-        PersonUpdateDto dto,
+        ContractPerson.UpdatePersonRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<Result> DeleteAsync(
+    Task<ApiResult> DeleteAsync(
         int id,
         CancellationToken cancellationToken = default);
 }

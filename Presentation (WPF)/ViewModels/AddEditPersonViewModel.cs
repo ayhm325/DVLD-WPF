@@ -1,8 +1,8 @@
-﻿using Application.DTOs.CountryDTO;
-using Application.DTOs.PersonDTO;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Enums;
+using DVLD.Contracts.Country;
+using DVLD.Contracts.Person;
 using DVLD_WPF;
 using Microsoft.Win32;
 using Presentation.Services.Api;
@@ -33,7 +33,7 @@ public partial class AddEditPersonViewModel : ObservableObject
     private string _pageTitle = "Add Person";
 
     [ObservableProperty]
-    private CountryDto? _selectedCountry;
+    private CountryResponse? _selectedCountry;
 
     [ObservableProperty]
     private string _imagePath = string.Empty;
@@ -72,7 +72,7 @@ public partial class AddEditPersonViewModel : ObservableObject
     [ObservableProperty]
     private bool _isFemale;
 
-    public ObservableCollection<CountryDto> Countries { get; } = new();
+    public ObservableCollection<CountryResponse> Countries { get; } = new();
 
     public DateTime MaxBirthDate =>
         DateTime.Today.AddYears(-18);
@@ -105,11 +105,13 @@ public partial class AddEditPersonViewModel : ObservableObject
     {
         _peopleApiClient =
             peopleApiClient
-            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+            ?? throw new ArgumentNullException(
+                nameof(peopleApiClient));
 
         _countriesApiClient =
             countriesApiClient
-            ?? throw new ArgumentNullException(nameof(countriesApiClient));
+            ?? throw new ArgumentNullException(
+                nameof(countriesApiClient));
     }
 
     partial void OnIsMaleChanged(bool value)
@@ -151,7 +153,7 @@ public partial class AddEditPersonViewModel : ObservableObject
     }
 
     partial void OnSelectedCountryChanged(
-        CountryDto? value)
+        CountryResponse? value)
     {
         OnPropertyChanged(nameof(CountryName));
     }
@@ -234,7 +236,7 @@ public partial class AddEditPersonViewModel : ObservableObject
         ImagePath = string.Empty;
     }
 
-    private void LoadData(PersonDto person)
+    private void LoadData(PersonResponse person)
     {
         FirstName = person.FirstName;
         SecondName = person.SecondName;
@@ -247,8 +249,11 @@ public partial class AddEditPersonViewModel : ObservableObject
         Address = person.Address;
         DateOfBirth = person.DateOfBirth;
 
-        IsMale = person.Gender == Gender.Male;
-        IsFemale = person.Gender == Gender.Female;
+        IsMale =
+            person.Gender == DVLD.Contracts.Person.Gender.Male;
+
+        IsFemale =
+            person.Gender == DVLD.Contracts.Person.Gender.Female;
 
         SelectedCountry =
             Countries.FirstOrDefault(
@@ -272,32 +277,51 @@ public partial class AddEditPersonViewModel : ObservableObject
 
         var gender =
             IsMale
-                ? Gender.Male
-                : Gender.Female;
+                ? DVLD.Contracts.Person.Gender.Male
+                : DVLD.Contracts.Person.Gender.Female;
 
         if (Mode == OperationMode.Edit)
         {
-            var updateDto =
-                new PersonUpdateDto
+            var updateRequest =
+                new UpdatePersonRequest
                 {
-                    FirstName = FirstName.Trim(),
-                    SecondName = SecondName.Trim(),
+                    FirstName =
+                        FirstName.Trim(),
+
+                    SecondName =
+                        SecondName.Trim(),
+
                     ThirdName =
                         string.IsNullOrWhiteSpace(ThirdName)
                             ? null
                             : ThirdName.Trim(),
-                    LastName = LastName.Trim(),
-                    NationalNo = NationalNo.Trim(),
-                    Phone = Phone.Trim(),
+
+                    LastName =
+                        LastName.Trim(),
+
+                    NationalNo =
+                        NationalNo.Trim(),
+
+                    Phone =
+                        Phone.Trim(),
+
                     Email =
                         string.IsNullOrWhiteSpace(Email)
                             ? null
                             : Email.Trim(),
-                    Address = Address.Trim(),
-                    DateOfBirth = DateOfBirth,
-                    Gender = gender,
+
+                    Address =
+                        Address.Trim(),
+
+                    DateOfBirth =
+                        DateOfBirth,
+
+                    Gender =
+                        gender,
+
                     NationalityCountryID =
                         SelectedCountry!.CountryId,
+
                     ImagePath =
                         string.IsNullOrWhiteSpace(ImagePath)
                             ? null
@@ -307,12 +331,15 @@ public partial class AddEditPersonViewModel : ObservableObject
             var result =
                 await _peopleApiClient.UpdateAsync(
                     PersonId,
-                    updateDto);
+                    updateRequest);
 
             if (result.IsFailure)
             {
-                ShowValidationMessage(result.Error);
+                ShowValidationMessage(
+                    result.Error);
+
                 SaveCompleted?.Invoke(false);
+
                 return;
             }
 
@@ -323,30 +350,50 @@ public partial class AddEditPersonViewModel : ObservableObject
                 MessageBoxImage.Information);
 
             SaveCompleted?.Invoke(true);
+
             return;
         }
 
-        var createDto =
-            new PersonCreateDto
+        var createRequest =
+            new CreatePersonRequest
             {
-                FirstName = FirstName.Trim(),
-                SecondName = SecondName.Trim(),
+                FirstName =
+                    FirstName.Trim(),
+
+                SecondName =
+                    SecondName.Trim(),
+
                 ThirdName =
                     string.IsNullOrWhiteSpace(ThirdName)
                         ? null
                         : ThirdName.Trim(),
-                LastName = LastName.Trim(),
-                NationalNo = NationalNo.Trim(),
-                Phone = Phone.Trim(),
+
+                LastName =
+                    LastName.Trim(),
+
+                NationalNo =
+                    NationalNo.Trim(),
+
+                Phone =
+                    Phone.Trim(),
+
                 Email =
                     string.IsNullOrWhiteSpace(Email)
                         ? null
                         : Email.Trim(),
-                Address = Address.Trim(),
-                DateOfBirth = DateOfBirth,
-                Gender = gender,
+
+                Address =
+                    Address.Trim(),
+
+                DateOfBirth =
+                    DateOfBirth,
+
+                Gender =
+                    gender,
+
                 NationalityCountryID =
                     SelectedCountry!.CountryId,
+
                 ImagePath =
                     string.IsNullOrWhiteSpace(ImagePath)
                         ? null
@@ -355,12 +402,15 @@ public partial class AddEditPersonViewModel : ObservableObject
 
         var addResult =
             await _peopleApiClient.CreateAsync(
-                createDto);
+                createRequest);
 
         if (addResult.IsFailure)
         {
-            ShowValidationMessage(addResult.Error);
+            ShowValidationMessage(
+                addResult.Error);
+
             SaveCompleted?.Invoke(false);
+
             return;
         }
 
@@ -421,7 +471,8 @@ public partial class AddEditPersonViewModel : ObservableObject
                 _destinationFolder);
 
             var extension =
-                Path.GetExtension(dialog.FileName);
+                Path.GetExtension(
+                    dialog.FileName);
 
             var targetPath =
                 Path.Combine(

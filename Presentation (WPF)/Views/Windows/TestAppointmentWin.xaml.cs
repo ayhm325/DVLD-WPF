@@ -1,38 +1,53 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
+using Presentation.Services.Api;
 using Presentation.ViewModels;
-using Presentation.Views.Windows;
+using System;
 using System.Windows;
 
-namespace Presentation.Views.Windows
+namespace Presentation.Views.Windows;
+
+public partial class TestAppointmentWin : Window
 {
-    public partial class TestAppointmentWin : Window
+    private readonly IPeopleApiClient _peopleApiClient;
+
+    public TestAppointmentWin(
+        TestAppointmentViewModel vm,
+        IPeopleApiClient peopleApiClient)
     {
-        public TestAppointmentWin(TestAppointmentViewModel vm)
-        {
-            InitializeComponent();
-            DataContext = vm;
+        InitializeComponent();
 
-            ApplicationBasicInfoControl.OpenPersonRequested += OnOpenPersonRequested;
-            DrivingLicenseApplicationInfoControl.OpenLicenseRequested += OnOpenLicenseRequested;
-        }
+        DataContext = vm;
 
-        private void OnOpenPersonRequested(int personId)
-        {
-            var window = new PersonDetailsWindow(personId);
-            window.ShowDialog();
-        }
+        _peopleApiClient = peopleApiClient
+            ?? throw new ArgumentNullException(nameof(peopleApiClient));
 
-        private void OnOpenLicenseRequested(int applicationId)
-        {
-            var window = new DriverLicenseInfoWin(applicationId);
-            window.ShowDialog();
-        }
+        ApplicationBasicInfoControl.OpenPersonRequested +=
+            OnOpenPersonRequested;
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
-        
+        DrivingLicenseApplicationInfoControl.OpenLicenseRequested +=
+            OnOpenLicenseRequested;
+    }
+
+    private void OnOpenPersonRequested(int personId)
+    {
+        var window = new PersonDetailsWindow(
+            personId,
+            _peopleApiClient);
+
+        window.ShowDialog();
+    }
+
+    private void OnOpenLicenseRequested(int applicationId)
+    {
+        var window = new DriverLicenseInfoWin(applicationId);
+        window.ShowDialog();
+    }
+
+    private void CloseButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        Close();
     }
 }

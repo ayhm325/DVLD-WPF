@@ -34,6 +34,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Application\Application.csproj" />
 		<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+		<ProjectReference Include="..\DVLD.Contracts\DVLD.Contracts.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -49,6 +50,10 @@
 	    <Generator>SettingsSingleFileGenerator</Generator>
 	    <LastGenOutput>Settings.Designer.cs</LastGenOutput>
 	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Services\Results\" />
 	</ItemGroup>
 
 </Project>

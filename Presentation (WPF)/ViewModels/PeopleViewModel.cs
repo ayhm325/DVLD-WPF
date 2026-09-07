@@ -1,7 +1,6 @@
-﻿using Application.DTOs.PersonDTO;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Enums;
+using DVLD.Contracts.Person;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
@@ -15,10 +14,10 @@ public partial class PeopleViewModel : ObservableObject
 {
     private readonly IPeopleApiClient _peopleApiClient;
 
-    private List<PersonDto> _allPeople = new();
+    private List<PersonResponse> _allPeople = new();
 
     [ObservableProperty]
-    private ObservableCollection<PersonDto> _filteredPeople = new();
+    private ObservableCollection<PersonResponse> _filteredPeople = new();
 
     [ObservableProperty]
     private int _peopleCount;
@@ -30,7 +29,7 @@ public partial class PeopleViewModel : ObservableObject
     private string _searchToolTip = "Search...";
 
     [ObservableProperty]
-    private PersonDto? _selectedPerson;
+    private PersonResponse? _selectedPerson;
 
     [ObservableProperty]
     private bool _isSearchTextVisible;
@@ -79,11 +78,13 @@ public partial class PeopleViewModel : ObservableObject
         }
     }
 
-    public PeopleViewModel(IPeopleApiClient peopleApiClient)
+    public PeopleViewModel(
+        IPeopleApiClient peopleApiClient)
     {
         _peopleApiClient =
             peopleApiClient
-            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+            ?? throw new ArgumentNullException(
+                nameof(peopleApiClient));
     }
 
     [RelayCommand]
@@ -104,7 +105,7 @@ public partial class PeopleViewModel : ObservableObject
         }
 
         _allPeople =
-            result.Value ?? new List<PersonDto>();
+            result.Value ?? new List<PersonResponse>();
 
         ApplyFilter();
     }
@@ -138,39 +139,50 @@ public partial class PeopleViewModel : ObservableObject
 
     private void ApplyFilter()
     {
-        IEnumerable<PersonDto> query = _allPeople;
+        IEnumerable<PersonResponse> query =
+            _allPeople;
 
         if (SelectedFilterType == "National No" &&
             !string.IsNullOrWhiteSpace(SearchText))
         {
-            query = query.Where(
-                p =>
-                    !string.IsNullOrWhiteSpace(p.NationalNo) &&
-                    p.NationalNo.Contains(
-                        SearchText,
-                        StringComparison.CurrentCultureIgnoreCase));
+            query =
+                query.Where(
+                    p =>
+                        !string.IsNullOrWhiteSpace(
+                            p.NationalNo) &&
+                        p.NationalNo.Contains(
+                            SearchText,
+                            StringComparison.CurrentCultureIgnoreCase));
         }
         else if (SelectedFilterType == "Name" &&
                  !string.IsNullOrWhiteSpace(SearchText))
         {
-            query = query.Where(
-                p =>
-                    !string.IsNullOrWhiteSpace(p.FullName) &&
-                    p.FullName.Contains(
-                        SearchText,
-                        StringComparison.CurrentCultureIgnoreCase));
+            query =
+                query.Where(
+                    p =>
+                        !string.IsNullOrWhiteSpace(
+                            p.FullName) &&
+                        p.FullName.Contains(
+                            SearchText,
+                            StringComparison.CurrentCultureIgnoreCase));
         }
         else if (SelectedFilterType == "Gender")
         {
             if (SelectedGender == "Male")
             {
-                query = query.Where(
-                    p => p.Gender == Gender.Male);
+                query =
+                    query.Where(
+                        p =>
+                            p.Gender ==
+                            Gender.Male);
             }
             else if (SelectedGender == "Female")
             {
-                query = query.Where(
-                    p => p.Gender == Gender.Female);
+                query =
+                    query.Where(
+                        p =>
+                            p.Gender ==
+                            Gender.Female);
             }
         }
 
@@ -178,7 +190,7 @@ public partial class PeopleViewModel : ObservableObject
             query.ToList();
 
         FilteredPeople =
-            new ObservableCollection<PersonDto>(
+            new ObservableCollection<PersonResponse>(
                 filteredList);
 
         PeopleCount =
@@ -186,7 +198,8 @@ public partial class PeopleViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ShowDetails(PersonDto? person)
+    private void ShowDetails(
+        PersonResponse? person)
     {
         if (person is null)
             return;
@@ -200,7 +213,9 @@ public partial class PeopleViewModel : ObservableObject
                 person.PersonId,
                 apiClient)
             {
-                Owner = System.Windows.Application.Current.MainWindow,
+                Owner =
+                    System.Windows.Application.Current.MainWindow,
+
                 WindowStartupLocation =
                     WindowStartupLocation.CenterOwner
             };
@@ -218,9 +233,12 @@ public partial class PeopleViewModel : ObservableObject
         await addEditViewModel.InitializeAsync(null);
 
         var window =
-            new AddEditPersonWin(addEditViewModel)
+            new AddEditPersonWin(
+                addEditViewModel)
             {
-                Owner = System.Windows.Application.Current.MainWindow,
+                Owner =
+                    System.Windows.Application.Current.MainWindow,
+
                 WindowStartupLocation =
                     WindowStartupLocation.CenterOwner
             };
@@ -231,7 +249,8 @@ public partial class PeopleViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task EditPerson(PersonDto? person)
+    private async Task EditPerson(
+        PersonResponse? person)
     {
         if (person is null)
             return;
@@ -244,9 +263,12 @@ public partial class PeopleViewModel : ObservableObject
             person.PersonId);
 
         var window =
-            new AddEditPersonWin(addEditViewModel)
+            new AddEditPersonWin(
+                addEditViewModel)
             {
-                Owner = System.Windows.Application.Current.MainWindow,
+                Owner =
+                    System.Windows.Application.Current.MainWindow,
+
                 WindowStartupLocation =
                     WindowStartupLocation.CenterOwner
             };
@@ -257,7 +279,8 @@ public partial class PeopleViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task DeletePersonAsync(PersonDto? person)
+    private async Task DeletePersonAsync(
+        PersonResponse? person)
     {
         if (person is null)
             return;
@@ -297,12 +320,14 @@ public partial class PeopleViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SendEmail(PersonDto? person)
+    private void SendEmail(
+        PersonResponse? person)
     {
     }
 
     [RelayCommand]
-    private void PhoneCall(PersonDto? person)
+    private void PhoneCall(
+        PersonResponse? person)
     {
     }
 }

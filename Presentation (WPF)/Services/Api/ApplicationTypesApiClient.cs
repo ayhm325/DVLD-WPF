@@ -1,5 +1,5 @@
-﻿using Application.Common.Results;
-using Application.DTOs;
+﻿using Application.DTOs;
+using Presentation.Services.Results;
 
 namespace Presentation.Services.Api;
 
@@ -7,9 +7,10 @@ public sealed class ApplicationTypesApiClient(
     IApiClient apiClient) : IApplicationTypesApiClient
 {
     private readonly IApiClient _apiClient =
-        apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        apiClient
+        ?? throw new ArgumentNullException(nameof(apiClient));
 
-    public Task<Result<List<ApplicationTypeDto>>> GetAllAsync(
+    public Task<ApiResult<List<ApplicationTypeDto>>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
         return _apiClient.GetAsync<List<ApplicationTypeDto>>(
@@ -17,14 +18,14 @@ public sealed class ApplicationTypesApiClient(
             cancellationToken);
     }
 
-    public Task<Result<ApplicationTypeDto>> GetByIdAsync(
+    public Task<ApiResult<ApplicationTypeDto>> GetByIdAsync(
         int id,
         CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
             return Task.FromResult(
-                Result<ApplicationTypeDto>.FromValidationFailure(
+                ApiResult<ApplicationTypeDto>.Failure(
                     "Application type ID must be greater than zero."));
         }
 
@@ -33,7 +34,7 @@ public sealed class ApplicationTypesApiClient(
             cancellationToken);
     }
 
-    public Task<Result> UpdateAsync(
+    public Task<ApiResult> UpdateAsync(
         int id,
         ApplicationTypeDto dto,
         CancellationToken cancellationToken = default)
@@ -43,7 +44,7 @@ public sealed class ApplicationTypesApiClient(
         if (id <= 0)
         {
             return Task.FromResult(
-                Result.ValidationFailure(
+                ApiResult.Failure(
                     "Application type ID must be greater than zero."));
         }
 

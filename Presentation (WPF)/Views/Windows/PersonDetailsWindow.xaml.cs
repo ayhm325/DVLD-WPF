@@ -1,5 +1,4 @@
-﻿using Application.DTOs.PersonDTO;
-using Domain.Enums;
+﻿using DVLD.Contracts.Person;
 using Presentation.Services.Api;
 using System.IO;
 using System.Windows;
@@ -68,7 +67,7 @@ public partial class PersonDetailsWindow : Window
     }
 
     private void LoadPersonData(
-        PersonDto person)
+        PersonResponse person)
     {
         LblPersonId.Text =
             person.PersonId.ToString();
@@ -104,7 +103,8 @@ public partial class PersonDetailsWindow : Window
         LoadImage(person);
     }
 
-    private void LoadImage(PersonDto person)
+    private void LoadImage(
+        PersonResponse person)
     {
         try
         {

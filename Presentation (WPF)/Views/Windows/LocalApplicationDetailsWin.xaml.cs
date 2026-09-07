@@ -1,53 +1,62 @@
-﻿using Application.DTOs;
-using Application.Interfaces;
-using Application.Services;
-using Domain.Entities;
+﻿using Presentation.Services.Api;
 using Presentation.ViewModels;
 using Presentation.Views.Controls;
 using System;
 using System.Windows;
-using System.Windows.Controls;
 
+namespace Presentation.Views.Windows;
 
-namespace Presentation.Views.Windows
+public partial class LocalApplicationDetailsWin : Window
 {
-    public partial class LocalApplicationDetailsWin : Window
+    private readonly IPeopleApiClient _peopleApiClient;
+
+    public LocalApplicationDetailsWin(
+        LocalApplicationDetailsViewModel vm,
+        IPeopleApiClient peopleApiClient)
     {
-       
-        public LocalApplicationDetailsWin(LocalApplicationDetailsViewModel vm)
-        {
-            InitializeComponent();
-            DataContext = vm;
+        InitializeComponent();
 
+        DataContext = vm;
 
-            ApplicationBasicInfoControl.OpenPersonRequested += OnOpenPersonRequested;
-            DrivingLicenseApplicationInfoControl.OpenLicenseRequested += OnOpenLicenseRequested;
-        }
+        _peopleApiClient =
+            peopleApiClient
+            ?? throw new ArgumentNullException(nameof(peopleApiClient));
 
-        private void OnOpenPersonRequested(int personId)
-        {
-            var window = new PersonDetailsWindow(personId);
-            window.ShowDialog();
-        }
+        ApplicationBasicInfoControl.OpenPersonRequested +=
+            OnOpenPersonRequested;
 
-        private void OnOpenLicenseRequested(int licenseId)
-        {
-            if (licenseId <= 0)
-                return;
+        DrivingLicenseApplicationInfoControl.OpenLicenseRequested +=
+            OnOpenLicenseRequested;
+    }
 
-            var window = new DriverLicenseInfoWin(licenseId)
+    private void OnOpenPersonRequested(int personId)
+    {
+        var window =
+            new PersonDetailsWindow(
+                personId,
+                _peopleApiClient);
+
+        window.ShowDialog();
+    }
+
+    private void OnOpenLicenseRequested(int licenseId)
+    {
+        if (licenseId <= 0)
+            return;
+
+        var window =
+            new DriverLicenseInfoWin(licenseId)
             {
                 Owner = this
             };
 
-            window.ShowDialog();
-        }
+        window.ShowDialog();
+    }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
-
-
+    private void CloseButton_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        Close();
     }
 }

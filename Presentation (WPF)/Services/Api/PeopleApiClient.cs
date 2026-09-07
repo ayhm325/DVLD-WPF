@@ -1,5 +1,5 @@
-﻿using Application.Common.Results;
-using Application.DTOs.PersonDTO;
+﻿using Presentation.Services.Results;
+using ContractPerson = DVLD.Contracts.Person;
 
 namespace Presentation.Services.Api;
 
@@ -10,112 +10,107 @@ public sealed class PeopleApiClient(
         apiClient
         ?? throw new ArgumentNullException(nameof(apiClient));
 
-    public Task<Result<List<PersonDto>>> GetAllAsync(
+    public Task<ApiResult<List<ContractPerson.PersonResponse>>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
-        return _apiClient.GetAsync<List<PersonDto>>(
+        return _apiClient.GetAsync<List<ContractPerson.PersonResponse>>(
             "api/people",
             cancellationToken);
     }
 
-    public Task<Result<PersonDto>> GetByIdAsync(
+    public Task<ApiResult<ContractPerson.PersonResponse>> GetByIdAsync(
         int id,
         CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
             return Task.FromResult(
-                Result<PersonDto>.FromValidationFailure(
+                ApiResult<ContractPerson.PersonResponse>.Failure(
                     "Person ID must be greater than zero."));
         }
 
-        return _apiClient.GetAsync<PersonDto>(
+        return _apiClient.GetAsync<ContractPerson.PersonResponse>(
             $"api/people/{id}",
             cancellationToken);
     }
 
-    public Task<Result<PersonDto>> GetByNationalNoAsync(
+    public Task<ApiResult<ContractPerson.PersonResponse>> GetByNationalNoAsync(
         string nationalNo,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(nationalNo))
         {
             return Task.FromResult(
-                Result<PersonDto>.FromValidationFailure(
+                ApiResult<ContractPerson.PersonResponse>.Failure(
                     "National number is required."));
         }
 
-        return _apiClient.GetAsync<PersonDto>(
+        return _apiClient.GetAsync<ContractPerson.PersonResponse>(
             $"api/people/national/{Uri.EscapeDataString(nationalNo.Trim())}",
             cancellationToken);
     }
 
-    public async Task<Result<int>> CreateAsync(
-        PersonCreateDto dto,
+    public async Task<ApiResult<int>> CreateAsync(
+        ContractPerson.CreatePersonRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(dto);
+        ArgumentNullException.ThrowIfNull(request);
 
         var result =
             await _apiClient.PostAsync<
-                PersonCreateDto,
-                PersonCreateResponse>(
+                ContractPerson.CreatePersonRequest,
+                ContractPerson.CreatePersonResponse>(
                 "api/people",
-                dto,
+                request,
                 cancellationToken);
 
         if (result.IsFailure)
-            return Result<int>.FromResult(result);
+            return ApiResult<int>.Failure(result.Error);
 
         if (result.Value is null ||
             result.Value.PersonId <= 0)
         {
-            return Result<int>.FromFailure(
+            return ApiResult<int>.Failure(
                 "The API returned an invalid person ID.");
         }
 
-        return Result<int>.Success(
+        return ApiResult<int>.Success(
             result.Value.PersonId);
     }
 
-    public Task<Result> UpdateAsync(
+    public Task<ApiResult> UpdateAsync(
         int id,
-        PersonUpdateDto dto,
+        ContractPerson.UpdatePersonRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(dto);
+        ArgumentNullException.ThrowIfNull(request);
 
         if (id <= 0)
         {
             return Task.FromResult(
-                Result.ValidationFailure(
+                ApiResult.Failure(
                     "Person ID must be greater than zero."));
         }
 
         return _apiClient.PutAsync(
             $"api/people/{id}",
-            dto,
+            request,
             cancellationToken);
     }
 
-    public Task<Result> DeleteAsync(
+    public Task<ApiResult> DeleteAsync(
         int id,
         CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
             return Task.FromResult(
-                Result.ValidationFailure(
+                ApiResult.Failure(
                     "Person ID must be greater than zero."));
         }
 
         return _apiClient.DeleteAsync(
             $"api/people/{id}",
             cancellationToken);
-    }
-
-    private sealed class PersonCreateResponse
-    {
-        public int PersonId { get; init; }
     }
 }
