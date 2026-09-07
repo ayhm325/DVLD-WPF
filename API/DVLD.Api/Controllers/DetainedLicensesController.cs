@@ -1,6 +1,7 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.DetainedLicenseDTO;
 using Application.Interfaces;
+using DVLD.Contracts.DetainedLicense;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,8 +16,7 @@ public sealed class DetainedLicensesController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result =
-            await service.GetAllAsync();
+        var result = await service.GetAllAsync();
 
         return result.IsSuccess
             ? Ok(result.Value)
@@ -26,8 +26,7 @@ public sealed class DetainedLicensesController(
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result =
-            await service.GetByIdAsync(id);
+        var result = await service.GetByIdAsync(id);
 
         return result.IsSuccess
             ? Ok(result.Value)
@@ -39,8 +38,7 @@ public sealed class DetainedLicensesController(
         int licenseId)
     {
         var result =
-            await service.GetActiveDetainByLicenseIdAsync(
-                licenseId);
+            await service.GetActiveDetainByLicenseIdAsync(licenseId);
 
         return result.IsSuccess
             ? Ok(result.Value)
@@ -54,15 +52,23 @@ public sealed class DetainedLicensesController(
         var result =
             await service.IsLicenseDetainedAsync(licenseId);
 
-        return Ok(new { detained = result });
+        return Ok(new
+        {
+            detained = result
+        });
     }
 
     [HttpPost]
     public async Task<IActionResult> Detain(
-        [FromBody] CreateDetainedLicenseDto dto)
+        [FromBody] CreateDetainedLicenseRequest request)
     {
-        var result =
-            await service.AddAsync(dto);
+        var dto = new CreateDetainedLicenseDto
+        {
+            LicenseID = request.LicenseId,
+            FineFees = request.FineFees
+        };
+
+        var result = await service.AddAsync(dto);
 
         if (result.IsFailure)
             return HandleFailure(result);
@@ -72,10 +78,14 @@ public sealed class DetainedLicensesController(
 
     [HttpPost("release")]
     public async Task<IActionResult> Release(
-        [FromBody] ReleaseDetainedLicenseDto dto)
+        [FromBody] ReleaseDetainedLicenseRequest request)
     {
-        var result =
-            await service.ReleaseAsync(dto);
+        var dto = new ReleaseDetainedLicenseDto
+        {
+            DetainID = request.DetainId
+        };
+
+        var result = await service.ReleaseAsync(dto);
 
         return result.IsSuccess
             ? NoContent()
@@ -99,15 +109,18 @@ public sealed class DetainedLicensesController(
                     new { error = result.Error }),
 
             ErrorType.Forbidden =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 },
 
             _ =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status500InternalServerError
+                    StatusCode =
+                        StatusCodes.Status500InternalServerError
                 }
         };
     }
