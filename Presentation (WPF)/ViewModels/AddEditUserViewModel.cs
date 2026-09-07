@@ -1,13 +1,12 @@
-﻿using Application.Common.Results;
-using Application.DTOs.PersonDTO;
-using Application.DTOs.UserDTO;
-using Application.Interfaces;
-using Application.Validators;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Domain.Enums;
+using DVLD.Contracts.Person;
+using DVLD.Contracts.User;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services;
+using Presentation.Services.Api;
 using Presentation.Views;
 using Presentation.Views.Windows;
 using System;
@@ -18,56 +17,95 @@ namespace Presentation.ViewModels;
 
 public partial class AddEditUserViewModel : ObservableObject
 {
-    // DEPENDENCIES
-    private readonly IUserService _userService;
-    private readonly IPersonService _personService;
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IUsersApiClient _usersApiClient;
+    private readonly IPeopleApiClient _peopleApiClient;
+    private readonly ICurrentUserSession _currentUserSession;
 
-    // CONSTRUCTOR
-    public AddEditUserViewModel(IUserService userService, IPersonService personService, ICurrentUserService currentUserService)
+    public AddEditUserViewModel(
+        IUsersApiClient usersApiClient,
+        IPeopleApiClient peopleApiClient,
+        ICurrentUserSession currentUserSession)
     {
-        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-        _personService = personService ?? throw new ArgumentNullException(nameof(personService));
-        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _usersApiClient = usersApiClient
+            ?? throw new ArgumentNullException(nameof(usersApiClient));
 
-        CurrentUsername = _currentUserService.Username;
-        CurrentFullName = _currentUserService.FullName;
+        _peopleApiClient = peopleApiClient
+            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+
+        _currentUserSession = currentUserSession
+            ?? throw new ArgumentNullException(nameof(currentUserSession));
+
+        CurrentUsername = _currentUserSession.Username;
+        CurrentFullName = _currentUserSession.FullName;
     }
 
-    // EVENTS
     public event Action<bool>? SaveCompleted;
 
     // CURRENT USER
-    [ObservableProperty] private string _currentUsername = string.Empty;
-    [ObservableProperty] private string _currentFullName = string.Empty;
+
+    [ObservableProperty]
+    private string _currentUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _currentFullName = string.Empty;
 
     // PERSON
-    [ObservableProperty] private PersonDto? _person;
+
+    [ObservableProperty]
+    private PersonResponse? _person;
 
     // MODE
-    [ObservableProperty] private OperationMode _mode;
+
+    [ObservableProperty]
+    private OperationMode _mode;
 
     // SEARCH
-    [ObservableProperty] private string _filterText = string.Empty;
-    [ObservableProperty] private int _selectedFilterIndex;
+
+    [ObservableProperty]
+    private string _filterText = string.Empty;
+
+    [ObservableProperty]
+    private int _selectedFilterIndex;
 
     // USER DATA
-    [ObservableProperty] private int _userId;
-    [ObservableProperty] private string _userName = string.Empty;
-    [ObservableProperty] private bool _isActive = true;
-    [ObservableProperty] private string _password = string.Empty;
-    [ObservableProperty] private string _confirmPassword = string.Empty;
+
+    [ObservableProperty]
+    private int _userId;
+
+    [ObservableProperty]
+    private string _userName = string.Empty;
+
+    [ObservableProperty]
+    private bool _isActive = true;
+
+    [ObservableProperty]
+    private string _password = string.Empty;
+
+    [ObservableProperty]
+    private string _confirmPassword = string.Empty;
 
     // DISPLAY
-    [ObservableProperty] private string? _userIdDisplay = "???";
-    [ObservableProperty] private string _userNameValidationMessage = "3-20 chars, start with a letter, numbers & _ allowed.";
-    [ObservableProperty] private string _userNameValidationColor = "Gray";
+
+    [ObservableProperty]
+    private string? _userIdDisplay = "???";
+
+    [ObservableProperty]
+    private string _userNameValidationMessage =
+        "3-20 chars, start with a letter, numbers & _ allowed.";
+
+    [ObservableProperty]
+    private string _userNameValidationColor = "Gray";
 
     // PASSWORD VISIBILITY
-    [ObservableProperty] private bool _isPasswordVisible;
-    [ObservableProperty] private bool _isConfirmPasswordVisible;
+
+    [ObservableProperty]
+    private bool _isPasswordVisible;
+
+    [ObservableProperty]
+    private bool _isConfirmPasswordVisible;
 
     // TABS
+
     [ObservableProperty]
     private int _selectedTabIndex;
 
@@ -82,10 +120,15 @@ public partial class AddEditUserViewModel : ObservableObject
     }
 
     // UI VISIBILITY
-    [ObservableProperty] private Visibility _passwordVisibility = Visibility.Visible;
-    [ObservableProperty] private Visibility _confirmPasswordVisibility = Visibility.Visible;
+
+    [ObservableProperty]
+    private Visibility _passwordVisibility = Visibility.Visible;
+
+    [ObservableProperty]
+    private Visibility _confirmPasswordVisibility = Visibility.Visible;
 
     // INITIALIZATION
+
     public async Task InitializeAsync(int? userId)
     {
         try
@@ -94,75 +137,106 @@ public partial class AddEditUserViewModel : ObservableObject
             GoToNextTabCommand.NotifyCanExecuteChanged();
 
             // EDIT MODE
+
             if (userId.HasValue && userId.Value > 0)
             {
                 Mode = OperationMode.Edit;
                 UserId = userId.Value;
                 UserIdDisplay = userId.Value.ToString();
 
-                // ⬇️ إخفاء حقول كلمة السر في وضع التعديل ⬇️
                 PasswordVisibility = Visibility.Collapsed;
                 ConfirmPasswordVisibility = Visibility.Collapsed;
+
                 Password = string.Empty;
                 ConfirmPassword = string.Empty;
 
-                var userResult = await _userService.GetUserByIdAsync(userId.Value);
+                var userResult =
+                    await _usersApiClient.GetByIdAsync(userId.Value);
+
                 if (userResult.IsFailure || userResult.Value is null)
                 {
-                    MessageBox.Show(userResult.Error ?? "User data could not be loaded.", "User Not Found",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        userResult.Error ?? "User data could not be loaded.",
+                        "User Not Found",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
                     return;
                 }
 
                 var user = userResult.Value;
+
                 UserName = user.UserName;
                 IsActive = user.IsActive;
 
-                var personResult = await _personService.GetPersonByIdAsync(user.PersonId);
+                var personResult =
+                    await _peopleApiClient.GetByIdAsync(user.PersonId);
+
                 if (personResult.IsFailure || personResult.Value is null)
                 {
-                    MessageBox.Show(personResult.Error ?? "The person associated with this user could not be found.",
-                        "Person Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        personResult.Error ??
+                        "The person associated with this user could not be found.",
+                        "Person Not Found",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
                     return;
                 }
 
                 Person = personResult.Value;
+
                 CanGoToNextTab = true;
                 GoToNextTabCommand.NotifyCanExecuteChanged();
+
                 return;
             }
 
             // ADD MODE
+
             Mode = OperationMode.Add;
+
             UserId = 0;
             UserIdDisplay = null;
+
             Person = null;
+
             FilterText = string.Empty;
             SelectedFilterIndex = 0;
+
             UserName = string.Empty;
 
-            // ⬇️ إظهار حقول كلمة السر في وضع الإضافة ⬇️
             PasswordVisibility = Visibility.Visible;
             ConfirmPasswordVisibility = Visibility.Visible;
 
             Password = string.Empty;
             ConfirmPassword = string.Empty;
+
             IsActive = true;
+
             SelectedTabIndex = 0;
+
             CanGoToNextTab = false;
-            UserNameValidationMessage = "3-20 chars, start with a letter, numbers & _ allowed.";
+
+            UserNameValidationMessage =
+                "3-20 chars, start with a letter, numbers & _ allowed.";
+
             UserNameValidationColor = "Gray";
+
             GoToNextTabCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"An error occurred while initializing the user form.\n\n{ex.Message}",
-                "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                $"An error occurred while initializing the user form.\n\n{ex.Message}",
+                "Initialization Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
-
     // SEARCH PERSON
+
     [RelayCommand]
     private async Task Search()
     {
@@ -182,12 +256,15 @@ public partial class AddEditUserViewModel : ObservableObject
 
         try
         {
-            Result<PersonDto> personResult;
+            PersonResponse? person;
 
             // BY PERSON ID
+
             if (SelectedFilterIndex == 0)
             {
-                if (!int.TryParse(FilterText.Trim(), out int personId))
+                if (!int.TryParse(
+                        FilterText.Trim(),
+                        out int personId))
                 {
                     MessageBox.Show(
                         "Please enter a valid Person ID.",
@@ -198,31 +275,53 @@ public partial class AddEditUserViewModel : ObservableObject
                     return;
                 }
 
-                personResult = await _personService.GetPersonByIdAsync(personId);
+                var personResult =
+                    await _peopleApiClient.GetByIdAsync(personId);
+
+                if (personResult.IsFailure ||
+                    personResult.Value is null)
+                {
+                    MessageBox.Show(
+                        personResult.Error ??
+                        "Person data could not be loaded.",
+                        "Person Not Found",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                person = personResult.Value;
             }
             // BY NATIONAL NUMBER
+
             else
             {
-                personResult = await _personService
-                    .GetPersonByNationalNoAsync(FilterText.Trim());
+                var personResult =
+                    await _peopleApiClient.GetByNationalNoAsync(
+                        FilterText.Trim());
+
+                if (personResult.IsFailure ||
+                    personResult.Value is null)
+                {
+                    MessageBox.Show(
+                        personResult.Error ??
+                        "Person data could not be loaded.",
+                        "Person Not Found",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                person = personResult.Value;
             }
-
-            if (personResult.IsFailure || personResult.Value is null)
-            {
-                MessageBox.Show(
-                    personResult.Error ?? "Person data could not be loaded.",
-                    "Person Not Found",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            var person = personResult.Value;
 
             // CHECK IF PERSON ALREADY HAS USER
+
             var existingUserResult =
-                await _userService.GetUserByPersonIdAsync(person.PersonId);
+                await _usersApiClient.GetByPersonIdAsync(
+                    person.PersonId);
 
             if (existingUserResult.IsSuccess &&
                 existingUserResult.Value is not null)
@@ -277,15 +376,24 @@ public partial class AddEditUserViewModel : ObservableObject
     }
 
     // ADD PERSON
+
     [RelayCommand]
     private void AddPerson()
     {
-        var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
-        var win = new AddEditPersonWin(vm) { Owner = System.Windows.Application.Current.MainWindow };
+        var vm =
+            App.ServiceProvider
+                .GetRequiredService<AddEditPersonViewModel>();
+
+        var win = new AddEditPersonWin(vm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+
         win.ShowDialog();
     }
 
     // SAVE USER
+
     [RelayCommand]
     private async Task SaveUserAsync()
     {
@@ -293,116 +401,155 @@ public partial class AddEditUserViewModel : ObservableObject
         {
             if (Person is null)
             {
-                MessageBox.Show("You must search for and select a person first.", "Validation Error",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    "You must search for and select a person first.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
             bool isEdit = Mode == OperationMode.Edit;
 
-            // CONFIRM PASSWORD
+            // PASSWORD CONFIRMATION
+
             if (!isEdit)
             {
                 if (string.IsNullOrWhiteSpace(Password))
                 {
-                    MessageBox.Show("Password is required.", "Validation Error",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        "Password is required.",
+                        "Validation Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
                     return;
                 }
+
                 if (Password != ConfirmPassword)
                 {
-                    MessageBox.Show("The entered passwords do not match.", "Validation Error",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        "The entered passwords do not match.",
+                        "Validation Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
                     return;
                 }
             }
-            else if (!string.IsNullOrWhiteSpace(Password) && Password != ConfirmPassword)
+            else if (!string.IsNullOrWhiteSpace(Password) &&
+                     Password != ConfirmPassword)
             {
-                MessageBox.Show("The entered passwords do not match.", "Validation Error",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    "The entered passwords do not match.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
             // CREATE
+
             if (!isEdit)
             {
-                var createDto = new CreateUserDto
-                {
-                    PersonId = Person.PersonId,
-                    UserName = UserName.Trim(),
-                    Password = Password,
-                    IsActive = IsActive
-                };
+                var request = new CreateUserRequest(
+                    Person.PersonId,
+                    UserName.Trim(),
+                    Password,
+                    IsActive);
 
-                var validationResult = UserValidator.ValidateCreateUser(createDto);
-                if (validationResult.IsFailure)
+                var existingUserResult =
+                    await _usersApiClient.GetByUsernameAsync(
+                        request.UserName);
+
+                if (existingUserResult.IsSuccess &&
+                    existingUserResult.Value is not null)
                 {
-                    MessageBox.Show(validationResult.Error, "Validation Errors",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        "This username is already taken. Please choose another.",
+                        "Validation Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
                     return;
                 }
 
-                if (await _userService.IsUsernameTakenForAnotherUserAsync(createDto.UserName, 0))
-                {
-                    MessageBox.Show("This username is already taken. Please choose another.", "Validation Error",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                var createResult =
+                    await _usersApiClient.CreateAsync(request);
 
-                var addResult = await _userService.AddUserAsync(createDto);
-                if (addResult.IsFailure)
+                if (createResult.IsFailure)
                 {
-                    MessageBox.Show(addResult.Error, "Save Failed",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(
+                        createResult.Error,
+                        "Save Failed",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
                     SaveCompleted?.Invoke(false);
                     return;
                 }
 
-                UserId = addResult.Value;
-                UserIdDisplay = addResult.Value.ToString();
+                UserId = createResult.Value;
+                UserIdDisplay = createResult.Value.ToString();
+
                 Mode = OperationMode.Edit;
 
-                // إخفاء حقول كلمة السر بعد التحول لوضع التعديل
                 PasswordVisibility = Visibility.Collapsed;
                 ConfirmPasswordVisibility = Visibility.Collapsed;
+
                 Password = string.Empty;
                 ConfirmPassword = string.Empty;
 
-                MessageBox.Show($"The user account has been created successfully.\n\nUser ID: {UserId}",
-                    "Operation Completed", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(
+                    $"The user account has been created successfully.\n\nUser ID: {UserId}",
+                    "Operation Completed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
                 SaveCompleted?.Invoke(true);
+
                 return;
             }
 
             // UPDATE
-            var updateDto = new UpdateUserDto
-            {
-                PersonId = Person.PersonId,
-                UserName = UserName.Trim(),
-                //Password = string.IsNullOrWhiteSpace(Password) ? null : Password,
-                IsActive = IsActive
-            };
 
-            var updateValidation = UserValidator.ValidateUpdateUser(updateDto);
-            if (updateValidation.IsFailure)
+            var updateRequest = new UpdateUserRequest(
+                Person.PersonId,
+                UserName.Trim(),
+                IsActive);
+
+            var existingUserByNameResult =
+                await _usersApiClient.GetByUsernameAsync(
+                    updateRequest.UserName);
+
+            if (existingUserByNameResult.IsSuccess &&
+                existingUserByNameResult.Value is not null &&
+                existingUserByNameResult.Value.UserId != UserId)
             {
-                MessageBox.Show(updateValidation.Error, "Validation Errors",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    "This username is already taken by another user. Please choose another.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
-            if (await _userService.IsUsernameTakenForAnotherUserAsync(updateDto.UserName, UserId))
-            {
-                MessageBox.Show("This username is already taken by another user. Please choose another.",
-                    "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            var updateResult =
+                await _usersApiClient.UpdateAsync(
+                    UserId,
+                    updateRequest);
 
-            var updateResult = await _userService.UpdateUserAsync(UserId, updateDto);
             if (updateResult.IsFailure)
             {
-                MessageBox.Show(updateResult.Error, "Save Failed",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    updateResult.Error,
+                    "Save Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
                 SaveCompleted?.Invoke(false);
                 return;
             }
@@ -410,34 +557,57 @@ public partial class AddEditUserViewModel : ObservableObject
             Password = string.Empty;
             ConfirmPassword = string.Empty;
 
-            MessageBox.Show("The user account has been updated successfully.", "Operation Completed",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                "The user account has been updated successfully.",
+                "Operation Completed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
             SaveCompleted?.Invoke(true);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error while saving user: {ex}");
-            MessageBox.Show($"An unexpected error occurred while saving the user.\n\n{ex.Message}",
-                "Save Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Diagnostics.Debug.WriteLine(
+                $"Error while saving user: {ex}");
+
+            MessageBox.Show(
+                $"An unexpected error occurred while saving the user.\n\n{ex.Message}",
+                "Save Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
             SaveCompleted?.Invoke(false);
         }
-    }    
+    }
 
     // CANCEL
-    [RelayCommand]
-    private void Cancel() => MainWindow.Navigation.GoBack();
-
-    // TOGGLE PASSWORD
-    [RelayCommand]
-    private void TogglePasswordVisibility() => IsPasswordVisible = !IsPasswordVisible;
 
     [RelayCommand]
-    private void ToggleConfirmPasswordVisibility() => IsConfirmPasswordVisible = !IsConfirmPasswordVisible;
+    private void Cancel()
+    {
+        MainWindow.Navigation.GoBack();
+    }
+
+    // PASSWORD VISIBILITY
+
+    [RelayCommand]
+    private void TogglePasswordVisibility()
+    {
+        IsPasswordVisible = !IsPasswordVisible;
+    }
+
+    [RelayCommand]
+    private void ToggleConfirmPasswordVisibility()
+    {
+        IsConfirmPasswordVisible = !IsConfirmPasswordVisible;
+    }
 
     // USERNAME CHANGED
+
     partial void OnUserNameChanged(string value)
     {
-        var sanitized = value?.Trim().ToLowerInvariant() ?? string.Empty;
+        var sanitized =
+            value?.Trim().ToLowerInvariant() ?? string.Empty;
 
         if (_userName != sanitized)
         {
@@ -447,21 +617,17 @@ public partial class AddEditUserViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(sanitized))
         {
-            UserNameValidationMessage = "Username is required.";
+            UserNameValidationMessage =
+                "Username is required.";
+
             UserNameValidationColor = "Red";
+
             return;
         }
 
-        var result = UserValidator.ValidateUsernameFormat(sanitized);
-        if (result.IsSuccess)
-        {
-            UserNameValidationMessage = "✓ Username is valid.";
-            UserNameValidationColor = "Green";
-        }
-        else
-        {
-            UserNameValidationMessage = result.Error ?? "Invalid username.";
-            UserNameValidationColor = "Red";
-        }
+        UserNameValidationMessage =
+            "Username format will be validated by the server.";
+
+        UserNameValidationColor = "Gray";
     }
 }

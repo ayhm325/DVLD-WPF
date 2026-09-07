@@ -8,4 +8,8 @@ public interface IAuthApiClient
     Task<ApiResult<LoginResponse>> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default);
 }

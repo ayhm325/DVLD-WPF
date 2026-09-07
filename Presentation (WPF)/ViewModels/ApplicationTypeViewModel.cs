@@ -1,68 +1,73 @@
-﻿using Application.DTOs;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.ApplicationType;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services.Api;
 using Presentation.Views.Windows.Applications;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using Presentation.ViewModels;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class ApplicationTypeViewModel : ObservableObject
 {
-    public partial class ApplicationTypeViewModel : ObservableObject
+    private readonly IApplicationTypesApiClient _applicationTypesApiClient;
+
+    public ObservableCollection<ApplicationTypeResponse> ApplicationTypes { get; } = new();
+
+    public ApplicationTypeViewModel(
+        IApplicationTypesApiClient applicationTypesApiClient)
     {
-        private readonly IApplicationTypeService _applicationTypeService;
+        _applicationTypesApiClient = applicationTypesApiClient;
 
-        // القائمة يجب أن تكون Public Property لكي يراها الـ DataGrid
-        public ObservableCollection<ApplicationTypeDto> ApplicationTypes { get; } = new();
+        _ = LoadApplicationTypesAsync();
+    }
 
-        public ApplicationTypeViewModel(IApplicationTypeService applicationTypeService)
+    private async Task LoadApplicationTypesAsync()
+    {
+        var result = await _applicationTypesApiClient.GetAllAsync();
+
+        if (result.IsFailure)
         {
-            _applicationTypeService = applicationTypeService;
-            LoadApplicationTypesAsync();
-        }
-
-        private async void LoadApplicationTypesAsync()
-        {
-            var result = await _applicationTypeService.GetAllApplicationTypesAsync();
-
-            if (result.IsFailure)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"DEBUG: Failed to load application types: {result.Error}");
-
-                return;
-            }
-
-            var data = result.Value!;
-
             System.Diagnostics.Debug.WriteLine(
-                $"DEBUG: Loaded {data.Count} items.");
+                $"DEBUG: Failed to load application types: {result.Error}");
 
-            ApplicationTypes.Clear();
-
-            foreach (var item in data)
-            {
-                ApplicationTypes.Add(item);
-            }
+            return;
         }
 
-        [RelayCommand]
-        private async Task EditApplicationType(ApplicationTypeDto? selectedType)
+        var data = result.Value ?? new List<ApplicationTypeResponse>();
+
+        System.Diagnostics.Debug.WriteLine(
+            $"DEBUG: Loaded {data.Count} items.");
+
+        ApplicationTypes.Clear();
+
+        foreach (var item in data)
         {
-            if (selectedType == null) return;
-
-
-            var updateVm = App.ServiceProvider.GetRequiredService<UpdateApplicationTypeViewModel>();
-            await updateVm.InitializeAsync(selectedType.ApplicationTypeId);
-
-            var editWindow = new EditApplicationTypeWindow(updateVm);
-            editWindow.ShowDialog();
-
-            // تحديث القائمة بعد إغلاق النافذة
-            LoadApplicationTypesAsync();
+            ApplicationTypes.Add(item);
         }
+    }
+
+    [RelayCommand]
+    private async Task EditApplicationType(
+        ApplicationTypeResponse? selectedType)
+    {
+        if (selectedType == null)
+            return;
+
+        var updateVm =
+            App.ServiceProvider
+                .GetRequiredService<UpdateApplicationTypeViewModel>();
+
+        await updateVm.InitializeAsync(
+            selectedType.ApplicationTypeId);
+
+        var editWindow =
+            new EditApplicationTypeWindow(updateVm);
+
+        editWindow.ShowDialog();
+
+        await LoadApplicationTypesAsync();
     }
 }

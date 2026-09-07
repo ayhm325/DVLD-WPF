@@ -51,9 +51,45 @@ public sealed class AuthApiClient : IAuthApiClient
             return ApiResult<LoginResponse>.Failure(
                 "Unable to connect to the DVLD API.");
         }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (TaskCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
         {
             return ApiResult<LoginResponse>.Failure(
+                "The request to the DVLD API timed out.");
+        }
+    }
+
+    public async Task<ApiResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            using var response = await _httpClient.PostAsJsonAsync(
+                "api/auth/change-password",
+                request,
+                cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return ApiResult.Success();
+            }
+
+            var error = await ExtractErrorMessageAsync(response);
+
+            return ApiResult.Failure(error);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failure(
+                "Unable to connect to the DVLD API.");
+        }
+        catch (TaskCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiResult.Failure(
                 "The request to the DVLD API timed out.");
         }
     }
