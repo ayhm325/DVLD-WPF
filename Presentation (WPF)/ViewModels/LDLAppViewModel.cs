@@ -1,8 +1,6 @@
-﻿using Application.DTOs.LicenseDTO;
-using Application.DTOs.LocalDrivingLicenseApplicationDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.LocalDrivingLicenseApplication;
 using Domain.Enums;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,16 +13,15 @@ namespace Presentation.ViewModels;
 
 public partial class LDLAppViewModel : ObservableObject
 {
-    private readonly ILocalDrivingLicenseApplicationService _service;
-    private readonly IApplicationService _appService;
+    private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;
+    private readonly IApplicationsApiClient _applicationsApiClient;
+    private readonly ILicensesApiClient _licensesApiClient;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ITestAppointmentService _testAppointmentService;
-    private readonly ILicenseService _licenseService;
     private readonly IPeopleApiClient _peopleApiClient;
 
-    private List<LocalDrivingLicenseApplicationListDto> _allApplications = new();
+    private List<LocalDrivingLicenseApplicationResponse> _allApplications = new();
 
-    public ObservableCollection<LocalDrivingLicenseApplicationListDto> Applications { get; set; } = new();
+    public ObservableCollection<LocalDrivingLicenseApplicationResponse> Applications { get; } = new();
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -53,14 +50,44 @@ public partial class LDLAppViewModel : ObservableObject
         nameof(ScheduleStreetCommand),
         nameof(IssueLicenseCommand),
         nameof(ShowLicenseCommand))]
-    private LocalDrivingLicenseApplicationListDto? _selectedApplication;
+    private LocalDrivingLicenseApplicationResponse? _selectedApplication;
 
     partial void OnSelectedApplicationChanged(
-        LocalDrivingLicenseApplicationListDto? value) =>
+        LocalDrivingLicenseApplicationResponse? value) =>
         RefreshCommands();
 
     partial void OnSearchTextChanged(string value) =>
         FilterApplications();
+
+    public LDLAppViewModel(
+        ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
+        IApplicationsApiClient applicationsApiClient,
+        ILicensesApiClient licensesApiClient,
+        IServiceProvider serviceProvider,
+        IPeopleApiClient peopleApiClient)
+    {
+        _localApplicationsApiClient =
+            localApplicationsApiClient
+            ?? throw new ArgumentNullException(nameof(localApplicationsApiClient));
+
+        _applicationsApiClient =
+            applicationsApiClient
+            ?? throw new ArgumentNullException(nameof(applicationsApiClient));
+
+        _licensesApiClient =
+            licensesApiClient
+            ?? throw new ArgumentNullException(nameof(licensesApiClient));
+
+        _serviceProvider =
+            serviceProvider
+            ?? throw new ArgumentNullException(nameof(serviceProvider));
+
+        _peopleApiClient =
+            peopleApiClient
+            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+
+        _ = LoadApplicationsAsync();
+    }
 
     private void RefreshCommands()
     {
@@ -75,41 +102,11 @@ public partial class LDLAppViewModel : ObservableObject
         ShowLicenseCommand.NotifyCanExecuteChanged();
     }
 
-    public LDLAppViewModel(
-        ILocalDrivingLicenseApplicationService service,
-        IApplicationService appService,
-        IServiceProvider serviceProvider,
-        ITestAppointmentService testAppointmentService,
-        ILicenseService licenseService,
-        IPeopleApiClient peopleApiClient)
-    {
-        _service = service
-            ?? throw new ArgumentNullException(nameof(service));
-
-        _appService = appService
-            ?? throw new ArgumentNullException(nameof(appService));
-
-        _serviceProvider = serviceProvider
-            ?? throw new ArgumentNullException(nameof(serviceProvider));
-
-        _testAppointmentService = testAppointmentService
-            ?? throw new ArgumentNullException(nameof(testAppointmentService));
-
-        _licenseService = licenseService
-            ?? throw new ArgumentNullException(nameof(licenseService));
-
-        _peopleApiClient = peopleApiClient
-            ?? throw new ArgumentNullException(nameof(peopleApiClient));
-
-        _ = LoadApplicationsAsync();
-    }
-
     [RelayCommand]
     public async Task LoadApplicationsAsync()
     {
         var result =
-            await _service
-                .GetAllLocalDrivingLicenseApplicationsAsync();
+            await _localApplicationsApiClient.GetAllAsync();
 
         if (result.IsFailure)
         {
@@ -120,7 +117,7 @@ public partial class LDLAppViewModel : ObservableObject
 
         _allApplications =
             result.Value
-            ?? new List<LocalDrivingLicenseApplicationListDto>();
+            ?? new List<LocalDrivingLicenseApplicationResponse>();
 
         FilterApplications();
         RefreshCommands();
@@ -141,14 +138,13 @@ public partial class LDLAppViewModel : ObservableObject
                     StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
-        if (SelectedStatusFilter != "All" &&
-            Enum.TryParse<AppStatus>(
-                SelectedStatusFilter,
-                out var status))
+        if (SelectedStatusFilter != "All")
         {
-            filtered =
-                filtered.Where(x =>
-                    x.ApplicationStatus == status);
+            filtered = filtered.Where(x =>
+                string.Equals(
+                    x.ApplicationStatus,
+                    SelectedStatusFilter,
+                    StringComparison.OrdinalIgnoreCase));
         }
 
         Applications.Clear();
@@ -168,14 +164,14 @@ public partial class LDLAppViewModel : ObservableObject
             App.ServiceProvider
                 .GetRequiredService<AddEditLDLAppViewModel>();
 
-        var win =
+        var window =
             new NewLocalLicnnse(addEditVm)
             {
                 Owner =
                     System.Windows.Application.Current.MainWindow
             };
 
-        win.ShowDialog();
+        window.ShowDialog();
 
         _ = LoadApplicationsAsync();
     }
@@ -184,7 +180,10 @@ public partial class LDLAppViewModel : ObservableObject
 
     private bool CanDelete() =>
         SelectedApplication != null &&
-        SelectedApplication.StatusText != "Completed";
+        !string.Equals(
+            SelectedApplication.StatusText,
+            "Completed",
+            StringComparison.OrdinalIgnoreCase);
 
     [RelayCommand(CanExecute = nameof(CanDelete))]
     private async Task Delete(int localApplicationId)
@@ -192,9 +191,8 @@ public partial class LDLAppViewModel : ObservableObject
         try
         {
             var result =
-                await _service
-                    .DeleteLocalDrivingLicenseApplicationAsync(
-                        localApplicationId);
+                await _localApplicationsApiClient
+                    .DeleteAsync(localApplicationId);
 
             if (result.IsFailure)
             {
@@ -225,7 +223,7 @@ public partial class LDLAppViewModel : ObservableObject
                 .GetRequiredService<LocalApplicationDetailsViewModel>();
 
         await vm.LoadAsync(
-            SelectedApplication.LocalDrivingLicenseApplicationID);
+            SelectedApplication.LocalDrivingLicenseApplicationId);
 
         var window =
             new LocalApplicationDetailsWin(
@@ -243,7 +241,10 @@ public partial class LDLAppViewModel : ObservableObject
 
     private bool CanEdit() =>
         SelectedApplication != null &&
-        SelectedApplication.StatusText == "New";
+        string.Equals(
+            SelectedApplication.StatusText,
+            "New",
+            StringComparison.OrdinalIgnoreCase);
 
     [RelayCommand(CanExecute = nameof(CanEdit))]
     private void Edit()
@@ -254,8 +255,14 @@ public partial class LDLAppViewModel : ObservableObject
 
     private bool CanCancel() =>
         SelectedApplication != null &&
-        SelectedApplication.StatusText != "Completed" &&
-        SelectedApplication.StatusText != "Cancelled";
+        !string.Equals(
+            SelectedApplication.StatusText,
+            "Completed",
+            StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(
+            SelectedApplication.StatusText,
+            "Cancelled",
+            StringComparison.OrdinalIgnoreCase);
 
     [RelayCommand(CanExecute = nameof(CanCancel))]
     private async Task Cancel(int localApplicationId)
@@ -263,9 +270,8 @@ public partial class LDLAppViewModel : ObservableObject
         try
         {
             var appIdResult =
-                await _service
-                    .GetApplicationIdByLocalIdAsync(
-                        localApplicationId);
+                await _localApplicationsApiClient
+                    .GetApplicationIdAsync(localApplicationId);
 
             if (appIdResult.IsFailure)
             {
@@ -273,11 +279,9 @@ public partial class LDLAppViewModel : ObservableObject
                 return;
             }
 
-            int appId = appIdResult.Value;
-
             var result =
-                await _appService
-                    .CancelApplicationAsync(appId);
+                await _applicationsApiClient
+                    .CancelAsync(appIdResult.Value);
 
             if (result.IsFailure)
             {
@@ -303,12 +307,18 @@ public partial class LDLAppViewModel : ObservableObject
 
     public bool CanScheduleTests =>
         SelectedApplication != null &&
-        SelectedApplication.StatusText == "New" &&
+        string.Equals(
+            SelectedApplication.StatusText,
+            "New",
+            StringComparison.OrdinalIgnoreCase) &&
         SelectedApplication.PassedTest < 3;
 
     private bool CanScheduleVision() =>
         SelectedApplication != null &&
-        SelectedApplication.StatusText == "New" &&
+        string.Equals(
+            SelectedApplication.StatusText,
+            "New",
+            StringComparison.OrdinalIgnoreCase) &&
         SelectedApplication.PassedTest == 0;
 
     [RelayCommand(CanExecute = nameof(CanScheduleVision))]
@@ -317,7 +327,10 @@ public partial class LDLAppViewModel : ObservableObject
 
     private bool CanScheduleWritten() =>
         SelectedApplication != null &&
-        SelectedApplication.StatusText == "New" &&
+        string.Equals(
+            SelectedApplication.StatusText,
+            "New",
+            StringComparison.OrdinalIgnoreCase) &&
         SelectedApplication.PassedTest == 1;
 
     [RelayCommand(CanExecute = nameof(CanScheduleWritten))]
@@ -326,7 +339,10 @@ public partial class LDLAppViewModel : ObservableObject
 
     private bool CanScheduleStreet() =>
         SelectedApplication != null &&
-        SelectedApplication.StatusText == "New" &&
+        string.Equals(
+            SelectedApplication.StatusText,
+            "New",
+            StringComparison.OrdinalIgnoreCase) &&
         SelectedApplication.PassedTest == 2;
 
     [RelayCommand(CanExecute = nameof(CanScheduleStreet))]
@@ -339,15 +355,15 @@ public partial class LDLAppViewModel : ObservableObject
         if (SelectedApplication == null)
             return;
 
-        int currentAppId =
-            SelectedApplication.LocalDrivingLicenseApplicationID;
+        int currentApplicationId =
+            SelectedApplication.LocalDrivingLicenseApplicationId;
 
         var vm =
             _serviceProvider
                 .GetRequiredService<TestAppointmentViewModel>();
 
         await vm.LoadAsync(
-            currentAppId,
+            currentApplicationId,
             testType);
 
         var window =
@@ -365,8 +381,8 @@ public partial class LDLAppViewModel : ObservableObject
 
         SelectedApplication =
             Applications.FirstOrDefault(x =>
-                x.LocalDrivingLicenseApplicationID ==
-                currentAppId);
+                x.LocalDrivingLicenseApplicationId ==
+                currentApplicationId);
 
         RefreshCommands();
 
@@ -384,13 +400,16 @@ public partial class LDLAppViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanIssueLicense))]
     private async Task IssueLicense()
     {
-        var window = new IssueDrivingLicenseForTheFirstTimeWin(null!,_peopleApiClient);
+        var window =
+            new IssueDrivingLicenseForTheFirstTimeWin(
+                null!,
+                _peopleApiClient);
 
         var vm =
             ActivatorUtilities.CreateInstance<
                 IssueDrivingLicenseForTheFirstTimeViewModel>(
                 _serviceProvider,
-                SelectedApplication!.LocalDrivingLicenseApplicationID,
+                SelectedApplication!.LocalDrivingLicenseApplicationId,
                 window);
 
         window.DataContext = vm;
@@ -401,13 +420,13 @@ public partial class LDLAppViewModel : ObservableObject
         window.ShowDialog();
 
         int id =
-            SelectedApplication.LocalDrivingLicenseApplicationID;
+            SelectedApplication.LocalDrivingLicenseApplicationId;
 
         await LoadApplicationsAsync();
 
         SelectedApplication =
             Applications.FirstOrDefault(x =>
-                x.LocalDrivingLicenseApplicationID == id);
+                x.LocalDrivingLicenseApplicationId == id);
 
         RefreshCommands();
     }
@@ -427,15 +446,14 @@ public partial class LDLAppViewModel : ObservableObject
         try
         {
             int localApplicationId =
-                SelectedApplication.LocalDrivingLicenseApplicationID;
+                SelectedApplication.LocalDrivingLicenseApplicationId;
 
             int licenseClassId =
-                SelectedApplication.LicenseClassID;
+                SelectedApplication.LicenseClassId;
 
             var applicationIdResult =
-                await _service
-                    .GetApplicationIdByLocalIdAsync(
-                        localApplicationId);
+                await _localApplicationsApiClient
+                    .GetApplicationIdAsync(localApplicationId);
 
             if (applicationIdResult.IsFailure)
             {
@@ -448,13 +466,10 @@ public partial class LDLAppViewModel : ObservableObject
                 return;
             }
 
-            int applicationId =
-                applicationIdResult.Value;
-
             var licensesResult =
-                await _licenseService
+                await _licensesApiClient
                     .GetByApplicationIdAsync(
-                        applicationId);
+                        applicationIdResult.Value);
 
             if (licensesResult.IsFailure)
             {
@@ -467,13 +482,10 @@ public partial class LDLAppViewModel : ObservableObject
                 return;
             }
 
-            var licenses =
-                licensesResult.Value
-                ?? new List<LicenseDto>();
-
             var license =
-                licenses.FirstOrDefault(x =>
-                    x.LicenseClassID == licenseClassId);
+                licensesResult.Value?
+                    .FirstOrDefault(x =>
+                        x.LicenseClassId == licenseClassId);
 
             if (license is null)
             {
@@ -490,7 +502,7 @@ public partial class LDLAppViewModel : ObservableObject
 
             var window =
                 new DriverLicenseInfoWin(
-                    license.LicenseID)
+                    license.LicenseId)
                 {
                     Owner =
                         System.Windows.Application.Current.MainWindow
@@ -521,7 +533,7 @@ public partial class LDLAppViewModel : ObservableObject
                 .GetRequiredService<LicenseHistoryViewModel>();
 
         int personId =
-            SelectedApplication.ApplicantPersonID;
+            SelectedApplication.ApplicantPersonId;
 
         await vm.LoadAsync(personId);
 

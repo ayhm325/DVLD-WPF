@@ -237,7 +237,7 @@
 
                     <controls:DrivingLicenseApplicationInfo
                         x:Name="DrivingLicenseApplicationInfoControl"
-                        DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
+                        DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationId}"
                         PassedTests="{Binding LdlAppInfo.PassedTest}"
                         TotalTests="3"
                         LicenseClassName="{Binding LdlAppInfo.LicenseClassName}"

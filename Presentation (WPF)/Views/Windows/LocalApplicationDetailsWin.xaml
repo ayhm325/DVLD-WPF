@@ -98,7 +98,7 @@
                     <!-- البطاقة الأولى: تفاصيل رخصة القيادة -->
                     <controls:DrivingLicenseApplicationInfo 
     x:Name="DrivingLicenseApplicationInfoControl"
-    DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationID}"
+    DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationId}"
     LicenseId="{Binding LicenseInfo.LicenseID}"
     PassedTests="{Binding LdlAppInfo.PassedTest}"
     TotalTests="3"

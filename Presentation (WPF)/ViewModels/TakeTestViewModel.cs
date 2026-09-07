@@ -1,9 +1,8 @@
-﻿using Application.DTOs.TestAppointmentDTO;
-using Application.DTOs.TestDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Enums;
+using DVLD.Contracts.Test;
+using DVLD.Contracts.TestAppointment;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Windows;
 
@@ -11,38 +10,34 @@ namespace Presentation.ViewModels;
 
 public partial class TakeTestViewModel : ObservableObject
 {
-    private readonly ITestAppointmentService _service;
-    private readonly ITestService _testService;
-    private readonly ICurrentUserService _currentUser;
+    private readonly ITestAppointmentsApiClient _testAppointmentsApiClient;
+    private readonly ITestsApiClient _testsApiClient;
 
     public TakeTestViewModel(
-    ITestAppointmentService service,
-    ITestService testService,
-    ICurrentUserService currentUser)
+        ITestAppointmentsApiClient testAppointmentsApiClient,
+        ITestsApiClient testsApiClient)
     {
-        _service =
-            service
-            ?? throw new ArgumentNullException(nameof(service));
+        _testAppointmentsApiClient =
+            testAppointmentsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(testAppointmentsApiClient));
 
-        _testService =
-            testService
-            ?? throw new ArgumentNullException(nameof(testService));
-
-        _currentUser =
-            currentUser
-            ?? throw new ArgumentNullException(nameof(currentUser));
+        _testsApiClient =
+            testsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(testsApiClient));
     }
 
     [ObservableProperty]
-    private TestResultType testResult =
-        TestResultType.Fail;
+    private TestResult testResult =
+        TestResult.Fail;
 
     [ObservableProperty]
     private string notes =
         string.Empty;
 
     [ObservableProperty]
-    private ScheduleTestDto? schedule;
+    private ScheduleTestResponse? schedule;
 
     [ObservableProperty]
     private string fullName =
@@ -56,7 +51,7 @@ public partial class TakeTestViewModel : ObservableObject
     private decimal fees;
 
     partial void OnScheduleChanged(
-        ScheduleTestDto? value)
+        ScheduleTestResponse? value)
     {
         if (value is null)
         {
@@ -79,7 +74,7 @@ public partial class TakeTestViewModel : ObservableObject
     }
 
     partial void OnTestResultChanged(
-        TestResultType value)
+        TestResult value)
     {
         OnPropertyChanged(nameof(IsPassed));
         OnPropertyChanged(nameof(IsFailed));
@@ -88,34 +83,34 @@ public partial class TakeTestViewModel : ObservableObject
 
     public bool IsPassed
     {
-        get => TestResult == TestResultType.Pass;
+        get => TestResult == TestResult.Pass;
 
         set
         {
             if (value)
-                TestResult = TestResultType.Pass;
+                TestResult = TestResult.Pass;
         }
     }
 
     public bool IsFailed
     {
-        get => TestResult == TestResultType.Fail;
+        get => TestResult == TestResult.Fail;
 
         set
         {
             if (value)
-                TestResult = TestResultType.Fail;
+                TestResult = TestResult.Fail;
         }
     }
 
     public bool IsNotTaken
     {
-        get => TestResult == TestResultType.NotTaken;
+        get => TestResult == TestResult.NotTaken;
 
         set
         {
             if (value)
-                TestResult = TestResultType.NotTaken;
+                TestResult = TestResult.NotTaken;
         }
     }
 
@@ -142,19 +137,7 @@ public partial class TakeTestViewModel : ObservableObject
             return;
         }
 
-        if (!_currentUser.IsLoggedIn ||
-            _currentUser.UserId <= 0)
-        {
-            MessageBox.Show(
-                "You must be logged in first.",
-                "Take Test",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
-            return;
-        }
-
-        if (TestResult == TestResultType.NotTaken)
+        if (TestResult == TestResult.NotTaken)
         {
             MessageBox.Show(
                 "Please select Pass or Fail.",
@@ -165,25 +148,19 @@ public partial class TakeTestViewModel : ObservableObject
             return;
         }
 
-        var dto =
-            new SaveTestResultDto
-            {
-                TestAppointmentID =
-                    Schedule.AppointmentID,
-
-                TestResult =
-                    TestResult == TestResultType.Pass,
-
-                Notes =
-                    string.IsNullOrWhiteSpace(Notes)
-                        ? null
-                        : Notes.Trim()
-            };
+        var request =
+            new SaveTestResultRequest(
+                Schedule.AppointmentId,
+                TestResult == TestResult.Pass,
+                string.IsNullOrWhiteSpace(Notes)
+                    ? null
+                    : Notes.Trim());
 
         try
         {
             var result =
-                await _testService.AddAsync(dto);
+                await _testsApiClient
+                    .SaveResultAsync(request);
 
             if (result.IsFailure)
             {
@@ -197,7 +174,7 @@ public partial class TakeTestViewModel : ObservableObject
             }
 
             MessageBox.Show(
-                dto.TestResult
+                request.TestResult
                     ? "Test result saved successfully.\n\nResult: Passed."
                     : "Test result saved successfully.\n\nResult: Failed.",
                 "Take Test",
@@ -244,7 +221,7 @@ public partial class TakeTestViewModel : ObservableObject
         try
         {
             var result =
-                await _service
+                await _testAppointmentsApiClient
                     .GetScheduleInfoAsync(
                         appointmentId);
 
@@ -277,13 +254,64 @@ public partial class TakeTestViewModel : ObservableObject
                 data;
 
             var trialCount =
-                await _service
+                await _testAppointmentsApiClient
                     .GetTrialCountAsync(
-                        data.LocalDrivingLicenseApplicationID,
-                        data.TestTypeID);
+                        data.LocalDrivingLicenseApplicationId,
+                        data.TestTypeId);
 
-            Schedule.Trial =
-                trialCount;
+            if (trialCount.IsFailure)
+            {
+                MessageBox.Show(
+                    trialCount.Error,
+                    "Take Test",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            Schedule =
+                new ScheduleTestResponse
+                {
+                    AppointmentId =
+                        data.AppointmentId,
+
+                    RetakeTestApplicationId =
+                        data.RetakeTestApplicationId,
+
+                    LocalDrivingLicenseApplicationId =
+                        data.LocalDrivingLicenseApplicationId,
+
+                    LicenseClassName =
+                        data.LicenseClassName,
+
+                    FullName =
+                        data.FullName,
+
+                    Trial =
+                        trialCount.Value,
+
+                    Date =
+                        data.Date,
+
+                    Fees =
+                        data.Fees,
+
+                    TestTypeId =
+                        data.TestTypeId,
+
+                    RetakerFees =
+                        data.RetakerFees,
+
+                    TestId =
+                        data.TestId,
+
+                    Result =
+                        data.Result,
+
+                    Notes =
+                        data.Notes
+                };
         }
         catch (Exception ex)
         {

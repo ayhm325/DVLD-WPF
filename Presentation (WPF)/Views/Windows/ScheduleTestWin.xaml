@@ -166,7 +166,7 @@
                     <!-- Row 0: D.L.App.ID & Trial -->
                     <StackPanel Grid.Row="0" Grid.Column="0">
                         <TextBlock Text="D.L.App.ID" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding Schedule.LocalDrivingLicenseApplicationID}" Style="{StaticResource ReadOnlyInput}"/>
+                        <TextBox Text="{Binding Schedule.LocalDrivingLicenseApplicationId}" Style="{StaticResource ReadOnlyInput}"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="0" Grid.Column="2">

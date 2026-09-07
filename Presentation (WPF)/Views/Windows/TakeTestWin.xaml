@@ -228,7 +228,7 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="D.L. App ID" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Schedule.LocalDrivingLicenseApplicationID}" Style="{StaticResource LockedInput}"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Schedule.LocalDrivingLicenseApplicationId}" Style="{StaticResource LockedInput}"/>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="D. Class" Style="{StaticResource LabelStyle}"/>
                         <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Schedule.LicenseClassName}" Style="{StaticResource LockedInput}"/>

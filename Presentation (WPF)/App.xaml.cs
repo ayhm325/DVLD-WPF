@@ -180,10 +180,14 @@ public partial class App : System.Windows.Application
         services.AddScoped<IPeopleApiClient, PeopleApiClient>();
         services.AddScoped<ICountriesApiClient, CountriesApiClient>();
         services.AddScoped<IApplicationTypesApiClient, ApplicationTypesApiClient>();
+        services.AddScoped<IApplicationsApiClient, ApplicationsApiClient>();
         services.AddScoped<ILicenseClassesApiClient, LicenseClassesApiClient>();
         services.AddScoped<ILocalDrivingLicenseApplicationsApiClient,LocalDrivingLicenseApplicationsApiClient>();
         services.AddScoped<ILicensesApiClient, LicensesApiClient>();
         services.AddScoped<ITestAppointmentsApiClient, TestAppointmentsApiClient>();
+        services.AddScoped<ILicenseIssuanceApiClient, LicenseIssuanceApiClient>();
+        services.AddScoped<ITestsApiClient, TestsApiClient>();
+        services.AddScoped<ITestWorkflowApiClient, TestWorkflowApiClient>();
 
         // =====================================================
         // 7. VIEW MODELS
