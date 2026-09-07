@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+﻿using DVLD.Contracts.ApplicationType;
 using Presentation.Services.Results;
 
 namespace Presentation.Services.Api;
@@ -6,51 +6,31 @@ namespace Presentation.Services.Api;
 public sealed class ApplicationTypesApiClient(
     IApiClient apiClient) : IApplicationTypesApiClient
 {
-    private readonly IApiClient _apiClient =
-        apiClient
-        ?? throw new ArgumentNullException(nameof(apiClient));
-
-    public Task<ApiResult<List<ApplicationTypeDto>>> GetAllAsync(
+    public Task<ApiResult<List<ApplicationTypeResponse>>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
-        return _apiClient.GetAsync<List<ApplicationTypeDto>>(
+        return apiClient.GetAsync<List<ApplicationTypeResponse>>(
             "api/applicationtypes",
             cancellationToken);
     }
 
-    public Task<ApiResult<ApplicationTypeDto>> GetByIdAsync(
-        int id,
+    public Task<ApiResult<ApplicationTypeResponse>> GetByIdAsync(
+        int applicationTypeId,
         CancellationToken cancellationToken = default)
     {
-        if (id <= 0)
-        {
-            return Task.FromResult(
-                ApiResult<ApplicationTypeDto>.Failure(
-                    "Application type ID must be greater than zero."));
-        }
-
-        return _apiClient.GetAsync<ApplicationTypeDto>(
-            $"api/applicationtypes/{id}",
+        return apiClient.GetAsync<ApplicationTypeResponse>(
+            $"api/applicationtypes/{applicationTypeId}",
             cancellationToken);
     }
 
     public Task<ApiResult> UpdateAsync(
-        int id,
-        ApplicationTypeDto dto,
+        int applicationTypeId,
+        UpdateApplicationTypeRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(dto);
-
-        if (id <= 0)
-        {
-            return Task.FromResult(
-                ApiResult.Failure(
-                    "Application type ID must be greater than zero."));
-        }
-
-        return _apiClient.PutAsync(
-            $"api/applicationtypes/{id}",
-            dto,
+        return apiClient.PutAsync(
+            $"api/applicationtypes/{applicationTypeId}",
+            request,
             cancellationToken);
     }
 }

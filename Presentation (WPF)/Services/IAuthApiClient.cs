@@ -1,11 +1,11 @@
-﻿using Application.Common.Results;
-using Application.DTOs.AuthDTO;
-using Application.DTOs.UserDTO;
+﻿using DVLD.Contracts.Auth;
+using Presentation.Services.Results;
 
 namespace Presentation.Services;
 
 public interface IAuthApiClient
 {
-    Task<Result<LoginResponseDto>> LoginAsync(
-        LoginRequestDto dto);
+    Task<ApiResult<LoginResponse>> LoginAsync(
+        LoginRequest request,
+        CancellationToken cancellationToken = default);
 }

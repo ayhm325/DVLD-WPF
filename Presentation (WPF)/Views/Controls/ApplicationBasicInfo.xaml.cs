@@ -1,54 +1,51 @@
-﻿using Application.DTOs.ApplicationDTO;
+﻿using DVLD.Contracts.Application;
 using System.Windows;
 using System.Windows.Controls;
 
+namespace Presentation.Views.Controls;
 
-namespace Presentation.Views.Controls
+public partial class ApplicationBasicInfo : UserControl
 {
-    public partial class ApplicationBasicInfo : UserControl
+    public event Action<int>? OpenPersonRequested;
+
+    public ApplicationBasicInfo()
     {
-        public event Action<int>? OpenPersonRequested;
+        InitializeComponent();
+    }
 
-        public ApplicationBasicInfo()
+    public ApplicationBasicInfoResponse? Application
+    {
+        get => (ApplicationBasicInfoResponse?)GetValue(ApplicationProperty);
+        set => SetValue(ApplicationProperty, value);
+    }
+
+    public static readonly DependencyProperty ApplicationProperty =
+        DependencyProperty.Register(
+            nameof(Application),
+            typeof(ApplicationBasicInfoResponse),
+            typeof(ApplicationBasicInfo),
+            new PropertyMetadata(null, OnApplicationChanged));
+
+    private static void OnApplicationChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (d is ApplicationBasicInfo control)
         {
-            InitializeComponent();
+            // Reserved for future UI refresh logic.
         }
+    }
 
+    private void PersonInfoButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (Application is null)
+            return;
 
-        public ApplicationBasicInfoDto Application
-        {
-            get => (ApplicationBasicInfoDto)GetValue(ApplicationProperty);
-            set => SetValue(ApplicationProperty, value);
-        }
+        var personId = Application.ApplicantPersonId;
 
-        public static readonly DependencyProperty ApplicationProperty =
-            DependencyProperty.Register(
-                nameof(Application),
-                typeof(ApplicationBasicInfoDto),
-                typeof(ApplicationBasicInfo),
-                new PropertyMetadata(null, OnApplicationChanged)); 
+        if (personId == 0)
+            return;
 
-        private static void OnApplicationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            // هذا الجزء اختياري: يُستخدم إذا كنت تريد تنفيذ منطق برمجي 
-            // إضافي عند وصول بيانات جديدة للـ UserControl
-            if (d is ApplicationBasicInfo control)
-            {
-                // يمكنك هنا عمل Refresh للبيانات إذا لزم الأمر
-            }
-        }
-
-        private void PersonInfoButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (Application == null)
-                return;
-
-            var personId = Application.ApplicantPersonID;
-
-            if (personId == 0)
-                return;
-
-            OpenPersonRequested?.Invoke(personId);
-        }
+        OpenPersonRequested?.Invoke(personId);
     }
 }

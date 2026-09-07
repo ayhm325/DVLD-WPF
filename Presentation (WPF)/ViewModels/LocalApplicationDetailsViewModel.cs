@@ -1,87 +1,75 @@
-﻿using Application.DTOs.ApplicationDTO;
-using Application.DTOs.LocalDrivingLicenseApplicationDTO;
-using Application.DTOs.LicenseDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using DVLD.Contracts.Application;
+using DVLD.Contracts.License;
+using DVLD.Contracts.LocalDrivingLicenseApplication;
+using Presentation.Services.Api;
 using System.Windows;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class LocalApplicationDetailsViewModel : ObservableObject
 {
-    public partial class LocalApplicationDetailsViewModel
-        : ObservableObject
+    private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;
+    private readonly IApplicationsApiClient _applicationsApiClient;
+    private readonly ILicensesApiClient _licensesApiClient;
+
+    [ObservableProperty]
+    private ApplicationBasicInfoResponse? applicationInfo;
+
+    [ObservableProperty]
+    private LocalDrivingLicenseApplicationResponse? ldlAppInfo;
+
+    [ObservableProperty]
+    private LicenseResponse? licenseInfo;
+
+    public LocalApplicationDetailsViewModel(
+        ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
+        IApplicationsApiClient applicationsApiClient,
+        ILicensesApiClient licensesApiClient)
     {
-        private readonly ILocalDrivingLicenseApplicationService _localService;
-        private readonly IApplicationService _applicationService;
-        private readonly ILicenseService _licenseService;
+        _localApplicationsApiClient =
+            localApplicationsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(localApplicationsApiClient));
 
-        // =====================================================
-        // APPLICATION INFO
-        // =====================================================
+        _applicationsApiClient =
+            applicationsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(applicationsApiClient));
 
-        [ObservableProperty]
-        private ApplicationBasicInfoDto? applicationInfo;
+        _licensesApiClient =
+            licensesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(licensesApiClient));
+    }
 
-        // =====================================================
-        // LOCAL APPLICATION INFO
-        // =====================================================
+    public async Task LoadAsync(int localId)
+    {
+        ApplicationInfo = null;
+        LdlAppInfo = null;
+        LicenseInfo = null;
 
-        [ObservableProperty]
-        private LocalDrivingLicenseApplicationListDto? ldlAppInfo;
-
-        // =====================================================
-        // LICENSE INFO
-        // =====================================================
-
-        [ObservableProperty]
-        private LicenseDto? licenseInfo;
-
-        // =====================================================
-        // CONSTRUCTOR
-        // =====================================================
-
-        public LocalApplicationDetailsViewModel(
-            ILocalDrivingLicenseApplicationService localService,
-            IApplicationService applicationService,
-            ILicenseService licenseService)
+        if (localId <= 0)
         {
-            _localService =
-                localService
-                ?? throw new ArgumentNullException(
-                    nameof(localService));
+            MessageBox.Show(
+                "Invalid local application ID.",
+                "Application Details",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
 
-            _applicationService =
-                applicationService
-                ?? throw new ArgumentNullException(
-                    nameof(applicationService));
-
-            _licenseService =
-                licenseService
-                ?? throw new ArgumentNullException(
-                    nameof(licenseService));
+            return;
         }
 
-        // =====================================================
-        // LOAD
-        // =====================================================
-
-        public async Task LoadAsync(int localId)
+        try
         {
-            // =================================================
-            // RESET
-            // =================================================
+            var localAppResult =
+                await _localApplicationsApiClient
+                    .GetByIdAsync(localId);
 
-            ApplicationInfo = null;
-            LdlAppInfo = null;
-            LicenseInfo = null;
-
-            // =================================================
-            // VALIDATE
-            // =================================================
-
-            if (localId <= 0)
+            if (localAppResult.IsFailure)
             {
                 MessageBox.Show(
-                    "Invalid local application ID.",
+                    localAppResult.Error,
                     "Application Details",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -89,129 +77,72 @@ namespace Presentation.ViewModels
                 return;
             }
 
-            try
+            LdlAppInfo = localAppResult.Value;
+
+            var appIdResult =
+                await _localApplicationsApiClient
+                    .GetApplicationIdAsync(localId);
+
+            if (appIdResult.IsFailure)
             {
-                // =============================================
-                // GET LOCAL APPLICATION
-                // =============================================
-
-                var localAppResult =
-                    await _localService
-                        .GetLocalDrivingLicenseApplicationByIdAsync(
-                            localId);
-
-                if (localAppResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        localAppResult.Error,
-                        "Application Details",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    return;
-                }
-
-                LdlAppInfo =
-                    localAppResult.Value;
-
-                // =============================================
-                // GET APPLICATION ID
-                // =============================================
-
-                var appIdResult =
-                    await _localService
-                        .GetApplicationIdByLocalIdAsync(
-                            localId);
-
-                if (appIdResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        appIdResult.Error,
-                        "Application Details",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    return;
-                }
-
-                var applicationId =
-                    appIdResult.Value;
-
-                // =============================================
-                // GET BASIC APPLICATION INFO
-                // =============================================
-
-                var applicationResult =
-                    await _applicationService
-                        .GetBasicInfoAsync(
-                            applicationId);
-
-                if (applicationResult.IsFailure)
-                {
-                    MessageBox.Show(
-                        applicationResult.Error,
-                        "Application Details",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    return;
-                }
-
-                ApplicationInfo =
-                    applicationResult.Value;
-
-                // =============================================
-                // GET LICENSES FOR THIS APPLICATION
-                // =============================================
-
-                var licensesResult =
-                    await _licenseService
-                        .GetByApplicationIdAsync(
-                            applicationId);
-
-                if (licensesResult.IsFailure)
-                {
-                    LicenseInfo = null;
-
-                    return;
-                }
-
-                var licenses =
-                    licensesResult.Value
-                    ?? new List<LicenseDto>();
-
-                // =============================================
-                // FIND LICENSE FOR THIS REQUEST'S CLASS
-                // =============================================
-
-                LicenseInfo =
-                    licenses.FirstOrDefault(x =>
-                        x.LicenseClassID ==
-                        LdlAppInfo!.LicenseClassID);
-
-                // =============================================
-                // NO LICENSE
-                // =============================================
-
-                if (LicenseInfo is null)
-                {
-                    // This is not necessarily an error.
-                    // The application may not have a license yet.
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                ApplicationInfo = null;
-                LdlAppInfo = null;
-                LicenseInfo = null;
-
                 MessageBox.Show(
-                    ex.Message,
+                    appIdResult.Error,
                     "Application Details",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    MessageBoxImage.Warning);
+
+                return;
             }
+
+            var applicationId = appIdResult.Value;
+
+            var applicationResult =
+                await _applicationsApiClient
+                    .GetBasicInfoAsync(applicationId);
+
+            if (applicationResult.IsFailure)
+            {
+                MessageBox.Show(
+                    applicationResult.Error,
+                    "Application Details",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            ApplicationInfo = applicationResult.Value;
+
+            var licensesResult =
+                await _licensesApiClient
+                    .GetByApplicationIdAsync(applicationId);
+
+            if (licensesResult.IsFailure)
+            {
+                LicenseInfo = null;
+                return;
+            }
+
+            var licenses =
+                licensesResult.Value
+                ?? new List<LicenseResponse>();
+
+            LicenseInfo =
+                licenses.FirstOrDefault(x =>
+                    x.LicenseClassId ==
+                    LdlAppInfo!.LicenseClassId);
+        }
+        catch (Exception ex)
+        {
+            ApplicationInfo = null;
+            LdlAppInfo = null;
+            LicenseInfo = null;
+
+            MessageBox.Show(
+                ex.Message,
+                "Application Details",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 }

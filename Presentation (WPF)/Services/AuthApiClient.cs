@@ -1,6 +1,5 @@
-﻿using Application.Common.Results;
-using Application.DTOs.AuthDTO;
-using Application.DTOs.UserDTO;
+﻿using DVLD.Contracts.Auth;
+using Presentation.Services.Results;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -18,59 +17,43 @@ public sealed class AuthApiClient : IAuthApiClient
             ?? throw new ArgumentNullException(nameof(httpClient));
     }
 
-    public async Task<Result<LoginResponseDto>> LoginAsync(
-        LoginRequestDto dto)
+    public async Task<ApiResult<LoginResponse>> LoginAsync(
+        LoginRequest request,
+        CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(dto);
+        ArgumentNullException.ThrowIfNull(request);
 
         try
         {
-            using var response =
-                await _httpClient.PostAsJsonAsync(
-                    "api/auth/login",
-                    dto);
+            using var response = await _httpClient.PostAsJsonAsync(
+                "api/auth/login",
+                request,
+                cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
                 var result =
-                    await response.Content
-                        .ReadFromJsonAsync<LoginResponseDto>();
+                    await response.Content.ReadFromJsonAsync<LoginResponse>(
+                        cancellationToken);
 
                 return result is null
-                    ? Result<LoginResponseDto>.FromFailure(
+                    ? ApiResult<LoginResponse>.Failure(
                         "The API returned an empty response.")
-                    : Result<LoginResponseDto>.Success(result);
+                    : ApiResult<LoginResponse>.Success(result);
             }
 
-            var error =
-                await ExtractErrorMessageAsync(response);
+            var error = await ExtractErrorMessageAsync(response);
 
-            return response.StatusCode switch
-            {
-                HttpStatusCode.BadRequest =>
-                    Result<LoginResponseDto>.FromValidationFailure(error),
-
-                HttpStatusCode.Forbidden =>
-                    Result<LoginResponseDto>.FromForbidden(error),
-
-                HttpStatusCode.NotFound =>
-                    Result<LoginResponseDto>.FromNotFound(error),
-
-                HttpStatusCode.Conflict =>
-                    Result<LoginResponseDto>.FromConflict(error),
-
-                _ =>
-                    Result<LoginResponseDto>.FromFailure(error)
-            };
+            return ApiResult<LoginResponse>.Failure(error);
         }
         catch (HttpRequestException)
         {
-            return Result<LoginResponseDto>.FromFailure(
+            return ApiResult<LoginResponse>.Failure(
                 "Unable to connect to the DVLD API.");
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return Result<LoginResponseDto>.FromFailure(
+            return ApiResult<LoginResponse>.Failure(
                 "The request to the DVLD API timed out.");
         }
     }
@@ -78,8 +61,7 @@ public sealed class AuthApiClient : IAuthApiClient
     private static async Task<string> ExtractErrorMessageAsync(
         HttpResponseMessage response)
     {
-        var content =
-            await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync();
 
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -104,8 +86,7 @@ public sealed class AuthApiClient : IAuthApiClient
 
         try
         {
-            using var document =
-                JsonDocument.Parse(content);
+            using var document = JsonDocument.Parse(content);
 
             if (document.RootElement.TryGetProperty(
                     "error",

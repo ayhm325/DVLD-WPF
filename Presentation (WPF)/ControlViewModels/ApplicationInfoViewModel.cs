@@ -1,41 +1,31 @@
-﻿using Application.DTOs.ApplicationDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using DVLD_WPF;
-using Microsoft.Extensions.DependencyInjection;
-using Presentation.Views.Windows.Applications;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Presentation.Services.Api;
+using DVLD.Contracts.Application;
 
-namespace Presentation.ControlViewModels
+namespace Presentation.ControlViewModels;
+
+public partial class ApplicationInfoViewModel : ObservableObject
 {
-    public partial class ApplicationInfoViewModel : ObservableObject
+    private readonly IApplicationsApiClient _applicationsApiClient;
+
+    [ObservableProperty]
+    private ApplicationBasicInfoResponse? applicationInfo;
+
+    public ApplicationInfoViewModel(IApplicationsApiClient applicationsApiClient)
     {
-        private  readonly IApplicationService _applicationService;
+        _applicationsApiClient = applicationsApiClient;
+    }
 
-        [ObservableProperty]
-        private ApplicationBasicInfoDto? applicationInfo;
+    public async Task LoadAsync(
+        int applicationId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _applicationsApiClient.GetBasicInfoAsync(
+            applicationId,
+            cancellationToken);
 
-        public ApplicationInfoViewModel(IApplicationService applicationService)
-        {
-            _applicationService = applicationService;
-        }
-
-
-        public async Task LoadAsync(int applicationId)
-        {
-            var result = await _applicationService.GetBasicInfoAsync(applicationId);
-
-            if (result.IsFailure)
-            {
-                ApplicationInfo = null;
-                return;
-            }
-
-            ApplicationInfo = result.Value;
-        }
-
-
+        ApplicationInfo = result.IsSuccess
+            ? result.Value
+            : null;
     }
 }

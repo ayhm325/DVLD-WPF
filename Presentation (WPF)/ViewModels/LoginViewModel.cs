@@ -1,11 +1,10 @@
-﻿using Application.DTOs.AuthDTO;
-using Application.DTOs.UserDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.Auth;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services;
+using Presentation.Services.Api;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,12 +15,12 @@ namespace Presentation.ViewModels;
 public partial class LoginViewModel : ObservableObject
 {
     private readonly IAuthApiClient _authApiClient;
-    private readonly ICurrentUserService _currentUser;
+    private readonly ICurrentUserSession _currentUser;
     private readonly IServiceProvider _serviceProvider;
 
     public LoginViewModel(
         IAuthApiClient authApiClient,
-        ICurrentUserService currentUser,
+        ICurrentUserSession currentUser,
         IServiceProvider serviceProvider)
     {
         _authApiClient = authApiClient
@@ -66,14 +65,14 @@ public partial class LoginViewModel : ObservableObject
             return;
         }
 
-        var loginDto = new LoginRequestDto
+        var request = new LoginRequest
         {
             UserName = Username.Trim(),
             Password = Password
         };
 
         var loginResult =
-            await _authApiClient.LoginAsync(loginDto);
+            await _authApiClient.LoginAsync(request);
 
         if (loginResult.IsFailure)
         {
