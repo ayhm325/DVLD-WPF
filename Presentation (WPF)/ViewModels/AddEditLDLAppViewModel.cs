@@ -1,378 +1,381 @@
-﻿using Application.Common.Results;
-using Application.DTOs;
-using Application.DTOs.ApplicationDTO;
-using Application.DTOs.PersonDTO;
-using Application.DTOs.LocalDrivingLicenseApplicationDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.ApplicationType;
+using DVLD.Contracts.LicenseClass;
+using DVLD.Contracts.LocalDrivingLicenseApplication;
+using DVLD.Contracts.Person;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class AddEditLDLAppViewModel : ObservableObject
 {
-    public partial class AddEditLDLAppViewModel : ObservableObject
+    private const int FirstTimeLicenseApplicationTypeId = 1;
+
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILicenseClassesApiClient _licenseClassesApiClient;
+    private readonly IPeopleApiClient _peopleApiClient;
+    private readonly IApplicationTypesApiClient _applicationTypesApiClient;
+    private readonly ILocalDrivingLicenseApplicationsApiClient
+        _localApplicationsApiClient;
+    private readonly ICurrentUserSession _currentUserSession;
+    private readonly LDLAppViewModel _gridViewModel;
+
+    private ApplicationTypeResponse? _ldlApplicationType;
+
+    public AddEditLDLAppViewModel(
+        ILicenseClassesApiClient licenseClassesApiClient,
+        IPeopleApiClient peopleApiClient,
+        IApplicationTypesApiClient applicationTypesApiClient,
+        ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
+        ICurrentUserSession currentUserSession,
+        LDLAppViewModel gridViewModel,
+        IServiceProvider serviceProvider)
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILicenseClassService _licenseClassService;
-        private readonly IPersonService _personService;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IApplicationTypeService _applicationTypeService;
-        private readonly ILocalDrivingLicenseApplicationService _localDrivingLicenseApplicationService;
-        private readonly LDLAppViewModel _gridViewModel;
+        _licenseClassesApiClient =
+            licenseClassesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(licenseClassesApiClient));
 
-        private ApplicationTypeDto? _ldlApplicationType;
+        _peopleApiClient =
+            peopleApiClient
+            ?? throw new ArgumentNullException(
+                nameof(peopleApiClient));
 
-        public AddEditLDLAppViewModel(
-            ILicenseClassService licenseClassService,
-            IPersonService personService,
-            ICurrentUserService currentUserService,
-            IApplicationTypeService applicationTypeService,
-            ILocalDrivingLicenseApplicationService localDrivingLicenseApplicationService,
-            LDLAppViewModel gridViewModel,
-            IServiceProvider serviceProvider)
+        _applicationTypesApiClient =
+            applicationTypesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(applicationTypesApiClient));
+
+        _localApplicationsApiClient =
+            localApplicationsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(localApplicationsApiClient));
+
+        _currentUserSession =
+            currentUserSession
+            ?? throw new ArgumentNullException(
+                nameof(currentUserSession));
+
+        _gridViewModel =
+            gridViewModel
+            ?? throw new ArgumentNullException(
+                nameof(gridViewModel));
+
+        _serviceProvider =
+            serviceProvider
+            ?? throw new ArgumentNullException(
+                nameof(serviceProvider));
+
+        CreatedByUserID = _currentUserSession.UserId;
+        CreatedBy = _currentUserSession.Username;
+    }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private PersonResponse? person;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private LicenseClassResponse? selectedLicenseClass;
+
+    [ObservableProperty]
+    private int applicationId;
+
+    [ObservableProperty]
+    private DateTime applicationDate = DateTime.Now;
+
+    [ObservableProperty]
+    private string createdBy = string.Empty;
+
+    [ObservableProperty]
+    private int createdByUserID;
+
+    [ObservableProperty]
+    private string filterText = string.Empty;
+
+    [ObservableProperty]
+    private int selectedFilterIndex;
+
+    [ObservableProperty]
+    private decimal applicationTypeFees;
+
+    public ObservableCollection<LicenseClassResponse> LicenseClasses { get; }
+        = [];
+
+    public int SelectedLicenseClassId =>
+        SelectedLicenseClass?.LicenseClassId ?? 0;
+
+    private bool CanSave()
+    {
+        return Person != null
+               && SelectedLicenseClass != null
+               && _ldlApplicationType != null;
+    }
+
+    public async Task InitializeAsync()
+    {
+        await LoadLicenseClassesAsync();
+        await LoadApplicationTypeAsync();
+    }
+
+    private async Task LoadLicenseClassesAsync()
+    {
+        try
         {
-            _licenseClassService =
-                licenseClassService
-                ?? throw new ArgumentNullException(nameof(licenseClassService));
+            var result =
+                await _licenseClassesApiClient
+                    .GetAllAsync();
 
-            _personService =
-                personService
-                ?? throw new ArgumentNullException(nameof(personService));
-
-            _currentUserService =
-                currentUserService
-                ?? throw new ArgumentNullException(nameof(currentUserService));
-
-            _applicationTypeService =
-                applicationTypeService
-                ?? throw new ArgumentNullException(nameof(applicationTypeService));
-
-            _localDrivingLicenseApplicationService =
-                localDrivingLicenseApplicationService
-                ?? throw new ArgumentNullException(
-                    nameof(localDrivingLicenseApplicationService));
-
-            _gridViewModel =
-                gridViewModel
-                ?? throw new ArgumentNullException(nameof(gridViewModel));
-
-            _serviceProvider =
-                serviceProvider
-                ?? throw new ArgumentNullException(nameof(serviceProvider));
-
-            CreatedByUserID = _currentUserService.UserId;
-            CreatedBy = _currentUserService.Username;
-        }
-
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-        private PersonDto? person;
-
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-        private LicenseClassDto? selectedLicenseClass;
-
-        [ObservableProperty]
-        private int applicationId;
-
-        [ObservableProperty]
-        private DateTime applicationDate = DateTime.Now;
-
-        [ObservableProperty]
-        private string createdBy = string.Empty;
-
-        [ObservableProperty]
-        private int createdByUserID;
-
-        [ObservableProperty]
-        private string filterText = string.Empty;
-
-        [ObservableProperty]
-        private int selectedFilterIndex;
-
-        [ObservableProperty]
-        private decimal applicationTypeFees;
-
-        public ObservableCollection<LicenseClassDto> LicenseClasses { get; } = new();
-
-        public int SelectedLicenseClassId =>
-            SelectedLicenseClass?.LicenseClassID ?? 0;
-
-        private bool CanSave()
-        {
-            return Person != null
-                   && SelectedLicenseClass != null
-                   && _ldlApplicationType != null;
-        }
-
-        public async Task InitializeAsync()
-        {
-            await LoadLicenseClassesAsync();
-            await LoadApplicationTypeAsync();
-        }
-
-        private async Task LoadLicenseClassesAsync()
-        {
-            try
+            if (result.IsFailure)
             {
-                var result =
-                    await _licenseClassService
-                        .GetAllLicenseClassesAsync();
-
-                if (result.IsFailure)
-                {
-                    MessageBox.Show(
-                        result.Error,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-
-                    return;
-                }
-
-                LicenseClasses.Clear();
-
-                if (result.Value != null)
-                {
-                    foreach (var licenseClass in result.Value)
-                    {
-                        LicenseClasses.Add(licenseClass);
-                    }
-                }
-
-                SelectedLicenseClass =
-                    LicenseClasses.Count > 0
-                        ? LicenseClasses[0]
-                        : null;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    $"Failed to load license classes.\n\n{ex.Message}",
+                Show(
+                    result.Error,
                     "Error",
-                    MessageBoxButton.OK,
                     MessageBoxImage.Error);
+
+                return;
             }
+
+            LicenseClasses.Clear();
+
+            if (result.Value is not null)
+            {
+                foreach (var licenseClass in result.Value)
+                    LicenseClasses.Add(licenseClass);
+            }
+
+            SelectedLicenseClass =
+                LicenseClasses.Count > 0
+                    ? LicenseClasses[0]
+                    : null;
         }
-
-        private async Task LoadApplicationTypeAsync()
+        catch (Exception ex)
         {
-            try
+            Show(
+                $"Failed to load license classes.\n\n{ex.Message}",
+                "Error",
+                MessageBoxImage.Error);
+        }
+    }
+
+    private async Task LoadApplicationTypeAsync()
+    {
+        try
+        {
+            var result =
+                await _applicationTypesApiClient
+                    .GetByIdAsync(
+                        FirstTimeLicenseApplicationTypeId);
+
+            if (result.IsFailure)
             {
-                var result =
-                    await _applicationTypeService
-                        .GetApplicationTypeByIdAsync(1);
-
-                if (result.IsFailure)
-                {
-                    MessageBox.Show(
-                        result.Error,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-
-                    return;
-                }
-
-                _ldlApplicationType = result.Value;
-
-                if (_ldlApplicationType != null)
-                {
-                    ApplicationTypeFees =
-                        _ldlApplicationType.ApplicationTypeFees;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    $"Failed to load application type.\n\n{ex.Message}",
+                Show(
+                    result.Error,
                     "Error",
-                    MessageBoxButton.OK,
                     MessageBoxImage.Error);
+
+                return;
             }
+
+            _ldlApplicationType = result.Value;
+
+            if (_ldlApplicationType is not null)
+            {
+                ApplicationTypeFees =
+                    _ldlApplicationType.ApplicationTypeFees;
+            }
+
+            SaveCommand.NotifyCanExecuteChanged();
+        }
+        catch (Exception ex)
+        {
+            Show(
+                $"Failed to load application type.\n\n{ex.Message}",
+                "Error",
+                MessageBoxImage.Error);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSave))]
+    private async Task Save()
+    {
+        if (Person is null)
+        {
+            Show(
+                "Please select a person first.",
+                "Validation",
+                MessageBoxImage.Warning);
+
+            return;
         }
 
-        [RelayCommand(CanExecute = nameof(CanSave))]
-        private async Task Save()
+        if (SelectedLicenseClass is null)
         {
-            if (Person == null)
+            Show(
+                "Please select a license class.",
+                "Validation",
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        if (_ldlApplicationType is null)
+        {
+            Show(
+                "Application type is not loaded.",
+                "Error",
+                MessageBoxImage.Error);
+
+            return;
+        }
+
+        try
+        {
+            var request =
+                new CreateLocalDrivingLicenseApplicationRequest
+                {
+                    ApplicantPersonId =
+                        Person.PersonId,
+
+                    ApplicationTypeId =
+                        _ldlApplicationType.ApplicationTypeId,
+
+                    LicenseClassId =
+                        SelectedLicenseClass.LicenseClassId
+                };
+
+            var result =
+                await _localApplicationsApiClient
+                    .CreateAsync(request);
+
+            if (result.IsFailure)
             {
-                MessageBox.Show(
-                    "Please select a person first.",
-                    "Validation",
-                    MessageBoxButton.OK,
+                Show(
+                    result.Error,
+                    "Error",
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            ApplicationId = result.Value;
+
+            if (ApplicationId <= 0)
+            {
+                Show(
+                    "Failed to create the application.",
+                    "Error",
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            Show(
+                "The application has been successfully created " +
+                "and saved to the system.\n\n" +
+                $"ID: {ApplicationId}",
+                "Success",
+                MessageBoxImage.Information);
+
+            await _gridViewModel.LoadApplicationsAsync();
+        }
+        catch (Exception ex)
+        {
+            Show(
+                "An unexpected error occurred while saving " +
+                $"the application.\n\n{ex.Message}",
+                "Error",
+                MessageBoxImage.Error);
+        }
+    }
+
+    [RelayCommand]
+    private async Task Search()
+    {
+        if (string.IsNullOrWhiteSpace(FilterText))
+            return;
+
+        try
+        {
+            var result =
+                SelectedFilterIndex == 0
+                    ? await SearchByIdAsync()
+                    : await _peopleApiClient
+                        .GetByNationalNoAsync(
+                            FilterText.Trim());
+
+            if (result.IsFailure)
+            {
+                Show(
+                    result.Error,
+                    "Person Not Found",
                     MessageBoxImage.Warning);
 
                 return;
             }
 
-            if (SelectedLicenseClass == null)
-            {
-                MessageBox.Show(
-                    "Please select a license class.",
-                    "Validation",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            if (_ldlApplicationType == null)
-            {
-                MessageBox.Show(
-                    "Application type is not loaded.",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
-            try
-            {
-                var newApplication =
-                    new CreateApplicationDto
-                    {
-                        ApplicantPersonID =
-                            Person.PersonId,
-
-                        ApplicationTypeID =
-                            _ldlApplicationType.ApplicationTypeId
-                    };
-
-                var newLDLApplication =
-                    new CreateLocalDrivingLicenseApplicationDto
-                    {
-                        ApplicationID = 0,
-                        LicenseClassID =
-                            SelectedLicenseClass.LicenseClassID
-                    };
-
-                var result =
-                    await _localDrivingLicenseApplicationService
-                        .CreateLocalDrivingLicenseApplicationAsync(
-                            newApplication,
-                            newLDLApplication);
-
-                if (result.IsFailure)
-                {
-                    MessageBox.Show(
-                        result.Error,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-
-                    return;
-                }
-
-                ApplicationId = result.Value;
-
-                if (ApplicationId <= 0)
-                {
-                    MessageBox.Show(
-                        "Failed to create the application.",
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-
-                    return;
-                }
-
-                MessageBox.Show(
-                    $"The application has been successfully created and saved to the system.\n\n" +
-                    $"ID: {ApplicationId}",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-
-                await _gridViewModel.LoadApplicationsAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    $"An unexpected error occurred while saving the application.\n\n" +
-                    $"{ex.Message}",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
+            Person = result.Value;
         }
-
-        [RelayCommand]
-        private async Task Search()
+        catch (Exception ex)
         {
-            if (string.IsNullOrWhiteSpace(FilterText))
-                return;
-
-            try
-            {
-                Result<PersonDto> result;
-
-                if (SelectedFilterIndex == 0)
-                {
-                    if (!int.TryParse(
-                            FilterText,
-                            out int personId))
-                    {
-                        MessageBox.Show(
-                            "Please enter a valid Person ID.",
-                            "Invalid ID",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
-
-                        return;
-                    }
-
-                    result =
-                        await _personService
-                            .GetPersonByIdAsync(personId);
-                }
-                else
-                {
-                    result =
-                        await _personService
-                            .GetPersonByNationalNoAsync(
-                                FilterText.Trim());
-                }
-
-                if (result.IsFailure)
-                {
-                    MessageBox.Show(
-                        result.Error,
-                        "Person Not Found",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    return;
-                }
-
-                Person = result.Value;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    $"An error occurred while searching.\n\n{ex.Message}",
-                    "Search Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
+            Show(
+                $"An error occurred while searching.\n\n{ex.Message}",
+                "Search Error",
+                MessageBoxImage.Error);
         }
+    }
 
-        [RelayCommand]
-        private void AddPerson()
+    private async Task<
+        Presentation.Services.Results.ApiResult<PersonResponse>>
+        SearchByIdAsync()
+    {
+        if (!int.TryParse(
+                FilterText,
+                out var personId))
         {
-            var window =
-                _serviceProvider
-                    .GetRequiredService<AddEditPersonWin>();
-
-            window.Owner =
-                App.Current.MainWindow;
-
-            window.ShowDialog();
+            return Presentation.Services.Results.ApiResult<PersonResponse>
+                .Failure("Please enter a valid Person ID.");
         }
+
+        return await _peopleApiClient
+            .GetByIdAsync(personId);
+    }
+
+    [RelayCommand]
+    private void AddPerson()
+    {
+        var window =
+            _serviceProvider
+                .GetRequiredService<AddEditPersonWin>();
+
+        window.Owner =
+            App.Current.MainWindow;
+
+        window.ShowDialog();
+    }
+
+    partial void OnSelectedLicenseClassChanged(
+        LicenseClassResponse? value)
+    {
+        OnPropertyChanged(nameof(SelectedLicenseClassId));
+    }
+
+    private static void Show(
+        string message,
+        string title,
+        MessageBoxImage image)
+    {
+        MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.OK,
+            image);
     }
 }

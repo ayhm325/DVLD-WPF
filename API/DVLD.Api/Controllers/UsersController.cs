@@ -1,6 +1,7 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
+using DVLD.Contracts.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +19,13 @@ public sealed class UsersController(
         var result =
             await service.GetAllUsersAsync();
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return Ok(
+            result.Value!
+                .Select(MapToResponse)
+                .ToList());
     }
 
     [HttpGet("{id:int}")]
@@ -29,9 +34,11 @@ public sealed class UsersController(
         var result =
             await service.GetUserByIdAsync(id);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return Ok(
+            MapToResponse(result.Value!));
     }
 
     [HttpGet("person/{personId:int}")]
@@ -39,12 +46,13 @@ public sealed class UsersController(
         int personId)
     {
         var result =
-            await service.GetUserByPersonIdAsync(
-                personId);
+            await service.GetUserByPersonIdAsync(personId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return Ok(
+            MapToResponse(result.Value!));
     }
 
     [HttpGet("username/{username}")]
@@ -52,18 +60,27 @@ public sealed class UsersController(
         string username)
     {
         var result =
-            await service.GetUserByUsernameAsync(
-                username);
+            await service.GetUserByUsernameAsync(username);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return Ok(
+            MapToResponse(result.Value!));
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] CreateUserDto dto)
+        [FromBody] CreateUserRequest request)
     {
+        var dto = new CreateUserDto
+        {
+            PersonId = request.PersonId,
+            UserName = request.UserName,
+            Password = request.Password,
+            IsActive = request.IsActive
+        };
+
         var result =
             await service.AddUserAsync(dto);
 
@@ -79,16 +96,22 @@ public sealed class UsersController(
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] UpdateUserDto dto)
+        [FromBody] UpdateUserRequest request)
     {
-        var result =
-            await service.UpdateUserAsync(
-                id,
-                dto);
+        var dto = new UpdateUserDto
+        {
+            PersonId = request.PersonId,
+            UserName = request.UserName,
+            IsActive = request.IsActive
+        };
 
-        return result.IsSuccess
-            ? NoContent()
-            : HandleFailure(result);
+        var result =
+            await service.UpdateUserAsync(id, dto);
+
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return NoContent();
     }
 
     [HttpDelete("{id:int}")]
@@ -97,10 +120,20 @@ public sealed class UsersController(
         var result =
             await service.DeleteUserAsync(id);
 
-        return result.IsSuccess
-            ? NoContent()
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return NoContent();
     }
+
+    private static UserResponse MapToResponse(
+        UserDto dto) =>
+        new(
+            UserId: dto.UserId,
+            PersonId: dto.PersonId,
+            UserName: dto.UserName,
+            IsActive: dto.IsActive,
+            PersonFullName: dto.FullName);
 
     private static IActionResult HandleFailure(
         Result result)
