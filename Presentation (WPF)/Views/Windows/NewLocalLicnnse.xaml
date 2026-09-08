@@ -129,7 +129,7 @@
                                            Margin="0,0,16,0"/>
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="2"
-                                           Text="{Binding ApplicationId}"
+                                           Text="{Binding LocalApplicationId}"
                                            Style="{StaticResource ValueTextStyle}"
                                            VerticalAlignment="Center"/>
 
@@ -213,7 +213,7 @@
                                            Margin="0,12,16,0"/>
                                 <TextBlock Grid.Row="3"
                                            Grid.Column="2"
-                                           Text="{Binding ApplicationTypeFees, StringFormat='{}{0:F2}'}"
+                                           Text="{Binding ApplicationFees, StringFormat='{}{0:F2}'}"
                                            Style="{StaticResource ValueTextStyle}"
                                            VerticalAlignment="Center"
                                            Margin="0,12,0,0"/>

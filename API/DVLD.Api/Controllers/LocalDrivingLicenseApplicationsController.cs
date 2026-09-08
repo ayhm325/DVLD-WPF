@@ -1,5 +1,4 @@
 ﻿using Application.Common.Results;
-using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
@@ -72,6 +71,20 @@ public sealed class LocalDrivingLicenseApplicationsController(
             : HandleFailure(result);
     }
 
+    [HttpGet("create-info")]
+    public async Task<IActionResult> GetCreateInfo()
+    {
+        var result =
+            await service.GetNewLocalDrivingLicenseApplicationFeesAsync();
+
+        return result.IsSuccess
+            ? Ok(new CreateLocalDrivingLicenseApplicationInfoResponse
+            {
+                ApplicationFees = result.Value
+            })
+            : HandleFailure(result);
+    }
+
     [HttpGet("{localId:int}/application-id")]
     public async Task<IActionResult> GetApplicationId(int localId)
     {
@@ -87,32 +100,20 @@ public sealed class LocalDrivingLicenseApplicationsController(
     public async Task<IActionResult> Create(
         [FromBody] CreateLocalDrivingLicenseApplicationRequest request)
     {
-        var applicationDto = new CreateApplicationDto
-        {
-            ApplicantPersonID = request.ApplicantPersonId,
-            ApplicationTypeID = request.ApplicationTypeId
-        };
-
-        var localApplicationDto = new CreateLocalDrivingLicenseApplicationDto
-        {
-            ApplicationID = 0,
-            LicenseClassID = request.LicenseClassId
-        };
-
-        var applicationResult =
+        var result =
             await service.CreateLocalDrivingLicenseApplicationAsync(
-                applicationDto,
-                localApplicationDto);
+                request.ApplicantPersonId,
+                request.LicenseClassId);
 
-        if (applicationResult.IsFailure)
-            return HandleFailure(applicationResult);
+        if (result.IsFailure)
+            return HandleFailure(result);
 
         return CreatedAtAction(
             nameof(GetById),
-            new { id = applicationResult.Value },
-            new
+            new { id = result.Value },
+            new CreateLocalDrivingLicenseApplicationResponse
             {
-                localApplicationId = applicationResult.Value
+                LocalDrivingLicenseApplicationId = result.Value
             });
     }
 
@@ -127,7 +128,9 @@ public sealed class LocalDrivingLicenseApplicationsController(
         };
 
         var result =
-            await service.UpdateLocalDrivingLicenseApplicationAsync(id, dto);
+            await service.UpdateLocalDrivingLicenseApplicationAsync(
+                id,
+                dto);
 
         return result.IsSuccess
             ? NoContent()
@@ -147,8 +150,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
 
     private static LocalDrivingLicenseApplicationResponse Map(
         LocalDrivingLicenseApplicationListDto dto)
-    {
-        return new LocalDrivingLicenseApplicationResponse
+        => new()
         {
             LocalDrivingLicenseApplicationId =
                 dto.LocalDrivingLicenseApplicationID,
@@ -186,11 +188,9 @@ public sealed class LocalDrivingLicenseApplicationsController(
             ApplicantPersonId =
                 dto.ApplicantPersonID
         };
-    }
 
     private IActionResult HandleFailure<T>(Result<T> result)
-    {
-        return result.ErrorType switch
+        => result.ErrorType switch
         {
             ErrorType.NotFound =>
                 NotFound(new { error = result.Error }),
@@ -199,7 +199,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
                 BadRequest(new { error = result.Error }),
 
             ErrorType.Conflict =>
-                Conflict(new { error = result.Error }),           
+                Conflict(new { error = result.Error }),
 
             ErrorType.Forbidden =>
                 Forbid(),
@@ -209,11 +209,9 @@ public sealed class LocalDrivingLicenseApplicationsController(
                     StatusCodes.Status500InternalServerError,
                     new { error = result.Error })
         };
-    }
 
     private IActionResult HandleFailure(Result result)
-    {
-        return result.ErrorType switch
+        => result.ErrorType switch
         {
             ErrorType.NotFound =>
                 NotFound(new { error = result.Error }),
@@ -222,7 +220,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
                 BadRequest(new { error = result.Error }),
 
             ErrorType.Conflict =>
-                Conflict(new { error = result.Error }),            
+                Conflict(new { error = result.Error }),
 
             ErrorType.Forbidden =>
                 Forbid(),
@@ -232,5 +230,4 @@ public sealed class LocalDrivingLicenseApplicationsController(
                     StatusCodes.Status500InternalServerError,
                     new { error = result.Error })
         };
-    }
 }

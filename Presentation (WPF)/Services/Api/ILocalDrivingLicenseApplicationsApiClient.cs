@@ -33,6 +33,10 @@ public interface ILocalDrivingLicenseApplicationsApiClient
             int localApplicationId,
             CancellationToken cancellationToken = default);
 
+    Task<ApiResult<CreateLocalDrivingLicenseApplicationInfoResponse>>
+        GetCreateInfoAsync(
+            CancellationToken cancellationToken = default);
+
     Task<ApiResult<int>>
         CreateAsync(
             CreateLocalDrivingLicenseApplicationRequest request,

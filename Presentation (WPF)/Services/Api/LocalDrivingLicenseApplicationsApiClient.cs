@@ -54,12 +54,17 @@ public sealed class LocalDrivingLicenseApplicationsApiClient(
                 $"api/localdrivinglicenseapplications/{localApplicationId}/application-id",
                 cancellationToken);
 
-        if (result.IsFailure)
-            return ApiResult<int>.Failure(result.Error);
-
-        return ApiResult<int>.Success(
-            result.Value!.ApplicationId);
+        return result.IsFailure
+            ? ApiResult<int>.Failure(result.Error)
+            : ApiResult<int>.Success(result.Value!.ApplicationId);
     }
+
+    public Task<ApiResult<CreateLocalDrivingLicenseApplicationInfoResponse>>
+        GetCreateInfoAsync(
+            CancellationToken cancellationToken = default)
+        => apiClient.GetAsync<CreateLocalDrivingLicenseApplicationInfoResponse>(
+            "api/localdrivinglicenseapplications/create-info",
+            cancellationToken);
 
     public async Task<ApiResult<int>>
         CreateAsync(
@@ -74,11 +79,10 @@ public sealed class LocalDrivingLicenseApplicationsApiClient(
                 request,
                 cancellationToken);
 
-        if (result.IsFailure)
-            return ApiResult<int>.Failure(result.Error);
-
-        return ApiResult<int>.Success(
-            result.Value!.LocalDrivingLicenseApplicationId);
+        return result.IsFailure
+            ? ApiResult<int>.Failure(result.Error)
+            : ApiResult<int>.Success(
+                result.Value!.LocalDrivingLicenseApplicationId);
     }
 
     public Task<ApiResult>

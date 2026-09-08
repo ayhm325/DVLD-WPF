@@ -1,12 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using DVLD.Contracts.ApplicationType;
 using DVLD.Contracts.LicenseClass;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
 using DVLD.Contracts.Person;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
-using Presentation.Services;
 using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
@@ -16,25 +14,17 @@ namespace Presentation.ViewModels;
 
 public partial class AddEditLDLAppViewModel : ObservableObject
 {
-    private const int FirstTimeLicenseApplicationTypeId = 1;
-
     private readonly IServiceProvider _serviceProvider;
     private readonly ILicenseClassesApiClient _licenseClassesApiClient;
     private readonly IPeopleApiClient _peopleApiClient;
-    private readonly IApplicationTypesApiClient _applicationTypesApiClient;
     private readonly ILocalDrivingLicenseApplicationsApiClient
         _localApplicationsApiClient;
-    private readonly ICurrentUserSession _currentUserSession;
     private readonly LDLAppViewModel _gridViewModel;
-
-    private ApplicationTypeResponse? _ldlApplicationType;
 
     public AddEditLDLAppViewModel(
         ILicenseClassesApiClient licenseClassesApiClient,
         IPeopleApiClient peopleApiClient,
-        IApplicationTypesApiClient applicationTypesApiClient,
         ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
-        ICurrentUserSession currentUserSession,
         LDLAppViewModel gridViewModel,
         IServiceProvider serviceProvider)
     {
@@ -48,20 +38,10 @@ public partial class AddEditLDLAppViewModel : ObservableObject
             ?? throw new ArgumentNullException(
                 nameof(peopleApiClient));
 
-        _applicationTypesApiClient =
-            applicationTypesApiClient
-            ?? throw new ArgumentNullException(
-                nameof(applicationTypesApiClient));
-
         _localApplicationsApiClient =
             localApplicationsApiClient
             ?? throw new ArgumentNullException(
                 nameof(localApplicationsApiClient));
-
-        _currentUserSession =
-            currentUserSession
-            ?? throw new ArgumentNullException(
-                nameof(currentUserSession));
 
         _gridViewModel =
             gridViewModel
@@ -72,9 +52,6 @@ public partial class AddEditLDLAppViewModel : ObservableObject
             serviceProvider
             ?? throw new ArgumentNullException(
                 nameof(serviceProvider));
-
-        CreatedByUserID = _currentUserSession.UserId;
-        CreatedBy = _currentUserSession.Username;
     }
 
     [ObservableProperty]
@@ -86,16 +63,10 @@ public partial class AddEditLDLAppViewModel : ObservableObject
     private LicenseClassResponse? selectedLicenseClass;
 
     [ObservableProperty]
-    private int applicationId;
+    private int localApplicationId;
 
     [ObservableProperty]
     private DateTime applicationDate = DateTime.Now;
-
-    [ObservableProperty]
-    private string createdBy = string.Empty;
-
-    [ObservableProperty]
-    private int createdByUserID;
 
     [ObservableProperty]
     private string filterText = string.Empty;
@@ -104,7 +75,7 @@ public partial class AddEditLDLAppViewModel : ObservableObject
     private int selectedFilterIndex;
 
     [ObservableProperty]
-    private decimal applicationTypeFees;
+    private decimal applicationFees;
 
     public ObservableCollection<LicenseClassResponse> LicenseClasses { get; }
         = [];
@@ -113,16 +84,12 @@ public partial class AddEditLDLAppViewModel : ObservableObject
         SelectedLicenseClass?.LicenseClassId ?? 0;
 
     private bool CanSave()
-    {
-        return Person != null
-               && SelectedLicenseClass != null
-               && _ldlApplicationType != null;
-    }
+        => Person != null && SelectedLicenseClass != null;
 
     public async Task InitializeAsync()
     {
         await LoadLicenseClassesAsync();
-        await LoadApplicationTypeAsync();
+        await LoadCreateInfoAsync();
     }
 
     private async Task LoadLicenseClassesAsync()
@@ -130,8 +97,7 @@ public partial class AddEditLDLAppViewModel : ObservableObject
         try
         {
             var result =
-                await _licenseClassesApiClient
-                    .GetAllAsync();
+                await _licenseClassesApiClient.GetAllAsync();
 
             if (result.IsFailure)
             {
@@ -165,14 +131,13 @@ public partial class AddEditLDLAppViewModel : ObservableObject
         }
     }
 
-    private async Task LoadApplicationTypeAsync()
+    private async Task LoadCreateInfoAsync()
     {
         try
         {
             var result =
-                await _applicationTypesApiClient
-                    .GetByIdAsync(
-                        FirstTimeLicenseApplicationTypeId);
+                await _localApplicationsApiClient
+                    .GetCreateInfoAsync();
 
             if (result.IsFailure)
             {
@@ -184,20 +149,13 @@ public partial class AddEditLDLAppViewModel : ObservableObject
                 return;
             }
 
-            _ldlApplicationType = result.Value;
-
-            if (_ldlApplicationType is not null)
-            {
-                ApplicationTypeFees =
-                    _ldlApplicationType.ApplicationTypeFees;
-            }
-
-            SaveCommand.NotifyCanExecuteChanged();
+            ApplicationFees =
+                result.Value?.ApplicationFees ?? 0;
         }
         catch (Exception ex)
         {
             Show(
-                $"Failed to load application type.\n\n{ex.Message}",
+                $"Failed to load application information.\n\n{ex.Message}",
                 "Error",
                 MessageBoxImage.Error);
         }
@@ -226,16 +184,6 @@ public partial class AddEditLDLAppViewModel : ObservableObject
             return;
         }
 
-        if (_ldlApplicationType is null)
-        {
-            Show(
-                "Application type is not loaded.",
-                "Error",
-                MessageBoxImage.Error);
-
-            return;
-        }
-
         try
         {
             var request =
@@ -243,9 +191,6 @@ public partial class AddEditLDLAppViewModel : ObservableObject
                 {
                     ApplicantPersonId =
                         Person.PersonId,
-
-                    ApplicationTypeId =
-                        _ldlApplicationType.ApplicationTypeId,
 
                     LicenseClassId =
                         SelectedLicenseClass.LicenseClassId
@@ -265,9 +210,9 @@ public partial class AddEditLDLAppViewModel : ObservableObject
                 return;
             }
 
-            ApplicationId = result.Value;
+            LocalApplicationId = result.Value;
 
-            if (ApplicationId <= 0)
+            if (LocalApplicationId <= 0)
             {
                 Show(
                     "Failed to create the application.",
@@ -280,7 +225,7 @@ public partial class AddEditLDLAppViewModel : ObservableObject
             Show(
                 "The application has been successfully created " +
                 "and saved to the system.\n\n" +
-                $"ID: {ApplicationId}",
+                $"ID: {LocalApplicationId}",
                 "Success",
                 MessageBoxImage.Information);
 
@@ -307,9 +252,8 @@ public partial class AddEditLDLAppViewModel : ObservableObject
             var result =
                 SelectedFilterIndex == 0
                     ? await SearchByIdAsync()
-                    : await _peopleApiClient
-                        .GetByNationalNoAsync(
-                            FilterText.Trim());
+                    : await _peopleApiClient.GetByNationalNoAsync(
+                        FilterText.Trim());
 
             if (result.IsFailure)
             {
@@ -344,8 +288,7 @@ public partial class AddEditLDLAppViewModel : ObservableObject
                 .Failure("Please enter a valid Person ID.");
         }
 
-        return await _peopleApiClient
-            .GetByIdAsync(personId);
+        return await _peopleApiClient.GetByIdAsync(personId);
     }
 
     [RelayCommand]
@@ -363,19 +306,15 @@ public partial class AddEditLDLAppViewModel : ObservableObject
 
     partial void OnSelectedLicenseClassChanged(
         LicenseClassResponse? value)
-    {
-        OnPropertyChanged(nameof(SelectedLicenseClassId));
-    }
+        => OnPropertyChanged(nameof(SelectedLicenseClassId));
 
     private static void Show(
         string message,
         string title,
         MessageBoxImage image)
-    {
-        MessageBox.Show(
+        => MessageBox.Show(
             message,
             title,
             MessageBoxButton.OK,
             image);
-    }
 }
