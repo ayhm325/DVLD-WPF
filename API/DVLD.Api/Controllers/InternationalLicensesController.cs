@@ -2,8 +2,8 @@
 using Application.DTOs.InternationalLicenseDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
-using DVLD.Contracts.License;
 using DVLD.Contracts.InternationalLicense;
+using DVLD.Contracts.License;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,27 +24,36 @@ public sealed class InternationalLicensesController(
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
+        var response =
+            result.Value!
+                .Select(MapToResponse)
+                .ToList();
 
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet("{internationalLicenseId:int}")]
+    public async Task<IActionResult> GetById(
+        int internationalLicenseId)
     {
         var result =
-            await service.GetByIdAsync(id);
+            await service.GetByIdAsync(
+                internationalLicenseId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
         if (result.Value is null)
+        {
             return NotFound(
-                new { error = "International license not found." });
+                new
+                {
+                    error = "International license not found."
+                });
+        }
 
-        return Ok(MapToResponse(result.Value));
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpGet("driver/{driverId:int}")]
@@ -52,14 +61,16 @@ public sealed class InternationalLicensesController(
         int driverId)
     {
         var result =
-            await service.GetByDriverIdAsync(driverId);
+            await service.GetByDriverIdAsync(
+                driverId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
+        var response =
+            result.Value!
+                .Select(MapToResponse)
+                .ToList();
 
         return Ok(response);
     }
@@ -69,31 +80,40 @@ public sealed class InternationalLicensesController(
         int applicationId)
     {
         var result =
-            await service.GetByApplicationIdAsync(applicationId);
+            await service.GetByApplicationIdAsync(
+                applicationId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
         if (result.Value is null)
+        {
             return NotFound(
-                new { error = "International license not found." });
+                new
+                {
+                    error = "International license not found."
+                });
+        }
 
-        return Ok(MapToResponse(result.Value));
+        return Ok(
+            MapToResponse(result.Value));
     }
 
-    [HttpGet("local-license/{localLicenseId:int}")]
+    [HttpGet("license/{localLicenseId:int}")]
     public async Task<IActionResult> GetByLocalLicenseId(
         int localLicenseId)
     {
         var result =
-            await service.GetByLocalLicenseIdAsync(localLicenseId);
+            await service.GetByLocalLicenseIdAsync(
+                localLicenseId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
+        var response =
+            result.Value!
+                .Select(MapToResponse)
+                .ToList();
 
         return Ok(response);
     }
@@ -103,16 +123,23 @@ public sealed class InternationalLicensesController(
         int licenseId)
     {
         var result =
-            await service.GetLocalLicenseInfoAsync(licenseId);
+            await service.GetLocalLicenseInfoAsync(
+                licenseId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
         if (result.Value is null)
+        {
             return NotFound(
-                new { error = "License not found." });
+                new
+                {
+                    error = "License not found."
+                });
+        }
 
-        return Ok(MapToResponse(result.Value));
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpPost]
@@ -126,10 +153,27 @@ public sealed class InternationalLicensesController(
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(new
+        var internationalLicenseResult =
+            await service.GetByIdAsync(
+                result.Value);
+
+        if (internationalLicenseResult.IsFailure)
+            return HandleFailure(
+                internationalLicenseResult);
+
+        if (internationalLicenseResult.Value is null)
         {
-            internationalLicenseId = result.Value
-        });
+            return NotFound(
+                new
+                {
+                    error =
+                        "International license was issued but could not be retrieved."
+                });
+        }
+
+        return Ok(
+            MapToResponse(
+                internationalLicenseResult.Value));
     }
 
     private static InternationalLicenseResponse MapToResponse(
@@ -249,19 +293,31 @@ public sealed class InternationalLicensesController(
         {
             ErrorType.Validation =>
                 new BadRequestObjectResult(
-                    new { error = result.Error }),
+                    new
+                    {
+                        error = result.Error
+                    }),
 
             ErrorType.NotFound =>
                 new NotFoundObjectResult(
-                    new { error = result.Error }),
+                    new
+                    {
+                        error = result.Error
+                    }),
 
             ErrorType.Conflict =>
                 new ConflictObjectResult(
-                    new { error = result.Error }),
+                    new
+                    {
+                        error = result.Error
+                    }),
 
             ErrorType.Forbidden =>
                 new ObjectResult(
-                    new { error = result.Error })
+                    new
+                    {
+                        error = result.Error
+                    })
                 {
                     StatusCode =
                         StatusCodes.Status403Forbidden
@@ -269,7 +325,10 @@ public sealed class InternationalLicensesController(
 
             _ =>
                 new ObjectResult(
-                    new { error = result.Error })
+                    new
+                    {
+                        error = result.Error
+                    })
                 {
                     StatusCode =
                         StatusCodes.Status500InternalServerError
@@ -277,6 +336,3 @@ public sealed class InternationalLicensesController(
         };
     }
 }
-
-public sealed record IssueInternationalLicenseRequest(
-    int LocalLicenseId);

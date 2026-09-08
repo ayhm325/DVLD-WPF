@@ -9,28 +9,46 @@
              HorizontalContentAlignment="Stretch"
              d:DesignHeight="250"
              d:DesignWidth="800">
+
     <UserControl.Resources>
-        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource LabelStyle}">
-            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Margin" Value="0"/>
+
+        <Style x:Key="FieldLabel"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource LabelStyle}">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Margin"
+                    Value="0"/>
         </Style>
-        <Style x:Key="FieldValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Margin" Value="0,4,0,0"/>
+
+        <Style x:Key="FieldValue"
+               TargetType="TextBlock">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Margin"
+                    Value="0,4,0,0"/>
         </Style>
+
     </UserControl.Resources>
+
     <Border Style="{StaticResource CardStyle}"
             Padding="{StaticResource CardPadding}"
             Margin="20,10,20,20"
             HorizontalAlignment="Stretch">
+
         <Grid>
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
+
             <Border Grid.Row="0"
                     Background="{StaticResource SurfaceSecondaryColor}"
                     CornerRadius="{StaticResource RadiusMedium}"
@@ -38,20 +56,25 @@
                     Margin="-16,-16,-16,0"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1">
+
                 <Grid>
+
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
+
                     <StackPanel Grid.Column="0"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
+
                         <Border Width="38"
                                 Height="38"
                                 CornerRadius="{StaticResource RadiusMedium}"
                                 Background="{StaticResource PrimaryLightColor}"
                                 Margin="0,0,14,0"
                                 VerticalAlignment="Center">
+
                             <materialDesign:PackIcon Kind="FileDocumentOutline"
                                                      Foreground="{StaticResource PrimaryColor}"
                                                      Width="22"
@@ -59,92 +82,147 @@
                                                      VerticalAlignment="Center"
                                                      HorizontalAlignment="Center"/>
                         </Border>
+
                         <TextBlock Text="Application Info"
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"/>
+
                     </StackPanel>
+
                 </Grid>
+
             </Border>
+
             <Border Grid.Row="0"
                     Height="1"
                     VerticalAlignment="Bottom"
                     Margin="0,0,0,16"
                     Background="{StaticResource BorderColor}"/>
+
             <Grid Grid.Row="1"
                   Margin="0,4,0,0">
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
+
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+
                 <StackPanel Grid.Column="0"
                             Margin="0,0,12,15">
+
                     <TextBlock Text="APPLICATION ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ApplicationID, ElementName=Root}"
+
+                    <TextBlock Text="{Binding Application.ApplicationId,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
                 <StackPanel Grid.Column="1"
                             Margin="0,0,12,15">
+
                     <TextBlock Text="INTERNATIONAL LICENSE ID"
-                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.InternationalLicenseID, ElementName=Root}"
-                                Style="{StaticResource FieldValue}"/>
+                               Style="{StaticResource FieldLabel}"/>
+
+                    <TextBlock Text="{Binding Application.InternationalLicenseId,
+                                              ElementName=Root}"
+                               Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
                 <StackPanel Grid.Column="2"
                             Margin="0,0,12,15">
-                    <TextBlock Text="APPLICATION DATE"
+
+                    <TextBlock Text="DRIVER ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ApplicationDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}'}"
+
+                    <TextBlock Text="{Binding Application.DriverId,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
                 <StackPanel Grid.Column="3"
                             Margin="0,0,0,15">
+
                     <TextBlock Text="LOCAL LICENSE ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.LocalLicenseID, ElementName=Root}"
+
+                    <TextBlock Text="{Binding Application.IssuedUsingLocalLicenseId,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
                 <StackPanel Grid.Column="0"
                             Grid.Row="1"
                             Margin="0,5,12,0">
+
                     <TextBlock Text="ISSUE DATE"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.IssueDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}'}"
+
+                    <TextBlock Text="{Binding Application.IssueDate,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:dd/MMM/yyyy}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
                 <StackPanel Grid.Column="1"
                             Grid.Row="1"
                             Margin="0,5,12,0">
+
                     <TextBlock Text="EXPIRATION DATE"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ExpirationDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}'}"
+
+                    <TextBlock Text="{Binding Application.ExpirationDate,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:dd/MMM/yyyy}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
                 <StackPanel Grid.Column="2"
                             Grid.Row="1"
                             Margin="0,5,12,0">
+
                     <TextBlock Text="FEES"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.PaidFees, ElementName=Root, StringFormat='{}{0:F2}'}"
+
+                    <TextBlock Text="{Binding Application.Fees,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:F2}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
                 <StackPanel Grid.Column="3"
                             Grid.Row="1"
                             Margin="0,5,0,0"
                             HorizontalAlignment="Left">
+
                     <TextBlock Text="CREATED BY"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.CreatedByUserName, ElementName=Root}"
+
+                    <TextBlock Text="{Binding Application.CreatedByUserName,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"
                                TextWrapping="Wrap"/>
+
                 </StackPanel>
+
             </Grid>
+
         </Grid>
+
     </Border>
+
 </UserControl>
