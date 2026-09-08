@@ -186,7 +186,8 @@ public partial class NewInternationalLicenseApplicationViewModel
 
         var win =
             new DriverInterNationalLicenseInfoWin(
-                ApplicationInfo.InternationalLicenseId);
+                ApplicationInfo.InternationalLicenseId,
+                _internationalLicensesApiClient);
 
         win.ShowDialog();
     }

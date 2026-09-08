@@ -94,6 +94,21 @@ public sealed class TestAppointmentsApiClient(
         return ApiResult<bool>.Success(result.Value!.Scheduled);
     }
 
+    public async Task<ApiResult> ScheduleAsync(
+        ScheduleTestRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result =
+            await apiClient.PostAsync<ScheduleTestRequest, object>(
+                "api/testappointments/schedule",
+                request,
+                cancellationToken);
+
+        return result.IsSuccess
+            ? ApiResult.Success()
+            : ApiResult.Failure(result.Error);
+    }
+
     public async Task<ApiResult> CreateAsync(
         CreateTestAppointmentRequest request,
         CancellationToken cancellationToken = default)

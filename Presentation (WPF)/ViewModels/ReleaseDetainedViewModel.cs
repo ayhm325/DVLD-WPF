@@ -1,5 +1,4 @@
-﻿using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.DetainedLicense;
 using DVLD.Contracts.License;
@@ -14,13 +13,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
     private readonly ILicensesApiClient _licensesApiClient;
     private readonly IDetainedLicensesApiClient _detainedLicensesApiClient;
     private readonly IApplicationTypesApiClient _applicationTypesApiClient;
-
-    private readonly ICurrentUserService _currentUserService;
-
-    private readonly IPersonService _personService;
-    private readonly IDriverService _driverService;
-    private readonly ILicenseService _licenseService;
-    private readonly IInternationalService _internationalService;
 
     private readonly IPeopleApiClient _peopleApiClient;
     private readonly IDriversApiClient _driversApiClient;
@@ -52,11 +44,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         ILicensesApiClient licensesApiClient,
         IDetainedLicensesApiClient detainedLicensesApiClient,
         IApplicationTypesApiClient applicationTypesApiClient,
-        ICurrentUserService currentUserService,
-        IPersonService personService,
-        IDriverService driverService,
-        ILicenseService licenseService,
-        IInternationalService internationalService,
         IPeopleApiClient peopleApiClient,
         IDriversApiClient driversApiClient,
         IInternationalLicensesApiClient internationalLicensesApiClient)
@@ -75,31 +62,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             applicationTypesApiClient
             ?? throw new ArgumentNullException(
                 nameof(applicationTypesApiClient));
-
-        _currentUserService =
-            currentUserService
-            ?? throw new ArgumentNullException(
-                nameof(currentUserService));
-
-        _personService =
-            personService
-            ?? throw new ArgumentNullException(
-                nameof(personService));
-
-        _driverService =
-            driverService
-            ?? throw new ArgumentNullException(
-                nameof(driverService));
-
-        _licenseService =
-            licenseService
-            ?? throw new ArgumentNullException(
-                nameof(licenseService));
-
-        _internationalService =
-            internationalService
-            ?? throw new ArgumentNullException(
-                nameof(internationalService));
 
         _peopleApiClient =
             peopleApiClient
@@ -154,6 +116,11 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
+        LicenseInfo = null;
+        Release = null;
+        ApplicationFees = 0;
+        IsLicenseIssued = false;
+
         var licenseResult =
             await _licensesApiClient
                 .GetDetailsByIdAsync(
@@ -161,12 +128,19 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         if (licenseResult.IsFailure)
         {
-            LicenseInfo = null;
-            Release = null;
-            IsLicenseIssued = false;
-
             CustomMessageBox.Show(
                 licenseResult.Error,
+                "Warning",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        if (licenseResult.Value is null)
+        {
+            CustomMessageBox.Show(
+                "License information was not found.",
                 "Warning",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -177,13 +151,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         LicenseInfo =
             licenseResult.Value;
 
-        if (LicenseInfo is null)
-        {
-            Release = null;
-            IsLicenseIssued = false;
-            return;
-        }
-
         var releaseResult =
             await _detainedLicensesApiClient
                 .GetActiveByLicenseIdAsync(
@@ -191,8 +158,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         if (releaseResult.IsFailure)
         {
-            Release = null;
-            IsLicenseIssued = false;
+            LicenseInfo = null;
 
             CustomMessageBox.Show(
                 releaseResult.Error,
@@ -205,8 +171,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         if (releaseResult.Value is null)
         {
-            Release = null;
-            IsLicenseIssued = false;
+            LicenseInfo = null;
 
             CustomMessageBox.Show(
                 "This license is not detained.",
@@ -219,8 +184,6 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         Release =
             releaseResult.Value;
-
-        IsLicenseIssued = true;
 
         var applicationTypeResult =
             await _applicationTypesApiClient
@@ -237,10 +200,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
-        var applicationType =
-            applicationTypeResult.Value;
-
-        if (applicationType is null)
+        if (applicationTypeResult.Value is null)
         {
             CustomMessageBox.Show(
                 "Application type was not found.",
@@ -252,7 +212,9 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         }
 
         ApplicationFees =
-            applicationType.ApplicationTypeFees;
+            applicationTypeResult
+                .Value
+                .ApplicationTypeFees;
 
         OnPropertyChanged(
             nameof(TotalFees));
@@ -273,21 +235,9 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
         }
 
-        if (!_currentUserService.IsLoggedIn ||
-            _currentUserService.UserId <= 0)
-        {
-            CustomMessageBox.Show(
-                "You must be logged in first.",
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
-            return;
-        }
-
         try
         {
-            var releaseRequest =
+            var request =
                 new ReleaseDetainedLicenseRequest
                 {
                     DetainId =
@@ -297,7 +247,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             var result =
                 await _detainedLicensesApiClient
                     .ReleaseAsync(
-                        releaseRequest);
+                        request);
 
             if (result.IsFailure)
             {
@@ -323,6 +273,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             else
             {
                 Release = null;
+                IsLicenseIssued = false;
             }
 
             CustomMessageBox.Show(

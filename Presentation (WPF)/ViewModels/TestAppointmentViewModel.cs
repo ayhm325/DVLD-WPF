@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Enums;
 using DVLD.Contracts.Application;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
 using DVLD.Contracts.TestAppointment;
@@ -53,7 +52,7 @@ public partial class TestAppointmentViewModel : ObservableObject
     // ===== STATE =====
 
     [ObservableProperty]
-    private TestTypeEnum testType;
+    private TestType testType;
 
     [ObservableProperty]
     private LocalDrivingLicenseApplicationResponse? ldlAppInfo;
@@ -85,13 +84,13 @@ public partial class TestAppointmentViewModel : ObservableObject
 
     public string PageTitle => TestType switch
     {
-        TestTypeEnum.Theory =>
+        TestType.Theory =>
             "Theory Test Appointments",
 
-        TestTypeEnum.Written =>
+        TestType.Written =>
             "Written Test Appointments",
 
-        TestTypeEnum.Practical =>
+        TestType.Practical =>
             "Practical Test Appointments",
 
         _ =>
@@ -100,13 +99,13 @@ public partial class TestAppointmentViewModel : ObservableObject
 
     public string PageDescription => TestType switch
     {
-        TestTypeEnum.Theory =>
+        TestType.Theory =>
             "Manage theory test appointments for this application.",
 
-        TestTypeEnum.Written =>
+        TestType.Written =>
             "Manage written test appointments for this application.",
 
-        TestTypeEnum.Practical =>
+        TestType.Practical =>
             "Manage practical test appointments for this application.",
 
         _ =>
@@ -117,7 +116,7 @@ public partial class TestAppointmentViewModel : ObservableObject
 
     public async Task LoadAsync(
         int localApplicationId,
-        TestTypeEnum type)
+        TestType type)
     {
         try
         {
@@ -197,7 +196,7 @@ public partial class TestAppointmentViewModel : ObservableObject
                 await _testWorkflowApiClient
                     .CanScheduleAsync(
                         localApplicationId,
-                        ToContractTestType(TestType));
+                        TestType);
 
             if (workflowResult.IsFailure ||
                 workflowResult.Value is null ||
@@ -267,7 +266,9 @@ public partial class TestAppointmentViewModel : ObservableObject
             ?? [];
 
         foreach (var appointment in appointments)
+        {
             AppointmentsList.Add(appointment);
+        }
     }
 
     private async Task RefreshAppointmentStateAsync()
@@ -322,7 +323,7 @@ public partial class TestAppointmentViewModel : ObservableObject
             await _testWorkflowApiClient
                 .CanScheduleAsync(
                     LdlAppInfo.LocalDrivingLicenseApplicationId,
-                    ToContractTestType(TestType));
+                    TestType);
 
         if (workflowResult.IsFailure ||
             workflowResult.Value is null ||
@@ -481,25 +482,6 @@ public partial class TestAppointmentViewModel : ObservableObject
     }
 
     // ===== HELPERS =====
-
-    private static DVLD.Contracts.TestAppointment.TestType
-        ToContractTestType(
-            TestTypeEnum testType) =>
-        testType switch
-        {
-            TestTypeEnum.Theory =>
-                DVLD.Contracts.TestAppointment.TestType.Theory,
-
-            TestTypeEnum.Written =>
-                DVLD.Contracts.TestAppointment.TestType.Written,
-
-            TestTypeEnum.Practical =>
-                DVLD.Contracts.TestAppointment.TestType.Practical,
-
-            _ =>
-                throw new ArgumentOutOfRangeException(
-                    nameof(testType))
-        };
 
     private static void Show(
         string message,

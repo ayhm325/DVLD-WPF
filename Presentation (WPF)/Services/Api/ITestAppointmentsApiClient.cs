@@ -42,6 +42,10 @@ public interface ITestAppointmentsApiClient
         int testTypeId,
         CancellationToken cancellationToken = default);
 
+    Task<ApiResult> ScheduleAsync(
+        ScheduleTestRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<ApiResult> CreateAsync(
         CreateTestAppointmentRequest request,
         CancellationToken cancellationToken = default);

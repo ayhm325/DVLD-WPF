@@ -2,6 +2,7 @@
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
 using Domain.Enums;
+using DVLD.Contracts.TestAppointment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -57,6 +58,21 @@ public sealed class TestAppointmentsController(
 
         return result.IsSuccess
             ? Ok(result.Value)
+            : HandleFailure(result);
+    }
+
+    [HttpPost("schedule")]
+    public async Task<IActionResult> Schedule(
+    [FromBody] ScheduleTestRequest request)
+    {
+        var result =
+            await service.ScheduleAsync(
+                request.LocalDrivingLicenseApplicationId,
+                request.TestTypeId,
+                request.AppointmentDate);
+
+        return result.IsSuccess
+            ? NoContent()
             : HandleFailure(result);
     }
 

@@ -10,8 +10,10 @@ public static class TestAppointmentValidator
         CreateTestAppointmentDto? dto)
     {
         if (dto is null)
+        {
             return Result.ValidationFailure(
                 "Test appointment data is required.");
+        }
 
         var errors = new List<string>();
 
@@ -52,12 +54,51 @@ public static class TestAppointmentValidator
         return CreateResult(errors);
     }
 
+    public static Result ValidateSchedule(
+        int localAppId,
+        int testTypeId,
+        DateTime appointmentDate)
+    {
+        var errors = new List<string>();
+
+        if (localAppId <= 0)
+        {
+            errors.Add(
+                "Invalid local driving license application ID.");
+        }
+
+        if (testTypeId <= 0)
+        {
+            errors.Add("Test type is required.");
+        }
+        else if (!Enum.IsDefined(
+                     typeof(TestTypeEnum),
+                     testTypeId))
+        {
+            errors.Add("Invalid test type.");
+        }
+
+        if (appointmentDate == default)
+        {
+            errors.Add("Appointment date is required.");
+        }
+        else if (appointmentDate <= DateTime.UtcNow)
+        {
+            errors.Add(
+                "Appointment date must be in the future.");
+        }
+
+        return CreateResult(errors);
+    }
+
     public static Result ValidateUpdate(
         UpdateTestAppointmentDto? dto)
     {
         if (dto is null)
+        {
             return Result.ValidationFailure(
                 "Test appointment data is required.");
+        }
 
         var errors = new List<string>();
 
@@ -94,7 +135,8 @@ public static class TestAppointmentValidator
             : Result.ValidationFailure(
                 "Invalid test type.");
 
-    public static Result ValidateApplicationId(int applicationId) =>
+    public static Result ValidateApplicationId(
+        int applicationId) =>
         applicationId > 0
             ? Result.Success()
             : Result.ValidationFailure(

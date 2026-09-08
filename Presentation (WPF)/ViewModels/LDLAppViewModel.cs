@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
-using Domain.Enums;
+using DVLD.Contracts.TestAppointment;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
@@ -323,7 +323,7 @@ public partial class LDLAppViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(CanScheduleVision))]
     private async Task ScheduleVision() =>
-        await OpenTestAppointment(TestTypeEnum.Theory);
+        await OpenTestAppointment(TestType.Theory);
 
     private bool CanScheduleWritten() =>
         SelectedApplication != null &&
@@ -335,7 +335,7 @@ public partial class LDLAppViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(CanScheduleWritten))]
     private async Task ScheduleWritten() =>
-        await OpenTestAppointment(TestTypeEnum.Written);
+        await OpenTestAppointment(TestType.Written);
 
     private bool CanScheduleStreet() =>
         SelectedApplication != null &&
@@ -347,10 +347,10 @@ public partial class LDLAppViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(CanScheduleStreet))]
     private async Task ScheduleStreet() =>
-        await OpenTestAppointment(TestTypeEnum.Practical);
+        await OpenTestAppointment(TestType.Practical);
 
     private async Task OpenTestAppointment(
-        TestTypeEnum testType)
+        TestType testType)
     {
         if (SelectedApplication == null)
             return;
