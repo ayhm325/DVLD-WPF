@@ -85,7 +85,7 @@
                             Margin="0,0,12,0">
                     <TextBlock Text="DETAIN ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Detain.DetainID, ElementName=Root}"
+                    <TextBlock Text="{Binding Detain.DetainId, ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1"

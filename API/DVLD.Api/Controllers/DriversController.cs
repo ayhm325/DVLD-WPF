@@ -2,6 +2,7 @@
 using Application.DTOs;
 using Application.DTOs.DriverDTO;
 using Application.Interfaces;
+using DVLD.Contracts.Driver;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,9 +19,14 @@ public sealed class DriversController(
     {
         var result = await service.GetAllAsync();
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response = result.Value!
+            .Select(MapToResponse)
+            .ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]
@@ -29,9 +35,13 @@ public sealed class DriversController(
         var result =
             await service.GetByIdAsync(id);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+            return NotFound(new { error = "Driver not found." });
+
+        return Ok(MapToResponse(result.Value));
     }
 
     [HttpGet("person/{personId:int}")]
@@ -41,9 +51,13 @@ public sealed class DriversController(
         var result =
             await service.GetByPersonIdAsync(personId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+            return NotFound(new { error = "Driver not found." });
+
+        return Ok(MapToResponse(result.Value));
     }
 
     [HttpGet("created-by/{userId:int}")]
@@ -53,15 +67,25 @@ public sealed class DriversController(
         var result =
             await service.GetByCreatedUserIdAsync(userId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response = result.Value!
+            .Select(MapToResponse)
+            .ToList();
+
+        return Ok(response);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] CreateDriverDto dto)
+        [FromBody] CreateDriverRequest request)
     {
+        var dto = new CreateDriverDto
+        {
+            PersonID = request.PersonId
+        };
+
         var result =
             await service.AddAsync(dto);
 
@@ -77,8 +101,22 @@ public sealed class DriversController(
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] UpdateDriverDto dto)
+        [FromBody] UpdateDriverRequest request)
     {
+        if (id != request.DriverId)
+        {
+            return BadRequest(new
+            {
+                error = "The route driver id does not match the request driver id."
+            });
+        }
+
+        var dto = new UpdateDriverDto
+        {
+            DriverID = request.DriverId,
+            PersonID = request.PersonId
+        };
+
         var result =
             await service.UpdateAsync(dto);
 
@@ -98,7 +136,27 @@ public sealed class DriversController(
             : HandleFailure(result);
     }
 
-    private static IActionResult HandleFailure(Result result)
+    private static DriverResponse MapToResponse(
+        DriverDto dto)
+    {
+        return new DriverResponse
+        {
+            DriverId = dto.DriverID,
+            PersonId = dto.PersonID,
+            FullName = dto.FullName,
+            NationalNo = dto.NationalNo,
+            DateOfBirth = dto.DateOfBirth,
+            Gender = dto.Gender.ToString(),
+            ImagePath = dto.ImagePath,
+            ActiveLicenses = dto.ActiveLicenses,
+            CreatedByUserId = dto.CreatedByUserID,
+            CreatedByUserName = dto.CreatedByUserName,
+            CreatedDate = dto.CreatedDate
+        };
+    }
+
+    private static IActionResult HandleFailure(
+        Result result)
     {
         return result.ErrorType switch
         {
@@ -115,15 +173,18 @@ public sealed class DriversController(
                     new { error = result.Error }),
 
             ErrorType.Forbidden =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
                 },
 
             _ =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status500InternalServerError
+                    StatusCode =
+                        StatusCodes.Status500InternalServerError
                 }
         };
     }

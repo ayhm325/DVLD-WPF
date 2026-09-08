@@ -1,8 +1,9 @@
-﻿using Application.DTOs.DetainedLicenseDTO;
-using Application.DTOs.LicenseDTO;
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.DetainedLicense;
+using DVLD.Contracts.License;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Windows;
 
@@ -10,14 +11,20 @@ namespace Presentation.ViewModels;
 
 public partial class ReleaseDetainedViewModel : ObservableObject
 {
-    private readonly ILicenseService _licenseService;
-    private readonly ILicenseQueryService _licenseQueryService;
-    private readonly IDetainedLicenseService _detainedLicenseService;
+    private readonly ILicensesApiClient _licensesApiClient;
+    private readonly IDetainedLicensesApiClient _detainedLicensesApiClient;
+    private readonly IApplicationTypesApiClient _applicationTypesApiClient;
+
     private readonly ICurrentUserService _currentUserService;
+
     private readonly IPersonService _personService;
     private readonly IDriverService _driverService;
+    private readonly ILicenseService _licenseService;
     private readonly IInternationalService _internationalService;
-    private readonly IApplicationTypeService _applicationTypeService;
+
+    private readonly IPeopleApiClient _peopleApiClient;
+    private readonly IDriversApiClient _driversApiClient;
+    private readonly IInternationalLicensesApiClient _internationalLicensesApiClient;
 
     [ObservableProperty]
     private bool isLicenseIdReadOnly;
@@ -26,10 +33,10 @@ public partial class ReleaseDetainedViewModel : ObservableObject
     private string? licenseIdText;
 
     [ObservableProperty]
-    private DriverLicenseInfoDto? licenseInfo;
+    private DriverLicenseInfoResponse? licenseInfo;
 
     [ObservableProperty]
-    private DetainedLicenseDto? release;
+    private DetainedLicenseResponse? release;
 
     [ObservableProperty]
     private decimal applicationFees;
@@ -42,27 +49,32 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         (Release?.FineFees ?? 0);
 
     public ReleaseDetainedViewModel(
-        ILicenseService licenseService,
-        ILicenseQueryService licenseQueryService,
-        IDetainedLicenseService detainedLicenseService,
+        ILicensesApiClient licensesApiClient,
+        IDetainedLicensesApiClient detainedLicensesApiClient,
+        IApplicationTypesApiClient applicationTypesApiClient,
         ICurrentUserService currentUserService,
         IPersonService personService,
         IDriverService driverService,
+        ILicenseService licenseService,
         IInternationalService internationalService,
-        IApplicationTypeService applicationTypeService)
+        IPeopleApiClient peopleApiClient,
+        IDriversApiClient driversApiClient,
+        IInternationalLicensesApiClient internationalLicensesApiClient)
     {
-        _licenseService =
-            licenseService
-            ?? throw new ArgumentNullException(nameof(licenseService));
-
-        _licenseQueryService =
-            licenseQueryService
-            ?? throw new ArgumentNullException(nameof(licenseQueryService));
-
-        _detainedLicenseService =
-            detainedLicenseService
+        _licensesApiClient =
+            licensesApiClient
             ?? throw new ArgumentNullException(
-                nameof(detainedLicenseService));
+                nameof(licensesApiClient));
+
+        _detainedLicensesApiClient =
+            detainedLicensesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(detainedLicensesApiClient));
+
+        _applicationTypesApiClient =
+            applicationTypesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(applicationTypesApiClient));
 
         _currentUserService =
             currentUserService
@@ -71,25 +83,42 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         _personService =
             personService
-            ?? throw new ArgumentNullException(nameof(personService));
+            ?? throw new ArgumentNullException(
+                nameof(personService));
 
         _driverService =
             driverService
-            ?? throw new ArgumentNullException(nameof(driverService));
+            ?? throw new ArgumentNullException(
+                nameof(driverService));
+
+        _licenseService =
+            licenseService
+            ?? throw new ArgumentNullException(
+                nameof(licenseService));
 
         _internationalService =
             internationalService
             ?? throw new ArgumentNullException(
                 nameof(internationalService));
 
-        _applicationTypeService =
-            applicationTypeService
+        _peopleApiClient =
+            peopleApiClient
             ?? throw new ArgumentNullException(
-                nameof(applicationTypeService));
+                nameof(peopleApiClient));
+
+        _driversApiClient =
+            driversApiClient
+            ?? throw new ArgumentNullException(
+                nameof(driversApiClient));
+
+        _internationalLicensesApiClient =
+            internationalLicensesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(internationalLicensesApiClient));
     }
 
     partial void OnReleaseChanged(
-        DetainedLicenseDto? value)
+        DetainedLicenseResponse? value)
     {
         IsLicenseIssued =
             value != null;
@@ -126,8 +155,8 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         }
 
         var licenseResult =
-            await _licenseQueryService
-                .GetLicenseDetailsByIdAsync(
+            await _licensesApiClient
+                .GetDetailsByIdAsync(
                     licenseId);
 
         if (licenseResult.IsFailure)
@@ -156,8 +185,8 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         }
 
         var releaseResult =
-            await _detainedLicenseService
-                .GetActiveDetainByLicenseIdAsync(
+            await _detainedLicensesApiClient
+                .GetActiveByLicenseIdAsync(
                     licenseId);
 
         if (releaseResult.IsFailure)
@@ -194,8 +223,8 @@ public partial class ReleaseDetainedViewModel : ObservableObject
         IsLicenseIssued = true;
 
         var applicationTypeResult =
-            await _applicationTypeService
-                .GetApplicationTypeByIdAsync(5);
+            await _applicationTypesApiClient
+                .GetByIdAsync(5);
 
         if (applicationTypeResult.IsFailure)
         {
@@ -258,17 +287,17 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         try
         {
-            var releaseDto =
-                new ReleaseDetainedLicenseDto
+            var releaseRequest =
+                new ReleaseDetainedLicenseRequest
                 {
-                    DetainID =
-                        Release.DetainID
+                    DetainId =
+                        Release.DetainId
                 };
 
             var result =
-                await _detainedLicenseService
+                await _detainedLicensesApiClient
                     .ReleaseAsync(
-                        releaseDto);
+                        releaseRequest);
 
             if (result.IsFailure)
             {
@@ -282,9 +311,9 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             }
 
             var refreshedResult =
-                await _detainedLicenseService
+                await _detainedLicensesApiClient
                     .GetByIdAsync(
-                        Release.DetainID);
+                        Release.DetainId);
 
             if (refreshedResult.IsSuccess)
             {
@@ -331,15 +360,15 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
         var vm =
             new LicenseHistoryViewModel(
-                _personService,
-                _driverService,
-                _licenseService,
-                _internationalService);
+                _peopleApiClient,
+                _driversApiClient,
+                _licensesApiClient,
+                _internationalLicensesApiClient);
 
         var window =
             new LicenseHistoryWin(
                 vm,
-                LicenseInfo.PersonID);
+                LicenseInfo.PersonId);
 
         window.Owner =
             System.Windows.Application.Current.MainWindow;
@@ -367,15 +396,15 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 public static class CustomMessageBox
 {
     public static MessageBoxResult Show(
-    string message,
-    string title,
-    MessageBoxButton button,
-    MessageBoxImage icon)
+        string message,
+        string title,
+        MessageBoxButton button,
+        MessageBoxImage icon)
     {
         return MessageBox.Show(
-        message,
-        title,
-        button,
-        icon);
+            message,
+            title,
+            button,
+            icon);
     }
 }

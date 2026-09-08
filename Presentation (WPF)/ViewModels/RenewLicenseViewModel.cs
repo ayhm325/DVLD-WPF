@@ -3,6 +3,7 @@ using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Windows;
 
@@ -19,8 +20,12 @@ public partial class RenewLicenseViewModel : ObservableObject
     private readonly IDriverService _driverService;
     private readonly IInternationalService _internationalService;
 
-    private const int RenewLicenseApplicationTypeId = 2;
+    private readonly IPeopleApiClient _peopleApiClient;
+    private readonly IDriversApiClient _driversApiClient;
+    private readonly ILicensesApiClient _licensesApiClient;
+    private readonly IInternationalLicensesApiClient _internationalLicensesApiClient;
 
+    private const int RenewLicenseApplicationTypeId = 2;
 
     public RenewLicenseViewModel(
         ILicenseService licenseService,
@@ -30,7 +35,11 @@ public partial class RenewLicenseViewModel : ObservableObject
         ICurrentUserService currentUserService,
         IPersonService personService,
         IDriverService driverService,
-        IInternationalService internationalService)
+        IInternationalService internationalService,
+        IPeopleApiClient peopleApiClient,
+        IDriversApiClient driversApiClient,
+        ILicensesApiClient licensesApiClient,
+        IInternationalLicensesApiClient internationalLicensesApiClient)
     {
         _licenseService =
             licenseService
@@ -71,12 +80,27 @@ public partial class RenewLicenseViewModel : ObservableObject
             internationalService
             ?? throw new ArgumentNullException(
                 nameof(internationalService));
+
+        _peopleApiClient =
+            peopleApiClient
+            ?? throw new ArgumentNullException(
+                nameof(peopleApiClient));
+
+        _driversApiClient =
+            driversApiClient
+            ?? throw new ArgumentNullException(
+                nameof(driversApiClient));
+
+        _licensesApiClient =
+            licensesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(licensesApiClient));
+
+        _internationalLicensesApiClient =
+            internationalLicensesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(internationalLicensesApiClient));
     }
-
-
-    // =========================================================
-    // PROPERTIES
-    // =========================================================
 
     [ObservableProperty]
     private string licenseIdText = string.Empty;
@@ -96,16 +120,10 @@ public partial class RenewLicenseViewModel : ObservableObject
     [ObservableProperty]
     private int? renewedLicenseId;
 
-
     public bool CanSearch =>
         int.TryParse(
             LicenseIdText,
             out _);
-
-
-    // =========================================================
-    // SEARCH
-    // =========================================================
 
     [RelayCommand]
     private async Task Search()
@@ -123,16 +141,10 @@ public partial class RenewLicenseViewModel : ObservableObject
             return;
         }
 
-
-        // =====================================================
-        // GET LICENSE DETAILS
-        // =====================================================
-
         var licenseResult =
             await _licenseQueryService
                 .GetLicenseDetailsByIdAsync(
                     licenseId);
-
 
         if (licenseResult.IsFailure)
         {
@@ -147,10 +159,8 @@ public partial class RenewLicenseViewModel : ObservableObject
             return;
         }
 
-
         LicenseInfo =
             licenseResult.Value;
-
 
         if (LicenseInfo == null)
         {
@@ -158,11 +168,6 @@ public partial class RenewLicenseViewModel : ObservableObject
 
             return;
         }
-
-
-        // =====================================================
-        // MUST BE EXPIRED
-        // =====================================================
 
         if (LicenseInfo.ExpirationDate > DateTime.Now)
         {
@@ -178,11 +183,6 @@ public partial class RenewLicenseViewModel : ObservableObject
             return;
         }
 
-
-        // =====================================================
-        // MUST BE ACTIVE
-        // =====================================================
-
         if (!LicenseInfo.IsActive)
         {
             MessageBox.Show(
@@ -196,16 +196,10 @@ public partial class RenewLicenseViewModel : ObservableObject
             return;
         }
 
-
-        // =====================================================
-        // GET APPLICATION TYPE
-        // =====================================================
-
         var applicationTypeResult =
             await _applicationTypeService
                 .GetApplicationTypeByIdAsync(
                     RenewLicenseApplicationTypeId);
-
 
         if (applicationTypeResult.IsFailure)
         {
@@ -218,10 +212,8 @@ public partial class RenewLicenseViewModel : ObservableObject
             return;
         }
 
-
         var applicationType =
             applicationTypeResult.Value;
-
 
         if (applicationType == null)
         {
@@ -233,11 +225,6 @@ public partial class RenewLicenseViewModel : ObservableObject
 
             return;
         }
-
-
-        // =====================================================
-        // BUILD DISPLAY INFO
-        // =====================================================
 
         NewLicenseInfo =
             new ApplicationNewLicenseInfoDto
@@ -267,11 +254,6 @@ public partial class RenewLicenseViewModel : ObservableObject
                     _currentUserService.Username
             };
 
-
-        // =====================================================
-        // BUILD APPLICATION INFO
-        // =====================================================
-
         ApplicationInfo =
             new ApplicationDto
             {
@@ -300,14 +282,8 @@ public partial class RenewLicenseViewModel : ObservableObject
                     _currentUserService.Username
             };
 
-
-        // =====================================================
-        // RESET PREVIOUS STATE
-        // =====================================================
-
         RenewedLicenseId = null;
         IsLicenseIssued = false;
-
 
         MessageBox.Show(
             "License found successfully",
@@ -315,11 +291,6 @@ public partial class RenewLicenseViewModel : ObservableObject
             MessageBoxButton.OK,
             MessageBoxImage.Information);
     }
-
-
-    // =========================================================
-    // ISSUE / RENEW LICENSE
-    // =========================================================
 
     [RelayCommand]
     private async Task Issue()
@@ -335,19 +306,13 @@ public partial class RenewLicenseViewModel : ObservableObject
             return;
         }
 
-
         try
         {
-            // =================================================
-            // RENEWAL SERVICE
-            // =================================================
-
             var renewResult =
                 await _licenseRenewalService
                     .RenewLicenseAsync(
                         LicenseInfo.LicenseId,
                         NewLicenseInfo?.Notes);
-
 
             if (renewResult.IsFailure)
             {
@@ -360,24 +325,16 @@ public partial class RenewLicenseViewModel : ObservableObject
                 return;
             }
 
-
             int newLicenseId =
                 renewResult.Value;
 
-
             RenewedLicenseId =
                 newLicenseId;
-
-
-            // =================================================
-            // GET NEW LICENSE
-            // =================================================
 
             var licenseResult =
                 await _licenseService
                     .GetByIdAsync(
                         newLicenseId);
-
 
             if (licenseResult.IsFailure)
             {
@@ -390,10 +347,8 @@ public partial class RenewLicenseViewModel : ObservableObject
                 return;
             }
 
-
             var newLicense =
                 licenseResult.Value;
-
 
             if (newLicense == null)
             {
@@ -405,11 +360,6 @@ public partial class RenewLicenseViewModel : ObservableObject
 
                 return;
             }
-
-
-            // =================================================
-            // BUILD FINAL DISPLAY INFO
-            // =================================================
 
             NewLicenseInfo =
                 new ApplicationNewLicenseInfoDto
@@ -443,9 +393,7 @@ public partial class RenewLicenseViewModel : ObservableObject
                         ?? "Unknown"
                 };
 
-
             IsLicenseIssued = true;
-
 
             MessageBox.Show(
                 $"License renewed successfully.\n" +
@@ -464,39 +412,26 @@ public partial class RenewLicenseViewModel : ObservableObject
         }
     }
 
-
-    // =========================================================
-    // LICENSE HISTORY
-    // =========================================================
-
     [RelayCommand]
     private void ShowLicensesHistory()
     {
         if (LicenseInfo == null)
             return;
 
-
         var vm =
             new LicenseHistoryViewModel(
-                _personService,
-                _driverService,
-                _licenseService,
-                _internationalService);
-
+                _peopleApiClient,
+                _driversApiClient,
+                _licensesApiClient,
+                _internationalLicensesApiClient);
 
         var win =
             new LicenseHistoryWin(
                 vm,
                 LicenseInfo.PersonID);
 
-
         win.ShowDialog();
     }
-
-
-    // =========================================================
-    // NEW LICENSE INFO
-    // =========================================================
 
     [RelayCommand]
     private void ShowLicensesInfo()
@@ -513,19 +448,12 @@ public partial class RenewLicenseViewModel : ObservableObject
             return;
         }
 
-
         var win =
             new DriverLicenseInfoWin(
                 RenewedLicenseId.Value);
 
-
         win.ShowDialog();
     }
-
-
-    // =========================================================
-    // CLEAR
-    // =========================================================
 
     private void ClearLicenseData()
     {

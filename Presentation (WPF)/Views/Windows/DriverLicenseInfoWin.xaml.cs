@@ -1,7 +1,7 @@
-﻿using Application.DTOs.LicenseDTO;
-using Application.Interfaces;
+﻿using DVLD.Contracts.License;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services.Api;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -13,16 +13,15 @@ namespace Presentation.Views.Windows;
 public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
 {
     private readonly int _licenseId;
-    private readonly ILicenseQueryService _licenseQueryService;
-
+    private readonly ILicensesApiClient _licensesApiClient;
 
     // =========================================================
     // LICENSE DATA
     // =========================================================
 
-    private DriverLicenseInfoDto? _licenseData;
+    private DriverLicenseInfoResponse? _licenseData;
 
-    public DriverLicenseInfoDto? LicenseData
+    public DriverLicenseInfoResponse? LicenseData
     {
         get => _licenseData;
 
@@ -33,32 +32,27 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
         }
     }
 
-
     // =========================================================
     // COMMAND
     // =========================================================
 
     public ICommand CloseCommand { get; }
 
-
     // =========================================================
     // CONSTRUCTOR
     // =========================================================
 
-    public DriverLicenseInfoWin(
-        int licenseId)
+    public DriverLicenseInfoWin(int licenseId)
     {
         InitializeComponent();
 
-        _licenseId =
-            licenseId;
+        _licenseId = licenseId;
 
-        _licenseQueryService =
+        _licensesApiClient =
             App.ServiceProvider
-                .GetRequiredService<ILicenseQueryService>();
+                .GetRequiredService<ILicensesApiClient>();
 
-        DataContext =
-            this;
+        DataContext = this;
 
         CloseCommand =
             new RelayCommand(
@@ -67,7 +61,6 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
         Loaded +=
             DriverLicenseInfoWin_Loaded;
     }
-
 
     // =========================================================
     // LOADED
@@ -80,19 +73,31 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
         try
         {
             var result =
-                await _licenseQueryService
-                    .GetLicenseDetailsByIdAsync(
+                await _licensesApiClient
+                    .GetDetailsByIdAsync(
                         _licenseId);
-
 
             if (result.IsFailure)
             {
                 MessageBox.Show(
-                    result.Error);
+                    result.Error,
+                    "License Information",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
 
                 return;
             }
 
+            if (result.Value is null)
+            {
+                MessageBox.Show(
+                    "License information was not found.",
+                    "License Information",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
 
             LicenseData =
                 result.Value;
@@ -100,10 +105,12 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Error: {ex.Message}");
+                $"Error: {ex.Message}",
+                "License Information",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
-
 
     // =========================================================
     // PROPERTY CHANGED
@@ -112,7 +119,6 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
     public event PropertyChangedEventHandler?
         PropertyChanged;
 
-
     protected void OnPropertyChanged(
         [CallerMemberName] string? name = null)
     {
@@ -120,7 +126,6 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
             this,
             new PropertyChangedEventArgs(name));
     }
-
 
     // =========================================================
     // CLOSE
@@ -134,7 +139,6 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
     }
 }
 
-
 // =============================================================
 // RELAY COMMAND
 // =============================================================
@@ -145,7 +149,6 @@ public class RelayCommand : ICommand
 
     private readonly Func<object?, bool>?
         _canExecute;
-
 
     public RelayCommand(
         Action<object?> execute,
@@ -160,7 +163,6 @@ public class RelayCommand : ICommand
             canExecute;
     }
 
-
     public bool CanExecute(
         object? parameter)
     {
@@ -168,17 +170,14 @@ public class RelayCommand : ICommand
             ?? true;
     }
 
-
     public void Execute(
         object? parameter)
     {
         _execute(parameter);
     }
 
-
     public event EventHandler?
         CanExecuteChanged;
-
 
     public void RaiseCanExecuteChanged()
     {

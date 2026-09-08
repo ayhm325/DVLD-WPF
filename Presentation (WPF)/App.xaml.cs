@@ -23,7 +23,7 @@ namespace DVLD_WPF;
 public partial class App : System.Windows.Application
 {
     private const string ConnectionString =
-        "Server=.;Database=DVLDf;Trusted_Connection=True;TrustServerCertificate=True";
+    "Server=.;Database=DVLDf;Trusted_Connection=True;TrustServerCertificate=True";
 
     private IServiceProvider _rootServiceProvider = null!;
     private IServiceScope _applicationScope = null!;
@@ -131,7 +131,6 @@ public partial class App : System.Windows.Application
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
         services.AddScoped<ICountryService, CountryService>();
-        services.AddScoped<IDetainedLicenseService, DetainedLicenseService>();
         services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<ILicenseClassService, LicenseClassService>();
         services.AddScoped<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
@@ -182,12 +181,15 @@ public partial class App : System.Windows.Application
         services.AddScoped<IApplicationTypesApiClient, ApplicationTypesApiClient>();
         services.AddScoped<IApplicationsApiClient, ApplicationsApiClient>();
         services.AddScoped<ILicenseClassesApiClient, LicenseClassesApiClient>();
-        services.AddScoped<ILocalDrivingLicenseApplicationsApiClient,LocalDrivingLicenseApplicationsApiClient>();
+        services.AddScoped<ILocalDrivingLicenseApplicationsApiClient, LocalDrivingLicenseApplicationsApiClient>();
         services.AddScoped<ILicensesApiClient, LicensesApiClient>();
+        services.AddScoped<IDriversApiClient, DriversApiClient>();
+        services.AddScoped<IInternationalLicensesApiClient, InternationalLicensesApiClient>();
         services.AddScoped<ITestAppointmentsApiClient, TestAppointmentsApiClient>();
         services.AddScoped<ILicenseIssuanceApiClient, LicenseIssuanceApiClient>();
         services.AddScoped<ITestsApiClient, TestsApiClient>();
         services.AddScoped<ITestWorkflowApiClient, TestWorkflowApiClient>();
+        services.AddScoped<IDetainedLicensesApiClient, DetainedLicensesApiClient>();
 
         // =====================================================
         // 7. VIEW MODELS

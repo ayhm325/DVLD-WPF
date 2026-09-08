@@ -1,5 +1,9 @@
 ﻿using Application.Common.Results;
+using Application.DTOs.InternationalLicenseDTO;
+using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
+using DVLD.Contracts.License;
+using DVLD.Contracts.InternationalLicense;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,9 +21,14 @@ public sealed class InternationalLicensesController(
         var result =
             await service.GetAllAsync();
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response = result.Value!
+            .Select(MapToResponse)
+            .ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]
@@ -28,9 +37,14 @@ public sealed class InternationalLicensesController(
         var result =
             await service.GetByIdAsync(id);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+            return NotFound(
+                new { error = "International license not found." });
+
+        return Ok(MapToResponse(result.Value));
     }
 
     [HttpGet("driver/{driverId:int}")]
@@ -40,9 +54,14 @@ public sealed class InternationalLicensesController(
         var result =
             await service.GetByDriverIdAsync(driverId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response = result.Value!
+            .Select(MapToResponse)
+            .ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("application/{applicationId:int}")]
@@ -52,9 +71,14 @@ public sealed class InternationalLicensesController(
         var result =
             await service.GetByApplicationIdAsync(applicationId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+            return NotFound(
+                new { error = "International license not found." });
+
+        return Ok(MapToResponse(result.Value));
     }
 
     [HttpGet("local-license/{localLicenseId:int}")]
@@ -64,9 +88,14 @@ public sealed class InternationalLicensesController(
         var result =
             await service.GetByLocalLicenseIdAsync(localLicenseId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response = result.Value!
+            .Select(MapToResponse)
+            .ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("license/{licenseId:int}/info")]
@@ -76,9 +105,14 @@ public sealed class InternationalLicensesController(
         var result =
             await service.GetLocalLicenseInfoAsync(licenseId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+            return NotFound(
+                new { error = "License not found." });
+
+        return Ok(MapToResponse(result.Value));
     }
 
     [HttpPost]
@@ -92,10 +126,124 @@ public sealed class InternationalLicensesController(
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(new { internationalLicenseId = result.Value });
+        return Ok(new
+        {
+            internationalLicenseId = result.Value
+        });
     }
 
-    private static IActionResult HandleFailure(Result result)
+    private static InternationalLicenseResponse MapToResponse(
+        InternationalDto dto)
+    {
+        return new InternationalLicenseResponse
+        {
+            InternationalLicenseId =
+                dto.InternationalLicenseID,
+
+            ApplicationId =
+                dto.ApplicationID,
+
+            DriverId =
+                dto.DriverID,
+
+            IssuedUsingLocalLicenseId =
+                dto.IssuedUsingLocalLicenseID,
+
+            IssueDate =
+                dto.IssueDate,
+
+            ExpirationDate =
+                dto.ExpirationDate,
+
+            IsActive =
+                dto.IsActive,
+
+            CreatedByUserId =
+                dto.CreatedByUserID,
+
+            PersonId =
+                dto.PersonID,
+
+            FullName =
+                dto.FullName,
+
+            DateOfBirth =
+                dto.DateOfBirth,
+
+            ImagePath =
+                dto.ImagePath,
+
+            NationalNo =
+                dto.NationalNo,
+
+            Gender =
+                dto.Gender,
+
+            Fees =
+                dto.Fees,
+
+            CreatedByUserName =
+                dto.CreatedByUserName
+        };
+    }
+
+    private static DriverLicenseInfoResponse MapToResponse(
+        DriverLicenseInfoDto dto)
+    {
+        return new DriverLicenseInfoResponse
+        {
+            LicenseId =
+                dto.LicenseId,
+
+            LicenseClass =
+                dto.LicenseClass,
+
+            IssueDate =
+                dto.IssueDate,
+
+            ExpirationDate =
+                dto.ExpirationDate,
+
+            IsActive =
+                dto.IsActive,
+
+            IsDetained =
+                dto.IsDetained,
+
+            IssueReason =
+                dto.IssueReason,
+
+            Notes =
+                dto.Notes,
+
+            LicenseClassFees =
+                dto.LicenseClassFees,
+
+            DriverId =
+                dto.DriverId,
+
+            PersonId =
+                dto.PersonID,
+
+            FullName =
+                dto.FullName,
+
+            NationalNo =
+                dto.NationalNo,
+
+            DateOfBirth =
+                dto.DateOfBirth,
+
+            Gender =
+                dto.Gender,
+
+            ImagePath =
+                dto.ImagePath
+        };
+    }
+
+    private static IActionResult HandleFailure(
+        Result result)
     {
         return result.ErrorType switch
         {
@@ -112,15 +260,19 @@ public sealed class InternationalLicensesController(
                     new { error = result.Error }),
 
             ErrorType.Forbidden =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status403Forbidden
+                    StatusCode =
+                        StatusCodes.Status403Forbidden
                 },
 
             _ =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status500InternalServerError
+                    StatusCode =
+                        StatusCodes.Status500InternalServerError
                 }
         };
     }

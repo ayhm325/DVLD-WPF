@@ -34,9 +34,10 @@ public sealed class DetainedLicensesApiClient(
             int licenseId,
             CancellationToken cancellationToken = default)
     {
-        var result = await apiClient.GetAsync<DetainedStatusResponse>(
-            $"api/detainedlicenses/license/{licenseId}/detained",
-            cancellationToken);
+        var result =
+            await apiClient.GetAsync<DetainedStatusResponse>(
+                $"api/detainedlicenses/license/{licenseId}/detained",
+                cancellationToken);
 
         if (result.IsFailure)
             return ApiResult<bool>.Failure(result.Error);
@@ -61,20 +62,16 @@ public sealed class DetainedLicensesApiClient(
             ReleaseDetainedLicenseRequest request,
             CancellationToken cancellationToken = default)
     {
-        var result = await apiClient.PostAsync<
-            ReleaseDetainedLicenseRequest,
-            object>(
-            "api/detainedlicenses/release",
-            request,
-            cancellationToken);
+        var result =
+            await apiClient.PostAsync<
+                ReleaseDetainedLicenseRequest,
+                object>(
+                "api/detainedlicenses/release",
+                request,
+                cancellationToken);
 
         return result.IsSuccess
             ? ApiResult.Success()
             : ApiResult.Failure(result.Error);
-    }
-
-    private sealed class DetainedStatusResponse
-    {
-        public bool Detained { get; init; }
     }
 }

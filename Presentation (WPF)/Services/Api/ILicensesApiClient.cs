@@ -14,4 +14,14 @@ public interface ILicensesApiClient
         GetByIdAsync(
             int licenseId,
             CancellationToken cancellationToken = default);
+
+    Task<ApiResult<DriverLicenseInfoResponse>>
+        GetDetailsByIdAsync(
+            int licenseId,
+            CancellationToken cancellationToken = default);
+
+    Task<ApiResult<List<LicenseResponse>>>
+        GetByDriverIdAsync(
+            int driverId,
+            CancellationToken cancellationToken = default);
 }

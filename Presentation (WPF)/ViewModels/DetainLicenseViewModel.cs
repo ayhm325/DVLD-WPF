@@ -1,8 +1,11 @@
-﻿using Application.DTOs.DetainedLicenseDTO;
-using Application.DTOs.LicenseDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.DetainedLicense;
+using DVLD.Contracts.License;
+using DVLD_WPF;
+using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services.Api;
+using Presentation.ViewModels;
 using Presentation.Views.Windows;
 using System.Windows;
 
@@ -10,22 +13,17 @@ namespace Presentation.ViewModels;
 
 public partial class DetainLicenseViewModel : ObservableObject
 {
-    private readonly ILicenseService _licenseService;
-    private readonly ILicenseQueryService _licenseQueryService;
-    private readonly IDetainedLicenseService _detainedLicenseService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly IPersonService _personService;
-    private readonly IDriverService _driverService;
-    private readonly IInternationalService _internationalService;
+    private readonly ILicensesApiClient _licensesApiClient;
+    private readonly IDetainedLicensesApiClient _detainedLicensesApiClient;
 
     [ObservableProperty]
     private string? licenseIdText;
 
     [ObservableProperty]
-    private DriverLicenseInfoDto? licenseInfo;
+    private DriverLicenseInfoResponse? licenseInfo;
 
     [ObservableProperty]
-    private DetainedLicenseDto? detainInfo;
+    private DetainedLicenseResponse? detainInfo;
 
     [ObservableProperty]
     private decimal fineFees;
@@ -34,44 +32,18 @@ public partial class DetainLicenseViewModel : ObservableObject
     private bool isLicenseIssued;
 
     public DetainLicenseViewModel(
-        ILicenseService licenseService,
-        ILicenseQueryService licenseQueryService,
-        IDetainedLicenseService detainedLicenseService,
-        ICurrentUserService currentUserService,
-        IPersonService personService,
-        IDriverService driverService,
-        IInternationalService internationalService)
+        ILicensesApiClient licensesApiClient,
+        IDetainedLicensesApiClient detainedLicensesApiClient)
     {
-        _licenseService =
-            licenseService
-            ?? throw new ArgumentNullException(nameof(licenseService));
-
-        _licenseQueryService =
-            licenseQueryService
-            ?? throw new ArgumentNullException(nameof(licenseQueryService));
-
-        _detainedLicenseService =
-            detainedLicenseService
+        _licensesApiClient =
+            licensesApiClient
             ?? throw new ArgumentNullException(
-                nameof(detainedLicenseService));
+                nameof(licensesApiClient));
 
-        _currentUserService =
-            currentUserService
+        _detainedLicensesApiClient =
+            detainedLicensesApiClient
             ?? throw new ArgumentNullException(
-                nameof(currentUserService));
-
-        _personService =
-            personService
-            ?? throw new ArgumentNullException(nameof(personService));
-
-        _driverService =
-            driverService
-            ?? throw new ArgumentNullException(nameof(driverService));
-
-        _internationalService =
-            internationalService
-            ?? throw new ArgumentNullException(
-                nameof(internationalService));
+                nameof(detainedLicensesApiClient));
     }
 
     [RelayCommand]
@@ -97,8 +69,8 @@ public partial class DetainLicenseViewModel : ObservableObject
         IsLicenseIssued = false;
 
         var result =
-            await _licenseQueryService
-                .GetLicenseDetailsByIdAsync(
+            await _licensesApiClient
+                .GetDetailsByIdAsync(
                     licenseId);
 
         if (result.IsFailure)
@@ -112,10 +84,7 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-        LicenseInfo =
-            result.Value;
-
-        if (LicenseInfo is null)
+        if (result.Value is null)
         {
             MessageBox.Show(
                 "License information was not found.",
@@ -126,11 +95,14 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
+        LicenseInfo =
+            result.Value;
+
         IsLicenseIssued = true;
 
         var detentionResult =
-            await _detainedLicenseService
-                .GetActiveDetainByLicenseIdAsync(
+            await _detainedLicensesApiClient
+                .GetActiveByLicenseIdAsync(
                     LicenseInfo.LicenseId);
 
         if (detentionResult.IsSuccess)
@@ -163,11 +135,22 @@ public partial class DetainLicenseViewModel : ObservableObject
         }
 
         var alreadyDetained =
-            await _detainedLicenseService
+            await _detainedLicensesApiClient
                 .IsLicenseDetainedAsync(
                     LicenseInfo.LicenseId);
 
-        if (alreadyDetained)
+        if (alreadyDetained.IsFailure)
+        {
+            MessageBox.Show(
+                alreadyDetained.Error,
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            return;
+        }
+
+        if (alreadyDetained.Value)
         {
             MessageBox.Show(
                 "This license is already detained.",
@@ -189,10 +172,10 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
         }
 
-        var dto =
-            new CreateDetainedLicenseDto
+        var request =
+            new CreateDetainedLicenseRequest
             {
-                LicenseID =
+                LicenseId =
                     LicenseInfo.LicenseId,
 
                 FineFees =
@@ -200,8 +183,8 @@ public partial class DetainLicenseViewModel : ObservableObject
             };
 
         var result =
-            await _detainedLicenseService
-                .AddAsync(dto);
+            await _detainedLicensesApiClient
+                .DetainAsync(request);
 
         if (result.IsFailure)
         {
@@ -231,16 +214,13 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
 
         var vm =
-            new LicenseHistoryViewModel(
-                _personService,
-                _driverService,
-                _licenseService,
-                _internationalService);
+            App.ServiceProvider
+                .GetRequiredService<LicenseHistoryViewModel>();
 
         var window =
             new LicenseHistoryWin(
                 vm,
-                LicenseInfo.PersonID);
+                LicenseInfo.PersonId);
 
         window.Owner =
             System.Windows.Application.Current.MainWindow;

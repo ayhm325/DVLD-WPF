@@ -1,4 +1,4 @@
-﻿using Application.DTOs.PersonDTO;
+﻿using DVLD.Contracts.Person;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -11,16 +11,16 @@ namespace Presentation.Views.Controls
             InitializeComponent();
         }
 
-        public PersonDto? Person
+        public PersonResponse? Person
         {
-            get => (PersonDto?)GetValue(PersonProperty);
+            get => (PersonResponse?)GetValue(PersonProperty);
             set => SetValue(PersonProperty, value);
         }
 
         public static readonly DependencyProperty PersonProperty =
             DependencyProperty.Register(
                 nameof(Person),
-                typeof(PersonDto),
+                typeof(PersonResponse),
                 typeof(InformationPerson),
                 new PropertyMetadata(null));
     }

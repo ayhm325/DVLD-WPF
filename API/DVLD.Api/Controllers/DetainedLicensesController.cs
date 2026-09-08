@@ -16,21 +16,53 @@ public sealed class DetainedLicensesController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result = await service.GetAllAsync();
+        var result =
+            await service.GetAllAsync();
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    error =
+                        "Detained license service returned no data."
+                });
+        }
+
+        var response =
+            result.Value
+                .Select(MapToResponse)
+                .ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await service.GetByIdAsync(id);
+        var result =
+            await service.GetByIdAsync(id);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    error =
+                        "Detained license service returned no data."
+                });
+        }
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpGet("license/{licenseId:int}/active")]
@@ -38,11 +70,26 @@ public sealed class DetainedLicensesController(
         int licenseId)
     {
         var result =
-            await service.GetActiveDetainByLicenseIdAsync(licenseId);
+            await service
+                .GetActiveDetainByLicenseIdAsync(
+                    licenseId);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    error =
+                        "Detained license service returned no data."
+                });
+        }
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpGet("license/{licenseId:int}/detained")]
@@ -50,7 +97,9 @@ public sealed class DetainedLicensesController(
         int licenseId)
     {
         var result =
-            await service.IsLicenseDetainedAsync(licenseId);
+            await service
+                .IsLicenseDetainedAsync(
+                    licenseId);
 
         return Ok(new
         {
@@ -62,37 +111,105 @@ public sealed class DetainedLicensesController(
     public async Task<IActionResult> Detain(
         [FromBody] CreateDetainedLicenseRequest request)
     {
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = request.LicenseId,
-            FineFees = request.FineFees
-        };
+        var dto =
+            new CreateDetainedLicenseDto
+            {
+                LicenseID =
+                    request.LicenseId,
 
-        var result = await service.AddAsync(dto);
+                FineFees =
+                    request.FineFees
+            };
+
+        var result =
+            await service.AddAsync(dto);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(result.Value);
+        if (result.Value is null)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    error =
+                        "Detained license service returned no data."
+                });
+        }
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpPost("release")]
     public async Task<IActionResult> Release(
         [FromBody] ReleaseDetainedLicenseRequest request)
     {
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = request.DetainId
-        };
+        var dto =
+            new ReleaseDetainedLicenseDto
+            {
+                DetainID =
+                    request.DetainId
+            };
 
-        var result = await service.ReleaseAsync(dto);
+        var result =
+            await service.ReleaseAsync(dto);
 
-        return result.IsSuccess
-            ? NoContent()
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return NoContent();
     }
 
-    private static IActionResult HandleFailure(Result result)
+    private static DetainedLicenseResponse MapToResponse(
+        DetainedLicenseDto dto)
+    {
+        return new DetainedLicenseResponse
+        {
+            DetainId =
+                dto.DetainID,
+
+            LicenseId =
+                dto.LicenseID,
+
+            PersonId =
+                dto.PersonID,
+
+            NationalNo =
+                dto.NationalNo,
+
+            FullName =
+                dto.FullName,
+
+            DetainDate =
+                dto.DetainDate,
+
+            FineFees =
+                dto.FineFees,
+
+            CreatedByUserId =
+                dto.CreatedByUserID,
+
+            CreatedByUserName =
+                dto.CreatedByUserName,
+
+            IsReleased =
+                dto.IsReleased,
+
+            ReleaseDate =
+                dto.ReleaseDate,
+
+            ReleasedByUserId =
+                dto.ReleasedByUserID,
+
+            ReleaseApplicationId =
+                dto.ReleaseApplicationID
+        };
+    }
+
+    private static IActionResult HandleFailure(
+        Result result)
     {
         return result.ErrorType switch
         {
@@ -112,7 +229,8 @@ public sealed class DetainedLicensesController(
                 new ObjectResult(
                     new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status403Forbidden
+                    StatusCode =
+                        StatusCodes.Status403Forbidden
                 },
 
             _ =>

@@ -1,4 +1,4 @@
-﻿using Application.DTOs.DetainedLicenseDTO;
+﻿using DVLD.Contracts.DetainedLicense;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -16,15 +16,15 @@ namespace Presentation.Views.Controls
         // =========================================================
 
         public static readonly DependencyProperty ReleaseProperty =
-            DependencyProperty.Register(
-                nameof(Release),
-                typeof(DetainedLicenseDto),
-                typeof(ReleaseDetainedInfo),
-                new PropertyMetadata(null));
+        DependencyProperty.Register(
+            nameof(Release),
+            typeof(DetainedLicenseResponse),
+            typeof(ReleaseDetainedInfo),
+            new PropertyMetadata(null));
 
-        public DetainedLicenseDto? Release
+        public DetainedLicenseResponse? Release
         {
-            get => (DetainedLicenseDto?)GetValue(ReleaseProperty);
+            get => (DetainedLicenseResponse?)GetValue(ReleaseProperty);
             set => SetValue(ReleaseProperty, value);
         }
 

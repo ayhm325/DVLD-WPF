@@ -16,7 +16,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using Application.Interfaces;
 
 namespace DVLD_WPF
 {
@@ -24,7 +23,7 @@ namespace DVLD_WPF
     {
         public static INavigationService Navigation { get; private set; } = null!;
 
-        private readonly ICurrentUserService _currentUserService;
+        private readonly ICurrentUserSession _currentUserSession;
         private readonly IServiceProvider _serviceProvider;
         private readonly IDashboardService _dashboardService;
 
@@ -47,14 +46,14 @@ namespace DVLD_WPF
         //private bool _isFirstLoad = true;
 
         public MainWindow(
-            ICurrentUserService currentUserService,
+            ICurrentUserSession currentUserSession,
             IServiceProvider serviceProvider,
             IDashboardService dashboardService)
         {
             InitializeComponent();
 
-            _currentUserService = currentUserService
-                ?? throw new ArgumentNullException(nameof(currentUserService));
+            _currentUserSession = currentUserSession
+                ?? throw new ArgumentNullException(nameof(currentUserSession));
 
             _serviceProvider = serviceProvider
                 ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -99,7 +98,9 @@ namespace DVLD_WPF
         //                     أحداث النافذة
         // ═══════════════════════════════════════════════════════════
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void MainWindow_Loaded(
+            object sender,
+            RoutedEventArgs e)
         {
             _clockTimer = new DispatcherTimer
             {
@@ -190,7 +191,8 @@ namespace DVLD_WPF
                     continue;
                 }
 
-                nav.Style = (Style)FindResource("NavItemStyle");
+                nav.Style =
+                    (Style)FindResource("NavItemStyle");
             }
 
             if (item != NavSignOut)
@@ -212,11 +214,14 @@ namespace DVLD_WPF
             Border navItem,
             Page page)
         {
-            DashboardPanel.Visibility = Visibility.Collapsed;
+            DashboardPanel.Visibility =
+                Visibility.Collapsed;
 
             StopTypewriterEffect();
 
-            MainFrame.Visibility = Visibility.Visible;
+            MainFrame.Visibility =
+                Visibility.Visible;
+
             MainFrame.Navigate(page);
 
             SetActiveNav(navItem);
@@ -248,13 +253,18 @@ namespace DVLD_WPF
 
         private void ShowDashboard()
         {
-            DashboardPanel.Visibility = Visibility.Visible;
-            MainFrame.Visibility = Visibility.Collapsed;
+            DashboardPanel.Visibility =
+                Visibility.Visible;
+
+            MainFrame.Visibility =
+                Visibility.Collapsed;
+
             MainFrame.Content = null;
 
             SetActiveNav(NavDashboard);
 
             HeaderTitle.Text = "Dashboard";
+
             HeaderSubtitle.Text =
                 "Overview of your driving license system";
 
@@ -281,7 +291,8 @@ namespace DVLD_WPF
                 "Manage People",
                 "View and manage all registered people",
                 NavPeople,
-                _serviceProvider.GetRequiredService<PeoplePage>());
+                _serviceProvider
+                    .GetRequiredService<PeoplePage>());
         }
 
         private void NavDrivers_Click(
@@ -292,7 +303,8 @@ namespace DVLD_WPF
                 "Manage Drivers",
                 "View and manage all licensed drivers",
                 NavDrivers,
-                _serviceProvider.GetRequiredService<DriversPage>());
+                _serviceProvider
+                    .GetRequiredService<DriversPage>());
         }
 
         private void NavLocalApps_Click(
@@ -303,7 +315,8 @@ namespace DVLD_WPF
                 "Local Applications",
                 "Manage local driving license applications",
                 NavLocalApps,
-                _serviceProvider.GetRequiredService<LDLAppPage>());
+                _serviceProvider
+                    .GetRequiredService<LDLAppPage>());
         }
 
         private void NavIntlApps_Click(
@@ -314,7 +327,8 @@ namespace DVLD_WPF
                 "International Applications",
                 "Manage international license applications",
                 NavIntlApps,
-                _serviceProvider.GetRequiredService<InterLAppPage>());
+                _serviceProvider
+                    .GetRequiredService<InterLAppPage>());
         }
 
         private void NavDetained_Click(
@@ -325,7 +339,8 @@ namespace DVLD_WPF
                 "Detained Licenses",
                 "View and manage all detained licenses",
                 NavDetained,
-                _serviceProvider.GetRequiredService<ListDetainedLicenses>());
+                _serviceProvider
+                    .GetRequiredService<ListDetainedLicenses>());
         }
 
         private void NavRetakeTest_Click(
@@ -336,7 +351,8 @@ namespace DVLD_WPF
                 "Retake Test",
                 "Schedule a test retake for an applicant",
                 NavRetakeTest,
-                _serviceProvider.GetRequiredService<LDLAppPage>());
+                _serviceProvider
+                    .GetRequiredService<LDLAppPage>());
         }
 
         private void NavUsers_Click(
@@ -347,7 +363,8 @@ namespace DVLD_WPF
                 "Users",
                 "Manage system users and permissions",
                 NavUsers,
-                _serviceProvider.GetRequiredService<UserPage>());
+                _serviceProvider
+                    .GetRequiredService<UserPage>());
         }
 
         private void NavAppTypes_Click(
@@ -358,7 +375,8 @@ namespace DVLD_WPF
                 "Application Types",
                 "Configure application type settings",
                 NavAppTypes,
-                _serviceProvider.GetRequiredService<ManageApplicationTypePage>());
+                _serviceProvider
+                    .GetRequiredService<ManageApplicationTypePage>());
         }
 
         private void NavTestTypes_Click(
@@ -369,7 +387,8 @@ namespace DVLD_WPF
                 "Test Types",
                 "Configure test type settings",
                 NavTestTypes,
-                _serviceProvider.GetRequiredService<ManageTestTypePage>());
+                _serviceProvider
+                    .GetRequiredService<ManageTestTypePage>());
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -381,7 +400,8 @@ namespace DVLD_WPF
             MouseButtonEventArgs e)
         {
             OpenWindow(
-                _serviceProvider.GetRequiredService<NewLocalLicnnse>());
+                _serviceProvider
+                    .GetRequiredService<NewLocalLicnnse>());
         }
 
         private void NavNewInternational_Click(
@@ -389,7 +409,9 @@ namespace DVLD_WPF
             MouseButtonEventArgs e)
         {
             OpenWindow(
-                _serviceProvider.GetRequiredService<NewInternationalLicenseApplicationWin>());
+                _serviceProvider
+                    .GetRequiredService<
+                        NewInternationalLicenseApplicationWin>());
         }
 
         private void NavRenew_Click(
@@ -397,7 +419,9 @@ namespace DVLD_WPF
             MouseButtonEventArgs e)
         {
             OpenWindow(
-                _serviceProvider.GetRequiredService<RenewLicenseApplicationWin>());
+                _serviceProvider
+                    .GetRequiredService<
+                        RenewLicenseApplicationWin>());
         }
 
         private void NavReplace_Click(
@@ -405,7 +429,9 @@ namespace DVLD_WPF
             MouseButtonEventArgs e)
         {
             OpenWindow(
-                _serviceProvider.GetRequiredService<ReplacementDamagedLicense>());
+                _serviceProvider
+                    .GetRequiredService<
+                        ReplacementDamagedLicense>());
         }
 
         private void NavReleaseDetained_Click(
@@ -413,7 +439,9 @@ namespace DVLD_WPF
             MouseButtonEventArgs e)
         {
             OpenWindow(
-                _serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>());
+                _serviceProvider
+                    .GetRequiredService<
+                        ReleaseDetainedLicenseWin>());
         }
 
         private void NavDetainLicense_Click(
@@ -421,7 +449,9 @@ namespace DVLD_WPF
             MouseButtonEventArgs e)
         {
             OpenWindow(
-                _serviceProvider.GetRequiredService<DetainLicenseWin>());
+                _serviceProvider
+                    .GetRequiredService<
+                        DetainLicenseWin>());
         }
 
         private async void NavMyProfile_Click(
@@ -430,16 +460,19 @@ namespace DVLD_WPF
         {
             var userDetailsVm =
                 _serviceProvider
-                    .GetRequiredService<AddEditUserViewModel>();
+                    .GetRequiredService<
+                        AddEditUserViewModel>();
 
             await userDetailsVm.InitializeAsync(
-                _currentUserService.UserId);
+                _currentUserSession.UserId);
 
             var window =
                 _serviceProvider
-                    .GetRequiredService<UserDetailsWindow>();
+                    .GetRequiredService<
+                        UserDetailsWindow>();
 
-            window.DataContext = userDetailsVm;
+            window.DataContext =
+                userDetailsVm;
 
             OpenWindow(window);
         }
@@ -450,16 +483,21 @@ namespace DVLD_WPF
         {
             var vm =
                 _serviceProvider
-                    .GetRequiredService<ChangePasswordViewModel>();
+                    .GetRequiredService<
+                        ChangePasswordViewModel>();
 
-            vm.UserId = _currentUserService.UserId;
-            vm.UserName = _currentUserService.Username;
+            vm.UserId =
+                _currentUserSession.UserId;
 
-            var window = new ChangePasswordWindow(vm)
-            {
-                Owner =
-                    System.Windows.Application.Current.MainWindow
-            };
+            vm.UserName =
+                _currentUserSession.Username;
+
+            var window =
+                new ChangePasswordWindow(vm)
+                {
+                    Owner =
+                        System.Windows.Application.Current.MainWindow
+                };
 
             OpenWindow(window);
         }
@@ -483,10 +521,11 @@ namespace DVLD_WPF
                 return;
             }
 
-            _currentUserService.Clear();
+            _currentUserSession.Clear();
 
             var loginWindow =
-                _serviceProvider.GetRequiredService<LoginWindow>();
+                _serviceProvider
+                    .GetRequiredService<LoginWindow>();
 
             loginWindow.Show();
 
@@ -514,13 +553,15 @@ namespace DVLD_WPF
 
             // تشغيل الـ Storyboard المتدرج
             var stagger =
-                (Storyboard)FindResource("StaggerEnterStoryboard");
+                (Storyboard)FindResource(
+                    "StaggerEnterStoryboard");
 
             stagger.Begin(this);
 
             // تشغيل توهج النبض
             var glow =
-                (Storyboard)FindResource("PulseGlowStoryboard");
+                (Storyboard)FindResource(
+                    "PulseGlowStoryboard");
 
             glow.Begin(this);
         }
@@ -538,7 +579,8 @@ namespace DVLD_WPF
             TypewriterCursor.Opacity = 1;
 
             _cursorBlinkStoryboard =
-                (Storyboard)FindResource("CursorBlinkStoryboard");
+                (Storyboard)FindResource(
+                    "CursorBlinkStoryboard");
 
             _cursorBlinkStoryboard.Begin(
                 TypewriterCursor,
@@ -546,10 +588,13 @@ namespace DVLD_WPF
 
             _typewriterTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(25)
+                Interval =
+                    TimeSpan.FromMilliseconds(25)
             };
 
-            _typewriterTimer.Tick += TypewriterTimer_Tick;
+            _typewriterTimer.Tick +=
+                TypewriterTimer_Tick;
+
             _typewriterTimer.Start();
         }
 
@@ -558,7 +603,10 @@ namespace DVLD_WPF
             if (_typewriterTimer != null)
             {
                 _typewriterTimer.Stop();
-                _typewriterTimer.Tick -= TypewriterTimer_Tick;
+
+                _typewriterTimer.Tick -=
+                    TypewriterTimer_Tick;
+
                 _typewriterTimer = null;
             }
 
@@ -566,7 +614,8 @@ namespace DVLD_WPF
             {
                 try
                 {
-                    _cursorBlinkStoryboard.Remove(TypewriterCursor);
+                    _cursorBlinkStoryboard.Remove(
+                        TypewriterCursor);
                 }
                 catch
                 {
@@ -581,10 +630,12 @@ namespace DVLD_WPF
             object? sender,
             EventArgs e)
         {
-            if (_typewriterIndex < TypewriterFullText.Length)
+            if (_typewriterIndex <
+                TypewriterFullText.Length)
             {
                 TypewriterText.Text +=
-                    TypewriterFullText[_typewriterIndex];
+                    TypewriterFullText[
+                        _typewriterIndex];
 
                 _typewriterIndex++;
             }
@@ -592,6 +643,6 @@ namespace DVLD_WPF
             {
                 StopTypewriterEffect();
             }
-        }       
+        }
     }
 }

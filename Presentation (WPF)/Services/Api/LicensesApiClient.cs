@@ -21,4 +21,20 @@ public sealed class LicensesApiClient(
         => apiClient.GetAsync<LicenseResponse>(
             $"api/licenses/{licenseId}",
             cancellationToken);
+
+    public Task<ApiResult<DriverLicenseInfoResponse>>
+        GetDetailsByIdAsync(
+            int licenseId,
+            CancellationToken cancellationToken = default)
+        => apiClient.GetAsync<DriverLicenseInfoResponse>(
+            $"api/licenses/{licenseId}/details",
+            cancellationToken);
+
+    public Task<ApiResult<List<LicenseResponse>>>
+        GetByDriverIdAsync(
+            int driverId,
+            CancellationToken cancellationToken = default)
+        => apiClient.GetAsync<List<LicenseResponse>>(
+            $"api/licenses/driver/{driverId}",
+            cancellationToken);
 }

@@ -1,7 +1,6 @@
-﻿using Application.DTOs.DetainedLicenseDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.DetainedLicense;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
@@ -14,16 +13,16 @@ namespace Presentation.ViewModels;
 public partial class ListDetainedLicensesViewModel : ObservableObject
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IDetainedLicenseService _detainedLicenseService;
+    private readonly IDetainedLicensesApiClient _detainedLicensesApiClient;
     private readonly IPeopleApiClient _peopleApiClient;
 
-    private List<DetainedLicenseDto> _allDetainedLicenses = new();
+    private List<DetainedLicenseResponse> _allDetainedLicenses = new();
 
-    public ObservableCollection<DetainedLicenseDto> DetainedLicenses { get; }
+    public ObservableCollection<DetainedLicenseResponse> DetainedLicenses { get; }
         = new();
 
     [ObservableProperty]
-    private DetainedLicenseDto? selectedDetainedLicense;
+    private DetainedLicenseResponse? selectedDetainedLicense;
 
     [ObservableProperty]
     private string searchText = string.Empty;
@@ -59,14 +58,14 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
         SelectedFilter == "Released";
 
     public ListDetainedLicensesViewModel(
-        IDetainedLicenseService detainedLicenseService,
+        IDetainedLicensesApiClient detainedLicensesApiClient,
         IServiceProvider serviceProvider,
         IPeopleApiClient peopleApiClient)
     {
-        _detainedLicenseService =
-            detainedLicenseService
+        _detainedLicensesApiClient =
+            detainedLicensesApiClient
             ?? throw new ArgumentNullException(
-                nameof(detainedLicenseService));
+                nameof(detainedLicensesApiClient));
 
         _serviceProvider =
             serviceProvider
@@ -86,7 +85,7 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
     public async Task LoadAsync()
     {
         var result =
-            await _detainedLicenseService.GetAllAsync();
+            await _detainedLicensesApiClient.GetAllAsync();
 
         if (result.IsFailure)
         {
@@ -133,7 +132,7 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
 
     private void ApplyFilter()
     {
-        IEnumerable<DetainedLicenseDto> query =
+        IEnumerable<DetainedLicenseResponse> query =
             _allDetainedLicenses;
 
         if (SelectedFilter == "Released")
@@ -161,13 +160,13 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
             {
                 "Detain ID" =>
                     query.Where(x =>
-                        x.DetainID
+                        x.DetainId
                             .ToString()
                             .Contains(text)),
 
                 "License ID" =>
                     query.Where(x =>
-                        x.LicenseID
+                        x.LicenseId
                             .ToString()
                             .Contains(text)),
 
@@ -220,7 +219,7 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
 
         var window =
             new PersonDetailsWindow(
-                SelectedDetainedLicense.ApplicantPersonID,
+                SelectedDetainedLicense.PersonId,
                 _peopleApiClient)
             {
                 Owner =
@@ -242,7 +241,7 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
 
         var window =
             new DriverLicenseInfoWin(
-                SelectedDetainedLicense.LicenseID)
+                SelectedDetainedLicense.LicenseId)
             {
                 Owner =
                     System.Windows.Application.Current.MainWindow
@@ -262,7 +261,7 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
             return;
 
         int personId =
-            SelectedDetainedLicense.ApplicantPersonID;
+            SelectedDetainedLicense.PersonId;
 
         var vm =
             _serviceProvider
@@ -293,11 +292,11 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
             return;
 
         int licenseId =
-            SelectedDetainedLicense.LicenseID;
+            SelectedDetainedLicense.LicenseId;
 
         var detainedResult =
-            await _detainedLicenseService
-                .GetActiveDetainByLicenseIdAsync(
+            await _detainedLicensesApiClient
+                .GetActiveByLicenseIdAsync(
                     licenseId);
 
         if (detainedResult.IsFailure ||

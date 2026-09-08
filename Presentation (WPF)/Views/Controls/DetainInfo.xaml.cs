@@ -1,4 +1,4 @@
-﻿using Application.DTOs.DetainedLicenseDTO;
+﻿using DVLD.Contracts.DetainedLicense;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -12,15 +12,15 @@ namespace Presentation.Views.Controls
         }
 
         public static readonly DependencyProperty DetainProperty =
-            DependencyProperty.Register(
-                nameof(Detain),
-                typeof(DetainedLicenseDto),
-                typeof(DetainInfo),
-                new PropertyMetadata(null));
+        DependencyProperty.Register(
+            nameof(Detain),
+            typeof(DetainedLicenseResponse),
+            typeof(DetainInfo),
+            new PropertyMetadata(null));
 
-        public DetainedLicenseDto? Detain
+        public DetainedLicenseResponse? Detain
         {
-            get => (DetainedLicenseDto?)GetValue(DetainProperty);
+            get => (DetainedLicenseResponse?)GetValue(DetainProperty);
             set => SetValue(DetainProperty, value);
         }
 
