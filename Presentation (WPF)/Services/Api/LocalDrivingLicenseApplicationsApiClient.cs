@@ -103,6 +103,14 @@ public sealed class LocalDrivingLicenseApplicationsApiClient(
             $"api/localdrivinglicenseapplications/{localApplicationId}",
             cancellationToken);
 
+    public Task<ApiResult>
+        CancelAsync(
+            int localApplicationId,
+            CancellationToken cancellationToken = default)
+        => apiClient.PostAsync(
+            $"api/localdrivinglicenseapplications/{localApplicationId}/cancel",
+            cancellationToken);
+
     private sealed class ApplicationIdResponse
     {
         public int ApplicationId { get; init; }

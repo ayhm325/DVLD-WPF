@@ -13,8 +13,7 @@ namespace Presentation.ViewModels;
 
 public partial class LDLAppViewModel : ObservableObject
 {
-    private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;
-    private readonly IApplicationsApiClient _applicationsApiClient;
+    private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;  
     private readonly ILicensesApiClient _licensesApiClient;
     private readonly IServiceProvider _serviceProvider;
     private readonly IPeopleApiClient _peopleApiClient;
@@ -61,7 +60,6 @@ public partial class LDLAppViewModel : ObservableObject
 
     public LDLAppViewModel(
         ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
-        IApplicationsApiClient applicationsApiClient,
         ILicensesApiClient licensesApiClient,
         IServiceProvider serviceProvider,
         IPeopleApiClient peopleApiClient)
@@ -69,11 +67,7 @@ public partial class LDLAppViewModel : ObservableObject
         _localApplicationsApiClient =
             localApplicationsApiClient
             ?? throw new ArgumentNullException(nameof(localApplicationsApiClient));
-
-        _applicationsApiClient =
-            applicationsApiClient
-            ?? throw new ArgumentNullException(nameof(applicationsApiClient));
-
+        
         _licensesApiClient =
             licensesApiClient
             ?? throw new ArgumentNullException(nameof(licensesApiClient));
@@ -269,23 +263,18 @@ public partial class LDLAppViewModel : ObservableObject
     {
         try
         {
-            var appIdResult =
-                await _localApplicationsApiClient
-                    .GetApplicationIdAsync(localApplicationId);
-
-            if (appIdResult.IsFailure)
-            {
-                MessageBox.Show(appIdResult.Error);
-                return;
-            }
-
             var result =
-                await _applicationsApiClient
-                    .CancelAsync(appIdResult.Value);
+                await _localApplicationsApiClient
+                    .CancelAsync(localApplicationId);
 
             if (result.IsFailure)
             {
-                MessageBox.Show(result.Error);
+                MessageBox.Show(
+                    result.Error,
+                    "Cancel Application",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 

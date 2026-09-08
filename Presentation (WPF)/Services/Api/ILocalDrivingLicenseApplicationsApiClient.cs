@@ -6,7 +6,8 @@ namespace Presentation.Services.Api;
 public interface ILocalDrivingLicenseApplicationsApiClient
 {
     Task<ApiResult<List<LocalDrivingLicenseApplicationResponse>>>
-        GetAllAsync(CancellationToken cancellationToken = default);
+        GetAllAsync(
+            CancellationToken cancellationToken = default);
 
     Task<ApiResult<LocalDrivingLicenseApplicationResponse>>
         GetByIdAsync(
@@ -50,6 +51,11 @@ public interface ILocalDrivingLicenseApplicationsApiClient
 
     Task<ApiResult>
         DeleteAsync(
+            int localApplicationId,
+            CancellationToken cancellationToken = default);
+
+    Task<ApiResult>
+        CancelAsync(
             int localApplicationId,
             CancellationToken cancellationToken = default);
 }

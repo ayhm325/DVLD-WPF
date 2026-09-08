@@ -47,6 +47,22 @@ public sealed class ApiClient(
             cancellationToken);
     }
 
+    public async Task<ApiResult> PostAsync(
+        string requestUri,
+        CancellationToken cancellationToken = default)
+    {
+        var result =
+            await SendAsync<object?>(
+                () => CreateRequest(
+                    HttpMethod.Post,
+                    requestUri),
+                cancellationToken);
+
+        return result.IsSuccess
+            ? ApiResult.Success()
+            : ApiResult.Failure(result.Error);
+    }
+
     public async Task<ApiResult> PutAsync<TRequest>(
         string requestUri,
         TRequest request,

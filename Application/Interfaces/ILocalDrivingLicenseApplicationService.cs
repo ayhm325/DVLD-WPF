@@ -12,13 +12,16 @@ public interface ILocalDrivingLicenseApplicationService
         GetLocalDrivingLicenseApplicationByIdAsync(int id);
 
     Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
-        GetLocalDrivingLicenseApplicationsByApplicationIdAsync(int applicationId);
+        GetLocalDrivingLicenseApplicationsByApplicationIdAsync(
+            int applicationId);
 
     Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
-        GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(int licenseClassId);
+        GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(
+            int licenseClassId);
 
     Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
-        GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(int applicantPersonId);
+        GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(
+            int applicantPersonId);
 
     Task<Result<decimal>>
         GetNewLocalDrivingLicenseApplicationFeesAsync();
@@ -39,6 +42,10 @@ public interface ILocalDrivingLicenseApplicationService
 
     Task<Result>
         DeleteLocalDrivingLicenseApplicationAsync(int id);
+
+    Task<Result>
+        CancelLocalDrivingLicenseApplicationAsync(
+            int localApplicationId);
 
     Task<Result<int>>
         GetApplicationIdByLocalIdAsync(int localId);

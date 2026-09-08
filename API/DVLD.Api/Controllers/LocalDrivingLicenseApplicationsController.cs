@@ -148,6 +148,17 @@ public sealed class LocalDrivingLicenseApplicationsController(
             : HandleFailure(result);
     }
 
+    [HttpPost("{id:int}/cancel")]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var result =
+            await service.CancelLocalDrivingLicenseApplicationAsync(id);
+
+        return result.IsSuccess
+            ? NoContent()
+            : HandleFailure(result);
+    }
+
     private static LocalDrivingLicenseApplicationResponse Map(
         LocalDrivingLicenseApplicationListDto dto)
         => new()

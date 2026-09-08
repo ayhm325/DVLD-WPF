@@ -13,6 +13,10 @@ public interface IApiClient
         TRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<ApiResult> PostAsync(
+        string requestUri,
+        CancellationToken cancellationToken = default);
+
     Task<ApiResult> PutAsync<TRequest>(
         string requestUri,
         TRequest request,
