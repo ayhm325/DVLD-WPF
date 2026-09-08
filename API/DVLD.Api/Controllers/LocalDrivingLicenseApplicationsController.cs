@@ -1,6 +1,8 @@
 ﻿using Application.Common.Results;
+using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
+using DVLD.Contracts.Application;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +35,19 @@ public sealed class LocalDrivingLicenseApplicationsController(
         return result.IsSuccess
             ? Ok(Map(result.Value!))
             : HandleFailure(result);
+    }
+
+    [HttpGet("{localId:int}/application-basic-info")]
+    public async Task<IActionResult> GetApplicationBasicInfo(int localId)
+    {
+        var result =
+            await service.GetApplicationBasicInfoAsync(localId);
+
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return Ok(
+            MapApplicationBasicInfo(result.Value!));
     }
 
     [HttpGet("application/{applicationId:int}")]
@@ -244,4 +259,20 @@ public sealed class LocalDrivingLicenseApplicationsController(
                     StatusCodes.Status500InternalServerError,
                     new { error = result.Error })
         };
+
+    private static ApplicationBasicInfoResponse MapApplicationBasicInfo(
+         ApplicationBasicInfoDto dto)
+         => new()
+         {
+             ApplicantPersonId = dto.ApplicantPersonID,
+             ApplicationId = dto.ApplicationID,
+             ApplicationStatus = dto.ApplicationStatus.ToString(),
+             StatusText = dto.StatusText,
+             PaidFees = dto.PaidFees,
+             ApplicationTypeName = dto.ApplicationTypeName,
+             ApplicantFullName = dto.ApplicantFullName,
+             ApplicationDate = dto.ApplicationDate,
+             LastStatusDate = dto.LastStatusDate,
+             CreatedByUserName = dto.CreatedByUserName
+         };
 }

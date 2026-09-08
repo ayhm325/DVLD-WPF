@@ -12,12 +12,9 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
 {
     private readonly ILicenseIssuanceApiClient _licenseIssuanceApiClient;
     private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;
-    private readonly IApplicationsApiClient _applicationsApiClient;
-
     private readonly int _localAppId;
     private readonly Window _window;
 
-    // App Info
     [ObservableProperty]
     private int drivingLicenseApplicationId;
 
@@ -30,11 +27,9 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
     [ObservableProperty]
     private int totalTests = 3;
 
-    // Basic Info
     [ObservableProperty]
     private ApplicationBasicInfoResponse? basicApplicationInfo;
 
-    // Form
     [ObservableProperty]
     private string? notes;
 
@@ -45,20 +40,23 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
         int localAppId,
         Window window,
         ILicenseIssuanceApiClient licenseIssuanceApiClient,
-        ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
-        IApplicationsApiClient applicationsApiClient)
+        ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient)
     {
         if (localAppId <= 0)
             throw new ArgumentOutOfRangeException(nameof(localAppId));
 
         _localAppId = localAppId;
-        _window = window ?? throw new ArgumentNullException(nameof(window));
-        _licenseIssuanceApiClient =
-            licenseIssuanceApiClient ?? throw new ArgumentNullException(nameof(licenseIssuanceApiClient));
-        _localApplicationsApiClient =
-            localApplicationsApiClient ?? throw new ArgumentNullException(nameof(localApplicationsApiClient));
-        _applicationsApiClient =
-            applicationsApiClient ?? throw new ArgumentNullException(nameof(applicationsApiClient));
+
+        _window = window
+            ?? throw new ArgumentNullException(nameof(window));
+
+        _licenseIssuanceApiClient = licenseIssuanceApiClient
+            ?? throw new ArgumentNullException(
+                nameof(licenseIssuanceApiClient));
+
+        _localApplicationsApiClient = localApplicationsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(localApplicationsApiClient));
 
         DrivingLicenseApplicationId = localAppId;
 
@@ -70,32 +68,22 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
         try
         {
             var localAppResult =
-                await _localApplicationsApiClient.GetByIdAsync(_localAppId);
+                await _localApplicationsApiClient
+                    .GetByIdAsync(_localAppId);
 
-            if (localAppResult.IsFailure)
+            if (localAppResult.IsFailure ||
+                localAppResult.Value is null)
             {
-                MessageBox.Show(
-                    localAppResult.Error,
-                    "Loading Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                ShowError(
+                    localAppResult.IsFailure
+                        ? localAppResult.Error
+                        : "Local driving license application was not found.",
+                    "Loading Error");
 
                 return;
             }
 
-            LocalDrivingLicenseApplicationResponse? localApp =
-                localAppResult.Value;
-
-            if (localApp is null)
-            {
-                MessageBox.Show(
-                    "Local driving license application was not found.",
-                    "Loading Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
+            var localApp = localAppResult.Value;
 
             DrivingLicenseApplicationId =
                 localApp.LocalDrivingLicenseApplicationId;
@@ -106,61 +94,36 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
             PassedTests =
                 localApp.PassedTest;
 
-            var applicationIdResult =
-                await _localApplicationsApiClient.GetApplicationIdAsync(_localAppId);
+            var applicationResult =
+                await _localApplicationsApiClient
+                    .GetApplicationBasicInfoAsync(_localAppId);
 
-            if (applicationIdResult.IsFailure)
+            if (applicationResult.IsFailure)
             {
-                BasicApplicationInfo = null;
-
-                MessageBox.Show(
-                    applicationIdResult.Error,
-                    "Loading Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
-            int applicationId =
-                applicationIdResult.Value;
-
-            var result =
-                await _applicationsApiClient.GetBasicInfoAsync(applicationId);
-
-            if (result.IsFailure)
-            {
-                BasicApplicationInfo = null;
-
-                MessageBox.Show(
-                    result.Error,
-                    "Loading Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                ShowError(
+                    applicationResult.Error,
+                    "Loading Error");
 
                 return;
             }
 
             BasicApplicationInfo =
-                result.Value;
+                applicationResult.Value;
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            ShowError(
                 ex.Message,
-                "Loading Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                "Loading Error");
         }
     }
 
     [RelayCommand]
-    private void Close()
-    {
+    private void Close() =>
         _window.Close();
-    }
 
-    private bool CanIssue() => !IsBusy;
+    private bool CanIssue() =>
+        !IsBusy;
 
     [RelayCommand(CanExecute = nameof(CanIssue))]
     private async Task Issue()
@@ -169,21 +132,18 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
         {
             IsBusy = true;
 
-            var request =
-                new IssueFirstLicenseRequest(
-                    _localAppId,
-                    Notes);
-
             var result =
-                await _licenseIssuanceApiClient.IssueFirstLicenseAsync(request);
+                await _licenseIssuanceApiClient
+                    .IssueFirstLicenseAsync(
+                        new IssueFirstLicenseRequest(
+                            _localAppId,
+                            Notes));
 
             if (result.IsFailure)
             {
-                MessageBox.Show(
+                ShowError(
                     result.Error,
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    "Error");
 
                 return;
             }
@@ -198,11 +158,9 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            ShowError(
                 ex.Message,
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                "Error");
         }
         finally
         {
@@ -210,4 +168,13 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
             IssueCommand.NotifyCanExecuteChanged();
         }
     }
+
+    private static void ShowError(
+        string message,
+        string title) =>
+        MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
 }

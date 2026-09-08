@@ -10,7 +10,6 @@ namespace Presentation.ViewModels;
 public partial class LocalApplicationDetailsViewModel : ObservableObject
 {
     private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;
-    private readonly IApplicationsApiClient _applicationsApiClient;
     private readonly ILicensesApiClient _licensesApiClient;
 
     [ObservableProperty]
@@ -24,38 +23,26 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
 
     public LocalApplicationDetailsViewModel(
         ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
-        IApplicationsApiClient applicationsApiClient,
         ILicensesApiClient licensesApiClient)
     {
-        _localApplicationsApiClient =
-            localApplicationsApiClient
+        _localApplicationsApiClient = localApplicationsApiClient
             ?? throw new ArgumentNullException(
                 nameof(localApplicationsApiClient));
 
-        _applicationsApiClient =
-            applicationsApiClient
-            ?? throw new ArgumentNullException(
-                nameof(applicationsApiClient));
-
-        _licensesApiClient =
-            licensesApiClient
+        _licensesApiClient = licensesApiClient
             ?? throw new ArgumentNullException(
                 nameof(licensesApiClient));
     }
 
     public async Task LoadAsync(int localId)
     {
-        ApplicationInfo = null;
-        LdlAppInfo = null;
-        LicenseInfo = null;
+        ResetState();
 
         if (localId <= 0)
         {
-            MessageBox.Show(
+            ShowWarning(
                 "Invalid local application ID.",
-                "Application Details",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                "Application Details");
 
             return;
         }
@@ -66,83 +53,88 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
                 await _localApplicationsApiClient
                     .GetByIdAsync(localId);
 
-            if (localAppResult.IsFailure)
+            if (localAppResult.IsFailure ||
+                localAppResult.Value is null)
             {
-                MessageBox.Show(
-                    localAppResult.Error,
-                    "Application Details",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                ShowWarning(
+                    localAppResult.IsFailure
+                        ? localAppResult.Error
+                        : "Local driving license application was not found.",
+                    "Application Details");
 
                 return;
             }
 
-            LdlAppInfo = localAppResult.Value;
-
-            var appIdResult =
-                await _localApplicationsApiClient
-                    .GetApplicationIdAsync(localId);
-
-            if (appIdResult.IsFailure)
-            {
-                MessageBox.Show(
-                    appIdResult.Error,
-                    "Application Details",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            var applicationId = appIdResult.Value;
+            LdlAppInfo =
+                localAppResult.Value;
 
             var applicationResult =
-                await _applicationsApiClient
-                    .GetBasicInfoAsync(applicationId);
+                await _localApplicationsApiClient
+                    .GetApplicationBasicInfoAsync(localId);
 
-            if (applicationResult.IsFailure)
+            if (applicationResult.IsFailure ||
+                applicationResult.Value is null)
             {
-                MessageBox.Show(
-                    applicationResult.Error,
-                    "Application Details",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                ShowWarning(
+                    applicationResult.IsFailure
+                        ? applicationResult.Error
+                        : "Application information was not found.",
+                    "Application Details");
 
                 return;
             }
 
-            ApplicationInfo = applicationResult.Value;
+            ApplicationInfo =
+                applicationResult.Value;
+
+            var applicationId =
+                ApplicationInfo.ApplicationId;
 
             var licensesResult =
                 await _licensesApiClient
                     .GetByApplicationIdAsync(applicationId);
 
             if (licensesResult.IsFailure)
-            {
-                LicenseInfo = null;
                 return;
-            }
-
-            var licenses =
-                licensesResult.Value
-                ?? new List<LicenseResponse>();
 
             LicenseInfo =
-                licenses.FirstOrDefault(x =>
-                    x.LicenseClassId ==
-                    LdlAppInfo!.LicenseClassId);
+                licensesResult.Value?
+                    .FirstOrDefault(x =>
+                        x.LicenseClassId ==
+                        LdlAppInfo.LicenseClassId);
         }
         catch (Exception ex)
         {
-            ApplicationInfo = null;
-            LdlAppInfo = null;
-            LicenseInfo = null;
+            ResetState();
 
-            MessageBox.Show(
+            ShowError(
                 ex.Message,
-                "Application Details",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                "Application Details");
         }
     }
+
+    private void ResetState()
+    {
+        ApplicationInfo = null;
+        LdlAppInfo = null;
+        LicenseInfo = null;
+    }
+
+    private static void ShowWarning(
+        string message,
+        string title) =>
+        MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+
+    private static void ShowError(
+        string message,
+        string title) =>
+        MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
 }

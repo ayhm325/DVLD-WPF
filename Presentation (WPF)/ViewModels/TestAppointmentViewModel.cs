@@ -17,39 +17,8 @@ public partial class TestAppointmentViewModel : ObservableObject
     private readonly ITestAppointmentsApiClient _testAppointmentsApiClient;
     private readonly ITestWorkflowApiClient _testWorkflowApiClient;
     private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;
-    private readonly IApplicationsApiClient _applicationsApiClient;
 
     private int _localApplicationId;
-
-    public TestAppointmentViewModel(
-        ITestAppointmentsApiClient testAppointmentsApiClient,
-        ITestWorkflowApiClient testWorkflowApiClient,
-        ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
-        IApplicationsApiClient applicationsApiClient,
-        IServiceProvider serviceProvider)
-    {
-        _testAppointmentsApiClient =
-            testAppointmentsApiClient
-            ?? throw new ArgumentNullException(nameof(testAppointmentsApiClient));
-
-        _testWorkflowApiClient =
-            testWorkflowApiClient
-            ?? throw new ArgumentNullException(nameof(testWorkflowApiClient));
-
-        _localApplicationsApiClient =
-            localApplicationsApiClient
-            ?? throw new ArgumentNullException(nameof(localApplicationsApiClient));
-
-        _applicationsApiClient =
-            applicationsApiClient
-            ?? throw new ArgumentNullException(nameof(applicationsApiClient));
-
-        _serviceProvider =
-            serviceProvider
-            ?? throw new ArgumentNullException(nameof(serviceProvider));
-    }
-
-    // ===== STATE =====
 
     [ObservableProperty]
     private TestType testType;
@@ -78,9 +47,8 @@ public partial class TestAppointmentViewModel : ObservableObject
     [ObservableProperty]
     private string workflowMessage = string.Empty;
 
-    public ObservableCollection<TestAppointmentResponse> AppointmentsList { get; } = new();
-
-    // ===== UI TEXT =====
+    public ObservableCollection<TestAppointmentResponse> AppointmentsList
+    { get; } = new();
 
     public string PageTitle => TestType switch
     {
@@ -112,7 +80,28 @@ public partial class TestAppointmentViewModel : ObservableObject
             "Manage test appointments for this application."
     };
 
-    // ===== LOAD =====
+    public TestAppointmentViewModel(
+        ITestAppointmentsApiClient testAppointmentsApiClient,
+        ITestWorkflowApiClient testWorkflowApiClient,
+        ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
+        IServiceProvider serviceProvider)
+    {
+        _testAppointmentsApiClient = testAppointmentsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(testAppointmentsApiClient));
+
+        _testWorkflowApiClient = testWorkflowApiClient
+            ?? throw new ArgumentNullException(
+                nameof(testWorkflowApiClient));
+
+        _localApplicationsApiClient = localApplicationsApiClient
+            ?? throw new ArgumentNullException(
+                nameof(localApplicationsApiClient));
+
+        _serviceProvider = serviceProvider
+            ?? throw new ArgumentNullException(
+                nameof(serviceProvider));
+    }
 
     public async Task LoadAsync(
         int localApplicationId,
@@ -130,13 +119,9 @@ public partial class TestAppointmentViewModel : ObservableObject
 
             if (localApplicationId <= 0)
             {
-                WorkflowMessage =
-                    "Invalid local driving license application ID.";
-
-                Show(
-                    WorkflowMessage,
-                    "Invalid Data",
-                    MessageBoxImage.Warning);
+                ShowWarning(
+                    "Invalid local driving license application ID.",
+                    "Invalid Data");
 
                 return;
             }
@@ -153,10 +138,9 @@ public partial class TestAppointmentViewModel : ObservableObject
                         ? ldlResult.Error
                         : "Local driving license application was not found.";
 
-                Show(
+                ShowWarning(
                     WorkflowMessage,
-                    "Application Not Found",
-                    MessageBoxImage.Warning);
+                    "Application Not Found");
 
                 return;
             }
@@ -164,33 +148,28 @@ public partial class TestAppointmentViewModel : ObservableObject
             LdlAppInfo =
                 ldlResult.Value;
 
-            var applicationIdResult =
+            var applicationResult =
                 await _localApplicationsApiClient
-                    .GetApplicationIdAsync(localApplicationId);
+                    .GetApplicationBasicInfoAsync(
+                        localApplicationId);
 
-            if (applicationIdResult.IsFailure)
+            if (applicationResult.IsFailure ||
+                applicationResult.Value is null)
             {
                 WorkflowMessage =
-                    applicationIdResult.Error;
+                    applicationResult.IsFailure
+                        ? applicationResult.Error
+                        : "Application information was not found.";
 
-                Show(
+                ShowWarning(
                     WorkflowMessage,
-                    "Application Error",
-                    MessageBoxImage.Warning);
+                    "Application Error");
 
                 return;
             }
 
-            var applicationResult =
-                await _applicationsApiClient
-                    .GetBasicInfoAsync(
-                        applicationIdResult.Value);
-
-            if (applicationResult.IsSuccess)
-            {
-                ApplicationInfo =
-                    applicationResult.Value;
-            }
+            ApplicationInfo =
+                applicationResult.Value;
 
             var workflowResult =
                 await _testWorkflowApiClient
@@ -229,10 +208,9 @@ public partial class TestAppointmentViewModel : ObservableObject
         {
             ResetState();
 
-            Show(
+            ShowError(
                 ex.Message,
-                "Loading Error",
-                MessageBoxImage.Error);
+                "Loading Error");
         }
     }
 
@@ -247,28 +225,24 @@ public partial class TestAppointmentViewModel : ObservableObject
 
         if (result.IsFailure)
         {
-            Show(
+            ShowWarning(
                 result.Error,
-                "Appointments Error",
-                MessageBoxImage.Warning);
+                "Appointments Error");
 
             return;
         }
 
-        var testTypeId =
-            (int)TestType;
-
         var appointments =
             result.Value?
-                .Where(x => x.TestTypeId == testTypeId)
-                .OrderByDescending(x => x.AppointmentDate)
+                .Where(x =>
+                    x.TestTypeId == (int)TestType)
+                .OrderByDescending(x =>
+                    x.AppointmentDate)
                 .ToList()
             ?? [];
 
         foreach (var appointment in appointments)
-        {
             AppointmentsList.Add(appointment);
-        }
     }
 
     private async Task RefreshAppointmentStateAsync()
@@ -284,13 +258,8 @@ public partial class TestAppointmentViewModel : ObservableObject
                     _localApplicationId,
                     (int)TestType);
 
-        if (result.IsFailure)
-        {
-            CanAddAppointment = false;
-            return;
-        }
-
-        CanAddAppointment = !result.Value;
+        if (result.IsSuccess)
+            CanAddAppointment = !result.Value;
     }
 
     private void ResetState()
@@ -304,14 +273,11 @@ public partial class TestAppointmentViewModel : ObservableObject
         CanAddAppointment = false;
         CanTakeTest = false;
         CanEditAppointment = false;
-
         IsWorkflowAllowed = false;
         WorkflowMessage = string.Empty;
 
         RefreshCommands();
     }
-
-    // ===== ADD APPOINTMENT =====
 
     [RelayCommand(CanExecute = nameof(CanAddAppointment))]
     private async Task AddAppointmentAsync()
@@ -319,26 +285,25 @@ public partial class TestAppointmentViewModel : ObservableObject
         if (LdlAppInfo is null)
             return;
 
+        var localApplicationId =
+            LdlAppInfo.LocalDrivingLicenseApplicationId;
+
         var workflowResult =
             await _testWorkflowApiClient
                 .CanScheduleAsync(
-                    LdlAppInfo.LocalDrivingLicenseApplicationId,
+                    localApplicationId,
                     TestType);
 
         if (workflowResult.IsFailure ||
             workflowResult.Value is null ||
             !workflowResult.Value.Allowed)
         {
-            var error =
+            ShowWarning(
                 workflowResult.IsFailure
                     ? workflowResult.Error
                     : workflowResult.Value?.Error
-                      ?? "Test cannot be scheduled at this stage.";
-
-            Show(
-                error,
-                "Cannot Schedule Test",
-                MessageBoxImage.Warning);
+                      ?? "Test cannot be scheduled at this stage.",
+                "Cannot Schedule Test");
 
             return;
         }
@@ -348,37 +313,35 @@ public partial class TestAppointmentViewModel : ObservableObject
                 .GetRequiredService<ScheduleTestViewModel>();
 
         await vm.LoadAsync(
-            LdlAppInfo.LocalDrivingLicenseApplicationId,
+            localApplicationId,
             TestType);
 
         OpenDialog(
             new ScheduleTestWin(vm));
 
         await LoadAsync(
-            LdlAppInfo.LocalDrivingLicenseApplicationId,
+            localApplicationId,
             TestType);
     }
-
-    // ===== EDIT APPOINTMENT =====
 
     [RelayCommand(CanExecute = nameof(CanEditAppointment))]
     private async Task EditAppointmentAsync()
     {
         if (SelectedAppointment is null ||
             LdlAppInfo is null)
-        {
             return;
-        }
 
         if (SelectedAppointment.IsLocked)
         {
-            Show(
+            ShowWarning(
                 "This appointment is locked and cannot be modified.",
-                "Edit Appointment",
-                MessageBoxImage.Warning);
+                "Edit Appointment");
 
             return;
         }
+
+        var localApplicationId =
+            LdlAppInfo.LocalDrivingLicenseApplicationId;
 
         var vm =
             _serviceProvider
@@ -391,27 +354,22 @@ public partial class TestAppointmentViewModel : ObservableObject
             new ScheduleTestWin(vm));
 
         await LoadAsync(
-            LdlAppInfo.LocalDrivingLicenseApplicationId,
+            localApplicationId,
             TestType);
     }
-
-    // ===== TAKE TEST =====
 
     [RelayCommand(CanExecute = nameof(CanTakeTest))]
     private async Task TakeTestAsync()
     {
         if (SelectedAppointment is null ||
             LdlAppInfo is null)
-        {
             return;
-        }
 
         if (SelectedAppointment.IsLocked)
         {
-            Show(
+            ShowWarning(
                 "This appointment is already locked.",
-                "Take Test",
-                MessageBoxImage.Warning);
+                "Take Test");
 
             return;
         }
@@ -425,19 +383,18 @@ public partial class TestAppointmentViewModel : ObservableObject
             workflowResult.Value is null ||
             !workflowResult.Value.Allowed)
         {
-            var error =
+            ShowWarning(
                 workflowResult.IsFailure
                     ? workflowResult.Error
                     : workflowResult.Value?.Error
-                      ?? "This test cannot be taken yet.";
-
-            Show(
-                error,
-                "Cannot Take Test",
-                MessageBoxImage.Warning);
+                      ?? "This test cannot be taken yet.",
+                "Cannot Take Test");
 
             return;
         }
+
+        var localApplicationId =
+            LdlAppInfo.LocalDrivingLicenseApplicationId;
 
         var vm =
             _serviceProvider
@@ -450,49 +407,29 @@ public partial class TestAppointmentViewModel : ObservableObject
             new TakeTestWin(vm));
 
         await LoadAsync(
-            LdlAppInfo.LocalDrivingLicenseApplicationId,
+            localApplicationId,
             TestType);
     }
-
-    // ===== SELECTION =====
 
     partial void OnSelectedAppointmentChanged(
         TestAppointmentResponse? value)
     {
-        UpdateSelectedAppointmentState();
-    }
+        CanEditAppointment =
+            value is not null &&
+            !value.IsLocked;
 
-    private void UpdateSelectedAppointmentState()
-    {
-        if (SelectedAppointment is null)
-        {
-            CanEditAppointment = false;
-            CanTakeTest = false;
-        }
-        else
-        {
-            CanEditAppointment =
-                !SelectedAppointment.IsLocked;
-
-            CanTakeTest =
-                !SelectedAppointment.IsLocked;
-        }
+        CanTakeTest =
+            value is not null &&
+            !value.IsLocked;
 
         RefreshCommands();
     }
 
-    // ===== HELPERS =====
-
-    private static void Show(
-        string message,
-        string title,
-        MessageBoxImage image)
+    private void RefreshCommands()
     {
-        MessageBox.Show(
-            message,
-            title,
-            MessageBoxButton.OK,
-            image);
+        AddAppointmentCommand.NotifyCanExecuteChanged();
+        EditAppointmentCommand.NotifyCanExecuteChanged();
+        TakeTestCommand.NotifyCanExecuteChanged();
     }
 
     private static void OpenDialog(Window window)
@@ -503,10 +440,21 @@ public partial class TestAppointmentViewModel : ObservableObject
         window.ShowDialog();
     }
 
-    private void RefreshCommands()
-    {
-        AddAppointmentCommand.NotifyCanExecuteChanged();
-        EditAppointmentCommand.NotifyCanExecuteChanged();
-        TakeTestCommand.NotifyCanExecuteChanged();
-    }
+    private static void ShowWarning(
+        string message,
+        string title) =>
+        MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+
+    private static void ShowError(
+        string message,
+        string title) =>
+        MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
 }

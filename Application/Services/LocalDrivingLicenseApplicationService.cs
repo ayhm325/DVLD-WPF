@@ -415,6 +415,40 @@ public sealed class LocalDrivingLicenseApplicationService(
             await MapListToDtoAsync(entities));
     }
 
+    public async Task<Result<ApplicationBasicInfoDto>>
+    GetApplicationBasicInfoAsync(int localApplicationId)
+    {
+        var validation =
+            LocalDrivingLicenseApplicationValidator.ValidateId(
+                localApplicationId);
+
+        if (validation.IsFailure)
+        {
+            return Result<ApplicationBasicInfoDto>
+                .FromValidationFailure(validation.Error);
+        }
+
+        var entity =
+            await _repository.GetByIdAsync(localApplicationId);
+
+        if (entity is null)
+        {
+            return Result<ApplicationBasicInfoDto>
+                .FromNotFound(
+                    "Local driving license application not found.");
+        }
+
+        if (entity.Application is null)
+        {
+            return Result<ApplicationBasicInfoDto>
+                .FromNotFound(
+                    "Main application information not found.");
+        }
+
+        return Result<ApplicationBasicInfoDto>.Success(
+            ApplicationMapper.ToBasicInfoDto(entity.Application));
+    }
+
     public async Task<Result<int>>
         GetApplicationIdByLocalIdAsync(int localId)
     {

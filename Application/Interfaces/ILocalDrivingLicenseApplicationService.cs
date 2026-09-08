@@ -1,4 +1,5 @@
 ﻿using Application.Common.Results;
+using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 
 namespace Application.Interfaces;
@@ -10,6 +11,9 @@ public interface ILocalDrivingLicenseApplicationService
 
     Task<Result<LocalDrivingLicenseApplicationListDto>>
         GetLocalDrivingLicenseApplicationByIdAsync(int id);
+
+    Task<Result<ApplicationBasicInfoDto>>
+        GetApplicationBasicInfoAsync(int localApplicationId);
 
     Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
         GetLocalDrivingLicenseApplicationsByApplicationIdAsync(
