@@ -28,6 +28,11 @@ public interface ITestAppointmentsApiClient
         int appointmentId,
         CancellationToken cancellationToken = default);
 
+    Task<ApiResult<ScheduleTestResponse>> GetSchedulePreparationAsync(
+        int localApplicationId,
+        int testTypeId,
+        CancellationToken cancellationToken = default);
+
     Task<ApiResult<decimal>> GetTestTypeFeesAsync(
         int testTypeId,
         CancellationToken cancellationToken = default);

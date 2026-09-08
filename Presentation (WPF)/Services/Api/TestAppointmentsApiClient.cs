@@ -7,44 +7,52 @@ public sealed class TestAppointmentsApiClient(
     IApiClient apiClient) : ITestAppointmentsApiClient
 {
     public Task<ApiResult<List<TestAppointmentResponse>>> GetAllAsync(
-        CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<List<TestAppointmentResponse>>(
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<List<TestAppointmentResponse>>(
             "api/testappointments",
             cancellationToken);
 
     public Task<ApiResult<TestAppointmentResponse>> GetByIdAsync(
         int appointmentId,
-        CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<TestAppointmentResponse>(
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<TestAppointmentResponse>(
             $"api/testappointments/{appointmentId}",
             cancellationToken);
 
     public Task<ApiResult<List<TestAppointmentResponse>>> GetByLocalApplicationIdAsync(
         int localApplicationId,
-        CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<List<TestAppointmentResponse>>(
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<List<TestAppointmentResponse>>(
             $"api/testappointments/local-application/{localApplicationId}",
             cancellationToken);
 
     public Task<ApiResult<List<TestAppointmentResponse>>> GetByTestTypeIdAsync(
         TestType testType,
-        CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<List<TestAppointmentResponse>>(
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<List<TestAppointmentResponse>>(
             $"api/testappointments/test-type/{(int)testType}",
             cancellationToken);
 
     public Task<ApiResult<List<TestAppointmentResponse>>> GetByCreatedUserIdAsync(
         int userId,
-        CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<List<TestAppointmentResponse>>(
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<List<TestAppointmentResponse>>(
             $"api/testappointments/created-by/{userId}",
             cancellationToken);
 
     public Task<ApiResult<ScheduleTestResponse>> GetScheduleInfoAsync(
         int appointmentId,
-        CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<ScheduleTestResponse>(
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<ScheduleTestResponse>(
             $"api/testappointments/{appointmentId}/schedule-info",
+            cancellationToken);
+
+    public Task<ApiResult<ScheduleTestResponse>> GetSchedulePreparationAsync(
+        int localApplicationId,
+        int testTypeId,
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<ScheduleTestResponse>(
+            $"api/testappointments/schedule-preparation/{localApplicationId}/{testTypeId}",
             cancellationToken);
 
     public async Task<ApiResult<decimal>> GetTestTypeFeesAsync(
@@ -56,10 +64,9 @@ public sealed class TestAppointmentsApiClient(
                 $"api/testappointments/fees/{testTypeId}",
                 cancellationToken);
 
-        if (result.IsFailure)
-            return ApiResult<decimal>.Failure(result.Error);
-
-        return ApiResult<decimal>.Success(result.Value!.Fees);
+        return result.IsFailure
+            ? ApiResult<decimal>.Failure(result.Error)
+            : ApiResult<decimal>.Success(result.Value!.Fees);
     }
 
     public async Task<ApiResult<int>> GetTrialCountAsync(
@@ -72,10 +79,9 @@ public sealed class TestAppointmentsApiClient(
                 $"api/testappointments/trial-count?localAppId={localApplicationId}&testTypeId={testTypeId}",
                 cancellationToken);
 
-        if (result.IsFailure)
-            return ApiResult<int>.Failure(result.Error);
-
-        return ApiResult<int>.Success(result.Value!.TrialCount);
+        return result.IsFailure
+            ? ApiResult<int>.Failure(result.Error)
+            : ApiResult<int>.Success(result.Value!.TrialCount);
     }
 
     public async Task<ApiResult<bool>> IsAppointmentAlreadyScheduledAsync(
@@ -88,10 +94,9 @@ public sealed class TestAppointmentsApiClient(
                 $"api/testappointments/scheduled?localAppId={localApplicationId}&testTypeId={testTypeId}",
                 cancellationToken);
 
-        if (result.IsFailure)
-            return ApiResult<bool>.Failure(result.Error);
-
-        return ApiResult<bool>.Success(result.Value!.Scheduled);
+        return result.IsFailure
+            ? ApiResult<bool>.Failure(result.Error)
+            : ApiResult<bool>.Success(result.Value!.Scheduled);
     }
 
     public async Task<ApiResult> ScheduleAsync(
@@ -126,16 +131,16 @@ public sealed class TestAppointmentsApiClient(
 
     public Task<ApiResult> UpdateAsync(
         UpdateTestAppointmentRequest request,
-        CancellationToken cancellationToken = default)
-        => apiClient.PutAsync(
+        CancellationToken cancellationToken = default) =>
+        apiClient.PutAsync(
             $"api/testappointments/{request.TestAppointmentId}",
             request,
             cancellationToken);
 
     public Task<ApiResult> DeleteAsync(
         int appointmentId,
-        CancellationToken cancellationToken = default)
-        => apiClient.DeleteAsync(
+        CancellationToken cancellationToken = default) =>
+        apiClient.DeleteAsync(
             $"api/testappointments/{appointmentId}",
             cancellationToken);
 
