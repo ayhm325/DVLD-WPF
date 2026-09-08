@@ -320,7 +320,7 @@
                                             Binding="{Binding PersonId}"
                                             Width="90"/>
                         <DataGridTextColumn Header="Full Name"
-                                            Binding="{Binding FullName}"
+                                            Binding="{Binding PersonFullName}"
                                             Width="*"/>
                         <DataGridTextColumn Header="User Name"
                                             Binding="{Binding UserName}"

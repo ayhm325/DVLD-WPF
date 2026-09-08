@@ -290,16 +290,16 @@
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Detain ID"
-                                        Binding="{Binding DetainID}"
+                                        Binding="{Binding DetainId}"
                                         Width="90"/>
                     <DataGridTextColumn Header="License ID"
-                                        Binding="{Binding LicenseID}"
+                                        Binding="{Binding LicenseId}"
                                         Width="90"/>
                     <DataGridTextColumn Header="Detain Date"
                                         Binding="{Binding DetainDate, StringFormat={}{0:dd/MM/yyyy hh:mm tt}}"
                                         Width="160"/>
                     <DataGridTextColumn Header="Is Released"
-                                        Binding="{Binding IsReleasedText}"
+                                        Binding="{Binding IsReleased}"
                                         Width="110"/>
                     <DataGridTextColumn Header="Fine Fees"
                                         Binding="{Binding FineFees}"
@@ -314,7 +314,7 @@
                                         Binding="{Binding FullName}"
                                         Width="*"/>
                     <DataGridTextColumn Header="Release App ID"
-                                        Binding="{Binding ReleaseApplicationID}"
+                                        Binding="{Binding ReleaseApplicationId}"
                                         Width="140"/>
                 </DataGrid.Columns>
             </DataGrid>

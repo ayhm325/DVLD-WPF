@@ -190,7 +190,7 @@
                                 <!-- 6. International License ID -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Int. License ID" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
                                 <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource IdBadgeStyle}">
-                                    <TextBlock Text="{Binding LicenseData.InternationalLicenseID}"
+                                    <TextBlock Text="{Binding LicenseData.InternationalLicenseId}"
                                                Foreground="{StaticResource PrimaryColor}"
                                                FontWeight="Bold" FontSize="12"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -199,11 +199,11 @@
 
                                 <!-- 7. License ID -->
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="License ID" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LicenseData.IssuedUsingLocalLicenseID}" Style="{StaticResource ValueTextStyle}" x:Name="txtLicenseId"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LicenseData.IssuedUsingLocalLicenseId}" Style="{StaticResource ValueTextStyle}" x:Name="txtLicenseId"/>
 
                                 <!-- 8. Application ID -->
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Application ID" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseData.ApplicationID}"
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LicenseData.ApplicationId}"
                                            Style="{StaticResource ValueTextStyle}"
                                            Foreground="{StaticResource TextSecondaryColor}"
                                            FontStyle="Italic" x:Name="txtApplicationId"/>

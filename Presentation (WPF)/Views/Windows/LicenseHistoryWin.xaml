@@ -245,9 +245,9 @@
                                           SelectedItem="{Binding SelectedLocalLicense}"
                                           Margin="8,8,8,12">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Lic.ID" Binding="{Binding LicenseID}"
+                                        <DataGridTextColumn Header="Lic.ID" Binding="{Binding LicenseId}"
                                                             Width="70" ElementStyle="{StaticResource ColumnTextBoldStyle}"/>
-                                        <DataGridTextColumn Header="App.ID" Binding="{Binding ApplicationID}"
+                                        <DataGridTextColumn Header="App.ID" Binding="{Binding ApplicationId}"
                                                             Width="70" ElementStyle="{StaticResource ColumnTextStyle}"/>
                                         <DataGridTextColumn Header="Class Name" Binding="{Binding LicenseClassName}"
                                                             Width="*" ElementStyle="{StaticResource ColumnTextLeftStyle}"/>

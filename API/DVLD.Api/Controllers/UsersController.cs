@@ -71,7 +71,7 @@ public sealed class UsersController(
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] CreateUserRequest request)
+    [FromBody] CreateUserRequest request)
     {
         var dto = new CreateUserDto
         {
@@ -90,7 +90,7 @@ public sealed class UsersController(
         return CreatedAtAction(
             nameof(GetById),
             new { id = result.Value },
-            new { userId = result.Value });
+            result.Value);
     }
 
     [HttpPut("{id:int}")]
