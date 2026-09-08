@@ -263,11 +263,11 @@
 
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Driver ID"
-                                        Binding="{Binding DriverID}"
+                                        Binding="{Binding DriverId}"
                                         Width="90"/>
 
                     <DataGridTextColumn Header="Person ID"
-                                        Binding="{Binding PersonID}"
+                                        Binding="{Binding PersonId}"
                                         Width="90"/>
 
                     <DataGridTextColumn Header="National No"

@@ -1,14 +1,12 @@
 ﻿using Application.Common.Results;
-using Application.DTOs.TestTypeDTO;
 using Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+using DVLD.Contracts.TestType;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DVLD.Api.Controllers;
 
-[ApiController]
-[Authorize]
 [Route("api/[controller]")]
+[ApiController]
 public sealed class TestTypesController(
     ITestTypeService service) : ControllerBase
 {
@@ -18,9 +16,15 @@ public sealed class TestTypesController(
         var result =
             await service.GetAllTestTypesAsync();
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response =
+            result.Value!
+                .Select(MapToResponse)
+                .ToList();
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]
@@ -29,51 +33,106 @@ public sealed class TestTypesController(
         var result =
             await service.GetTestTypeByIdAsync(id);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        return Ok(MapToResponse(result.Value!));
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] TestTypeDto dto)
+        [FromBody] UpdateTestTypeRequest request)
     {
+        var dto = new Application.DTOs.TestTypeDTO.TestTypeDto
+        {
+            TestTypeId = request.TestTypeId,
+            TestTypeTitle = request.TestTypeTitle,
+            TestTypeDescription = request.TestTypeDescription,
+            TestTypeFees = request.TestTypeFees
+        };
+
         var result =
-            await service.UpdateTestTypeAsync(id, dto);
+            await service.UpdateTestTypeAsync(
+                id,
+                dto);
 
         return result.IsSuccess
             ? NoContent()
             : HandleFailure(result);
     }
 
-    private static IActionResult HandleFailure(Result result)
+    private static TestTypeResponse MapToResponse(
+        Application.DTOs.TestTypeDTO.TestTypeDto dto)
+    {
+        return new TestTypeResponse
+        {
+            TestTypeId = dto.TestTypeId,
+            TestTypeTitle = dto.TestTypeTitle,
+            TestTypeDescription = dto.TestTypeDescription,
+            TestTypeFees = dto.TestTypeFees
+        };
+    }
+
+    private IActionResult HandleFailure<T>(
+        Result<T> result)
     {
         return result.ErrorType switch
         {
-            ErrorType.Validation =>
-                new BadRequestObjectResult(
-                    new { error = result.Error }),
-
             ErrorType.NotFound =>
-                new NotFoundObjectResult(
-                    new { error = result.Error }),
+                NotFound(new
+                {
+                    message = result.Error
+                }),
 
             ErrorType.Conflict =>
-                new ConflictObjectResult(
-                    new { error = result.Error }),
-
-            ErrorType.Forbidden =>
-                new ObjectResult(new { error = result.Error })
+                Conflict(new
                 {
-                    StatusCode = StatusCodes.Status403Forbidden
-                },
+                    message = result.Error
+                }),
+
+            ErrorType.Validation =>
+                BadRequest(new
+                {
+                    message = result.Error
+                }),
 
             _ =>
-                new ObjectResult(new { error = result.Error })
+                BadRequest(new
                 {
-                    StatusCode = StatusCodes.Status500InternalServerError
-                }
+                    message = result.Error
+                })
+        };
+    }
+
+    private IActionResult HandleFailure(
+        Result result)
+    {
+        return result.ErrorType switch
+        {
+            ErrorType.NotFound =>
+                NotFound(new
+                {
+                    message = result.Error
+                }),
+
+            ErrorType.Conflict =>
+                Conflict(new
+                {
+                    message = result.Error
+                }),
+
+            ErrorType.Validation =>
+                BadRequest(new
+                {
+                    message = result.Error
+                }),
+
+            _ =>
+                BadRequest(new
+                {
+                    message = result.Error
+                })
         };
     }
 }

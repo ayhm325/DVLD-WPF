@@ -1,85 +1,90 @@
-﻿using Application.DTOs.TestTypeDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using DVLD_WPF;
+using DVLD.Contracts.TestType;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services.Api;
 using Presentation.Views.Windows.Tests;
 using System.Collections.ObjectModel;
+using System.Windows;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class TestTypeViewModel : ObservableObject
 {
-    public partial class TestTypeViewModel : ObservableObject
+    private readonly ITestTypesApiClient _testTypesApiClient;
+    private readonly IServiceProvider _serviceProvider;
+
+    public ObservableCollection<TestTypeResponse> TestTypes { get; } = [];
+
+    public TestTypeViewModel(
+        ITestTypesApiClient testTypesApiClient,
+        IServiceProvider serviceProvider)
     {
-        private readonly ITestTypeService _testTypeService;
+        _testTypesApiClient =
+            testTypesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(testTypesApiClient));
 
-        public ObservableCollection<TestTypeDto> TestTypes { get; } = new();
+        _serviceProvider =
+            serviceProvider
+            ?? throw new ArgumentNullException(
+                nameof(serviceProvider));
+    }
 
-        public TestTypeViewModel(ITestTypeService testTypeService)
+    public async Task LoadTestTypesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var result =
+            await _testTypesApiClient.GetAllAsync(
+                cancellationToken);
+
+        if (result.IsFailure)
         {
-            _testTypeService = testTypeService
-                ?? throw new ArgumentNullException(nameof(testTypeService));
+            MessageBox.Show(
+                result.Error,
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
 
-            _ = LoadTestTypesAsync();
+            return;
         }
 
-        public async Task LoadTestTypesAsync()
+        TestTypes.Clear();
+
+        if (result.Value is null)
+            return;
+
+        foreach (var testType in result.Value)
         {
-            try
+            TestTypes.Add(testType);
+        }
+    }
+
+    [RelayCommand]
+    private async Task EditTestType(
+        TestTypeResponse? selectedType)
+    {
+        if (selectedType is null)
+            return;
+
+        var updateVm =
+            _serviceProvider
+                .GetRequiredService<UpdateTestTypeViewModel>();
+
+        await updateVm.InitializeAsync(
+            selectedType.TestTypeId);
+
+        if (updateVm.CurrentTestType is null)
+            return;
+
+        var editWindow =
+            new EditTestTypeWindow(updateVm)
             {
-                var result = await _testTypeService.GetAllTestTypesAsync();
+                Owner =System.Windows.Application.Current.MainWindow
+            };
 
-                if (result.IsFailure)
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"DEBUG: Failed to load test types: {result.Error}");
+        editWindow.ShowDialog();
 
-                    return;
-                }
-
-                var data = result.Value;
-
-                if (data is null)
-                {
-                    System.Diagnostics.Debug.WriteLine(
-                        "DEBUG: Test types result contains no data.");
-
-                    return;
-                }
-
-                System.Diagnostics.Debug.WriteLine(
-                    $"DEBUG: Loaded {data.Count} items.");
-
-                TestTypes.Clear();
-
-                foreach (var item in data)
-                {
-                    TestTypes.Add(item);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"DEBUG: Failed to load test types: {ex}");
-            }
-        }
-
-        [RelayCommand]
-        private async Task EditTestType(TestTypeDto? selectedType)
-        {
-            if (selectedType is null)
-                return;
-
-            var updateVm =
-                App.ServiceProvider.GetRequiredService<UpdateTestTypeViewModel>();
-
-            await updateVm.InitializeAsync(selectedType.TestTypeId);
-
-            var editWindow = new EditTestTypeWindow(updateVm);
-
-            editWindow.ShowDialog();
-
-            await LoadTestTypesAsync();
-        }
+        await LoadTestTypesAsync();
     }
 }

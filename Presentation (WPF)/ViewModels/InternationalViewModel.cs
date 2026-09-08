@@ -1,166 +1,220 @@
-﻿using Application.DTOs.InternationalLicenseDTO;
-using Application.Interfaces;
+﻿using DVLD.Contracts.InternationalLicense;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class InternationalViewModel : ObservableObject
 {
-    public partial class InternationalViewModel : ObservableObject
+    private readonly IInternationalLicensesApiClient _internationalLicensesApiClient;
+    private readonly IServiceProvider _serviceProvider;
+
+    private readonly ObservableCollection<InternationalLicenseResponse>
+        _allApplications = [];
+
+    public ObservableCollection<InternationalLicenseResponse>
+        Applications
+    { get; } = [];
+
+    [ObservableProperty]
+    private InternationalLicenseResponse? selectedApplication;
+
+    [ObservableProperty]
+    private string searchText = string.Empty;
+
+    [ObservableProperty]
+    private string selectedFilter = "Int License ID";
+
+    public ObservableCollection<string> Filters { get; } =
+    [
+        "Int License ID",
+        "Application ID",
+        "Driver ID",
+        "L.License ID"
+    ];
+
+    public InternationalViewModel(
+        IInternationalLicensesApiClient internationalLicensesApiClient,
+        IServiceProvider serviceProvider)
     {
-        private readonly IInternationalService _licenseService;
-        private readonly IServiceProvider _serviceProvider;
+        _internationalLicensesApiClient =
+            internationalLicensesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(internationalLicensesApiClient));
 
-        // القائمة الأصلية
-        private ObservableCollection<InternationalDto> _allApplications = new();
+        _serviceProvider =
+            serviceProvider
+            ?? throw new ArgumentNullException(
+                nameof(serviceProvider));
 
-        // القائمة المعروضة في الـ DataGrid
-        public ObservableCollection<InternationalDto> Applications { get; } = new();
+        _ = LoadApplicationsAsync();
+    }
 
-        [ObservableProperty]
-        private InternationalDto? _selectedApplication;
+    private async Task LoadApplicationsAsync()
+    {
+        var result =
+            await _internationalLicensesApiClient
+                .GetAllAsync();
 
-        [ObservableProperty]
-        private string _searchText = string.Empty;
+        _allApplications.Clear();
+        Applications.Clear();
 
-        [ObservableProperty]
-        private string _selectedFilter = "Int License ID";
-
-        public InternationalViewModel(
-            IInternationalService licenseService,
-            IServiceProvider serviceProvider)
+        if (result.IsFailure)
         {
-            _licenseService = licenseService;
-            _serviceProvider = serviceProvider;
+            MessageBox.Show(
+                result.Error,
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
 
-            _ = LoadApplications();
+            return;
         }
 
-        private async Task LoadApplications()
+        if (result.Value is null)
+            return;
+
+        foreach (var item in result.Value)
         {
-            var result = await _licenseService.GetAllAsync();
-
-
-            _allApplications.Clear();
-
-
-            if (result.IsFailure)
-            {
-                MessageBox.Show(result.Error);
-                return;
-            }
-
-
-            foreach (var item in result.Value!)
-            {
-                _allApplications.Add(item);
-            }
-
-
-            ApplyFilter();
+            _allApplications.Add(item);
         }
 
-        partial void OnSearchTextChanged(string value) => ApplyFilter();
-        partial void OnSelectedFilterChanged(string value) => ApplyFilter();
+        ApplyFilter();
+    }
 
-        public ObservableCollection<string> Filters { get; } = new()
+    partial void OnSearchTextChanged(string value)
+    {
+        ApplyFilter();
+    }
+
+    partial void OnSelectedFilterChanged(string value)
+    {
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        Applications.Clear();
+
+        IEnumerable<InternationalLicenseResponse> filtered =
+            _allApplications;
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
         {
-            "Int License ID",
-            "Application ID",
-            "Driver ID",
-            "L.License ID"
-        };
+            var filter =
+                SearchText.Trim();
 
-        private void ApplyFilter()
-        {
-            // 1. إذا كانت القائمة الأصلية فارغة، لا تقم بأي إجراء
-            if (_allApplications == null) return;
-
-            Applications.Clear();
-
-            // 2. البحث
-            var filtered = _allApplications.Where(x =>
-            {
-                // إذا كان نص البحث فارغاً، أعرض الكل
-                if (string.IsNullOrWhiteSpace(SearchText)) return true;
-
-                // تحويل نص البحث إلى صيغة موحدة للبحث
-                string filter = SearchText.Trim();
-
-                return SelectedFilter switch
+            filtered =
+                SelectedFilter switch
                 {
-                    "Int License ID" => x.InternationalLicenseID.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase),
-                    "Application ID" => x.ApplicationID.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase),
-                    "Driver ID" => x.DriverID.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase),
-                    "L.License ID" => x.IssuedUsingLocalLicenseID.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase),
-                    _ => true
+                    "Int License ID" =>
+                        _allApplications.Where(x =>
+                            x.InternationalLicenseId
+                                .ToString()
+                                .Contains(
+                                    filter,
+                                    StringComparison.OrdinalIgnoreCase)),
+
+                    "Application ID" =>
+                        _allApplications.Where(x =>
+                            x.ApplicationId
+                                .ToString()
+                                .Contains(
+                                    filter,
+                                    StringComparison.OrdinalIgnoreCase)),
+
+                    "Driver ID" =>
+                        _allApplications.Where(x =>
+                            x.DriverId
+                                .ToString()
+                                .Contains(
+                                    filter,
+                                    StringComparison.OrdinalIgnoreCase)),
+
+                    "L.License ID" =>
+                        _allApplications.Where(x =>
+                            x.IssuedUsingLocalLicenseId
+                                .ToString()
+                                .Contains(
+                                    filter,
+                                    StringComparison.OrdinalIgnoreCase)),
+
+                    _ => _allApplications
                 };
-            });
-
-            // 3. إضافة النتائج المفلترة للقائمة المعروضة
-            foreach (var item in filtered)
-            {
-                Applications.Add(item);
-            }
         }
 
-        [RelayCommand]
-        private async Task IssueNew() 
+        foreach (var item in filtered)
         {
-            var window = ActivatorUtilities.CreateInstance<NewInternationalLicenseApplicationWin>(
+            Applications.Add(item);
+        }
+    }
+
+    [RelayCommand]
+    private async Task IssueNew()
+    {
+        var window =
+            ActivatorUtilities.CreateInstance<
+                NewInternationalLicenseApplicationWin>(
                 _serviceProvider);
-            
-            window.ShowDialog();
-          
-            await LoadApplications();
-        }
 
-        [RelayCommand]
-        private void ShowPersonDetails()
-        {
-            if (SelectedApplication == null)
-                return;
+        window.ShowDialog();
 
-            int personId = SelectedApplication.PersonID;
+        await LoadApplicationsAsync();
+    }
 
-            var window = ActivatorUtilities.CreateInstance<PersonDetailsWindow>(
+    [RelayCommand]
+    private void ShowPersonDetails()
+    {
+        if (SelectedApplication is null)
+            return;
+
+        var personId =
+            SelectedApplication.PersonId;
+
+        var window =
+            ActivatorUtilities.CreateInstance<PersonDetailsWindow>(
                 _serviceProvider,
                 personId);
 
-            window.ShowDialog();
-        }
+        window.ShowDialog();
+    }
 
-        [RelayCommand]
-        private void ShowLicenseDetails()
-        {
-            if (SelectedApplication == null)
-                return;
+    [RelayCommand]
+    private void ShowLicenseDetails()
+    {
+        if (SelectedApplication is null)
+            return;
 
-            int licenseId = SelectedApplication.InternationalLicenseID;
+        var licenseId =
+            SelectedApplication.InternationalLicenseId;
 
-            var window = ActivatorUtilities.CreateInstance<DriverInterNationalLicenseInfoWin>(
+        var window =
+            ActivatorUtilities.CreateInstance<
+                DriverInterNationalLicenseInfoWin>(
                 _serviceProvider,
                 licenseId);
 
-            window.ShowDialog();
-        }
+        window.ShowDialog();
+    }
 
-        [RelayCommand]
-        private void ShowPersonLicenseHistory()
-        {
-            if (SelectedApplication == null)
-                return;
+    [RelayCommand]
+    private void ShowPersonLicenseHistory()
+    {
+        if (SelectedApplication is null)
+            return;
 
-            int personId = SelectedApplication.PersonID;
+        var personId =
+            SelectedApplication.PersonId;
 
-            var window = ActivatorUtilities.CreateInstance<LicenseHistoryWin>(
+        var window =
+            ActivatorUtilities.CreateInstance<LicenseHistoryWin>(
                 _serviceProvider,
                 personId);
 
-            window.ShowDialog();
-        }
+        window.ShowDialog();
     }
 }

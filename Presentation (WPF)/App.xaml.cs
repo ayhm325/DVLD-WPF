@@ -176,6 +176,7 @@ public partial class App : System.Windows.Application
                     TimeSpan.FromSeconds(30);
             });
 
+        services.AddScoped<IUsersApiClient, UsersApiClient>();
         services.AddScoped<IPeopleApiClient, PeopleApiClient>();
         services.AddScoped<ICountriesApiClient, CountriesApiClient>();
         services.AddScoped<IApplicationTypesApiClient, ApplicationTypesApiClient>();
@@ -190,6 +191,7 @@ public partial class App : System.Windows.Application
         services.AddScoped<ITestsApiClient, TestsApiClient>();
         services.AddScoped<ITestWorkflowApiClient, TestWorkflowApiClient>();
         services.AddScoped<IDetainedLicensesApiClient, DetainedLicensesApiClient>();
+        services.AddScoped<ITestTypesApiClient, TestTypesApiClient>();
 
         // =====================================================
         // 7. VIEW MODELS

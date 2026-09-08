@@ -7,6 +7,13 @@ public sealed class InternationalLicensesApiClient(
     IApiClient apiClient) : IInternationalLicensesApiClient
 {
     public Task<ApiResult<List<InternationalLicenseResponse>>>
+        GetAllAsync(
+            CancellationToken cancellationToken = default)
+        => apiClient.GetAsync<List<InternationalLicenseResponse>>(
+            "api/internationallicenses",
+            cancellationToken);
+
+    public Task<ApiResult<List<InternationalLicenseResponse>>>
         GetByDriverIdAsync(
             int driverId,
             CancellationToken cancellationToken = default)

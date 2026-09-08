@@ -1,94 +1,110 @@
-﻿using Application.DTOs;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.ApplicationType;
+using Presentation.Services.Api;
 using System.Windows;
 
+namespace Presentation.ViewModels;
 
-namespace Presentation.ViewModels
+public partial class UpdateApplicationTypeViewModel : ObservableObject
 {
-    public partial class UpdateApplicationTypeViewModel : ObservableObject
+    private readonly IApplicationTypesApiClient _applicationTypesApiClient;
+
+    [ObservableProperty]
+    private UpdateApplicationTypeRequest? currentApplicationType = new();
+
+    public UpdateApplicationTypeViewModel(
+        IApplicationTypesApiClient applicationTypesApiClient)
     {
-        private readonly IApplicationTypeService _applicationTypeService;
+        _applicationTypesApiClient =
+            applicationTypesApiClient
+            ?? throw new ArgumentNullException(
+                nameof(applicationTypesApiClient));
+    }
 
-        [ObservableProperty]
-        private ApplicationTypeDto? _currentApplicationType = new();
+    public async Task InitializeAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var result =
+            await _applicationTypesApiClient.GetByIdAsync(
+                id,
+                cancellationToken);
 
-        public UpdateApplicationTypeViewModel(IApplicationTypeService applicationTypeService)
+        if (result.IsFailure)
         {
-            _applicationTypeService = applicationTypeService;
+            CurrentApplicationType = null;
+
+            MessageBox.Show(
+                result.Error,
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
         }
 
-        public async Task InitializeAsync(int id)
+        if (result.Value is null)
         {
-            var result = await _applicationTypeService
-                .GetApplicationTypeByIdAsync(id);
+            CurrentApplicationType = null;
 
-            if (result.IsFailure)
-            {
-                CurrentApplicationType = null;
+            MessageBox.Show(
+                "Application Type was not found.",
+                "Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
 
-                MessageBox.Show(
-                    result.Error,
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            CurrentApplicationType = result.Value!;
+            return;
         }
 
-        // أمر الحفظ
-        [RelayCommand]
-        private async Task SaveAsync(Window window)
-        {
-            if (CurrentApplicationType == null)
-                return;
-
-            var appDto = new ApplicationTypeDto
+        CurrentApplicationType =
+            new UpdateApplicationTypeRequest
             {
-                ApplicationTypeId = CurrentApplicationType.ApplicationTypeId,
-                ApplicationTypeTitle = CurrentApplicationType.ApplicationTypeTitle,
-                ApplicationTypeFees = CurrentApplicationType.ApplicationTypeFees
+                ApplicationTypeId =
+                    result.Value.ApplicationTypeId,
+
+                ApplicationTypeTitle =
+                    result.Value.ApplicationTypeTitle,
+
+                ApplicationTypeFees =
+                    result.Value.ApplicationTypeFees
             };
+    }
 
+    [RelayCommand]
+    private async Task SaveAsync(Window window)
+    {
+        if (CurrentApplicationType is null)
+            return;
 
-            var result = await _applicationTypeService
-                .UpdateApplicationTypeAsync(
-                    CurrentApplicationType.ApplicationTypeId,
-                    appDto);
+        var result =
+            await _applicationTypesApiClient.UpdateAsync(
+                CurrentApplicationType.ApplicationTypeId,
+                CurrentApplicationType);
 
-
-            if (result.IsSuccess)
-            {
-                MessageBox.Show(
-                    "Application Type updated successfully!",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-
-                window?.Close();
-            }
-            else
-            {
-                MessageBox.Show(
-                    result.Error,
-                    "Update Failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            }
-        }
-
-
-
-        [RelayCommand]
-        private void Close(Window window)
+        if (result.IsSuccess)
         {
+            MessageBox.Show(
+                "Application Type updated successfully!",
+                "Success",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
             window?.Close();
+
+            return;
         }
 
+        MessageBox.Show(
+            result.Error,
+            "Update Failed",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+    }
 
+    [RelayCommand]
+    private void Close(Window window)
+    {
+        window?.Close();
     }
 }
