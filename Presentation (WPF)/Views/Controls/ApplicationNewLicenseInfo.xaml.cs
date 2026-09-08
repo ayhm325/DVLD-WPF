@@ -1,5 +1,4 @@
-﻿using Application.DTOs.ApplicationDTO;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 namespace Presentation.Views.Controls
@@ -11,19 +10,32 @@ namespace Presentation.Views.Controls
             InitializeComponent();
         }
 
-
-        public ApplicationNewLicenseInfoDto? Application
+        public object? Application
         {
-            get => (ApplicationNewLicenseInfoDto?)GetValue(ApplicationProperty);
+            get => GetValue(ApplicationProperty);
             set => SetValue(ApplicationProperty, value);
         }
-
 
         public static readonly DependencyProperty ApplicationProperty =
             DependencyProperty.Register(
                 nameof(Application),
-                typeof(ApplicationNewLicenseInfoDto),
+                typeof(object),
                 typeof(ApplicationNewLicenseInfo),
                 new PropertyMetadata(null));
+
+        public string? Notes
+        {
+            get => (string?)GetValue(NotesProperty);
+            set => SetValue(NotesProperty, value);
+        }
+
+        public static readonly DependencyProperty NotesProperty =
+            DependencyProperty.Register(
+                nameof(Notes),
+                typeof(string),
+                typeof(ApplicationNewLicenseInfo),
+                new FrameworkPropertyMetadata(
+                    null,
+                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
     }
 }

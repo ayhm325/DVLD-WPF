@@ -9,41 +9,72 @@
              HorizontalContentAlignment="Stretch"
              d:DesignHeight="450"
              d:DesignWidth="800">
+
     <UserControl.Resources>
-        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource LabelStyle}">
-            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Margin" Value="0"/>
+
+        <Style x:Key="FieldLabel"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource LabelStyle}">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Margin"
+                    Value="0"/>
         </Style>
-        <Style x:Key="FieldValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Margin" Value="0,4,0,0"/>
+
+        <Style x:Key="FieldValue"
+               TargetType="TextBlock">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Margin"
+                    Value="0,4,0,0"/>
         </Style>
-        <Style x:Key="NotesField" TargetType="TextBox">
-            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="VerticalContentAlignment" Value="Top"/>
-            <Setter Property="AcceptsReturn" Value="True"/>
-            <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="Margin" Value="0,4,0,0"/>
+
+        <Style x:Key="NotesField"
+               TargetType="TextBox">
+            <Setter Property="FontSize"
+                    Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight"
+                    Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground"
+                    Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Background"
+                    Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="Padding"
+                    Value="8,6"/>
+            <Setter Property="VerticalContentAlignment"
+                    Value="Top"/>
+            <Setter Property="AcceptsReturn"
+                    Value="True"/>
+            <Setter Property="TextWrapping"
+                    Value="Wrap"/>
+            <Setter Property="Margin"
+                    Value="0,4,0,0"/>
         </Style>
+
     </UserControl.Resources>
+
     <Border Style="{StaticResource CardStyle}"
             Padding="{StaticResource CardPadding}"
             Margin="20,10,20,20"
             HorizontalAlignment="Stretch">
+
         <Grid>
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
+
             <Border Grid.Row="0"
                     Background="{StaticResource SurfaceSecondaryColor}"
                     CornerRadius="{StaticResource RadiusMedium}"
@@ -51,14 +82,17 @@
                     Margin="-16,-16,-16,0"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1">
+
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center">
+
                     <Border Width="38"
                             Height="38"
                             CornerRadius="{StaticResource RadiusMedium}"
                             Background="{StaticResource PrimaryLightColor}"
                             Margin="0,0,14,0"
                             VerticalAlignment="Center">
+
                         <materialDesign:PackIcon Kind="License"
                                                  Foreground="{StaticResource PrimaryColor}"
                                                  Width="22"
@@ -66,114 +100,209 @@
                                                  VerticalAlignment="Center"
                                                  HorizontalAlignment="Center"/>
                     </Border>
+
                     <TextBlock Text="Application New License Info"
                                Style="{StaticResource HeaderStyle}"
                                VerticalAlignment="Center"/>
+
                 </StackPanel>
+
             </Border>
+
             <Grid Grid.Row="1"
                   Margin="0,20,0,0">
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
+
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+
+                <!-- Renewal Application ID -->
+
                 <StackPanel Grid.Column="0"
                             Margin="0,0,12,15">
+
                     <TextBlock Text="R.L.APPLICATION ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.RenewedLicenseApplicationID, ElementName=Root}"
+
+                    <TextBlock Text="{Binding Application.RenewedLicenseApplicationId,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Renewed License ID -->
+
                 <StackPanel Grid.Column="1"
                             Margin="0,0,12,15">
+
                     <TextBlock Text="RENEWED LICENSE ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.RenewedLicenseID, ElementName=Root}"
+
+                    <TextBlock Text="{Binding Application.RenewedLicenseId,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Application Date -->
+
                 <StackPanel Grid.Column="2"
                             Margin="0,0,0,15">
+
                     <TextBlock Text="APPLICATION DATE"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ApplicationDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}'}"
+
+                    <TextBlock Text="{Binding Application.ApplicationDate,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:dd/MMM/yyyy}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Old License ID -->
+
                 <StackPanel Grid.Column="0"
                             Grid.Row="1"
                             Margin="0,5,12,15">
+
                     <TextBlock Text="OLD LICENSE ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.OldLicenseID, ElementName=Root}"
+
+                    <TextBlock Text="{Binding Application.OldLicenseId,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Issue Date -->
+
                 <StackPanel Grid.Column="1"
                             Grid.Row="1"
                             Margin="0,5,12,15">
+
                     <TextBlock Text="ISSUE DATE"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.IssueDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}'}"
+
+                    <TextBlock Text="{Binding Application.IssueDate,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:dd/MMM/yyyy}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Expiration Date -->
+
                 <StackPanel Grid.Column="2"
                             Grid.Row="1"
                             Margin="0,5,0,15">
+
                     <TextBlock Text="EXPIRATION DATE"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ExpirationDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}'}"
+
+                    <TextBlock Text="{Binding Application.ExpirationDate,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:dd/MMM/yyyy}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Application Fees -->
+
                 <StackPanel Grid.Column="0"
                             Grid.Row="2"
                             Margin="0,5,12,15">
+
                     <TextBlock Text="APPLICATION FEES"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ApplicationFees, ElementName=Root, StringFormat='{}{0:F2}'}"
+
+                    <TextBlock Text="{Binding Application.ApplicationFees,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:F2}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Created By -->
+
                 <StackPanel Grid.Column="1"
                             Grid.Row="2"
                             Margin="0,5,12,15">
+
                     <TextBlock Text="CREATED BY"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.CreatedByUserName, ElementName=Root}"
+
+                    <TextBlock Text="{Binding Application.CreatedByUserName,
+                                              ElementName=Root}"
                                Style="{StaticResource FieldValue}"
                                TextWrapping="Wrap"/>
+
                 </StackPanel>
+
+                <!-- License Fees -->
+
                 <StackPanel Grid.Column="2"
                             Grid.Row="2"
                             Margin="0,5,0,15">
+
                     <TextBlock Text="LICENSE FEES"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.LicenseFees, ElementName=Root, StringFormat='{}{0:F2}'}"
+
+                    <TextBlock Text="{Binding Application.LicenseFees,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:F2}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Total Fees -->
+
                 <StackPanel Grid.Column="0"
                             Grid.Row="3"
                             Margin="0,5,12,0">
+
                     <TextBlock Text="TOTAL FEES"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.TotalFees, ElementName=Root, StringFormat='{}{0:F2}'}"
+
+                    <TextBlock Text="{Binding Application.TotalFees,
+                                              ElementName=Root,
+                                              StringFormat='{}{0:F2}'}"
                                Style="{StaticResource FieldValue}"/>
+
                 </StackPanel>
+
+                <!-- Notes -->
+
                 <StackPanel Grid.Column="1"
                             Grid.ColumnSpan="2"
                             Grid.Row="3"
                             Margin="0,5,0,0">
+
                     <TextBlock Text="NOTES"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBox Text="{Binding Application.Notes, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+
+                    <TextBox Text="{Binding Notes,
+                                            ElementName=Root,
+                                            Mode=TwoWay,
+                                            UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource NotesField}"
                              Height="50"
                              materialDesign:HintAssist.Hint="Enter notes..."/>
+
                 </StackPanel>
+
             </Grid>
+
         </Grid>
+
     </Border>
+
 </UserControl>

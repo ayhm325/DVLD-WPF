@@ -1,8 +1,8 @@
-﻿using Application.DTOs.ApplicationDTO;
-using Application.DTOs.LicenseDTO;
-using Application.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DVLD.Contracts.Application;
+using DVLD.Contracts.License;
+using DVLD.Contracts.LicenseReplacement;
 using Presentation.Services.Api;
 using Presentation.Views.Windows;
 using System.Windows;
@@ -12,73 +12,36 @@ namespace Presentation.ViewModels;
 public partial class ReplacementDamagedLicenseViewModel
     : ObservableObject
 {
-    private readonly ILicenseService _licenseService;
-    private readonly ILicenseQueryService _licenseQueryService;
-    private readonly ILicenseReplacementService _licenseReplacementService;
-    private readonly IApplicationTypeService _applicationTypeService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly IPersonService _personService;
-    private readonly IDriverService _driverService;
-    private readonly IInternationalService _internationalService;
+    private readonly ILicensesApiClient _licensesApiClient;
+    private readonly ILicenseReplacementApiClient _licenseReplacementApiClient;
+    private readonly IApplicationsApiClient _applicationsApiClient;
 
     private readonly IPeopleApiClient _peopleApiClient;
     private readonly IDriversApiClient _driversApiClient;
-    private readonly ILicensesApiClient _licensesApiClient;
     private readonly IInternationalLicensesApiClient _internationalLicensesApiClient;
 
     public ReplacementDamagedLicenseViewModel(
-        ILicenseService licenseService,
-        ILicenseQueryService licenseQueryService,
-        ILicenseReplacementService licenseReplacementService,
-        IApplicationTypeService applicationTypeService,
-        ICurrentUserService currentUserService,
-        IPersonService personService,
-        IDriverService driverService,
-        IInternationalService internationalService,
+        ILicensesApiClient licensesApiClient,
+        ILicenseReplacementApiClient licenseReplacementApiClient,
+        IApplicationsApiClient applicationsApiClient,
         IPeopleApiClient peopleApiClient,
         IDriversApiClient driversApiClient,
-        ILicensesApiClient licensesApiClient,
         IInternationalLicensesApiClient internationalLicensesApiClient)
     {
-        _licenseService =
-            licenseService
+        _licensesApiClient =
+            licensesApiClient
             ?? throw new ArgumentNullException(
-                nameof(licenseService));
+                nameof(licensesApiClient));
 
-        _licenseQueryService =
-            licenseQueryService
+        _licenseReplacementApiClient =
+            licenseReplacementApiClient
             ?? throw new ArgumentNullException(
-                nameof(licenseQueryService));
+                nameof(licenseReplacementApiClient));
 
-        _licenseReplacementService =
-            licenseReplacementService
+        _applicationsApiClient =
+            applicationsApiClient
             ?? throw new ArgumentNullException(
-                nameof(licenseReplacementService));
-
-        _applicationTypeService =
-            applicationTypeService
-            ?? throw new ArgumentNullException(
-                nameof(applicationTypeService));
-
-        _currentUserService =
-            currentUserService
-            ?? throw new ArgumentNullException(
-                nameof(currentUserService));
-
-        _personService =
-            personService
-            ?? throw new ArgumentNullException(
-                nameof(personService));
-
-        _driverService =
-            driverService
-            ?? throw new ArgumentNullException(
-                nameof(driverService));
-
-        _internationalService =
-            internationalService
-            ?? throw new ArgumentNullException(
-                nameof(internationalService));
+                nameof(applicationsApiClient));
 
         _peopleApiClient =
             peopleApiClient
@@ -90,11 +53,6 @@ public partial class ReplacementDamagedLicenseViewModel
             ?? throw new ArgumentNullException(
                 nameof(driversApiClient));
 
-        _licensesApiClient =
-            licensesApiClient
-            ?? throw new ArgumentNullException(
-                nameof(licensesApiClient));
-
         _internationalLicensesApiClient =
             internationalLicensesApiClient
             ?? throw new ArgumentNullException(
@@ -105,16 +63,13 @@ public partial class ReplacementDamagedLicenseViewModel
     private string licenseIdText = string.Empty;
 
     [ObservableProperty]
-    private DriverLicenseInfoDto? licenseInfo;
+    private DriverLicenseInfoResponse? licenseInfo;
 
     [ObservableProperty]
-    private ApplicationReplacementInfoDto? replacementInfo;
+    private ReplacementApplicationInfo? replacementInfo;
 
     [ObservableProperty]
     private bool isLicenseIssued;
-
-    [ObservableProperty]
-    private int applicationTypeId = 4;
 
     [ObservableProperty]
     private string replacementReason = "Damaged License";
@@ -135,16 +90,17 @@ public partial class ReplacementDamagedLicenseViewModel
             return;
         }
 
-        var licenseResult =
-            await _licenseQueryService
-                .GetLicenseDetailsByIdAsync(
-                    licenseId);
+        ClearReplacementData();
 
-        if (licenseResult.IsFailure)
+        var result =
+            await _licensesApiClient
+                .GetDetailsByIdAsync(licenseId);
+
+        if (result.IsFailure)
         {
             MessageBox.Show(
-                licenseResult.Error,
-                "Warning",
+                result.Error,
+                "Replacement License",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
 
@@ -153,14 +109,11 @@ public partial class ReplacementDamagedLicenseViewModel
             return;
         }
 
-        LicenseInfo =
-            licenseResult.Value;
-
-        if (LicenseInfo == null)
+        if (result.Value is null)
         {
             MessageBox.Show(
                 "License information was not found.",
-                "Warning",
+                "Replacement License",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
 
@@ -168,12 +121,14 @@ public partial class ReplacementDamagedLicenseViewModel
 
             return;
         }
+
+        LicenseInfo = result.Value;
 
         if (!LicenseInfo.IsActive)
         {
             MessageBox.Show(
                 "This license is not active.",
-                "Warning",
+                "Replacement License",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
 
@@ -182,56 +137,11 @@ public partial class ReplacementDamagedLicenseViewModel
             return;
         }
 
-        var applicationTypeResult =
-            await _applicationTypeService
-                .GetApplicationTypeByIdAsync(
-                    ApplicationTypeId);
-
-        if (applicationTypeResult.IsFailure)
-        {
-            MessageBox.Show(
-                applicationTypeResult.Error,
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
-            return;
-        }
-
-        var applicationType =
-            applicationTypeResult.Value;
-
-        if (applicationType == null)
-        {
-            MessageBox.Show(
-                "Application type was not found.",
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
-            return;
-        }
-
-        ReplacementInfo =
-            new ApplicationReplacementInfoDto
-            {
-                OldLicenseID =
-                    LicenseInfo.LicenseId,
-
-                ApplicationDate =
-                    DateTime.Now,
-
-                ApplicationFees =
-                    applicationType.ApplicationTypeFees,
-
-                ReplacementReason =
-                    ReplacementReason,
-
-                CreatedByUserName =
-                    _currentUserService.Username
-            };
-
-        IsLicenseIssued = false;
+        MessageBox.Show(
+            "License found successfully",
+            "Replacement License",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     [RelayCommand]
@@ -248,13 +158,27 @@ public partial class ReplacementDamagedLicenseViewModel
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(ReplacementReason))
+        {
+            MessageBox.Show(
+                "Please select a replacement reason.",
+                "Replacement License",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
         try
         {
+            var request =
+                new ReplaceLicenseRequest(
+                    LicenseInfo.LicenseId,
+                    ReplacementReason);
+
             var replaceResult =
-                await _licenseReplacementService
-                    .ReplaceLicenseAsync(
-                        LicenseInfo.LicenseId,
-                        ReplacementReason);
+                await _licenseReplacementApiClient
+                    .ReplaceAsync(request);
 
             if (replaceResult.IsFailure)
             {
@@ -267,19 +191,41 @@ public partial class ReplacementDamagedLicenseViewModel
                 return;
             }
 
-            int newLicenseId =
-                replaceResult.Value;
-
-            var licenseResult =
-                await _licenseService
-                    .GetByIdAsync(
-                        newLicenseId);
-
-            if (licenseResult.IsFailure)
+            if (replaceResult.Value is null ||
+                replaceResult.Value.LicenseId <= 0)
             {
                 MessageBox.Show(
-                    licenseResult.Error,
-                    "Error",
+                    "The new license ID was not returned.",
+                    "Replacement License",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            var newLicenseId =
+                replaceResult.Value.LicenseId;
+
+            var newLicenseResult =
+                await _licensesApiClient
+                    .GetByIdAsync(newLicenseId);
+
+            if (newLicenseResult.IsFailure)
+            {
+                MessageBox.Show(
+                    newLicenseResult.Error,
+                    "Replacement License",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            if (newLicenseResult.Value is null)
+            {
+                MessageBox.Show(
+                    "The new license could not be found.",
+                    "Replacement License",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
 
@@ -287,39 +233,55 @@ public partial class ReplacementDamagedLicenseViewModel
             }
 
             var newLicense =
-                licenseResult.Value;
+                newLicenseResult.Value;
 
-            if (newLicense == null)
+            var applicationResult =
+                await _applicationsApiClient
+                    .GetByIdAsync(
+                        newLicense.ApplicationId);
+
+            if (applicationResult.IsFailure)
             {
                 MessageBox.Show(
-                    "The new license could not be found.",
-                    "Error",
+                    applicationResult.Error,
+                    "Replacement License",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
 
                 return;
             }
 
-            var applicationFees =
-                ReplacementInfo?.ApplicationFees ?? 0;
+            if (applicationResult.Value is null)
+            {
+                MessageBox.Show(
+                    "The replacement application could not be found.",
+                    "Replacement License",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            var application =
+                applicationResult.Value;
 
             ReplacementInfo =
-                new ApplicationReplacementInfoDto
+                new ReplacementApplicationInfo
                 {
-                    ReplacementApplicationID =
-                        newLicense.ApplicationID,
+                    ReplacementApplicationId =
+                        application.ApplicationId,
 
-                    ReplacementLicenseID =
-                        newLicense.LicenseID,
+                    ReplacementLicenseId =
+                        newLicense.LicenseId,
 
-                    OldLicenseID =
+                    OldLicenseId =
                         LicenseInfo.LicenseId,
 
                     ApplicationDate =
-                        newLicense.IssueDate,
+                        application.ApplicationDate,
 
                     ApplicationFees =
-                        applicationFees,
+                        application.PaidFees,
 
                     LicenseFees =
                         newLicense.PaidFees,
@@ -329,7 +291,7 @@ public partial class ReplacementDamagedLicenseViewModel
 
                     CreatedByUserName =
                         newLicense.CreatedByUserName
-                        ?? "Unknown"
+                        ?? application.CreatedByUserName
                 };
 
             IsLicenseIssued = true;
@@ -357,13 +319,7 @@ public partial class ReplacementDamagedLicenseViewModel
         ReplacementReason =
             "Lost License";
 
-        ApplicationTypeId = 3;
-
-        if (ReplacementInfo != null)
-        {
-            ReplacementInfo.ReplacementReason =
-                ReplacementReason;
-        }
+        ClearReplacementData();
     }
 
     [RelayCommand]
@@ -372,13 +328,7 @@ public partial class ReplacementDamagedLicenseViewModel
         ReplacementReason =
             "Damaged License";
 
-        ApplicationTypeId = 4;
-
-        if (ReplacementInfo != null)
-        {
-            ReplacementInfo.ReplacementReason =
-                ReplacementReason;
-        }
+        ClearReplacementData();
     }
 
     [RelayCommand]
@@ -396,7 +346,7 @@ public partial class ReplacementDamagedLicenseViewModel
 
         new LicenseHistoryWin(
             vm,
-            LicenseInfo.PersonID)
+            LicenseInfo.PersonId)
             .ShowDialog();
     }
 
@@ -404,7 +354,7 @@ public partial class ReplacementDamagedLicenseViewModel
     private void ShowLicensesInfo()
     {
         if (!IsLicenseIssued ||
-            ReplacementInfo?.ReplacementLicenseID == null)
+            ReplacementInfo?.ReplacementLicenseId == null)
         {
             MessageBox.Show(
                 "License not issued yet",
@@ -417,7 +367,7 @@ public partial class ReplacementDamagedLicenseViewModel
 
         new DriverLicenseInfoWin(
             ReplacementInfo
-                .ReplacementLicenseID
+                .ReplacementLicenseId
                 .Value)
             .ShowDialog();
     }
@@ -425,7 +375,33 @@ public partial class ReplacementDamagedLicenseViewModel
     private void ClearLicenseData()
     {
         LicenseInfo = null;
+        ClearReplacementData();
+    }
+
+    private void ClearReplacementData()
+    {
         ReplacementInfo = null;
         IsLicenseIssued = false;
     }
+}
+
+public sealed class ReplacementApplicationInfo
+{
+    public int? ReplacementApplicationId { get; init; }
+
+    public int OldLicenseId { get; init; }
+
+    public int? ReplacementLicenseId { get; init; }
+
+    public DateTime ApplicationDate { get; init; }
+
+    public decimal ApplicationFees { get; init; }
+
+    public decimal LicenseFees { get; init; }
+
+    public string ReplacementReason { get; init; } =
+        string.Empty;
+
+    public string CreatedByUserName { get; init; } =
+        string.Empty;
 }

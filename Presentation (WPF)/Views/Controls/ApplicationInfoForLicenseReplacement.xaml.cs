@@ -1,28 +1,34 @@
-﻿using System.Windows;
+﻿using Presentation.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
-using Application.DTOs.ApplicationDTO;
+using static Presentation.ViewModels.ReplacementDamagedLicenseViewModel;
 
-namespace Presentation.Views.Controls
+namespace Presentation.Views.Controls;
+
+public partial class ApplicationInfoForLicenseReplacement
+    : UserControl
 {
-    public partial class ApplicationInfoForLicenseReplacement : UserControl
+    public ApplicationInfoForLicenseReplacement()
     {
-        public ApplicationInfoForLicenseReplacement()
-        {
-            InitializeComponent();
-        }
-
-        public ApplicationReplacementInfoDto? Application
-        {
-            get => (ApplicationReplacementInfoDto?)GetValue(ApplicationProperty);
-            set => SetValue(ApplicationProperty, value);
-        }
-
-
-        public static readonly DependencyProperty ApplicationProperty =
-            DependencyProperty.Register(
-                nameof(Application),
-                typeof(ApplicationReplacementInfoDto),
-                typeof(ApplicationInfoForLicenseReplacement),
-                new PropertyMetadata(null));
+        InitializeComponent();
     }
+
+    public ReplacementApplicationInfo? Application
+    {
+        get =>
+            (ReplacementApplicationInfo?)GetValue(
+                ApplicationProperty);
+
+        set =>
+            SetValue(
+                ApplicationProperty,
+                value);
+    }
+
+    public static readonly DependencyProperty ApplicationProperty =
+        DependencyProperty.Register(
+            nameof(Application),
+            typeof(ReplacementApplicationInfo),
+            typeof(ApplicationInfoForLicenseReplacement),
+            new PropertyMetadata(null));
 }

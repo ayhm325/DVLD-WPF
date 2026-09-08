@@ -299,7 +299,9 @@
                             SearchCommand="{Binding SearchCommand}"
                             License="{Binding LicenseInfo}"/>
 
-                    <controls:ApplicationNewLicenseInfo Application="{Binding NewLicenseInfo}"/>
+                    <controls:ApplicationNewLicenseInfo
+                            Application="{Binding NewLicenseInfo}"
+                            Notes="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                 </StackPanel>
 

@@ -146,9 +146,7 @@ public partial class App : System.Windows.Application
         // =====================================================
 
         services.AddScoped<ILicenseService, LicenseService>();
-        services.AddScoped<ILicenseRenewalService, LicenseRenewalService>();
         services.AddScoped<ILicenseIssuanceService, LicenseIssuanceService>();
-        services.AddScoped<ILicenseReplacementService, LicenseReplacementService>();
         services.AddScoped<ITestWorkflowService, TestWorkflowService>();
         services.AddScoped<ILicenseQueryService, LicenseQueryService>();
 
@@ -192,6 +190,8 @@ public partial class App : System.Windows.Application
         services.AddScoped<ITestWorkflowApiClient, TestWorkflowApiClient>();
         services.AddScoped<IDetainedLicensesApiClient, DetainedLicensesApiClient>();
         services.AddScoped<ITestTypesApiClient, TestTypesApiClient>();
+        services.AddScoped<ILicenseRenewalApiClient, LicenseRenewalApiClient>();
+        services.AddScoped<ILicenseReplacementApiClient, LicenseReplacementApiClient>();
 
         // =====================================================
         // 7. VIEW MODELS
