@@ -1,6 +1,5 @@
 ﻿using Presentation.ViewModels;
 using System.Windows;
-using Presentation.Models;
 
 namespace Presentation.Views.Windows
 {

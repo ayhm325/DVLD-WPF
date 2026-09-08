@@ -9,7 +9,6 @@ using Presentation.Views.Pages.Tests;
 using Presentation.Views.Windows;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -25,7 +24,6 @@ namespace DVLD_WPF
 
         private readonly ICurrentUserSession _currentUserSession;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IDashboardService _dashboardService;
 
         // ═══════ متغيرات تأثير الكاتبة ═══════
         private DispatcherTimer? _typewriterTimer;
@@ -47,8 +45,7 @@ namespace DVLD_WPF
 
         public MainWindow(
             ICurrentUserSession currentUserSession,
-            IServiceProvider serviceProvider,
-            IDashboardService dashboardService)
+            IServiceProvider serviceProvider)
         {
             InitializeComponent();
 
@@ -57,9 +54,6 @@ namespace DVLD_WPF
 
             _serviceProvider = serviceProvider
                 ?? throw new ArgumentNullException(nameof(serviceProvider));
-
-            _dashboardService = dashboardService
-                ?? throw new ArgumentNullException(nameof(dashboardService));
 
             WindowState = WindowState.Maximized;
 

@@ -1,8 +1,6 @@
-﻿using Domain.Entities;
-using Domain.Enums;
+﻿
 using Presentation.Services.Api;
 using Presentation.ViewModels;
-using System;
 using System.Windows;
 
 namespace Presentation.Views.Windows;

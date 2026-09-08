@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Enums;
+using Presentation.Enums;
 using DVLD.Contracts.Country;
 using DVLD.Contracts.Person;
 using DVLD_WPF;

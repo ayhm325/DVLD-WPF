@@ -1,16 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Domain.Enums;
+using Presentation.Enums;
 using DVLD.Contracts.Person;
 using DVLD.Contracts.User;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services;
 using Presentation.Services.Api;
-using Presentation.Views;
 using Presentation.Views.Windows;
-using System;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Presentation.ViewModels;

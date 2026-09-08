@@ -1,9 +1,4 @@
-﻿using Application.Interfaces;
-using Application.Services;
-using Infrastructure;
-using Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Presentation;
 using Presentation.Services;
 using Presentation.Services.Api;
@@ -22,9 +17,6 @@ namespace DVLD_WPF;
 
 public partial class App : System.Windows.Application
 {
-    private const string ConnectionString =
-    "Server=.;Database=DVLDf;Trusted_Connection=True;TrustServerCertificate=True";
-
     private IServiceProvider _rootServiceProvider = null!;
     private IServiceScope _applicationScope = null!;
 
@@ -86,72 +78,15 @@ public partial class App : System.Windows.Application
     private void ConfigureServices(IServiceCollection services)
     {
         // =====================================================
-        // 1. DATABASE
-        // =====================================================
-
-        services.AddDbContextFactory<DVLDDbContext>(
-            options =>
-                options.UseSqlServer(ConnectionString));
-
-        // =====================================================
-        // 2. UNIT OF WORK
-        // =====================================================
-
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-        // =====================================================
-        // 3. REPOSITORIES
-        // =====================================================
-
-        services.AddScoped<IDashboardRepository, DashboardRepository>();
-        services.AddScoped<IApplicationRepository, ApplicationRepository>();
-        services.AddScoped<IApplicationTypeRepository, ApplicationTypeRepository>();
-        services.AddScoped<ICountryRepository, CountryRepository>();
-        services.AddScoped<IDetainedLicenseRepository, DetainedLicenseRepository>();
-        services.AddScoped<IDriverRepository, DriverRepository>();
-        services.AddScoped<ILicenseClassRepository, LicenseClassRepository>();
-        services.AddScoped<ILicenseRepository, LicenseRepository>();
-        services.AddScoped<ILocalDrivingLicenseApplicationRepository, LocalDrivingLicenseApplicationRepository>();
-        services.AddScoped<IPersonRepository, PersonRepository>();
-        services.AddScoped<ITestAppointmentRepository, TestAppointmentRepository>();
-        services.AddScoped<ITestRepository, TestRepository>();
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<ITestTypeRepository, TestTypeRepository>();
-        services.AddScoped<IInternationalRepository, InternationalRepository>();
-
-        // =====================================================
-        // 4. APPLICATION SERVICES
+        // 1. APPLICATION / PRESENTATION SERVICES
         // =====================================================
 
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<ICurrentUserSession, CurrentUserService>();
         services.AddSingleton<IApiHostService, ApiHostService>();
 
-        services.AddScoped<IDashboardService, DashboardService>();
-        services.AddScoped<IApplicationService, ApplicationService>();
-        services.AddScoped<IApplicationTypeService, ApplicationTypeService>();
-        services.AddScoped<ICountryService, CountryService>();
-        services.AddScoped<IDriverService, DriverService>();
-        services.AddScoped<ILicenseClassService, LicenseClassService>();
-        services.AddScoped<ILocalDrivingLicenseApplicationService, LocalDrivingLicenseApplicationService>();
-        services.AddScoped<IPersonService, PersonService>();
-        services.AddScoped<ITestAppointmentService, TestAppointmentService>();
-        services.AddScoped<ITestService, TestService>();
-        services.AddScoped<ITestTypeService, TestTypeService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IInternationalService, InternationalService>();
-
         // =====================================================
-        // 5. LICENSE SERVICES
-        // =====================================================
-
-        services.AddScoped<ILicenseService, LicenseService>();
-        services.AddScoped<ILicenseIssuanceService, LicenseIssuanceService>();
-        services.AddScoped<ITestWorkflowService, TestWorkflowService>();
-        services.AddScoped<ILicenseQueryService, LicenseQueryService>();
-
-        // =====================================================
-        // 6. API CLIENTS
+        // 2. API CLIENTS
         // =====================================================
 
         services.AddHttpClient<IApiClient, ApiClient>(
@@ -194,7 +129,7 @@ public partial class App : System.Windows.Application
         services.AddScoped<ILicenseReplacementApiClient, LicenseReplacementApiClient>();
 
         // =====================================================
-        // 7. VIEW MODELS
+        // 3. VIEW MODELS
         // =====================================================
 
         services.AddTransient<AddEditLDLAppViewModel>();
@@ -227,7 +162,7 @@ public partial class App : System.Windows.Application
         services.AddTransient<ReleaseDetainedViewModel>();
 
         // =====================================================
-        // 8. VIEWS
+        // 4. VIEWS
         // =====================================================
 
         services.AddTransient<LoginWindow>();

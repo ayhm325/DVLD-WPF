@@ -1,7 +1,5 @@
 ﻿using Presentation.Services.Api;
 using Presentation.ViewModels;
-using Presentation.Views.Controls;
-using System;
 using System.Windows;
 
 namespace Presentation.Views.Windows;
