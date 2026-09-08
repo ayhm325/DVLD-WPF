@@ -25,7 +25,10 @@ public static class LocalDrivingLicenseApplicationMapper
             NationalNo =
                 entity.Application?.Person?.NationalNo ?? "N/A",
 
-            Fees =
+            ApplicationFees =
+                entity.Application?.PaidFees ?? 0,
+
+            LicenseClassFees =
                 entity.LicenseClass?.ClassFees ?? 0,
 
             FullName =

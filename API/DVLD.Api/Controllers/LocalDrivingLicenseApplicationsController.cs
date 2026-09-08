@@ -179,8 +179,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
             StatusText =
                 dto.StatusText,
 
-            Fees =
-                dto.Fees,
+            ApplicationFees =
+                dto.ApplicationFees,
+
+            LicenseClassFees =
+                dto.LicenseClassFees,
 
             HasLicense =
                 dto.HasLicense,

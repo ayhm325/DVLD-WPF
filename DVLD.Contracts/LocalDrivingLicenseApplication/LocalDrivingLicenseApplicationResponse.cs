@@ -20,7 +20,9 @@ public sealed class LocalDrivingLicenseApplicationResponse
 
     public string StatusText { get; init; } = string.Empty;
 
-    public decimal Fees { get; init; }
+    public decimal ApplicationFees { get; init; }
+
+    public decimal LicenseClassFees { get; init; }
 
     public bool HasLicense { get; init; }
 

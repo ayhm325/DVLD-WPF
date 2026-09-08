@@ -23,7 +23,9 @@ public class LocalDrivingLicenseApplicationListDto
     public string StatusText =>
         ApplicationStatus.ToString();
 
-    public decimal Fees { get; set; }
+    public decimal ApplicationFees { get; set; }
+
+    public decimal LicenseClassFees { get; set; }
 
     public bool HasLicense { get; set; }
 
