@@ -7,23 +7,36 @@ public sealed class GlobalExceptionHandler(
     ILogger<GlobalExceptionHandler> logger)
     : IExceptionHandler
 {
+    private readonly ILogger<GlobalExceptionHandler> _logger =
+        logger ?? throw new ArgumentNullException(nameof(logger));
+
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
         CancellationToken cancellationToken)
     {
-        logger.LogError(
+        _logger.LogError(
             exception,
-            "Unhandled exception occurred.");
+            "Unhandled exception occurred while processing {Method} {Path}.",
+            httpContext.Request.Method,
+            httpContext.Request.Path);
+
+        var problemDetails = new ProblemDetails
+        {
+            Status = StatusCodes.Status500InternalServerError,
+            Title = "An unexpected error occurred.",
+            Detail = "The server could not complete the request."
+        };
+
+        problemDetails.Extensions["traceId"] =
+            httpContext.TraceIdentifier;
 
         httpContext.Response.StatusCode =
             StatusCodes.Status500InternalServerError;
 
-        await Results.Problem(
-            statusCode: StatusCodes.Status500InternalServerError,
-            title: "An unexpected error occurred.",
-            detail: "The server could not complete the request.")
-            .ExecuteAsync(httpContext);
+        await httpContext.Response.WriteAsJsonAsync(
+            problemDetails,
+            cancellationToken);
 
         return true;
     }

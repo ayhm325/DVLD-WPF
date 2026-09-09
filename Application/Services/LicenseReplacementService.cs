@@ -10,323 +10,158 @@ using System.Data;
 
 namespace Application.Services;
 
-public sealed class LicenseReplacementService
-: ILicenseReplacementService
+public sealed class LicenseReplacementService(
+    ILicenseRepository licenseRepository,
+    IApplicationService applicationService,
+    IApplicationTypeService applicationTypeService,
+    ICurrentUserService currentUserService,
+    IUnitOfWork unitOfWork,
+    ILogger<LicenseReplacementService> logger) : ILicenseReplacementService
 {
     private const int LostReplacementApplicationTypeId = 3;
     private const int DamagedReplacementApplicationTypeId = 4;
 
-    private readonly ILicenseRepository _licenseRepository;
-    private readonly IApplicationService _applicationService;
-    private readonly IApplicationTypeService _applicationTypeService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<LicenseReplacementService> _logger;
+    private readonly ILicenseRepository _licenseRepository =
+        licenseRepository ?? throw new ArgumentNullException(nameof(licenseRepository));
+    private readonly IApplicationService _applicationService =
+        applicationService ?? throw new ArgumentNullException(nameof(applicationService));
+    private readonly IApplicationTypeService _applicationTypeService =
+        applicationTypeService ?? throw new ArgumentNullException(nameof(applicationTypeService));
+    private readonly ICurrentUserService _currentUserService =
+        currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+    private readonly IUnitOfWork _unitOfWork =
+        unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+    private readonly ILogger<LicenseReplacementService> _logger =
+        logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public LicenseReplacementService(
-        ILicenseRepository licenseRepository,
-        IApplicationService applicationService,
-        IApplicationTypeService applicationTypeService,
-        ICurrentUserService currentUserService,
-        IUnitOfWork unitOfWork,
-        ILogger<LicenseReplacementService> logger)
+    public async Task<Result<int>> ReplaceLicenseAsync(int oldLicenseId, string replacementReason)
     {
-        _licenseRepository =
-            licenseRepository
-            ?? throw new ArgumentNullException(nameof(licenseRepository));
-
-        _applicationService =
-            applicationService
-            ?? throw new ArgumentNullException(nameof(applicationService));
-
-        _applicationTypeService =
-            applicationTypeService
-            ?? throw new ArgumentNullException(nameof(applicationTypeService));
-
-        _currentUserService =
-            currentUserService
-            ?? throw new ArgumentNullException(nameof(currentUserService));
-
-        _unitOfWork =
-            unitOfWork
-            ?? throw new ArgumentNullException(nameof(unitOfWork));
-
-        _logger =
-            logger
-            ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    public async Task<Result<int>> ReplaceLicenseAsync(
-        int oldLicenseId,
-        string replacementReason)
-    {
-        var validation =
-            LicenseValidator.ValidateId(oldLicenseId);
-
+        var validation = LicenseValidator.ValidateId(oldLicenseId);
         if (validation.IsFailure)
-        {
-            return Result<int>.FromValidationFailure(
-                validation.Error);
-        }
+            return Result<int>.FromValidationFailure(validation.Error);
 
         if (string.IsNullOrWhiteSpace(replacementReason))
-        {
-            return Result<int>.FromValidationFailure(
-                "Replacement reason is required.");
-        }
+            return Result<int>.FromValidationFailure("Replacement reason is required.");
 
-        if (!_currentUserService.IsLoggedIn ||
-            _currentUserService.UserId <= 0)
-        {
-            return Result<int>.FromForbidden(
-                "Authenticated user is required.");
-        }
+        if (!IsAuthenticated())
+            return Result<int>.FromForbidden("Authenticated user is required.");
 
-        var replacementInfo =
-            GetReplacementInfo(replacementReason.Trim());
-
+        var replacementInfo = GetReplacementInfo(replacementReason.Trim());
         if (replacementInfo is null)
-        {
-            return Result<int>.FromValidationFailure(
-                "Invalid replacement reason. " +
-                "Allowed reasons are Lost License or Damaged License.");
-        }
+            return Result<int>.FromValidationFailure("Invalid replacement reason. Allowed reasons are Lost License or Damaged License.");
 
-        var applicationTypeResult =
-            await _applicationTypeService
-                .GetApplicationTypeByIdAsync(
-                    replacementInfo.Value.ApplicationTypeId);
-
+        var applicationTypeResult = await _applicationTypeService.GetApplicationTypeByIdAsync(replacementInfo.Value.ApplicationTypeId);
         if (applicationTypeResult.IsFailure)
-            return PropagateFailure<int>(
-                applicationTypeResult);
-
+            return PropagateFailure<int>(applicationTypeResult);
         if (applicationTypeResult.Value is null)
-        {
-            return Result<int>.FromNotFound(
-                "Replacement application type not found.");
-        }
+            return Result<int>.FromNotFound("Replacement application type not found.");
 
-        var currentUserId =
-            _currentUserService.UserId;
-
-        await using var transaction =
-            await _unitOfWork.BeginTransactionAsync(
-                IsolationLevel.Serializable);
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(IsolationLevel.Serializable);
 
         try
         {
-            var oldLicense =
-                await _licenseRepository
-                    .GetLicenseByIdAsync(oldLicenseId);
-
+            var oldLicense = await _licenseRepository.GetLicenseByIdAsync(oldLicenseId);
             if (oldLicense is null)
-            {
-                return Result<int>.FromNotFound(
-                    "License not found.");
-            }
+                return await RollbackAsync(transaction, Result<int>.FromNotFound("License not found."));
 
             if (!oldLicense.IsActive)
-            {
-                return Result<int>.FromConflict(
-                    "Cannot replace an inactive license.");
-            }
+                return await RollbackAsync(transaction, Result<int>.FromConflict("Cannot replace an inactive license."));
 
             if (oldLicense.Driver is null)
-            {
-                return Result<int>.FromNotFound(
-                    "Driver information is not available.");
-            }
+                return await RollbackAsync(transaction, Result<int>.FromNotFound("Driver information is not available."));
 
             if (oldLicense.LicenseClassInfo is null)
-            {
-                return Result<int>.FromNotFound(
-                    "License class information is not available.");
-            }
+                return await RollbackAsync(transaction, Result<int>.FromNotFound("License class information is not available."));
 
             var now = DateTime.UtcNow;
-
             if (oldLicense.ExpirationDate <= now)
+                return await RollbackAsync(transaction, Result<int>.FromConflict("Cannot replace an expired license."));
+
+            var applicationResult = await _applicationService.AddNewApplicationAsync(new CreateApplicationDto
             {
-                return Result<int>.FromConflict(
-                    "Cannot replace an expired license.");
-            }
-
-            var createApplicationDto =
-                new CreateApplicationDto
-                {
-                    ApplicantPersonID =
-                        oldLicense.Driver.PersonID,
-
-                    ApplicationTypeID =
-                        replacementInfo.Value.ApplicationTypeId
-                };
-
-            var applicationResult =
-                await _applicationService
-                    .AddNewApplicationAsync(
-                        createApplicationDto);
+                ApplicantPersonID = oldLicense.Driver.PersonID,
+                ApplicationTypeID = replacementInfo.Value.ApplicationTypeId
+            });
 
             if (applicationResult.IsFailure)
-                return PropagateFailure<int>(
-                    applicationResult);
+                return await RollbackAsync(transaction, PropagateFailure<int>(applicationResult));
 
-            var applicationId =
-                applicationResult.Value;
-
+            var applicationId = applicationResult.Value;
             if (applicationId <= 0)
+                return await RollbackAsync(transaction, Result<int>.FromFailure("Failed to create replacement application."));
+
+            var createLicenseDto = new CreateLicenseDto
             {
-                return Result<int>.FromFailure(
-                    "Failed to create replacement application.");
-            }
+                ApplicationID = applicationId,
+                DriverID = oldLicense.DriverID,
+                LicenseClassID = oldLicense.LicenseClass,
+                IssueDate = now,
+                ExpirationDate = oldLicense.ExpirationDate,
+                PaidFees = oldLicense.LicenseClassInfo.ClassFees,
+                Notes = replacementReason.Trim(),
+                IssueReason = replacementInfo.Value.IssueReason
+            };
 
-            var createLicenseDto =
-                new CreateLicenseDto
-                {
-                    ApplicationID = applicationId,
-                    DriverID = oldLicense.DriverID,
-                    LicenseClassID = oldLicense.LicenseClass,
-                    IssueDate = now,
-                    ExpirationDate =
-                        oldLicense.ExpirationDate,
-
-                    PaidFees =
-                        oldLicense.LicenseClassInfo.ClassFees,
-
-                    Notes =
-                        replacementReason.Trim(),
-
-
-                    IssueReason = replacementInfo.Value.IssueReason
-                };
-
-            var licenseValidation =
-                LicenseValidator.ValidateCreate(
-                    createLicenseDto);
-
+            var licenseValidation = LicenseValidator.ValidateCreate(createLicenseDto);
             if (licenseValidation.IsFailure)
-            {
-                return Result<int>.FromValidationFailure(
-                    licenseValidation.Error);
-            }
+                return await RollbackAsync(transaction, Result<int>.FromValidationFailure(licenseValidation.Error));
 
             if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId))
-            {
-                return Result<int>.FromFailure(
-                    "Failed to deactivate the old license.");
-            }
+                return await RollbackAsync(transaction, Result<int>.FromFailure("Failed to deactivate the old license."));
 
-            var newLicense =
-                LicenseMapper.ToEntity(
-                    createLicenseDto);
+            var newLicense = LicenseMapper.ToEntity(createLicenseDto);
+            newLicense.CreatedByUserID = _currentUserService.UserId;
+            await _licenseRepository.AddLicenseAsync(newLicense);
 
-            newLicense.CreatedByUserID =
-                currentUserId;
+            var saved = await _unitOfWork.SaveChangesAsync();
+            if (saved <= 0 || newLicense.LicenseID <= 0)
+                return await RollbackAsync(transaction, Result<int>.FromFailure("Failed to save the replacement license."));
 
-            await _licenseRepository
-                .AddLicenseAsync(newLicense);
-
-            var saved =
-                await _unitOfWork.SaveChangesAsync();
-
-            if (saved <= 0 ||
-                newLicense.LicenseID <= 0)
-            {
-                return Result<int>.FromFailure(
-                    "Failed to save the replacement license.");
-            }
-
-           
-
-            var completeResult =
-                await _applicationService
-                    .CompleteApplicationAsync(
-                        applicationId);
-
+            var completeResult = await _applicationService.CompleteApplicationAsync(applicationId);
             if (completeResult.IsFailure)
-                return PropagateFailure<int>(
-                    completeResult);
+                return await RollbackAsync(transaction, PropagateFailure<int>(completeResult));
 
             await transaction.CommitAsync();
-
-            return Result<int>.Success(
-                newLicense.LicenseID);
+            return Result<int>.Success(newLicense.LicenseID);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(
-                ex,
-                "Error while replacing license {LicenseId}.",
-                oldLicenseId);
-
-            try
-            {
-                await transaction.RollbackAsync();
-            }
-            catch (Exception rollbackException)
-            {
-                _logger.LogError(
-                    rollbackException,
-                    "Rollback failed while replacing license {LicenseId}.",
-                    oldLicenseId);
-            }
-
-            return Result<int>.FromFailure(
-                "An unexpected error occurred while replacing the license.");
+            await RollbackSafelyAsync(transaction, oldLicenseId);
+            throw;
         }
     }
 
-    private static (
-        int ApplicationTypeId,
-        IssueReason IssueReason)?
-        GetReplacementInfo(
-            string replacementReason)
+    private bool IsAuthenticated() =>
+        _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;
+
+    private static (int ApplicationTypeId, IssueReason IssueReason)? GetReplacementInfo(string replacementReason) =>
+        replacementReason.Equals("Lost License", StringComparison.OrdinalIgnoreCase)
+            ? (LostReplacementApplicationTypeId, IssueReason.ReplacementForLost)
+            : replacementReason.Equals("Damaged License", StringComparison.OrdinalIgnoreCase)
+                ? (DamagedReplacementApplicationTypeId, IssueReason.ReplacementForDamaged)
+                : null;
+
+    private static async Task<T> RollbackAsync<T>(dynamic transaction, T result)
     {
-        if (replacementReason.Equals(
-                "Lost License",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return (
-                LostReplacementApplicationTypeId,
-                IssueReason.ReplacementForLost);
-        }
-
-        if (replacementReason.Equals(
-                "Damaged License",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return (
-                DamagedReplacementApplicationTypeId,
-                IssueReason.ReplacementForDamaged);
-        }
-
-        return null;
+        await transaction.RollbackAsync();
+        return result;
     }
 
-    private static Result<T> PropagateFailure<T>(
-        Result source)
+    private async Task RollbackSafelyAsync(dynamic transaction, int licenseId)
     {
-        return source.ErrorType switch
+        try { await transaction.RollbackAsync(); }
+        catch (Exception rollbackException)
         {
-            ErrorType.Validation =>
-                Result<T>.FromValidationFailure(
-                    source.Error),
-
-            ErrorType.NotFound =>
-                Result<T>.FromNotFound(
-                    source.Error),
-
-            ErrorType.Conflict =>
-                Result<T>.FromConflict(
-                    source.Error),
-
-            ErrorType.Forbidden =>
-                Result<T>.FromForbidden(
-                    source.Error),
-
-            _ =>
-                Result<T>.FromFailure(
-                    source.Error)
-        };
+            _logger.LogError(rollbackException, "Rollback failed while replacing license {LicenseId}.", licenseId);
+        }
     }
+
+    private static Result<T> PropagateFailure<T>(Result source) => source.ErrorType switch
+    {
+        ErrorType.Validation => Result<T>.FromValidationFailure(source.Error),
+        ErrorType.NotFound => Result<T>.FromNotFound(source.Error),
+        ErrorType.Conflict => Result<T>.FromConflict(source.Error),
+        ErrorType.Forbidden => Result<T>.FromForbidden(source.Error),
+        _ => Result<T>.FromFailure(source.Error)
+    };
 }
