@@ -325,11 +325,11 @@
                                     </Border>
                                     <StackPanel Margin="10,0,0,0"
                                                 VerticalAlignment="Center">
-                                        <TextBlock Text="Ayhm Mohammed"
+                                        <TextBlock Text="{Binding CurrentUserFullName,RelativeSource={RelativeSource AncestorType=Window}}"
                                                    FontSize="12"
                                                    FontWeight="SemiBold"
                                                    Foreground="{StaticResource TextPrimaryColor}"/>
-                                        <TextBlock Text="Administrator"
+                                        <TextBlock Text="{Binding CurrentUserRole,RelativeSource={RelativeSource AncestorType=Window}}"
                                                    FontSize="10"
                                                    Foreground="{StaticResource TextMutedColor}"
                                                    Margin="0,3,0,0"/>
@@ -754,7 +754,7 @@
                                                                    Margin="10,0,0,0"/>
                                                     </StackPanel>
                                                     <TextBlock x:Name="StatTotalPeople"
-                                                               Text="0"
+                                                               Text="{Binding TotalPeople}"                                                              
                                                                FontSize="28"
                                                                FontWeight="Bold"
                                                                Foreground="{StaticResource TextPrimaryColor}"
@@ -786,7 +786,7 @@
                                                                    Margin="10,0,0,0"/>
                                                     </StackPanel>
                                                     <TextBlock x:Name="StatTotalDrivers"
-                                                               Text="0"
+                                                               Text="{Binding TotalDrivers}"
                                                                FontSize="28"
                                                                FontWeight="Bold"
                                                                Foreground="{StaticResource TextPrimaryColor}"
@@ -818,7 +818,7 @@
                                                                    Margin="10,0,0,0"/>
                                                     </StackPanel>
                                                     <TextBlock x:Name="StatActiveLicenses"
-                                                               Text="0"
+                                                               Text="{Binding ActiveLicenses}"
                                                                FontSize="28"
                                                                FontWeight="Bold"
                                                                Foreground="{StaticResource TextPrimaryColor}"
@@ -850,7 +850,7 @@
                                                                    Margin="10,0,0,0"/>
                                                     </StackPanel>
                                                     <TextBlock x:Name="StatTestsToday"
-                                                               Text="0"
+                                                               Text="{Binding UpcomingTests}"
                                                                FontSize="28"
                                                                FontWeight="Bold"
                                                                Foreground="{StaticResource TextPrimaryColor}"
@@ -901,7 +901,7 @@
                                                                    FontWeight="Bold"
                                                                    Foreground="{StaticResource TextMutedColor}"/>
                                                         <TextBlock x:Name="StatLocalApps"
-                                                                   Text="0"
+                                                                   Text="{Binding LocalDrivingLicenseApplications}"
                                                                    FontSize="22"
                                                                    FontWeight="Bold"
                                                                    Foreground="{StaticResource TextPrimaryColor}"
@@ -934,7 +934,7 @@
                                                                    FontWeight="Bold"
                                                                    Foreground="{StaticResource TextMutedColor}"/>
                                                         <TextBlock x:Name="StatIntlApps"
-                                                                   Text="0"
+                                                                   Text="{Binding InternationalLicenses}"
                                                                    FontSize="22"
                                                                    FontWeight="Bold"
                                                                    Foreground="{StaticResource TextPrimaryColor}"
@@ -967,7 +967,7 @@
                                                                    FontWeight="Bold"
                                                                    Foreground="{StaticResource TextMutedColor}"/>
                                                         <TextBlock x:Name="StatDetainedLicenses"
-                                                                   Text="0"
+                                                                   Text="{Binding DetainedLicenses}"
                                                                    FontSize="22"
                                                                    FontWeight="Bold"
                                                                    Foreground="{StaticResource TextPrimaryColor}"

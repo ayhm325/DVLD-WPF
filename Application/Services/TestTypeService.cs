@@ -10,22 +10,29 @@ public sealed class TestTypeService(
     IUnitOfWork unitOfWork) : ITestTypeService
 {
     private readonly ITestTypeRepository _repository =
-        repository ?? throw new ArgumentNullException(nameof(repository));
+        repository
+        ?? throw new ArgumentNullException(nameof(repository));
 
     private readonly IUnitOfWork _unitOfWork =
-        unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        unitOfWork
+        ?? throw new ArgumentNullException(nameof(unitOfWork));
 
     public async Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync()
     {
-        var testTypes = await _repository.GetAllAsync();
+        var testTypes =
+            await _repository.GetAllAsync();
 
         return Result<List<TestTypeDto>>.Success(
-            testTypes.Select(MapToDto).ToList());
+            testTypes
+                .Select(MapToDto)
+                .ToList());
     }
 
-    public async Task<Result<TestTypeDto>> GetTestTypeByIdAsync(int id)
+    public async Task<Result<TestTypeDto>> GetTestTypeByIdAsync(
+        int id)
     {
-        var validation = TestTypeValidator.ValidateId(id);
+        var validation =
+            TestTypeValidator.ValidateId(id);
 
         if (validation.IsFailure)
         {
@@ -33,7 +40,8 @@ public sealed class TestTypeService(
                 validation.Error);
         }
 
-        var testType = await _repository.GetByIdAsync(id);
+        var testType =
+            await _repository.GetByIdAsync(id);
 
         return testType is null
             ? Result<TestTypeDto>.FromNotFound(
@@ -56,7 +64,7 @@ public sealed class TestTypeService(
         }
 
         var testType =
-            await _repository.GetByIdAsync(id);
+            await _repository.GetForUpdateAsync(id);
 
         if (testType is null)
         {
@@ -88,7 +96,8 @@ public sealed class TestTypeService(
         {
             TestTypeId = entity.TestTypeId,
             TestTypeTitle = entity.TestTypeTitle,
-            TestTypeDescription = entity.TestTypeDescription,
+            TestTypeDescription =
+                entity.TestTypeDescription,
             TestTypeFees = entity.TestTypeFees
         };
 }

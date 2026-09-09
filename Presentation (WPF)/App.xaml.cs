@@ -128,6 +128,8 @@ public partial class App : System.Windows.Application
         services.AddScoped<ILicenseRenewalApiClient, LicenseRenewalApiClient>();
         services.AddScoped<ILicenseReplacementApiClient, LicenseReplacementApiClient>();
 
+        services.AddScoped<IDashboardApiClient, DashboardApiClient>();
+
         // =====================================================
         // 3. VIEW MODELS
         // =====================================================
@@ -160,6 +162,8 @@ public partial class App : System.Windows.Application
         services.AddTransient<ListDetainedLicensesViewModel>();
         services.AddTransient<DetainLicenseViewModel>();
         services.AddTransient<ReleaseDetainedViewModel>();
+
+        services.AddTransient<DashboardViewModel>();
 
         // =====================================================
         // 4. VIEWS

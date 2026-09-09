@@ -8,7 +8,8 @@ public sealed class TestTypeRepository(DVLDDbContext context)
     : ITestTypeRepository
 {
     private readonly DVLDDbContext _context =
-        context ?? throw new ArgumentNullException(nameof(context));
+        context
+        ?? throw new ArgumentNullException(nameof(context));
 
     public Task<List<TestType>> GetAllAsync() =>
         _context.TestTypes
@@ -21,5 +22,13 @@ public sealed class TestTypeRepository(DVLDDbContext context)
             ? Task.FromResult<TestType?>(null)
             : _context.TestTypes
                 .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.TestTypeId == id);
+                .FirstOrDefaultAsync(
+                    t => t.TestTypeId == id);
+
+    public Task<TestType?> GetForUpdateAsync(int id) =>
+        id <= 0
+            ? Task.FromResult<TestType?>(null)
+            : _context.TestTypes
+                .FirstOrDefaultAsync(
+                    t => t.TestTypeId == id);
 }

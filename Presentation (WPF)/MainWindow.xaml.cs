@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Presentation;
 using Presentation.Services;
+using Presentation.Services.Api;
 using Presentation.ViewModels;
 using Presentation.Views;
 using Presentation.Views.Pages;
@@ -24,6 +25,11 @@ namespace DVLD_WPF
 
         private readonly ICurrentUserSession _currentUserSession;
         private readonly IServiceProvider _serviceProvider;
+        private readonly DashboardViewModel _dashboardViewModel;
+
+        public string CurrentUserFullName => _currentUserSession.FullName;
+
+        public string CurrentUserRole => _currentUserSession.Role;
 
         // ═══════ متغيرات تأثير الكاتبة ═══════
         private DispatcherTimer? _typewriterTimer;
@@ -40,12 +46,10 @@ namespace DVLD_WPF
         private readonly List<Border> _allNavItems;
         private Border? _activeNavItem;
 
-        // ═══════ متغيرات تحكم عامة ═══════
-        //private bool _isFirstLoad = true;
-
         public MainWindow(
             ICurrentUserSession currentUserSession,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            DashboardViewModel dashboardViewModel)
         {
             InitializeComponent();
 
@@ -55,11 +59,15 @@ namespace DVLD_WPF
             _serviceProvider = serviceProvider
                 ?? throw new ArgumentNullException(nameof(serviceProvider));
 
+            _dashboardViewModel = dashboardViewModel
+                ?? throw new ArgumentNullException(nameof(dashboardViewModel));
+
+            DataContext = _dashboardViewModel;
+
             WindowState = WindowState.Maximized;
 
             Navigation = new NavigationService(MainFrame);
 
-            // جمع كل عناصر التنقل
             _allNavItems = new List<Border>
             {
                 NavDashboard,
@@ -92,7 +100,7 @@ namespace DVLD_WPF
         //                     أحداث النافذة
         // ═══════════════════════════════════════════════════════════
 
-        private void MainWindow_Loaded(
+        private async void MainWindow_Loaded(
             object sender,
             RoutedEventArgs e)
         {
@@ -108,6 +116,8 @@ namespace DVLD_WPF
 
             StartDashboardAnimations();
             StartTypewriterEffect();
+
+            await _dashboardViewModel.LoadAsync();
         }
 
         protected override void OnClosed(EventArgs e)
@@ -245,7 +255,7 @@ namespace DVLD_WPF
         //            Sidebar — العودة للداشبورد
         // ═══════════════════════════════════════════════════════════
 
-        private void ShowDashboard()
+        private async void ShowDashboard()
         {
             DashboardPanel.Visibility =
                 Visibility.Visible;
@@ -264,15 +274,15 @@ namespace DVLD_WPF
 
             StartDashboardAnimations();
             StartTypewriterEffect();
+
+            await _dashboardViewModel.LoadAsync();
         }
 
         // ═══════════════════════════════════════════════════════════
         //         Sidebar Click Handlers — الصفحات (Pages)
         // ═══════════════════════════════════════════════════════════
 
-        private void NavDashboard_Click(
-            object sender,
-            MouseButtonEventArgs e)
+        private void NavDashboard_Click(object sender,MouseButtonEventArgs e)
         {
             ShowDashboard();
         }
@@ -532,7 +542,6 @@ namespace DVLD_WPF
 
         private void StartDashboardAnimations()
         {
-            // إعادة تعيين الحالة قبل الحركة
             StatsRow1.Opacity = 0;
             StatsRow1RT.Y = 24;
 
@@ -545,14 +554,12 @@ namespace DVLD_WPF
             RecentActivitiesSection.Opacity = 0;
             RecentActivitiesRT.Y = 24;
 
-            // تشغيل الـ Storyboard المتدرج
             var stagger =
                 (Storyboard)FindResource(
                     "StaggerEnterStoryboard");
 
             stagger.Begin(this);
 
-            // تشغيل توهج النبض
             var glow =
                 (Storyboard)FindResource(
                     "PulseGlowStoryboard");

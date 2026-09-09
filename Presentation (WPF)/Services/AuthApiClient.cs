@@ -2,6 +2,7 @@
 using Presentation.Services.Results;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -10,11 +11,17 @@ namespace Presentation.Services;
 public sealed class AuthApiClient : IAuthApiClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ICurrentUserSession _currentUser;
 
-    public AuthApiClient(HttpClient httpClient)
+    public AuthApiClient(
+        HttpClient httpClient,
+        ICurrentUserSession currentUser)
     {
         _httpClient = httpClient
             ?? throw new ArgumentNullException(nameof(httpClient));
+
+        _currentUser = currentUser
+            ?? throw new ArgumentNullException(nameof(currentUser));
     }
 
     public async Task<ApiResult<LoginResponse>> LoginAsync(
@@ -67,17 +74,35 @@ public sealed class AuthApiClient : IAuthApiClient
 
         try
         {
-            using var response = await _httpClient.PostAsJsonAsync(
-                "api/auth/change-password",
-                request,
-                cancellationToken);
+            using var httpRequest =
+                new HttpRequestMessage(
+                    HttpMethod.Post,
+                    "api/auth/change-password");
+
+            httpRequest.Content =
+                JsonContent.Create(request);
+
+            if (!string.IsNullOrWhiteSpace(
+                    _currentUser.AccessToken))
+            {
+                httpRequest.Headers.Authorization =
+                    new AuthenticationHeaderValue(
+                        "Bearer",
+                        _currentUser.AccessToken);
+            }
+
+            using var response =
+                await _httpClient.SendAsync(
+                    httpRequest,
+                    cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
                 return ApiResult.Success();
             }
 
-            var error = await ExtractErrorMessageAsync(response);
+            var error =
+                await ExtractErrorMessageAsync(response);
 
             return ApiResult.Failure(error);
         }
@@ -97,7 +122,8 @@ public sealed class AuthApiClient : IAuthApiClient
     private static async Task<string> ExtractErrorMessageAsync(
         HttpResponseMessage response)
     {
-        var content = await response.Content.ReadAsStringAsync();
+        var content =
+            await response.Content.ReadAsStringAsync();
 
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -122,7 +148,8 @@ public sealed class AuthApiClient : IAuthApiClient
 
         try
         {
-            using var document = JsonDocument.Parse(content);
+            using var document =
+                JsonDocument.Parse(content);
 
             if (document.RootElement.TryGetProperty(
                     "error",
