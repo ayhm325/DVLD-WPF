@@ -109,7 +109,7 @@ public sealed class LicenseQueryService(
 
         var applicationId = applicationIdResult.Value;
         if (applicationId <= 0)
-            return Result<DriverLicenseInfoDto>.FromFailure("Invalid application ID.");
+            Result<DriverLicenseInfoDto>.FromValidationFailure("Invalid application ID.");
 
         var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId);
         var license = licenses.FirstOrDefault(x => x.LicenseClass == localApplication.LicenseClassID);
