@@ -1,5 +1,6 @@
 ﻿using Application.Common.Results;
 using Application.Interfaces;
+using DVLD.Contracts.LicenseIssuance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +24,9 @@ public sealed class LicenseIssuanceController(
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(new { licenseId = result.Value });
+        return Ok(
+            new IssueFirstLicenseResponse(
+                result.Value));
     }
 
     private static IActionResult HandleFailure(Result result)
@@ -43,20 +46,20 @@ public sealed class LicenseIssuanceController(
                     new { error = result.Error }),
 
             ErrorType.Forbidden =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status403Forbidden
+                    StatusCode =
+                        StatusCodes.Status403Forbidden
                 },
 
             _ =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status500InternalServerError
+                    StatusCode =
+                        StatusCodes.Status500InternalServerError
                 }
         };
     }
 }
-
-public sealed record IssueFirstLicenseRequest(
-    int LocalApplicationId,
-    string? Notes);

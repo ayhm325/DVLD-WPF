@@ -41,12 +41,12 @@ public sealed class TestTypesController(
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
-        int id,
-        [FromBody] UpdateTestTypeRequest request)
+    int id,
+    [FromBody] UpdateTestTypeRequest request)
     {
         var dto = new Application.DTOs.TestTypeDTO.TestTypeDto
         {
-            TestTypeId = request.TestTypeId,
+            TestTypeId = id,
             TestTypeTitle = request.TestTypeTitle,
             TestTypeDescription = request.TestTypeDescription,
             TestTypeFees = request.TestTypeFees

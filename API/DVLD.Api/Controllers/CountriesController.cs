@@ -1,5 +1,7 @@
 using Application.Common.Results;
+using Application.DTOs.CountryDTO;
 using Application.Interfaces;
+using DVLD.Contracts.Country;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,9 +25,25 @@ public class CountriesController : ControllerBase
         var result =
             await _countryService.GetAllCountriesAsync();
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response = result.Value?
+            .Select(MapToResponse)
+            .ToList() ?? [];
+
+
+        return Ok(response);
+    }
+
+    private static CountryResponse MapToResponse(
+        CountryDto dto)
+    {
+        return new CountryResponse
+        {
+            CountryId = dto.CountryId,
+            CountryName = dto.CountryName
+        };
     }
 
     private IActionResult HandleFailure(Result result)
@@ -42,11 +60,13 @@ public class CountriesController : ControllerBase
                 Conflict(new { error = result.Error }),
 
             ErrorType.Forbidden =>
-                StatusCode(StatusCodes.Status403Forbidden,
+                StatusCode(
+                    StatusCodes.Status403Forbidden,
                     new { error = result.Error }),
 
             _ =>
-                StatusCode(StatusCodes.Status500InternalServerError,
+                StatusCode(
+                    StatusCodes.Status500InternalServerError,
                     new { error = result.Error })
         };
     }

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Application.Interfaces;
+using DVLD.Contracts.Dashboard;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DVLD.Api.Controllers;
@@ -15,6 +17,22 @@ public sealed class DashboardController(
         var result =
             await service.GetStatisticsAsync();
 
-        return Ok(result);
+        var response = new DashboardResponse
+        {
+            TotalPeople = result.TotalPeople,
+            TotalDrivers = result.TotalDrivers,
+            ActiveLicenses = result.ActiveLicenses,
+            PendingApplications = result.PendingApplications,
+            LocalDrivingLicenseApplications =
+                result.LocalDrivingLicenseApplications,
+            InternationalLicenses =
+                result.InternationalLicenses,
+            DetainedLicenses =
+                result.DetainedLicenses,
+            UpcomingTests =
+                result.UpcomingTests
+        };
+
+        return Ok(response);
     }
 }

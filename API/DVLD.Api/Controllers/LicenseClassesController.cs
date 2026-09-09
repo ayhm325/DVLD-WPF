@@ -1,5 +1,7 @@
 ﻿using Application.Common.Results;
+using Application.DTOs;
 using Application.Interfaces;
+using DVLD.Contracts.LicenseClass;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,9 +19,14 @@ public sealed class LicenseClassesController(
         var result =
             await service.GetAllLicenseClassesAsync();
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var response = result.Value?
+            .Select(MapToResponse)
+            .ToList() ?? [];
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}")]
@@ -28,9 +35,31 @@ public sealed class LicenseClassesController(
         var result =
             await service.GetLicenseClassByIdAsync(id);
 
-        return result.IsSuccess
-            ? Ok(result.Value)
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        if (result.Value is null)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = "License class data is unavailable." });
+        }
+
+        return Ok(MapToResponse(result.Value));
+    }
+
+    private static LicenseClassResponse MapToResponse(
+        LicenseClassDto dto)
+    {
+        return new LicenseClassResponse
+        {
+            LicenseClassId = dto.LicenseClassID,
+            LicenseClassName = dto.LicenseClassName,
+            LicenseClassDescription = dto.LicenseClassDescription,
+            MinAllowedAge = dto.MinAllowedAge,
+            DefaultValidityLength = dto.DefaultValidityLength,
+            LicenseClassFees = dto.LicenseClassFees
+        };
     }
 
     private static IActionResult HandleFailure(Result result)
@@ -46,9 +75,11 @@ public sealed class LicenseClassesController(
                     new { error = result.Error }),
 
             _ =>
-                new ObjectResult(new { error = result.Error })
+                new ObjectResult(
+                    new { error = result.Error })
                 {
-                    StatusCode = StatusCodes.Status500InternalServerError
+                    StatusCode =
+                        StatusCodes.Status500InternalServerError
                 }
         };
     }
