@@ -119,7 +119,7 @@
                     <StackPanel>
                         <TextBlock Text="DETAIN ID"
                                    Style="{StaticResource FieldLabel}"/>
-                        <TextBlock Text="{Binding Release.DetainID, ElementName=Root}"
+                        <TextBlock Text="{Binding Release.DetainId, ElementName=Root}"
                                    Style="{StaticResource FieldValue}"/>
                     </StackPanel>
                 </Border>

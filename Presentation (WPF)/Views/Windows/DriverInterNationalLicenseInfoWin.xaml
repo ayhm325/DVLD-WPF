@@ -161,7 +161,7 @@
                                 <!-- 5. Driver ID -->
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Driver ID" Style="{StaticResource LabelStyle}" Margin="0,4,0,0"/>
                                 <Border Grid.Row="4" Grid.Column="1" Style="{StaticResource IdBadgeStyle}">
-                                    <TextBlock Text="{Binding LicenseData.DriverID}"
+                                    <TextBlock Text="{Binding LicenseData.DriverId}"
                                                Foreground="{StaticResource PrimaryColor}"
                                                FontWeight="Bold" FontSize="12"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"

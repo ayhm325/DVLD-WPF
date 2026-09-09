@@ -32,12 +32,13 @@ public partial class App : System.Windows.Application
 
             ConfigureServices(services);
 
-            _rootServiceProvider = services.BuildServiceProvider(
-                new ServiceProviderOptions
-                {
-                    ValidateScopes = true,
-                    ValidateOnBuild = true
-                });
+            _rootServiceProvider =
+                services.BuildServiceProvider(
+                    new ServiceProviderOptions
+                    {
+                        ValidateScopes = true,
+                        ValidateOnBuild = true
+                    });
 
             _applicationScope =
                 _rootServiceProvider.CreateScope();
@@ -78,15 +79,15 @@ public partial class App : System.Windows.Application
     private void ConfigureServices(IServiceCollection services)
     {
         // =====================================================
-        // 1. APPLICATION / PRESENTATION SERVICES
+        // Presentation Services
         // =====================================================
 
-        services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<ICurrentUserSession, CurrentUserService>();
         services.AddSingleton<IApiHostService, ApiHostService>();
+        services.AddSingleton<IWindowService, WindowService>();
 
         // =====================================================
-        // 2. API CLIENTS
+        // API Clients
         // =====================================================
 
         services.AddHttpClient<IApiClient, ApiClient>(
@@ -109,29 +110,28 @@ public partial class App : System.Windows.Application
                     TimeSpan.FromSeconds(30);
             });
 
-        services.AddScoped<IUsersApiClient, UsersApiClient>();
-        services.AddScoped<IPeopleApiClient, PeopleApiClient>();
-        services.AddScoped<ICountriesApiClient, CountriesApiClient>();
-        services.AddScoped<IApplicationTypesApiClient, ApplicationTypesApiClient>();
         services.AddScoped<IApplicationsApiClient, ApplicationsApiClient>();
-        services.AddScoped<ILicenseClassesApiClient, LicenseClassesApiClient>();
-        services.AddScoped<ILocalDrivingLicenseApplicationsApiClient, LocalDrivingLicenseApplicationsApiClient>();
-        services.AddScoped<ILicensesApiClient, LicensesApiClient>();
+        services.AddScoped<IApplicationTypesApiClient, ApplicationTypesApiClient>();
+        services.AddScoped<ICountriesApiClient, CountriesApiClient>();
+        services.AddScoped<IDashboardApiClient, DashboardApiClient>();
+        services.AddScoped<IDetainedLicensesApiClient, DetainedLicensesApiClient>();
         services.AddScoped<IDriversApiClient, DriversApiClient>();
         services.AddScoped<IInternationalLicensesApiClient, InternationalLicensesApiClient>();
-        services.AddScoped<ITestAppointmentsApiClient, TestAppointmentsApiClient>();
+        services.AddScoped<ILicenseClassesApiClient, LicenseClassesApiClient>();
         services.AddScoped<ILicenseIssuanceApiClient, LicenseIssuanceApiClient>();
-        services.AddScoped<ITestsApiClient, TestsApiClient>();
-        services.AddScoped<ITestWorkflowApiClient, TestWorkflowApiClient>();
-        services.AddScoped<IDetainedLicensesApiClient, DetainedLicensesApiClient>();
-        services.AddScoped<ITestTypesApiClient, TestTypesApiClient>();
         services.AddScoped<ILicenseRenewalApiClient, LicenseRenewalApiClient>();
         services.AddScoped<ILicenseReplacementApiClient, LicenseReplacementApiClient>();
-
-        services.AddScoped<IDashboardApiClient, DashboardApiClient>();
+        services.AddScoped<ILicensesApiClient, LicensesApiClient>();
+        services.AddScoped<ILocalDrivingLicenseApplicationsApiClient, LocalDrivingLicenseApplicationsApiClient>();
+        services.AddScoped<IPeopleApiClient, PeopleApiClient>();
+        services.AddScoped<ITestAppointmentsApiClient, TestAppointmentsApiClient>();
+        services.AddScoped<ITestTypesApiClient, TestTypesApiClient>();
+        services.AddScoped<ITestsApiClient, TestsApiClient>();
+        services.AddScoped<ITestWorkflowApiClient, TestWorkflowApiClient>();
+        services.AddScoped<IUsersApiClient, UsersApiClient>();
 
         // =====================================================
-        // 3. VIEW MODELS
+        // ViewModels
         // =====================================================
 
         services.AddTransient<AddEditLDLAppViewModel>();
@@ -139,10 +139,20 @@ public partial class App : System.Windows.Application
         services.AddTransient<AddEditUserViewModel>();
         services.AddTransient<ApplicationTypeViewModel>();
         services.AddTransient<ChangePasswordViewModel>();
+        services.AddTransient<DashboardViewModel>();
+        services.AddTransient<DetainLicenseViewModel>();
+        services.AddTransient<DriversViewModel>();
+        services.AddTransient<InternationalViewModel>();
         services.AddTransient<LDLAppViewModel>();
+        services.AddTransient<LicenseHistoryViewModel>();
+        services.AddTransient<ListDetainedLicensesViewModel>();
         services.AddTransient<LocalApplicationDetailsViewModel>();
         services.AddTransient<LoginViewModel>();
+        services.AddTransient<NewInternationalLicenseApplicationViewModel>();
         services.AddTransient<PeopleViewModel>();
+        services.AddTransient<ReleaseDetainedViewModel>();
+        services.AddTransient<ReplacementDamagedLicenseViewModel>();
+        services.AddTransient<RenewLicenseViewModel>();
         services.AddTransient<ScheduleTestViewModel>();
         services.AddTransient<TakeTestViewModel>();
         services.AddTransient<TestAppointmentViewModel>();
@@ -151,53 +161,40 @@ public partial class App : System.Windows.Application
         services.AddTransient<UpdateTestTypeViewModel>();
         services.AddTransient<UsersViewModel>();
 
-        // services.AddTransient<IssueDrivingLicenseForTheFirstTimeViewModel>();
-
-        services.AddTransient<LicenseHistoryViewModel>();
-        services.AddTransient<DriversViewModel>();
-        services.AddTransient<InternationalViewModel>();
-        services.AddTransient<NewInternationalLicenseApplicationViewModel>();
-        services.AddTransient<RenewLicenseViewModel>();
-        services.AddTransient<ReplacementDamagedLicenseViewModel>();
-        services.AddTransient<ListDetainedLicensesViewModel>();
-        services.AddTransient<DetainLicenseViewModel>();
-        services.AddTransient<ReleaseDetainedViewModel>();
-
-        services.AddTransient<DashboardViewModel>();
-
         // =====================================================
-        // 4. VIEWS
+        // Windows
         // =====================================================
 
-        services.AddTransient<LoginWindow>();
-        services.AddTransient<MainWindow>();
-        services.AddTransient<UserPage>();
-        services.AddTransient<DriversPage>();
-        services.AddTransient<ChangePasswordWindow>();
-        services.AddTransient<PeoplePage>();
-        services.AddTransient<UserDetailsWindow>();
-        services.AddTransient<ManageApplicationTypePage>();
-        services.AddTransient<EditApplicationTypeWindow>();
-        services.AddTransient<ManageTestTypePage>();
-        services.AddTransient<EditTestTypeWindow>();
-        services.AddTransient<NewLocalLicnnse>();
-        services.AddTransient<LDLAppPage>();
         services.AddTransient<AddEditPersonWin>();
         services.AddTransient<AddEditUserWin>();
+        services.AddTransient<ChangePasswordWindow>();
+        services.AddTransient<DetainLicenseWin>();
+        services.AddTransient<EditApplicationTypeWindow>();
+        services.AddTransient<EditTestTypeWindow>();
         services.AddTransient<LocalApplicationDetailsWin>();
-        services.AddTransient<TestAppointmentWin>();
-        services.AddTransient<ScheduleTestWin>();
-        services.AddTransient<TakeTestWin>();
-
-        // services.AddTransient<IssueDrivingLicenseForTheFirstTimeWin>();
-        // services.AddTransient<LicenseHistoryWin>();
-
+        services.AddTransient<LoginWindow>();
+        services.AddTransient<MainWindow>();
         services.AddTransient<NewInternationalLicenseApplicationWin>();
-        services.AddTransient<InterLAppPage>();
+        services.AddTransient<NewLocalLicnnse>();
+        services.AddTransient<ReleaseDetainedLicenseWin>();
         services.AddTransient<RenewLicenseApplicationWin>();
         services.AddTransient<ReplacementDamagedLicense>();
+        services.AddTransient<ScheduleTestWin>();
+        services.AddTransient<TakeTestWin>();
+        services.AddTransient<TestAppointmentWin>();
+        services.AddTransient<UserDetailsWindow>();
+
+        // =====================================================
+        // Pages
+        // =====================================================
+
+        services.AddTransient<DriversPage>();
+        services.AddTransient<InterLAppPage>();
+        services.AddTransient<LDLAppPage>();
+        services.AddTransient<ManageApplicationTypePage>();
+        services.AddTransient<ManageTestTypePage>();
+        services.AddTransient<PeoplePage>();
+        services.AddTransient<UserPage>();
         services.AddTransient<ListDetainedLicenses>();
-        services.AddTransient<DetainLicenseWin>();
-        services.AddTransient<ReleaseDetainedLicenseWin>();
     }
 }

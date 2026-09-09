@@ -241,7 +241,7 @@
                         <!-- R.Test.App.ID -->
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="R.Test.App.ID" Style="{StaticResource RetakeLabelStyle}"/>
-                            <TextBox Text="{Binding AppDto.ApplicationID}" 
+                            <TextBox Text="{Binding AppDto.RetakeTestApplicationId}" 
                                      Style="{StaticResource RetakeTextBoxStyle}" 
                                      Foreground="{StaticResource TextSecondaryColor}"/>
                         </StackPanel>

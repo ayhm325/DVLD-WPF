@@ -276,12 +276,12 @@
                                           Margin="8,8,8,12">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Int.Lic.ID" 
-                                                            Binding="{Binding InternationalLicenseID}"
+                                                            Binding="{Binding InternationalLicenseId}"
                                                             Width="90" ElementStyle="{StaticResource ColumnTextBoldStyle}"/>
-                                        <DataGridTextColumn Header="App.ID" Binding="{Binding ApplicationID}"
+                                        <DataGridTextColumn Header="App.ID" Binding="{Binding ApplicationId}"
                                                             Width="80" ElementStyle="{StaticResource ColumnTextStyle}"/>
                                         <DataGridTextColumn Header="L.Lic.ID" 
-                                                            Binding="{Binding IssuedUsingLocalLicenseID}"
+                                                            Binding="{Binding IssuedUsingLocalLicenseId}"
                                                             Width="80" ElementStyle="{StaticResource ColumnTextStyle}"/>
                                         <DataGridTextColumn Header="Issue Date" 
                                                             Binding="{Binding IssueDate, StringFormat='yyyy/M/d'}"

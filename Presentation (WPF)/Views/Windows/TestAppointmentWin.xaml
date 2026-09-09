@@ -302,7 +302,7 @@
 
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Appointment ID"
-                                                        Binding="{Binding TestAppointmentID}"
+                                                        Binding="{Binding TestAppointmentId}"
                                                         Width="150"/>
                                     <DataGridTextColumn Header="Date"
                                                         Binding="{Binding AppointmentDate, StringFormat=dd/MM/yyyy}"

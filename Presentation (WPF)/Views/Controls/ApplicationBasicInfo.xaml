@@ -83,7 +83,7 @@
                             Margin="0,0,12,15">
                     <TextBlock Text="ID"
                                Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ApplicationID, ElementName=Root}"
+                    <TextBlock Text="{Binding Application.ApplicationId, ElementName=Root}"
                                Style="{StaticResource FieldValue}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1"
