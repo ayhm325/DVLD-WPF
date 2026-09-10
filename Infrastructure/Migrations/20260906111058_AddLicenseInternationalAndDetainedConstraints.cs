@@ -25,6 +25,10 @@ namespace Infrastructure.Migrations
                 table: "TestAppointments",
                 columns: new[] { "LocalDrivingLicenseApplicationID", "TestTypeID" });
 
+            migrationBuilder.DropIndex(
+                name: "IX_InternationalLicenses_DriverID",
+                table: "InternationalLicenses");
+
             migrationBuilder.CreateIndex(
                 name: "IX_InternationalLicenses_DriverID",
                 table: "InternationalLicenses",
@@ -38,13 +42,6 @@ namespace Infrastructure.Migrations
                 columns: new[] { "LicenseID", "IsReleased" },
                 unique: true,
                 filter: "[IsReleased] = 0");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Licenses_DriverID_LicenseClass",
-                table: "Licenses",
-                columns: new[] { "DriverID", "LicenseClass" },
-                unique: true,
-                filter: "[IsActive] = 1");
         }
 
         /// <inheritdoc />
@@ -66,13 +63,14 @@ namespace Infrastructure.Migrations
                 name: "IX_InternationalLicenses_DriverID",
                 table: "InternationalLicenses");
 
+            migrationBuilder.CreateIndex(
+                name: "IX_InternationalLicenses_DriverID",
+                table: "InternationalLicenses",
+                column: "DriverID");
+
             migrationBuilder.DropIndex(
                 name: "IX_DetainedLicenses_LicenseID_IsReleased",
                 table: "DetainedLicenses");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Licenses_DriverID_LicenseClass",
-                table: "Licenses");
         }
     }
 }
