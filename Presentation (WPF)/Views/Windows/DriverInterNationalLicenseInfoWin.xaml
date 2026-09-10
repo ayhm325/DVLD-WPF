@@ -107,7 +107,7 @@
                         <TextBlock Foreground="{StaticResource PrimaryColor}"
                                    FontWeight="Bold" FontSize="12" x:Name="txtIntLicenseId">
                             <Run Text="ID: "/>
-                            <Run Text="{Binding LicenseData.InternationalLicenseID}"/>
+                            <Run Text="{Binding LicenseData.InternationalLicenseId}"/>
                         </TextBlock>
                     </Border>
                 </Grid>

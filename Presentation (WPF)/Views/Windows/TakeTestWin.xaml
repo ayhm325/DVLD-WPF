@@ -250,7 +250,7 @@
                     <Border Style="{StaticResource TestIdBox}">
                         <Grid>
                             <TextBlock Text="Test ID" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource PrimaryHoverColor}"/>
-                            <TextBlock Text="{Binding Schedule.TestID, TargetNullValue='Not Taken Yet'}" 
+                            <TextBlock Text="{Binding Schedule.TestId, TargetNullValue='Not Taken Yet'}" 
                                        FontSize="13" FontWeight="Bold" 
                                        Foreground="{StaticResource PrimaryColor}" 
                                        HorizontalAlignment="Right"/>
