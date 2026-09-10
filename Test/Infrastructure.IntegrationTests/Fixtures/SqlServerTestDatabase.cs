@@ -1,6 +1,6 @@
 ﻿using Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.IntegrationTests.Fixtures;
 

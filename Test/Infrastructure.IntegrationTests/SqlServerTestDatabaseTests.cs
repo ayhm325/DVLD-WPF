@@ -17,25 +17,31 @@ public sealed class SqlServerTestDatabaseTests
     [Fact]
     public async Task Database_ShouldBeReachable()
     {
+        // Arrange
         await using var context =
             _database.CreateContext();
 
+        // Act
         var canConnect =
             await context.Database.CanConnectAsync();
 
+        // Assert
         Assert.True(canConnect);
     }
 
     [Fact]
     public async Task Database_ShouldHaveNoPendingMigrations()
     {
+        // Arrange
         await using var context =
             _database.CreateContext();
 
+        // Act
         var pendingMigrations =
             await context.Database
                 .GetPendingMigrationsAsync();
 
+        // Assert
         Assert.Empty(pendingMigrations);
     }
 }
