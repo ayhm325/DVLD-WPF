@@ -173,6 +173,26 @@ public sealed class ApplicationRepository
             .ToListAsync();
     }
 
+    // =========================================================
+    // GET FOR ISSUANCE
+    // =========================================================
+
+    public Task<ApplicationD?> GetApplicationForIssuanceAsync(
+    int id)
+    {
+        if (id <= 0)
+            return Task.FromResult<ApplicationD?>(
+                null);
+
+        return _context.Applications
+            .FromSqlInterpolated(
+                $"""
+                SELECT *
+                FROM [Applications] WITH (UPDLOCK, ROWLOCK)
+                WHERE [ApplicationID] = {id}
+                """)
+            .SingleOrDefaultAsync();
+    }
 
     // =========================================================
     // EXISTS BY ID

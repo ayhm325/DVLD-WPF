@@ -29,6 +29,8 @@ public interface IApplicationRepository
     Task<List<ApplicationD>> GetApplicationsByStatusAsync(
         AppStatus status);
 
+    Task<ApplicationD?> GetApplicationForIssuanceAsync(
+    int id);
 
     // =========================================================
     // CHECKS

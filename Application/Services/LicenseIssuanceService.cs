@@ -113,7 +113,7 @@ public sealed class LicenseIssuanceService(
 
         try
         {
-            var currentApplicationResult = await _applicationService.GetApplicationByIdAsync(applicationId);
+            var currentApplicationResult = await _applicationService.GetApplicationForIssuanceAsync(applicationId);
             if (currentApplicationResult.IsFailure)
                 return await RollbackAsync(transaction, PropagateFailure<int>(currentApplicationResult));
             if (currentApplicationResult.Value is null)
@@ -200,18 +200,29 @@ public sealed class LicenseIssuanceService(
     private bool IsAuthenticated() =>
         _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;
 
-    private static async Task<T> RollbackAsync<T>(dynamic transaction, T result)
+    private static async Task<T> RollbackAsync<T>(
+    IUnitOfWorkTransaction transaction,
+    T result)
     {
         await transaction.RollbackAsync();
+
         return result;
     }
 
-    private async Task RollbackSafelyAsync(dynamic transaction, int localAppId)
+    private async Task RollbackSafelyAsync(
+        IUnitOfWorkTransaction transaction,
+        int localAppId)
     {
-        try { await transaction.RollbackAsync(); }
+        try
+        {
+            await transaction.RollbackAsync();
+        }
         catch (Exception rollbackException)
         {
-            _logger.LogError(rollbackException, "Rollback failed while issuing first license for LocalApplicationId {LocalApplicationId}.", localAppId);
+            _logger.LogError(
+                rollbackException,
+                "Rollback failed while issuing first license for LocalApplicationId {LocalApplicationId}.",
+                localAppId);
         }
     }
 

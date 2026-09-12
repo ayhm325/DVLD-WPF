@@ -18,6 +18,9 @@ public interface IApplicationService
     Task<Result<ApplicationBasicInfoDto>>
         GetBasicInfoAsync(int id);
 
+    Task<Result<ApplicationDto>>
+    GetApplicationForIssuanceAsync(int id);
+
 
     // =========================================================
     // CREATE / UPDATE

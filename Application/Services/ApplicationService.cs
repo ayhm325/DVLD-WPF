@@ -53,6 +53,28 @@ public sealed class ApplicationService(
             : Result<ApplicationDto>.Success(ApplicationMapper.ToDto(entity));
     }
 
+    public async Task<Result<ApplicationDto>>
+    GetApplicationForIssuanceAsync(int id)
+    {
+        var validation =
+            ApplicationValidator.ValidateId(id);
+
+        if (validation.IsFailure)
+            return Result<ApplicationDto>
+                .FromValidationFailure(
+                    validation.Error);
+
+        var entity =
+            await _repository
+                .GetApplicationForIssuanceAsync(id);
+
+        return entity is null
+            ? Result<ApplicationDto>.FromNotFound(
+                "Application not found.")
+            : Result<ApplicationDto>.Success(
+                ApplicationMapper.ToDto(entity));
+    }
+
     public async Task<Result<int>> AddNewApplicationAsync(CreateApplicationDto dto)
     {
         var validation = ApplicationValidator.ValidateCreate(dto);
