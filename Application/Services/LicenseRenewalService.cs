@@ -134,18 +134,28 @@ public sealed class LicenseRenewalService(
     private bool IsAuthenticated() =>
         _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;
 
-    private static async Task<T> RollbackAsync<T>(dynamic transaction, T result)
+    private static async Task<T> RollbackAsync<T>(
+    IUnitOfWorkTransaction transaction,
+    T result)
     {
         await transaction.RollbackAsync();
         return result;
     }
 
-    private async Task RollbackSafelyAsync(dynamic transaction, int licenseId)
+    private async Task RollbackSafelyAsync(
+        IUnitOfWorkTransaction transaction,
+        int licenseId)
     {
-        try { await transaction.RollbackAsync(); }
+        try
+        {
+            await transaction.RollbackAsync();
+        }
         catch (Exception rollbackException)
         {
-            _logger.LogError(rollbackException, "Rollback failed while renewing license {LicenseId}.", licenseId);
+            _logger.LogError(
+                rollbackException,
+                "Rollback failed while renewing license {LicenseId}.",
+                licenseId);
         }
     }
 

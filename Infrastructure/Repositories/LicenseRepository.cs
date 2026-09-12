@@ -17,13 +17,25 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .Include(l => l.LicenseClassInfo)
             .Include(l => l.CreatedByUser);
 
-    public Task<License?> GetLicenseByIdAsync(int id) =>
-        id <= 0
-            ? Task.FromResult<License?>(null)
-            : Query()
-                .AsNoTracking()
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(l => l.LicenseID == id);
+    public Task<License?> GetLicenseByIdAsync(int id)
+    {
+        if (id <= 0)
+            return Task.FromResult<License?>(null);
+
+        return _context.Licenses
+            .FromSqlInterpolated($"""
+            SELECT *
+            FROM Licenses WITH (UPDLOCK, HOLDLOCK)
+            WHERE LicenseID = {id}
+            """)
+            .Include(l => l.Driver)
+                .ThenInclude(d => d.Person)
+            .Include(l => l.LicenseClassInfo)
+            .Include(l => l.CreatedByUser)
+            .AsNoTracking()
+            .AsSplitQuery()
+            .FirstOrDefaultAsync();
+    }
 
     public Task<License?> GetByDriverIdAsync(int driverId) =>
         driverId <= 0
