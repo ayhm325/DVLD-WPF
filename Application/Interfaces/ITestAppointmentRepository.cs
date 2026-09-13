@@ -51,4 +51,7 @@ public interface ITestAppointmentRepository
     Task AddAsync(TestAppointment appointment);
 
     void Delete(TestAppointment appointment);
+
+    Task<bool> LockLocalApplicationForSchedulingAsync(
+    int localAppId);
 }

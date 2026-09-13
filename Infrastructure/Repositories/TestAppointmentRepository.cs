@@ -205,4 +205,21 @@ public sealed class TestAppointmentRepository(
 
         _context.TestAppointments.Remove(appointment);
     }
+
+    public async Task<bool> LockLocalApplicationForSchedulingAsync(
+    int localAppId)
+    {
+        if (localAppId <= 0)
+            return false;
+
+        var application = await _context.LocalDrivingLicenseApplications
+            .FromSqlInterpolated($"""
+            SELECT *
+            FROM LocalDrivingLicenseApplications WITH (UPDLOCK, HOLDLOCK)
+            WHERE LocalDrivingLicenseApplicationID = {localAppId}
+            """)
+            .FirstOrDefaultAsync();
+
+        return application is not null;
+    }
 }
