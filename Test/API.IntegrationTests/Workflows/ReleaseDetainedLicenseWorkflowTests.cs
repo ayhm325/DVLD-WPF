@@ -435,9 +435,6 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
         var seed =
             await SeedDetainedLicenseScenarioAsync(factory);
 
-        const string constraintName =
-            "CK_Applications_IntegrationTest_BlockCompletion";
-
         await using var setupContext =
             factory.CreateDbContext();
 
@@ -445,18 +442,12 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
 
         try
         {
-            var completedStatusValue =
-                (int)AppStatus.Completed;
-
             await setupContext.Database.ExecuteSqlRawAsync(
-                $"""
+                """
             ALTER TABLE Applications
-            ADD CONSTRAINT [{constraintName}]
-            CHECK (ApplicationStatus <> @completedStatus)
-            """,
-                new SqlParameter(
-                    "@completedStatus",
-                    completedStatusValue));
+            ADD CONSTRAINT [CK_Applications_IntegrationTest_BlockCompletion]
+            CHECK (ApplicationStatus <> 3)
+            """);
         }
         finally
         {
@@ -550,9 +541,9 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
             try
             {
                 await cleanupContext.Database.ExecuteSqlRawAsync(
-                    $"""
+                    """
                 ALTER TABLE Applications
-                DROP CONSTRAINT [{constraintName}]
+                DROP CONSTRAINT [CK_Applications_IntegrationTest_BlockCompletion]
                 """);
             }
             catch
