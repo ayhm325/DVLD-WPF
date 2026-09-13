@@ -66,9 +66,6 @@ public class LicenseIssuanceServiceTests
             _loggerMock.Object);
     }
 
-    // =========================================================
-    // Authentication / Validation
-    // =========================================================
 
     [Fact]
     public async Task IssueFirstLicenseAsync_InvalidLocalApplicationId_ReturnsValidationFailure()
@@ -134,9 +131,6 @@ public class LicenseIssuanceServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Initial Application Checks
-    // =========================================================
 
     [Fact]
     public async Task IssueFirstLicenseAsync_LocalApplicationNotFound_ReturnsNotFound()
@@ -205,7 +199,7 @@ public class LicenseIssuanceServiceTests
 
         _applicationServiceMock.Verify(
             service =>
-                service.GetApplicationByIdAsync(
+                service.GetApplicationForIssuanceAsync(
                     It.IsAny<int>()),
             Times.Never);
     }
@@ -341,7 +335,7 @@ public class LicenseIssuanceServiceTests
 
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationByIdAsync(applicationId))
+                service.GetApplicationForIssuanceAsync(applicationId))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
 
@@ -372,9 +366,6 @@ public class LicenseIssuanceServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // License Class Validation
-    // =========================================================
 
     [Fact]
     public async Task IssueFirstLicenseAsync_InvalidLicenseClassId_ReturnsValidationFailure()
@@ -571,9 +562,6 @@ public class LicenseIssuanceServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Transaction / Application State
-    // =========================================================
 
     [Fact]
     public async Task IssueFirstLicenseAsync_ApplicationNotNewInsideTransaction_RollsBackAndReturnsConflict()
@@ -590,34 +578,12 @@ public class LicenseIssuanceServiceTests
 
         SetupTransaction();
 
-        var currentApplication = CreateApplication(
-            applicationId,
-            applicantPersonId: personId,
-            status: AppStatus.Cancelled);
-
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationByIdAsync(applicationId))
+                service.GetApplicationForIssuanceAsync(applicationId))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(
-                    CreateApplication(
-                        applicationId,
-                        applicantPersonId: personId,
-                        status: AppStatus.New)))
-            .Callback(() => { });
-
-        _applicationServiceMock
-            .SetupSequence(service =>
-                service.GetApplicationByIdAsync(applicationId))
-            .ReturnsAsync(
-                Result<ApplicationDto>.Success(
-                    CreateApplication(
-                        applicationId,
-                        applicantPersonId: personId,
-                        status: AppStatus.New)))
-            .ReturnsAsync(
-                Result<ApplicationDto>.Success(
-                    currentApplication));
+                    CreateApplication(applicationId, personId, AppStatus.Cancelled)));
 
         // Act
         Result<int> result =
@@ -662,7 +628,7 @@ public class LicenseIssuanceServiceTests
 
         _applicationServiceMock
             .SetupSequence(service =>
-                service.GetApplicationByIdAsync(applicationId))
+                service.GetApplicationForIssuanceAsync(applicationId))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(
                     CreateApplication(
@@ -721,12 +687,6 @@ public class LicenseIssuanceServiceTests
             personId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -753,9 +713,6 @@ public class LicenseIssuanceServiceTests
             Times.Once);
     }
 
-    // =========================================================
-    // Driver
-    // =========================================================
 
     [Fact]
     public async Task IssueFirstLicenseAsync_ExistingDriverWithInvalidId_RollsBackAndReturnsFailure()
@@ -771,12 +728,6 @@ public class LicenseIssuanceServiceTests
             personId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -828,12 +779,6 @@ public class LicenseIssuanceServiceTests
             personId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -896,12 +841,6 @@ public class LicenseIssuanceServiceTests
             personId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -958,12 +897,6 @@ public class LicenseIssuanceServiceTests
             personId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -1014,9 +947,6 @@ public class LicenseIssuanceServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // License Save / Completion
-    // =========================================================
 
     [Fact]
     public async Task IssueFirstLicenseAsync_SaveFails_RollsBackAndReturnsFailure()
@@ -1033,12 +963,6 @@ public class LicenseIssuanceServiceTests
             personId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -1109,12 +1033,6 @@ public class LicenseIssuanceServiceTests
             personId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -1194,12 +1112,6 @@ public class LicenseIssuanceServiceTests
             licenseClassId);
 
         SetupTransaction();
-        SetupSecondApplicationLookup(applicationId, personId);
-
-        _testWorkflowServiceMock
-            .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
-            .ReturnsAsync(true);
 
         _licenseRepositoryMock
             .Setup(repository =>
@@ -1308,9 +1220,6 @@ public class LicenseIssuanceServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Helpers
-    // =========================================================
 
     private void SetupAuthenticatedUser()
     {
@@ -1359,6 +1268,14 @@ public class LicenseIssuanceServiceTests
                 Result<LicenseClassDto>.Success(
                     CreateLicenseClass(
                         licenseClassId)));
+
+        _applicationServiceMock
+            .Setup(service => service.GetApplicationForIssuanceAsync(applicationId))
+            .ReturnsAsync(Result<ApplicationDto>.Success(CreateApplication(applicationId, personId)));
+
+        _testWorkflowServiceMock
+            .Setup(service => service.HasPassedAllTestsAsync(localAppId))
+            .ReturnsAsync(true);
     }
 
     private void SetupValidLocalApplication(
@@ -1381,8 +1298,8 @@ public class LicenseIssuanceServiceTests
     }
 
     private void SetupValidApplicationLookup(
-        int applicationId,
-        int applicantPersonId = 50)
+    int applicationId,
+    int applicantPersonId = 50)
     {
         _localApplicationServiceMock
             .Setup(service =>
@@ -1391,35 +1308,21 @@ public class LicenseIssuanceServiceTests
             .ReturnsAsync(
                 Result<int>.Success(applicationId));
 
+        var application = CreateApplication(
+            applicationId,
+            applicantPersonId);
+
         _applicationServiceMock
             .Setup(service =>
                 service.GetApplicationByIdAsync(applicationId))
             .ReturnsAsync(
-                Result<ApplicationDto>.Success(
-                    CreateApplication(
-                        applicationId,
-                        applicantPersonId)));
-    }
+                Result<ApplicationDto>.Success(application));
 
-    private void SetupSecondApplicationLookup(
-        int applicationId,
-        int personId)
-    {
         _applicationServiceMock
-            .SetupSequence(service =>
-                service.GetApplicationByIdAsync(applicationId))
+            .Setup(service =>
+                service.GetApplicationForIssuanceAsync(applicationId))
             .ReturnsAsync(
-                Result<ApplicationDto>.Success(
-                    CreateApplication(
-                        applicationId,
-                        personId,
-                        AppStatus.New)))
-            .ReturnsAsync(
-                Result<ApplicationDto>.Success(
-                    CreateApplication(
-                        applicationId,
-                        personId,
-                        AppStatus.New)));
+                Result<ApplicationDto>.Success(application));
     }
 
     private void SetupPerson(int personId)
