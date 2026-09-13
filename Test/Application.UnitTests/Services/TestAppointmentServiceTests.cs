@@ -78,6 +78,11 @@ public sealed class TestAppointmentServiceTests
             .SetupGet(x => x.UserId)
             .Returns(10);
 
+        _repository
+        .Setup(x =>
+            x.LockLocalApplicationForSchedulingAsync(100))
+        .ReturnsAsync(true);
+
         return new TestAppointmentService(
             _unitOfWork.Object,
             _repository.Object,
@@ -232,6 +237,11 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.GetTrialCountAsync(100, 1))
             .ReturnsAsync(0);
+
+        _repository
+            .Setup(x =>
+                x.LockLocalApplicationForSchedulingAsync(100))
+            .ReturnsAsync(true);
     }
 
     // =========================================================
