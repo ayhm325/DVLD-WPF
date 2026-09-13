@@ -2,6 +2,7 @@
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.DetainedLicense;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http.Json;
@@ -450,9 +451,12 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
             await setupContext.Database.ExecuteSqlRawAsync(
                 $"""
             ALTER TABLE Applications
-            ADD CONSTRAINT {constraintName}
-            CHECK (ApplicationStatus <> {completedStatusValue})
-            """);
+            ADD CONSTRAINT [{constraintName}]
+            CHECK (ApplicationStatus <> @completedStatus)
+            """,
+                new SqlParameter(
+                    "@completedStatus",
+                    completedStatusValue));
         }
         finally
         {
@@ -471,7 +475,8 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
             var request =
                 new ReleaseDetainedLicenseRequest
                 {
-                    DetainId = seed.DetainId
+                    DetainId =
+                        seed.DetainId
                 };
 
             var response =
@@ -490,24 +495,36 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
                 await context.DetainedLicenses
                     .AsNoTracking()
                     .SingleOrDefaultAsync(
-                        x => x.DetainID == seed.DetainId);
+                        x =>
+                            x.DetainID ==
+                            seed.DetainId);
 
             Assert.NotNull(detention);
 
-            Assert.False(detention.IsReleased);
-            Assert.Null(detention.ReleaseDate);
-            Assert.Null(detention.ReleasedByUserID);
-            Assert.Null(detention.ReleaseApplicationID);
+            Assert.False(
+                detention.IsReleased);
+
+            Assert.Null(
+                detention.ReleaseDate);
+
+            Assert.Null(
+                detention.ReleasedByUserID);
+
+            Assert.Null(
+                detention.ReleaseApplicationID);
 
             var license =
                 await context.Licenses
                     .AsNoTracking()
                     .SingleOrDefaultAsync(
-                        x => x.LicenseID == seed.LicenseId);
+                        x =>
+                            x.LicenseID ==
+                            seed.LicenseId);
 
             Assert.NotNull(license);
 
-            Assert.False(license.IsActive);
+            Assert.False(
+                license.IsActive);
 
             var releaseApplications =
                 await context.Applications
@@ -516,10 +533,12 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
                         x =>
                             x.ApplicantPersonID ==
                                 seed.PersonId &&
-                            x.ApplicationTypeID == 5)
+                            x.ApplicationTypeID ==
+                                5)
                     .ToListAsync();
 
-            Assert.Empty(releaseApplications);
+            Assert.Empty(
+                releaseApplications);
         }
         finally
         {
@@ -533,12 +552,13 @@ public sealed class ReleaseDetainedLicenseWorkflowTests
                 await cleanupContext.Database.ExecuteSqlRawAsync(
                     $"""
                 ALTER TABLE Applications
-                DROP CONSTRAINT {constraintName}
+                DROP CONSTRAINT [{constraintName}]
                 """);
             }
             catch
             {
-                // Constraint may already be removed during database cleanup.
+                // Constraint may already be removed
+                // during database cleanup.
             }
             finally
             {

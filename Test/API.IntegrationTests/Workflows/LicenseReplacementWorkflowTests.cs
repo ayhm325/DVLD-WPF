@@ -6,6 +6,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace API.IntegrationTests.Workflows;
@@ -316,22 +317,34 @@ public sealed class LicenseReplacementWorkflowTests
     }
 
     private static async Task AddFailureConstraintAsync(
-        SqlServerApiWebApplicationFactory factory,
-        string constraintName)
+    SqlServerApiWebApplicationFactory factory,
+    string constraintName)
     {
-        await using var context = factory.CreateDbContext();
+        if (!Regex.IsMatch(
+                constraintName,
+                @"^[A-Za-z_][A-Za-z0-9_]*$"))
+        {
+            throw new ArgumentException(
+                "Invalid SQL constraint name.",
+                nameof(constraintName));
+        }
+
+        await using var context =
+            factory.CreateDbContext();
 
         await context.Database.OpenConnectionAsync();
 
         try
         {
-            await context.Database.ExecuteSqlRawAsync(
-                $"""
-                ALTER TABLE Licenses
-                ADD CONSTRAINT {constraintName}
-                CHECK (Notes <> 'Lost License')
-                """);
-        }
+            #pragma warning disable EF1002
+                        await context.Database.ExecuteSqlRawAsync(
+                            $"""
+                        ALTER TABLE Licenses
+                        ADD CONSTRAINT [{constraintName}]
+                        CHECK (Notes <> 'Lost License')
+                        """);
+            #pragma warning restore EF1002
+                    }
         finally
         {
             await context.Database.CloseConnectionAsync();
@@ -339,20 +352,32 @@ public sealed class LicenseReplacementWorkflowTests
     }
 
     private static async Task RemoveFailureConstraintAsync(
-        SqlServerApiWebApplicationFactory factory,
-        string constraintName)
+    SqlServerApiWebApplicationFactory factory,
+    string constraintName)
     {
-        await using var context = factory.CreateDbContext();
+        if (!Regex.IsMatch(
+                constraintName,
+                @"^[A-Za-z_][A-Za-z0-9_]*$"))
+        {
+            throw new ArgumentException(
+                "Invalid SQL constraint name.",
+                nameof(constraintName));
+        }
+
+        await using var context =
+            factory.CreateDbContext();
 
         await context.Database.OpenConnectionAsync();
 
         try
         {
-            await context.Database.ExecuteSqlRawAsync(
-                $"""
-                ALTER TABLE Licenses
-                DROP CONSTRAINT {constraintName}
-                """);
+            #pragma warning disable EF1002
+                        await context.Database.ExecuteSqlRawAsync(
+                            $"""
+                        ALTER TABLE Licenses
+                        DROP CONSTRAINT [{constraintName}]
+                        """);
+            #pragma warning restore EF1002
         }
         catch
         {

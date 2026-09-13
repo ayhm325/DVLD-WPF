@@ -156,6 +156,8 @@ public sealed class ApplicationRepositoryTests
             EntityState.Detached,
             context.Entry(result.Person).State);
 
+        Assert.NotNull(result.ApplicationType);
+
         Assert.Equal(
             EntityState.Detached,
             context.Entry(result.ApplicationType).State);
@@ -394,9 +396,13 @@ public sealed class ApplicationRepositoryTests
                     EntityState.Detached,
                     context.Entry(application.Person).State);
 
+                Assert.NotNull(application.ApplicationType);
+
+                var applicationType = application.ApplicationType;
+
                 Assert.Equal(
                     EntityState.Detached,
-                    context.Entry(application.ApplicationType).State);
+                    context.Entry(applicationType).State);
 
                 Assert.Equal(
                     EntityState.Detached,

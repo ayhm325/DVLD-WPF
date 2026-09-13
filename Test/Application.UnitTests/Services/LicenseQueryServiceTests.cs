@@ -298,7 +298,7 @@ public sealed class LicenseQueryServiceTests
     public async Task GetLicenseDetailsById_WhenDriverNotLoaded_ReturnsFailure()
     {
         var license = CreateLicense(5);
-        license.Driver = null;
+        license.Driver = null!;
 
         _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5))
             .ReturnsAsync(license);

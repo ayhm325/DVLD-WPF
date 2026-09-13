@@ -229,7 +229,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     public async Task GetApplicationBasicInfo_WhenApplicationNavigationMissing_ReturnsNotFound()
     {
         var entity = CreateEntity(5);
-        entity.Application = null;
+        entity.Application = null!;
 
         _repository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(entity);
 
@@ -266,7 +266,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     public async Task Cancel_WhenNavigationMissing_ReturnsFailure()
     {
         var entity = CreateEntity(5);
-        entity.Application = null;
+        entity.Application = null!;
         _repository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(entity);
 
         var result = await CreateService()

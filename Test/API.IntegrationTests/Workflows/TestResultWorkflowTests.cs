@@ -612,7 +612,7 @@ public sealed class TestResultWorkflowTests
         if (!await context.ApplicationTypes.AnyAsync(
                 x => x.ApplicationTypeId == id))
         {
-            await context.Database.ExecuteSqlRawAsync(
+            await context.Database.ExecuteSqlInterpolatedAsync(
                 $"""
                 SET IDENTITY_INSERT ApplicationTypes ON;
 
@@ -622,7 +622,7 @@ public sealed class TestResultWorkflowTests
                      ApplicationFees)
                 VALUES
                     ({id},
-                     N'{title.Replace("'", "''")}',
+                     {title},
                      {fees});
 
                 SET IDENTITY_INSERT ApplicationTypes OFF;
@@ -676,7 +676,7 @@ public sealed class TestResultWorkflowTests
             return;
         }
 
-        await context.Database.ExecuteSqlRawAsync(
+        await context.Database.ExecuteSqlInterpolatedAsync(
             $"""
             SET IDENTITY_INSERT TestTypes ON;
 
@@ -687,8 +687,8 @@ public sealed class TestResultWorkflowTests
                  TestTypeFees)
             VALUES
                 ({id},
-                 N'{title.Replace("'", "''")}',
-                 N'Integration test type',
+                 {title},
+                 {"Integration test type"},
                  {fees});
 
             SET IDENTITY_INSERT TestTypes OFF;

@@ -294,15 +294,26 @@ public sealed class DetainedLicenseRepositoryTests
             scope.Context.Entry(
                 detainedLicense.CreatedByUser).State);
 
-        Assert.Equal(
-            EntityState.Detached,
-            scope.Context.Entry(
-                detainedLicense.ReleasedByUser).State);
+        Assert.NotNull(detainedLicense.ReleasedByUser);
+
+        var releasedByUser =
+            detainedLicense.ReleasedByUser;
 
         Assert.Equal(
             EntityState.Detached,
-            scope.Context.Entry(
-                detainedLicense.ReleaseApplication).State);
+            scope.Context.Entry(releasedByUser).State);
+
+
+        Assert.NotNull(detainedLicense.ReleaseApplication);
+
+        var releaseApplication =
+            detainedLicense.ReleaseApplication;
+
+        Assert.Equal(
+            EntityState.Detached,
+            scope.Context.Entry(releaseApplication).State);
+
+        
     }
 
     // =========================================================
@@ -460,15 +471,23 @@ public sealed class DetainedLicenseRepositoryTests
             scope.Context.Entry(
                 result.CreatedByUser).State);
 
-        Assert.Equal(
-            EntityState.Detached,
-            scope.Context.Entry(
-                result.ReleasedByUser).State);
+        Assert.NotNull(result.ReleasedByUser);
+
+        var releasedByUser =
+            result.ReleasedByUser;
 
         Assert.Equal(
             EntityState.Detached,
-            scope.Context.Entry(
-                result.ReleaseApplication).State);
+            scope.Context.Entry(releasedByUser).State);
+
+        Assert.NotNull(result.ReleaseApplication);
+
+        var releaseApplication =
+            result.ReleaseApplication;
+
+        Assert.Equal(
+            EntityState.Detached,
+            scope.Context.Entry(releaseApplication).State);
     }
 
     // =========================================================

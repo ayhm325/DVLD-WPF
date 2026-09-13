@@ -3,6 +3,7 @@ using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Infrastructure.IntegrationTests;
 
@@ -124,9 +125,14 @@ public sealed class PersonRepositoryTests
             EntityState.Detached,
             context.Entry(result).State);
 
+        Assert.NotNull(result.Country);
+
+        var country =
+            result.Country;
+
         Assert.Equal(
             EntityState.Detached,
-            context.Entry(result.Country).State);
+            context.Entry(country).State);
     }
 
     [Fact]
@@ -209,9 +215,14 @@ public sealed class PersonRepositoryTests
             EntityState.Detached,
             context.Entry(result).State);
 
+        Assert.NotNull(result.Country);
+
+        var country =
+            result.Country;
+
         Assert.Equal(
             EntityState.Detached,
-            context.Entry(result.Country).State);
+            context.Entry(country).State);
     }
 
     [Fact]
@@ -300,9 +311,14 @@ public sealed class PersonRepositoryTests
                     EntityState.Detached,
                     context.Entry(person).State);
 
+                Assert.NotNull(person.Country);
+
+                var country =
+                    person.Country;
+
                 Assert.Equal(
                     EntityState.Detached,
-                    context.Entry(person.Country).State);
+                    context.Entry(country).State);
             });
     }
 
