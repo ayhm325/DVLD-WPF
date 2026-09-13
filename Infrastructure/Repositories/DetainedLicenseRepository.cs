@@ -58,9 +58,23 @@ public sealed class DetainedLicenseRepository(
         await _context.DetainedLicenses.AddAsync(entity);
     }
 
-    public Task<DetainedLicense?> GetByIdForUpdateAsync(int id) =>
-    id <= 0
-        ? Task.FromResult<DetainedLicense?>(null)
-        : Query().FirstOrDefaultAsync(
-            d => d.DetainID == id);
+    public Task<DetainedLicense?> GetByIdForUpdateAsync(int id)
+    {
+        if (id <= 0)
+            return Task.FromResult<DetainedLicense?>(null);
+
+        return _context.DetainedLicenses
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM DetainedLicenses WITH (UPDLOCK, HOLDLOCK)
+                WHERE DetainID = {id}
+                """)
+            .Include(d => d.License)
+                .ThenInclude(l => l.Driver)
+                    .ThenInclude(d => d.Person)
+            .Include(d => d.CreatedByUser)
+            .Include(d => d.ReleasedByUser)
+            .Include(d => d.ReleaseApplication)
+            .FirstOrDefaultAsync();
+    }
 }
