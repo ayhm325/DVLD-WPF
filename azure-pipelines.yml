@@ -7,6 +7,7 @@ pool:
 variables:
   solution: '**/*.sln'
   buildConfiguration: 'Release'
+  DVLD_TEST_CONNECTION: 'Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
 
 steps:
 
@@ -28,3 +29,43 @@ steps:
     command: 'build'
     projects: '$(solution)'
     arguments: '--configuration $(buildConfiguration) --no-restore'
+
+# ---------------------------------------------------------
+# Unit Tests
+# ---------------------------------------------------------
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run Application Unit Tests'
+  inputs:
+    command: 'test'
+    projects: 'Test/Application.UnitTests/Application.UnitTests.csproj'
+    arguments: '--configuration $(buildConfiguration) --no-build'
+    publishTestResults: true
+
+# ---------------------------------------------------------
+# API Integration Tests
+# ---------------------------------------------------------
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run API Integration Tests'
+  inputs:
+    command: 'test'
+    projects: 'Test/API.IntegrationTests/API.IntegrationTests.csproj'
+    arguments: '--configuration $(buildConfiguration) --no-build'
+    publishTestResults: true
+  env:
+    DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+
+# ---------------------------------------------------------
+# Infrastructure Integration Tests
+# ---------------------------------------------------------
+
+- task: DotNetCoreCLI@2
+  displayName: 'Run Infrastructure Integration Tests'
+  inputs:
+    command: 'test'
+    projects: 'Test/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj'
+    arguments: '--configuration $(buildConfiguration) --no-build'
+    publishTestResults: true
+  env:
+    DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
