@@ -41,11 +41,15 @@ public sealed class TestAppointmentRepository(
                     x => x.TestAppointmentID == id);
 
     public Task<TestAppointment?> GetForUpdateAsync(int id) =>
-        id <= 0
-            ? Task.FromResult<TestAppointment?>(null)
-            : _context.TestAppointments
-                .FirstOrDefaultAsync(
-                    x => x.TestAppointmentID == id);
+    id <= 0
+        ? Task.FromResult<TestAppointment?>(null)
+        : _context.TestAppointments
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM TestAppointments WITH (UPDLOCK, HOLDLOCK)
+                WHERE TestAppointmentID = {id}
+                """)
+            .FirstOrDefaultAsync();
 
     public Task<List<TestAppointment>> GetAllAsync() =>
         Query()
