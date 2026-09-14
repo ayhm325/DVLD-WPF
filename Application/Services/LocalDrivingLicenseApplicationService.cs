@@ -73,7 +73,9 @@ public sealed class LocalDrivingLicenseApplicationService(
             : Result<decimal>.Success(applicationType.ApplicationFees);
     }
 
-    public async Task<Result<int>> CreateLocalDrivingLicenseApplicationAsync(int applicantPersonId, int licenseClassId)
+    public async Task<Result<int>> CreateLocalDrivingLicenseApplicationAsync(
+    int applicantPersonId,
+    int licenseClassId)
     {
         var applicationDto = new CreateApplicationDto
         {
@@ -81,60 +83,100 @@ public sealed class LocalDrivingLicenseApplicationService(
             ApplicationTypeID = NewLocalDrivingLicenseApplicationTypeId
         };
 
-        var applicationValidation = ApplicationValidator.ValidateCreate(applicationDto);
-        if (applicationValidation.IsFailure)
-            return Result<int>.FromValidationFailure(applicationValidation.Error);
+        var applicationValidation =
+            ApplicationValidator.ValidateCreate(applicationDto);
 
-        var localValidation = LocalDrivingLicenseApplicationValidator.ValidateCreate(
-            new CreateLocalDrivingLicenseApplicationDto { ApplicationID = 0, LicenseClassID = licenseClassId });
+        if (applicationValidation.IsFailure)
+            return Result<int>.FromValidationFailure(
+                applicationValidation.Error);
+
+        var localValidation =
+            LocalDrivingLicenseApplicationValidator.ValidateCreate(
+                new CreateLocalDrivingLicenseApplicationDto
+                {
+                    ApplicationID = 0,
+                    LicenseClassID = licenseClassId
+                });
+
         if (localValidation.IsFailure)
-            return Result<int>.FromValidationFailure(localValidation.Error);
+            return Result<int>.FromValidationFailure(
+                localValidation.Error);
 
         if (!IsAuthenticated())
-            return Result<int>.FromFailure("Authenticated user is required.");
+            return Result<int>.FromFailure(
+                "Authenticated user is required.");
 
-        var licenseClassResult = await _licenseClassService.GetLicenseClassByIdAsync(licenseClassId);
+        var licenseClassResult =
+            await _licenseClassService.GetLicenseClassByIdAsync(
+                licenseClassId);
+
         if (licenseClassResult.IsFailure)
-            return Result<int>.FromFailure(licenseClassResult.Error);
+            return Result<int>.FromFailure(
+                licenseClassResult.Error);
 
-        var applicationType = await _applicationTypeRepository.GetApplicationTypeByIdAsync(NewLocalDrivingLicenseApplicationTypeId);
+        var applicationType =
+            await _applicationTypeRepository
+                .GetApplicationTypeByIdAsync(
+                    NewLocalDrivingLicenseApplicationTypeId);
+
         if (applicationType is null)
-            return Result<int>.FromNotFound("Application type not found.");
+            return Result<int>.FromNotFound(
+                "Application type not found.");
 
-        await using var transaction = await _unitOfWork.BeginTransactionAsync(IsolationLevel.Serializable);
-
-        try
-        {
-            var duplicateApplicationId = await _repository.HasDuplicateApplicationAsync(applicantPersonId, licenseClassId);
-            if (duplicateApplicationId.HasValue)
-                return await RollbackAsync(transaction, Result<int>.FromConflict(
-                    "A local driving license application already exists for this person and license class. " +
-                    $"Application ID: {duplicateApplicationId.Value}"));
-
-            var applicationEntity = ApplicationMapper.ToEntity(applicationDto, applicationType.ApplicationFees, _currentUserService.UserId);
-            await _applicationRepository.AddNewApplicationAsync(applicationEntity);
-
-            if (await _unitOfWork.SaveChangesAsync() <= 0 || applicationEntity.ApplicationID <= 0)
-                return await RollbackAsync(transaction, Result<int>.FromFailure("Failed to create the main application."));
-
-            var localApplicationEntity = new LocalDrivingLicenseApplication
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async () =>
             {
-                ApplicationID = applicationEntity.ApplicationID,
-                LicenseClassID = licenseClassId
-            };
-            await _repository.AddAsync(localApplicationEntity);
+                var duplicateApplicationId =
+                    await _repository.HasDuplicateApplicationAsync(
+                        applicantPersonId,
+                        licenseClassId);
 
-            if (await _unitOfWork.SaveChangesAsync() <= 0 || localApplicationEntity.LocalDrivingLicenseApplicationID <= 0)
-                return await RollbackAsync(transaction, Result<int>.FromFailure("Failed to create the local driving license application."));
+                if (duplicateApplicationId.HasValue)
+                {
+                    return Result<int>.FromConflict(
+                        "A local driving license application already exists for this person and license class. " +
+                        $"Application ID: {duplicateApplicationId.Value}");
+                }
 
-            await transaction.CommitAsync();
-            return Result<int>.Success(localApplicationEntity.LocalDrivingLicenseApplicationID);
-        }
-        catch (Exception)
-        {
-            await RollbackSafelyAsync(transaction);
-            throw;
-        }
+                var applicationEntity =
+                    ApplicationMapper.ToEntity(
+                        applicationDto,
+                        applicationType.ApplicationFees,
+                        _currentUserService.UserId);
+
+                await _applicationRepository.AddNewApplicationAsync(
+                    applicationEntity);
+
+                if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                    applicationEntity.ApplicationID <= 0)
+                {
+                    return Result<int>.FromFailure(
+                        "Failed to create the main application.");
+                }
+
+                var localApplicationEntity =
+                    new LocalDrivingLicenseApplication
+                    {
+                        ApplicationID =
+                            applicationEntity.ApplicationID,
+
+                        LicenseClassID = licenseClassId
+                    };
+
+                await _repository.AddAsync(
+                    localApplicationEntity);
+
+                if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                    localApplicationEntity.LocalDrivingLicenseApplicationID <= 0)
+                {
+                    return Result<int>.FromFailure(
+                        "Failed to create the local driving license application.");
+                }
+
+                return Result<int>.Success(
+                    localApplicationEntity.LocalDrivingLicenseApplicationID);
+            },
+            IsolationLevel.Serializable);
     }
 
     public async Task<Result<int>> AddLocalDrivingLicenseApplicationAsync(CreateLocalDrivingLicenseApplicationDto dto)
@@ -176,15 +218,19 @@ public sealed class LocalDrivingLicenseApplicationService(
             : Result<int>.FromFailure("Failed to create local driving license application.");
     }
 
-    public async Task<Result> UpdateLocalDrivingLicenseApplicationAsync(int id, UpdateLocalDrivingLicenseApplicationDto dto)
+    public async Task<Result> UpdateLocalDrivingLicenseApplicationAsync(
+    int id,
+    UpdateLocalDrivingLicenseApplicationDto dto)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
         var validation = LocalDrivingLicenseApplicationValidator.ValidateUpdate(id, dto);
+
         if (validation.IsFailure)
             return Result.ValidationFailure(validation.Error);
 
         var existing = await _repository.GetForUpdateAsync(id);
+
         if (existing is null)
             return Result.NotFound("Local driving license application not found.");
 
@@ -194,37 +240,42 @@ public sealed class LocalDrivingLicenseApplicationService(
         if (existing.Application.ApplicationStatus != AppStatus.New)
             return Result.Conflict("Only a New application can be updated.");
 
-        var licenseClassResult = await _licenseClassService.GetLicenseClassByIdAsync(dto.LicenseClassID);
+        var licenseClassResult =
+            await _licenseClassService.GetLicenseClassByIdAsync(dto.LicenseClassID);
+
         if (licenseClassResult.IsFailure)
             return Result.Failure(licenseClassResult.Error);
 
         if (existing.LicenseClassID == dto.LicenseClassID)
             return Result.Success();
 
-        await using var transaction = await _unitOfWork.BeginTransactionAsync(IsolationLevel.Serializable);
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async () =>
+            {
+                var duplicateApplicationId =
+                    await _repository.HasDuplicateApplicationAsync(
+                        existing.Application.ApplicantPersonID,
+                        dto.LicenseClassID);
 
-        try
-        {
-            var duplicateApplicationId = await _repository.HasDuplicateApplicationAsync(
-                existing.Application.ApplicantPersonID, dto.LicenseClassID);
+                if (duplicateApplicationId.HasValue &&
+                    duplicateApplicationId.Value != existing.ApplicationID)
+                {
+                    return Result.Conflict(
+                        "Another local driving license application already exists " +
+                        "for this person and license class.");
+                }
 
-            if (duplicateApplicationId.HasValue && duplicateApplicationId.Value != existing.ApplicationID)
-                return await RollbackAsync(transaction, Result.Conflict(
-                    "Another local driving license application already exists for this person and license class."));
+                existing.LicenseClassID = dto.LicenseClassID;
 
-            existing.LicenseClassID = dto.LicenseClassID;
+                if (await _unitOfWork.SaveChangesAsync() <= 0)
+                {
+                    return Result.Failure(
+                        "No local driving license application changes were saved.");
+                }
 
-            if (await _unitOfWork.SaveChangesAsync() <= 0)
-                return await RollbackAsync(transaction, Result.Failure("No local driving license application changes were saved."));
-
-            await transaction.CommitAsync();
-            return Result.Success();
-        }
-        catch (Exception)
-        {
-            await RollbackSafelyAsync(transaction);
-            throw;
-        }
+                return Result.Success();
+            },
+            IsolationLevel.Serializable);
     }
 
     public async Task<Result> DeleteLocalDrivingLicenseApplicationAsync(int id)
@@ -331,16 +382,25 @@ public sealed class LocalDrivingLicenseApplicationService(
     private bool IsAuthenticated() =>
         _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;
 
-    private static async Task<T> RollbackAsync<T>(dynamic transaction, T result)
+    private static async Task<T> RollbackAsync<T>(
+    IUnitOfWorkTransaction transaction,
+    T result)
     {
         await transaction.RollbackAsync();
         return result;
     }
 
-    private static async Task RollbackSafelyAsync(dynamic transaction)
+    private static async Task RollbackSafelyAsync(
+        IUnitOfWorkTransaction transaction)
     {
-        try { await transaction.RollbackAsync(); }
-        catch { }
+        try
+        {
+            await transaction.RollbackAsync();
+        }
+        catch
+        {
+            // Ignore rollback failure because the original exception must be preserved.
+        }
     }
 
     private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(List<LocalDrivingLicenseApplication> entities)

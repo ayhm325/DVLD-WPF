@@ -13,4 +13,9 @@ public interface IUnitOfWork
     Task<IUnitOfWorkTransaction> BeginTransactionAsync(
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default);
+
+    Task<T> ExecuteInTransactionAsync<T>(
+        Func<Task<T>> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default);
 }

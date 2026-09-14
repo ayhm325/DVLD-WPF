@@ -61,7 +61,9 @@ var connectionString = builder.Configuration.GetConnectionString("DVLDConnection
         "Connection string 'DVLDConnection' was not found.");
 
 builder.Services.AddDbContext<DVLDDbContext>(
-    options => options.UseSqlServer(connectionString));
+    options => options.UseSqlServer(
+        connectionString,
+        sql => sql.EnableRetryOnFailure()));
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 

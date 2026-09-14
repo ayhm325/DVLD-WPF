@@ -71,4 +71,37 @@ public sealed class UnitOfWork : IUnitOfWork
             return _transaction.DisposeAsync();
         }
     }
+
+    public async Task<T> ExecuteInTransactionAsync<T>(
+    Func<Task<T>> operation,
+    IsolationLevel isolationLevel,
+    CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    isolationLevel,
+                    cancellationToken);
+
+            try
+            {
+                var result = await operation();
+
+                await transaction.CommitAsync(cancellationToken);
+
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _context.ChangeTracker.Clear();
+                throw;
+            }
+        });
+    }
 }
