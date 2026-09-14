@@ -73,7 +73,7 @@ public sealed class UnitOfWork : IUnitOfWork
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
-    Func<Task<T>> operation,
+    Func<IUnitOfWorkTransaction, Task<T>> operation,
     IsolationLevel isolationLevel,
     CancellationToken cancellationToken = default)
     {
@@ -84,15 +84,14 @@ public sealed class UnitOfWork : IUnitOfWork
         return await strategy.ExecuteAsync(async () =>
         {
             await using var transaction =
-                await _context.Database.BeginTransactionAsync(
-                    isolationLevel,
-                    cancellationToken);
+                new UnitOfWorkTransaction(
+                    await _context.Database.BeginTransactionAsync(
+                        isolationLevel,
+                        cancellationToken));
 
             try
             {
-                var result = await operation();
-
-                await transaction.CommitAsync(cancellationToken);
+                var result = await operation(transaction);
 
                 return result;
             }

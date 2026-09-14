@@ -27,22 +27,16 @@ public sealed class InternationalService(
 
     private readonly IInternationalRepository _repository =
         repository ?? throw new ArgumentNullException(nameof(repository));
-
     private readonly ILicenseQueryService _licenseQueryService =
         licenseQueryService ?? throw new ArgumentNullException(nameof(licenseQueryService));
-
     private readonly IApplicationService _applicationService =
         applicationService ?? throw new ArgumentNullException(nameof(applicationService));
-
     private readonly IApplicationTypeService _applicationTypeService =
         applicationTypeService ?? throw new ArgumentNullException(nameof(applicationTypeService));
-
     private readonly ICurrentUserService _currentUserService =
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-
     private readonly IUnitOfWork _unitOfWork =
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-
     private readonly ILogger<InternationalService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -51,342 +45,234 @@ public sealed class InternationalService(
         var entities = await _repository.GetAllAsync();
 
         return Result<List<InternationalDto>>.Success(
-            entities
-                .Select(InternationalLicenseMapper.ToDto)
-                .ToList());
+            entities.Select(InternationalLicenseMapper.ToDto).ToList());
     }
 
-    public async Task<Result<InternationalDto>> GetByIdAsync(
-        int internationalLicenseId)
+    public async Task<Result<InternationalDto>> GetByIdAsync(int internationalLicenseId)
     {
-        var validation =
-            InternationalLicenseValidator.ValidateId(internationalLicenseId);
-
+        var validation = InternationalLicenseValidator.ValidateId(internationalLicenseId);
         if (validation.IsFailure)
-            return Result<InternationalDto>.FromValidationFailure(
-                validation.Error);
+            return Result<InternationalDto>.FromValidationFailure(validation.Error);
 
-        var entity =
-            await _repository.GetByIdAsync(internationalLicenseId);
+        var entity = await _repository.GetByIdAsync(internationalLicenseId);
 
         return entity is null
-            ? Result<InternationalDto>.FromNotFound(
-                "International license not found.")
-            : Result<InternationalDto>.Success(
-                InternationalLicenseMapper.ToDto(entity));
+            ? Result<InternationalDto>.FromNotFound("International license not found.")
+            : Result<InternationalDto>.Success(InternationalLicenseMapper.ToDto(entity));
     }
 
-    public async Task<Result<List<InternationalDto>>> GetByDriverIdAsync(
-        int driverId)
+    public async Task<Result<List<InternationalDto>>> GetByDriverIdAsync(int driverId)
     {
-        var validation =
-            InternationalLicenseValidator.ValidateDriverId(driverId);
-
+        var validation = InternationalLicenseValidator.ValidateDriverId(driverId);
         if (validation.IsFailure)
-            return Result<List<InternationalDto>>.FromValidationFailure(
-                validation.Error);
+            return Result<List<InternationalDto>>.FromValidationFailure(validation.Error);
 
-        var entities =
-            await _repository.GetByDriverIdAsync(driverId);
+        var entities = await _repository.GetByDriverIdAsync(driverId);
 
         return Result<List<InternationalDto>>.Success(
-            entities
-                .Select(InternationalLicenseMapper.ToDto)
-                .ToList());
+            entities.Select(InternationalLicenseMapper.ToDto).ToList());
     }
 
-    public async Task<Result<InternationalDto>> GetByApplicationIdAsync(
-        int applicationId)
+    public async Task<Result<InternationalDto>> GetByApplicationIdAsync(int applicationId)
     {
-        var validation =
-            InternationalLicenseValidator.ValidateApplicationId(applicationId);
-
+        var validation = InternationalLicenseValidator.ValidateApplicationId(applicationId);
         if (validation.IsFailure)
-            return Result<InternationalDto>.FromValidationFailure(
-                validation.Error);
+            return Result<InternationalDto>.FromValidationFailure(validation.Error);
 
-        var entity =
-            await _repository.GetByApplicationIdAsync(applicationId);
+        var entity = await _repository.GetByApplicationIdAsync(applicationId);
 
         return entity is null
-            ? Result<InternationalDto>.FromNotFound(
-                "International license not found.")
-            : Result<InternationalDto>.Success(
-                InternationalLicenseMapper.ToDto(entity));
+            ? Result<InternationalDto>.FromNotFound("International license not found.")
+            : Result<InternationalDto>.Success(InternationalLicenseMapper.ToDto(entity));
     }
 
-    public async Task<Result<List<InternationalDto>>> GetByLocalLicenseIdAsync(
-        int localLicenseId)
+    public async Task<Result<List<InternationalDto>>> GetByLocalLicenseIdAsync(int localLicenseId)
     {
-        var validation =
-            InternationalLicenseValidator.ValidateLocalLicenseId(localLicenseId);
-
+        var validation = InternationalLicenseValidator.ValidateLocalLicenseId(localLicenseId);
         if (validation.IsFailure)
-            return Result<List<InternationalDto>>.FromValidationFailure(
-                validation.Error);
+            return Result<List<InternationalDto>>.FromValidationFailure(validation.Error);
 
-        var entities =
-            await _repository.GetByLocalLicenseIdAsync(localLicenseId);
+        var entities = await _repository.GetByLocalLicenseIdAsync(localLicenseId);
 
         return Result<List<InternationalDto>>.Success(
-            entities
-                .Select(InternationalLicenseMapper.ToDto)
-                .ToList());
+            entities.Select(InternationalLicenseMapper.ToDto).ToList());
     }
 
     public Task<bool> HasActiveInternationalLicenseAsync(int driverId) =>
         _repository.HasActiveInternationalLicenseAsync(driverId);
 
-    public async Task<Result<int>> IssueInternationalLicenseAsync(
-        int localLicenseId)
+    public async Task<Result<int>> IssueInternationalLicenseAsync(int localLicenseId)
     {
-        var validation =
-            InternationalLicenseValidator.ValidateLocalLicenseId(localLicenseId);
-
+        var validation = InternationalLicenseValidator.ValidateLocalLicenseId(localLicenseId);
         if (validation.IsFailure)
             return Result<int>.FromValidationFailure(validation.Error);
 
         if (!IsAuthenticated())
-            return Result<int>.FromForbidden(
-                "Authenticated user is required.");
+            return Result<int>.FromForbidden("Authenticated user is required.");
 
         var applicationTypeResult =
-            await _applicationTypeService.GetApplicationTypeByIdAsync(
-                InternationalApplicationTypeId);
+            await _applicationTypeService.GetApplicationTypeByIdAsync(InternationalApplicationTypeId);
 
         if (applicationTypeResult.IsFailure)
             return PropagateFailure<int>(applicationTypeResult);
 
         if (applicationTypeResult.Value is null)
-            return Result<int>.FromNotFound(
-                "International application type not found.");
+            return Result<int>.FromNotFound("International application type not found.");
 
-        await using var transaction =
-            await _unitOfWork.BeginTransactionAsync(
-                IsolationLevel.Serializable);
-
-        try
-        {
-            var licenseResult =
-                await _licenseQueryService.GetByIdAsync(localLicenseId);
-
-            if (licenseResult.IsFailure)
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async transaction =>
             {
-                return await RollbackAsync(
-                    transaction,
-                    PropagateFailure<int>(licenseResult));
-            }
+                var licenseResult = await _licenseQueryService.GetByIdAsync(localLicenseId);
 
-            if (licenseResult.Value is null)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromNotFound(
-                        "Local license not found."));
-            }
+                if (licenseResult.IsFailure)
+                    return await RollbackAsync(transaction, PropagateFailure<int>(licenseResult));
 
-            var license = licenseResult.Value;
+                if (licenseResult.Value is null)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromNotFound("Local license not found."));
 
-            if (license.LicenseClassID != OrdinaryLicenseClassId)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict(
-                        "Only class 3 licenses can be issued internationally."));
-            }
+                var license = licenseResult.Value;
 
-            if (!license.IsActive)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict(
-                        "The local license is not active."));
-            }
+                if (license.LicenseClassID != OrdinaryLicenseClassId)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "Only class 3 licenses can be issued internationally."));
 
-            if (license.ExpirationDate <= DateTime.UtcNow)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict(
-                        "The local license is expired."));
-            }
+                if (!license.IsActive)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict("The local license is not active."));
 
-            if (license.Driver is null)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromNotFound(
-                        "Driver information is not available."));
-            }
+                if (license.ExpirationDate <= DateTime.UtcNow)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict("The local license is expired."));
 
-            if (license.Driver.PersonID <= 0)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromFailure(
-                        "The license has invalid driver information."));
-            }
+                if (license.Driver is null)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromNotFound("Driver information is not available."));
 
-            if (await _repository.ExistsByLocalLicenseAsync(localLicenseId))
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict(
-                        "An international license already exists for this local license."));
-            }
+                if (license.Driver.PersonID <= 0)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromFailure(
+                            "The license has invalid driver information."));
 
-            if (await _repository.HasActiveInternationalLicenseAsync(
-                    license.DriverID))
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict(
-                        "The driver already has an active international license."));
-            }
+                if (await _repository.ExistsByLocalLicenseAsync(localLicenseId))
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "An international license already exists for this local license."));
 
-            var now = DateTime.UtcNow;
+                if (await _repository.HasActiveInternationalLicenseAsync(license.DriverID))
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "The driver already has an active international license."));
 
-            var applicationResult =
-                await _applicationService.AddNewApplicationAsync(
-                    new CreateApplicationDto
-                    {
-                        ApplicantPersonID = license.Driver.PersonID,
-                        ApplicationTypeID = InternationalApplicationTypeId
-                    });
+                var now = DateTime.UtcNow;
 
-            if (applicationResult.IsFailure)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    PropagateFailure<int>(applicationResult));
-            }
+                var applicationResult =
+                    await _applicationService.AddNewApplicationAsync(
+                        new CreateApplicationDto
+                        {
+                            ApplicantPersonID = license.Driver.PersonID,
+                            ApplicationTypeID = InternationalApplicationTypeId
+                        });
 
-            var applicationId = applicationResult.Value;
+                if (applicationResult.IsFailure)
+                    return await RollbackAsync(
+                        transaction,
+                        PropagateFailure<int>(applicationResult));
 
-            if (applicationId <= 0)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromFailure(
-                        "Failed to create international application."));
-            }
+                var applicationId = applicationResult.Value;
 
-            var entity = new InternationalLicense
-            {
-                ApplicationID = applicationId,
-                DriverID = license.DriverID,
-                IssuedUsingLocalLicenseID = localLicenseId,
-                IssueDate = now,
-                ExpirationDate =
-                    now.AddYears(InternationalLicenseValidityYears),
-                IsActive = true,
-                CreatedByUserID = _currentUserService.UserId
-            };
+                if (applicationId <= 0)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromFailure(
+                            "Failed to create international application."));
 
-            await _repository.AddAsync(entity);
+                var entity = new InternationalLicense
+                {
+                    ApplicationID = applicationId,
+                    DriverID = license.DriverID,
+                    IssuedUsingLocalLicenseID = localLicenseId,
+                    IssueDate = now,
+                    ExpirationDate = now.AddYears(InternationalLicenseValidityYears),
+                    IsActive = true,
+                    CreatedByUserID = _currentUserService.UserId
+                };
 
-            var saved =
-                await _unitOfWork.SaveChangesAsync();
+                await _repository.AddAsync(entity);
 
-            if (saved <= 0 ||
-                entity.InternationalLicenseID <= 0)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromFailure(
-                        "Failed to save international license."));
-            }
+                if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                    entity.InternationalLicenseID <= 0)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromFailure(
+                            "Failed to save international license."));
 
-            var completeResult =
-                await _applicationService.CompleteApplicationAsync(
-                    applicationId);
+                var completeResult =
+                    await _applicationService.CompleteApplicationAsync(applicationId);
 
-            if (completeResult.IsFailure)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    PropagateFailure<int>(completeResult));
-            }
+                if (completeResult.IsFailure)
+                    return await RollbackAsync(
+                        transaction,
+                        PropagateFailure<int>(completeResult));
 
-            await transaction.CommitAsync();
+                await transaction.CommitAsync();
 
-            return Result<int>.Success(
-                entity.InternationalLicenseID);
-        }
-        catch (Exception)
-        {
-            await RollbackSafelyAsync(
-                transaction,
-                localLicenseId);
-
-            throw;
-        }
+                return Result<int>.Success(entity.InternationalLicenseID);
+            },
+            IsolationLevel.Serializable);
     }
 
-    public async Task<Result<DriverLicenseInfoDto>> GetLocalLicenseInfoAsync(
-        int licenseId)
+    public async Task<Result<DriverLicenseInfoDto>> GetLocalLicenseInfoAsync(int licenseId)
     {
-        var validation =
-            InternationalLicenseValidator.ValidateLocalLicenseId(licenseId);
-
+        var validation = InternationalLicenseValidator.ValidateLocalLicenseId(licenseId);
         if (validation.IsFailure)
-            return Result<DriverLicenseInfoDto>.FromValidationFailure(
-                validation.Error);
+            return Result<DriverLicenseInfoDto>.FromValidationFailure(validation.Error);
 
-        var licenseResult =
-            await _licenseQueryService.GetByIdAsync(licenseId);
+        var licenseResult = await _licenseQueryService.GetByIdAsync(licenseId);
 
         if (licenseResult.IsFailure)
-        {
-            return PropagateFailure<DriverLicenseInfoDto>(
-                licenseResult);
-        }
+            return PropagateFailure<DriverLicenseInfoDto>(licenseResult);
 
         if (licenseResult.Value is null)
-        {
-            return Result<DriverLicenseInfoDto>.FromNotFound(
-                "Local license not found.");
-        }
+            return Result<DriverLicenseInfoDto>.FromNotFound("Local license not found.");
 
         var license = licenseResult.Value;
 
         if (license.LicenseClassID != OrdinaryLicenseClassId)
-        {
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "Only class 3 licenses can be converted to an international license.");
-        }
 
         if (!license.IsActive)
-        {
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "The local license is not active.");
-        }
 
         if (license.ExpirationDate <= DateTime.UtcNow)
-        {
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "The local license is expired.");
-        }
 
         if (license.Driver is null)
-        {
             return Result<DriverLicenseInfoDto>.FromNotFound(
                 "Driver information is not available.");
-        }
 
         if (await _repository.ExistsByLocalLicenseAsync(licenseId))
-        {
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "An international license already exists for this local license.");
-        }
 
         return Result<DriverLicenseInfoDto>.Success(
             InternationalLicenseMapper.ToDriverLicenseInfoDto(license));
     }
 
     private bool IsAuthenticated() =>
-        _currentUserService.IsLoggedIn &&
-        _currentUserService.UserId > 0;
+        _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;
 
     private static async Task<T> RollbackAsync<T>(
         IUnitOfWorkTransaction transaction,
@@ -396,40 +282,13 @@ public sealed class InternationalService(
         return result;
     }
 
-    private async Task RollbackSafelyAsync(
-        IUnitOfWorkTransaction transaction,
-        int licenseId)
-    {
-        try
-        {
-            await transaction.RollbackAsync();
-        }
-        catch (Exception rollbackException)
-        {
-            _logger.LogError(
-                rollbackException,
-                "Rollback failed while issuing international license for local license {LocalLicenseId}.",
-                licenseId);
-        }
-    }
-
-    private static Result<T> PropagateFailure<T>(
-        Result source) =>
+    private static Result<T> PropagateFailure<T>(Result source) =>
         source.ErrorType switch
         {
-            ErrorType.Validation =>
-                Result<T>.FromValidationFailure(source.Error),
-
-            ErrorType.NotFound =>
-                Result<T>.FromNotFound(source.Error),
-
-            ErrorType.Conflict =>
-                Result<T>.FromConflict(source.Error),
-
-            ErrorType.Forbidden =>
-                Result<T>.FromForbidden(source.Error),
-
-            _ =>
-                Result<T>.FromFailure(source.Error)
+            ErrorType.Validation => Result<T>.FromValidationFailure(source.Error),
+            ErrorType.NotFound => Result<T>.FromNotFound(source.Error),
+            ErrorType.Conflict => Result<T>.FromConflict(source.Error),
+            ErrorType.Forbidden => Result<T>.FromForbidden(source.Error),
+            _ => Result<T>.FromFailure(source.Error)
         };
 }

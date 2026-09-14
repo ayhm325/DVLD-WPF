@@ -32,10 +32,6 @@ public class LicenseReplacementServiceTests
             _logger.Object);
     }
 
-    // =========================================================
-    // Validation
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenLicenseIdIsInvalid_ReturnsValidationFailure()
     {
@@ -134,7 +130,8 @@ public class LicenseReplacementServiceTests
             Times.Never);
 
         _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
+            x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 It.IsAny<IsolationLevel>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
@@ -234,10 +231,6 @@ public class LicenseReplacementServiceTests
             Times.Once);
     }
 
-    // =========================================================
-    // Application Type
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenLostReason_RequestsLostApplicationType()
     {
@@ -269,7 +262,8 @@ public class LicenseReplacementServiceTests
             Times.Never);
 
         _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
+            x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 It.IsAny<IsolationLevel>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
@@ -333,7 +327,8 @@ public class LicenseReplacementServiceTests
             result.Error);
 
         _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
+            x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 It.IsAny<IsolationLevel>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
@@ -365,15 +360,12 @@ public class LicenseReplacementServiceTests
             result.Error);
 
         _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
+            x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 It.IsAny<IsolationLevel>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
-    // =========================================================
-    // Old License
-    // =========================================================
 
     [Fact]
     public async Task ReplaceLicenseAsync_WhenLicenseDoesNotExist_ReturnsNotFoundAndRollsBack()
@@ -545,10 +537,6 @@ public class LicenseReplacementServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Renewal Application Creation
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenApplicationCreationFails_PropagatesFailureAndRollsBack()
     {
@@ -663,10 +651,6 @@ public class LicenseReplacementServiceTests
             Times.Once);
     }
 
-    // =========================================================
-    // Deactivation
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenDeactivationFails_ReturnsFailureAndRollsBack()
     {
@@ -708,10 +692,6 @@ public class LicenseReplacementServiceTests
                 It.IsAny<License>()),
             Times.Never);
     }
-
-    // =========================================================
-    // Save
-    // =========================================================
 
     [Fact]
     public async Task ReplaceLicenseAsync_WhenSaveReturnsZero_ReturnsFailureAndRollsBack()
@@ -812,10 +792,6 @@ public class LicenseReplacementServiceTests
         VerifyRollback(transaction);
     }
 
-    // =========================================================
-    // Complete Application
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenCompletingApplicationFails_PropagatesFailureAndRollsBack()
     {
@@ -878,10 +854,6 @@ public class LicenseReplacementServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Successful Lost Replacement
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenLostLicenseIsValid_ReturnsNewLicenseIdAndCommits()
     {
@@ -934,10 +906,6 @@ public class LicenseReplacementServiceTests
             IssueReason.ReplacementForLost,
             3);
     }
-
-    // =========================================================
-    // Successful Damaged Replacement
-    // =========================================================
 
     [Fact]
     public async Task ReplaceLicenseAsync_WhenDamagedLicenseIsValid_ReturnsNewLicenseIdAndCommits()
@@ -992,10 +960,6 @@ public class LicenseReplacementServiceTests
             4);
     }
 
-    // =========================================================
-    // Trimmed Reason
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenReasonHasWhitespace_TrimsReason()
     {
@@ -1047,10 +1011,6 @@ public class LicenseReplacementServiceTests
                     license.Notes == "Lost License")),
             Times.Once);
     }
-
-    // =========================================================
-    // License Mapping
-    // =========================================================
 
     [Fact]
     public async Task ReplaceLicenseAsync_WhenValid_CopiesDriverAndLicenseClass()
@@ -1213,10 +1173,6 @@ public class LicenseReplacementServiceTests
             Times.Once);
     }
 
-    // =========================================================
-    // Exception
-    // =========================================================
-
     [Fact]
     public async Task ReplaceLicenseAsync_WhenExceptionOccurs_RollsBackAndRethrows()
     {
@@ -1254,10 +1210,6 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
-    // =========================================================
-    // Helpers
-    // =========================================================
 
     private void SetupAuthenticatedUser()
     {
@@ -1304,14 +1256,28 @@ public class LicenseReplacementServiceTests
         return transaction;
     }
 
-    private void SetupTransaction(
-        Mock<IUnitOfWorkTransaction> transaction)
+    private void SetupTransaction(Mock<IUnitOfWorkTransaction> transaction)
     {
         _unitOfWork
-            .Setup(x => x.BeginTransactionAsync(
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 IsolationLevel.Serializable,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(transaction.Object);
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result<int>>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                try
+                {
+                    return await operation(transaction.Object);
+                }
+                catch
+                {
+                    await transaction.Object.RollbackAsync();
+                    throw;
+                }
+            });
     }
 
     private void VerifyRollback(

@@ -20,26 +20,20 @@ public sealed class TestService(
 {
     private readonly ITestRepository _repository =
         repository ?? throw new ArgumentNullException(nameof(repository));
-
     private readonly ITestAppointmentRepository _appointmentRepository =
         appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
-
     private readonly ICurrentUserService _currentUserService =
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-
     private readonly ITestWorkflowService _workflowService =
         workflowService ?? throw new ArgumentNullException(nameof(workflowService));
-
     private readonly IUnitOfWork _unitOfWork =
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-
     private readonly ILogger<TestService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<Result<TestDto>> GetByIdAsync(int id)
     {
         var validation = TestValidator.ValidateId(id);
-
         if (validation.IsFailure)
             return Result<TestDto>.FromValidationFailure(validation.Error);
 
@@ -58,18 +52,13 @@ public sealed class TestService(
             tests.Select(TestMapper.ToDto).ToList());
     }
 
-    public async Task<Result<List<TestDto>>> GetByTestAppointmentIdAsync(
-        int appointmentId)
+    public async Task<Result<List<TestDto>>> GetByTestAppointmentIdAsync(int appointmentId)
     {
-        var validation =
-            TestValidator.ValidateAppointmentId(appointmentId);
-
+        var validation = TestValidator.ValidateAppointmentId(appointmentId);
         if (validation.IsFailure)
-            return Result<List<TestDto>>.FromValidationFailure(
-                validation.Error);
+            return Result<List<TestDto>>.FromValidationFailure(validation.Error);
 
-        var tests =
-            await _repository.GetByTestAppointmentIdAsync(appointmentId);
+        var tests = await _repository.GetByTestAppointmentIdAsync(appointmentId);
 
         return Result<List<TestDto>>.Success(
             tests.Select(TestMapper.ToDto).ToList());
@@ -78,10 +67,8 @@ public sealed class TestService(
     public async Task<Result<List<TestDto>>> GetByUserIdAsync(int userId)
     {
         var validation = TestValidator.ValidateUserId(userId);
-
         if (validation.IsFailure)
-            return Result<List<TestDto>>.FromValidationFailure(
-                validation.Error);
+            return Result<List<TestDto>>.FromValidationFailure(validation.Error);
 
         var tests = await _repository.GetByUserIdAsync(userId);
 
@@ -92,95 +79,57 @@ public sealed class TestService(
     public async Task<Result<int>> AddAsync(SaveTestResultDto dto)
     {
         var validation = TestValidator.ValidateCreate(dto);
-
         if (validation.IsFailure)
             return Result<int>.FromValidationFailure(validation.Error);
 
-        if (!_currentUserService.IsLoggedIn ||
-            _currentUserService.UserId <= 0)
-        {
-            return Result<int>.FromForbidden(
-                "You must be logged in first.");
-        }
+        if (!_currentUserService.IsLoggedIn || _currentUserService.UserId <= 0)
+            return Result<int>.FromForbidden("You must be logged in first.");
 
-        await using var transaction =
-            await _unitOfWork.BeginTransactionAsync(
-                IsolationLevel.Serializable);
-
-        try
-        {
-            var appointment =
-                await _appointmentRepository.GetForUpdateAsync(
-                    dto.TestAppointmentID);
-
-            if (appointment is null)
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async transaction =>
             {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromNotFound(
-                        "Test appointment not found."));
-            }
+                var appointment =
+                    await _appointmentRepository.GetForUpdateAsync(dto.TestAppointmentID);
 
-            if (appointment.IsLocked)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict(
-                        "This appointment is already locked."));
-            }
+                if (appointment is null)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromNotFound("Test appointment not found."));
 
-            if (await _repository.IsTestAlreadyTakenAsync(
-                    dto.TestAppointmentID))
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict(
-                        "A result already exists for this appointment."));
-            }
+                if (appointment.IsLocked)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict("This appointment is already locked."));
 
-            var workflow =
-                await _workflowService.CanTakeTestAsync(
-                    dto.TestAppointmentID);
+                if (await _repository.IsTestAlreadyTakenAsync(dto.TestAppointmentID))
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "A result already exists for this appointment."));
 
-            if (workflow.IsFailure)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromResult(workflow));
-            }
+                var workflow =
+                    await _workflowService.CanTakeTestAsync(dto.TestAppointmentID);
 
-            var entity =
-                TestMapper.ToEntity(
-                    dto,
-                    _currentUserService.UserId);
+                if (workflow.IsFailure)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromResult(workflow));
 
-            await _repository.AddAsync(entity);
+                var entity = TestMapper.ToEntity(dto, _currentUserService.UserId);
+                await _repository.AddAsync(entity);
 
-            appointment.IsLocked = true;
+                appointment.IsLocked = true;
 
-            var saved =
-                await _unitOfWork.SaveChangesAsync();
+                if (await _unitOfWork.SaveChangesAsync() <= 0 || entity.TestID <= 0)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromFailure("Failed to save test result."));
 
-            if (saved <= 0 || entity.TestID <= 0)
-            {
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromFailure(
-                        "Failed to save test result."));
-            }
+                await transaction.CommitAsync();
 
-            await transaction.CommitAsync();
-
-            return Result<int>.Success(entity.TestID);
-        }
-        catch (Exception)
-        {
-            await RollbackSafelyAsync(
-                transaction,
-                dto.TestAppointmentID);
-
-            throw;
-        }
+                return Result<int>.Success(entity.TestID);
+            },
+            IsolationLevel.Serializable);
     }
 
     private static async Task<T> RollbackAsync<T>(
@@ -189,22 +138,5 @@ public sealed class TestService(
     {
         await transaction.RollbackAsync();
         return result;
-    }
-
-    private async Task RollbackSafelyAsync(
-        IUnitOfWorkTransaction transaction,
-        int appointmentId)
-    {
-        try
-        {
-            await transaction.RollbackAsync();
-        }
-        catch (Exception rollbackException)
-        {
-            _logger.LogError(
-                rollbackException,
-                "Failed to rollback test result transaction for appointment {AppointmentId}.",
-                appointmentId);
-        }
     }
 }

@@ -37,10 +37,6 @@ public sealed class InternationalServiceTests
             _logger.Object);
     }
 
-    // =========================================================
-    // Helpers
-    // =========================================================
-
     private void SetupAuthenticatedUser(int userId = 10)
     {
         _currentUserService
@@ -55,10 +51,25 @@ public sealed class InternationalServiceTests
     private void SetupTransaction()
     {
         _unitOfWork
-            .Setup(x => x.BeginTransactionAsync(
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 IsolationLevel.Serializable,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_transaction.Object);
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result<int>>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                try
+                {
+                    return await operation(_transaction.Object);
+                }
+                catch
+                {
+                    await _transaction.Object.RollbackAsync();
+                    throw;
+                }
+            });
     }
 
     private void SetupRollback()
@@ -179,10 +190,6 @@ public sealed class InternationalServiceTests
         SetupRollback();
     }
 
-    // =========================================================
-    // GetAllAsync
-    // =========================================================
-
     [Fact]
     public async Task GetAllAsync_WhenRepositoryReturnsEntities_ReturnsMappedDtos()
     {
@@ -247,10 +254,6 @@ public sealed class InternationalServiceTests
 
         Assert.Empty(result.Value!);
     }
-
-    // =========================================================
-    // GetByIdAsync
-    // =========================================================
 
     [Theory]
     [InlineData(0)]
@@ -323,10 +326,6 @@ public sealed class InternationalServiceTests
         Assert.Equal(400, value.IssuedUsingLocalLicenseID);
     }
 
-    // =========================================================
-    // GetByDriverIdAsync
-    // =========================================================
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -394,10 +393,6 @@ public sealed class InternationalServiceTests
         Assert.Empty(result.Value!);
     }
 
-    // =========================================================
-    // GetByApplicationIdAsync
-    // =========================================================
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -460,10 +455,6 @@ public sealed class InternationalServiceTests
             result.Value!.ApplicationID);
     }
 
-    // =========================================================
-    // GetByLocalLicenseIdAsync
-    // =========================================================
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -514,10 +505,6 @@ public sealed class InternationalServiceTests
             100,
             value[0].IssuedUsingLocalLicenseID);
     }
-
-    // =========================================================
-    // HasActiveInternationalLicenseAsync
-    // =========================================================
 
     [Fact]
     public async Task HasActiveInternationalLicenseAsync_DelegatesToRepository()
@@ -618,10 +605,6 @@ public sealed class InternationalServiceTests
             result.Error);
     }
 
-    // =========================================================
-    // Application Type
-    // =========================================================
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenApplicationTypeFails_PropagatesFailure()
     {
@@ -647,7 +630,8 @@ public sealed class InternationalServiceTests
             result.Error);
 
         _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
+            x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 It.IsAny<IsolationLevel>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
@@ -676,10 +660,6 @@ public sealed class InternationalServiceTests
             "International application type not found.",
             result.Error);
     }
-
-    // =========================================================
-    // Local License
-    // =========================================================
 
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenLicenseQueryFails_RollsBackAndPropagates()
@@ -892,10 +872,6 @@ public sealed class InternationalServiceTests
             result.Error);
     }
 
-    // =========================================================
-    // Duplicate Checks
-    // =========================================================
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenInternationalLicenseAlreadyExists_ReturnsConflict()
     {
@@ -958,10 +934,6 @@ public sealed class InternationalServiceTests
             "The driver already has an active international license.",
             result.Error);
     }
-
-    // =========================================================
-    // Application Creation
-    // =========================================================
 
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenApplicationCreationFails_RollsBackAndPropagates()
@@ -1108,10 +1080,6 @@ public sealed class InternationalServiceTests
             Times.Once);
     }
 
-    // =========================================================
-    // Save
-    // =========================================================
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenSaveReturnsZero_RollsBack()
     {
@@ -1218,10 +1186,6 @@ public sealed class InternationalServiceTests
             result.Error);
     }
 
-    // =========================================================
-    // Entity Creation
-    // =========================================================
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_CreatesInternationalLicenseWithCorrectData()
     {
@@ -1300,10 +1264,6 @@ public sealed class InternationalServiceTests
             after.AddYears(1));
     }
 
-    // =========================================================
-    // Complete Application
-    // =========================================================
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenCompletingApplicationFails_RollsBack()
     {
@@ -1369,10 +1329,6 @@ public sealed class InternationalServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Successful Workflow
-    // =========================================================
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenEverythingIsValid_ReturnsCreatedLicenseId()
     {
@@ -1415,10 +1371,6 @@ public sealed class InternationalServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Exception / Rollback
-    // =========================================================
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenUnexpectedExceptionOccurs_RollsBackAndRethrows()
     {
@@ -1447,10 +1399,6 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
-    // =========================================================
-    // GetLocalLicenseInfoAsync
-    // =========================================================
 
     [Theory]
     [InlineData(0)]

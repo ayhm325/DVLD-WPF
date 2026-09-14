@@ -34,10 +34,6 @@ public sealed class DetainedLicenseServiceTests
             _logger.Object);
     }
 
-    // =========================================================
-    // Helpers
-    // =========================================================
-
     private void SetupAuthenticatedUser(int userId = 10)
     {
         _currentUserService
@@ -51,11 +47,25 @@ public sealed class DetainedLicenseServiceTests
 
     private void SetupTransaction()
     {
-        _unitOfWork
-            .Setup(x => x.BeginTransactionAsync(
-                IsolationLevel.Serializable,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_transaction.Object);
+        _unitOfWork.Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<IUnitOfWorkTransaction, Task<Result>>>(), It.IsAny<IsolationLevel>(), It.IsAny<CancellationToken>()))
+            .Returns(async (Func<IUnitOfWorkTransaction, Task<Result>> op, IsolationLevel _, CancellationToken __) => await RunTransaction(op));
+        _unitOfWork.Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(), It.IsAny<IsolationLevel>(), It.IsAny<CancellationToken>()))
+            .Returns(async (Func<IUnitOfWorkTransaction, Task<Result<int>>> op, IsolationLevel _, CancellationToken __) => await RunTransaction(op));
+        _unitOfWork.Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<DetainedLicenseDto>>>>(), It.IsAny<IsolationLevel>(), It.IsAny<CancellationToken>()))
+            .Returns(async (Func<IUnitOfWorkTransaction, Task<Result<DetainedLicenseDto>>> op, IsolationLevel _, CancellationToken __) => await RunTransaction(op));
+    }
+
+    private async Task<T> RunTransaction<T>(Func<IUnitOfWorkTransaction, Task<T>> operation)
+    {
+        try
+        {
+            return await operation(_transaction.Object);
+        }
+        catch
+        {
+            await _transaction.Object.RollbackAsync();
+            throw;
+        }
     }
 
     private void SetupRollback()
@@ -130,10 +140,6 @@ public sealed class DetainedLicenseServiceTests
                 });
     }
 
-    // =========================================================
-    // GetAllAsync
-    // =========================================================
-
     [Fact]
     public async Task GetAllAsync_WhenRepositoryReturnsEntities_ReturnsMappedDtos()
     {
@@ -200,10 +206,6 @@ public sealed class DetainedLicenseServiceTests
         Assert.Empty(result.Value!);
     }
 
-    // =========================================================
-    // GetByIdAsync
-    // =========================================================
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -215,9 +217,7 @@ public sealed class DetainedLicenseServiceTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
-        Assert.Equal(
-            "Invalid detained license ID.",
-            result.Error);
+        Assert.Equal("Invalid detained license ID.", result.Error);
 
         _repository.Verify(
             x => x.GetByIdAsync(It.IsAny<int>()),
@@ -235,9 +235,7 @@ public sealed class DetainedLicenseServiceTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
-        Assert.Equal(
-            "Detained license not found.",
-            result.Error);
+        Assert.Equal("Detained license not found.", result.Error);
     }
 
     [Fact]
@@ -271,28 +269,18 @@ public sealed class DetainedLicenseServiceTests
         Assert.False(value.IsReleased);
     }
 
-    // =========================================================
-    // GetActiveDetainByLicenseIdAsync
-    // =========================================================
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
     public async Task GetActiveDetainByLicenseIdAsync_WhenLicenseIdIsInvalid_ReturnsValidationFailure(
         int licenseId)
     {
-        var result =
-            await CreateService()
-                .GetActiveDetainByLicenseIdAsync(licenseId);
+        var result = await CreateService().GetActiveDetainByLicenseIdAsync(licenseId);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Validation,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
 
-        Assert.Equal(
-            "Invalid license ID.",
-            result.Error);
+        Assert.Equal("Invalid license ID.", result.Error);
 
         _repository.Verify(
             x => x.GetActiveDetainByLicenseIdAsync(
@@ -307,18 +295,12 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.GetActiveDetainByLicenseIdAsync(100))
             .ReturnsAsync((DetainedLicense?)null);
 
-        var result =
-            await CreateService()
-                .GetActiveDetainByLicenseIdAsync(100);
+        var result = await CreateService().GetActiveDetainByLicenseIdAsync(100);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.NotFound,
-            result.ErrorType);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
 
-        Assert.Equal(
-            "No active detention found for this license.",
-            result.Error);
+        Assert.Equal("No active detention found for this license.", result.Error);
     }
 
     [Fact]
@@ -338,9 +320,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.GetActiveDetainByLicenseIdAsync(100))
             .ReturnsAsync(entity);
 
-        var result =
-            await CreateService()
-                .GetActiveDetainByLicenseIdAsync(100);
+        var result = await CreateService().GetActiveDetainByLicenseIdAsync(100);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
@@ -349,19 +329,13 @@ public sealed class DetainedLicenseServiceTests
         Assert.Equal(100, result.Value.LicenseID);
     }
 
-    // =========================================================
-    // IsLicenseDetainedAsync
-    // =========================================================
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
     public async Task IsLicenseDetainedAsync_WhenLicenseIdIsInvalid_ReturnsFalse(
         int licenseId)
     {
-        var result =
-            await CreateService()
-                .IsLicenseDetainedAsync(licenseId);
+        var result = await CreateService().IsLicenseDetainedAsync(licenseId);
 
         Assert.False(result);
 
@@ -378,9 +352,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.IsLicenseDetainedAsync(100))
             .ReturnsAsync(true);
 
-        var result =
-            await CreateService()
-                .IsLicenseDetainedAsync(100);
+        var result = await CreateService().IsLicenseDetainedAsync(100);
 
         Assert.True(result);
     }
@@ -392,32 +364,20 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.IsLicenseDetainedAsync(100))
             .ReturnsAsync(false);
 
-        var result =
-            await CreateService()
-                .IsLicenseDetainedAsync(100);
+        var result = await CreateService().IsLicenseDetainedAsync(100);
 
         Assert.False(result);
     }
 
-    // =========================================================
-    // AddAsync - Validation
-    // =========================================================
-
     [Fact]
     public async Task AddAsync_WhenDtoIsNull_ReturnsValidationFailure()
     {
-        var result =
-            await CreateService()
-                .AddAsync(null!);
+        var result = await CreateService().AddAsync(null!);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Validation,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
 
-        Assert.Equal(
-            "Detained license data is required.",
-            result.Error);
+        Assert.Equal("Detained license data is required.", result.Error);
     }
 
     [Theory]
@@ -426,81 +386,41 @@ public sealed class DetainedLicenseServiceTests
     public async Task AddAsync_WhenLicenseIdIsInvalid_ReturnsValidationFailure(
         int licenseId)
     {
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = licenseId,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = licenseId, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Validation,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
 
-        Assert.Contains(
-            "A valid license is required.",
-            result.Error);
-
-        _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
-                It.IsAny<IsolationLevel>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.Contains("A valid license is required.", result.Error);
     }
 
     [Fact]
     public async Task AddAsync_WhenFineFeesAreNegative_ReturnsValidationFailure()
     {
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = -1
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = -1 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Validation,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
 
-        Assert.Contains(
-            "Fine fees cannot be negative.",
-            result.Error);
+        Assert.Contains("Fine fees cannot be negative.", result.Error);
     }
 
     [Fact]
     public async Task AddAsync_WhenFineFeesExceedMaximum_ReturnsValidationFailure()
     {
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 10_000_000_000_000_000m
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 10_000_000_000_000_000m };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Validation,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
 
-        Assert.Contains(
-            "Fine fees exceed the allowed value.",
-            result.Error);
+        Assert.Contains("Fine fees exceed the allowed value.", result.Error);
     }
-
-    // =========================================================
-    // AddAsync - Authentication
-    // =========================================================
 
     [Fact]
     public async Task AddAsync_WhenUserIsNotAuthenticated_ReturnsForbidden()
@@ -513,30 +433,14 @@ public sealed class DetainedLicenseServiceTests
             .SetupGet(x => x.UserId)
             .Returns(0);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Forbidden,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Forbidden, result.ErrorType);
 
-        Assert.Equal(
-            "Authenticated user is required.",
-            result.Error);
-
-        _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
-                It.IsAny<IsolationLevel>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.Equal("Authenticated user is required.", result.Error);
     }
 
     [Fact]
@@ -550,25 +454,13 @@ public sealed class DetainedLicenseServiceTests
             .SetupGet(x => x.UserId)
             .Returns(0);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Forbidden,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Forbidden, result.ErrorType);
     }
-
-    // =========================================================
-    // AddAsync - License checks
-    // =========================================================
 
     [Fact]
     public async Task AddAsync_WhenLicenseDoesNotExist_ReturnsNotFoundAndRollsBack()
@@ -581,24 +473,14 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.GetLicenseByIdAsync(100))
             .ReturnsAsync((License?)null);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.NotFound,
-            result.ErrorType);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
 
-        Assert.Equal(
-            "License not found.",
-            result.Error);
+        Assert.Equal("License not found.", result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -623,24 +505,14 @@ public sealed class DetainedLicenseServiceTests
                     ExpirationDate = DateTime.UtcNow.AddMonths(6)
                 });
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Conflict,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
 
-        Assert.Equal(
-            "Only an active license can be detained.",
-            result.Error);
+        Assert.Equal("Only an active license can be detained.", result.Error);
     }
 
     [Fact]
@@ -661,24 +533,14 @@ public sealed class DetainedLicenseServiceTests
                         DateTime.UtcNow.AddMinutes(-1)
                 });
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Conflict,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
 
-        Assert.Equal(
-            "An expired license cannot be detained.",
-            result.Error);
+        Assert.Equal("An expired license cannot be detained.", result.Error);
     }
 
     [Fact]
@@ -694,34 +556,20 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.IsLicenseDetainedAsync(100))
             .ReturnsAsync(true);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Conflict,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
 
-        Assert.Equal(
-            "License is already detained.",
-            result.Error);
+        Assert.Equal("License is already detained.", result.Error);
 
         _repository.Verify(
             x => x.AddAsync(
                 It.IsAny<DetainedLicense>()),
             Times.Never);
     }
-
-    // =========================================================
-    // AddAsync - Create / Deactivate
-    // =========================================================
 
     [Fact]
     public async Task AddAsync_WhenDeactivateLicenseFails_ReturnsFailureAndRollsBack()
@@ -745,24 +593,14 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.DeactivateLicenseAsync(100))
             .ReturnsAsync(false);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 75
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 75 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Failure,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
 
-        Assert.Equal(
-            "Failed to deactivate the license.",
-            result.Error);
+        Assert.Equal("Failed to deactivate the license.", result.Error);
 
         _unitOfWork.Verify(
             x => x.SaveChangesAsync(
@@ -824,15 +662,9 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.GetByIdAsync(500))
             .ReturnsAsync(savedEntity);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 75
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 75 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
@@ -898,24 +730,14 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Failure,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
 
-        Assert.Equal(
-            "Failed to save detained license.",
-            result.Error);
+        Assert.Equal("Failed to save detained license.", result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -955,24 +777,14 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Failure,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
 
-        Assert.Equal(
-            "Failed to save detained license.",
-            result.Error);
+        Assert.Equal("Failed to save detained license.", result.Error);
     }
 
     [Fact]
@@ -1008,34 +820,20 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.GetByIdAsync(500))
             .ReturnsAsync((DetainedLicense?)null);
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
 
-        var result =
-            await CreateService()
-                .AddAsync(dto);
+        var result = await CreateService().AddAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Failure,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
 
-        Assert.Equal(
-            "Unable to retrieve created detained license.",
-            result.Error);
+        Assert.Equal("Unable to retrieve created detained license.", result.Error);
 
         _transaction.Verify(
             x => x.CommitAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
-    // =========================================================
-    // AddAsync - Exception
-    // =========================================================
 
     [Fact]
     public async Task AddAsync_WhenUnexpectedExceptionOccurs_RollsBackAndRethrows()
@@ -1046,49 +844,28 @@ public sealed class DetainedLicenseServiceTests
 
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(100))
-            .ThrowsAsync(
-                new InvalidOperationException(
-                    "Database failure."));
+            .ThrowsAsync(new InvalidOperationException("Database failure."));
 
-        var dto = new CreateDetainedLicenseDto
-        {
-            LicenseID = 100,
-            FineFees = 50
-        };
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => CreateService().AddAsync(
+                new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 }));
 
-        var exception =
-            await Assert.ThrowsAsync<InvalidOperationException>(
-                () => CreateService().AddAsync(dto));
-
-        Assert.Equal(
-            "Database failure.",
-            exception.Message);
+        Assert.Equal("Database failure.", exception.Message);
 
         _transaction.Verify(
-            x => x.RollbackAsync(
-                It.IsAny<CancellationToken>()),
+            x => x.RollbackAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
-    // =========================================================
-    // ReleaseAsync - Validation
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenDtoIsNull_ReturnsValidationFailure()
     {
-        var result =
-            await CreateService()
-                .ReleaseAsync(null!);
+        var result = await CreateService().ReleaseAsync(null!);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Validation,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
 
-        Assert.Equal(
-            "Release data is required.",
-            result.Error);
+        Assert.Equal("Release data is required.", result.Error);
     }
 
     [Theory]
@@ -1097,34 +874,15 @@ public sealed class DetainedLicenseServiceTests
     public async Task ReleaseAsync_WhenDetainIdIsInvalid_ReturnsValidationFailure(
         int detainId)
     {
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = detainId
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = detainId };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Validation,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
 
-        Assert.Equal(
-            "A valid detention ID is required.",
-            result.Error);
-
-        _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
-                It.IsAny<IsolationLevel>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.Equal("A valid detention ID is required.", result.Error);
     }
-
-    // =========================================================
-    // ReleaseAsync - Authentication
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenUserIsNotAuthenticated_ReturnsForbidden()
@@ -1137,34 +895,15 @@ public sealed class DetainedLicenseServiceTests
             .SetupGet(x => x.UserId)
             .Returns(0);
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Forbidden,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Forbidden, result.ErrorType);
 
-        Assert.Equal(
-            "Authenticated user is required.",
-            result.Error);
-
-        _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
-                It.IsAny<IsolationLevel>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.Equal("Authenticated user is required.", result.Error);
     }
-
-    // =========================================================
-    // ReleaseAsync - Detention checks
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenDetentionDoesNotExist_ReturnsNotFoundAndRollsBack()
@@ -1177,23 +916,14 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.GetByIdForUpdateAsync(50))
             .ReturnsAsync((DetainedLicense?)null);
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.NotFound,
-            result.ErrorType);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
 
-        Assert.Equal(
-            "Detained license not found.",
-            result.Error);
+        Assert.Equal("Detained license not found.", result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -1218,28 +948,15 @@ public sealed class DetainedLicenseServiceTests
                     IsReleased = true
                 });
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Conflict,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
 
-        Assert.Equal(
-            "License is already released.",
-            result.Error);
+        Assert.Equal("License is already released.", result.Error);
     }
-
-    // =========================================================
-    // ReleaseAsync - Associated license
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenAssociatedLicenseDoesNotExist_ReturnsNotFound()
@@ -1254,28 +971,15 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.GetLicenseByIdAsync(100))
             .ReturnsAsync((License?)null);
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.NotFound,
-            result.ErrorType);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
 
-        Assert.Equal(
-            "Associated license not found.",
-            result.Error);
+        Assert.Equal("Associated license not found.", result.Error);
     }
-
-    // =========================================================
-    // ReleaseAsync - Application Type
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenApplicationTypeFails_PropagatesFailure()
@@ -1293,23 +997,14 @@ public sealed class DetainedLicenseServiceTests
                 Result<ApplicationTypeDto>.FromNotFound(
                     "Application type not found."));
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.NotFound,
-            result.ErrorType);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
 
-        Assert.Equal(
-            "Application type not found.",
-            result.Error);
+        Assert.Equal("Application type not found.", result.Error);
     }
 
     [Fact]
@@ -1327,28 +1022,15 @@ public sealed class DetainedLicenseServiceTests
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(null!));
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.NotFound,
-            result.ErrorType);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
 
-        Assert.Equal(
-            "Release application type not found.",
-            result.Error);
+        Assert.Equal("Release application type not found.", result.Error);
     }
-
-    // =========================================================
-    // ReleaseAsync - Driver
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenDriverIsMissing_ReturnsNotFound()
@@ -1376,34 +1058,17 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.NotFound,
-            result.ErrorType);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
 
-        Assert.Equal(
-            "Driver information is not available.",
-            result.Error);
+        Assert.Equal("Driver information is not available.", result.Error);
     }
-
-    // =========================================================
-    // ReleaseAsync - Application creation
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenApplicationCreationFails_RollsBackAndPropagates()
@@ -1418,11 +1083,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1431,23 +1092,14 @@ public sealed class DetainedLicenseServiceTests
                 Result<int>.FromConflict(
                     "Application conflict."));
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Conflict,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
 
-        Assert.Equal(
-            "Application conflict.",
-            result.Error);
+        Assert.Equal("Application conflict.", result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -1468,11 +1120,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1480,23 +1128,14 @@ public sealed class DetainedLicenseServiceTests
             .ReturnsAsync(
                 Result<int>.Success(0));
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Failure,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
 
-        Assert.Equal(
-            "Failed to create release application.",
-            result.Error);
+        Assert.Equal("Failed to create release application.", result.Error);
     }
 
     [Fact]
@@ -1512,11 +1151,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1542,14 +1177,9 @@ public sealed class DetainedLicenseServiceTests
 
         SetupCommit();
 
-        var dto = new ReleaseDetainedLicenseDto
-        {
-            DetainID = 50
-        };
+        var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
 
-        var result =
-            await CreateService()
-                .ReleaseAsync(dto);
+        var result = await CreateService().ReleaseAsync(dto);
 
         Assert.True(result.IsSuccess);
 
@@ -1560,10 +1190,6 @@ public sealed class DetainedLicenseServiceTests
                     application.ApplicationTypeID == 5)),
             Times.Once);
     }
-
-    // =========================================================
-    // ReleaseAsync - License activation
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenAnotherActiveLicenseExists_DoesNotActivateLicense()
@@ -1578,11 +1204,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1611,10 +1233,7 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         Assert.True(result.IsSuccess);
 
@@ -1654,11 +1273,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1687,10 +1302,7 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         Assert.True(result.IsSuccess);
 
@@ -1713,11 +1325,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1750,10 +1358,7 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         Assert.True(result.IsSuccess);
 
@@ -1775,11 +1380,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1801,19 +1402,12 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Failure,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
 
-        Assert.Equal(
-            "Failed to restore the license state.",
-            result.Error);
+        Assert.Equal("Failed to restore the license state.", result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -1825,10 +1419,6 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
-    // =========================================================
-    // ReleaseAsync - Save
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenSaveFails_ReturnsFailureAndRollsBack()
@@ -1843,11 +1433,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1870,19 +1456,12 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Failure,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
 
-        Assert.Equal(
-            "Failed to save license release.",
-            result.Error);
+        Assert.Equal("Failed to save license release.", result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -1894,10 +1473,6 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<int>()),
             Times.Never);
     }
-
-    // =========================================================
-    // ReleaseAsync - Complete Application
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_WhenCompletingApplicationFails_RollsBack()
@@ -1912,11 +1487,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1945,19 +1516,12 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         Assert.True(result.IsFailure);
-        Assert.Equal(
-            ErrorType.Conflict,
-            result.ErrorType);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
 
-        Assert.Equal(
-            "Could not complete release application.",
-            result.Error);
+        Assert.Equal("Could not complete release application.", result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -1969,10 +1533,6 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
-    // =========================================================
-    // ReleaseAsync - Entity State
-    // =========================================================
 
     [Fact]
     public async Task ReleaseAsync_UpdatesDetentionWithCorrectReleaseData()
@@ -2001,11 +1561,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -2034,10 +1590,7 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         var after = DateTime.UtcNow;
 
@@ -2054,10 +1607,6 @@ public sealed class DetainedLicenseServiceTests
             after);
     }
 
-    // =========================================================
-    // ReleaseAsync - Success
-    // =========================================================
-
     [Fact]
     public async Task ReleaseAsync_WhenEverythingIsValid_CommitsAndReturnsSuccess()
     {
@@ -2072,11 +1621,7 @@ public sealed class DetainedLicenseServiceTests
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 5
-                    }));
+                Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
 
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -2103,10 +1648,7 @@ public sealed class DetainedLicenseServiceTests
         var result =
             await CreateService()
                 .ReleaseAsync(
-                    new ReleaseDetainedLicenseDto
-                    {
-                        DetainID = 50
-                    });
+                    new ReleaseDetainedLicenseDto { DetainID = 50 });
 
         Assert.True(result.IsSuccess);
 
@@ -2130,10 +1672,6 @@ public sealed class DetainedLicenseServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // ReleaseAsync - Exception
-    // =========================================================
-
     [Fact]
     public async Task ReleaseAsync_WhenUnexpectedExceptionOccurs_RollsBackAndRethrows()
     {
@@ -2151,14 +1689,9 @@ public sealed class DetainedLicenseServiceTests
             await Assert.ThrowsAsync<InvalidOperationException>(
                 () => CreateService()
                     .ReleaseAsync(
-                        new ReleaseDetainedLicenseDto
-                        {
-                            DetainID = 50
-                        }));
+                        new ReleaseDetainedLicenseDto { DetainID = 50 }));
 
-        Assert.Equal(
-            "Database failure.",
-            exception.Message);
+        Assert.Equal("Database failure.", exception.Message);
 
         _transaction.Verify(
             x => x.RollbackAsync(

@@ -124,7 +124,7 @@ public sealed class LocalDrivingLicenseApplicationService(
                 "Application type not found.");
 
         return await _unitOfWork.ExecuteInTransactionAsync(
-            async () =>
+            async transaction =>
             {
                 var duplicateApplicationId =
                     await _repository.HasDuplicateApplicationAsync(
@@ -172,6 +172,8 @@ public sealed class LocalDrivingLicenseApplicationService(
                     return Result<int>.FromFailure(
                         "Failed to create the local driving license application.");
                 }
+
+                await transaction.CommitAsync();
 
                 return Result<int>.Success(
                     localApplicationEntity.LocalDrivingLicenseApplicationID);
@@ -250,7 +252,7 @@ public sealed class LocalDrivingLicenseApplicationService(
             return Result.Success();
 
         return await _unitOfWork.ExecuteInTransactionAsync(
-            async () =>
+            async transaction =>
             {
                 var duplicateApplicationId =
                     await _repository.HasDuplicateApplicationAsync(
@@ -272,7 +274,7 @@ public sealed class LocalDrivingLicenseApplicationService(
                     return Result.Failure(
                         "No local driving license application changes were saved.");
                 }
-
+                await transaction.CommitAsync();
                 return Result.Success();
             },
             IsolationLevel.Serializable);

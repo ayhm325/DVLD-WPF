@@ -70,16 +70,13 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_InvalidLocalApplicationId_ReturnsValidationFailure()
     {
-        // Arrange
         const int localAppId = 0;
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
@@ -100,7 +97,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_UserNotAuthenticated_ReturnsForbidden()
     {
-        // Arrange
         const int localAppId = 10;
 
         _currentUserServiceMock
@@ -111,13 +107,11 @@ public class LicenseIssuanceServiceTests
             .SetupGet(service => service.UserId)
             .Returns(0);
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
         Assert.Equal(
@@ -135,7 +129,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_LocalApplicationNotFound_ReturnsNotFound()
     {
-        // Arrange
         const int localAppId = 10;
 
         SetupAuthenticatedUser();
@@ -148,13 +141,11 @@ public class LicenseIssuanceServiceTests
                 Result<LocalDrivingLicenseApplicationListDto>
                     .FromNotFound("Local application not found."));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -171,7 +162,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ApplicationIdLookupFails_PropagatesFailure()
     {
-        // Arrange
         const int localAppId = 10;
 
         SetupAuthenticatedUser();
@@ -184,13 +174,11 @@ public class LicenseIssuanceServiceTests
                 Result<int>.FromNotFound(
                     "Application was not found."));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -207,7 +195,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ApplicationNotFound_ReturnsNotFound()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
 
@@ -227,13 +214,11 @@ public class LicenseIssuanceServiceTests
                 Result<ApplicationDto>.FromNotFound(
                     "Application was not found."));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -244,7 +229,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_NotNewApplicationType_ReturnsConflict()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
 
@@ -262,13 +246,11 @@ public class LicenseIssuanceServiceTests
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -279,7 +261,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_InvalidApplicant_ReturnsValidationFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
 
@@ -297,13 +278,11 @@ public class LicenseIssuanceServiceTests
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
@@ -320,7 +299,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_PersonNotFound_ReturnsNotFound()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -346,13 +324,11 @@ public class LicenseIssuanceServiceTests
                 Result<PersonDto>.FromNotFound(
                     "Applicant person was not found."));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -370,7 +346,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_InvalidLicenseClassId_ReturnsValidationFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -391,13 +366,11 @@ public class LicenseIssuanceServiceTests
                 Result<PersonDto>.Success(
                     CreatePerson(personId)));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
@@ -414,7 +387,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_LicenseClassNotFound_ReturnsNotFound()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -439,13 +411,11 @@ public class LicenseIssuanceServiceTests
                 Result<LicenseClassDto>.FromNotFound(
                     "License class was not found."));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -454,7 +424,8 @@ public class LicenseIssuanceServiceTests
 
         _unitOfWorkMock.Verify(
             unitOfWork =>
-                unitOfWork.BeginTransactionAsync(
+                unitOfWork.ExecuteInTransactionAsync(
+                    It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                     It.IsAny<IsolationLevel>(),
                     It.IsAny<CancellationToken>()),
             Times.Never);
@@ -463,7 +434,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_InvalidValidityPeriod_ReturnsValidationFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -490,13 +460,11 @@ public class LicenseIssuanceServiceTests
                         licenseClassId,
                         validityLength: 0)));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
@@ -505,7 +473,8 @@ public class LicenseIssuanceServiceTests
 
         _unitOfWorkMock.Verify(
             unitOfWork =>
-                unitOfWork.BeginTransactionAsync(
+                unitOfWork.ExecuteInTransactionAsync(
+                    It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                     It.IsAny<IsolationLevel>(),
                     It.IsAny<CancellationToken>()),
             Times.Never);
@@ -514,7 +483,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_NegativeLicenseFees_ReturnsValidationFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -541,13 +509,11 @@ public class LicenseIssuanceServiceTests
                         licenseClassId,
                         fees: -1)));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
@@ -556,7 +522,8 @@ public class LicenseIssuanceServiceTests
 
         _unitOfWorkMock.Verify(
             unitOfWork =>
-                unitOfWork.BeginTransactionAsync(
+                unitOfWork.ExecuteInTransactionAsync(
+                    It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                     It.IsAny<IsolationLevel>(),
                     It.IsAny<CancellationToken>()),
             Times.Never);
@@ -566,7 +533,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ApplicationNotNewInsideTransaction_RollsBackAndReturnsConflict()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -585,13 +551,11 @@ public class LicenseIssuanceServiceTests
                 Result<ApplicationDto>.Success(
                     CreateApplication(applicationId, personId, AppStatus.Cancelled)));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -614,7 +578,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_NotAllTestsPassed_RollsBackAndReturnsConflict()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -647,13 +610,11 @@ public class LicenseIssuanceServiceTests
                 service.HasPassedAllTestsAsync(localAppId))
             .ReturnsAsync(false);
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -676,7 +637,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ApplicationAlreadyHasLicense_RollsBackAndReturnsConflict()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -693,13 +653,11 @@ public class LicenseIssuanceServiceTests
                 repository.IsApplicationHasLicenseAsync(applicationId))
             .ReturnsAsync(true);
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -717,7 +675,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ExistingDriverWithInvalidId_RollsBackAndReturnsFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -745,13 +702,11 @@ public class LicenseIssuanceServiceTests
                         PersonID = personId
                     }));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
@@ -768,7 +723,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_DriverNotFound_CreatesDriver()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -810,13 +764,11 @@ public class LicenseIssuanceServiceTests
         SetupSuccessfulLicenseSave();
         SetupSuccessfulCompletion(applicationId);
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.True(result.IsSuccess);
 
         _driverServiceMock.Verify(
@@ -830,7 +782,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_DriverCreationFails_RollsBackAndPropagatesFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -862,13 +813,11 @@ public class LicenseIssuanceServiceTests
                 Result<int>.FromFailure(
                     "Failed to create driver."));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
@@ -885,7 +834,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ActiveLicenseExists_RollsBackAndReturnsConflict()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -921,13 +869,11 @@ public class LicenseIssuanceServiceTests
                     3))
             .ReturnsAsync(true);
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -951,7 +897,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_SaveFails_RollsBackAndReturnsFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -992,13 +937,11 @@ public class LicenseIssuanceServiceTests
                     It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 " Test notes ");
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
@@ -1021,7 +964,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ApplicationCompletionFails_RollsBackAndPropagatesFailure()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -1068,13 +1010,11 @@ public class LicenseIssuanceServiceTests
             .ReturnsAsync(
                 Result.Failure("Failed to complete application."));
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 null);
 
-        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
@@ -1097,7 +1037,6 @@ public class LicenseIssuanceServiceTests
     [Fact]
     public async Task IssueFirstLicenseAsync_ValidRequest_ReturnsLicenseIdAndCommitsTransaction()
     {
-        // Arrange
         const int localAppId = 10;
         const int applicationId = 100;
         const int personId = 50;
@@ -1152,13 +1091,11 @@ public class LicenseIssuanceServiceTests
                 service.CompleteApplicationAsync(applicationId))
             .ReturnsAsync(Result.Success());
 
-        // Act
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
                 localAppId,
                 "   First license   ");
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(ErrorType.None, result.ErrorType);
         Assert.Equal(licenseId, result.Value);
@@ -1191,7 +1128,8 @@ public class LicenseIssuanceServiceTests
 
         _unitOfWorkMock.Verify(
             unitOfWork =>
-                unitOfWork.BeginTransactionAsync(
+                unitOfWork.ExecuteInTransactionAsync(
+                    It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                     IsolationLevel.Serializable,
                     It.IsAny<CancellationToken>()),
             Times.Once);
@@ -1235,11 +1173,32 @@ public class LicenseIssuanceServiceTests
     private void SetupTransaction()
     {
         _unitOfWorkMock
-            .Setup(unitOfWork =>
-                unitOfWork.BeginTransactionAsync(
-                    IsolationLevel.Serializable,
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_transactionMock.Object);
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+                IsolationLevel.Serializable,
+                It.IsAny<CancellationToken>()))
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result<int>>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                try
+                {
+                    var result = await operation(_transactionMock.Object);
+
+                    if (!result.IsSuccess)
+                    {
+                        await _transactionMock.Object.RollbackAsync();
+                    }
+
+                    return result;
+                }
+                catch
+                {
+                    await _transactionMock.Object.RollbackAsync();
+                    throw;
+                }
+            });
     }
 
     private void SetupValidPreTransactionState(

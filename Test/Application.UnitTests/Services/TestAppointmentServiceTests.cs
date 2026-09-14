@@ -47,10 +47,57 @@ public sealed class TestAppointmentServiceTests
     {
         _unitOfWork
             .Setup(x =>
-                x.BeginTransactionAsync(
+                x.ExecuteInTransactionAsync(
+                    It.IsAny<Func<IUnitOfWorkTransaction, Task<Result>>>(),
                     It.IsAny<IsolationLevel>(),
                     It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_transaction.Object);
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                try
+                {
+                    var result = await operation(_transaction.Object);
+
+                    if (result.IsFailure)
+                        await _transaction.Object.RollbackAsync();
+
+                    return result;
+                }
+                catch
+                {
+                    await _transaction.Object.RollbackAsync();
+                    throw;
+                }
+            });
+
+        _unitOfWork
+            .Setup(x =>
+                x.ExecuteInTransactionAsync(
+                    It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+                    It.IsAny<IsolationLevel>(),
+                    It.IsAny<CancellationToken>()))
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result<int>>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                try
+                {
+                    var result = await operation(_transaction.Object);
+
+                    if (result.IsFailure)
+                        await _transaction.Object.RollbackAsync();
+
+                    return result;
+                }
+                catch
+                {
+                    await _transaction.Object.RollbackAsync();
+                    throw;
+                }
+            });
 
         _unitOfWork
             .Setup(x =>
@@ -79,9 +126,9 @@ public sealed class TestAppointmentServiceTests
             .Returns(10);
 
         _repository
-        .Setup(x =>
-            x.LockLocalApplicationForSchedulingAsync(100))
-        .ReturnsAsync(true);
+            .Setup(x =>
+                x.LockLocalApplicationForSchedulingAsync(100))
+            .ReturnsAsync(true);
 
         return new TestAppointmentService(
             _unitOfWork.Object,

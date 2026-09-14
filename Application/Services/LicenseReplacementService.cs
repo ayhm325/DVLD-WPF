@@ -23,19 +23,14 @@ public sealed class LicenseReplacementService(
 
     private readonly ILicenseRepository _licenseRepository =
         licenseRepository ?? throw new ArgumentNullException(nameof(licenseRepository));
-
     private readonly IApplicationService _applicationService =
         applicationService ?? throw new ArgumentNullException(nameof(applicationService));
-
     private readonly IApplicationTypeService _applicationTypeService =
         applicationTypeService ?? throw new ArgumentNullException(nameof(applicationTypeService));
-
     private readonly ICurrentUserService _currentUserService =
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-
     private readonly IUnitOfWork _unitOfWork =
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-
     private readonly ILogger<LicenseReplacementService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -68,117 +63,120 @@ public sealed class LicenseReplacementService(
             return PropagateFailure<int>(applicationTypeResult);
 
         if (applicationTypeResult.Value is null)
-            return Result<int>.FromNotFound("Replacement application type not found.");
+            return Result<int>.FromNotFound(
+                "Replacement application type not found.");
 
-        await using var transaction =
-            await _unitOfWork.BeginTransactionAsync(IsolationLevel.Serializable);
-
-        try
-        {
-            var oldLicense = await _licenseRepository.GetLicenseByIdAsync(oldLicenseId);
-
-            if (oldLicense is null)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromNotFound("License not found."));
-
-            if (!oldLicense.IsActive)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict("Cannot replace an inactive license."));
-
-            if (oldLicense.Driver is null)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromNotFound("Driver information is not available."));
-
-            if (oldLicense.LicenseClassInfo is null)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromNotFound("License class information is not available."));
-
-            var now = DateTime.UtcNow;
-
-            if (oldLicense.ExpirationDate <= now)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromConflict("Cannot replace an expired license."));
-
-            var applicationResult = await _applicationService.AddNewApplicationAsync(
-                new CreateApplicationDto
-                {
-                    ApplicantPersonID = oldLicense.Driver.PersonID,
-                    ApplicationTypeID = replacementInfo.Value.ApplicationTypeId
-                });
-
-            if (applicationResult.IsFailure)
-                return await RollbackAsync(
-                    transaction,
-                    PropagateFailure<int>(applicationResult));
-
-            var applicationId = applicationResult.Value;
-
-            if (applicationId <= 0)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromFailure(
-                        "Failed to create replacement application."));
-
-            var createLicenseDto = new CreateLicenseDto
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async transaction =>
             {
-                ApplicationID = applicationId,
-                DriverID = oldLicense.DriverID,
-                LicenseClassID = oldLicense.LicenseClass,
-                IssueDate = now,
-                ExpirationDate = oldLicense.ExpirationDate,
-                PaidFees = oldLicense.LicenseClassInfo.ClassFees,
-                Notes = reason,
-                IssueReason = replacementInfo.Value.IssueReason
-            };
+                var oldLicense =
+                    await _licenseRepository.GetLicenseByIdAsync(oldLicenseId);
 
-            var licenseValidation = LicenseValidator.ValidateCreate(createLicenseDto);
+                if (oldLicense is null)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromNotFound("License not found."));
 
-            if (licenseValidation.IsFailure)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromValidationFailure(licenseValidation.Error));
+                if (!oldLicense.IsActive)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "Cannot replace an inactive license."));
 
-            if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId))
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromFailure(
-                        "Failed to deactivate the old license."));
+                if (oldLicense.Driver is null)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromNotFound(
+                            "Driver information is not available."));
 
-            var newLicense = LicenseMapper.ToEntity(createLicenseDto);
-            newLicense.CreatedByUserID = _currentUserService.UserId;
+                if (oldLicense.LicenseClassInfo is null)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromNotFound(
+                            "License class information is not available."));
 
-            await _licenseRepository.AddLicenseAsync(newLicense);
+                var now = DateTime.UtcNow;
 
-            var saved = await _unitOfWork.SaveChangesAsync();
+                if (oldLicense.ExpirationDate <= now)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "Cannot replace an expired license."));
 
-            if (saved <= 0 || newLicense.LicenseID <= 0)
-                return await RollbackAsync(
-                    transaction,
-                    Result<int>.FromFailure(
-                        "Failed to save the replacement license."));
+                var applicationResult =
+                    await _applicationService.AddNewApplicationAsync(
+                        new CreateApplicationDto
+                        {
+                            ApplicantPersonID = oldLicense.Driver.PersonID,
+                            ApplicationTypeID =
+                                replacementInfo.Value.ApplicationTypeId
+                        });
 
-            var completeResult =
-                await _applicationService.CompleteApplicationAsync(applicationId);
+                if (applicationResult.IsFailure)
+                    return await RollbackAsync(
+                        transaction,
+                        PropagateFailure<int>(applicationResult));
 
-            if (completeResult.IsFailure)
-                return await RollbackAsync(
-                    transaction,
-                    PropagateFailure<int>(completeResult));
+                var applicationId = applicationResult.Value;
 
-            await transaction.CommitAsync();
+                if (applicationId <= 0)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromFailure(
+                            "Failed to create replacement application."));
 
-            return Result<int>.Success(newLicense.LicenseID);
-        }
-        catch (Exception)
-        {
-            await RollbackSafelyAsync(transaction, oldLicenseId);
-            throw;
-        }
+                var createLicenseDto = new CreateLicenseDto
+                {
+                    ApplicationID = applicationId,
+                    DriverID = oldLicense.DriverID,
+                    LicenseClassID = oldLicense.LicenseClass,
+                    IssueDate = now,
+                    ExpirationDate = oldLicense.ExpirationDate,
+                    PaidFees = oldLicense.LicenseClassInfo.ClassFees,
+                    Notes = reason,
+                    IssueReason = replacementInfo.Value.IssueReason
+                };
+
+                var licenseValidation =
+                    LicenseValidator.ValidateCreate(createLicenseDto);
+
+                if (licenseValidation.IsFailure)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromValidationFailure(
+                            licenseValidation.Error));
+
+                if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId))
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromFailure(
+                            "Failed to deactivate the old license."));
+
+                var newLicense = LicenseMapper.ToEntity(createLicenseDto);
+                newLicense.CreatedByUserID = _currentUserService.UserId;
+
+                await _licenseRepository.AddLicenseAsync(newLicense);
+
+                if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                    newLicense.LicenseID <= 0)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromFailure(
+                            "Failed to save the replacement license."));
+
+                var completeResult =
+                    await _applicationService.CompleteApplicationAsync(applicationId);
+
+                if (completeResult.IsFailure)
+                    return await RollbackAsync(
+                        transaction,
+                        PropagateFailure<int>(completeResult));
+
+                await transaction.CommitAsync();
+
+                return Result<int>.Success(newLicense.LicenseID);
+            },
+            IsolationLevel.Serializable);
     }
 
     private bool IsAuthenticated() =>
@@ -200,29 +198,13 @@ public sealed class LicenseReplacementService(
         return result;
     }
 
-    private async Task RollbackSafelyAsync(
-        IUnitOfWorkTransaction transaction,
-        int licenseId)
-    {
-        try
+    private static Result<T> PropagateFailure<T>(Result source) =>
+        source.ErrorType switch
         {
-            await transaction.RollbackAsync();
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(
-                exception,
-                "Rollback failed while replacing license {LicenseId}.",
-                licenseId);
-        }
-    }
-
-    private static Result<T> PropagateFailure<T>(Result source) => source.ErrorType switch
-    {
-        ErrorType.Validation => Result<T>.FromValidationFailure(source.Error),
-        ErrorType.NotFound => Result<T>.FromNotFound(source.Error),
-        ErrorType.Conflict => Result<T>.FromConflict(source.Error),
-        ErrorType.Forbidden => Result<T>.FromForbidden(source.Error),
-        _ => Result<T>.FromFailure(source.Error)
-    };
+            ErrorType.Validation => Result<T>.FromValidationFailure(source.Error),
+            ErrorType.NotFound => Result<T>.FromNotFound(source.Error),
+            ErrorType.Conflict => Result<T>.FromConflict(source.Error),
+            ErrorType.Forbidden => Result<T>.FromForbidden(source.Error),
+            _ => Result<T>.FromFailure(source.Error)
+        };
 }

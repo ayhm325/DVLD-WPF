@@ -32,10 +32,6 @@ public class LicenseRenewalServiceTests
             _logger.Object);
     }
 
-    // =========================================================
-    // Validation / Authentication
-    // =========================================================
-
     [Fact]
     public async Task RenewLicenseAsync_WhenLicenseIdIsInvalid_ReturnsValidationFailure()
     {
@@ -74,11 +70,10 @@ public class LicenseRenewalServiceTests
             x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
             Times.Never);
 
-        _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
-                It.IsAny<IsolationLevel>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        _unitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+            It.IsAny<IsolationLevel>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -105,10 +100,6 @@ public class LicenseRenewalServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Application Type
-    // =========================================================
-
     [Fact]
     public async Task RenewLicenseAsync_WhenApplicationTypeFails_PropagatesFailure()
     {
@@ -128,11 +119,10 @@ public class LicenseRenewalServiceTests
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal("Application type not found.", result.Error);
 
-        _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
-                It.IsAny<IsolationLevel>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        _unitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+            It.IsAny<IsolationLevel>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -155,16 +145,11 @@ public class LicenseRenewalServiceTests
             "Renewal application type not found.",
             result.Error);
 
-        _unitOfWork.Verify(
-            x => x.BeginTransactionAsync(
-                It.IsAny<IsolationLevel>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        _unitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+            It.IsAny<IsolationLevel>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
-
-    // =========================================================
-    // Old License Preconditions
-    // =========================================================
 
     [Fact]
     public async Task RenewLicenseAsync_WhenOldLicenseDoesNotExist_ReturnsNotFoundAndRollsBack()
@@ -373,10 +358,6 @@ public class LicenseRenewalServiceTests
         VerifyRollback(transaction);
     }
 
-    // =========================================================
-    // Renewal Application
-    // =========================================================
-
     [Fact]
     public async Task RenewLicenseAsync_WhenCreatingApplicationFails_PropagatesFailureAndRollsBack()
     {
@@ -443,10 +424,6 @@ public class LicenseRenewalServiceTests
         VerifyRollback(transaction);
     }
 
-    // =========================================================
-    // Deactivation
-    // =========================================================
-
     [Fact]
     public async Task RenewLicenseAsync_WhenDeactivationFails_ReturnsFailureAndRollsBack()
     {
@@ -481,10 +458,6 @@ public class LicenseRenewalServiceTests
             x => x.AddLicenseAsync(It.IsAny<License>()),
             Times.Never);
     }
-
-    // =========================================================
-    // Save
-    // =========================================================
 
     [Fact]
     public async Task RenewLicenseAsync_WhenSaveChangesFails_ReturnsFailureAndRollsBack()
@@ -528,10 +501,6 @@ public class LicenseRenewalServiceTests
             x => x.CompleteApplicationAsync(It.IsAny<int>()),
             Times.Never);
     }
-
-    // =========================================================
-    // Complete Application
-    // =========================================================
 
     [Fact]
     public async Task RenewLicenseAsync_WhenCompletingApplicationFails_PropagatesFailureAndRollsBack()
@@ -591,10 +560,6 @@ public class LicenseRenewalServiceTests
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
-    // =========================================================
-    // Successful Renewal
-    // =========================================================
 
     [Fact]
     public async Task RenewLicenseAsync_WhenValid_ReturnsNewLicenseIdAndCommits()
@@ -763,10 +728,6 @@ public class LicenseRenewalServiceTests
             Times.Once);
     }
 
-    // =========================================================
-    // Exception / Rollback
-    // =========================================================
-
     [Fact]
     public async Task RenewLicenseAsync_WhenExceptionOccurs_RollsBackAndRethrows()
     {
@@ -800,10 +761,6 @@ public class LicenseRenewalServiceTests
             Times.Never);
     }
 
-    // =========================================================
-    // Helpers
-    // =========================================================
-
     private void SetupAuthenticatedUser()
     {
         _currentUserService
@@ -830,10 +787,22 @@ public class LicenseRenewalServiceTests
     private void SetupTransaction(Mock<IUnitOfWorkTransaction> transaction)
     {
         _unitOfWork
-            .Setup(x => x.BeginTransactionAsync(
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
                 IsolationLevel.Serializable,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(transaction.Object);
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result<int>>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                try { return await operation(transaction.Object); }
+                catch
+                {
+                    await transaction.Object.RollbackAsync();
+                    throw;
+                }
+            });
     }
 
     private Mock<IUnitOfWorkTransaction> CreateTransactionMock()
