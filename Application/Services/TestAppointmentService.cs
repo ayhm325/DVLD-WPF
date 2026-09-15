@@ -66,13 +66,13 @@ public sealed class TestAppointmentService(
             entities.Select(TestAppointmentMapper.ToDto).ToList());
     }
 
-    public async Task<Result<List<TestAppointmentDto>>> GetByTestTypeIdAsync(TestTypeEnum testType)
+    public async Task<Result<List<TestAppointmentDto>>> GetByTestTypeIdAsync(int testType)
     {
         var validation = TestAppointmentValidator.ValidateTestTypeId((int)testType);
         if (validation.IsFailure)
             return Result<List<TestAppointmentDto>>.FromValidationFailure(validation.Error);
 
-        var entities = await _repository.GetByTestTypeIdAsync(testType);
+        var entities = await _repository.GetByTestTypeIdAsync((TestTypeEnum)testType);
 
         return Result<List<TestAppointmentDto>>.Success(
             entities.Select(TestAppointmentMapper.ToDto).ToList());

@@ -1,7 +1,5 @@
 ﻿using Application.Common.Results;
-using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
-using Domain.Enums;
 
 namespace Application.Interfaces;
 
@@ -14,8 +12,7 @@ public interface ITestAppointmentService
     Task<Result<List<TestAppointmentDto>>> GetByLocalDrivingLicenseApplicationIdAsync(
         int localAppId);
 
-    Task<Result<List<TestAppointmentDto>>> GetByTestTypeIdAsync(
-        TestTypeEnum testType);
+    Task<Result<List<TestAppointmentDto>>> GetByTestTypeIdAsync(int testType);
 
     Task<Result<List<TestAppointmentDto>>> GetByCreatedUserIdAsync(int userId);
 

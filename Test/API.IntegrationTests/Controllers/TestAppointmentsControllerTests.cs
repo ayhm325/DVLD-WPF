@@ -363,12 +363,11 @@ public sealed class TestAppointmentsControllerTests
         var dto =
             CreateTestAppointmentDto(40);
 
-        var testType =
-            (TestTypeEnum)1;
+        var testType = (int)1;
 
         _factory.TestAppointmentServiceMock
             .Setup(x =>
-                x.GetByTestTypeIdAsync(testType))
+                x.GetByTestTypeIdAsync((int)testType))
             .ReturnsAsync(
                 Result<List<TestAppointmentDto>>.Success(
                     new List<TestAppointmentDto>
@@ -405,7 +404,7 @@ public sealed class TestAppointmentsControllerTests
     public async Task GetByTestType_WhenFailure_ReturnsMappedFailure()
     {
         var testType =
-            (TestTypeEnum)1;
+            (int)1;
 
         _factory.TestAppointmentServiceMock
             .Setup(x =>

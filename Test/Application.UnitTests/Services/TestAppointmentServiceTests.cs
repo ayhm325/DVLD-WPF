@@ -1,5 +1,4 @@
 ﻿using Application.Common.Results;
-using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
@@ -600,7 +599,7 @@ public sealed class TestAppointmentServiceTests
 
         var result =
             await service.GetByTestTypeIdAsync(
-                (TestTypeEnum)999);
+                (int)999);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -623,9 +622,7 @@ public sealed class TestAppointmentServiceTests
                 ValidAppointment(1)
             ]);
 
-        var result =
-            await service.GetByTestTypeIdAsync(
-                TestTypeEnum.Theory);
+        var result = await service.GetByTestTypeIdAsync((int)TestTypeEnum.Theory);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value!);

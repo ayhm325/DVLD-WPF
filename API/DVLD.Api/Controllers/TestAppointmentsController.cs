@@ -1,7 +1,6 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
-using Domain.Enums;
 using DVLD.Contracts.TestAppointment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -60,10 +59,10 @@ public sealed class TestAppointmentsController(
 
     [HttpGet("test-type/{testType}")]
     public async Task<IActionResult> GetByTestType(
-        TestTypeEnum testType)
+        int testType)
     {
         var result =
-            await service.GetByTestTypeIdAsync(testType);
+            await service.GetByTestTypeIdAsync((int)testType);
 
         if (result.IsFailure)
             return HandleFailure(result);
