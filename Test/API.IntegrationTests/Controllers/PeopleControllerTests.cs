@@ -49,7 +49,7 @@ public sealed class PeopleControllerTests
                 thirdName: "Ali",
                 lastName: "Obeidat",
                 fullName: "Ahmad Mohammed Ali Obeidat",
-                gender: Gender.Male,
+                gender: (int)Gender.Male,
                 countryName: "Jordan"),
 
             CreatePersonDto(
@@ -60,7 +60,7 @@ public sealed class PeopleControllerTests
                 thirdName: null,
                 lastName: "Ali",
                 fullName: "Sara Mohammed Ali",
-                gender: Gender.Female,
+                gender: (int)Gender.Female,
                 countryName: "Jordan")
         };
 
@@ -208,7 +208,7 @@ public sealed class PeopleControllerTests
                 thirdName: "Ali",
                 lastName: "Obeidat",
                 fullName: "Ahmad Mohammed Ali Obeidat",
-                gender: Gender.Male,
+                gender: (int)Gender.Male,
                 countryName: "Jordan");
 
         factory.PersonServiceMock
@@ -317,7 +317,7 @@ public sealed class PeopleControllerTests
                 thirdName: null,
                 lastName: "Omar",
                 fullName: "Khaled Ali Omar",
-                gender: Gender.Male,
+                gender: (int)Gender.Male,
                 countryName: "Jordan");
 
         factory.PersonServiceMock
@@ -482,7 +482,7 @@ public sealed class PeopleControllerTests
                             dto.LastName == "Obeidat" &&
                             dto.DateOfBirth ==
                                 new DateTime(1996, 5, 10) &&
-                            dto.Gender == Gender.Male &&
+                            dto.Gender == (int)Gender.Male &&
                             dto.Address == "Amman" &&
                             dto.Phone == "0791234567" &&
                             dto.Email == "ahmad@example.com" &&
@@ -665,7 +665,7 @@ public sealed class PeopleControllerTests
                             dto.LastName == "Obeidat" &&
                             dto.DateOfBirth ==
                                 new DateTime(1995, 4, 20) &&
-                            dto.Gender == Gender.Female &&
+                            dto.Gender == (int)Gender.Female &&
                             dto.Address == "Irbid" &&
                             dto.Phone == "0781234567" &&
                             dto.Email == "updated@example.com" &&
@@ -967,7 +967,7 @@ public sealed class PeopleControllerTests
         string? thirdName,
         string lastName,
         string fullName,
-        Gender gender,
+        int gender,
         string countryName)
     {
         return new PersonDto

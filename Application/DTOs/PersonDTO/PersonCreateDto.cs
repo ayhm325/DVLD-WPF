@@ -1,6 +1,4 @@
 ﻿
-using Domain.Enums;
-
 namespace Application.DTOs.PersonDTO;
 
 public class PersonCreateDto
@@ -17,7 +15,7 @@ public class PersonCreateDto
 
     public DateTime DateOfBirth { get; set; }
 
-    public Gender Gender { get; set; }
+    public int Gender { get; set; }
 
     public string Address { get; set; } = null!;
 

@@ -99,7 +99,7 @@ public class PersonServiceTests
         Assert.Equal(person.SecondName, result.Value.SecondName);
         Assert.Equal(person.LastName, result.Value.LastName);
         Assert.Equal(person.DateOfBirth, result.Value.DateOfBirth);
-        Assert.Equal(person.Gender, result.Value.Gender);
+        Assert.Equal((int)person.Gender, result.Value.Gender);
         Assert.Equal(person.Address, result.Value.Address);
         Assert.Equal(person.Phone, result.Value.Phone);
         Assert.Equal(person.Email, result.Value.Email);
@@ -390,7 +390,7 @@ public class PersonServiceTests
             SecondName = "",
             LastName = "",
             DateOfBirth = DateTime.Now.AddYears(1),
-            Gender = Gender.Male,
+            Gender = (int)Gender.Male,
             Address = "",
             Phone = "",
             Email = null,
@@ -621,7 +621,7 @@ public class PersonServiceTests
             SecondName = "",
             LastName = "",
             DateOfBirth = DateTime.Now.AddYears(1),
-            Gender = Gender.Male,
+            Gender = (int)Gender.Male,
             Address = "",
             Phone = "",
             Email = null,
@@ -1126,7 +1126,7 @@ public class PersonServiceTests
             ThirdName = null,
             LastName = "Obeidat",
             DateOfBirth = new DateTime(1993, 1, 1),
-            Gender = Gender.Male,
+            Gender = (int)Gender.Male,
             Address = "Amman",
             Phone = "0791234567",
             Email = "ayhm@example.com",
@@ -1145,7 +1145,7 @@ public class PersonServiceTests
             ThirdName = "Test",
             LastName = "Obeidat",
             DateOfBirth = new DateTime(1992, 5, 10),
-            Gender = Gender.Male,
+            Gender = (int)Gender.Male,
             Address = "Irbid",
             Phone = "0781234567",
             Email = "updated@example.com",

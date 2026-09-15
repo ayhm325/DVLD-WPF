@@ -31,7 +31,7 @@ public static class PersonMapper
 
             DateOfBirth = person.DateOfBirth,
 
-            Gender = person.Gender,
+            Gender = (int)person.Gender,
 
             Address = person.Address,
 
@@ -79,8 +79,7 @@ public static class PersonMapper
             DateOfBirth =
                 dto.DateOfBirth,
 
-            Gender =
-                dto.Gender,
+            Gender = (Domain.Enums.Gender)dto.Gender,
 
             Address =
                 NormalizeRequired(dto.Address),
@@ -128,8 +127,7 @@ public static class PersonMapper
         person.DateOfBirth =
             dto.DateOfBirth;
 
-        person.Gender =
-            dto.Gender;
+        person.Gender = (Domain.Enums.Gender)dto.Gender;
 
         person.Address =
             NormalizeRequired(dto.Address);

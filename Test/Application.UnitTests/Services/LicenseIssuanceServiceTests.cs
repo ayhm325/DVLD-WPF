@@ -1377,7 +1377,7 @@ public class LicenseIssuanceServiceTests
             LastName = "User",
             FullName = "Test Person User",
             DateOfBirth = new DateTime(1990, 1, 1),
-            Gender = Gender.Male,
+            Gender = (int)Gender.Male,
             Address = "Amman",
             Phone = "0791234567",
             Email = "test@example.com",

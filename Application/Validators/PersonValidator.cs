@@ -1,6 +1,5 @@
 ﻿using Application.Common.Results;
 using Application.DTOs.PersonDTO;
-using Domain.Enums;
 using System.Text.RegularExpressions;
 
 namespace Application.Validators;
@@ -75,7 +74,7 @@ public static class PersonValidator
         string? thirdName,
         string? lastName,
         DateTime dateOfBirth,
-        Gender gender,
+        int gender,
         string? address,
         string? phone,
         string? email,
@@ -214,11 +213,9 @@ public static class PersonValidator
         }
 
         if (!Enum.IsDefined(
-                typeof(Gender),
-                gender))
+        typeof(Domain.Enums.Gender),(byte)gender))
         {
-            errors.Add(
-                "Invalid gender value.");
+            errors.Add("Invalid gender value.");
         }
 
         if (nationalityCountryId <= 0)
