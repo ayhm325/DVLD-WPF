@@ -21,7 +21,7 @@ public sealed class PeopleController(
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(result.Value!.Select(ToResponse).ToList());
+        return Ok(result.Value!.Select(ToListResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
@@ -162,4 +162,17 @@ public sealed class PeopleController(
                 StatusCode = StatusCodes.Status500InternalServerError
             }
         };
+
+    private static ContractPerson.PersonListResponse ToListResponse(PersonDto dto) => new()
+    {
+        PersonId = dto.PersonId,
+        NationalNo = dto.NationalNo,
+        FullName = dto.FullName,
+        DateOfBirth = dto.DateOfBirth,
+        Gender = (ContractPerson.Gender)dto.Gender,
+        Address = dto.Address,
+        Phone = dto.Phone,
+        Email = dto.Email,
+        CountryName = dto.CountryName
+    };
 }

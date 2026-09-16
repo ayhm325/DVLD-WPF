@@ -5,7 +5,7 @@ namespace Presentation.Services.Api;
 
 public interface IDriversApiClient
 {
-    Task<ApiResult<IReadOnlyList<DriverResponse>>>
+    Task<ApiResult<IReadOnlyList<DriverListResponse>>>
         GetAllAsync(
             CancellationToken cancellationToken = default);
 

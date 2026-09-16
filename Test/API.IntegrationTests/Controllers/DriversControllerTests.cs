@@ -30,25 +30,23 @@ public sealed class DriversControllerTests
         await using var factory = new ApiWebApplicationFactory();
         using var client = CreateAuthenticatedClient(factory);
 
-        var createdDate = new DateTime(2026, 9, 10, 14, 30, 0);
-
         var drivers = new List<DriverDto>
+    {
+        new()
         {
-            new()
-            {
-                DriverID = 10,
-                PersonID = 20,
-                FullName = "Ahmad Mohammed",
-                NationalNo = "123456789",
-                DateOfBirth = new DateTime(1990, 5, 10),
-                Gender = Gender.Male,
-                ImagePath = "ahmad.jpg",
-                ActiveLicenses = 2,
-                CreatedByUserID = 5,
-                CreatedByUserName = "admin",
-                CreatedDate = createdDate
-            }
-        };
+            DriverID = 10,
+            PersonID = 20,
+            FullName = "Ahmad Mohammed",
+            NationalNo = "123456789",
+            DateOfBirth = new DateTime(1990, 5, 10),
+            Gender = Gender.Male,
+            ImagePath = "ahmad.jpg",
+            ActiveLicenses = 2,
+            CreatedByUserID = 5,
+            CreatedByUserName = "admin",
+            CreatedDate = new DateTime(2026, 9, 10, 14, 30, 0)
+        }
+    };
 
         factory.DriverServiceMock
             .Setup(x => x.GetAllAsync())
@@ -59,9 +57,10 @@ public sealed class DriversControllerTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content
-            .ReadFromJsonAsync<List<DriverResponse>>();
+            .ReadFromJsonAsync<List<DriverListResponse>>();
 
         Assert.NotNull(body);
+
         var driver = Assert.Single(body);
 
         Assert.Equal(10, driver.DriverId);
@@ -69,12 +68,17 @@ public sealed class DriversControllerTests
         Assert.Equal("Ahmad Mohammed", driver.FullName);
         Assert.Equal("123456789", driver.NationalNo);
         Assert.Equal(new DateTime(1990, 5, 10), driver.DateOfBirth);
-        Assert.Equal("Male", driver.Gender);
-        Assert.Equal("ahmad.jpg", driver.ImagePath);
         Assert.Equal(2, driver.ActiveLicenses);
-        Assert.Equal(5, driver.CreatedByUserId);
-        Assert.Equal("admin", driver.CreatedByUserName);
-        Assert.Equal(createdDate, driver.CreatedDate);
+        Assert.Equal(
+            new DateTime(2026, 9, 10, 14, 30, 0),
+            driver.CreatedDate);
+
+        var json = await response.Content.ReadAsStringAsync();
+
+        Assert.DoesNotContain("\"gender\"", json);
+        Assert.DoesNotContain("\"imagePath\"", json);
+        Assert.DoesNotContain("\"createdByUserId\"", json);
+        Assert.DoesNotContain("\"createdByUserName\"", json);
 
         factory.DriverServiceMock.Verify(
             x => x.GetAllAsync(),
@@ -89,19 +93,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DriverDto>>.FromFailure(
-                    "Failed to retrieve drivers."));
+            .ReturnsAsync(Result<List<DriverDto>>.FromFailure("Failed to retrieve drivers."));
 
         var response = await client.GetAsync("/api/Drivers");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Failed to retrieve drivers.");
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        await AssertErrorAsync(response, "Failed to retrieve drivers.");
     }
 
     [Fact]
@@ -118,7 +115,6 @@ public sealed class DriversControllerTests
             NationalNo = "987654321",
             DateOfBirth = new DateTime(1988, 3, 20),
             Gender = Gender.Male,
-            ImagePath = null,
             ActiveLicenses = 1,
             CreatedByUserID = 7,
             CreatedByUserName = "staff",
@@ -133,8 +129,7 @@ public sealed class DriversControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var body = await response.Content
-            .ReadFromJsonAsync<DriverResponse>();
+        var body = await response.Content.ReadFromJsonAsync<DriverResponse>();
 
         Assert.NotNull(body);
         Assert.Equal(15, body.DriverId);
@@ -153,17 +148,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.GetByIdAsync(999))
-            .ReturnsAsync(
-                Result<DriverDto>.FromNotFound(
-                    "Driver not found."));
+            .ReturnsAsync(Result<DriverDto>.FromNotFound("Driver not found."));
 
         var response = await client.GetAsync("/api/Drivers/999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Driver not found.");
+        await AssertErrorAsync(response, "Driver not found.");
     }
 
     [Fact]
@@ -174,17 +164,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.GetByIdAsync(0))
-            .ReturnsAsync(
-                Result<DriverDto>.FromValidationFailure(
-                    "Invalid driver ID."));
+            .ReturnsAsync(Result<DriverDto>.FromValidationFailure("Invalid driver ID."));
 
         var response = await client.GetAsync("/api/Drivers/0");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Invalid driver ID.");
+        await AssertErrorAsync(response, "Invalid driver ID.");
     }
 
     [Fact]
@@ -211,13 +196,11 @@ public sealed class DriversControllerTests
             .Setup(x => x.GetByPersonIdAsync(40))
             .ReturnsAsync(Result<DriverDto>.Success(driver));
 
-        var response =
-            await client.GetAsync("/api/Drivers/person/40");
+        var response = await client.GetAsync("/api/Drivers/person/40");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var body = await response.Content
-            .ReadFromJsonAsync<DriverResponse>();
+        var body = await response.Content.ReadFromJsonAsync<DriverResponse>();
 
         Assert.NotNull(body);
         Assert.Equal(30, body.DriverId);
@@ -234,18 +217,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.GetByPersonIdAsync(404))
-            .ReturnsAsync(
-                Result<DriverDto>.FromNotFound(
-                    "Driver not found."));
+            .ReturnsAsync(Result<DriverDto>.FromNotFound("Driver not found."));
 
-        var response =
-            await client.GetAsync("/api/Drivers/person/404");
+        var response = await client.GetAsync("/api/Drivers/person/404");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Driver not found.");
+        await AssertErrorAsync(response, "Driver not found.");
     }
 
     [Fact]
@@ -282,8 +259,7 @@ public sealed class DriversControllerTests
             .Setup(x => x.GetByCreatedUserIdAsync(50))
             .ReturnsAsync(Result<List<DriverDto>>.Success(drivers));
 
-        var response =
-            await client.GetAsync("/api/Drivers/created-by/50");
+        var response = await client.GetAsync("/api/Drivers/created-by/50");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -292,11 +268,9 @@ public sealed class DriversControllerTests
 
         Assert.NotNull(body);
         Assert.Equal(2, body.Count);
-
         Assert.Equal(1, body[0].DriverId);
         Assert.Equal("First Driver", body[0].FullName);
         Assert.Equal("Male", body[0].Gender);
-
         Assert.Equal(2, body[1].DriverId);
         Assert.Equal("Second Driver", body[1].FullName);
         Assert.Equal("Female", body[1].Gender);
@@ -310,18 +284,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.GetByCreatedUserIdAsync(0))
-            .ReturnsAsync(
-                Result<List<DriverDto>>.FromValidationFailure(
-                    "Invalid created user ID."));
+            .ReturnsAsync(Result<List<DriverDto>>.FromValidationFailure("Invalid created user ID."));
 
-        var response =
-            await client.GetAsync("/api/Drivers/created-by/0");
+        var response = await client.GetAsync("/api/Drivers/created-by/0");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Invalid created user ID.");
+        await AssertErrorAsync(response, "Invalid created user ID.");
     }
 
     [Fact]
@@ -331,44 +299,22 @@ public sealed class DriversControllerTests
         using var client = CreateAuthenticatedClient(factory);
 
         factory.DriverServiceMock
-            .Setup(x => x.AddAsync(
-                It.Is<CreateDriverDto>(
-                    dto => dto.PersonID == 123)))
+            .Setup(x => x.AddAsync(It.Is<CreateDriverDto>(dto => dto.PersonID == 123)))
             .ReturnsAsync(Result<int>.Success(77));
 
-        var request = new
-        {
-            PersonId = 123
-        };
+        var response = await client.PostAsJsonAsync("/api/Drivers", new { PersonId = 123 });
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/Drivers",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Created,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
-        Assert.Contains(
-            "/api/Drivers/77",
-            response.Headers.Location!.ToString());
+        Assert.Contains("/api/Drivers/77", response.Headers.Location!.ToString());
 
-        using var document =
-            JsonDocument.Parse(
-                await response.Content.ReadAsStringAsync());
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        Assert.Equal(
-            77,
-            document.RootElement
-                .GetProperty("driverId")
-                .GetInt32());
+        Assert.Equal(77, document.RootElement.GetProperty("driverId").GetInt32());
 
         factory.DriverServiceMock.Verify(
-            x => x.AddAsync(
-                It.Is<CreateDriverDto>(
-                    dto => dto.PersonID == 123)),
+            x => x.AddAsync(It.Is<CreateDriverDto>(dto => dto.PersonID == 123)),
             Times.Once);
     }
 
@@ -380,23 +326,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.AddAsync(It.IsAny<CreateDriverDto>()))
-            .ReturnsAsync(
-                Result<int>.FromValidationFailure(
-                    "Person ID is invalid."));
+            .ReturnsAsync(Result<int>.FromValidationFailure("Person ID is invalid."));
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/Drivers",
-                new
-                {
-                    PersonId = 0
-                });
+        var response = await client.PostAsJsonAsync("/api/Drivers", new { PersonId = 0 });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Person ID is invalid.");
+        await AssertErrorAsync(response, "Person ID is invalid.");
     }
 
     [Fact]
@@ -407,23 +342,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.AddAsync(It.IsAny<CreateDriverDto>()))
-            .ReturnsAsync(
-                Result<int>.FromNotFound(
-                    "Person not found."));
+            .ReturnsAsync(Result<int>.FromNotFound("Person not found."));
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/Drivers",
-                new
-                {
-                    PersonId = 999
-                });
+        var response = await client.PostAsJsonAsync("/api/Drivers", new { PersonId = 999 });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Person not found.");
+        await AssertErrorAsync(response, "Person not found.");
     }
 
     [Fact]
@@ -434,22 +358,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.AddAsync(It.IsAny<CreateDriverDto>()))
-            .ReturnsAsync(
-                Result<int>.FromConflict(
-                    "This person is already registered as a driver."));
+            .ReturnsAsync(Result<int>.FromConflict(
+                "This person is already registered as a driver."));
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/Drivers",
-                new
-                {
-                    PersonId = 123
-                });
+        var response = await client.PostAsJsonAsync("/api/Drivers", new { PersonId = 123 });
 
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         await AssertErrorAsync(
             response,
             "This person is already registered as a driver.");
@@ -461,21 +375,11 @@ public sealed class DriversControllerTests
         await using var factory = new ApiWebApplicationFactory();
         using var client = CreateAuthenticatedClient(factory);
 
-        var request = new
-        {
-            DriverId = 20,
-            PersonId = 50
-        };
+        var response = await client.PutAsJsonAsync(
+            "/api/Drivers/10",
+            new { DriverId = 20, PersonId = 50 });
 
-        var response =
-            await client.PutAsJsonAsync(
-                "/api/Drivers/10",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         await AssertErrorAsync(
             response,
             "The route driver id does not match the request driver id.");
@@ -492,34 +396,19 @@ public sealed class DriversControllerTests
         using var client = CreateAuthenticatedClient(factory);
 
         factory.DriverServiceMock
-            .Setup(x => x.UpdateAsync(
-                It.Is<UpdateDriverDto>(
-                    dto =>
-                        dto.DriverID == 20 &&
-                        dto.PersonID == 50)))
+            .Setup(x => x.UpdateAsync(It.Is<UpdateDriverDto>(
+                dto => dto.DriverID == 20 && dto.PersonID == 50)))
             .ReturnsAsync(Result.Success());
 
-        var request = new
-        {
-            DriverId = 20,
-            PersonId = 50
-        };
+        var response = await client.PutAsJsonAsync(
+            "/api/Drivers/20",
+            new { DriverId = 20, PersonId = 50 });
 
-        var response =
-            await client.PutAsJsonAsync(
-                "/api/Drivers/20",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.NoContent,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         factory.DriverServiceMock.Verify(
-            x => x.UpdateAsync(
-                It.Is<UpdateDriverDto>(
-                    dto =>
-                        dto.DriverID == 20 &&
-                        dto.PersonID == 50)),
+            x => x.UpdateAsync(It.Is<UpdateDriverDto>(
+                dto => dto.DriverID == 20 && dto.PersonID == 50)),
             Times.Once);
     }
 
@@ -531,26 +420,14 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.UpdateAsync(It.IsAny<UpdateDriverDto>()))
-            .ReturnsAsync(
-                Result.NotFound(
-                    "Driver not found."));
+            .ReturnsAsync(Result.NotFound("Driver not found."));
 
-        var response =
-            await client.PutAsJsonAsync(
-                "/api/Drivers/20",
-                new
-                {
-                    DriverId = 20,
-                    PersonId = 50
-                });
+        var response = await client.PutAsJsonAsync(
+            "/api/Drivers/20",
+            new { DriverId = 20, PersonId = 50 });
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Driver not found.");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertErrorAsync(response, "Driver not found.");
     }
 
     [Fact]
@@ -561,23 +438,14 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.UpdateAsync(It.IsAny<UpdateDriverDto>()))
-            .ReturnsAsync(
-                Result.Conflict(
-                    "This person is already registered as another driver."));
+            .ReturnsAsync(Result.Conflict(
+                "This person is already registered as another driver."));
 
-        var response =
-            await client.PutAsJsonAsync(
-                "/api/Drivers/20",
-                new
-                {
-                    DriverId = 20,
-                    PersonId = 50
-                });
+        var response = await client.PutAsJsonAsync(
+            "/api/Drivers/20",
+            new { DriverId = 20, PersonId = 50 });
 
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         await AssertErrorAsync(
             response,
             "This person is already registered as another driver.");
@@ -593,12 +461,9 @@ public sealed class DriversControllerTests
             .Setup(x => x.DeleteAsync(25))
             .ReturnsAsync(Result.Success());
 
-        var response =
-            await client.DeleteAsync("/api/Drivers/25");
+        var response = await client.DeleteAsync("/api/Drivers/25");
 
-        Assert.Equal(
-            HttpStatusCode.NoContent,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         factory.DriverServiceMock.Verify(
             x => x.DeleteAsync(25),
@@ -613,20 +478,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.DeleteAsync(25))
-            .ReturnsAsync(
-                Result.NotFound(
-                    "Driver not found."));
+            .ReturnsAsync(Result.NotFound("Driver not found."));
 
-        var response =
-            await client.DeleteAsync("/api/Drivers/25");
+        var response = await client.DeleteAsync("/api/Drivers/25");
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Driver not found.");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertErrorAsync(response, "Driver not found.");
     }
 
     [Fact]
@@ -637,17 +494,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.DeleteAsync(25))
-            .ReturnsAsync(
-                Result.Conflict(
-                    "Cannot delete a driver with existing licenses."));
+            .ReturnsAsync(Result.Conflict(
+                "Cannot delete a driver with existing licenses."));
 
-        var response =
-            await client.DeleteAsync("/api/Drivers/25");
+        var response = await client.DeleteAsync("/api/Drivers/25");
 
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         await AssertErrorAsync(
             response,
             "Cannot delete a driver with existing licenses.");
@@ -661,20 +513,12 @@ public sealed class DriversControllerTests
 
         factory.DriverServiceMock
             .Setup(x => x.DeleteAsync(25))
-            .ReturnsAsync(
-                Result.Failure(
-                    "Failed to delete driver."));
+            .ReturnsAsync(Result.Failure("Failed to delete driver."));
 
-        var response =
-            await client.DeleteAsync("/api/Drivers/25");
+        var response = await client.DeleteAsync("/api/Drivers/25");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Failed to delete driver.");
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        await AssertErrorAsync(response, "Failed to delete driver.");
     }
 
     [Fact]
@@ -683,23 +527,15 @@ public sealed class DriversControllerTests
         await using var factory = new ApiWebApplicationFactory();
         using var client = factory.CreateClient();
 
-        var response =
-            await client.DeleteAsync("/api/Drivers/25");
+        var response = await client.DeleteAsync("/api/Drivers/25");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private static HttpClient CreateAuthenticatedClient(
-        ApiWebApplicationFactory factory)
+    private static HttpClient CreateAuthenticatedClient(ApiWebApplicationFactory factory)
     {
         var client = factory.CreateClient();
-
-        client.DefaultRequestHeaders.Add(
-            "X-Test-User-Id",
-            "1");
-
+        client.DefaultRequestHeaders.Add("X-Test-User-Id", "1");
         return client;
     }
 
@@ -707,14 +543,12 @@ public sealed class DriversControllerTests
         HttpResponseMessage response,
         string expectedError)
     {
-        using var document =
-            JsonDocument.Parse(
-                await response.Content.ReadAsStringAsync());
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        var error =
-            document.RootElement
-                .GetProperty("error")
-                .GetString();
+        var error = document.RootElement
+            .GetProperty("error")
+            .GetString();
 
         Assert.Equal(expectedError, error);
     }

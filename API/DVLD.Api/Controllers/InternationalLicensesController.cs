@@ -21,7 +21,7 @@ public sealed class InternationalLicensesController(
         var result = await service.GetAllAsync();
         if (result.IsFailure) return HandleFailure(result);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(result.Value!.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("{internationalLicenseId:int}")]
@@ -41,7 +41,7 @@ public sealed class InternationalLicensesController(
         var result = await service.GetByDriverIdAsync(driverId);
         if (result.IsFailure) return HandleFailure(result);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(result.Value!.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("application/{applicationId:int}")]
@@ -61,7 +61,7 @@ public sealed class InternationalLicensesController(
         var result = await service.GetByLocalLicenseIdAsync(localLicenseId);
         if (result.IsFailure) return HandleFailure(result);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(result.Value!.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("license/{licenseId:int}/info")]
@@ -164,4 +164,17 @@ public sealed class InternationalLicensesController(
                 StatusCode = StatusCodes.Status500InternalServerError
             }
         };
+
+    private static InternationalLicenseListResponse MapToListResponse(
+    InternationalDto dto) => new()
+    {
+        InternationalLicenseId = dto.InternationalLicenseID,
+        ApplicationId = dto.ApplicationID,
+        DriverId = dto.DriverID,
+        IssuedUsingLocalLicenseId = dto.IssuedUsingLocalLicenseID,
+        PersonId = dto.PersonID,
+        IssueDate = dto.IssueDate,
+        ExpirationDate = dto.ExpirationDate,
+        IsActive = dto.IsActive
+    };
 }

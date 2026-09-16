@@ -6,11 +6,11 @@ namespace Presentation.Services.Api;
 
 public interface IInternationalLicensesApiClient
 {
-    Task<ApiResult<List<InternationalLicenseResponse>>>
+    Task<ApiResult<List<InternationalLicenseListResponse>>>
         GetAllAsync(
             CancellationToken cancellationToken = default);
 
-    Task<ApiResult<List<InternationalLicenseResponse>>>
+    Task<ApiResult<List<InternationalLicenseListResponse>>>
         GetByDriverIdAsync(
             int driverId,
             CancellationToken cancellationToken = default);
@@ -20,7 +20,7 @@ public interface IInternationalLicensesApiClient
             int internationalLicenseId,
             CancellationToken cancellationToken = default);
 
-    Task<ApiResult<List<InternationalLicenseResponse>>>
+    Task<ApiResult<List<InternationalLicenseListResponse>>>
         GetByLocalLicenseIdAsync(
             int localLicenseId,
             CancellationToken cancellationToken = default);

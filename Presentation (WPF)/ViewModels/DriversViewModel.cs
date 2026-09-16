@@ -8,54 +8,39 @@ using System.Collections.ObjectModel;
 
 namespace Presentation.ViewModels;
 
-public partial class DriversViewModel : ObservableObject
+public partial class DriversViewModel(
+    IServiceProvider serviceProvider,
+    IDriversApiClient driversApiClient,
+    IPeopleApiClient peopleApiClient) : ObservableObject
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IDriversApiClient _driversApiClient;
-    private readonly IPeopleApiClient _peopleApiClient;
+    private readonly IServiceProvider _serviceProvider =
+        serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
-    private List<DriverResponse> _allDrivers = [];
+    private readonly IDriversApiClient _driversApiClient =
+        driversApiClient ?? throw new ArgumentNullException(nameof(driversApiClient));
 
-    public DriversViewModel(
-        IServiceProvider serviceProvider,
-        IDriversApiClient driversApiClient,
-        IPeopleApiClient peopleApiClient)
-    {
-        _serviceProvider =
-            serviceProvider
-            ?? throw new ArgumentNullException(nameof(serviceProvider));
+    private readonly IPeopleApiClient _peopleApiClient =
+        peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
 
-        _driversApiClient =
-            driversApiClient
-            ?? throw new ArgumentNullException(nameof(driversApiClient));
-
-        _peopleApiClient =
-            peopleApiClient
-            ?? throw new ArgumentNullException(nameof(peopleApiClient));
-    }
+    private List<DriverListResponse> _allDrivers = [];
 
     [ObservableProperty]
-    private DriverResponse? selectedDriver;
+    private DriverListResponse? selectedDriver;
 
-    public ObservableCollection<DriverResponse> Drivers { get; } = [];
+    public ObservableCollection<DriverListResponse> Drivers { get; } = [];
 
     private int _driversCount;
-
     public int DriversCount
     {
         get => _driversCount;
         private set => SetProperty(ref _driversCount, value);
     }
 
-    public async Task LoadAsync(
-        CancellationToken cancellationToken = default)
+    public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
-        var result =
-            await _driversApiClient.GetAllAsync(
-                cancellationToken);
+        var result = await _driversApiClient.GetAllAsync(cancellationToken);
 
-        if (result.IsFailure ||
-            result.Value is null)
+        if (result.IsFailure || result.Value is null)
         {
             _allDrivers = [];
             Drivers.Clear();
@@ -63,65 +48,39 @@ public partial class DriversViewModel : ObservableObject
             return;
         }
 
-        _allDrivers =
-            result.Value.ToList();
-
-        FilterDrivers(
-            string.Empty,
-            "None");
+        _allDrivers = result.Value.ToList();
+        FilterDrivers(string.Empty, "None");
     }
 
-    public void FilterDrivers(
-        string filterValue,
-        string filterBy)
+    public void FilterDrivers(string filterValue, string filterBy)
     {
-        IEnumerable<DriverResponse> filtered =
-            _allDrivers;
+        IEnumerable<DriverListResponse> filtered = _allDrivers;
 
         if (!string.IsNullOrWhiteSpace(filterValue))
         {
-            var value =
-                filterValue.Trim();
+            var value = filterValue.Trim();
 
-            if (filterBy == "Driver ID")
+            filtered = filterBy switch
             {
-                filtered =
-                    _allDrivers.Where(driver =>
-                        driver.DriverId
-                            .ToString()
-                            .Contains(
-                                value,
-                                StringComparison.OrdinalIgnoreCase));
-            }
-            else if (filterBy == "Person ID")
-            {
-                filtered =
-                    _allDrivers.Where(driver =>
-                        driver.PersonId
-                            .ToString()
-                            .Contains(
-                                value,
-                                StringComparison.OrdinalIgnoreCase));
-            }
-            else if (filterBy == "Full Name")
-            {
-                filtered =
-                    _allDrivers.Where(driver =>
-                        driver.FullName.Contains(
-                            value,
-                            StringComparison.OrdinalIgnoreCase));
-            }
+                "Driver ID" => _allDrivers.Where(d =>
+                    d.DriverId.ToString().Contains(value, StringComparison.OrdinalIgnoreCase)),
+
+                "Person ID" => _allDrivers.Where(d =>
+                    d.PersonId.ToString().Contains(value, StringComparison.OrdinalIgnoreCase)),
+
+                "Full Name" => _allDrivers.Where(d =>
+                    d.FullName.Contains(value, StringComparison.OrdinalIgnoreCase)),
+
+                _ => _allDrivers
+            };
         }
 
         Drivers.Clear();
 
         foreach (var driver in filtered)
-        {
             Drivers.Add(driver);
-        }
 
-        DriversCount =
-            Drivers.Count;
+        DriversCount = Drivers.Count;
     }
 
     [RelayCommand]
@@ -130,23 +89,15 @@ public partial class DriversViewModel : ObservableObject
         if (SelectedDriver is null)
             return;
 
-        var personId =
-            SelectedDriver.PersonId;
-
-        var vm =
-            _serviceProvider
-                .GetRequiredService<LicenseHistoryViewModel>();
+        var personId = SelectedDriver.PersonId;
+        var vm = _serviceProvider.GetRequiredService<LicenseHistoryViewModel>();
 
         await vm.LoadAsync(personId);
 
-        var window =
-            new LicenseHistoryWin(
-                vm,
-                personId)
-            {
-                Owner =
-                    System.Windows.Application.Current.MainWindow
-            };
+        var window = new LicenseHistoryWin(vm, personId)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
 
         window.ShowDialog();
     }
@@ -157,14 +108,12 @@ public partial class DriversViewModel : ObservableObject
         if (SelectedDriver is null)
             return;
 
-        var window =
-            new PersonDetailsWindow(
-                SelectedDriver.PersonId,
-                _peopleApiClient)
-            {
-                Owner =
-                    System.Windows.Application.Current.MainWindow
-            };
+        var window = new PersonDetailsWindow(
+            SelectedDriver.PersonId,
+            _peopleApiClient)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
 
         window.ShowDialog();
     }

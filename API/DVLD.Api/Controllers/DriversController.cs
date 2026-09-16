@@ -19,7 +19,7 @@ public sealed class DriversController(IDriverService service) : ControllerBase
         var result = await service.GetAllAsync();
         if (result.IsFailure) return HandleFailure(result);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(result.Value!.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
@@ -141,4 +141,15 @@ public sealed class DriversController(IDriverService service) : ControllerBase
                 StatusCode = StatusCodes.Status500InternalServerError
             }
         };
+
+    private static DriverListResponse MapToListResponse(DriverDto dto) => new()
+    {
+        DriverId = dto.DriverID,
+        PersonId = dto.PersonID,
+        FullName = dto.FullName,
+        ActiveLicenses = dto.ActiveLicenses,
+        NationalNo = dto.NationalNo,
+        DateOfBirth = dto.DateOfBirth,
+        CreatedDate = dto.CreatedDate
+    };
 }

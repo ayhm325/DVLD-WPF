@@ -6,10 +6,10 @@ namespace Presentation.Services.Api;
 public sealed class DriversApiClient(
     IApiClient apiClient) : IDriversApiClient
 {
-    public Task<ApiResult<IReadOnlyList<DriverResponse>>>
+    public Task<ApiResult<IReadOnlyList<DriverListResponse>>>
         GetAllAsync(
             CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<IReadOnlyList<DriverResponse>>(
+        => apiClient.GetAsync<IReadOnlyList<DriverListResponse>>(
             "api/drivers",
             cancellationToken);
 

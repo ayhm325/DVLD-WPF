@@ -9,133 +9,95 @@ using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
 
-namespace Presentation.ViewModels
+namespace Presentation.ViewModels;
+
+public partial class LicenseHistoryViewModel(
+    IPeopleApiClient peopleApiClient,
+    IDriversApiClient driversApiClient,
+    ILicensesApiClient licensesApiClient,
+    IInternationalLicensesApiClient internationalLicensesApiClient) : ObservableObject
 {
-    public partial class LicenseHistoryViewModel : ObservableObject
+    private readonly IPeopleApiClient _peopleApiClient = peopleApiClient;
+    private readonly IDriversApiClient _driversApiClient = driversApiClient;
+    private readonly ILicensesApiClient _licensesApiClient = licensesApiClient;
+    private readonly IInternationalLicensesApiClient _internationalLicensesApiClient = internationalLicensesApiClient;
+
+    [ObservableProperty]
+    private PersonResponse? person;
+
+    [ObservableProperty]
+    private LicenseResponse? selectedLocalLicense;
+
+    [ObservableProperty]
+    private InternationalLicenseListResponse? selectedInternationalLicense;
+
+    [ObservableProperty]
+    private ObservableCollection<LicenseResponse> localLicenses = [];
+
+    [ObservableProperty]
+    private ObservableCollection<InternationalLicenseListResponse> internationalLicenses = [];
+
+    public async Task LoadAsync(int personId)
     {
-        private readonly IPeopleApiClient _peopleApiClient;
-        private readonly IDriversApiClient _driversApiClient;
-        private readonly ILicensesApiClient _licensesApiClient;
-        private readonly IInternationalLicensesApiClient _internationalLicensesApiClient;
+        var personResult = await _peopleApiClient.GetByIdAsync(personId);
 
-        [ObservableProperty]
-        private PersonResponse? person;
-
-        [ObservableProperty]
-        private LicenseResponse? selectedLocalLicense;
-
-        [ObservableProperty]
-        private InternationalLicenseResponse? selectedInternationalLicense;
-
-        [ObservableProperty]
-        private ObservableCollection<LicenseResponse> localLicenses = [];
-
-        [ObservableProperty]
-        private ObservableCollection<InternationalLicenseResponse> internationalLicenses = [];
-
-        public LicenseHistoryViewModel(
-            IPeopleApiClient peopleApiClient,
-            IDriversApiClient driversApiClient,
-            ILicensesApiClient licensesApiClient,
-            IInternationalLicensesApiClient internationalLicensesApiClient)
+        if (personResult.IsFailure || personResult.Value is null)
         {
-            _peopleApiClient = peopleApiClient;
-            _driversApiClient = driversApiClient;
-            _licensesApiClient = licensesApiClient;
-            _internationalLicensesApiClient = internationalLicensesApiClient;
+            Person = null;
+            LocalLicenses.Clear();
+            InternationalLicenses.Clear();
+            return;
         }
 
-        public async Task LoadAsync(int personId)
+        Person = personResult.Value;
+
+        var driverResult = await _driversApiClient.GetByPersonIdAsync(personId);
+
+        if (driverResult.IsFailure || driverResult.Value is null)
         {
-            var personResult =
-                await _peopleApiClient.GetByIdAsync(personId);
-
-            if (personResult.IsFailure ||
-                personResult.Value is null)
-            {
-                Person = null;
-                LocalLicenses.Clear();
-                InternationalLicenses.Clear();
-                return;
-            }
-
-            Person = personResult.Value;
-
-            var driverResult =
-                await _driversApiClient.GetByPersonIdAsync(personId);
-
-            if (driverResult.IsFailure ||
-                driverResult.Value is null)
-            {
-                LocalLicenses.Clear();
-                InternationalLicenses.Clear();
-                return;
-            }
-
-            DriverResponse driver = driverResult.Value;
-
-            var licensesResult =
-                await _licensesApiClient.GetByDriverIdAsync(
-                    driver.DriverId);
-
-            if (licensesResult.IsFailure ||
-                licensesResult.Value is null)
-            {
-                LocalLicenses.Clear();
-            }
-            else
-            {
-                LocalLicenses =
-                    new ObservableCollection<LicenseResponse>(
-                        licensesResult.Value);
-            }
-
-            var internationalResult =
-                await _internationalLicensesApiClient.GetByDriverIdAsync(
-                    driver.DriverId);
-
-            if (internationalResult.IsFailure ||
-                internationalResult.Value is null)
-            {
-                InternationalLicenses.Clear();
-            }
-            else
-            {
-                InternationalLicenses =
-                    new ObservableCollection<InternationalLicenseResponse>(
-                        internationalResult.Value);
-            }
+            LocalLicenses.Clear();
+            InternationalLicenses.Clear();
+            return;
         }
 
-        [RelayCommand]
-        private void ShowLicense()
+        var licensesResult = await _licensesApiClient.GetByDriverIdAsync(
+            driverResult.Value.DriverId);
+
+        if (licensesResult.IsFailure || licensesResult.Value is null)
+            LocalLicenses.Clear();
+        else
+            LocalLicenses = new(licensesResult.Value);
+
+        var internationalResult = await _internationalLicensesApiClient.GetByDriverIdAsync(
+            driverResult.Value.DriverId);
+
+        if (internationalResult.IsFailure || internationalResult.Value is null)
+            InternationalLicenses.Clear();
+        else
+            InternationalLicenses = new(internationalResult.Value);
+    }
+
+    [RelayCommand]
+    private void ShowLicense()
+    {
+        if (SelectedLocalLicense is null)
         {
-            if (SelectedLocalLicense is null)
-            {
-                MessageBox.Show("Please select a license first");
-                return;
-            }
-
-            var win =
-                new DriverLicenseInfoWin(
-                    SelectedLocalLicense.LicenseId);
-
-            win.ShowDialog();
+            MessageBox.Show("Please select a license first");
+            return;
         }
 
-        [RelayCommand]
-        private void ShowInternationalLicense()
+        new DriverLicenseInfoWin(SelectedLocalLicense.LicenseId).ShowDialog();
+    }
+
+    [RelayCommand]
+    private void ShowInternationalLicense()
+    {
+        if (SelectedInternationalLicense is null)
         {
-            if (SelectedInternationalLicense is null)
-            {
-                MessageBox.Show(
-                    "Please select an international license first");
-
-                return;
-            }
-
-            MessageBox.Show(
-                "International license details are not available yet.");
+            MessageBox.Show("Please select an international license first");
+            return;
         }
+
+        MessageBox.Show("International license details are not available yet.");
     }
 }

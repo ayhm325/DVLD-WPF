@@ -10,10 +10,10 @@ public sealed class PeopleApiClient(
         apiClient
         ?? throw new ArgumentNullException(nameof(apiClient));
 
-    public Task<ApiResult<List<ContractPerson.PersonResponse>>> GetAllAsync(
-        CancellationToken cancellationToken = default)
+    public Task<ApiResult<List<ContractPerson.PersonListResponse>>> GetAllAsync(
+    CancellationToken cancellationToken = default)
     {
-        return _apiClient.GetAsync<List<ContractPerson.PersonResponse>>(
+        return _apiClient.GetAsync<List<ContractPerson.PersonListResponse>>(
             "api/people",
             cancellationToken);
     }

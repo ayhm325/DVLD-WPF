@@ -7,24 +7,16 @@ namespace Presentation.Services.Api;
 public sealed class InternationalLicensesApiClient(
     IApiClient apiClient) : IInternationalLicensesApiClient
 {
-    public Task<ApiResult<List<InternationalLicenseResponse>>>
-        GetAllAsync(
-            CancellationToken cancellationToken = default)
-    {
-        return apiClient.GetAsync<List<InternationalLicenseResponse>>(
-            "api/internationallicenses",
-            cancellationToken);
-    }
+    public Task<ApiResult<List<InternationalLicenseListResponse>>> GetAllAsync(
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<List<InternationalLicenseListResponse>>(
+            "api/internationallicenses", cancellationToken);
 
-    public Task<ApiResult<List<InternationalLicenseResponse>>>
-        GetByDriverIdAsync(
-            int driverId,
-            CancellationToken cancellationToken = default)
-    {
-        return apiClient.GetAsync<List<InternationalLicenseResponse>>(
-            $"api/internationallicenses/driver/{driverId}",
-            cancellationToken);
-    }
+    public Task<ApiResult<List<InternationalLicenseListResponse>>> GetByDriverIdAsync(
+        int driverId,
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<List<InternationalLicenseListResponse>>(
+            $"api/internationallicenses/driver/{driverId}", cancellationToken);
 
     public Task<ApiResult<InternationalLicenseResponse>>
         GetByIdAsync(
@@ -36,15 +28,11 @@ public sealed class InternationalLicensesApiClient(
             cancellationToken);
     }
 
-    public Task<ApiResult<List<InternationalLicenseResponse>>>
-        GetByLocalLicenseIdAsync(
-            int localLicenseId,
-            CancellationToken cancellationToken = default)
-    {
-        return apiClient.GetAsync<List<InternationalLicenseResponse>>(
-            $"api/internationallicenses/license/{localLicenseId}",
-            cancellationToken);
-    }
+    public Task<ApiResult<List<InternationalLicenseListResponse>>> GetByLocalLicenseIdAsync(
+        int localLicenseId,
+        CancellationToken cancellationToken = default) =>
+        apiClient.GetAsync<List<InternationalLicenseListResponse>>(
+            $"api/internationallicenses/license/{localLicenseId}", cancellationToken);
 
     public Task<ApiResult<DriverLicenseInfoResponse>>
         GetLocalLicenseInfoAsync(

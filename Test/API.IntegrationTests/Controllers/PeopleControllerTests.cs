@@ -40,29 +40,29 @@ public sealed class PeopleControllerTests
             new ApiWebApplicationFactory();
 
         var people = new List<PersonDto>
-        {
-            CreatePersonDto(
-                id: 1,
-                nationalNo: "9901234567",
-                firstName: "Ahmad",
-                secondName: "Mohammed",
-                thirdName: "Ali",
-                lastName: "Obeidat",
-                fullName: "Ahmad Mohammed Ali Obeidat",
-                gender: (int)Gender.Male,
-                countryName: "Jordan"),
+    {
+        CreatePersonDto(
+            id: 1,
+            nationalNo: "9901234567",
+            firstName: "Ahmad",
+            secondName: "Mohammed",
+            thirdName: "Ali",
+            lastName: "Obeidat",
+            fullName: "Ahmad Mohammed Ali Obeidat",
+            gender: (int)Gender.Male,
+            countryName: "Jordan"),
 
-            CreatePersonDto(
-                id: 2,
-                nationalNo: "9901234568",
-                firstName: "Sara",
-                secondName: "Mohammed",
-                thirdName: null,
-                lastName: "Ali",
-                fullName: "Sara Mohammed Ali",
-                gender: (int)Gender.Female,
-                countryName: "Jordan")
-        };
+        CreatePersonDto(
+            id: 2,
+            nationalNo: "9901234568",
+            firstName: "Sara",
+            secondName: "Mohammed",
+            thirdName: null,
+            lastName: "Ali",
+            fullName: "Sara Mohammed Ali",
+            gender: (int)Gender.Female,
+            countryName: "Jordan")
+    };
 
         factory.PersonServiceMock
             .Setup(x => x.GetAllPeopleAsync())
@@ -108,22 +108,6 @@ public sealed class PeopleControllerTests
             firstPerson.GetProperty("nationalNo").GetString());
 
         Assert.Equal(
-            "Ahmad",
-            firstPerson.GetProperty("firstName").GetString());
-
-        Assert.Equal(
-            "Mohammed",
-            firstPerson.GetProperty("secondName").GetString());
-
-        Assert.Equal(
-            "Ali",
-            firstPerson.GetProperty("thirdName").GetString());
-
-        Assert.Equal(
-            "Obeidat",
-            firstPerson.GetProperty("lastName").GetString());
-
-        Assert.Equal(
             "Ahmad Mohammed Ali Obeidat",
             firstPerson.GetProperty("fullName").GetString());
 
@@ -140,16 +124,8 @@ public sealed class PeopleControllerTests
             firstPerson.GetProperty("email").GetString());
 
         Assert.Equal(
-            1,
-            firstPerson.GetProperty("nationalityCountryID").GetInt32());
-
-        Assert.Equal(
             "Jordan",
             firstPerson.GetProperty("countryName").GetString());
-
-        Assert.Equal(
-            "ahmad.jpg",
-            firstPerson.GetProperty("imagePath").GetString());
 
         factory.PersonServiceMock.Verify(
             x => x.GetAllPeopleAsync(),

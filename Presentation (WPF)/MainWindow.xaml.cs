@@ -30,6 +30,9 @@ namespace DVLD_WPF
         public string CurrentUserFullName => _currentUserSession.FullName;
 
         public string CurrentUserRole => _currentUserSession.Role;
+        
+        private bool IsAdmin() =>
+            string.Equals(_currentUserSession.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
         // ═══════ متغيرات تأثير الكاتبة ═══════
         private DispatcherTimer? _typewriterTimer;
@@ -92,8 +95,18 @@ namespace DVLD_WPF
             };
 
             _activeNavItem = NavDashboard;
+            ApplyRoleVisibility();
 
             Loaded += MainWindow_Loaded;
+        }
+
+        private void ApplyRoleVisibility()
+        {
+            var visibility = IsAdmin() ? Visibility.Visible : Visibility.Collapsed;
+
+            NavUsers.Visibility = visibility;
+            NavAppTypes.Visibility = visibility;
+            NavTestTypes.Visibility = visibility;
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -363,6 +376,8 @@ namespace DVLD_WPF
             object sender,
             MouseButtonEventArgs e)
         {
+            if (!IsAdmin()) return;
+
             NavigateToPage(
                 "Users",
                 "Manage system users and permissions",
@@ -371,28 +386,26 @@ namespace DVLD_WPF
                     .GetRequiredService<UserPage>());
         }
 
-        private void NavAppTypes_Click(
-            object sender,
-            MouseButtonEventArgs e)
+        private void NavAppTypes_Click(object sender, MouseButtonEventArgs e)
         {
+            if (!IsAdmin()) return;
+
             NavigateToPage(
                 "Application Types",
                 "Configure application type settings",
                 NavAppTypes,
-                _serviceProvider
-                    .GetRequiredService<ManageApplicationTypePage>());
+                _serviceProvider.GetRequiredService<ManageApplicationTypePage>());
         }
 
-        private void NavTestTypes_Click(
-            object sender,
-            MouseButtonEventArgs e)
+        private void NavTestTypes_Click(object sender, MouseButtonEventArgs e)
         {
+            if (!IsAdmin()) return;
+
             NavigateToPage(
                 "Test Types",
                 "Configure test type settings",
                 NavTestTypes,
-                _serviceProvider
-                    .GetRequiredService<ManageTestTypePage>());
+                _serviceProvider.GetRequiredService<ManageTestTypePage>());
         }
 
         // ═══════════════════════════════════════════════════════════

@@ -5,7 +5,7 @@ namespace Presentation.Services.Api;
 
 public interface IPeopleApiClient
 {
-    Task<ApiResult<List<ContractPerson.PersonResponse>>> GetAllAsync(
+    Task<ApiResult<List<ContractPerson.PersonListResponse>>> GetAllAsync(
         CancellationToken cancellationToken = default);
 
     Task<ApiResult<ContractPerson.PersonResponse>> GetByIdAsync(
