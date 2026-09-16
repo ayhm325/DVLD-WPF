@@ -1,37 +1,33 @@
 ﻿using Application.Common.Results;
+using Application.DTOs.TestTypeDTO;
 using Application.Interfaces;
 using DVLD.Contracts.TestType;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DVLD.Api.Controllers;
 
-[Route("api/[controller]")]
 [ApiController]
+[Authorize]
+[Route("api/[controller]")]
 public sealed class TestTypesController(
     ITestTypeService service) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result =
-            await service.GetAllTestTypesAsync();
+        var result = await service.GetAllTestTypesAsync();
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response =
-            result.Value!
-                .Select(MapToResponse)
-                .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result =
-            await service.GetTestTypeByIdAsync(id);
+        var result = await service.GetTestTypeByIdAsync(id);
 
         if (result.IsFailure)
             return HandleFailure(result);
@@ -40,22 +36,20 @@ public sealed class TestTypesController(
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(
-    int id,
-    [FromBody] UpdateTestTypeRequest request)
+        int id,
+        [FromBody] UpdateTestTypeRequest request)
     {
-        var dto = new Application.DTOs.TestTypeDTO.TestTypeDto
-        {
-            TestTypeId = id,
-            TestTypeTitle = request.TestTypeTitle,
-            TestTypeDescription = request.TestTypeDescription,
-            TestTypeFees = request.TestTypeFees
-        };
-
-        var result =
-            await service.UpdateTestTypeAsync(
-                id,
-                dto);
+        var result = await service.UpdateTestTypeAsync(
+            id,
+            new TestTypeDto
+            {
+                TestTypeId = id,
+                TestTypeTitle = request.TestTypeTitle,
+                TestTypeDescription = request.TestTypeDescription,
+                TestTypeFees = request.TestTypeFees
+            });
 
         return result.IsSuccess
             ? NoContent()
@@ -63,76 +57,35 @@ public sealed class TestTypesController(
     }
 
     private static TestTypeResponse MapToResponse(
-        Application.DTOs.TestTypeDTO.TestTypeDto dto)
-    {
-        return new TestTypeResponse
+        TestTypeDto dto) => new()
         {
             TestTypeId = dto.TestTypeId,
             TestTypeTitle = dto.TestTypeTitle,
             TestTypeDescription = dto.TestTypeDescription,
             TestTypeFees = dto.TestTypeFees
         };
-    }
 
-    private IActionResult HandleFailure<T>(
-        Result<T> result)
-    {
-        return result.ErrorType switch
+    private IActionResult HandleFailure<T>(Result<T> result) =>
+        result.ErrorType switch
         {
-            ErrorType.NotFound =>
-                NotFound(new
-                {
-                    message = result.Error
-                }),
-
-            ErrorType.Conflict =>
-                Conflict(new
-                {
-                    message = result.Error
-                }),
-
-            ErrorType.Validation =>
-                BadRequest(new
-                {
-                    message = result.Error
-                }),
-
-            _ =>
-                BadRequest(new
-                {
-                    message = result.Error
-                })
+            ErrorType.NotFound => NotFound(new { error = result.Error }),
+            ErrorType.Conflict => Conflict(new { error = result.Error }),
+            ErrorType.Validation => BadRequest(new { error = result.Error }),
+            ErrorType.Forbidden => Forbid(),
+            _ => StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = result.Error })
         };
-    }
 
-    private IActionResult HandleFailure(
-        Result result)
-    {
-        return result.ErrorType switch
+    private IActionResult HandleFailure(Result result) =>
+        result.ErrorType switch
         {
-            ErrorType.NotFound =>
-                NotFound(new
-                {
-                    message = result.Error
-                }),
-
-            ErrorType.Conflict =>
-                Conflict(new
-                {
-                    message = result.Error
-                }),
-
-            ErrorType.Validation =>
-                BadRequest(new
-                {
-                    message = result.Error
-                }),
-
-            _ =>
-                BadRequest(new
-                {
-                    message = result.Error
-                })
+            ErrorType.NotFound => NotFound(new { error = result.Error }),
+            ErrorType.Conflict => Conflict(new { error = result.Error }),
+            ErrorType.Validation => BadRequest(new { error = result.Error }),
+            ErrorType.Forbidden => Forbid(),
+            _ => StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = result.Error })
         };
-    }
 }

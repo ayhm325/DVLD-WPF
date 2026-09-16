@@ -11,137 +11,131 @@ namespace API.IntegrationTests.Controllers;
 public sealed class ApplicationTypesControllerTests
 {
     [Fact]
-    public async Task GetAll_WithoutAuthentication_Returns401()
+    public async Task GetAll_WhenAnonymous_Returns401()
     {
         await using var factory = new ApiWebApplicationFactory();
-        using var client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/ApplicationTypes");
+        var response = await SendAsync(
+            factory, HttpMethod.Get, "/api/ApplicationTypes", role: null);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetAllApplicationTypesAsync(),
-            Times.Never);
+        VerifyGetNever(factory);
     }
 
     [Fact]
-    public async Task GetAll_WhenSuccessful_Returns200AndMappedResponse()
+    public async Task GetAll_WhenStaff_Returns403()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        var response = await SendAsync(
+            factory, HttpMethod.Get, "/api/ApplicationTypes", role: "Staff");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        VerifyGetNever(factory);
+    }
+
+    [Fact]
+    public async Task GetAll_WhenSuccessful_ReturnsMappedResponse()
     {
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
             .Setup(x => x.GetAllApplicationTypesAsync())
-            .ReturnsAsync(
-                Result<List<ApplicationTypeDto>>.Success(
-                    new List<ApplicationTypeDto>
-                    {
-                        new()
-                        {
-                            ApplicationTypeId = 1,
-                            ApplicationTypeTitle = "New Local Driving License Service",
-                            ApplicationTypeFees = 20.50m
-                        },
-                        new()
-                        {
-                            ApplicationTypeId = 2,
-                            ApplicationTypeTitle = "Renew Driving License",
-                            ApplicationTypeFees = 15.75m
-                        }
-                    }));
+            .ReturnsAsync(Result<List<ApplicationTypeDto>>.Success(
+            [
+                new()
+                {
+                    ApplicationTypeId = 1,
+                    ApplicationTypeTitle = "New Local Driving License Service",
+                    ApplicationTypeFees = 20.50m
+                },
+                new()
+                {
+                    ApplicationTypeId = 2,
+                    ApplicationTypeTitle = "Renew Driving License",
+                    ApplicationTypeFees = 15.75m
+                }
+            ]));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var response =
-            await client.GetAsync("/api/ApplicationTypes");
+        var response = await SendAsync(
+            factory, HttpMethod.Get, "/api/ApplicationTypes");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<ApplicationTypeResponse>>();
+        var result = await response.Content
+            .ReadFromJsonAsync<List<ApplicationTypeResponse>>();
 
         Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
 
-        Assert.Equal(1, result[0].ApplicationTypeId);
-        Assert.Equal(
-            "New Local Driving License Service",
-            result[0].ApplicationTypeTitle);
-        Assert.Equal(20.50m, result[0].ApplicationTypeFees);
-
-        Assert.Equal(2, result[1].ApplicationTypeId);
-        Assert.Equal(
-            "Renew Driving License",
-            result[1].ApplicationTypeTitle);
-        Assert.Equal(15.75m, result[1].ApplicationTypeFees);
+        Assert.Collection(
+            result,
+            x =>
+            {
+                Assert.Equal(1, x.ApplicationTypeId);
+                Assert.Equal(
+                    "New Local Driving License Service",
+                    x.ApplicationTypeTitle);
+                Assert.Equal(20.50m, x.ApplicationTypeFees);
+            },
+            x =>
+            {
+                Assert.Equal(2, x.ApplicationTypeId);
+                Assert.Equal(
+                    "Renew Driving License",
+                    x.ApplicationTypeTitle);
+                Assert.Equal(15.75m, x.ApplicationTypeFees);
+            });
 
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetAllApplicationTypesAsync(),
-            Times.Once);
+            x => x.GetAllApplicationTypesAsync(), Times.Once);
     }
 
     [Fact]
-    public async Task GetAll_WhenServiceFails_Returns400()
+    public async Task GetAll_WhenServiceFails_Returns500()
     {
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
             .Setup(x => x.GetAllApplicationTypesAsync())
-            .ReturnsAsync(
-                Result<List<ApplicationTypeDto>>.FromFailure(
-                    "Failed to load application types."));
+            .ReturnsAsync(Result<List<ApplicationTypeDto>>.FromFailure(
+                "Failed to load application types."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var response =
-            await client.GetAsync("/api/ApplicationTypes");
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        var error = await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Failed to load application types.",
-            error);
+        await AssertErrorAsync(
+            await SendAsync(
+                factory, HttpMethod.Get, "/api/ApplicationTypes"),
+            HttpStatusCode.InternalServerError,
+            "Failed to load application types.");
     }
 
     [Fact]
-    public async Task GetById_WhenSuccessful_Returns200AndMappedResponse()
+    public async Task GetById_WhenSuccessful_ReturnsMappedResponse()
     {
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
             .Setup(x => x.GetApplicationTypeByIdAsync(3))
-            .ReturnsAsync(
-                Result<ApplicationTypeDto>.Success(
-                    new ApplicationTypeDto
-                    {
-                        ApplicationTypeId = 3,
-                        ApplicationTypeTitle = "Replace Lost License",
-                        ApplicationTypeFees = 25m
-                    }));
+            .ReturnsAsync(Result<ApplicationTypeDto>.Success(new()
+            {
+                ApplicationTypeId = 3,
+                ApplicationTypeTitle = "Replace Lost License",
+                ApplicationTypeFees = 25m
+            }));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var response =
-            await client.GetAsync("/api/ApplicationTypes/3");
+        var response = await SendAsync(
+            factory, HttpMethod.Get, "/api/ApplicationTypes/3");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<ApplicationTypeResponse>();
+        var result = await response.Content
+            .ReadFromJsonAsync<ApplicationTypeResponse>();
 
         Assert.NotNull(result);
         Assert.Equal(3, result.ApplicationTypeId);
-        Assert.Equal(
-            "Replace Lost License",
-            result.ApplicationTypeTitle);
+        Assert.Equal("Replace Lost License", result.ApplicationTypeTitle);
         Assert.Equal(25m, result.ApplicationTypeFees);
 
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetApplicationTypeByIdAsync(3),
-            Times.Once);
+            x => x.GetApplicationTypeByIdAsync(3), Times.Once);
     }
 
     [Fact]
@@ -151,22 +145,14 @@ public sealed class ApplicationTypesControllerTests
 
         factory.ApplicationTypeServiceMock
             .Setup(x => x.GetApplicationTypeByIdAsync(99))
-            .ReturnsAsync(
-                Result<ApplicationTypeDto>.FromNotFound(
-                    "Application type not found."));
+            .ReturnsAsync(Result<ApplicationTypeDto>.FromNotFound(
+                "Application type not found."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var response =
-            await client.GetAsync("/api/ApplicationTypes/99");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-
-        var error = await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Application type not found.",
-            error);
+        await AssertErrorAsync(
+            await SendAsync(
+                factory, HttpMethod.Get, "/api/ApplicationTypes/99"),
+            HttpStatusCode.NotFound,
+            "Application type not found.");
     }
 
     [Fact]
@@ -176,22 +162,14 @@ public sealed class ApplicationTypesControllerTests
 
         factory.ApplicationTypeServiceMock
             .Setup(x => x.GetApplicationTypeByIdAsync(0))
-            .ReturnsAsync(
-                Result<ApplicationTypeDto>.FromValidationFailure(
-                    "Invalid application type ID."));
+            .ReturnsAsync(Result<ApplicationTypeDto>.FromValidationFailure(
+                "Invalid application type ID."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var response =
-            await client.GetAsync("/api/ApplicationTypes/0");
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        var error = await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Invalid application type ID.",
-            error);
+        await AssertErrorAsync(
+            await SendAsync(
+                factory, HttpMethod.Get, "/api/ApplicationTypes/0"),
+            HttpStatusCode.BadRequest,
+            "Invalid application type ID.");
     }
 
     [Fact]
@@ -201,24 +179,46 @@ public sealed class ApplicationTypesControllerTests
 
         factory.ApplicationTypeServiceMock
             .Setup(x => x.GetApplicationTypeByIdAsync(5))
-            .ReturnsAsync(
-                Result<ApplicationTypeDto>.FromFailure(
-                    "Unexpected application type failure."));
+            .ReturnsAsync(Result<ApplicationTypeDto>.FromFailure(
+                "Unexpected application type failure."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var response =
-            await client.GetAsync("/api/ApplicationTypes/5");
-
-        Assert.Equal(
+        await AssertErrorAsync(
+            await SendAsync(
+                factory, HttpMethod.Get, "/api/ApplicationTypes/5"),
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
+            "Unexpected application type failure.");
+    }
 
-        var error = await ReadErrorAsync(response);
+    [Fact]
+    public async Task Update_WhenAnonymous_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
 
-        Assert.Equal(
-            "Unexpected application type failure.",
-            error);
+        var response = await SendAsync(
+            factory,
+            HttpMethod.Put,
+            "/api/ApplicationTypes/10",
+            ValidRequest(),
+            null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        VerifyUpdateNever(factory);
+    }
+
+    [Fact]
+    public async Task Update_WhenStaff_Returns403()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        var response = await SendAsync(
+            factory,
+            HttpMethod.Put,
+            "/api/ApplicationTypes/10",
+            ValidRequest(),
+            "Staff");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        VerifyUpdateNever(factory);
     }
 
     [Fact]
@@ -227,39 +227,34 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x =>
-                x.UpdateApplicationTypeAsync(
-                    4,
-                    It.Is<ApplicationTypeDto>(dto =>
-                        dto.ApplicationTypeId == 4 &&
-                        dto.ApplicationTypeTitle == "Updated Type" &&
-                        dto.ApplicationTypeFees == 30m)))
+            .Setup(x => x.UpdateApplicationTypeAsync(
+                4,
+                It.Is<ApplicationTypeDto>(d =>
+                    d.ApplicationTypeId == 4 &&
+                    d.ApplicationTypeTitle == "Updated Type" &&
+                    d.ApplicationTypeFees == 30m)))
             .ReturnsAsync(Result.Success());
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var request = new UpdateApplicationTypeRequest
-        {
-            ApplicationTypeId = 999,
-            ApplicationTypeTitle = "Updated Type",
-            ApplicationTypeFees = 30m
-        };
-
-        var response =
-            await client.PutAsJsonAsync(
-                "/api/ApplicationTypes/4",
-                request);
+        var response = await SendAsync(
+            factory,
+            HttpMethod.Put,
+            "/api/ApplicationTypes/4",
+            new UpdateApplicationTypeRequest
+            {
+                ApplicationTypeId = 999,
+                ApplicationTypeTitle = "Updated Type",
+                ApplicationTypeFees = 30m
+            });
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         factory.ApplicationTypeServiceMock.Verify(
-            x =>
-                x.UpdateApplicationTypeAsync(
-                    4,
-                    It.Is<ApplicationTypeDto>(dto =>
-                        dto.ApplicationTypeId == 4 &&
-                        dto.ApplicationTypeTitle == "Updated Type" &&
-                        dto.ApplicationTypeFees == 30m)),
+            x => x.UpdateApplicationTypeAsync(
+                4,
+                It.Is<ApplicationTypeDto>(d =>
+                    d.ApplicationTypeId == 4 &&
+                    d.ApplicationTypeTitle == "Updated Type" &&
+                    d.ApplicationTypeFees == 30m)),
             Times.Once);
     }
 
@@ -269,35 +264,25 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x =>
-                x.UpdateApplicationTypeAsync(
-                    4,
-                    It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(
-                Result.ValidationFailure(
-                    "Invalid application type data."));
+            .Setup(x => x.UpdateApplicationTypeAsync(
+                4,
+                It.IsAny<ApplicationTypeDto>()))
+            .ReturnsAsync(Result.ValidationFailure(
+                "Invalid application type data."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var request = new UpdateApplicationTypeRequest
-        {
-            ApplicationTypeId = 4,
-            ApplicationTypeTitle = "",
-            ApplicationTypeFees = 0m
-        };
-
-        var response =
-            await client.PutAsJsonAsync(
+        await AssertErrorAsync(
+            await SendAsync(
+                factory,
+                HttpMethod.Put,
                 "/api/ApplicationTypes/4",
-                request);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-
-        var error = await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Invalid application type data.",
-            error);
+                new UpdateApplicationTypeRequest
+                {
+                    ApplicationTypeId = 4,
+                    ApplicationTypeTitle = "",
+                    ApplicationTypeFees = 0m
+                }),
+            HttpStatusCode.BadRequest,
+            "Invalid application type data.");
     }
 
     [Fact]
@@ -306,35 +291,20 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x =>
-                x.UpdateApplicationTypeAsync(
-                    10,
-                    It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(
-                Result.NotFound(
-                    "Application type not found."));
+            .Setup(x => x.UpdateApplicationTypeAsync(
+                10,
+                It.IsAny<ApplicationTypeDto>()))
+            .ReturnsAsync(Result.NotFound(
+                "Application type not found."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var request = new UpdateApplicationTypeRequest
-        {
-            ApplicationTypeId = 10,
-            ApplicationTypeTitle = "Updated Type",
-            ApplicationTypeFees = 20m
-        };
-
-        var response =
-            await client.PutAsJsonAsync(
+        await AssertErrorAsync(
+            await SendAsync(
+                factory,
+                HttpMethod.Put,
                 "/api/ApplicationTypes/10",
-                request);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-
-        var error = await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Application type not found.",
-            error);
+                ValidRequest()),
+            HttpStatusCode.NotFound,
+            "Application type not found.");
     }
 
     [Fact]
@@ -343,70 +313,20 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x =>
-                x.UpdateApplicationTypeAsync(
-                    10,
-                    It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(
-                Result.Conflict(
-                    "Application type update conflicts with existing data."));
+            .Setup(x => x.UpdateApplicationTypeAsync(
+                10,
+                It.IsAny<ApplicationTypeDto>()))
+            .ReturnsAsync(Result.Conflict(
+                "Application type update conflicts with existing data."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var request = new UpdateApplicationTypeRequest
-        {
-            ApplicationTypeId = 10,
-            ApplicationTypeTitle = "Conflicting Type",
-            ApplicationTypeFees = 20m
-        };
-
-        var response =
-            await client.PutAsJsonAsync(
+        await AssertErrorAsync(
+            await SendAsync(
+                factory,
+                HttpMethod.Put,
                 "/api/ApplicationTypes/10",
-                request);
-
-        Assert.Equal(
+                ValidRequest()),
             HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var error = await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Application type update conflicts with existing data.",
-            error);
-    }
-
-    [Fact]
-    public async Task Update_WhenForbidden_Returns403()
-    {
-        await using var factory = new ApiWebApplicationFactory();
-
-        factory.ApplicationTypeServiceMock
-            .Setup(x =>
-                x.UpdateApplicationTypeAsync(
-                    10,
-                    It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(
-                Result.Forbidden(
-                    "Authenticated user is required."));
-
-        using var client = CreateAuthenticatedClient(factory);
-
-        var request = new UpdateApplicationTypeRequest
-        {
-            ApplicationTypeId = 10,
-            ApplicationTypeTitle = "Updated Type",
-            ApplicationTypeFees = 20m
-        };
-
-        var response =
-            await client.PutAsJsonAsync(
-                "/api/ApplicationTypes/10",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
+            "Application type update conflicts with existing data.");
     }
 
     [Fact]
@@ -415,58 +335,74 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x =>
-                x.UpdateApplicationTypeAsync(
-                    10,
-                    It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(
-                Result.Failure(
-                    "Failed to save application type changes."));
+            .Setup(x => x.UpdateApplicationTypeAsync(
+                10,
+                It.IsAny<ApplicationTypeDto>()))
+            .ReturnsAsync(Result.Failure(
+                "Failed to save application type changes."));
 
-        using var client = CreateAuthenticatedClient(factory);
-
-        var request = new UpdateApplicationTypeRequest
-        {
-            ApplicationTypeId = 10,
-            ApplicationTypeTitle = "Updated Type",
-            ApplicationTypeFees = 20m
-        };
-
-        var response =
-            await client.PutAsJsonAsync(
+        await AssertErrorAsync(
+            await SendAsync(
+                factory,
+                HttpMethod.Put,
                 "/api/ApplicationTypes/10",
-                request);
-
-        Assert.Equal(
+                ValidRequest()),
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var error = await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Failed to save application type changes.",
-            error);
+            "Failed to save application type changes.");
     }
 
-    private static HttpClient CreateAuthenticatedClient(
-        ApiWebApplicationFactory factory)
+    private static UpdateApplicationTypeRequest ValidRequest() => new()
     {
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add(
-            "X-Test-User-Id",
-            "1");
+        ApplicationTypeId = 10,
+        ApplicationTypeTitle = "Updated Type",
+        ApplicationTypeFees = 20m
+    };
 
-        return client;
+    private static async Task<HttpResponseMessage> SendAsync(
+        ApiWebApplicationFactory factory,
+        HttpMethod method,
+        string url,
+        object? content = null,
+        string? role = "Admin")
+    {
+        using var request = new HttpRequestMessage(method, url);
+
+        if (role is not null)
+        {
+            request.Headers.Add("X-Test-User-Id", role == "Admin" ? "1" : "6");
+            request.Headers.Add("X-Test-Username", "testuser");
+            request.Headers.Add("X-Test-FullName", "Test User");
+            request.Headers.Add("X-Test-Role", role);
+        }
+
+        if (content is not null)
+            request.Content = JsonContent.Create(content);
+
+        return await factory.CreateClient().SendAsync(request);
     }
 
-    private static async Task<string?> ReadErrorAsync(
-        HttpResponseMessage response)
-    {
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
+    private static void VerifyGetNever(ApiWebApplicationFactory factory) =>
+        factory.ApplicationTypeServiceMock.Verify(
+            x => x.GetAllApplicationTypesAsync(), Times.Never);
 
-        return body?.Error;
+    private static void VerifyUpdateNever(ApiWebApplicationFactory factory) =>
+        factory.ApplicationTypeServiceMock.Verify(
+            x => x.UpdateApplicationTypeAsync(
+                It.IsAny<int>(),
+                It.IsAny<ApplicationTypeDto>()),
+            Times.Never);
+
+    private static async Task AssertErrorAsync(
+        HttpResponseMessage response,
+        HttpStatusCode status,
+        string message)
+    {
+        Assert.Equal(status, response.StatusCode);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<ErrorResponse>();
+
+        Assert.Equal(message, body?.Error);
     }
 
     private sealed record ErrorResponse(string? Error);

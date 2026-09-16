@@ -8,38 +8,26 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "StaffOnly")]
 [Route("api/[controller]")]
 public sealed class PeopleController(
-    IPersonService personService)
-    : ControllerBase
+    IPersonService personService) : ControllerBase
 {
-    private readonly IPersonService _personService =
-        personService
-        ?? throw new ArgumentNullException(nameof(personService));
-
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result =
-            await _personService.GetAllPeopleAsync();
+        var result = await personService.GetAllPeopleAsync();
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response =
-            result.Value!
-                .Select(ToResponse)
-                .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(ToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result =
-            await _personService.GetPersonByIdAsync(id);
+        var result = await personService.GetPersonByIdAsync(id);
 
         if (result.IsFailure)
             return HandleFailure(result);
@@ -48,12 +36,10 @@ public sealed class PeopleController(
     }
 
     [HttpGet("national/{nationalNo}")]
-    public async Task<IActionResult> GetByNationalNo(
-        string nationalNo)
+    public async Task<IActionResult> GetByNationalNo(string nationalNo)
     {
         var result =
-            await _personService
-                .GetPersonByNationalNoAsync(nationalNo);
+            await personService.GetPersonByNationalNoAsync(nationalNo);
 
         if (result.IsFailure)
             return HandleFailure(result);
@@ -65,7 +51,7 @@ public sealed class PeopleController(
     public async Task<IActionResult> Create(
         [FromBody] ContractPerson.CreatePersonRequest request)
     {
-        var dto =
+        var result = await personService.AddPersonAsync(
             new PersonCreateDto
             {
                 NationalNo = request.NationalNo,
@@ -78,13 +64,9 @@ public sealed class PeopleController(
                 Address = request.Address,
                 Phone = request.Phone,
                 Email = request.Email,
-                NationalityCountryID =
-                    request.NationalityCountryID,
+                NationalityCountryID = request.NationalityCountryID,
                 ImagePath = request.ImagePath
-            };
-
-        var result =
-            await _personService.AddPersonAsync(dto);
+            });
 
         if (result.IsFailure)
             return HandleFailure(result);
@@ -103,7 +85,8 @@ public sealed class PeopleController(
         int id,
         [FromBody] ContractPerson.UpdatePersonRequest request)
     {
-        var dto =
+        var result = await personService.UpdatePersonAsync(
+            id,
             new PersonUpdateDto
             {
                 NationalNo = request.NationalNo,
@@ -116,14 +99,9 @@ public sealed class PeopleController(
                 Address = request.Address,
                 Phone = request.Phone,
                 Email = request.Email,
-                NationalityCountryID =
-                    request.NationalityCountryID,
+                NationalityCountryID = request.NationalityCountryID,
                 ImagePath = request.ImagePath
-            };
-
-        var result =
-            await _personService
-                .UpdatePersonAsync(id, dto);
+            });
 
         return result.IsSuccess
             ? NoContent()
@@ -133,9 +111,7 @@ public sealed class PeopleController(
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result =
-            await _personService
-                .DeletePersonAsync(id);
+        var result = await personService.DeletePersonAsync(id);
 
         return result.IsSuccess
             ? NoContent()
@@ -143,9 +119,7 @@ public sealed class PeopleController(
     }
 
     private static ContractPerson.PersonResponse ToResponse(
-        PersonDto dto)
-    {
-        return new ContractPerson.PersonResponse
+        PersonDto dto) => new()
         {
             PersonId = dto.PersonId,
             NationalNo = dto.NationalNo,
@@ -159,60 +133,33 @@ public sealed class PeopleController(
             Address = dto.Address,
             Phone = dto.Phone,
             Email = dto.Email,
-            NationalityCountryID =
-                dto.NationalityCountryID,
+            NationalityCountryID = dto.NationalityCountryID,
             CountryName = dto.CountryName,
             ImagePath = dto.ImagePath
         };
-    }
 
-    private static IActionResult HandleFailure(
-        Result result)
-    {
-        return result.ErrorType switch
+    private static IActionResult HandleFailure(Result result) =>
+        result.ErrorType switch
         {
-            ErrorType.Validation =>
-                new BadRequestObjectResult(
-                    new
-                    {
-                        error = result.Error
-                    }),
+            ErrorType.Validation => new BadRequestObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.NotFound =>
-                new NotFoundObjectResult(
-                    new
-                    {
-                        error = result.Error
-                    }),
+            ErrorType.NotFound => new NotFoundObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Conflict =>
-                new ConflictObjectResult(
-                    new
-                    {
-                        error = result.Error
-                    }),
+            ErrorType.Conflict => new ConflictObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Forbidden =>
-                new ObjectResult(
-                    new
-                    {
-                        error = result.Error
-                    })
-                {
-                    StatusCode =
-                        StatusCodes.Status403Forbidden
-                },
+            ErrorType.Forbidden => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            },
 
-            _ =>
-                new ObjectResult(
-                    new
-                    {
-                        error = result.Error
-                    })
-                {
-                    StatusCode =
-                        StatusCodes.Status500InternalServerError
-                }
+            _ => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            }
         };
-    }
 }

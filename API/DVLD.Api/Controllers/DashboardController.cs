@@ -8,16 +8,14 @@ namespace DVLD.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
-public sealed class DashboardController(
-    IDashboardService service) : ControllerBase
+public sealed class DashboardController(IDashboardService service) : ControllerBase
 {
     [HttpGet("statistics")]
     public async Task<IActionResult> GetStatistics()
     {
-        var result =
-            await service.GetStatisticsAsync();
+        var result = await service.GetStatisticsAsync();
 
-        var response = new DashboardResponse
+        return Ok(new DashboardResponse
         {
             TotalPeople = result.TotalPeople,
             TotalDrivers = result.TotalDrivers,
@@ -25,14 +23,9 @@ public sealed class DashboardController(
             PendingApplications = result.PendingApplications,
             LocalDrivingLicenseApplications =
                 result.LocalDrivingLicenseApplications,
-            InternationalLicenses =
-                result.InternationalLicenses,
-            DetainedLicenses =
-                result.DetainedLicenses,
-            UpcomingTests =
-                result.UpcomingTests
-        };
-
-        return Ok(response);
+            InternationalLicenses = result.InternationalLicenses,
+            DetainedLicenses = result.DetainedLicenses,
+            UpcomingTests = result.UpcomingTests
+        });
     }
 }

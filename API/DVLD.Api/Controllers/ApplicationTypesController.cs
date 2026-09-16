@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 [Route("api/[controller]")]
 public sealed class ApplicationTypesController(
     IApplicationTypeService service) : ControllerBase
@@ -17,36 +17,18 @@ public sealed class ApplicationTypesController(
     public async Task<IActionResult> GetAll()
     {
         var result = await service.GetAllApplicationTypesAsync();
+        if (result.IsFailure) return HandleFailure(result);
 
-        if (!result.IsSuccess)
-            return BadRequest(new { error = result.Error });
-
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await service.GetApplicationTypeByIdAsync(id);
+        if (result.IsFailure) return HandleFailure(result);
 
-        if (result.IsSuccess)
-            return Ok(MapToResponse(result.Value!));
-
-        return result.ErrorType switch
-        {
-            ErrorType.NotFound =>
-                NotFound(new { error = result.Error }),
-
-            ErrorType.Validation =>
-                BadRequest(new { error = result.Error }),
-
-            _ =>
-                StatusCode(500, new { error = result.Error })
-        };
+        return Ok(MapToResponse(result.Value!));
     }
 
     [HttpPut("{id:int}")]
@@ -61,39 +43,43 @@ public sealed class ApplicationTypesController(
             ApplicationTypeFees = request.ApplicationTypeFees
         };
 
-        var result =
-            await service.UpdateApplicationTypeAsync(id, dto);
+        var result = await service.UpdateApplicationTypeAsync(id, dto);
 
-        if (result.IsSuccess)
-            return NoContent();
-
-        return result.ErrorType switch
-        {
-            ErrorType.Validation =>
-                BadRequest(new { error = result.Error }),
-
-            ErrorType.NotFound =>
-                NotFound(new { error = result.Error }),
-
-            ErrorType.Conflict =>
-                Conflict(new { error = result.Error }),
-
-            ErrorType.Forbidden =>
-                Forbid(),
-
-            _ =>
-                StatusCode(500, new { error = result.Error })
-        };
+        return result.IsSuccess
+            ? NoContent()
+            : HandleFailure(result);
     }
 
     private static ApplicationTypeResponse MapToResponse(
-        ApplicationTypeDto dto)
-    {
-        return new ApplicationTypeResponse
+        ApplicationTypeDto dto) => new()
         {
             ApplicationTypeId = dto.ApplicationTypeId,
             ApplicationTypeTitle = dto.ApplicationTypeTitle,
             ApplicationTypeFees = dto.ApplicationTypeFees
         };
-    }
+
+    private static IActionResult HandleFailure(Result result) =>
+        result.ErrorType switch
+        {
+            ErrorType.Validation => new BadRequestObjectResult(
+                new { error = result.Error }),
+
+            ErrorType.NotFound => new NotFoundObjectResult(
+                new { error = result.Error }),
+
+            ErrorType.Conflict => new ConflictObjectResult(
+                new { error = result.Error }),
+
+            ErrorType.Forbidden => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            },
+
+            _ => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            }
+        };
 }

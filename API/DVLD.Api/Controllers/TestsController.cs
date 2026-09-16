@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "StaffOnly")]
 [Route("api/[controller]")]
 public sealed class TestsController(
     ITestService service) : ControllerBase
@@ -17,86 +17,67 @@ public sealed class TestsController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result =
-            await service.GetAllAsync();
+        var result = await service.GetAllAsync();
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(
-            result.Value!
-                .Select(MapToResponse)
-                .ToList());
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result =
-            await service.GetByIdAsync(id);
+        var result = await service.GetByIdAsync(id);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(
-            MapToResponse(result.Value!));
+        return Ok(MapToResponse(result.Value!));
     }
 
     [HttpGet("appointment/{appointmentId:int}")]
-    public async Task<IActionResult> GetByAppointmentId(
-        int appointmentId)
+    public async Task<IActionResult> GetByAppointmentId(int appointmentId)
     {
         var result =
-            await service.GetByTestAppointmentIdAsync(
-                appointmentId);
+            await service.GetByTestAppointmentIdAsync(appointmentId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(
-            result.Value!
-                .Select(MapToResponse)
-                .ToList());
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("created-by/{userId:int}")]
     public async Task<IActionResult> GetByUserId(int userId)
     {
-        var result =
-            await service.GetByUserIdAsync(userId);
+        var result = await service.GetByUserIdAsync(userId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(
-            result.Value!
-                .Select(MapToResponse)
-                .ToList());
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpPost]
     public async Task<IActionResult> AddResult(
         [FromBody] SaveTestResultRequest request)
     {
-        var dto = new SaveTestResultDto
-        {
-            TestAppointmentID = request.TestAppointmentId,
-            TestResult = request.TestResult,
-            Notes = request.Notes
-        };
+        var result = await service.AddAsync(
+            new SaveTestResultDto
+            {
+                TestAppointmentID = request.TestAppointmentId,
+                TestResult = request.TestResult,
+                Notes = request.Notes
+            });
 
-        var result =
-            await service.AddAsync(dto);
-
-        if (result.IsFailure)
-            return HandleFailure(result);
-
-        return Ok(result.Value);
+        return result.IsSuccess
+            ? Ok(result.Value)
+            : HandleFailure(result);
     }
 
     private static TestResponse MapToResponse(
-        TestDto dto) =>
-        new(
+        TestDto dto) => new(
             TestId: dto.TestID,
             TestAppointmentId: dto.TestAppointmentID,
             TestResult: dto.TestResult,
@@ -106,37 +87,28 @@ public sealed class TestsController(
             TestTypeName: dto.TestTypeName,
             AppointmentDate: dto.AppointmentDate);
 
-    private static IActionResult HandleFailure(Result result)
-    {
-        return result.ErrorType switch
+    private static IActionResult HandleFailure(Result result) =>
+        result.ErrorType switch
         {
-            ErrorType.Validation =>
-                new BadRequestObjectResult(
-                    new { error = result.Error }),
+            ErrorType.Validation => new BadRequestObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.NotFound =>
-                new NotFoundObjectResult(
-                    new { error = result.Error }),
+            ErrorType.NotFound => new NotFoundObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Conflict =>
-                new ConflictObjectResult(
-                    new { error = result.Error }),
+            ErrorType.Conflict => new ConflictObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Forbidden =>
-                new ObjectResult(
-                    new { error = result.Error })
-                {
-                    StatusCode =
-                        StatusCodes.Status403Forbidden
-                },
+            ErrorType.Forbidden => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            },
 
-            _ =>
-                new ObjectResult(
-                    new { error = result.Error })
-                {
-                    StatusCode =
-                        StatusCodes.Status500InternalServerError
-                }
+            _ => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            }
         };
-    }
 }

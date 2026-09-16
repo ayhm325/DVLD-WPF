@@ -8,33 +8,24 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "StaffOnly")]
 [Route("api/[controller]")]
-public sealed class ApplicationsController(
-    IApplicationService service) : ControllerBase
+public sealed class ApplicationsController(IApplicationService service) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         var result = await service.GetAllApplicationsAsync();
+        if (result.IsFailure) return HandleFailure(result);
 
-        if (result.IsFailure)
-            return HandleFailure(result);
-
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await service.GetApplicationByIdAsync(id);
-
-        if (result.IsFailure)
-            return HandleFailure(result);
+        if (result.IsFailure) return HandleFailure(result);
 
         return Ok(MapToResponse(result.Value!));
     }
@@ -43,9 +34,7 @@ public sealed class ApplicationsController(
     public async Task<IActionResult> GetBasicInfo(int id)
     {
         var result = await service.GetBasicInfoAsync(id);
-
-        if (result.IsFailure)
-            return HandleFailure(result);
+        if (result.IsFailure) return HandleFailure(result);
 
         return Ok(MapToBasicInfoResponse(result.Value!));
     }
@@ -61,9 +50,7 @@ public sealed class ApplicationsController(
         };
 
         var result = await service.AddNewApplicationAsync(dto);
-
-        if (result.IsFailure)
-            return HandleFailure(result);
+        if (result.IsFailure) return HandleFailure(result);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -77,12 +64,10 @@ public sealed class ApplicationsController(
         [FromBody] UpdateApplicationRequest request)
     {
         if (id != request.ApplicationId)
-        {
             return BadRequest(new
             {
                 error = "Route application ID does not match request application ID."
             });
-        }
 
         var dto = new UpdateApplicationDto
         {
@@ -127,28 +112,22 @@ public sealed class ApplicationsController(
             : HandleFailure(result);
     }
 
-    private static ApplicationResponse MapToResponse(
-        ApplicationDto dto)
+    private static ApplicationResponse MapToResponse(ApplicationDto dto) => new()
     {
-        return new ApplicationResponse
-        {
-            ApplicationId = dto.ApplicationID,
-            ApplicantPersonId = dto.ApplicantPersonID,
-            ApplicationDate = dto.ApplicationDate,
-            ApplicationTypeId = dto.ApplicationTypeID,
-            ApplicationStatus = dto.ApplicationStatus.ToString(),
-            StatusText = dto.StatusText,
-            LastStatusDate = dto.LastStatusDate,
-            PaidFees = dto.PaidFees,
-            CreatedByUserId = dto.CreatedByUserID,
-            CreatedByUserName = dto.CreatedByUserName
-        };
-    }
+        ApplicationId = dto.ApplicationID,
+        ApplicantPersonId = dto.ApplicantPersonID,
+        ApplicationDate = dto.ApplicationDate,
+        ApplicationTypeId = dto.ApplicationTypeID,
+        ApplicationStatus = dto.ApplicationStatus.ToString(),
+        StatusText = dto.StatusText,
+        LastStatusDate = dto.LastStatusDate,
+        PaidFees = dto.PaidFees,
+        CreatedByUserId = dto.CreatedByUserID,
+        CreatedByUserName = dto.CreatedByUserName
+    };
 
     private static ApplicationBasicInfoResponse MapToBasicInfoResponse(
-        ApplicationBasicInfoDto dto)
-    {
-        return new ApplicationBasicInfoResponse
+        ApplicationBasicInfoDto dto) => new()
         {
             ApplicantPersonId = dto.ApplicantPersonID,
             ApplicationId = dto.ApplicationID,
@@ -161,35 +140,29 @@ public sealed class ApplicationsController(
             LastStatusDate = dto.LastStatusDate,
             CreatedByUserName = dto.CreatedByUserName
         };
-    }
 
-    private static IActionResult HandleFailure(Result result)
-    {
-        return result.ErrorType switch
+    private static IActionResult HandleFailure(Result result) =>
+        result.ErrorType switch
         {
-            ErrorType.Validation =>
-                new BadRequestObjectResult(
-                    new { error = result.Error }),
+            ErrorType.Validation => new BadRequestObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.NotFound =>
-                new NotFoundObjectResult(
-                    new { error = result.Error }),
+            ErrorType.NotFound => new NotFoundObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Conflict =>
-                new ConflictObjectResult(
-                    new { error = result.Error }),
+            ErrorType.Conflict => new ConflictObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Forbidden =>
-                new ObjectResult(new { error = result.Error })
-                {
-                    StatusCode = StatusCodes.Status403Forbidden
-                },
+            ErrorType.Forbidden => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            },
 
-            _ =>
-                new ObjectResult(new { error = result.Error })
-                {
-                    StatusCode = StatusCodes.Status500InternalServerError
-                }
+            _ => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            }
         };
-    }
 }

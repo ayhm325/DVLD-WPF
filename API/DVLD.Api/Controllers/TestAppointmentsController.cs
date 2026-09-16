@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "StaffOnly")]
 [Route("api/[controller]")]
 public sealed class TestAppointmentsController(
     ITestAppointmentService service) : ControllerBase
@@ -21,11 +21,7 @@ public sealed class TestAppointmentsController(
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
@@ -40,38 +36,26 @@ public sealed class TestAppointmentsController(
     }
 
     [HttpGet("local-application/{localAppId:int}")]
-    public async Task<IActionResult> GetByLocalApplication(
-        int localAppId)
+    public async Task<IActionResult> GetByLocalApplication(int localAppId)
     {
         var result =
-            await service.GetByLocalDrivingLicenseApplicationIdAsync(
-                localAppId);
+            await service.GetByLocalDrivingLicenseApplicationIdAsync(localAppId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
-    [HttpGet("test-type/{testType}")]
-    public async Task<IActionResult> GetByTestType(
-        int testType)
+    [HttpGet("test-type/{testType:int}")]
+    public async Task<IActionResult> GetByTestType(int testType)
     {
-        var result =
-            await service.GetByTestTypeIdAsync((int)testType);
+        var result = await service.GetByTestTypeIdAsync(testType);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("schedule-preparation/{localAppId:int}/{testTypeId:int}")]
@@ -87,13 +71,12 @@ public sealed class TestAppointmentsController(
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(
-            MapToScheduleResponse(result.Value!));
+        return Ok(MapToScheduleResponse(result.Value!));
     }
 
     [HttpPost("schedule")]
     public async Task<IActionResult> Schedule(
-    [FromBody] ScheduleTestRequest request)
+        [FromBody] ScheduleTestRequest request)
     {
         var result =
             await service.ScheduleAsync(
@@ -101,48 +84,37 @@ public sealed class TestAppointmentsController(
                 request.TestTypeId,
                 request.AppointmentDate);
 
-        if (result.IsFailure)
-            return HandleFailure(result);
-
-        return NoContent();
+        return result.IsSuccess
+            ? NoContent()
+            : HandleFailure(result);
     }
 
     [HttpGet("created-by/{userId:int}")]
-    public async Task<IActionResult> GetByCreatedUser(
-        int userId)
+    public async Task<IActionResult> GetByCreatedUser(int userId)
     {
-        var result =
-            await service.GetByCreatedUserIdAsync(userId);
+        var result = await service.GetByCreatedUserIdAsync(userId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        var response = result.Value!
-            .Select(MapToResponse)
-            .ToList();
-
-        return Ok(response);
+        return Ok(result.Value!.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{appointmentId:int}/schedule-info")]
-    public async Task<IActionResult> GetScheduleInfo(
-        int appointmentId)
+    public async Task<IActionResult> GetScheduleInfo(int appointmentId)
     {
-        var result =
-            await service.GetScheduleInfoAsync(appointmentId);
+        var result = await service.GetScheduleInfoAsync(appointmentId);
 
         if (result.IsFailure)
             return HandleFailure(result);
 
-        return Ok(
-            MapToScheduleResponse(result.Value!));
+        return Ok(MapToScheduleResponse(result.Value!));
     }
 
     [HttpGet("fees/{testTypeId:int}")]
     public async Task<IActionResult> GetFees(int testTypeId)
     {
-        var fees =
-            await service.GetTestTypeFeesAsync(testTypeId);
+        var fees = await service.GetTestTypeFeesAsync(testTypeId);
 
         return Ok(new { fees });
     }
@@ -177,18 +149,16 @@ public sealed class TestAppointmentsController(
     public async Task<IActionResult> Create(
         [FromBody] CreateTestAppointmentRequest request)
     {
-        var dto = new CreateTestAppointmentDto
-        {
-            TestTypeID = request.TestTypeId,
-            LocalDrivingLicenseApplicationID =
-                request.LocalDrivingLicenseApplicationId,
-            AppointmentDate = request.AppointmentDate,
-            RetakeTestApplicationID =
-                request.RetakeTestApplicationId
-        };
-
-        var result =
-            await service.AddAsync(dto);
+        var result = await service.AddAsync(
+            new CreateTestAppointmentDto
+            {
+                TestTypeID = request.TestTypeId,
+                LocalDrivingLicenseApplicationID =
+                    request.LocalDrivingLicenseApplicationId,
+                AppointmentDate = request.AppointmentDate,
+                RetakeTestApplicationID =
+                    request.RetakeTestApplicationId
+            });
 
         return result.IsSuccess
             ? NoContent()
@@ -200,14 +170,12 @@ public sealed class TestAppointmentsController(
         int id,
         [FromBody] UpdateTestAppointmentRequest request)
     {
-        var dto = new UpdateTestAppointmentDto
-        {
-            TestAppointmentID = id,
-            AppointmentDate = request.AppointmentDate
-        };
-
-        var result =
-            await service.UpdateAsync(dto);
+        var result = await service.UpdateAsync(
+            new UpdateTestAppointmentDto
+            {
+                TestAppointmentID = id,
+                AppointmentDate = request.AppointmentDate
+            });
 
         return result.IsSuccess
             ? NoContent()
@@ -217,8 +185,7 @@ public sealed class TestAppointmentsController(
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result =
-            await service.DeleteAsync(id);
+        var result = await service.DeleteAsync(id);
 
         return result.IsSuccess
             ? NoContent()
@@ -226,13 +193,12 @@ public sealed class TestAppointmentsController(
     }
 
     private static TestAppointmentResponse MapToResponse(
-        TestAppointmentDto dto) =>
-        new()
+        TestAppointmentDto dto) => new()
         {
             TestAppointmentId = dto.TestAppointmentID,
             TestTypeId = dto.TestTypeID,
-            TestResult = (DVLD.Contracts.TestAppointment.TestResult)
-                dto.TestResult,
+            TestResult =
+                (DVLD.Contracts.TestAppointment.TestResult)dto.TestResult,
             CreatedByUserName = dto.CreatedByUserName,
             TestTypeName = dto.TestTypeName,
             LocalDrivingLicenseApplicationId =
@@ -245,17 +211,14 @@ public sealed class TestAppointmentsController(
                 dto.RetakeTestApplicationID,
             TestResultText = dto.TestResultText,
             Status = dto.Status,
-            AppointmentDateFormatted =
-                dto.AppointmentDateFormatted
+            AppointmentDateFormatted = dto.AppointmentDateFormatted
         };
 
     private static ScheduleTestResponse MapToScheduleResponse(
-        ScheduleTestDto dto) =>
-        new()
+        ScheduleTestDto dto) => new()
         {
             AppointmentId = dto.AppointmentID,
-            RetakeTestApplicationId =
-                dto.RetakeTestApplicationID,
+            RetakeTestApplicationId = dto.RetakeTestApplicationID,
             LocalDrivingLicenseApplicationId =
                 dto.LocalDrivingLicenseApplicationID,
             LicenseClassName = dto.LicenseClassName,
@@ -270,36 +233,28 @@ public sealed class TestAppointmentsController(
             Notes = dto.Notes
         };
 
-    private static IActionResult HandleFailure(
-        Result result) =>
+    private static IActionResult HandleFailure(Result result) =>
         result.ErrorType switch
         {
-            ErrorType.Validation =>
-                new BadRequestObjectResult(
-                    new { error = result.Error }),
+            ErrorType.Validation => new BadRequestObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.NotFound =>
-                new NotFoundObjectResult(
-                    new { error = result.Error }),
+            ErrorType.NotFound => new NotFoundObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Conflict =>
-                new ConflictObjectResult(
-                    new { error = result.Error }),
+            ErrorType.Conflict => new ConflictObjectResult(
+                new { error = result.Error }),
 
-            ErrorType.Forbidden =>
-                new ObjectResult(
-                    new { error = result.Error })
-                {
-                    StatusCode =
-                        StatusCodes.Status403Forbidden
-                },
+            ErrorType.Forbidden => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            },
 
-            _ =>
-                new ObjectResult(
-                    new { error = result.Error })
-                {
-                    StatusCode =
-                        StatusCodes.Status500InternalServerError
-                }
+            _ => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            }
         };
 }

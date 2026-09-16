@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = "StaffOnly")]
 [Route("api/[controller]")]
 public sealed class LocalDrivingLicenseApplicationsController(
     ILocalDrivingLicenseApplicationService service) : ControllerBase
@@ -18,8 +18,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result =
-            await service.GetAllLocalDrivingLicenseApplicationsAsync();
+        var result = await service.GetAllLocalDrivingLicenseApplicationsAsync();
 
         return result.IsSuccess
             ? Ok(result.Value!.Select(Map).ToList())
@@ -40,14 +39,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
     [HttpGet("{localId:int}/application-basic-info")]
     public async Task<IActionResult> GetApplicationBasicInfo(int localId)
     {
-        var result =
-            await service.GetApplicationBasicInfoAsync(localId);
+        var result = await service.GetApplicationBasicInfoAsync(localId);
 
-        if (result.IsFailure)
-            return HandleFailure(result);
-
-        return Ok(
-            MapApplicationBasicInfo(result.Value!));
+        return result.IsSuccess
+            ? Ok(MapApplicationBasicInfo(result.Value!))
+            : HandleFailure(result);
     }
 
     [HttpGet("application/{applicationId:int}")]
@@ -103,8 +99,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
     [HttpGet("{localId:int}/application-id")]
     public async Task<IActionResult> GetApplicationId(int localId)
     {
-        var result =
-            await service.GetApplicationIdByLocalIdAsync(localId);
+        var result = await service.GetApplicationIdByLocalIdAsync(localId);
 
         return result.IsSuccess
             ? Ok(new { applicationId = result.Value })
@@ -137,15 +132,13 @@ public sealed class LocalDrivingLicenseApplicationsController(
         int id,
         [FromBody] UpdateLocalDrivingLicenseApplicationRequest request)
     {
-        var dto = new UpdateLocalDrivingLicenseApplicationDto
-        {
-            LicenseClassID = request.LicenseClassId
-        };
-
         var result =
             await service.UpdateLocalDrivingLicenseApplicationAsync(
                 id,
-                dto);
+                new UpdateLocalDrivingLicenseApplicationDto
+                {
+                    LicenseClassID = request.LicenseClassId
+                });
 
         return result.IsSuccess
             ? NoContent()
@@ -175,104 +168,60 @@ public sealed class LocalDrivingLicenseApplicationsController(
     }
 
     private static LocalDrivingLicenseApplicationResponse Map(
-        LocalDrivingLicenseApplicationListDto dto)
-        => new()
+        LocalDrivingLicenseApplicationListDto dto) => new()
         {
             LocalDrivingLicenseApplicationId =
-                dto.LocalDrivingLicenseApplicationID,
+            dto.LocalDrivingLicenseApplicationID,
+            LicenseClassId = dto.LicenseClassID,
+            LicenseClassName = dto.LicenseClassName,
+            NationalNo = dto.NationalNo,
+            FullName = dto.FullName,
+            ApplicationDate = dto.ApplicationDate,
+            PassedTest = dto.PassedTest,
+            ApplicationStatus = dto.ApplicationStatus.ToString(),
+            StatusText = dto.StatusText,
+            ApplicationFees = dto.ApplicationFees,
+            LicenseClassFees = dto.LicenseClassFees,
+            HasLicense = dto.HasLicense,
+            ApplicantPersonId = dto.ApplicantPersonID
+        };
 
-            LicenseClassId =
-                dto.LicenseClassID,
-
-            LicenseClassName =
-                dto.LicenseClassName,
-
-            NationalNo =
-                dto.NationalNo,
-
-            FullName =
-                dto.FullName,
-
-            ApplicationDate =
-                dto.ApplicationDate,
-
-            PassedTest =
-                dto.PassedTest,
-
-            ApplicationStatus =
-                dto.ApplicationStatus.ToString(),
-
-            StatusText =
-                dto.StatusText,
-
-            ApplicationFees =
-                dto.ApplicationFees,
-
-            LicenseClassFees =
-                dto.LicenseClassFees,
-
-            HasLicense =
-                dto.HasLicense,
-
-            ApplicantPersonId =
-                dto.ApplicantPersonID
+    private static ApplicationBasicInfoResponse MapApplicationBasicInfo(
+        ApplicationBasicInfoDto dto) => new()
+        {
+            ApplicantPersonId = dto.ApplicantPersonID,
+            ApplicationId = dto.ApplicationID,
+            ApplicationStatus = dto.ApplicationStatus.ToString(),
+            StatusText = dto.StatusText,
+            PaidFees = dto.PaidFees,
+            ApplicationTypeName = dto.ApplicationTypeName,
+            ApplicantFullName = dto.ApplicantFullName,
+            ApplicationDate = dto.ApplicationDate,
+            LastStatusDate = dto.LastStatusDate,
+            CreatedByUserName = dto.CreatedByUserName
         };
 
     private IActionResult HandleFailure<T>(Result<T> result)
         => result.ErrorType switch
         {
-            ErrorType.NotFound =>
-                NotFound(new { error = result.Error }),
-
-            ErrorType.Validation =>
-                BadRequest(new { error = result.Error }),
-
-            ErrorType.Conflict =>
-                Conflict(new { error = result.Error }),
-
-            ErrorType.Forbidden =>
-                Forbid(),
-
-            _ =>
-                StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new { error = result.Error })
+            ErrorType.NotFound => NotFound(new { error = result.Error }),
+            ErrorType.Validation => BadRequest(new { error = result.Error }),
+            ErrorType.Conflict => Conflict(new { error = result.Error }),
+            ErrorType.Forbidden => Forbid(),
+            _ => StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = result.Error })
         };
 
     private IActionResult HandleFailure(Result result)
         => result.ErrorType switch
         {
-            ErrorType.NotFound =>
-                NotFound(new { error = result.Error }),
-
-            ErrorType.Validation =>
-                BadRequest(new { error = result.Error }),
-
-            ErrorType.Conflict =>
-                Conflict(new { error = result.Error }),
-
-            ErrorType.Forbidden =>
-                Forbid(),
-
-            _ =>
-                StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new { error = result.Error })
+            ErrorType.NotFound => NotFound(new { error = result.Error }),
+            ErrorType.Validation => BadRequest(new { error = result.Error }),
+            ErrorType.Conflict => Conflict(new { error = result.Error }),
+            ErrorType.Forbidden => Forbid(),
+            _ => StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = result.Error })
         };
-
-    private static ApplicationBasicInfoResponse MapApplicationBasicInfo(
-         ApplicationBasicInfoDto dto)
-         => new()
-         {
-             ApplicantPersonId = dto.ApplicantPersonID,
-             ApplicationId = dto.ApplicationID,
-             ApplicationStatus = dto.ApplicationStatus.ToString(),
-             StatusText = dto.StatusText,
-             PaidFees = dto.PaidFees,
-             ApplicationTypeName = dto.ApplicationTypeName,
-             ApplicantFullName = dto.ApplicantFullName,
-             ApplicationDate = dto.ApplicationDate,
-             LastStatusDate = dto.LastStatusDate,
-             CreatedByUserName = dto.CreatedByUserName
-         };
 }

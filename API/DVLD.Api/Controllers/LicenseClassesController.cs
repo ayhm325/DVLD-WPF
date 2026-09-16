@@ -10,77 +10,59 @@ namespace DVLD.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
-public sealed class LicenseClassesController(
-    ILicenseClassService service) : ControllerBase
+public sealed class LicenseClassesController(ILicenseClassService service) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result =
-            await service.GetAllLicenseClassesAsync();
+        var result = await service.GetAllLicenseClassesAsync();
+        if (result.IsFailure) return HandleFailure(result);
 
-        if (result.IsFailure)
-            return HandleFailure(result);
-
-        var response = result.Value?
-            .Select(MapToResponse)
-            .ToList() ?? [];
-
-        return Ok(response);
+        return Ok(result.Value?.Select(MapToResponse).ToList() ?? []);
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result =
-            await service.GetLicenseClassByIdAsync(id);
+        var result = await service.GetLicenseClassByIdAsync(id);
+        if (result.IsFailure) return HandleFailure(result);
 
-        if (result.IsFailure)
-            return HandleFailure(result);
-
-        if (result.Value is null)
-        {
-            return StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new { error = "License class data is unavailable." });
-        }
-
-        return Ok(MapToResponse(result.Value));
+        return result.Value is null
+            ? ServerError("License class data is unavailable.")
+            : Ok(MapToResponse(result.Value));
     }
 
-    private static LicenseClassResponse MapToResponse(
-        LicenseClassDto dto)
+    private static LicenseClassResponse MapToResponse(LicenseClassDto dto) => new()
     {
-        return new LicenseClassResponse
+        LicenseClassId = dto.LicenseClassID,
+        LicenseClassName = dto.LicenseClassName,
+        LicenseClassDescription = dto.LicenseClassDescription,
+        MinAllowedAge = dto.MinAllowedAge,
+        DefaultValidityLength = dto.DefaultValidityLength,
+        LicenseClassFees = dto.LicenseClassFees
+    };
+
+    private static IActionResult HandleFailure(Result result) =>
+        result.ErrorType switch
         {
-            LicenseClassId = dto.LicenseClassID,
-            LicenseClassName = dto.LicenseClassName,
-            LicenseClassDescription = dto.LicenseClassDescription,
-            MinAllowedAge = dto.MinAllowedAge,
-            DefaultValidityLength = dto.DefaultValidityLength,
-            LicenseClassFees = dto.LicenseClassFees
-        };
-    }
+            ErrorType.Validation => new BadRequestObjectResult(
+                new { error = result.Error }),
 
-    private static IActionResult HandleFailure(Result result)
-    {
-        return result.ErrorType switch
+            ErrorType.NotFound => new NotFoundObjectResult(
+                new { error = result.Error }),
+
+            ErrorType.Forbidden => new ObjectResult(
+                new { error = result.Error })
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            },
+
+            _ => ServerError(result.Error)
+        };
+
+    private static IActionResult ServerError(string error) =>
+        new ObjectResult(new { error })
         {
-            ErrorType.Validation =>
-                new BadRequestObjectResult(
-                    new { error = result.Error }),
-
-            ErrorType.NotFound =>
-                new NotFoundObjectResult(
-                    new { error = result.Error }),
-
-            _ =>
-                new ObjectResult(
-                    new { error = result.Error })
-                {
-                    StatusCode =
-                        StatusCodes.Status500InternalServerError
-                }
+            StatusCode = StatusCodes.Status500InternalServerError
         };
-    }
 }
