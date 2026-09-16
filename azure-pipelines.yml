@@ -5,9 +5,13 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/*.sln'
-  buildConfiguration: 'Release'
-  DVLD_TEST_CONNECTION: 'Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
+- group: DVLD-Test-Secrets
+- name: solution
+  value: '**/*.sln'
+- name: buildConfiguration
+  value: 'Release'
+- name: DVLD_TEST_CONNECTION
+  value: 'Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
 
 steps:
 
@@ -55,6 +59,7 @@ steps:
     publishTestResults: true
   env:
     DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+    Jwt__SecretKey: '$(Jwt__SecretKey)'
 
 # ---------------------------------------------------------
 # Infrastructure Integration Tests
