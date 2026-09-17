@@ -59,6 +59,38 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userIdClaim =
+                    context.Principal?
+                        .FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?
+                        .Value;
+
+                if (!int.TryParse(userIdClaim, out var userId) || userId <= 0)
+                {
+                    context.Fail("Invalid user identity.");
+                    return;
+                }
+
+                var dbContext =
+                    context.HttpContext.RequestServices
+                        .GetRequiredService<DVLDDbContext>();
+
+                var userExistsAndActive =
+                    await dbContext.Users
+                        .AsNoTracking()
+                        .AnyAsync(
+                            user => user.UserId == userId &&
+                                    user.IsActive,
+                            context.HttpContext.RequestAborted);
+
+                if (!userExistsAndActive)
+                    context.Fail("User account is inactive or no longer exists.");
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>
