@@ -13,18 +13,10 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize"
-        FontFamily="Segoe UI"
         SnapsToDevicePixels="True"
         UseLayoutRounding="True">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد (فاتح) -->
-        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#F0FDFA" Offset="0"/>
-            <GradientStop Color="#FFFFFF" Offset="1"/>
-        </LinearGradientBrush>
-
-        <!-- ستايل زر الإغلاق -->
         <Style x:Key="CloseButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Width" Value="34"/>
             <Setter Property="Height" Value="34"/>
@@ -38,13 +30,19 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="CloseBorder" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="CloseBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource RadiusMedium}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CloseBorder" Property="Background" Value="{StaticResource DangerLightColor}"/>
-                                <Setter Property="Foreground" Value="{StaticResource DangerColor}"/>
+                                <Setter TargetName="CloseBorder"
+                                        Property="Background"
+                                        Value="{StaticResource DangerLightColor}"/>
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource DangerColor}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Opacity" Value="0.75"/>
@@ -54,44 +52,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Ghost Button (فاتح) -->
-        <Style x:Key="GhostButtonStyle" TargetType="{x:Type Button}">
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="Padding" Value="20,0"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" CornerRadius="10" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource PrimaryLightColor}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-                                <Setter Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="{StaticResource TextMutedColor}"/>
-                                <Setter Property="Opacity" Value="0.5"/>
-                                <Setter Property="Cursor" Value="Arrow"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
     <Border Margin="15"
             Background="{StaticResource BackgroundColor}"
             BorderBrush="{StaticResource BorderColor}"
@@ -99,7 +61,6 @@
             CornerRadius="16"
             SnapsToDevicePixels="True"
             Effect="{StaticResource ElevationShadow3}">
-
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -107,50 +68,70 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر ================= -->
             <Border Grid.Row="0"
-                    Background="{StaticResource HeaderBgGradient}"
+                    Background="{StaticResource SurfaceColor}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1"
                     CornerRadius="16,16,0,0"
-                    Padding="25,18,25,18">
+                    Padding="25,18">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="38" Height="38" CornerRadius="10"
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Border Width="38"
+                                Height="38"
+                                CornerRadius="{StaticResource RadiusMedium}"
                                 Background="{StaticResource PrimaryLightColor}"
-                                Opacity="0.15"
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1"
                                 Margin="0,0,14,0"
                                 Padding="8"
                                 VerticalAlignment="Center">
                             <Path Data="M19,12H21V14H19V12M19,8H21V10H19V8M3,20H17V4H3A2,2 0 0,0 1,6V18A2,2 0 0,0 3,20Z"
-                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5"
-                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                  Stroke="{StaticResource PrimaryColor}"
+                                  StrokeThickness="1.5"
+                                  Fill="Transparent"
+                                  Stretch="Uniform"
+                                  Height="20"
+                                  Width="20"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
                         </Border>
+
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Detain License" FontSize="18" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextPrimaryColor}"/>
-                            <TextBlock Text="Detain and manage a driver's license" FontSize="12" 
-                                       Foreground="{StaticResource TextSecondaryColor}" Margin="0,3,0,0"/>
+                            <TextBlock Text="Detain License"
+                                       Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="Detain and manage a driver's license"
+                                       Style="{StaticResource CaptionStyle}"
+                                       Margin="0,3,0,0"/>
                         </StackPanel>
                     </StackPanel>
 
-                    <Button Grid.Column="1" Style="{StaticResource CloseButtonStyle}" 
-                            Click="CloseButton_Click" ToolTip="Close" VerticalAlignment="Center">
-                        <TextBlock Text="✕" FontSize="20" FontWeight="Light" 
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Style="{StaticResource CloseButtonStyle}"
+                            Click="CloseButton_Click"
+                            ToolTip="Close"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="✕"
+                                   FontSize="20"
+                                   FontWeight="Light"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
                     </Button>
                 </Grid>
             </Border>
 
-            <!-- ================= المحتوى ================= -->
-            <Border Grid.Row="1" Background="{StaticResource BackgroundColor}" Padding="20,18,20,18">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True">
+            <Border Grid.Row="1"
+                    Background="{StaticResource BackgroundColor}"
+                    Padding="20,18">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              CanContentScroll="True">
                     <StackPanel>
                         <controls:DriverLicenseInfo
                             LicenseIdText="{Binding LicenseIdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -165,9 +146,8 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
             <Border Grid.Row="2"
-                    Background="{StaticResource BackgroundColor}"
+                    Background="{StaticResource SurfaceColor}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,1,0,0"
                     CornerRadius="0,0,16,16"
@@ -178,15 +158,19 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left Side -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
                         <Button Content="Show Licenses History"
                                 Style="{StaticResource GhostButtonStyle}"
                                 Command="{Binding ShowLicensesHistoryCommand}"
                                 IsEnabled="{Binding IsLicenseIssued}"/>
 
-                        <Rectangle Width="1" Height="20" Fill="{StaticResource BorderColor}" 
-                                   Margin="12,0" VerticalAlignment="Center"/>
+                        <Rectangle Width="1"
+                                   Height="20"
+                                   Fill="{StaticResource BorderColor}"
+                                   Margin="12,0"
+                                   VerticalAlignment="Center"/>
 
                         <Button Content="Show Licenses Info"
                                 Style="{StaticResource GhostButtonStyle}"
@@ -194,8 +178,9 @@
                                 IsEnabled="{Binding IsLicenseIssued}"/>
                     </StackPanel>
 
-                    <!-- Right Side -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
                         <Button Content="Detain"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Width="120"

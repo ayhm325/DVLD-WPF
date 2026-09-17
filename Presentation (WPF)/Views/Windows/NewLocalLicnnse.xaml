@@ -4,10 +4,7 @@
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="New Local Driving License Application"
-        Height="700"
-        Width="870"
-        MinHeight="650"
-        MinWidth="820"
+        Height="700" Width="870" MinHeight="650" MinWidth="820"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundColor}"
         ResizeMode="NoResize">
@@ -19,23 +16,18 @@
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
-
         <Style x:Key="InfoIconBox" TargetType="Border">
-            <Setter Property="Width" Value="36"/>
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}"/>
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
             <Setter Property="Background" Value="{StaticResource PrimaryLightColor}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
     </Window.Resources>
 
-    <Border Background="{StaticResource SurfaceColor}"
-            BorderBrush="{StaticResource BorderColor}"
-            BorderThickness="1"
-            CornerRadius="{StaticResource RadiusLarge}"
-            Margin="16"
+    <Border Background="{StaticResource SurfaceColor}" BorderBrush="{StaticResource BorderColor}"
+            BorderThickness="1" CornerRadius="{StaticResource RadiusLarge}" Margin="16"
             Effect="{StaticResource ElevationShadow3}">
-
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -43,49 +35,33 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر ================= -->
-            <Border Grid.Row="0"
-                    BorderBrush="{StaticResource BorderColor}"
-                    BorderThickness="0,0,0,1"
-                    Padding="{StaticResource CardPadding}">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="40"
-                            Height="40"
-                            CornerRadius="{StaticResource RadiusMedium}"
-                            Background="{StaticResource PrimaryLightColor}"
-                            Margin="0,0,16,0"
-                            VerticalAlignment="Center">
+            <Border Grid.Row="0" Background="{StaticResource SurfaceColor}"
+                    BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1"
+                    Padding="24,18" CornerRadius="16,16,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="42" Height="42" CornerRadius="{StaticResource RadiusMedium}"
+                            Background="{StaticResource PrimaryLightColor}" Margin="0,0,14,0">
                         <materialDesign:PackIcon Kind="FileDocumentPlusOutline"
                                                  Foreground="{StaticResource PrimaryColor}"
-                                                 Width="20"
-                                                 Height="20"
-                                                 VerticalAlignment="Center"
-                                                 HorizontalAlignment="Center"/>
+                                                 Width="21" Height="21"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="New Local Driving License Application"
-                               Style="{StaticResource HeaderStyle}"
-                               VerticalAlignment="Center"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="New Local Driving License Application" Style="{StaticResource HeaderStyle}"/>
+                        <TextBlock Text="Create a new application and assign its license class"
+                                   Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
-            <!-- ================= المحتوى ================= -->
-            <Grid Grid.Row="1" Margin="{StaticResource CardPadding}">
-                <TabControl x:Name="MainTabControl"
-                            Background="Transparent"
-                            BorderThickness="0">
-
-                    <TabItem Header="Personal Info"
-                             Style="{StaticResource TabItemStyle}">
-                        <DockPanel Margin="0,12,0,12"
-                                   LastChildFill="True">
-                            <controls:Filter DockPanel.Dock="Top"
-                                              Margin="0,0,0,12"/>
-                            <Button DockPanel.Dock="Bottom"
-                                    Content="Next"
-                                    HorizontalAlignment="Right"
-                                    Margin="0,12,0,0"
-                                    Click="NextButton_Click"
-                                    Style="{StaticResource PrimaryButtonStyle}"/>
+            <Grid Grid.Row="1" Margin="24,18">
+                <TabControl x:Name="MainTabControl" Background="Transparent" BorderThickness="0">
+                    <TabItem Header="Personal Info" Style="{StaticResource TabItemStyle}">
+                        <DockPanel Margin="0,12,0,0">
+                            <controls:Filter DockPanel.Dock="Top" Margin="0,0,0,14"/>
+                            <Button DockPanel.Dock="Bottom" Content="Next"
+                                    HorizontalAlignment="Right" Margin="0,14,0,0"
+                                    Click="NextButton_Click" Style="{StaticResource PrimaryButtonStyle}"/>
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
                                 <controls:InformationPerson Person="{Binding Person}"/>
@@ -93,14 +69,12 @@
                         </DockPanel>
                     </TabItem>
 
-                    <TabItem Header="Application Info"
-                             Style="{StaticResource TabItemStyle}">
-                        <Border Style="{StaticResource CardStyle}"
-                                Margin="0,12,0,0">
+                    <TabItem Header="Application Info" Style="{StaticResource TabItemStyle}">
+                        <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="190"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
@@ -110,136 +84,65 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- D.L. Application ID -->
-                                <Border Style="{StaticResource InfoIconBox}"
-                                        Grid.Row="0"
-                                        Grid.Column="0">
-                                    <materialDesign:PackIcon Kind="Identifier"
-                                                             Foreground="{StaticResource PrimaryColor}"
-                                                             Width="18"
-                                                             Height="18"
-                                                             VerticalAlignment="Center"
-                                                             HorizontalAlignment="Center"/>
+                                <Border Style="{StaticResource InfoIconBox}" Grid.Row="0" Grid.Column="0">
+                                    <materialDesign:PackIcon Kind="Identifier" Foreground="{StaticResource PrimaryColor}"
+                                                             Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Grid.Row="0"
-                                           Grid.Column="1"
-                                           Text="D.L. Application ID"
-                                           Style="{StaticResource LabelStyle}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,16,0"/>
-                                <TextBlock Grid.Row="0"
-                                           Grid.Column="2"
-                                           Text="{Binding LocalApplicationId}"
-                                           Style="{StaticResource ValueTextStyle}"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="D.L. Application ID"
+                                           Style="{StaticResource LabelStyle}" Margin="0,0,16,0"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding LocalApplicationId}"
+                                           Style="{StaticResource ValueTextStyle}"/>
 
-                                <!-- Application Date -->
-                                <Border Style="{StaticResource InfoIconBox}"
-                                        Grid.Row="1"
-                                        Grid.Column="0"
-                                        Margin="0,12,0,0">
-                                    <materialDesign:PackIcon Kind="Calendar"
-                                                             Foreground="{StaticResource PrimaryColor}"
-                                                             Width="18"
-                                                             Height="18"
-                                                             VerticalAlignment="Center"
-                                                             HorizontalAlignment="Center"/>
+                                <Border Style="{StaticResource InfoIconBox}" Grid.Row="1" Grid.Column="0" Margin="0,12,0,0">
+                                    <materialDesign:PackIcon Kind="Calendar" Foreground="{StaticResource PrimaryColor}"
+                                                             Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Grid.Row="1"
-                                           Grid.Column="1"
-                                           Text="Application Date"
-                                           Style="{StaticResource LabelStyle}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,12,16,0"/>
-                                <TextBlock Grid.Row="1"
-                                           Grid.Column="2"
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="Application Date"
+                                           Style="{StaticResource LabelStyle}" Margin="0,12,16,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2"
                                            Text="{Binding ApplicationDate, StringFormat='{}{0:dd/MM/yyyy}'}"
-                                           Style="{StaticResource ValueTextStyle}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,12,0,0"/>
+                                           Style="{StaticResource ValueTextStyle}" Margin="0,12,0,0"/>
 
-                                <!-- License Class -->
-                                <Border Style="{StaticResource InfoIconBox}"
-                                        Grid.Row="2"
-                                        Grid.Column="0"
-                                        Margin="0,12,0,0">
-                                    <materialDesign:PackIcon Kind="Car"
-                                                             Foreground="{StaticResource PrimaryColor}"
-                                                             Width="18"
-                                                             Height="18"
-                                                             VerticalAlignment="Center"
-                                                             HorizontalAlignment="Center"/>
+                                <Border Style="{StaticResource InfoIconBox}" Grid.Row="2" Grid.Column="0" Margin="0,12,0,0">
+                                    <materialDesign:PackIcon Kind="Car" Foreground="{StaticResource PrimaryColor}"
+                                                             Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Grid.Row="2"
-                                           Grid.Column="1"
-                                           Text="License Class"
-                                           Style="{StaticResource LabelStyle}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,12,16,0"/>
-
-                                <ComboBox Grid.Row="2"
-                                            Grid.Column="2"
-                                            ItemsSource="{Binding LicenseClasses}"
-                                            SelectedItem="{Binding SelectedLicenseClass, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                            MinWidth="250"
-                                            Height="40"
-                                            VerticalAlignment="Center"
-                                            Margin="0,12,0,0">
-                                    
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="License Class"
+                                           Style="{StaticResource LabelStyle}" Margin="0,12,16,0"/>
+                                <ComboBox Grid.Row="2" Grid.Column="2"
+                                          ItemsSource="{Binding LicenseClasses}"
+                                          SelectedItem="{Binding SelectedLicenseClass, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Height="40" Margin="0,12,0,0">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding LicenseClassName}" />
+                                            <TextBlock Text="{Binding LicenseClassName}"/>
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
 
-                                <!-- Application Fees -->
-                                <Border Style="{StaticResource InfoIconBox}"
-                                        Grid.Row="3"
-                                        Grid.Column="0"
-                                        Margin="0,12,0,0">
-                                    <materialDesign:PackIcon Kind="Cash"
-                                                             Foreground="{StaticResource PrimaryColor}"
-                                                             Width="18"
-                                                             Height="18"
-                                                             VerticalAlignment="Center"
-                                                             HorizontalAlignment="Center"/>
+                                <Border Style="{StaticResource InfoIconBox}" Grid.Row="3" Grid.Column="0" Margin="0,12,0,0">
+                                    <materialDesign:PackIcon Kind="Cash" Foreground="{StaticResource PrimaryColor}"
+                                                             Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Grid.Row="3"
-                                           Grid.Column="1"
-                                           Text="Application Fees"
-                                           Style="{StaticResource LabelStyle}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,12,16,0"/>
-                                <TextBlock Grid.Row="3"
-                                           Grid.Column="2"
-                                           Text="{Binding ApplicationFees, StringFormat='{}{0:F2}'}"
-                                           Style="{StaticResource ValueTextStyle}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,12,0,0"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="Application Fees"
+                                           Style="{StaticResource LabelStyle}" Margin="0,12,16,0"/>
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding ApplicationFees, StringFormat='{}{0:F2}'}"
+                                           Style="{StaticResource ValueTextStyle}" Margin="0,12,0,0"/>
                             </Grid>
                         </Border>
                     </TabItem>
                 </TabControl>
             </Grid>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="2"
-                    BorderBrush="{StaticResource BorderColor}"
-                    BorderThickness="0,1,0,0"
-                    Padding="{StaticResource CardPadding}">
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-                    <Button Content="Close"
-                            Click="CloseButton_Click"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Margin="0,0,12,0"/>
-                    <Button Content="Save"
-                            Command="{Binding SaveCommand}"
+            <Border Grid.Row="2" BorderBrush="{StaticResource BorderColor}" BorderThickness="0,1,0,0"
+                    Background="{StaticResource SurfaceSecondaryColor}" Padding="24,15,24,20">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Close" Click="CloseButton_Click"
+                            Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,12,0"/>
+                    <Button Content="Save" Command="{Binding SaveCommand}"
                             Style="{StaticResource PrimaryButtonStyle}"/>
                 </StackPanel>
             </Border>
-
         </Grid>
     </Border>
 </Window>

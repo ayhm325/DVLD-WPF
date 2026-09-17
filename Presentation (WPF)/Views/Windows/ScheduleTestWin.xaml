@@ -3,73 +3,30 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Presentation.Views.Windows"        
         mc:Ignorable="d"
-        Title="Schedule Test" 
-        Height="700" Width="520" 
-        WindowStartupLocation="CenterScreen"        
+        Title="Schedule Test"
+        Height="700" Width="520"
+        WindowStartupLocation="CenterScreen"
         Background="Transparent"
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- تدرج الهيدر الموحد (فاتح) -->
-        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#F0FDFA" Offset="0"/>
-            <GradientStop Color="#FFFFFF" Offset="1"/>
-        </LinearGradientBrush>
-
-        <!-- ستايل زر الإغلاق -->
-        <Style x:Key="CloseButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-                                <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Retake Section Style (فاتح ومميز) -->
-        <Style x:Key="RetakeSectionStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource PrimaryLightColor}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="16,14"/>
-            <Setter Property="Margin" Value="0,0,0,0"/>
-        </Style>
-
-        <!-- ReadOnly Input Override (فاتح) -->
         <Style x:Key="ReadOnlyInput" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
             <Setter Property="Foreground" Value="{StaticResource TextMutedColor}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="IsReadOnly" Value="True"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
-        <!-- Retake Field Label -->
+        <Style x:Key="RetakeSectionStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource PrimarySoftColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusLarge}"/>
+            <Setter Property="Padding" Value="18,16"/>
+        </Style>
+
         <Style x:Key="RetakeLabelStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -77,143 +34,98 @@
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
 
-        <!-- Retake Field TextBox -->
-        <Style x:Key="RetakeTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="FontSize" Value="13"/>
+        <Style x:Key="RetakeTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="IsReadOnly" Value="True"/>
         </Style>
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
-    <Border Background="{StaticResource BackgroundColor}" 
-            BorderBrush="{StaticResource BorderColor}" 
-            BorderThickness="1" 
-            CornerRadius="16" 
-            Margin="15"
+    <Border Background="{StaticResource SurfaceColor}" BorderBrush="{StaticResource BorderColor}"
+            BorderThickness="1" CornerRadius="{StaticResource RadiusLarge}" Margin="16"
             Effect="{StaticResource ElevationShadow3}">
-
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- Header -->
                 <RowDefinition Height="*"/>
-                <!-- Scrollable Content -->
                 <RowDefinition Height="Auto"/>
-                <!-- Retake Section -->
                 <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر الموحد ================= -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="16,16,0,0" 
-                    Padding="25,18,25,18"
-                    BorderBrush="{StaticResource BorderColor}"
-                    BorderThickness="0,0,0,1">
-                <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="38" Height="38" CornerRadius="10" 
-                                Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.15"
-                                Margin="0,0,14,0"
-                                Padding="8"
-                                VerticalAlignment="Center">
-                            <Path Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" 
-                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
-                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
-                        </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Schedule Test" 
-                                       FontSize="18" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextPrimaryColor}"/>
-                            <TextBlock Text="Vision Test" 
-                                       FontSize="12" 
-                                       Foreground="{StaticResource TextSecondaryColor}" 
-                                       Margin="0,2,0,0"/>
-                        </StackPanel>
+            <Border Grid.Row="0" Background="{StaticResource SurfaceColor}"
+                    BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1"
+                    Padding="24,18" CornerRadius="16,16,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="42" Height="42" CornerRadius="{StaticResource RadiusMedium}"
+                            Background="{StaticResource PrimaryLightColor}" Margin="0,0,14,0">
+                        <TextBlock Text="◉" Foreground="{StaticResource PrimaryColor}"
+                                   FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Schedule Test" Style="{StaticResource HeaderStyle}"/>
+                        <TextBlock Text="Vision Test" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
                     </StackPanel>
-                </Grid>
+                </StackPanel>
             </Border>
 
-            <!-- ================= المحتوى ================= -->
-            <ScrollViewer Grid.Row="1" 
-                          VerticalScrollBarVisibility="Auto"
-                          Margin="20,15,20,0">
+            <ScrollViewer Grid.Row="1" Margin="24,18,24,0"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <TextBlock Text="Applicant &amp; Appointment" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="14"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="14"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="14"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="D.L.App.ID" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Schedule.LocalDrivingLicenseApplicationId}" Style="{StaticResource ReadOnlyInput}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock Text="Trial" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Schedule.Trial}" Style="{StaticResource ReadOnlyInput}"/>
+                        </StackPanel>
 
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="20"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+                            <TextBlock Text="D. Class" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Schedule.LicenseClassName}" Style="{StaticResource ReadOnlyInput}"/>
+                        </StackPanel>
 
-                    <!-- Row 0: D.L.App.ID & Trial -->
-                    <StackPanel Grid.Row="0" Grid.Column="0">
-                        <TextBlock Text="D.L.App.ID" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding Schedule.LocalDrivingLicenseApplicationId}" Style="{StaticResource ReadOnlyInput}"/>
-                    </StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
+                            <TextBlock Text="Name" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Schedule.FullName}" Style="{StaticResource ReadOnlyInput}"/>
+                        </StackPanel>
 
-                    <StackPanel Grid.Row="0" Grid.Column="2">
-                        <TextBlock Text="Trial" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding Schedule.Trial}" Style="{StaticResource ReadOnlyInput}"/>
-                    </StackPanel>
-
-                    <!-- Row 2: D. Class (Full Width) -->
-                    <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
-                        <TextBlock Text="D. Class" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding Schedule.LicenseClassName}" Style="{StaticResource ReadOnlyInput}"/>
-                    </StackPanel>
-
-                    <!-- Row 4: Name (Full Width) -->
-                    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
-                        <TextBlock Text="Name" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding Schedule.FullName}" Style="{StaticResource ReadOnlyInput}"/>
-                    </StackPanel>
-
-                    <!-- Row 6: Date & Fees -->
-                    <StackPanel Grid.Row="6" Grid.Column="0">
-                        <TextBlock Text="Date" Style="{StaticResource LabelStyle}"/>
-                        <DatePicker SelectedDate="{Binding Schedule.Date}" 
-                                    DisplayDateStart="{Binding MinDate, Mode=OneWay}"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Row="6" Grid.Column="2">
-                        <TextBlock Text="Fees" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding Schedule.Fees}" Style="{StaticResource ReadOnlyInput}"/>
-                    </StackPanel>
-                </Grid>
-
+                        <StackPanel Grid.Row="6" Grid.Column="0">
+                            <TextBlock Text="Date" Style="{StaticResource LabelStyle}"/>
+                            <DatePicker SelectedDate="{Binding Schedule.Date}" DisplayDateStart="{Binding MinDate, Mode=OneWay}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="6" Grid.Column="2">
+                            <TextBlock Text="Fees" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding Schedule.Fees}" Style="{StaticResource ReadOnlyInput}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
             </ScrollViewer>
 
-            <!-- ================= قسم إعادة الاختبار ================= -->
-            <Border Grid.Row="2" 
-                    Style="{StaticResource RetakeSectionStyle}" 
-                    Visibility="{Binding IsRetake,Converter={StaticResource BoolToVis}}"
-                    Margin="20,15,20,0">
+            <Border Grid.Row="2" Style="{StaticResource RetakeSectionStyle}"
+                    Visibility="{Binding IsRetake, Converter={StaticResource BoolToVis}}"
+                    Margin="24,16,24,0">
                 <StackPanel>
-                    <!-- Header -->
-                    <TextBlock Text="Retake Test Info" 
-                               FontSize="14" FontWeight="SemiBold" 
-                               Foreground="{StaticResource PrimaryColor}"
-                               Margin="0,0,0,12"/>
-
-                    <!-- Fields -->
+                    <TextBlock Text="Retake Test Info" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,12"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -223,53 +135,34 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- R.App.Fees -->
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="R.App.Fees" Style="{StaticResource RetakeLabelStyle}"/>
                             <TextBox Text="{Binding Schedule.RetakerFees}" Style="{StaticResource RetakeTextBoxStyle}"/>
                         </StackPanel>
-
-                        <!-- Total Fees -->
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Total Fees" Style="{StaticResource RetakeLabelStyle}"/>
-                            <TextBox Text="{Binding TotalFees, Mode=OneWay}" 
-                                     Style="{StaticResource RetakeTextBoxStyle}" 
-                                     FontWeight="Bold" 
-                                     Foreground="{StaticResource PrimaryColor}"/>
+                            <TextBox Text="{Binding TotalFees, Mode=OneWay}" Style="{StaticResource RetakeTextBoxStyle}"
+                                     FontWeight="Bold" Foreground="{StaticResource PrimaryColor}"/>
                         </StackPanel>
-
-                        <!-- R.Test.App.ID -->
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="R.Test.App.ID" Style="{StaticResource RetakeLabelStyle}"/>
-                            <TextBox Text="{Binding Schedule.RetakeTestApplicationId}" 
-                                     Style="{StaticResource RetakeTextBoxStyle}" 
+                            <TextBox Text="{Binding Schedule.RetakeTestApplicationId}" Style="{StaticResource RetakeTextBoxStyle}"
                                      Foreground="{StaticResource TextSecondaryColor}"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="3" Background="{StaticResource BackgroundColor}" 
-                    Padding="20,15,25,20" 
-                    CornerRadius="0,0,16,16"
-                    Margin="-1,0,-1,-1">
+            <Border Grid.Row="3" Background="{StaticResource SurfaceSecondaryColor}"
+                    Padding="20,15,24,20" CornerRadius="0,0,16,16"
+                    BorderBrush="{StaticResource BorderColor}" BorderThickness="0,1,0,0">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-
-                    <Button Style="{StaticResource PrimaryButtonStyle}" 
-                            Command="{Binding SaveCommand}" 
-                            Content="Save"
-                            Width="120"
-                            Margin="0,0,15,0"/>
-
-                    <Button Style="{StaticResource SecondaryButtonStyle}" 
-                            Command="{Binding CloseCommand}" 
-                            Content="Close"
-                            Width="120"
-                            Click="CloseButton_Click"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SaveCommand}"
+                            Content="Save" Width="120" Margin="0,0,12,0"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}" Command="{Binding CloseCommand}"
+                            Content="Close" Width="120" Click="CloseButton_Click"/>
                 </StackPanel>
             </Border>
-
         </Grid>
     </Border>
 </Window>
