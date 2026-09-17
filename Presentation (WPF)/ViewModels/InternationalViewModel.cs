@@ -3,9 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.InternationalLicense;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
-using System.Windows;
 
 namespace Presentation.ViewModels;
 
@@ -13,18 +13,14 @@ public partial class InternationalViewModel : ObservableObject
 {
     private readonly IInternationalLicensesApiClient _internationalLicensesApiClient;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IApiNotificationService _notifications;
     private readonly ObservableCollection<InternationalLicenseListResponse> _allApplications = [];
 
     public ObservableCollection<InternationalLicenseListResponse> Applications { get; } = [];
 
-    [ObservableProperty]
-    private InternationalLicenseListResponse? selectedApplication;
-
-    [ObservableProperty]
-    private string searchText = string.Empty;
-
-    [ObservableProperty]
-    private string selectedFilter = "Int License ID";
+    [ObservableProperty] private InternationalLicenseListResponse? _selectedApplication;
+    [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private string _selectedFilter = "Int License ID";
 
     public ObservableCollection<string> Filters { get; } =
     [
@@ -36,13 +32,12 @@ public partial class InternationalViewModel : ObservableObject
 
     public InternationalViewModel(
         IInternationalLicensesApiClient internationalLicensesApiClient,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IApiNotificationService notifications)
     {
-        _internationalLicensesApiClient = internationalLicensesApiClient
-            ?? throw new ArgumentNullException(nameof(internationalLicensesApiClient));
-
-        _serviceProvider = serviceProvider
-            ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _internationalLicensesApiClient = internationalLicensesApiClient ?? throw new ArgumentNullException(nameof(internationalLicensesApiClient));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         _ = LoadApplicationsAsync();
     }
@@ -56,7 +51,9 @@ public partial class InternationalViewModel : ObservableObject
 
         if (result.IsFailure)
         {
-            MessageBox.Show(result.Error, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowFailure(
+                result,
+                "Load International Licenses Failed");
             return;
         }
 
@@ -87,19 +84,23 @@ public partial class InternationalViewModel : ObservableObject
             {
                 "Int License ID" => _allApplications.Where(x =>
                     x.InternationalLicenseId.ToString().Contains(
-                        filter, StringComparison.OrdinalIgnoreCase)),
+                        filter,
+                        StringComparison.OrdinalIgnoreCase)),
 
                 "Application ID" => _allApplications.Where(x =>
                     x.ApplicationId.ToString().Contains(
-                        filter, StringComparison.OrdinalIgnoreCase)),
+                        filter,
+                        StringComparison.OrdinalIgnoreCase)),
 
                 "Driver ID" => _allApplications.Where(x =>
                     x.DriverId.ToString().Contains(
-                        filter, StringComparison.OrdinalIgnoreCase)),
+                        filter,
+                        StringComparison.OrdinalIgnoreCase)),
 
                 "L.License ID" => _allApplications.Where(x =>
                     x.IssuedUsingLocalLicenseId.ToString().Contains(
-                        filter, StringComparison.OrdinalIgnoreCase)),
+                        filter,
+                        StringComparison.OrdinalIgnoreCase)),
 
                 _ => _allApplications
             };
@@ -115,7 +116,9 @@ public partial class InternationalViewModel : ObservableObject
         var window = ActivatorUtilities.CreateInstance<NewInternationalLicenseApplicationWin>(
             _serviceProvider);
 
+        window.Owner = System.Windows.Application.Current.MainWindow;
         window.ShowDialog();
+
         await LoadApplicationsAsync();
     }
 
@@ -129,6 +132,7 @@ public partial class InternationalViewModel : ObservableObject
             _serviceProvider,
             SelectedApplication.PersonId);
 
+        window.Owner = System.Windows.Application.Current.MainWindow;
         window.ShowDialog();
     }
 
@@ -142,6 +146,7 @@ public partial class InternationalViewModel : ObservableObject
             _serviceProvider,
             SelectedApplication.InternationalLicenseId);
 
+        window.Owner = System.Windows.Application.Current.MainWindow;
         window.ShowDialog();
     }
 
@@ -155,6 +160,7 @@ public partial class InternationalViewModel : ObservableObject
             _serviceProvider,
             SelectedApplication.PersonId);
 
+        window.Owner = System.Windows.Application.Current.MainWindow;
         window.ShowDialog();
     }
 }

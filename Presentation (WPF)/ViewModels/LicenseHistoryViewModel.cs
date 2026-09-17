@@ -5,9 +5,9 @@ using DVLD.Contracts.InternationalLicense;
 using DVLD.Contracts.License;
 using DVLD.Contracts.Person;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
-using System.Windows;
 
 namespace Presentation.ViewModels;
 
@@ -15,37 +15,48 @@ public partial class LicenseHistoryViewModel(
     IPeopleApiClient peopleApiClient,
     IDriversApiClient driversApiClient,
     ILicensesApiClient licensesApiClient,
-    IInternationalLicensesApiClient internationalLicensesApiClient) : ObservableObject
+    IInternationalLicensesApiClient internationalLicensesApiClient,
+    IUserNotificationService userNotifications,
+    IApiNotificationService notifications) : ObservableObject
 {
     private readonly IPeopleApiClient _peopleApiClient = peopleApiClient;
     private readonly IDriversApiClient _driversApiClient = driversApiClient;
     private readonly ILicensesApiClient _licensesApiClient = licensesApiClient;
     private readonly IInternationalLicensesApiClient _internationalLicensesApiClient = internationalLicensesApiClient;
+    private readonly IUserNotificationService _userNotifications = userNotifications;
+    private readonly IApiNotificationService _notifications = notifications;
 
-    [ObservableProperty]
-    private PersonResponse? person;
-
-    [ObservableProperty]
-    private LicenseResponse? selectedLocalLicense;
-
-    [ObservableProperty]
-    private InternationalLicenseListResponse? selectedInternationalLicense;
-
-    [ObservableProperty]
-    private ObservableCollection<LicenseResponse> localLicenses = [];
-
-    [ObservableProperty]
-    private ObservableCollection<InternationalLicenseListResponse> internationalLicenses = [];
+    [ObservableProperty] private PersonResponse? _person;
+    [ObservableProperty] private LicenseResponse? _selectedLocalLicense;
+    [ObservableProperty] private InternationalLicenseListResponse? _selectedInternationalLicense;
+    [ObservableProperty] private ObservableCollection<LicenseResponse> _localLicenses = [];
+    [ObservableProperty] private ObservableCollection<InternationalLicenseListResponse> _internationalLicenses = [];
 
     public async Task LoadAsync(int personId)
     {
+        ResetState();
+
+        if (personId <= 0)
+        {
+            _userNotifications.ShowWarning(
+                "Invalid person ID.",
+                "License History");
+            return;
+        }
+
         var personResult = await _peopleApiClient.GetByIdAsync(personId);
 
-        if (personResult.IsFailure || personResult.Value is null)
+        if (personResult.IsFailure)
         {
-            Person = null;
-            LocalLicenses.Clear();
-            InternationalLicenses.Clear();
+            _notifications.ShowFailure(personResult, "License History");
+            return;
+        }
+
+        if (personResult.Value is null)
+        {
+            _userNotifications.ShowWarning(
+                "Person information was not found.",
+                "License History");
             return;
         }
 
@@ -53,27 +64,39 @@ public partial class LicenseHistoryViewModel(
 
         var driverResult = await _driversApiClient.GetByPersonIdAsync(personId);
 
-        if (driverResult.IsFailure || driverResult.Value is null)
+        if (driverResult.IsFailure)
         {
-            LocalLicenses.Clear();
-            InternationalLicenses.Clear();
+            _notifications.ShowFailure(driverResult, "License History");
             return;
         }
 
-        var licensesResult = await _licensesApiClient.GetByDriverIdAsync(
-            driverResult.Value.DriverId);
+        if (driverResult.Value is null)
+        {
+            _userNotifications.ShowWarning(
+                "Driver information was not found.",
+                "License History");
+            return;
+        }
 
-        if (licensesResult.IsFailure || licensesResult.Value is null)
-            LocalLicenses.Clear();
-        else
+        var driverId = driverResult.Value.DriverId;
+
+        var licensesResult = await _licensesApiClient.GetByDriverIdAsync(driverId);
+
+        if (licensesResult.IsFailure)
+            _notifications.ShowFailure(licensesResult, "Local Licenses");
+
+        else if (licensesResult.Value is not null)
             LocalLicenses = new(licensesResult.Value);
 
-        var internationalResult = await _internationalLicensesApiClient.GetByDriverIdAsync(
-            driverResult.Value.DriverId);
+        var internationalResult =
+            await _internationalLicensesApiClient.GetByDriverIdAsync(driverId);
 
-        if (internationalResult.IsFailure || internationalResult.Value is null)
-            InternationalLicenses.Clear();
-        else
+        if (internationalResult.IsFailure)
+            _notifications.ShowFailure(
+                internationalResult,
+                "International Licenses");
+
+        else if (internationalResult.Value is not null)
             InternationalLicenses = new(internationalResult.Value);
     }
 
@@ -82,11 +105,19 @@ public partial class LicenseHistoryViewModel(
     {
         if (SelectedLocalLicense is null)
         {
-            MessageBox.Show("Please select a license first");
+            _userNotifications.ShowWarning(
+                "Please select a license first.",
+                "License History");
             return;
         }
 
-        new DriverLicenseInfoWin(SelectedLocalLicense.LicenseId).ShowDialog();
+        var window = new DriverLicenseInfoWin(
+            SelectedLocalLicense.LicenseId)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+
+        window.ShowDialog();
     }
 
     [RelayCommand]
@@ -94,10 +125,23 @@ public partial class LicenseHistoryViewModel(
     {
         if (SelectedInternationalLicense is null)
         {
-            MessageBox.Show("Please select an international license first");
+            _userNotifications.ShowWarning(
+                "Please select an international license first.",
+                "License History");
             return;
         }
 
-        MessageBox.Show("International license details are not available yet.");
+        _userNotifications.ShowInfo(
+            "International license details are not available yet.",
+            "License History");
+    }
+
+    private void ResetState()
+    {
+        Person = null;
+        SelectedLocalLicense = null;
+        SelectedInternationalLicense = null;
+        LocalLicenses.Clear();
+        InternationalLicenses.Clear();
     }
 }

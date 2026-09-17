@@ -2,10 +2,8 @@
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.TestAppointment;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.Views.Windows;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -13,28 +11,25 @@ namespace Presentation.ViewModels;
 public partial class ScheduleTestViewModel : ObservableObject
 {
     private readonly ITestAppointmentsApiClient _testAppointmentsApiClient;
+    private readonly IApiNotificationService _notifications;
+    private readonly IUserNotificationService _userNotifications;
     private int _localApplicationId;
 
+    [ObservableProperty] private ScheduleTestResponse _schedule = new();
+    [ObservableProperty] private bool _isRetake;
+
+    public decimal TotalFees => (Schedule?.Fees ?? 0) + (Schedule?.RetakerFees ?? 0);
+    public DateTime MinDate => DateTime.Now.Date.AddDays(1);
+
     public ScheduleTestViewModel(
-        ITestAppointmentsApiClient testAppointmentsApiClient)
+        ITestAppointmentsApiClient testAppointmentsApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
-        _testAppointmentsApiClient =
-            testAppointmentsApiClient
-            ?? throw new ArgumentNullException(nameof(testAppointmentsApiClient));
+        _testAppointmentsApiClient = testAppointmentsApiClient ?? throw new ArgumentNullException(nameof(testAppointmentsApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
     }
-
-    [ObservableProperty]
-    private ScheduleTestResponse schedule = new();
-
-    [ObservableProperty]
-    private bool isRetake;
-
-    public decimal TotalFees =>
-        (Schedule?.Fees ?? 0) +
-        (Schedule?.RetakerFees ?? 0);
-
-    public DateTime MinDate =>
-        DateTime.Now.Date.AddDays(1);
 
     partial void OnScheduleChanged(ScheduleTestResponse value) =>
         OnPropertyChanged(nameof(TotalFees));
@@ -42,133 +37,148 @@ public partial class ScheduleTestViewModel : ObservableObject
     public async Task LoadAsync(int localAppId, TestType type)
     {
         if (localAppId <= 0)
-            throw new ArgumentOutOfRangeException(nameof(localAppId));
+        {
+            _userNotifications.ShowWarning(
+                "Invalid local driving license application ID.",
+                "Schedule Test");
+            return;
+        }
 
         _localApplicationId = localAppId;
 
-        var result =
-            await _testAppointmentsApiClient
-                .GetSchedulePreparationAsync(
-                    localAppId,
-                    (int)type);
+        try
+        {
+            var result = await _testAppointmentsApiClient
+                .GetSchedulePreparationAsync(localAppId, (int)type);
 
-        if (result.IsFailure)
-            throw new Exception(result.Error);
+            if (result.IsFailure)
+            {
+                _notifications.ShowFailure(result, "Schedule Test");
+                return;
+            }
 
-        var data = result.Value;
+            if (result.Value is null)
+            {
+                _userNotifications.ShowWarning(
+                    "Schedule information was not found.",
+                    "Schedule Test");
+                return;
+            }
 
-        if (data is null)
-            throw new Exception(
-                "Schedule information was not found.");
-
-        Schedule = data;
-        IsRetake = data.Trial > 1;
+            Schedule = result.Value;
+            IsRetake = Schedule.Trial > 1;
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowError(
+                GetExceptionMessage(ex),
+                "Schedule Test");
+        }
     }
 
     public async Task LoadForEditAsync(int appointmentId)
     {
         if (appointmentId <= 0)
+        {
+            _userNotifications.ShowWarning(
+                "Invalid test appointment ID.",
+                "Edit Appointment");
             return;
+        }
 
-        var result =
-            await _testAppointmentsApiClient
+        try
+        {
+            var result = await _testAppointmentsApiClient
                 .GetScheduleInfoAsync(appointmentId);
 
-        if (result.IsFailure)
-        {
-            ShowError(result.Error, "Error");
-            return;
+            if (result.IsFailure)
+            {
+                _notifications.ShowFailure(result, "Edit Appointment");
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _userNotifications.ShowWarning(
+                    "Appointment information was not found.",
+                    "Edit Appointment");
+                return;
+            }
+
+            Schedule = result.Value;
+            _localApplicationId = Schedule.LocalDrivingLicenseApplicationId;
+            IsRetake = Schedule.RetakeTestApplicationId > 0;
         }
-
-        var data = result.Value;
-
-        if (data is null)
+        catch (Exception ex)
         {
-            ShowError(
-                "Appointment information was not found.",
-                "Error");
-            return;
+            _userNotifications.ShowError(
+                GetExceptionMessage(ex),
+                "Edit Appointment");
         }
-
-        Schedule = data;
-        _localApplicationId = data.LocalDrivingLicenseApplicationId;
-        IsRetake = data.RetakeTestApplicationId > 0;
     }
 
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (Schedule is null)
-            return;
-
         try
         {
             if (Schedule.AppointmentId > 0)
             {
-                var result =
-                    await _testAppointmentsApiClient.UpdateAsync(
-                        new UpdateTestAppointmentRequest
-                        {
-                            TestAppointmentId = Schedule.AppointmentId,
-                            AppointmentDate = Schedule.Date
-                        });
+                var result = await _testAppointmentsApiClient.UpdateAsync(
+                    new UpdateTestAppointmentRequest
+                    {
+                        TestAppointmentId = Schedule.AppointmentId,
+                        AppointmentDate = Schedule.Date
+                    });
 
                 if (result.IsFailure)
                 {
-                    ShowError(result.Error, "Save Failed");
+                    _notifications.ShowFailure(result, "Save Failed");
                     return;
                 }
             }
             else
             {
-                var result =
-                    await _testAppointmentsApiClient.ScheduleAsync(
-                        new ScheduleTestRequest
-                        {
-                            TestTypeId = Schedule.TestTypeId,
-                            LocalDrivingLicenseApplicationId = _localApplicationId,
-                            AppointmentDate = Schedule.Date
-                        });
+                var result = await _testAppointmentsApiClient.ScheduleAsync(
+                    new ScheduleTestRequest
+                    {
+                        TestTypeId = Schedule.TestTypeId,
+                        LocalDrivingLicenseApplicationId = _localApplicationId,
+                        AppointmentDate = Schedule.Date
+                    });
 
                 if (result.IsFailure)
                 {
-                    ShowError(result.Error, "Save Failed");
+                    _notifications.ShowFailure(result, "Save Failed");
                     return;
                 }
             }
 
-            MessageBox.Show(
+            _userNotifications.ShowInfo(
                 "Appointment saved successfully.",
-                "Success",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                "Success");
 
             Close();
         }
         catch (Exception ex)
         {
-            ShowError(ex.Message, "Error");
+            _userNotifications.ShowError(
+                GetExceptionMessage(ex),
+                "Save Failed");
         }
     }
 
     [RelayCommand]
-    private void Close()
+    private static void Close()
     {
         System.Windows.Application.Current.Windows
             .OfType<ScheduleTestWin>()
-            .FirstOrDefault()?
-            .Close();
+            .FirstOrDefault()?.Close();
     }
 
-    private static void ShowError(
-        string message,
-        string title,
-        MessageBoxImage image = MessageBoxImage.Error)
-    {
-        MessageBox.Show(
-            message,
-            title,
-            MessageBoxButton.OK,
-            image);
-    }
+    private static string GetExceptionMessage(Exception ex) =>
+        ex.InnerException is null
+            ? ex.Message
+            : $"{ex.Message}{Environment.NewLine}{Environment.NewLine}" +
+              $"Inner Exception:{Environment.NewLine}{ex.InnerException.Message}";
 }

@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.TestType;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -9,69 +10,47 @@ namespace Presentation.ViewModels;
 public partial class UpdateTestTypeViewModel : ObservableObject
 {
     private readonly ITestTypesApiClient _testTypesApiClient;
+    private readonly IApiNotificationService _notifications;
+    private readonly IUserNotificationService _userNotifications;
 
-    [ObservableProperty]
-    private UpdateTestTypeRequest? currentTestType = new();
+    [ObservableProperty] private UpdateTestTypeRequest? _currentTestType = new();
 
     public UpdateTestTypeViewModel(
-        ITestTypesApiClient testTypesApiClient)
+        ITestTypesApiClient testTypesApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
-        _testTypesApiClient =
-            testTypesApiClient
-            ?? throw new ArgumentNullException(
-                nameof(testTypesApiClient));
+        _testTypesApiClient = testTypesApiClient ?? throw new ArgumentNullException(nameof(testTypesApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
-    public async Task InitializeAsync(
-        int id,
-        CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(int id, CancellationToken cancellationToken = default)
     {
-        var result =
-            await _testTypesApiClient.GetByIdAsync(
-                id,
-                cancellationToken);
+        var result = await _testTypesApiClient.GetByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
         {
             CurrentTestType = null;
-
-            MessageBox.Show(
-                result.Error,
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+            _notifications.ShowFailure(result);
             return;
         }
 
         if (result.Value is null)
         {
             CurrentTestType = null;
-
-            MessageBox.Show(
-                "Test Type was not found.",
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+            _userNotifications.ShowWarning("Test Type was not found.", "Error");
             return;
         }
 
-        CurrentTestType =
-            new UpdateTestTypeRequest
-            {
-                TestTypeId =
-                    result.Value.TestTypeId,
-
-                TestTypeTitle =
-                    result.Value.TestTypeTitle,
-
-                TestTypeDescription =
-                    result.Value.TestTypeDescription,
-
-                TestTypeFees =
-                    result.Value.TestTypeFees
-            };
+        var testType = result.Value;
+        CurrentTestType = new UpdateTestTypeRequest
+        {
+            TestTypeId = testType.TestTypeId,
+            TestTypeTitle = testType.TestTypeTitle,
+            TestTypeDescription = testType.TestTypeDescription,
+            TestTypeFees = testType.TestTypeFees
+        };
     }
 
     [RelayCommand]
@@ -80,34 +59,19 @@ public partial class UpdateTestTypeViewModel : ObservableObject
         if (CurrentTestType is null)
             return;
 
-        var result =
-            await _testTypesApiClient.UpdateAsync(
-                CurrentTestType.TestTypeId,
-                CurrentTestType);
+        var result = await _testTypesApiClient.UpdateAsync(
+            CurrentTestType.TestTypeId, CurrentTestType);
 
-        if (result.IsSuccess)
+        if (result.IsFailure)
         {
-            MessageBox.Show(
-                "Test Type updated successfully!",
-                "Success",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-
-            window?.Close();
-
+            _notifications.ShowFailure(result, "Update Failed");
             return;
         }
 
-        MessageBox.Show(
-            result.Error,
-            "Update Failed",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+        _userNotifications.ShowInfo("Test Type updated successfully!", "Success");
+        window?.Close();
     }
 
     [RelayCommand]
-    private void Close(Window window)
-    {
-        window?.Close();
-    }
+    private static void Close(Window window) => window?.Close();
 }

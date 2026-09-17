@@ -3,7 +3,7 @@ using DVLD.Contracts.Application;
 using DVLD.Contracts.License;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
 using Presentation.Services.Api;
-using System.Windows;
+using Presentation.Services.UI;
 
 namespace Presentation.ViewModels;
 
@@ -11,27 +11,23 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
 {
     private readonly ILocalDrivingLicenseApplicationsApiClient _localApplicationsApiClient;
     private readonly ILicensesApiClient _licensesApiClient;
+    private readonly IApiNotificationService _notifications;
+    private readonly IUserNotificationService _userNotifications;
 
-    [ObservableProperty]
-    private ApplicationBasicInfoResponse? applicationInfo;
-
-    [ObservableProperty]
-    private LocalDrivingLicenseApplicationResponse? ldlAppInfo;
-
-    [ObservableProperty]
-    private LicenseResponse? licenseInfo;
+    [ObservableProperty] private ApplicationBasicInfoResponse? _applicationInfo;
+    [ObservableProperty] private LocalDrivingLicenseApplicationResponse? _ldlAppInfo;
+    [ObservableProperty] private LicenseResponse? _licenseInfo;
 
     public LocalApplicationDetailsViewModel(
         ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
-        ILicensesApiClient licensesApiClient)
+        ILicensesApiClient licensesApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
-        _localApplicationsApiClient = localApplicationsApiClient
-            ?? throw new ArgumentNullException(
-                nameof(localApplicationsApiClient));
-
-        _licensesApiClient = licensesApiClient
-            ?? throw new ArgumentNullException(
-                nameof(licensesApiClient));
+        _localApplicationsApiClient = localApplicationsApiClient ?? throw new ArgumentNullException(nameof(localApplicationsApiClient));
+        _licensesApiClient = licensesApiClient ?? throw new ArgumentNullException(nameof(licensesApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
     public async Task LoadAsync(int localId)
@@ -40,75 +36,69 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
 
         if (localId <= 0)
         {
-            ShowWarning(
+            _userNotifications.ShowWarning(
                 "Invalid local application ID.",
                 "Application Details");
-
             return;
         }
 
         try
         {
-            var localAppResult =
-                await _localApplicationsApiClient
-                    .GetByIdAsync(localId);
+            var localAppResult = await _localApplicationsApiClient.GetByIdAsync(localId);
 
-            if (localAppResult.IsFailure ||
-                localAppResult.Value is null)
+            if (localAppResult.IsFailure)
             {
-                ShowWarning(
-                    localAppResult.IsFailure
-                        ? localAppResult.Error
-                        : "Local driving license application was not found.",
-                    "Application Details");
-
+                _notifications.ShowFailure(localAppResult, "Application Details");
                 return;
             }
 
-            LdlAppInfo =
-                localAppResult.Value;
+            if (localAppResult.Value is null)
+            {
+                _userNotifications.ShowWarning(
+                    "Local driving license application was not found.",
+                    "Application Details");
+                return;
+            }
+
+            LdlAppInfo = localAppResult.Value;
 
             var applicationResult =
-                await _localApplicationsApiClient
-                    .GetApplicationBasicInfoAsync(localId);
+                await _localApplicationsApiClient.GetApplicationBasicInfoAsync(localId);
 
-            if (applicationResult.IsFailure ||
-                applicationResult.Value is null)
+            if (applicationResult.IsFailure)
             {
-                ShowWarning(
-                    applicationResult.IsFailure
-                        ? applicationResult.Error
-                        : "Application information was not found.",
-                    "Application Details");
-
+                _notifications.ShowFailure(applicationResult, "Application Details");
                 return;
             }
 
-            ApplicationInfo =
-                applicationResult.Value;
+            if (applicationResult.Value is null)
+            {
+                _userNotifications.ShowWarning(
+                    "Application information was not found.",
+                    "Application Details");
+                return;
+            }
 
-            var applicationId =
-                ApplicationInfo.ApplicationId;
+            ApplicationInfo = applicationResult.Value;
 
             var licensesResult =
-                await _licensesApiClient
-                    .GetByApplicationIdAsync(applicationId);
+                await _licensesApiClient.GetByApplicationIdAsync(
+                    ApplicationInfo.ApplicationId);
 
             if (licensesResult.IsFailure)
+            {
+                _notifications.ShowFailure(licensesResult, "Application Details");
                 return;
+            }
 
-            LicenseInfo =
-                licensesResult.Value?
-                    .FirstOrDefault(x =>
-                        x.LicenseClassId ==
-                        LdlAppInfo.LicenseClassId);
+            LicenseInfo = licensesResult.Value?
+                .FirstOrDefault(x => x.LicenseClassId == LdlAppInfo.LicenseClassId);
         }
         catch (Exception ex)
         {
             ResetState();
-
-            ShowError(
-                ex.Message,
+            _userNotifications.ShowError(
+                GetExceptionMessage(ex),
                 "Application Details");
         }
     }
@@ -120,21 +110,9 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
         LicenseInfo = null;
     }
 
-    private static void ShowWarning(
-        string message,
-        string title) =>
-        MessageBox.Show(
-            message,
-            title,
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
-
-    private static void ShowError(
-        string message,
-        string title) =>
-        MessageBox.Show(
-            message,
-            title,
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+    private static string GetExceptionMessage(Exception ex) =>
+        ex.InnerException is null
+            ? ex.Message
+            : $"{ex.Message}{Environment.NewLine}{Environment.NewLine}" +
+              $"Inner Exception:{Environment.NewLine}{ex.InnerException.Message}";
 }

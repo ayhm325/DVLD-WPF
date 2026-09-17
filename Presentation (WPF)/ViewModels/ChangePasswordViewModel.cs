@@ -2,9 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.Auth;
 using Presentation.Services;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using Presentation.Services.UI;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -12,185 +10,112 @@ namespace Presentation.ViewModels;
 public partial class ChangePasswordViewModel : ObservableObject
 {
     private readonly IAuthApiClient _authApiClient;
+    private readonly IApiNotificationService _notifications;
+    private readonly IUserNotificationService _userNotifications;
 
-    // =========================
-    // USER
-    // =========================
-
-    [ObservableProperty]
-    private int _userId;
-
-    [ObservableProperty]
-    private string _userName = string.Empty;
-
-    // =========================
-    // PASSWORDS
-    // =========================
-
-    [ObservableProperty]
-    private string _currentPassword = string.Empty;
-
-    [ObservableProperty]
-    private string _newPassword = string.Empty;
-
-    [ObservableProperty]
-    private string _confirmNewPassword = string.Empty;
-
-    // =========================
-    // PASSWORD VISIBILITY
-    // =========================
-
-    [ObservableProperty]
-    private bool _isCurrentPasswordVisible;
-
-    [ObservableProperty]
-    private bool _isNewPasswordVisible;
-
-    [ObservableProperty]
-    private bool _isConfirmNewPasswordVisible;
-
-    // =========================
-    // CONSTRUCTOR
-    // =========================
+    [ObservableProperty] private int _userId;
+    [ObservableProperty] private string _userName = string.Empty;
+    [ObservableProperty] private string _currentPassword = string.Empty;
+    [ObservableProperty] private string _newPassword = string.Empty;
+    [ObservableProperty] private string _confirmNewPassword = string.Empty;
+    [ObservableProperty] private bool _isCurrentPasswordVisible;
+    [ObservableProperty] private bool _isNewPasswordVisible;
+    [ObservableProperty] private bool _isConfirmNewPasswordVisible;
 
     public ChangePasswordViewModel(
-        IAuthApiClient authApiClient)
+        IAuthApiClient authApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
-        _authApiClient = authApiClient
-            ?? throw new ArgumentNullException(
-                nameof(authApiClient));
-    }
-
-    // =========================
-    // TOGGLE PASSWORD VISIBILITY
-    // =========================
-
-    [RelayCommand]
-    private void ToggleCurrentPassword()
-    {
-        IsCurrentPasswordVisible =
-            !IsCurrentPasswordVisible;
+        _authApiClient = authApiClient ?? throw new ArgumentNullException(nameof(authApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
     [RelayCommand]
-    private void ToggleNewPassword()
-    {
-        IsNewPasswordVisible =
-            !IsNewPasswordVisible;
-    }
+    private void ToggleCurrentPassword() =>
+        IsCurrentPasswordVisible = !IsCurrentPasswordVisible;
 
     [RelayCommand]
-    private void ToggleConfirmPassword()
-    {
-        IsConfirmNewPasswordVisible =
-            !IsConfirmNewPasswordVisible;
-    }
+    private void ToggleNewPassword() =>
+        IsNewPasswordVisible = !IsNewPasswordVisible;
 
-    // =========================
-    // CHANGE PASSWORD
-    // =========================
+    [RelayCommand]
+    private void ToggleConfirmPassword() =>
+        IsConfirmNewPasswordVisible = !IsConfirmNewPasswordVisible;
 
     [RelayCommand]
     private async Task ChangePassword()
     {
-        // =========================
-        // BASIC VALIDATION
-        // =========================
-
         if (string.IsNullOrWhiteSpace(CurrentPassword) ||
             string.IsNullOrWhiteSpace(NewPassword) ||
             string.IsNullOrWhiteSpace(ConfirmNewPassword))
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "Please fill in all fields.",
-                "Validation Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Validation Error");
             return;
         }
-
-        // =========================
-        // CONFIRM NEW PASSWORD
-        // =========================
 
         if (NewPassword != ConfirmNewPassword)
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "Passwords do not match.",
-                "Validation Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Validation Error");
             return;
         }
 
-        // =========================
-        // SAME PASSWORD CHECK
-        // =========================
-
         if (CurrentPassword == NewPassword)
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "New password must be different from current.",
-                "Validation Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Validation Error");
             return;
         }
 
         try
         {
-            var request = new ChangePasswordRequest
+            var result = await _authApiClient.ChangePasswordAsync(
+                new ChangePasswordRequest
+                {
+                    CurrentPassword = CurrentPassword,
+                    NewPassword = NewPassword
+                });
+
+            if (result.IsFailure)
             {
-                CurrentPassword = CurrentPassword,
-                NewPassword = NewPassword
-            };
-
-            var result =
-                await _authApiClient.ChangePasswordAsync(request);
-
-            // =========================
-            // SUCCESS
-            // =========================
-
-            if (result.IsSuccess)
-            {
-                MessageBox.Show(
-                    "Password changed successfully.",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-
-                var window =
-                    System.Windows.Application.Current.Windows
-                        .OfType<Window>()
-                        .FirstOrDefault(
-                            w => w.DataContext == this);
-
-                window?.Close();
-
+                _notifications.ShowFailure(
+                    result,
+                    "Change Password");
                 return;
             }
 
-            // =========================
-            // FAILURE
-            // =========================
+            _userNotifications.ShowInfo(
+                "Password changed successfully.",
+                "Success");
 
-            MessageBox.Show(
-                result.Error,
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            CloseWindow();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
-                $"An error occurred: {ex.Message}",
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            _userNotifications.ShowError(
+                GetExceptionMessage(ex),
+                "Change Password");
         }
     }
+
+    private void CloseWindow()
+    {
+        var window = System.Windows.Application.Current.Windows
+            .OfType<Window>()
+            .FirstOrDefault(w => w.DataContext == this);
+
+        window?.Close();
+    }
+
+    private static string GetExceptionMessage(Exception ex) =>
+        ex.InnerException is null
+            ? ex.Message
+            : $"{ex.Message}{Environment.NewLine}{Environment.NewLine}" +
+              $"Inner Exception:{Environment.NewLine}{ex.InnerException.Message}";
 }

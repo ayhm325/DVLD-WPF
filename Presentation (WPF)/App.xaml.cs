@@ -2,6 +2,7 @@
 using Presentation;
 using Presentation.Services;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.ViewModels;
 using Presentation.Views;
 using Presentation.Views.Pages;
@@ -85,6 +86,8 @@ public partial class App : System.Windows.Application
         services.AddSingleton<ICurrentUserSession, CurrentUserService>();
         services.AddSingleton<IApiHostService, ApiHostService>();
         services.AddSingleton<IWindowService, WindowService>();
+        services.AddSingleton<IUserNotificationService, UserNotificationService>();
+        services.AddSingleton<IApiNotificationService, ApiNotificationService>();
 
         // =====================================================
         // API Clients

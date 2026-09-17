@@ -4,22 +4,28 @@ using DVLD.Contracts.ApplicationType;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.Views.Windows.Applications;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 
 namespace Presentation.ViewModels;
 
 public partial class ApplicationTypeViewModel : ObservableObject
 {
     private readonly IApplicationTypesApiClient _applicationTypesApiClient;
+    private readonly IApiNotificationService _notifications;
 
-    public ObservableCollection<ApplicationTypeResponse> ApplicationTypes { get; } = new();
+    public ObservableCollection<ApplicationTypeResponse> ApplicationTypes { get; } = [];
 
     public ApplicationTypeViewModel(
-        IApplicationTypesApiClient applicationTypesApiClient)
+        IApplicationTypesApiClient applicationTypesApiClient,
+        IApiNotificationService notifications)
     {
-        _applicationTypesApiClient = applicationTypesApiClient;
+        _applicationTypesApiClient = applicationTypesApiClient
+            ?? throw new ArgumentNullException(nameof(applicationTypesApiClient));
+
+        _notifications = notifications
+            ?? throw new ArgumentNullException(nameof(notifications));
 
         _ = LoadApplicationTypesAsync();
     }
@@ -30,41 +36,41 @@ public partial class ApplicationTypeViewModel : ObservableObject
 
         if (result.IsFailure)
         {
-            System.Diagnostics.Debug.WriteLine(
-                $"DEBUG: Failed to load application types: {result.Error}");
-
+            _notifications.ShowFailure(
+                result,
+                "Load Application Types Failed");
             return;
         }
 
-        var data = result.Value ?? new List<ApplicationTypeResponse>();
-
-        System.Diagnostics.Debug.WriteLine(
-            $"DEBUG: Loaded {data.Count} items.");
-
         ApplicationTypes.Clear();
 
-        foreach (var item in data)
-        {
+        if (result.Value is null)
+            return;
+
+        foreach (var item in result.Value)
             ApplicationTypes.Add(item);
-        }
     }
 
     [RelayCommand]
     private async Task EditApplicationType(
         ApplicationTypeResponse? selectedType)
     {
-        if (selectedType == null)
+        if (selectedType is null)
             return;
 
-        var updateVm =
-            App.ServiceProvider
-                .GetRequiredService<UpdateApplicationTypeViewModel>();
+        var updateVm = App.ServiceProvider
+            .GetRequiredService<UpdateApplicationTypeViewModel>();
 
         await updateVm.InitializeAsync(
             selectedType.ApplicationTypeId);
 
-        var editWindow =
-            new EditApplicationTypeWindow(updateVm);
+        if (updateVm.CurrentApplicationType is null)
+            return;
+
+        var editWindow = new EditApplicationTypeWindow(updateVm)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
 
         editWindow.ShowDialog();
 

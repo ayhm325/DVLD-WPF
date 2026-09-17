@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 
@@ -11,7 +12,8 @@ namespace Presentation.ViewModels;
 public partial class DriversViewModel(
     IServiceProvider serviceProvider,
     IDriversApiClient driversApiClient,
-    IPeopleApiClient peopleApiClient) : ObservableObject
+    IPeopleApiClient peopleApiClient,
+    IApiNotificationService notifications) : ObservableObject
 {
     private readonly IServiceProvider _serviceProvider =
         serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
@@ -22,10 +24,12 @@ public partial class DriversViewModel(
     private readonly IPeopleApiClient _peopleApiClient =
         peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
 
+    private readonly IApiNotificationService _notifications =
+        notifications ?? throw new ArgumentNullException(nameof(notifications));
+
     private List<DriverListResponse> _allDrivers = [];
 
-    [ObservableProperty]
-    private DriverListResponse? selectedDriver;
+    [ObservableProperty] private DriverListResponse? _selectedDriver;
 
     public ObservableCollection<DriverListResponse> Drivers { get; } = [];
 
@@ -40,7 +44,16 @@ public partial class DriversViewModel(
     {
         var result = await _driversApiClient.GetAllAsync(cancellationToken);
 
-        if (result.IsFailure || result.Value is null)
+        if (result.IsFailure)
+        {
+            _allDrivers = [];
+            Drivers.Clear();
+            DriversCount = 0;
+            _notifications.ShowFailure(result, "Load Drivers Failed");
+            return;
+        }
+
+        if (result.Value is null)
         {
             _allDrivers = [];
             Drivers.Clear();
@@ -63,13 +76,19 @@ public partial class DriversViewModel(
             filtered = filterBy switch
             {
                 "Driver ID" => _allDrivers.Where(d =>
-                    d.DriverId.ToString().Contains(value, StringComparison.OrdinalIgnoreCase)),
+                    d.DriverId.ToString().Contains(
+                        value,
+                        StringComparison.OrdinalIgnoreCase)),
 
                 "Person ID" => _allDrivers.Where(d =>
-                    d.PersonId.ToString().Contains(value, StringComparison.OrdinalIgnoreCase)),
+                    d.PersonId.ToString().Contains(
+                        value,
+                        StringComparison.OrdinalIgnoreCase)),
 
                 "Full Name" => _allDrivers.Where(d =>
-                    d.FullName.Contains(value, StringComparison.OrdinalIgnoreCase)),
+                    d.FullName.Contains(
+                        value,
+                        StringComparison.OrdinalIgnoreCase)),
 
                 _ => _allDrivers
             };

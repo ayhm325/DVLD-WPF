@@ -4,6 +4,7 @@ using DVLD.Contracts.Person;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -13,6 +14,8 @@ namespace Presentation.ViewModels;
 public partial class PeopleViewModel : ObservableObject
 {
     private readonly IPeopleApiClient _peopleApiClient;
+    private readonly IUserNotificationService _userNotifications;
+    private readonly IApiNotificationService _notifications;
     private List<PersonListResponse> _allPeople = [];
 
     [ObservableProperty] private ObservableCollection<PersonListResponse> _filteredPeople = [];
@@ -48,8 +51,15 @@ public partial class PeopleViewModel : ObservableObject
         }
     }
 
-    public PeopleViewModel(IPeopleApiClient peopleApiClient) =>
+    public PeopleViewModel(
+        IPeopleApiClient peopleApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
+    {
         _peopleApiClient = peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
+    }
 
     [RelayCommand]
     public async Task LoadPeopleAsync()
@@ -58,7 +68,7 @@ public partial class PeopleViewModel : ObservableObject
 
         if (result.IsFailure)
         {
-            MessageBox.Show(result.Error, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowFailure(result, "Load People Failed");
             return;
         }
 
@@ -107,7 +117,8 @@ public partial class PeopleViewModel : ObservableObject
     [RelayCommand]
     private void ShowDetails(PersonListResponse? person)
     {
-        if (person is null) return;
+        if (person is null)
+            return;
 
         var apiClient = App.ServiceProvider.GetRequiredService<IPeopleApiClient>();
         var window = new PersonDetailsWindow(person.PersonId, apiClient)
@@ -138,7 +149,8 @@ public partial class PeopleViewModel : ObservableObject
     [RelayCommand]
     private async Task EditPerson(PersonListResponse? person)
     {
-        if (person is null) return;
+        if (person is null)
+            return;
 
         var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
         await vm.InitializeAsync(person.PersonId);
@@ -156,29 +168,36 @@ public partial class PeopleViewModel : ObservableObject
     [RelayCommand]
     private async Task DeletePersonAsync(PersonListResponse? person)
     {
-        if (person is null) return;
+        if (person is null)
+            return;
 
-        var confirmation = MessageBox.Show(
-            $"Are you sure you want to delete {person.FullName}?",
-            "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-        if (confirmation != MessageBoxResult.Yes) return;
+        if (_userNotifications.ShowConfirmation(
+         $"Are you sure you want to delete {person.FullName}?",
+         "Confirm Delete") != MessageBoxResult.Yes)
+            return;
 
         var result = await _peopleApiClient.DeleteAsync(person.PersonId);
 
         if (result.IsFailure)
         {
-            MessageBox.Show(result.Error, "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            _notifications.ShowFailure(result, "Delete Failed");
             return;
         }
 
         await LoadPeopleAsync();
-        MessageBox.Show("Person deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+        _userNotifications.ShowInfo(
+            "Person deleted successfully.",
+            "Success");
     }
 
     [RelayCommand]
-    private void SendEmail(PersonListResponse? person) { }
+    private void SendEmail(PersonListResponse? person)
+    {
+    }
 
     [RelayCommand]
-    private void PhoneCall(PersonListResponse? person) { }
+    private void PhoneCall(PersonListResponse? person)
+    {
+    }
 }

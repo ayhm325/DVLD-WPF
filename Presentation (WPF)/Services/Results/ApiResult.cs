@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace Presentation.Services.Results;
 
 public class ApiResult
@@ -5,36 +7,32 @@ public class ApiResult
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
     public string Error { get; }
+    public HttpStatusCode? StatusCode { get; }
 
-    protected ApiResult(bool isSuccess, string error)
+    protected ApiResult(bool isSuccess, string error, HttpStatusCode? statusCode = null)
     {
         IsSuccess = isSuccess;
         Error = error;
+        StatusCode = statusCode;
     }
 
-    public static ApiResult Success()
-        => new(true, string.Empty);
+    public static ApiResult Success(HttpStatusCode statusCode = HttpStatusCode.OK)
+        => new(true, string.Empty, statusCode);
 
-    public static ApiResult Failure(string error)
-        => new(false, error);
+    public static ApiResult Failure(string error, HttpStatusCode? statusCode = null)
+        => new(false, error, statusCode);
 }
 
 public sealed class ApiResult<T> : ApiResult
 {
     public T? Value { get; }
 
-    private ApiResult(
-        bool isSuccess,
-        T? value,
-        string error)
-        : base(isSuccess, error)
-    {
-        Value = value;
-    }
+    private ApiResult(bool isSuccess, T? value, string error, HttpStatusCode? statusCode = null)
+        : base(isSuccess, error, statusCode) => Value = value;
 
-    public static ApiResult<T> Success(T value)
-        => new(true, value, string.Empty);
+    public static ApiResult<T> Success(T value, HttpStatusCode statusCode = HttpStatusCode.OK)
+        => new(true, value, string.Empty, statusCode);
 
-    public static new ApiResult<T> Failure(string error)
-        => new(false, default, error);
+    public static new ApiResult<T> Failure(string error, HttpStatusCode? statusCode = null)
+        => new(false, default, error, statusCode);
 }

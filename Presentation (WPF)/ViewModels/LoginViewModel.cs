@@ -5,9 +5,7 @@ using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services;
 using Presentation.Services.Api;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+using Presentation.Services.UI;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -17,20 +15,25 @@ public partial class LoginViewModel : ObservableObject
     private readonly IAuthApiClient _authApiClient;
     private readonly ICurrentUserSession _currentUser;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IApiNotificationService _notifications;
+    private readonly IUserNotificationService _userNotifications;
+
+    [ObservableProperty] private bool _rememberMe;
+    [ObservableProperty] private string _username = string.Empty;
+    [ObservableProperty] private string _password = string.Empty;
 
     public LoginViewModel(
         IAuthApiClient authApiClient,
         ICurrentUserSession currentUser,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
-        _authApiClient = authApiClient
-            ?? throw new ArgumentNullException(nameof(authApiClient));
-
-        _currentUser = currentUser
-            ?? throw new ArgumentNullException(nameof(currentUser));
-
-        _serviceProvider = serviceProvider
-            ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _authApiClient = authApiClient ?? throw new ArgumentNullException(nameof(authApiClient));
+        _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
 
         RememberMe = Properties.Settings.Default.RememberMe;
 
@@ -41,51 +44,39 @@ public partial class LoginViewModel : ObservableObject
         }
     }
 
-    [ObservableProperty]
-    private bool rememberMe;
-
-    [ObservableProperty]
-    private string username = string.Empty;
-
-    [ObservableProperty]
-    private string password = string.Empty;
-
     [RelayCommand]
     private async Task LoginAsync()
     {
         if (string.IsNullOrWhiteSpace(Username) ||
             string.IsNullOrWhiteSpace(Password))
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "Username and password are required.",
-                "Login Failed",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Login Failed");
             return;
         }
 
-        var request = new LoginRequest
+        var result = await _authApiClient.LoginAsync(new LoginRequest
         {
             UserName = Username.Trim(),
             Password = Password
-        };
+        });
 
-        var loginResult =
-            await _authApiClient.LoginAsync(request);
-
-        if (loginResult.IsFailure)
+        if (result.IsFailure)
         {
-            MessageBox.Show(
-                loginResult.Error,
-                "Login Failed",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+            _notifications.ShowFailure(result, "Login Failed");
             return;
         }
 
-        var user = loginResult.Value!;
+        if (result.Value is null)
+        {
+            _userNotifications.ShowError(
+                "The API did not return user authentication data.",
+                "Login Failed");
+            return;
+        }
+
+        var user = result.Value;
 
         _currentUser.SetSession(
             user.UserId,
@@ -96,9 +87,7 @@ public partial class LoginViewModel : ObservableObject
 
         SaveRememberMeSettings();
 
-        var mainWindow =
-            _serviceProvider.GetRequiredService<MainWindow>();
-
+        var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
         System.Windows.Application.Current.Windows

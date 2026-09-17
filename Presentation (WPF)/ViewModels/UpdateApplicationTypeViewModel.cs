@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.ApplicationType;
 using Presentation.Services.Api;
+using Presentation.Services.UI;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -9,66 +10,47 @@ namespace Presentation.ViewModels;
 public partial class UpdateApplicationTypeViewModel : ObservableObject
 {
     private readonly IApplicationTypesApiClient _applicationTypesApiClient;
+    private readonly IApiNotificationService _notifications;
+    private readonly IUserNotificationService _userNotifications;
 
-    [ObservableProperty]
-    private UpdateApplicationTypeRequest? currentApplicationType = new();
+    [ObservableProperty] private UpdateApplicationTypeRequest? _currentApplicationType = new();
 
     public UpdateApplicationTypeViewModel(
-        IApplicationTypesApiClient applicationTypesApiClient)
+        IApplicationTypesApiClient applicationTypesApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
-        _applicationTypesApiClient =
-            applicationTypesApiClient
-            ?? throw new ArgumentNullException(
-                nameof(applicationTypesApiClient));
+        _applicationTypesApiClient = applicationTypesApiClient ?? throw new ArgumentNullException(nameof(applicationTypesApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
-    public async Task InitializeAsync(
-        int id,
-        CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(int id, CancellationToken cancellationToken = default)
     {
-        var result =
-            await _applicationTypesApiClient.GetByIdAsync(
-                id,
-                cancellationToken);
+        var result = await _applicationTypesApiClient.GetByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
         {
             CurrentApplicationType = null;
-
-            MessageBox.Show(
-                result.Error,
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+            _notifications.ShowFailure(result);
             return;
         }
 
         if (result.Value is null)
         {
             CurrentApplicationType = null;
-
-            MessageBox.Show(
-                "Application Type was not found.",
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+            _userNotifications.ShowWarning("Application Type was not found.", "Error");
             return;
         }
 
-        CurrentApplicationType =
-            new UpdateApplicationTypeRequest
-            {
-                ApplicationTypeId =
-                    result.Value.ApplicationTypeId,
+        var applicationType = result.Value;
 
-                ApplicationTypeTitle =
-                    result.Value.ApplicationTypeTitle,
-
-                ApplicationTypeFees =
-                    result.Value.ApplicationTypeFees
-            };
+        CurrentApplicationType = new UpdateApplicationTypeRequest
+        {
+            ApplicationTypeId = applicationType.ApplicationTypeId,
+            ApplicationTypeTitle = applicationType.ApplicationTypeTitle,
+            ApplicationTypeFees = applicationType.ApplicationTypeFees
+        };
     }
 
     [RelayCommand]
@@ -77,34 +59,19 @@ public partial class UpdateApplicationTypeViewModel : ObservableObject
         if (CurrentApplicationType is null)
             return;
 
-        var result =
-            await _applicationTypesApiClient.UpdateAsync(
-                CurrentApplicationType.ApplicationTypeId,
-                CurrentApplicationType);
+        var result = await _applicationTypesApiClient.UpdateAsync(
+            CurrentApplicationType.ApplicationTypeId, CurrentApplicationType);
 
-        if (result.IsSuccess)
+        if (result.IsFailure)
         {
-            MessageBox.Show(
-                "Application Type updated successfully!",
-                "Success",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-
-            window?.Close();
-
+            _notifications.ShowFailure(result, "Update Failed");
             return;
         }
 
-        MessageBox.Show(
-            result.Error,
-            "Update Failed",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+        _userNotifications.ShowInfo("Application Type updated successfully!", "Success");
+        window?.Close();
     }
 
     [RelayCommand]
-    private void Close(Window window)
-    {
-        window?.Close();
-    }
+    private static void Close(Window window) => window?.Close();
 }

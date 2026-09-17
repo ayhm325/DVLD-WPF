@@ -5,9 +5,8 @@ using DVLD.Contracts.License;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
-using Presentation.ViewModels;
+using Presentation.Services.UI;
 using Presentation.Views.Windows;
-using System.Windows;
 
 namespace Presentation.ViewModels;
 
@@ -15,51 +14,35 @@ public partial class DetainLicenseViewModel : ObservableObject
 {
     private readonly ILicensesApiClient _licensesApiClient;
     private readonly IDetainedLicensesApiClient _detainedLicensesApiClient;
+    private readonly IApiNotificationService _notifications;
+    private readonly IUserNotificationService _userNotifications;
 
-    [ObservableProperty]
-    private string? licenseIdText;
-
-    [ObservableProperty]
-    private DriverLicenseInfoResponse? licenseInfo;
-
-    [ObservableProperty]
-    private DetainedLicenseResponse? detainInfo;
-
-    [ObservableProperty]
-    private decimal fineFees;
-
-    [ObservableProperty]
-    private bool isLicenseIssued;
+    [ObservableProperty] private string? _licenseIdText;
+    [ObservableProperty] private DriverLicenseInfoResponse? _licenseInfo;
+    [ObservableProperty] private DetainedLicenseResponse? _detainInfo;
+    [ObservableProperty] private decimal _fineFees;
+    [ObservableProperty] private bool _isLicenseIssued;
 
     public DetainLicenseViewModel(
         ILicensesApiClient licensesApiClient,
-        IDetainedLicensesApiClient detainedLicensesApiClient)
+        IDetainedLicensesApiClient detainedLicensesApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
-        _licensesApiClient =
-            licensesApiClient
-            ?? throw new ArgumentNullException(
-                nameof(licensesApiClient));
-
-        _detainedLicensesApiClient =
-            detainedLicensesApiClient
-            ?? throw new ArgumentNullException(
-                nameof(detainedLicensesApiClient));
+        _licensesApiClient = licensesApiClient ?? throw new ArgumentNullException(nameof(licensesApiClient));
+        _detainedLicensesApiClient = detainedLicensesApiClient ?? throw new ArgumentNullException(nameof(detainedLicensesApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
+        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
     [RelayCommand]
     private async Task SearchAsync()
     {
-        if (!int.TryParse(
-                LicenseIdText,
-                out int licenseId) ||
-            licenseId <= 0)
+        if (!int.TryParse(LicenseIdText, out var licenseId) || licenseId <= 0)
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "Please enter a valid License ID.",
-                "Validation",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Validation");
             return;
         }
 
@@ -68,56 +51,39 @@ public partial class DetainLicenseViewModel : ObservableObject
         FineFees = 0;
         IsLicenseIssued = false;
 
-        var result =
-            await _licensesApiClient
-                .GetDetailsByIdAsync(
-                    licenseId);
+        var result = await _licensesApiClient.GetDetailsByIdAsync(licenseId);
 
         if (result.IsFailure)
         {
-            MessageBox.Show(
-                result.Error,
-                "License Not Found",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+            _notifications.ShowFailure(result, "License Search");
             return;
         }
 
         if (result.Value is null)
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "License information was not found.",
-                "Warning",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "License Search");
             return;
         }
 
-        LicenseInfo =
-            result.Value;
-
+        LicenseInfo = result.Value;
         IsLicenseIssued = true;
 
         var detentionResult =
-            await _detainedLicensesApiClient
-                .GetActiveByLicenseIdAsync(
-                    LicenseInfo.LicenseId);
+            await _detainedLicensesApiClient.GetActiveByLicenseIdAsync(
+                LicenseInfo.LicenseId);
 
-        if (detentionResult.IsSuccess)
+        if (detentionResult.IsFailure)
         {
-            DetainInfo =
-                detentionResult.Value;
+            _notifications.ShowFailure(
+                detentionResult,
+                "Detention Status");
+            return;
+        }
 
-            FineFees =
-                DetainInfo?.FineFees ?? 0;
-        }
-        else
-        {
-            DetainInfo = null;
-            FineFees = 0;
-        }
+        DetainInfo = detentionResult.Value;
+        FineFees = DetainInfo?.FineFees ?? 0;
     }
 
     [RelayCommand]
@@ -125,86 +91,68 @@ public partial class DetainLicenseViewModel : ObservableObject
     {
         if (LicenseInfo is null)
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "Please search for a license first.",
-                "Warning",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Detain License");
             return;
         }
 
         var alreadyDetained =
-            await _detainedLicensesApiClient
-                .IsLicenseDetainedAsync(
-                    LicenseInfo.LicenseId);
+            await _detainedLicensesApiClient.IsLicenseDetainedAsync(
+                LicenseInfo.LicenseId);
 
         if (alreadyDetained.IsFailure)
         {
-            MessageBox.Show(
-                alreadyDetained.Error,
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-
+            _notifications.ShowFailure(
+                alreadyDetained,
+                "Detain License");
             return;
         }
 
         if (alreadyDetained.Value)
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "This license is already detained.",
-                "Warning",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Detain License");
             return;
         }
 
         if (FineFees < 0)
         {
-            MessageBox.Show(
+            _userNotifications.ShowWarning(
                 "Fine fees cannot be negative.",
-                "Validation",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+                "Validation");
             return;
         }
 
-        var request =
+        var result = await _detainedLicensesApiClient.DetainAsync(
             new CreateDetainedLicenseRequest
             {
-                LicenseId =
-                    LicenseInfo.LicenseId,
-
-                FineFees =
-                    FineFees
-            };
-
-        var result =
-            await _detainedLicensesApiClient
-                .DetainAsync(request);
+                LicenseId = LicenseInfo.LicenseId,
+                FineFees = FineFees
+            });
 
         if (result.IsFailure)
         {
-            MessageBox.Show(
-                result.Error,
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-
+            _notifications.ShowFailure(
+                result,
+                "Detain License");
             return;
         }
 
-        DetainInfo =
-            result.Value;
+        if (result.Value is null)
+        {
+            _userNotifications.ShowError(
+                "The detained license was not returned by the API.",
+                "Detain License");
+            return;
+        }
 
-        MessageBox.Show(
+        DetainInfo = result.Value;
+
+        _userNotifications.ShowInfo(
             "License detained successfully.",
-            "Success",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+            "Success");
     }
 
     [RelayCommand]
@@ -213,17 +161,15 @@ public partial class DetainLicenseViewModel : ObservableObject
         if (LicenseInfo is null)
             return;
 
-        var vm =
-            App.ServiceProvider
-                .GetRequiredService<LicenseHistoryViewModel>();
+        var vm = App.ServiceProvider
+            .GetRequiredService<LicenseHistoryViewModel>();
 
-        var window =
-            new LicenseHistoryWin(
-                vm,
-                LicenseInfo.PersonId);
-
-        window.Owner =
-            System.Windows.Application.Current.MainWindow;
+        var window = new LicenseHistoryWin(
+            vm,
+            LicenseInfo.PersonId)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
 
         window.ShowDialog();
     }
@@ -234,12 +180,11 @@ public partial class DetainLicenseViewModel : ObservableObject
         if (LicenseInfo is null)
             return;
 
-        var window =
-            new DriverLicenseInfoWin(
-                LicenseInfo.LicenseId);
-
-        window.Owner =
-            System.Windows.Application.Current.MainWindow;
+        var window = new DriverLicenseInfoWin(
+            LicenseInfo.LicenseId)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
 
         window.ShowDialog();
     }
