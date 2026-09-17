@@ -182,7 +182,7 @@
                                 <TextBlock Text="License Class"
                                            Style="{StaticResource FieldLabelStyle}"/>
 
-                                <TextBlock Text="{Binding LicenseInfo.LicenseClassName}"
+                                <TextBlock Text="{Binding LicenseInfo.LicenseClass}"
                                            Style="{StaticResource FieldValueStyle}"/>
 
                                 <TextBlock Text="Status"

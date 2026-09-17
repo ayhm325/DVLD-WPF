@@ -118,7 +118,7 @@
                         LicenseClassName="{Binding LicenseClassName}"
                         PassedTests="{Binding PassedTests}"
                         TotalTests="{Binding TotalTests}"
-                        Margin="0,0,0,15" Loaded="drivingLicenseInfo_Loaded"/>
+                        Margin="0,0,0,15"/>
 
                     <!-- Application Basic Info -->
                     <controls:ApplicationBasicInfo

@@ -8,176 +8,158 @@
              mc:Ignorable="d"
              HorizontalContentAlignment="Stretch"
              d:DesignHeight="330"
-             d:DesignWidth="800">
+             d:DesignWidth="800"
+             Background="Transparent"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True">
+
     <UserControl.Resources>
-        <Style x:Key="FieldLabel"
-               TargetType="{x:Type TextBlock}"
-               BasedOn="{StaticResource LabelStyle}">
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource LabelStyle}">
             <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
             <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
         </Style>
-        <Style x:Key="FieldValue"
-               TargetType="{x:Type TextBlock}">
+        <Style x:Key="FieldValue" TargetType="TextBlock">
             <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
             <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Margin" Value="0,5,0,0"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
-        <Style x:Key="AmountValue"
-               TargetType="{x:Type TextBlock}"
-               BasedOn="{StaticResource FieldValue}">
+        <Style x:Key="AmountValue" TargetType="TextBlock" BasedOn="{StaticResource FieldValue}">
             <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
             <Setter Property="FontWeight" Value="{StaticResource FontWeightBold}"/>
         </Style>
-        <Style x:Key="InfoCardStyle"
-               TargetType="{x:Type Border}">
-            <Setter Property="Background" Value="{StaticResource SurfaceSecondaryColor}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
-            <Setter Property="Padding" Value="14,12"/>
-        </Style>
     </UserControl.Resources>
+
     <Border Style="{StaticResource CardStyle}"
-            Padding="20"
+            Padding="{StaticResource CardPadding}"
             Margin="10"
             HorizontalAlignment="Stretch">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="68"/>
                 <RowDefinition Height="1"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0"
-                  Margin="0,0,0,18">
+
+            <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+
                 <Border Grid.Column="0"
-                        Width="46"
-                        Height="46"
+                        Width="42" Height="42"
                         CornerRadius="{StaticResource RadiusMedium}"
-                        Background="{StaticResource PrimaryLightColor}"
+                        Background="{StaticResource SuccessLightColor}"
                         VerticalAlignment="Center">
                     <materialDesign:PackIcon Kind="LockOpenOutline"
-                                             Width="23"
-                                             Height="23"
-                                             Foreground="{StaticResource PrimaryColor}"
+                                             Width="23" Height="23"
+                                             Foreground="{StaticResource SuccessColor}"
                                              HorizontalAlignment="Center"
                                              VerticalAlignment="Center"/>
                 </Border>
+
                 <StackPanel Grid.Column="1"
                             Margin="14,0,18,0"
                             VerticalAlignment="Center">
                     <TextBlock Text="Release Information"
-                               FontSize="{StaticResource FontSizeBody}"
+                               FontSize="17"
                                FontWeight="{StaticResource FontWeightSemiBold}"
                                Foreground="{StaticResource TextPrimaryColor}"/>
                     <TextBlock Text="Detained license release details"
                                FontSize="{StaticResource FontSizeCaption}"
-                               Foreground="{StaticResource SecondaryTextColor}"
-                               Margin="0,3,0,0"/>
+                               Foreground="{StaticResource TextSecondaryColor}"
+                               Margin="0,2,0,0"/>
                 </StackPanel>
+
                 <Border Grid.Column="2"
                         Background="{StaticResource SuccessLightColor}"
                         CornerRadius="{StaticResource RadiusSmall}"
                         Padding="11,7"
                         VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="7"
-                                 Height="7"
+                        <Ellipse Width="7" Height="7"
                                  Fill="{StaticResource SuccessColor}"
                                  Margin="0,0,7,0"
                                  VerticalAlignment="Center"/>
                         <TextBlock Text="RELEASE"
                                    FontSize="{StaticResource FontSizeCaption}"
                                    FontWeight="{StaticResource FontWeightSemiBold}"
-                                   Foreground="{StaticResource SuccessColor}"
-                                   VerticalAlignment="Center"/>
+                                   Foreground="{StaticResource SuccessColor}"/>
                     </StackPanel>
                 </Border>
             </Grid>
-            <Border Grid.Row="1"
-                    Background="{StaticResource BorderColor}"
-                    Height="1"/>
-            <Grid Grid.Row="2"
-                  Margin="0,20,0,0">
+
+            <Border Grid.Row="1" Background="{StaticResource BorderColor}"/>
+
+            <Grid Grid.Row="2" Margin="0,18,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0"
-                        Style="{StaticResource InfoCardStyle}"
-                        Margin="0,0,8,0">
+
+                <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="12" Margin="0,0,8,0">
                     <StackPanel>
-                        <TextBlock Text="DETAIN ID"
-                                   Style="{StaticResource FieldLabel}"/>
-                        <TextBlock Text="{Binding Release.DetainId, ElementName=Root}"
+                        <TextBlock Text="DETAIN ID" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{Binding Release.DetainId, ElementName=Root}" Style="{StaticResource FieldValue}"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="12" Margin="4,0,4,0">
+                    <StackPanel>
+                        <TextBlock Text="DETAIN DATE" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{Binding Release.DetainDate, ElementName=Root, StringFormat='{}{0:dd MMM yyyy}'}"
                                    Style="{StaticResource FieldValue}"/>
                     </StackPanel>
                 </Border>
-                <Border Grid.Column="1"
-                        Style="{StaticResource InfoCardStyle}"
-                        Margin="4,0,4,0">
+                <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="12" Margin="8,0,0,0">
                     <StackPanel>
-                        <TextBlock Text="DETAIN DATE"
-                                   Style="{StaticResource FieldLabel}"/>
-                        <TextBlock Text="{Binding Release.DetainDate,
-                                                   ElementName=Root,
-                                                   StringFormat='{}{0:dd MMM yyyy}'}"
-                                   Style="{StaticResource FieldValue}"/>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="2"
-                        Style="{StaticResource InfoCardStyle}"
-                        Margin="8,0,0,0">
-                    <StackPanel>
-                        <TextBlock Text="CREATED BY"
-                                   Style="{StaticResource FieldLabel}"/>
-                        <TextBlock Text="{Binding Release.CreatedByUserName,
-                                                   ElementName=Root}"
+                        <TextBlock Text="CREATED BY" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{Binding Release.CreatedByUserName, ElementName=Root}"
                                    Style="{StaticResource FieldValue}"/>
                     </StackPanel>
                 </Border>
             </Grid>
-            <Grid Grid.Row="3"
-                  Margin="0,12,0,0">
+
+            <Grid Grid.Row="3" Margin="0,12,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="1.2*"/>
                 </Grid.ColumnDefinitions>
+
                 <Border Grid.Column="0"
-                        Style="{StaticResource InfoCardStyle}"
+                        Background="{StaticResource SurfaceSecondaryColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusMedium}"
+                        Padding="14,12"
                         Margin="0,0,8,0">
                     <StackPanel>
-                        <TextBlock Text="APPLICATION FEES"
-                                   Style="{StaticResource FieldLabel}"/>
-                        <TextBlock Text="{Binding ApplicationFees,
-                                                   ElementName=Root,
-                                                   StringFormat='{}{0:F2}'}"
+                        <TextBlock Text="APPLICATION FEES" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{Binding ApplicationFees, ElementName=Root, StringFormat='{}{0:F2}'}"
                                    Style="{StaticResource AmountValue}"/>
                     </StackPanel>
                 </Border>
+
                 <Border Grid.Column="1"
-                        Style="{StaticResource InfoCardStyle}"
+                        Background="{StaticResource SurfaceSecondaryColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusMedium}"
+                        Padding="14,12"
                         Margin="4,0,4,0">
                     <StackPanel>
-                        <TextBlock Text="FINE FEES"
-                                   Style="{StaticResource FieldLabel}"/>
-                        <TextBlock Text="{Binding Release.FineFees,
-                                                   ElementName=Root,
-                                                   StringFormat='{}{0:F2}'}"
+                        <TextBlock Text="FINE FEES" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{Binding Release.FineFees, ElementName=Root, StringFormat='{}{0:F2}'}"
                                    Style="{StaticResource FieldValue}"/>
                     </StackPanel>
                 </Border>
+
                 <Border Grid.Column="2"
                         Background="{StaticResource PrimaryLightColor}"
                         BorderBrush="{StaticResource PrimaryColor}"
@@ -190,21 +172,18 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0"
-                                    VerticalAlignment="Center">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
                             <TextBlock Text="TOTAL FEES"
                                        FontSize="{StaticResource FontSizeCaption}"
                                        FontWeight="{StaticResource FontWeightSemiBold}"
                                        Foreground="{StaticResource PrimaryColor}"/>
                             <TextBlock Text="Release amount"
                                        FontSize="11"
-                                       Foreground="{StaticResource SecondaryTextColor}"
+                                       Foreground="{StaticResource TextSecondaryColor}"
                                        Margin="0,2,0,0"/>
                         </StackPanel>
                         <TextBlock Grid.Column="1"
-                                   Text="{Binding TotalFees,
-                                                  ElementName=Root,
-                                                  StringFormat='{}{0:F2}'}"
+                                   Text="{Binding TotalFees, ElementName=Root, StringFormat='{}{0:F2}'}"
                                    FontSize="18"
                                    FontWeight="{StaticResource FontWeightBold}"
                                    Foreground="{StaticResource PrimaryColor}"

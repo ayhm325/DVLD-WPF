@@ -15,170 +15,110 @@
              UseLayoutRounding="True">
 
     <UserControl.Resources>
-
-        <Style x:Key="InfoLabelStyle"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="VerticalAlignment"
-                    Value="Center"/>
-            <Setter Property="Margin"
-                    Value="0,0,0,5"/>
+        <Style x:Key="InfoLabelStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
 
-        <Style x:Key="InfoValueStyle"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="VerticalAlignment"
-                    Value="Center"/>
-            <Setter Property="TextWrapping"
-                    Value="Wrap"/>
-            <Setter Property="Margin"
-                    Value="0,0,0,16"/>
+        <Style x:Key="InfoValueStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
         </Style>
 
         <Style x:Key="PrimaryInfoValueStyle"
                TargetType="{x:Type TextBlock}"
                BasedOn="{StaticResource InfoValueStyle}">
-            <Setter Property="Foreground"
-                    Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
         </Style>
 
-        <Style x:Key="HeaderTitleStyle"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize"
-                    Value="18"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource TextPrimaryColor}"/>
+        <Style x:Key="HeaderTitleStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
         </Style>
 
-        <Style x:Key="HeaderSubtitleStyle"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightRegular}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="Margin"
-                    Value="0,3,0,0"/>
+        <Style x:Key="HeaderSubtitleStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
+            <Setter Property="Margin" Value="0,3,0,0"/>
         </Style>
 
-        <Style x:Key="SectionTitleStyle"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource PrimaryColor}"/>
-            <Setter Property="Margin"
-                    Value="0,0,0,12"/>
+        <Style x:Key="SectionTitleStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
-
     </UserControl.Resources>
 
     <Border Style="{StaticResource CardStyle}"
             Margin="10"
             Padding="0"
-            HorizontalAlignment="Stretch"
-            SnapsToDevicePixels="True">
-
+            HorizontalAlignment="Stretch">
         <Grid>
-
             <Grid.RowDefinitions>
                 <RowDefinition Height="74"/>
                 <RowDefinition Height="1"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- HEADER -->
             <Border Grid.Row="0"
                     Background="{StaticResource SurfaceSecondaryColor}"
-                    CornerRadius="{StaticResource RadiusMedium}"
-                    Padding="22,0">
-
+                    Padding="22,0"
+                    CornerRadius="{StaticResource RadiusMedium}">
                 <Grid>
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0"
-                            Width="42"
-                            Height="42"
+                    <Border Width="42" Height="42"
                             CornerRadius="{StaticResource RadiusMedium}"
                             Background="{StaticResource PrimaryLightColor}"
-                            VerticalAlignment="Center"
-                            Margin="0,0,14,0">
-
+                            Margin="0,0,14,0"
+                            VerticalAlignment="Center">
                         <materialDesign:PackIcon Kind="CardAccountDetails"
-                                                 Width="23"
-                                                 Height="23"
+                                                 Width="23" Height="23"
                                                  Foreground="{StaticResource PrimaryColor}"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center"/>
                     </Border>
 
-                    <StackPanel Grid.Column="1"
-                                VerticalAlignment="Center">
-
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="Personal Information"
                                    Style="{StaticResource HeaderTitleStyle}"/>
-
                         <TextBlock Text="Personal details and contact information"
                                    Style="{StaticResource HeaderSubtitleStyle}"/>
-
                     </StackPanel>
-
                 </Grid>
-
             </Border>
 
-            <!-- HEADER DIVIDER -->
-            <Border Grid.Row="1"
-                    Background="{StaticResource BorderColor}"/>
+            <Border Grid.Row="1" Background="{StaticResource BorderColor}"/>
 
-            <!-- CONTENT -->
-            <Grid Grid.Row="2"
-                  Margin="22,20,22,22">
-
+            <Grid Grid.Row="2" Margin="22,20,22,22">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="24"/>
                     <ColumnDefinition Width="170"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- INFORMATION -->
                 <Grid Grid.Column="0">
-
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- IDENTITY -->
                     <StackPanel Grid.Row="0">
-
-                        <TextBlock Text="IDENTITY"
-                                   Style="{StaticResource SectionTitleStyle}"/>
-
+                        <TextBlock Text="IDENTITY" Style="{StaticResource SectionTitleStyle}"/>
                         <Grid>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
@@ -186,61 +126,32 @@
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0"
-                                       Text="Person ID"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
+                            <TextBlock Grid.Column="0" Text="Person ID" Style="{StaticResource InfoLabelStyle}"/>
                             <TextBlock Grid.Column="1"
-                                       Text="{Binding Person.PersonId,
-                                                      ElementName=Root}"
+                                       Text="{Binding Person.PersonId, ElementName=Root}"
                                        Style="{StaticResource PrimaryInfoValueStyle}"/>
-
-                            <TextBlock Grid.Column="3"
-                                       Text="Gender"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
+                            <TextBlock Grid.Column="3" Text="Gender" Style="{StaticResource InfoLabelStyle}"/>
                             <TextBlock Grid.Column="4"
-                                       Text="{Binding Person.Gender,
-                                                      ElementName=Root}"
+                                       Text="{Binding Person.Gender, ElementName=Root}"
                                        Style="{StaticResource InfoValueStyle}"/>
-
                         </Grid>
-
                         <Grid>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0"
-                                       Text="Full Name"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
+                            <TextBlock Grid.Column="0" Text="Full Name" Style="{StaticResource InfoLabelStyle}"/>
                             <TextBlock Grid.Column="1"
-                                       Text="{Binding Person.FullName,
-                                                      ElementName=Root}"
+                                       Text="{Binding Person.FullName, ElementName=Root}"
                                        FontSize="16"
                                        Style="{StaticResource InfoValueStyle}"/>
-
                         </Grid>
-
                     </StackPanel>
 
-                    <!-- CONTACT -->
-                    <StackPanel Grid.Row="1"
-                                Margin="0,4,0,0">
-
-                        <Border Height="1"
-                                Background="{StaticResource BorderColor}"
-                                Margin="0,0,0,16"/>
-
-                        <TextBlock Text="CONTACT INFORMATION"
-                                   Style="{StaticResource SectionTitleStyle}"/>
-
+                    <StackPanel Grid.Row="1" Margin="0,4,0,0">
+                        <Border Height="1" Background="{StaticResource BorderColor}" Margin="0,0,0,16"/>
+                        <TextBlock Text="CONTACT INFORMATION" Style="{StaticResource SectionTitleStyle}"/>
                         <Grid>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
@@ -248,29 +159,12 @@
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0"
-                                       Text="National No"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding Person.NationalNo,
-                                                      ElementName=Root}"
-                                       Style="{StaticResource InfoValueStyle}"/>
-
-                            <TextBlock Grid.Column="3"
-                                       Text="Phone"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
-                            <TextBlock Grid.Column="4"
-                                       Text="{Binding Person.Phone,
-                                                      ElementName=Root}"
-                                       Style="{StaticResource InfoValueStyle}"/>
-
+                            <TextBlock Grid.Column="0" Text="National No" Style="{StaticResource InfoLabelStyle}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Person.NationalNo, ElementName=Root}" Style="{StaticResource InfoValueStyle}"/>
+                            <TextBlock Grid.Column="3" Text="Phone" Style="{StaticResource InfoLabelStyle}"/>
+                            <TextBlock Grid.Column="4" Text="{Binding Person.Phone, ElementName=Root}" Style="{StaticResource InfoValueStyle}"/>
                         </Grid>
-
                         <Grid>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
@@ -278,42 +172,17 @@
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0"
-                                       Text="Email"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding Person.Email,
-                                                      ElementName=Root}"
-                                       Style="{StaticResource InfoValueStyle}"/>
-
-                            <TextBlock Grid.Column="3"
-                                       Text="Country"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
-                            <TextBlock Grid.Column="4"
-                                       Text="{Binding Person.CountryName,
-                                                      ElementName=Root}"
-                                       Style="{StaticResource InfoValueStyle}"/>
-
+                            <TextBlock Grid.Column="0" Text="Email" Style="{StaticResource InfoLabelStyle}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Person.Email, ElementName=Root}" Style="{StaticResource InfoValueStyle}"/>
+                            <TextBlock Grid.Column="3" Text="Country" Style="{StaticResource InfoLabelStyle}"/>
+                            <TextBlock Grid.Column="4" Text="{Binding Person.CountryName, ElementName=Root}" Style="{StaticResource InfoValueStyle}"/>
                         </Grid>
-
                     </StackPanel>
 
-                    <!-- ADDITIONAL -->
-                    <StackPanel Grid.Row="2"
-                                Margin="0,4,0,0">
-
-                        <Border Height="1"
-                                Background="{StaticResource BorderColor}"
-                                Margin="0,0,0,16"/>
-
-                        <TextBlock Text="ADDITIONAL INFORMATION"
-                                   Style="{StaticResource SectionTitleStyle}"/>
-
+                    <StackPanel Grid.Row="2" Margin="0,4,0,0">
+                        <Border Height="1" Background="{StaticResource BorderColor}" Margin="0,0,0,16"/>
+                        <TextBlock Text="ADDITIONAL INFORMATION" Style="{StaticResource SectionTitleStyle}"/>
                         <Grid>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
@@ -321,64 +190,31 @@
                                 <ColumnDefinition Width="105"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Column="0"
-                                       Text="Date Of Birth"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
+                            <TextBlock Grid.Column="0" Text="Date Of Birth" Style="{StaticResource InfoLabelStyle}"/>
                             <TextBlock Grid.Column="1"
-                                       Text="{Binding Person.DateOfBirth,
-                                                      ElementName=Root,
-                                                      StringFormat='{}{0:dd/MM/yyyy}'}"
+                                       Text="{Binding Person.DateOfBirth, ElementName=Root, StringFormat='{}{0:dd/MM/yyyy}'}"
                                        Style="{StaticResource InfoValueStyle}"/>
-
-                            <TextBlock Grid.Column="3"
-                                       Text="Address"
-                                       Style="{StaticResource InfoLabelStyle}"/>
-
-                            <TextBlock Grid.Column="4"
-                                       Text="{Binding Person.Address,
-                                                      ElementName=Root}"
-                                       Style="{StaticResource InfoValueStyle}"/>
-
+                            <TextBlock Grid.Column="3" Text="Address" Style="{StaticResource InfoLabelStyle}"/>
+                            <TextBlock Grid.Column="4" Text="{Binding Person.Address, ElementName=Root}" Style="{StaticResource InfoValueStyle}"/>
                         </Grid>
-
                     </StackPanel>
-
                 </Grid>
 
-                <!-- SPACER -->
                 <Border Grid.Column="1"/>
 
-                <!-- PROFILE -->
                 <StackPanel Grid.Column="2"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Top">
-
-                    <Border Width="150"
-                            Height="150"
+                    <Border Width="150" Height="150"
                             CornerRadius="75"
                             Background="{StaticResource InputBackground}"
                             BorderBrush="{StaticResource PrimaryColor}"
                             BorderThickness="2"
                             ClipToBounds="True">
-
-                        <Grid>
-
-                            <Image Source="{Binding Person.ImagePath,
-                                                    ElementName=Root,
-                                                    TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}"
-                                   Stretch="UniformToFill"/>
-
-                            <Border Background="{StaticResource PrimaryLightColor}"
-                                    Opacity="0.15"/>
-
-                        </Grid>
-
+                        <Image Source="{Binding Person.ImagePath, ElementName=Root, TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}"
+                               Stretch="UniformToFill"/>
                     </Border>
-
-                    <TextBlock Text="{Binding Person.FullName,
-                                              ElementName=Root}"
+                    <TextBlock Text="{Binding Person.FullName, ElementName=Root}"
                                FontSize="15"
                                FontWeight="{StaticResource FontWeightSemiBold}"
                                Foreground="{StaticResource TextPrimaryColor}"
@@ -387,18 +223,12 @@
                                TextWrapping="Wrap"
                                MaxWidth="160"
                                Margin="0,12,0,2"/>
-
                     <TextBlock Text="Profile Photo"
                                FontSize="{StaticResource FontSizeCaption}"
-                               Foreground="{StaticResource SecondaryTextColor}"
+                               Foreground="{StaticResource TextSecondaryColor}"
                                HorizontalAlignment="Center"/>
-
                 </StackPanel>
-
             </Grid>
-
         </Grid>
-
     </Border>
-
 </UserControl>

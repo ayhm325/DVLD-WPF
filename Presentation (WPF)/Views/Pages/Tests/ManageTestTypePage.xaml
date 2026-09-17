@@ -1,16 +1,14 @@
 ﻿<Page x:Class="Presentation.Views.Pages.Tests.ManageTestTypePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:Presentation.Views.Pages.Tests"
-      mc:Ignorable="d" 
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      mc:Ignorable="d"
       d:DesignHeight="450" d:DesignWidth="800"
       Title="Manage Test Types"
       Background="{StaticResource BackgroundColor}">
 
     <Page.Resources>
-        <!-- ===================== DATA GRID STYLE ===================== -->
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -22,44 +20,47 @@
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
             <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
             <Setter Property="FontSize" Value="14"/>
+            <Setter Property="RowHeight" Value="46"/>
         </Style>
 
-        <!-- ستايل عناوين الأعمدة -->
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="15,12"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
         </Style>
 
-        <!-- ستايل الخلايا -->
         <Style TargetType="DataGridCell">
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Padding" Value="15,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Background" Value="{StaticResource SelectionBackgroundColor}"/>
                     <Setter Property="Foreground" Value="{StaticResource SelectionForegroundColor}"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- ===================== CONTEXT MENU STYLE ===================== -->
         <Style TargetType="ContextMenu">
             <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="6"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
@@ -81,7 +82,7 @@
 
         <Style TargetType="MenuItem">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="Margin" Value="0"/>
             <Setter Property="FontSize" Value="13"/>
@@ -111,7 +112,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Bd" Property="Background"
+                                <Setter TargetName="Bd"
+                                        Property="Background"
                                         Value="{StaticResource SurfaceHoverColor}"/>
                                 <Setter Property="Foreground"
                                         Value="{StaticResource PrimaryColor}"/>
@@ -124,7 +126,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
     </Page.Resources>
 
     <Grid Margin="25">
@@ -133,33 +134,69 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- ===================== HEADER SECTION ===================== -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
-            <TextBlock Text="Manage Test Types" 
-                       Style="{StaticResource HeaderStyle}"/>
+        <Border Grid.Row="0"
+                Style="{StaticResource CardStyle}"
+                Padding="20"
+                Margin="0,0,0,20">
+            <DockPanel LastChildFill="False">
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            DockPanel.Dock="Left">
+                    <TextBlock Text="Manage Test Types"
+                               Style="{StaticResource HeaderStyle}"/>
+                    <TextBlock Text="  •  "
+                               Foreground="{StaticResource TextMutedColor}"
+                               FontSize="{StaticResource FontSizeBody}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TestTypes.Count}"
+                               Foreground="{StaticResource PrimaryColor}"
+                               FontSize="{StaticResource FontSizeBody}"
+                               FontWeight="{StaticResource FontWeightSemiBold}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text=" records"
+                               Foreground="{StaticResource TextMutedColor}"
+                               FontSize="{StaticResource FontSizeCaption}"
+                               VerticalAlignment="Center"
+                               Margin="4,0,0,0"/>
+                </StackPanel>
 
-            <TextBlock Text="{Binding TestTypes.Count, StringFormat='({0})'}" 
-                       Style="{StaticResource HeaderStyle}" 
-                       Foreground="{StaticResource TextSecondaryColor}" 
-                       Margin="8,0,0,0"/>
-        </StackPanel>
+                <Border DockPanel.Dock="Right"
+                        Background="{StaticResource PrimarySoftColor}"
+                        BorderBrush="{StaticResource PrimaryLightColor}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="10,6">
+                    <TextBlock Text="Right-click a record to edit"
+                               Foreground="{StaticResource PrimaryColor}"
+                               FontSize="{StaticResource FontSizeCaption}"
+                               FontWeight="{StaticResource FontWeightSemiBold}"/>
+                </Border>
+            </DockPanel>
+        </Border>
 
-        <!-- ===================== DATA GRID CARD ===================== -->
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="0">
+        <Border Grid.Row="1"
+                Style="{StaticResource CardStyle}"
+                Padding="0">
             <DataGrid x:Name="dgTestType"
-                      ItemsSource="{Binding TestTypes}">
+                      ItemsSource="{Binding TestTypes}"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow">
 
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
-                        <Setter Property="Height" Value="45"/>
+                        <Setter Property="Height" Value="46"/>
                         <Setter Property="Background" Value="Transparent"/>
                         <Setter Property="BorderBrush" Value="Transparent"/>
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
+                                <Setter Property="Background"
+                                        Value="{StaticResource SurfaceHoverColor}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{StaticResource SelectionBackgroundColor}"/>
+                                <Setter Property="Background"
+                                        Value="{StaticResource SelectionBackgroundColor}"/>
+                                <Setter Property="BorderBrush"
+                                        Value="Transparent"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -167,22 +204,35 @@
 
                 <DataGrid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Edit Test Type" 
-                                  Command="{Binding EditTestTypeCommand}" 
+                        <MenuItem Header="Edit Test Type"
+                                  Command="{Binding EditTestTypeCommand}"
                                   CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                             <MenuItem.Icon>
-                                <Path Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" 
-                                      Fill="{StaticResource WarningColor}" Stretch="Uniform" Width="16" Height="16"/>
+                                <Path Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"
+                                      Fill="{StaticResource WarningColor}"
+                                      Stretch="Uniform"
+                                      Width="18"
+                                      Height="18"/>
                             </MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>
                 </DataGrid.ContextMenu>
 
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="ID" Binding="{Binding TestTypeId}" Width="80"/>
-                    <DataGridTextColumn Header="Title" Binding="{Binding TestTypeTitle}" Width="250"/>
-                    <DataGridTextColumn Header="Description" Binding="{Binding TestTypeDescription}" Width="*"/>
-                    <DataGridTextColumn Header="Fees" Binding="{Binding TestTypeFees, StringFormat={}{0:C}}" Width="150"/>
+                    
+                    <DataGridTextColumn Header="ID"
+                                        Binding="{Binding TestTypeId}"
+                                        Width="90"/>
+                    <DataGridTextColumn Header="Title"
+                                        Binding="{Binding TestTypeTitle}"
+                                        Width="240"/>
+                    <DataGridTextColumn Header="Description"
+                                        Binding="{Binding TestTypeDescription}"
+                                        Width="*"/>
+                    <DataGridTextColumn Header="Fees"
+                                        Binding="{Binding TestTypeFees, StringFormat={}{0:C}}"
+                                        Width="160"/>
+
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

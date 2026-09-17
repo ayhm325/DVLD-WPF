@@ -9,117 +9,70 @@
              d:DesignHeight="550"
              d:DesignWidth="920">
     <UserControl.Resources>
-        <SolidColorBrush x:Key="DriverPhotoPlaceholderBrush" Color="#E2E8F0"/>
-        <SolidColorBrush x:Key="ActiveGreenBackground" Color="#F0FDF4"/>
-        <SolidColorBrush x:Key="ActiveGreenForeground" Color="#16A34A"/>
-        <SolidColorBrush x:Key="InactiveRedBackground" Color="#FEF2F2"/>
-        <SolidColorBrush x:Key="InactiveRedForeground" Color="#DC2626"/>
-        <SolidColorBrush x:Key="DetainedRedBackground" Color="#FEF2F2"/>
-        <SolidColorBrush x:Key="DetainedRedForeground" Color="#DC2626"/>
-        <SolidColorBrush x:Key="FreeGreenBackground" Color="#F0FDF4"/>
-        <SolidColorBrush x:Key="FreeGreenForeground" Color="#16A34A"/>
+        <SolidColorBrush x:Key="DriverPhotoPlaceholderBrush" Color="#E7E2DC"/>
+        <SolidColorBrush x:Key="ActiveGreenBackground" Color="#EAF7F0"/>
+        <SolidColorBrush x:Key="ActiveGreenForeground" Color="#16845A"/>
+        <SolidColorBrush x:Key="InactiveRedBackground" Color="#FCEBED"/>
+        <SolidColorBrush x:Key="InactiveRedForeground" Color="#B4232D"/>
+        <SolidColorBrush x:Key="DetainedRedBackground" Color="#FCEBED"/>
+        <SolidColorBrush x:Key="DetainedRedForeground" Color="#B4232D"/>
+        <SolidColorBrush x:Key="FreeGreenBackground" Color="#EAF7F0"/>
+        <SolidColorBrush x:Key="FreeGreenForeground" Color="#16845A"/>
 
-        <LinearGradientBrush x:Key="LicenseHeaderGradient"
-                             StartPoint="0,0"
-                             EndPoint="1,1">
-            <GradientStop Color="#F8FAFC" Offset="0"/>
-            <GradientStop Color="#F1F5F9" Offset="0.5"/>
-            <GradientStop Color="#F8FAFC" Offset="1"/>
-        </LinearGradientBrush>
-
-        <Style x:Key="FieldItemContainer"
-               TargetType="Border">
-            <Setter Property="Background"
-                    Value="{StaticResource SurfaceColor}"/>
-            <Setter Property="CornerRadius"
-                    Value="{StaticResource RadiusMedium}"/>
-            <Setter Property="Padding"
-                    Value="14,12"/>
-            <Setter Property="BorderBrush"
-                    Value="{StaticResource BorderColor}"/>
-            <Setter Property="BorderThickness"
-                    Value="1"/>
+        <Style x:Key="FieldItemContainer" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style x:Key="FieldLabel"
                TargetType="TextBlock"
                BasedOn="{StaticResource LabelStyle}">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Margin"
-                    Value="10,0,0,0"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
         </Style>
 
-        <Style x:Key="FieldValue"
-               TargetType="TextBlock">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Margin"
-                    Value="10,4,0,0"/>
-            <Setter Property="TextWrapping"
-                    Value="Wrap"/>
+        <Style x:Key="FieldValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Margin" Value="10,4,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
-        <Style x:Key="IconCircle"
-               TargetType="Border">
-            <Setter Property="Width"
-                    Value="34"/>
-            <Setter Property="Height"
-                    Value="34"/>
-            <Setter Property="CornerRadius"
-                    Value="{StaticResource RadiusMedium}"/>
-            <Setter Property="Background"
-                    Value="{StaticResource PrimaryLightColor}"/>
-            <Setter Property="VerticalAlignment"
-                    Value="Center"/>
+        <Style x:Key="IconCircle" TargetType="Border">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryLightColor}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
-        <Style x:Key="StatusBadge"
-               TargetType="Border">
-            <Setter Property="CornerRadius"
-                    Value="6"/>
-            <Setter Property="Padding"
-                    Value="10,4"/>
-            <Setter Property="HorizontalAlignment"
-                    Value="Left"/>
-            <Setter Property="Margin"
-                    Value="10,4,0,0"/>
+        <Style x:Key="StatusBadge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Margin" Value="10,4,0,0"/>
         </Style>
 
-        <Style x:Key="LicenseSearchTextBox"
-               TargetType="TextBox">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Background"
-                    Value="Transparent"/>
-            <Setter Property="BorderThickness"
-                    Value="0"/>
-            <Setter Property="Padding"
-                    Value="0"/>
-            <Setter Property="VerticalContentAlignment"
-                    Value="Center"/>
+        <Style x:Key="LicenseSearchTextBox" TargetType="TextBox">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
-        <Style x:Key="LicenseSearchButton"
-               TargetType="Button">
-            <Setter Property="Background"
-                    Value="{StaticResource PrimaryColor}"/>
-            <Setter Property="Foreground"
-                    Value="White"/>
-            <Setter Property="BorderThickness"
-                    Value="0"/>
-            <Setter Property="Padding"
-                    Value="14,9"/>
-            <Setter Property="Cursor"
-                    Value="Hand"/>
+        <Style x:Key="LicenseSearchButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextOnPrimaryColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,9"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -131,23 +84,16 @@
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver"
-                                     Value="True">
-                                <Setter TargetName="ButtonBorder"
-                                        Property="Opacity"
-                                        Value="0.88"/>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background"
+                                        Value="{StaticResource PrimaryHoverColor}"/>
                             </Trigger>
-                            <Trigger Property="IsPressed"
-                                     Value="True">
-                                <Setter TargetName="ButtonBorder"
-                                        Property="Opacity"
-                                        Value="0.72"/>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background"
+                                        Value="{StaticResource PrimaryPressedColor}"/>
                             </Trigger>
-                            <Trigger Property="IsEnabled"
-                                     Value="False">
-                                <Setter TargetName="ButtonBorder"
-                                        Property="Opacity"
-                                        Value="0.45"/>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -156,20 +102,10 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Background="{StaticResource SurfaceColor}"
-            CornerRadius="{StaticResource RadiusLarge}"
+    <Border Style="{StaticResource CardStyle}"
             Margin="6"
-            BorderBrush="{StaticResource BorderColor}"
-            BorderThickness="1"
-            ClipToBounds="False">
-        <Border.Effect>
-            <DropShadowEffect Color="#000000"
-                              Direction="270"
-                              ShadowDepth="2"
-                              BlurRadius="12"
-                              Opacity="0.08"/>
-        </Border.Effect>
-
+            Padding="0"
+            HorizontalAlignment="Stretch">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -177,7 +113,7 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0"
-                    Background="{StaticResource LicenseHeaderGradient}"
+                    Background="{StaticResource SurfaceSecondaryColor}"
                     CornerRadius="{StaticResource RadiusLarge}"
                     Padding="24,18"
                     BorderBrush="{StaticResource BorderColor}"
@@ -207,7 +143,6 @@
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"/>
                         </Border>
-
                         <TextBlock Text="Driver License Info"
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"/>
@@ -222,11 +157,10 @@
                                    FontWeight="{StaticResource FontWeightMedium}"
                                    VerticalAlignment="Center"
                                    Margin="0,0,10,0"/>
-
                         <Border Width="220"
                                 Height="38"
                                 Background="{StaticResource SurfaceColor}"
-                                BorderBrush="{StaticResource BorderColor}"
+                                BorderBrush="{StaticResource InputBorderColor}"
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource RadiusMedium}">
                             <Grid>
@@ -240,23 +174,17 @@
                                       HorizontalAlignment="Left"
                                       VerticalAlignment="Center"
                                       Margin="10,0,0,0"/>
-
                                 <TextBox Style="{StaticResource LicenseSearchTextBox}"
                                          Margin="34,0,8,0"
-                                         Text="{Binding LicenseIdText,
-                                                        ElementName=Root,
-                                                        UpdateSourceTrigger=PropertyChanged}"
-                                         IsReadOnly="{Binding IsLicenseIdReadOnly,
-                                                               ElementName=Root}"/>
+                                         Text="{Binding LicenseIdText, ElementName=Root, UpdateSourceTrigger=PropertyChanged}"
+                                         IsReadOnly="{Binding IsLicenseIdReadOnly, ElementName=Root}"/>
                             </Grid>
                         </Border>
-
                         <Button Style="{StaticResource LicenseSearchButton}"
                                 Margin="8,0,0,0"
-                                Command="{Binding SearchCommand,
-                                                  ElementName=Root}">
+                                Command="{Binding SearchCommand, ElementName=Root}">
                             <Path Data="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                  Stroke="White"
+                                  Stroke="{StaticResource TextOnPrimaryColor}"
                                   StrokeThickness="2"
                                   Fill="Transparent"
                                   Stretch="Uniform"
@@ -282,372 +210,186 @@
                     </Grid.ColumnDefinitions>
 
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="12"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0"
-                            Grid.Column="0"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Class"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.LicenseClass,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Class" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.LicenseClass, ElementName=Root, FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="0"
-                            Grid.Column="2"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Name"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.FullName,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Name" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.FullName, ElementName=Root, FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="2"
-                            Grid.Column="0"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="License ID"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.LicenseId,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="License ID" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.LicenseId, ElementName=Root, FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="2"
-                            Grid.Column="2"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
-                                <Path Data="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h.01"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
+                                <Path Data="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 000-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h.01"
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="National No"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.NationalNo,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="National No" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.NationalNo, ElementName=Root, FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="4"
-                            Grid.Column="0"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="4" Grid.Column="0" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Gender"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.Gender,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Gender" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.Gender, ElementName=Root, FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="4"
-                            Grid.Column="2"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="4" Grid.Column="2" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Date Of Birth"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.DateOfBirth,
-                                                          ElementName=Root,
-                                                          StringFormat='{}{0:dd/MMM/yyyy}',
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Date Of Birth" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.DateOfBirth, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}', FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="6"
-                            Grid.Column="0"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="6" Grid.Column="0" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm-3.375 6.125h3.375"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Driver ID"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.DriverId,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Driver ID" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.DriverId, ElementName=Root, FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="6"
-                            Grid.Column="2"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="6" Grid.Column="2" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Issue Date"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.IssueDate,
-                                                          ElementName=Root,
-                                                          StringFormat='{}{0:dd/MMM/yyyy}',
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Issue Date" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.IssueDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}', FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="8"
-                            Grid.Column="0"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="8" Grid.Column="0" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Expiration Date"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.ExpirationDate,
-                                                          ElementName=Root,
-                                                          StringFormat='{}{0:dd/MMM/yyyy}',
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Expiration Date" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.ExpirationDate, ElementName=Root, StringFormat='{}{0:dd/MMM/yyyy}', FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="8"
-                            Grid.Column="2"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="8" Grid.Column="2" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Issue Reason"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.IssueReason,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"/>
+                                <TextBlock Text="Issue Reason" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.IssueReason, ElementName=Root, FallbackValue=---, TargetNullValue=---}" Style="{StaticResource FieldValue}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="10"
-                            Grid.Column="0"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="10" Grid.Column="0" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Is Active?"
-                                           Style="{StaticResource FieldLabel}"/>
-
+                                <TextBlock Text="Is Active?" Style="{StaticResource FieldLabel}"/>
                                 <Border>
                                     <Border.Style>
-                                        <Style TargetType="Border"
-                                               BasedOn="{StaticResource StatusBadge}">
-                                            <Setter Property="Background"
-                                                    Value="{StaticResource SurfaceColor}"/>
-                                            <Setter Property="BorderBrush"
-                                                    Value="{StaticResource BorderColor}"/>
-                                            <Setter Property="BorderThickness"
-                                                    Value="1"/>
+                                        <Style TargetType="Border" BasedOn="{StaticResource StatusBadge}">
+                                            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+                                            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding License.IsActive,
-                                                                                ElementName=Root}"
-                                                             Value="True">
-                                                    <Setter Property="Background"
-                                                            Value="{StaticResource ActiveGreenBackground}"/>
-                                                    <Setter Property="BorderBrush"
-                                                            Value="{StaticResource ActiveGreenForeground}"/>
-                                                    <Setter Property="BorderThickness"
-                                                            Value="0"/>
+                                                <DataTrigger Binding="{Binding License.IsActive, ElementName=Root}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource ActiveGreenBackground}"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource ActiveGreenForeground}"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
                                                 </DataTrigger>
-                                                <DataTrigger Binding="{Binding License.IsActive,
-                                                                                ElementName=Root}"
-                                                             Value="False">
-                                                    <Setter Property="Background"
-                                                            Value="{StaticResource InactiveRedBackground}"/>
-                                                    <Setter Property="BorderBrush"
-                                                            Value="{StaticResource InactiveRedForeground}"/>
-                                                    <Setter Property="BorderThickness"
-                                                            Value="0"/>
+                                                <DataTrigger Binding="{Binding License.IsActive, ElementName=Root}" Value="False">
+                                                    <Setter Property="Background" Value="{StaticResource InactiveRedBackground}"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource InactiveRedForeground}"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-
-                                    <TextBlock FontSize="{StaticResource FontSizeCaption}"
-                                               FontWeight="{StaticResource FontWeightSemiBold}">
+                                    <TextBlock FontSize="{StaticResource FontSizeCaption}" FontWeight="{StaticResource FontWeightSemiBold}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="Text"
-                                                        Value="Unknown"/>
-                                                <Setter Property="Foreground"
-                                                        Value="{StaticResource TextSecondaryColor}"/>
+                                                <Setter Property="Text" Value="Unknown"/>
+                                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding License.IsActive,
-                                                                                    ElementName=Root}"
-                                                                 Value="True">
-                                                        <Setter Property="Text"
-                                                                Value="Active"/>
-                                                        <Setter Property="Foreground"
-                                                                Value="{StaticResource ActiveGreenForeground}"/>
+                                                    <DataTrigger Binding="{Binding License.IsActive, ElementName=Root}" Value="True">
+                                                        <Setter Property="Text" Value="Active"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource ActiveGreenForeground}"/>
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding License.IsActive,
-                                                                                    ElementName=Root}"
-                                                                 Value="False">
-                                                        <Setter Property="Text"
-                                                                Value="Inactive"/>
-                                                        <Setter Property="Foreground"
-                                                                Value="{StaticResource InactiveRedForeground}"/>
+                                                    <DataTrigger Binding="{Binding License.IsActive, ElementName=Root}" Value="False">
+                                                        <Setter Property="Text" Value="Inactive"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource InactiveRedForeground}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -658,84 +400,47 @@
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="10"
-                            Grid.Column="2"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="10" Grid.Column="2" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left">
                                 <Path Data="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Is Detained?"
-                                           Style="{StaticResource FieldLabel}"/>
-
+                                <TextBlock Text="Is Detained?" Style="{StaticResource FieldLabel}"/>
                                 <Border>
                                     <Border.Style>
-                                        <Style TargetType="Border"
-                                               BasedOn="{StaticResource StatusBadge}">
-                                            <Setter Property="Background"
-                                                    Value="{StaticResource SurfaceColor}"/>
-                                            <Setter Property="BorderBrush"
-                                                    Value="{StaticResource BorderColor}"/>
-                                            <Setter Property="BorderThickness"
-                                                    Value="1"/>
+                                        <Style TargetType="Border" BasedOn="{StaticResource StatusBadge}">
+                                            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
+                                            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding License.IsDetained,
-                                                                                ElementName=Root}"
-                                                             Value="True">
-                                                    <Setter Property="Background"
-                                                            Value="{StaticResource DetainedRedBackground}"/>
-                                                    <Setter Property="BorderBrush"
-                                                            Value="{StaticResource DetainedRedForeground}"/>
-                                                    <Setter Property="BorderThickness"
-                                                            Value="0"/>
+                                                <DataTrigger Binding="{Binding License.IsDetained, ElementName=Root}" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource DetainedRedBackground}"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource DetainedRedForeground}"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
                                                 </DataTrigger>
-                                                <DataTrigger Binding="{Binding License.IsDetained,
-                                                                                ElementName=Root}"
-                                                             Value="False">
-                                                    <Setter Property="Background"
-                                                            Value="{StaticResource FreeGreenBackground}"/>
-                                                    <Setter Property="BorderBrush"
-                                                            Value="{StaticResource FreeGreenForeground}"/>
-                                                    <Setter Property="BorderThickness"
-                                                            Value="0"/>
+                                                <DataTrigger Binding="{Binding License.IsDetained, ElementName=Root}" Value="False">
+                                                    <Setter Property="Background" Value="{StaticResource FreeGreenBackground}"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource FreeGreenForeground}"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-
-                                    <TextBlock FontSize="{StaticResource FontSizeCaption}"
-                                               FontWeight="{StaticResource FontWeightSemiBold}">
+                                    <TextBlock FontSize="{StaticResource FontSizeCaption}" FontWeight="{StaticResource FontWeightSemiBold}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="Text"
-                                                        Value="Unknown"/>
-                                                <Setter Property="Foreground"
-                                                        Value="{StaticResource TextSecondaryColor}"/>
+                                                <Setter Property="Text" Value="Unknown"/>
+                                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding License.IsDetained,
-                                                                                    ElementName=Root}"
-                                                                 Value="True">
-                                                        <Setter Property="Text"
-                                                                Value="Detained"/>
-                                                        <Setter Property="Foreground"
-                                                                Value="{StaticResource DetainedRedForeground}"/>
+                                                    <DataTrigger Binding="{Binding License.IsDetained, ElementName=Root}" Value="True">
+                                                        <Setter Property="Text" Value="Detained"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource DetainedRedForeground}"/>
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding License.IsDetained,
-                                                                                    ElementName=Root}"
-                                                                 Value="False">
-                                                        <Setter Property="Text"
-                                                                Value="Free"/>
-                                                        <Setter Property="Foreground"
-                                                                Value="{StaticResource FreeGreenForeground}"/>
+                                                    <DataTrigger Binding="{Binding License.IsDetained, ElementName=Root}" Value="False">
+                                                        <Setter Property="Text" Value="Free"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource FreeGreenForeground}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -746,34 +451,16 @@
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Row="12"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="3"
-                            Style="{StaticResource FieldItemContainer}">
+                    <Border Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="3" Style="{StaticResource FieldItemContainer}">
                         <DockPanel>
-                            <Border Style="{StaticResource IconCircle}"
-                                    DockPanel.Dock="Left"
-                                    VerticalAlignment="Top"
-                                    Margin="0,2,0,0">
+                            <Border Style="{StaticResource IconCircle}" DockPanel.Dock="Left" VerticalAlignment="Top" Margin="0,2,0,0">
                                 <Path Data="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
-                                      Stroke="{StaticResource PrimaryColor}"
-                                      StrokeThickness="1.5"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16"
-                                      Height="16"/>
+                                      Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
                             </Border>
-
                             <StackPanel>
-                                <TextBlock Text="Notes"
-                                           Style="{StaticResource FieldLabel}"/>
-                                <TextBlock Text="{Binding License.Notes,
-                                                          ElementName=Root,
-                                                          FallbackValue=---,
-                                                          TargetNullValue=---}"
-                                           Style="{StaticResource FieldValue}"
-                                           TextWrapping="Wrap"
-                                           MaxHeight="50"/>
+                                <TextBlock Text="Notes" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding License.Notes, ElementName=Root, FallbackValue=---, TargetNullValue=---}"
+                                           Style="{StaticResource FieldValue}" TextWrapping="Wrap" MaxHeight="50"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -785,20 +472,17 @@
                     <StackPanel HorizontalAlignment="Center">
                         <Border Width="140"
                                 Height="170"
-                                Background="{StaticResource SurfaceColor}"
+                                Background="{StaticResource SurfaceSecondaryColor}"
                                 BorderBrush="{StaticResource BorderColor}"
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource RadiusMedium}"
                                 ClipToBounds="True">
                             <Grid>
-                                <StackPanel VerticalAlignment="Center"
-                                            HorizontalAlignment="Center">
-                                    <Ellipse Width="50"
-                                             Height="50"
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <Ellipse Width="50" Height="50"
                                              Fill="{StaticResource DriverPhotoPlaceholderBrush}"
                                              HorizontalAlignment="Center"/>
-                                    <Ellipse Width="70"
-                                             Height="35"
+                                    <Ellipse Width="70" Height="35"
                                              Fill="{StaticResource DriverPhotoPlaceholderBrush}"
                                              Margin="0,-18,0,0"
                                              HorizontalAlignment="Center"/>
@@ -808,15 +492,12 @@
                                                HorizontalAlignment="Center"
                                                Margin="0,12,0,0"/>
                                 </StackPanel>
-
-                                <Image Source="{Binding License.ImagePath,
-                                                         ElementName=Root}"
+                                <Image Source="{Binding License.ImagePath, ElementName=Root}"
                                        Stretch="UniformToFill"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
-
                         <TextBlock Text="Driver Photo"
                                    FontSize="{StaticResource FontSizeCaption}"
                                    FontWeight="{StaticResource FontWeightMedium}"

@@ -14,68 +14,24 @@
              UseLayoutRounding="True">
 
     <UserControl.Resources>
-
-        <Style x:Key="FieldLabel"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource SecondaryTextColor}"/>
-            <Setter Property="Margin"
-                    Value="0"/>
+        <Style x:Key="FieldLabel" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
         </Style>
-
-        <Style x:Key="FieldValue"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize"
-                    Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="FontWeight"
-                    Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground"
-                    Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Margin"
-                    Value="0,4,0,0"/>
+        <Style x:Key="FieldValue" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
         </Style>
-
-        <Style x:Key="InfoIconBox"
-               TargetType="{x:Type Border}">
-            <Setter Property="Width"
-                    Value="42"/>
-            <Setter Property="Height"
-                    Value="42"/>
-            <Setter Property="CornerRadius"
-                    Value="{StaticResource RadiusMedium}"/>
-            <Setter Property="Background"
-                    Value="{StaticResource PrimaryLightColor}"/>
-            <Setter Property="VerticalAlignment"
-                    Value="Center"/>
-        </Style>
-
-        <Style x:Key="StatusIconBox"
-               TargetType="{x:Type Border}">
-            <Setter Property="Width"
-                    Value="42"/>
-            <Setter Property="Height"
-                    Value="42"/>
-            <Setter Property="CornerRadius"
-                    Value="{StaticResource RadiusMedium}"/>
-            <Setter Property="Background"
-                    Value="{StaticResource SuccessLightColor}"/>
-            <Setter Property="VerticalAlignment"
-                    Value="Center"/>
-        </Style>
-
     </UserControl.Resources>
 
     <Border Style="{StaticResource CardStyle}"
             Padding="0"
             Margin="10,5,10,15"
             HorizontalAlignment="Stretch">
-
         <Grid>
-
             <Grid.RowDefinitions>
                 <RowDefinition Height="74"/>
                 <RowDefinition Height="1"/>
@@ -84,15 +40,11 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- HEADER -->
-
             <Border Grid.Row="0"
                     Background="{StaticResource SurfaceSecondaryColor}"
                     Padding="20,0"
                     CornerRadius="{StaticResource RadiusMedium}">
-
                 <Grid>
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -101,36 +53,26 @@
                     <StackPanel Grid.Column="0"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
-
-                        <Border Width="42"
-                                Height="42"
+                        <Border Width="42" Height="42"
                                 CornerRadius="{StaticResource RadiusMedium}"
                                 Background="{StaticResource PrimaryLightColor}"
                                 Margin="0,0,14,0">
-
                             <materialDesign:PackIcon Kind="CardAccountDetailsStar"
-                                                     Width="23"
-                                                     Height="23"
+                                                     Width="23" Height="23"
                                                      Foreground="{StaticResource PrimaryColor}"
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center"/>
-
                         </Border>
-
                         <StackPanel VerticalAlignment="Center">
-
                             <TextBlock Text="Driving License Application"
                                        FontSize="18"
                                        FontWeight="{StaticResource FontWeightSemiBold}"
                                        Foreground="{StaticResource TextPrimaryColor}"/>
-
                             <TextBlock Text="Application details and test progress"
                                        FontSize="{StaticResource FontSizeCaption}"
-                                       Foreground="{StaticResource SecondaryTextColor}"
+                                       Foreground="{StaticResource TextSecondaryColor}"
                                        Margin="0,3,0,0"/>
-
                         </StackPanel>
-
                     </StackPanel>
 
                     <Button Grid.Column="1"
@@ -141,124 +83,75 @@
                             Height="38"
                             MinWidth="115"
                             Margin="15,0,0,0"/>
-
                 </Grid>
-
             </Border>
 
-            <!-- DIVIDER -->
+            <Border Grid.Row="1" Background="{StaticResource BorderColor}"/>
 
-            <Border Grid.Row="1"
-                    Background="{StaticResource BorderColor}"/>
-
-            <!-- BASIC INFORMATION -->
-
-            <Grid Grid.Row="2"
-                  Margin="22,20">
-
+            <Grid Grid.Row="2" Margin="22,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="1"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- APPLICATION ID -->
-
-                <StackPanel Grid.Column="0"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center">
-
-                    <Border Style="{StaticResource InfoIconBox}"
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="42" Height="42"
+                            CornerRadius="{StaticResource RadiusMedium}"
+                            Background="{StaticResource PrimaryLightColor}"
                             Margin="0,0,13,0">
-
                         <materialDesign:PackIcon Kind="Identifier"
-                                                 Width="21"
-                                                 Height="21"
+                                                 Width="21" Height="21"
                                                  Foreground="{StaticResource PrimaryColor}"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center"/>
-
                     </Border>
-
                     <StackPanel VerticalAlignment="Center">
-
-                        <TextBlock Text="APPLICATION ID"
-                                   Style="{StaticResource FieldLabel}"/>
-
-                        <TextBlock Text="{Binding DrivingLicenseApplicationId,
-                                                  ElementName=Root}"
-                                   Style="{StaticResource FieldValue}"/>
-
+                        <TextBlock Text="APPLICATION ID" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{Binding DrivingLicenseApplicationId, ElementName=Root}" Style="{StaticResource FieldValue}"/>
                     </StackPanel>
-
                 </StackPanel>
 
-                <!-- VERTICAL DIVIDER -->
-
                 <Border Grid.Column="1"
-                        Width="1"
-                        Height="38"
+                        Width="1" Height="38"
                         Background="{StaticResource BorderColor}"
                         VerticalAlignment="Center"/>
-
-                <!-- PASSED TESTS -->
 
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Right">
-
-                    <Border Style="{StaticResource StatusIconBox}"
+                    <Border Width="42" Height="42"
+                            CornerRadius="{StaticResource RadiusMedium}"
+                            Background="{StaticResource SuccessLightColor}"
                             Margin="0,0,13,0">
-
                         <materialDesign:PackIcon Kind="CheckCircleOutline"
-                                                 Width="22"
-                                                 Height="22"
+                                                 Width="22" Height="22"
                                                  Foreground="{StaticResource SuccessColor}"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center"/>
-
                     </Border>
-
                     <StackPanel VerticalAlignment="Center">
-
-                        <TextBlock Text="TEST PROGRESS"
-                                   Style="{StaticResource FieldLabel}"/>
-
-                        <StackPanel Orientation="Horizontal"
-                                    Margin="0,4,0,0">
-
-                            <TextBlock Text="{Binding PassedTests,
-                                                      ElementName=Root}"
+                        <TextBlock Text="TEST PROGRESS" Style="{StaticResource FieldLabel}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding PassedTests, ElementName=Root}"
                                        FontSize="{StaticResource FontSizeBody}"
                                        FontWeight="{StaticResource FontWeightSemiBold}"
                                        Foreground="{StaticResource SuccessColor}"/>
-
                             <TextBlock Text=" / "
                                        FontSize="{StaticResource FontSizeBody}"
                                        FontWeight="{StaticResource FontWeightSemiBold}"
-                                       Foreground="{StaticResource SecondaryTextColor}"/>
-
-                            <TextBlock Text="{Binding TotalTests,
-                                                      ElementName=Root}"
+                                       Foreground="{StaticResource TextSecondaryColor}"/>
+                            <TextBlock Text="{Binding TotalTests, ElementName=Root}"
                                        FontSize="{StaticResource FontSizeBody}"
                                        FontWeight="{StaticResource FontWeightSemiBold}"
                                        Foreground="{StaticResource TextPrimaryColor}"/>
-
                         </StackPanel>
-
                     </StackPanel>
-
                 </StackPanel>
-
             </Grid>
 
-            <!-- DIVIDER -->
-
-            <Border Grid.Row="3"
-                    Background="{StaticResource BorderColor}"/>
-
-            <!-- LICENSE CLASS -->
+            <Border Grid.Row="3" Background="{StaticResource BorderColor}"/>
 
             <Border Grid.Row="4"
                     Margin="20,16,20,20"
@@ -267,9 +160,7 @@
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="1"
                     CornerRadius="{StaticResource RadiusMedium}">
-
                 <Grid>
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -277,38 +168,29 @@
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0"
-                            Width="44"
-                            Height="44"
+                            Width="44" Height="44"
                             CornerRadius="{StaticResource RadiusMedium}"
-                            Background="{StaticResource PrimaryColor}"
-                            VerticalAlignment="Center">
-
+                            Background="{StaticResource PrimaryColor}">
                         <materialDesign:PackIcon Kind="Car"
-                                                 Width="23"
-                                                 Height="23"
+                                                 Width="23" Height="23"
                                                  Foreground="White"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center"/>
-
                     </Border>
 
                     <StackPanel Grid.Column="1"
                                 Margin="14,0,15,0"
                                 VerticalAlignment="Center">
-
                         <TextBlock Text="APPLIED LICENSE CLASS"
                                    FontSize="{StaticResource FontSizeCaption}"
                                    FontWeight="{StaticResource FontWeightSemiBold}"
                                    Foreground="{StaticResource PrimaryColor}"/>
-
-                        <TextBlock Text="{Binding LicenseClassName,
-                                                  ElementName=Root}"
+                        <TextBlock Text="{Binding LicenseClassName, ElementName=Root}"
                                    FontSize="16"
                                    FontWeight="{StaticResource FontWeightSemiBold}"
                                    Foreground="{StaticResource TextPrimaryColor}"
                                    Margin="0,4,0,0"
                                    TextWrapping="Wrap"/>
-
                     </StackPanel>
 
                     <Border Grid.Column="2"
@@ -318,31 +200,20 @@
                             CornerRadius="{StaticResource RadiusSmall}"
                             Padding="10,6"
                             VerticalAlignment="Center">
-
                         <StackPanel Orientation="Horizontal">
-
-                            <Ellipse Width="7"
-                                     Height="7"
+                            <Ellipse Width="7" Height="7"
                                      Fill="{StaticResource PrimaryColor}"
                                      Margin="0,0,7,0"
                                      VerticalAlignment="Center"/>
-
                             <TextBlock Text="LICENSE"
                                        FontSize="{StaticResource FontSizeCaption}"
                                        FontWeight="{StaticResource FontWeightSemiBold}"
                                        Foreground="{StaticResource PrimaryColor}"
                                        VerticalAlignment="Center"/>
-
                         </StackPanel>
-
                     </Border>
-
                 </Grid>
-
             </Border>
-
         </Grid>
-
     </Border>
-
 </UserControl>

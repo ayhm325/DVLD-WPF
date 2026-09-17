@@ -11,21 +11,15 @@
              UseLayoutRounding="True">
 
     <UserControl.Resources>
-
-        <!-- Form Label -->
-        <Style x:Key="FormLabelStyle"
-               TargetType="{x:Type TextBlock}"
-               BasedOn="{StaticResource LabelStyle}">
+        <Style x:Key="FormLabelStyle" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource LabelStyle}">
             <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
             <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="Margin" Value="0,0,0,7"/>
         </Style>
 
-        <!-- Validation Message -->
-        <Style x:Key="ErrorMessageStyle"
-               TargetType="{x:Type TextBlock}">
-            <Setter Property="Foreground" Value="{StaticResource ErrorColor}"/>
+        <Style x:Key="ErrorMessageStyle" TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="{StaticResource DangerColor}"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Margin" Value="2,4,0,0"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
@@ -40,25 +34,18 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Image Buttons -->
-        <Style x:Key="ImageActionButtonStyle"
-               TargetType="{x:Type Button}"
-               BasedOn="{StaticResource SecondaryButtonStyle}">
+        <Style x:Key="ImageActionButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource SecondaryButtonStyle}">
             <Setter Property="Height" Value="38"/>
             <Setter Property="Width" Value="130"/>
         </Style>
 
-        <Style x:Key="RemoveImageButtonStyle"
-               TargetType="{x:Type Button}"
-               BasedOn="{StaticResource DangerButtonStyle}">
+        <Style x:Key="RemoveImageButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource DangerButtonStyle}">
             <Setter Property="Height" Value="38"/>
             <Setter Property="Width" Value="130"/>
         </Style>
 
-        <!-- Radio Button -->
-        <Style x:Key="PersonRadioButtonStyle"
-               TargetType="{x:Type RadioButton}">
-            <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
+        <Style x:Key="PersonRadioButtonStyle" TargetType="{x:Type RadioButton}">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -69,8 +56,7 @@
                     <ControlTemplate TargetType="{x:Type RadioButton}">
                         <StackPanel Orientation="Horizontal">
                             <Border x:Name="RadioBorder"
-                                    Width="20"
-                                    Height="20"
+                                    Width="20" Height="20"
                                     Background="{StaticResource InputBackground}"
                                     BorderBrush="{StaticResource InputBorderColor}"
                                     BorderThickness="1.5"
@@ -78,8 +64,7 @@
                                     Margin="0,0,8,0"
                                     VerticalAlignment="Center">
                                 <Ellipse x:Name="RadioMark"
-                                         Width="8"
-                                         Height="8"
+                                         Width="8" Height="8"
                                          Fill="{StaticResource PrimaryColor}"
                                          Visibility="Collapsed"
                                          HorizontalAlignment="Center"
@@ -87,46 +72,24 @@
                             </Border>
                             <ContentPresenter VerticalAlignment="Center"/>
                         </StackPanel>
-
                         <ControlTemplate.Triggers>
-
-                            <Trigger Property="IsMouseOver"
-                                     Value="True">
-                                <Setter TargetName="RadioBorder"
-                                        Property="BorderBrush"
-                                        Value="{StaticResource PrimaryColor}"/>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RadioBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
                             </Trigger>
-
-                            <Trigger Property="IsChecked"
-                                     Value="True">
-                                <Setter TargetName="RadioMark"
-                                        Property="Visibility"
-                                        Value="Visible"/>
-                                <Setter TargetName="RadioBorder"
-                                        Property="BorderBrush"
-                                        Value="{StaticResource PrimaryColor}"/>
-                                <Setter TargetName="RadioBorder"
-                                        Property="Background"
-                                        Value="{StaticResource PrimaryLightColor}"/>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="RadioMark" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="RadioBorder" Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                <Setter TargetName="RadioBorder" Property="Background" Value="{StaticResource PrimaryLightColor}"/>
                             </Trigger>
-
-                            <Trigger Property="IsEnabled"
-                                     Value="False">
-                                <Setter Property="Opacity"
-                                        Value="0.5"/>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
                             </Trigger>
-
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-
     </UserControl.Resources>
-
-    <!-- ========================================================= -->
-    <!-- MAIN CARD                                                  -->
-    <!-- ========================================================= -->
 
     <Border Style="{StaticResource CardStyle}"
             Background="{StaticResource SurfaceColor}"
@@ -134,25 +97,11 @@
             BorderThickness="1"
             CornerRadius="{StaticResource RadiusMedium}"
             SnapsToDevicePixels="True">
-
-        <Border.Effect>
-            <DropShadowEffect Color="#000000"
-                              Direction="270"
-                              ShadowDepth="1"
-                              BlurRadius="16"
-                              Opacity="0.07"/>
-        </Border.Effect>
-
         <Grid>
-
             <Grid.RowDefinitions>
                 <RowDefinition Height="74"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-
-            <!-- ================================================= -->
-            <!-- HEADER                                             -->
-            <!-- ================================================= -->
 
             <Border Grid.Row="0"
                     Background="{StaticResource PrimaryLightColor}"
@@ -160,24 +109,18 @@
                     BorderThickness="0,0,0,1"
                     CornerRadius="{StaticResource RadiusMedium}"
                     Padding="22,0">
-
                 <Grid>
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Icon -->
-
                     <Border Grid.Column="0"
-                            Width="42"
-                            Height="42"
+                            Width="42" Height="42"
                             CornerRadius="{StaticResource RadiusSmall}"
                             Background="{StaticResource PrimaryColor}"
                             VerticalAlignment="Center">
-
                         <TextBlock Text="P"
                                    Foreground="White"
                                    FontSize="20"
@@ -186,24 +129,18 @@
                                    VerticalAlignment="Center"/>
                     </Border>
 
-                    <!-- Header Text -->
-
                     <StackPanel Grid.Column="1"
                                 Margin="14,0,0,0"
                                 VerticalAlignment="Center">
-
                         <TextBlock Text="Personal Information"
                                    FontSize="18"
                                    FontWeight="{StaticResource FontWeightSemiBold}"
                                    Foreground="{StaticResource TextPrimaryColor}"/>
-
                         <TextBlock Text="Enter and manage personal details"
                                    FontSize="{StaticResource FontSizeCaption}"
                                    Foreground="{StaticResource TextMutedColor}"
                                    Margin="0,3,0,0"/>
                     </StackPanel>
-
-                    <!-- Required -->
 
                     <Border Grid.Column="2"
                             Background="{StaticResource SurfaceColor}"
@@ -212,42 +149,30 @@
                             CornerRadius="{StaticResource RadiusSmall}"
                             Padding="10,6"
                             VerticalAlignment="Center">
-
                         <StackPanel Orientation="Horizontal">
-
-                            <Ellipse Width="6"
-                                     Height="6"
+                            <Ellipse Width="6" Height="6"
                                      Fill="{StaticResource PrimaryColor}"
                                      Margin="0,0,6,0"
                                      VerticalAlignment="Center"/>
-
                             <TextBlock Text="Required fields"
                                        FontSize="11"
                                        FontWeight="{StaticResource FontWeightMedium}"
-                                       Foreground="{StaticResource SecondaryTextColor}"/>
+                                       Foreground="{StaticResource TextSecondaryColor}"/>
                         </StackPanel>
                     </Border>
-
                 </Grid>
             </Border>
-
-            <!-- ================================================= -->
-            <!-- CONTENT                                            -->
-            <!-- ================================================= -->
 
             <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Padding="22,20,22,18">
-
                 <Grid>
-
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="22"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -257,324 +182,152 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- ================================================= -->
-                    <!-- FIRST NAME                                         -->
-                    <!-- ================================================= -->
-
-                    <StackPanel Grid.Row="0"
-                                Grid.Column="0"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="First Name *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,17">
+                        <TextBlock Text="First Name *" Style="{StaticResource FormLabelStyle}"/>
                         <TextBox x:Name="TxtFirstName"
-                                 Text="{Binding FirstName,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                ValidatesOnNotifyDataErrors=True,
-                                                NotifyOnValidationError=True}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=TxtFirstName}"
+                                 Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtFirstName}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- SECOND NAME -->
-
-                    <StackPanel Grid.Row="0"
-                                Grid.Column="2"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Second Name *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,17">
+                        <TextBlock Text="Second Name *" Style="{StaticResource FormLabelStyle}"/>
                         <TextBox x:Name="TxtSecondName"
-                                 Text="{Binding SecondName,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                ValidatesOnNotifyDataErrors=True,
-                                                NotifyOnValidationError=True}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=TxtSecondName}"
+                                 Text="{Binding SecondName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtSecondName}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- ================================================= -->
-                    <!-- THIRD NAME                                         -->
-                    <!-- ================================================= -->
-
-                    <StackPanel Grid.Row="1"
-                                Grid.Column="0"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Third Name"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
-                        <TextBox Text="{Binding ThirdName,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                TargetNullValue=''}"/>
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,17">
+                        <TextBlock Text="Third Name" Style="{StaticResource FormLabelStyle}"/>
+                        <TextBox Text="{Binding ThirdName, UpdateSourceTrigger=PropertyChanged, TargetNullValue=''}"/>
                     </StackPanel>
 
-                    <!-- LAST NAME -->
-
-                    <StackPanel Grid.Row="1"
-                                Grid.Column="2"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Last Name *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,17">
+                        <TextBlock Text="Last Name *" Style="{StaticResource FormLabelStyle}"/>
                         <TextBox x:Name="TxtLastName"
-                                 Text="{Binding LastName,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                ValidatesOnNotifyDataErrors=True,
-                                                NotifyOnValidationError=True}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=TxtLastName}"
+                                 Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtLastName}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- ================================================= -->
-                    <!-- NATIONAL NUMBER                                    -->
-                    <!-- ================================================= -->
-
-                    <StackPanel Grid.Row="2"
-                                Grid.Column="0"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="National Number *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,17">
+                        <TextBlock Text="National Number *" Style="{StaticResource FormLabelStyle}"/>
                         <TextBox x:Name="TxtNationalNo"
-                                 Text="{Binding NationalNo,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                ValidatesOnNotifyDataErrors=True,
-                                                NotifyOnValidationError=True}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=TxtNationalNo}"
+                                 Text="{Binding NationalNo, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtNationalNo}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- PHONE -->
-
-                    <StackPanel Grid.Row="2"
-                                Grid.Column="2"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Phone Number *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,17">
+                        <TextBlock Text="Phone Number *" Style="{StaticResource FormLabelStyle}"/>
                         <TextBox x:Name="TxtPhone"
-                                 Text="{Binding Phone,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                ValidatesOnNotifyDataErrors=True,
-                                                NotifyOnValidationError=True}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=TxtPhone}"
+                                 Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtPhone}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- ================================================= -->
-                    <!-- EMAIL                                              -->
-                    <!-- ================================================= -->
-
-                    <StackPanel Grid.Row="3"
-                                Grid.Column="0"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Email Address"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,17">
+                        <TextBlock Text="Email Address" Style="{StaticResource FormLabelStyle}"/>
                         <TextBox x:Name="TxtEmail"
-                                 Text="{Binding Email,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                ValidatesOnNotifyDataErrors=True,
-                                                NotifyOnValidationError=True}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=TxtEmail}"
+                                 Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtEmail}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- ADDRESS -->
-
-                    <StackPanel Grid.Row="3"
-                                Grid.Column="2"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Physical Address *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,17">
+                        <TextBlock Text="Physical Address *" Style="{StaticResource FormLabelStyle}"/>
                         <TextBox x:Name="TxtAddress"
-                                 Text="{Binding Address,
-                                                UpdateSourceTrigger=PropertyChanged,
-                                                ValidatesOnNotifyDataErrors=True,
-                                                NotifyOnValidationError=True}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=TxtAddress}"
+                                 Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=TxtAddress}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- ================================================= -->
-                    <!-- DATE OF BIRTH                                      -->
-                    <!-- ================================================= -->
-
-                    <StackPanel Grid.Row="4"
-                                Grid.Column="0"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Date Of Birth *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,0,17">
+                        <TextBlock Text="Date Of Birth *" Style="{StaticResource FormLabelStyle}"/>
                         <DatePicker x:Name="DtpDateOfBirth"
-                                    SelectedDate="{Binding DateOfBirth,
-                                                           UpdateSourceTrigger=PropertyChanged,
-                                                           ValidatesOnNotifyDataErrors=True,
-                                                           NotifyOnValidationError=True}"
-                                    DisplayDateEnd="{Binding MaxBirthDate,
-                                                             Mode=OneWay}"/>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=DtpDateOfBirth}"
+                                    SelectedDate="{Binding DateOfBirth, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}"
+                                    DisplayDateEnd="{Binding MaxBirthDate, Mode=OneWay}"/>
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=DtpDateOfBirth}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- GENDER -->
-
-                    <StackPanel Grid.Row="4"
-                                Grid.Column="2"
-                                Margin="0,0,0,17">
-
-                        <TextBlock Text="Gender *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="4" Grid.Column="2" Margin="0,0,0,17">
+                        <TextBlock Text="Gender *" Style="{StaticResource FormLabelStyle}"/>
                         <Border Background="{StaticResource InputBackground}"
                                 BorderBrush="{StaticResource InputBorderColor}"
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource RadiusSmall}"
                                 Padding="14,8">
-
                             <StackPanel Orientation="Horizontal">
-
                                 <RadioButton Content="Male"
                                              GroupName="GenderGroup"
                                              Style="{StaticResource PersonRadioButtonStyle}"
-                                             IsChecked="{Binding IsMale,
-                                                                   Mode=TwoWay,
-                                                                   UpdateSourceTrigger=PropertyChanged}"/>
-
+                                             IsChecked="{Binding IsMale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 <RadioButton Content="Female"
                                              GroupName="GenderGroup"
                                              Style="{StaticResource PersonRadioButtonStyle}"
                                              Margin="0"
-                                             IsChecked="{Binding IsFemale,
-                                                                   Mode=TwoWay,
-                                                                   UpdateSourceTrigger=PropertyChanged}"/>
+                                             IsChecked="{Binding IsFemale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- ================================================= -->
-                    <!-- COUNTRY                                            -->
-                    <!-- ================================================= -->
-
-                    <StackPanel Grid.Row="5"
-                                Grid.Column="0"
-                                Margin="0,0,0,10">
-
-                        <TextBlock Text="Country *"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="5" Grid.Column="0" Margin="0,0,0,10">
+                        <TextBlock Text="Country *" Style="{StaticResource FormLabelStyle}"/>
                         <ComboBox x:Name="CboCountry"
-                                    ItemsSource="{Binding Countries}"
-                                    SelectedItem="{Binding SelectedCountry,
-                                                            Mode=TwoWay,
-                                                            UpdateSourceTrigger=PropertyChanged,
-                                                            ValidatesOnNotifyDataErrors=True,
-                                                            NotifyOnValidationError=True}">
-
+                                  ItemsSource="{Binding Countries}"
+                                  SelectedItem="{Binding SelectedCountry, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True, NotifyOnValidationError=True}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding CountryName}"
-                                                 VerticalAlignment="Center"
-                                                 TextTrimming="CharacterEllipsis"/>
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
-
                         </ComboBox>
-
-                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent,
-                                                  ElementName=CboCountry}"
+                        <TextBlock Text="{Binding (Validation.Errors)/ErrorContent, ElementName=CboCountry}"
                                    Style="{StaticResource ErrorMessageStyle}"/>
                     </StackPanel>
 
-                    <!-- ================================================= -->
-                    <!-- PROFILE PHOTO                                      -->
-                    <!-- ================================================= -->
-
-                    <StackPanel Grid.Row="5"
-                                Grid.Column="2"
-                                Margin="0,0,0,10">
-
-                        <TextBlock Text="Profile Photo"
-                                   Style="{StaticResource FormLabelStyle}"/>
-
+                    <StackPanel Grid.Row="5" Grid.Column="2" Margin="0,0,0,10">
+                        <TextBlock Text="Profile Photo" Style="{StaticResource FormLabelStyle}"/>
                         <Grid>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="96"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <!-- Photo -->
-
                             <Border Grid.Column="0"
-                                    Width="96"
-                                    Height="96"
+                                    Width="96" Height="96"
                                     CornerRadius="{StaticResource RadiusMedium}"
                                     Background="{StaticResource InputBackground}"
                                     BorderBrush="{StaticResource BorderColor}"
                                     BorderThickness="1"
                                     ClipToBounds="True">
-
                                 <Image Source="{Binding ImageDisplayPath}"
                                        Stretch="UniformToFill"
                                        Margin="2"
                                        ToolTip="Profile Image"/>
                             </Border>
-
-                            <!-- Actions -->
-
                             <StackPanel Grid.Column="1"
                                         Margin="14,0,0,0"
                                         VerticalAlignment="Center">
-
                                 <Button Content="Choose Image"
-                                        Width="130"
-                                        Height="36"
+                                        Width="130" Height="36"
                                         HorizontalAlignment="Left"
                                         Command="{Binding ChooseImageCommand}"
                                         Style="{StaticResource ImageActionButtonStyle}"/>
-
                                 <Button Content="Remove"
-                                        Width="130"
-                                        Height="36"
+                                        Width="130" Height="36"
                                         HorizontalAlignment="Left"
                                         Command="{Binding RemoveImageCommand}"
                                         Margin="0,8,0,0"
                                         Style="{StaticResource RemoveImageButtonStyle}"/>
                             </StackPanel>
-
                         </Grid>
                     </StackPanel>
-
                 </Grid>
             </ScrollViewer>
-
         </Grid>
     </Border>
 </UserControl>

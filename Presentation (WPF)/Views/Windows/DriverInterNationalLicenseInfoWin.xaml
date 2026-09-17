@@ -55,7 +55,7 @@
                                    Foreground="{StaticResource TextPrimaryColor}"/>
                         <TextBlock Text="International driving permit information"
                                    Margin="0,3,0,0"
-                                   FontSize="{StaticResource FontSizeSmall}"
+                                   FontSize="{StaticResource FontSizeCaption}"
                                    Foreground="{StaticResource TextMutedColor}"/>
                     </StackPanel>
 
@@ -96,7 +96,7 @@
                                            Foreground="{StaticResource TextPrimaryColor}"/>
                                 <TextBlock Text="{Binding LicenseData.NationalNo}"
                                            Margin="0,4,0,0"
-                                           FontSize="{StaticResource FontSizeSmall}"
+                                           FontSize="{StaticResource FontSizeCaption}"
                                            Foreground="{StaticResource TextMutedColor}"/>
                             </StackPanel>
                             <Border Grid.Column="1"
@@ -125,7 +125,7 @@
                                 Padding="18">
                             <StackPanel>
                                 <TextBlock Text="Personal Information"
-                                           FontSize="{StaticResource FontSizeSubHeader}"
+                                           FontSize="{StaticResource FontSizeBody}"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource PrimaryColor}"
                                            Margin="0,0,0,14"/>
@@ -168,7 +168,7 @@
                                 Padding="18">
                             <StackPanel>
                                 <TextBlock Text="International License"
-                                           FontSize="{StaticResource FontSizeSubHeader}"
+                                           FontSize="{StaticResource FontSizeBody}"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource PrimaryColor}"
                                            Margin="0,0,0,14"/>

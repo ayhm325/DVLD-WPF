@@ -11,24 +11,12 @@
              SnapsToDevicePixels="True"
              UseLayoutRounding="True">
 
-    <Border x:Name="CardBorder"
+    <Border Style="{StaticResource CardStyle}"
             Margin="5"
             Padding="0"
             Background="{StaticResource SurfaceColor}"
-            BorderBrush="{StaticResource BorderColor}"
-            BorderThickness="1"
-            CornerRadius="16">
-
-        <Border.Effect>
-            <DropShadowEffect Color="#000000"
-                              Direction="270"
-                              ShadowDepth="0"
-                              BlurRadius="14"
-                              Opacity="0.06"/>
-        </Border.Effect>
-
+            HorizontalAlignment="Stretch">
         <Grid>
-
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="72"/>
@@ -37,93 +25,68 @@
                 <ColumnDefinition Width="16"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ACCENT -->
             <Border Grid.Column="0"
                     CornerRadius="16,0,0,16"
                     Background="{StaticResource PrimaryColor}"/>
 
-            <!-- AVATAR -->
             <Grid Grid.Column="1"
                   Width="52"
                   Height="52"
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center">
-
                 <Ellipse Fill="{StaticResource PrimaryLightColor}"/>
-
                 <materialDesign:PackIcon Kind="AccountCircle"
                                          Width="30"
                                          Height="30"
                                          Foreground="{StaticResource PrimaryColor}"
                                          HorizontalAlignment="Center"
                                          VerticalAlignment="Center"/>
-
             </Grid>
 
-            <!-- USER INFORMATION -->
             <StackPanel Grid.Column="2"
                         VerticalAlignment="Center"
                         Margin="8,0,15,0">
-
                 <TextBlock Text="SYSTEM USER"
-                           FontSize="9"
-                           FontWeight="SemiBold"
+                           FontSize="{StaticResource FontSizeCaption}"
+                           FontWeight="{StaticResource FontWeightSemiBold}"
                            Foreground="{StaticResource TextMutedColor}"/>
-
                 <TextBlock Text="{Binding UserName}"
                            Margin="0,4,0,0"
                            FontSize="15"
-                           FontWeight="SemiBold"
+                           FontWeight="{StaticResource FontWeightSemiBold}"
                            Foreground="{StaticResource TextPrimaryColor}"
                            TextTrimming="CharacterEllipsis"/>
-
-                <StackPanel Orientation="Horizontal"
-                            Margin="0,5,0,0">
-
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                     <materialDesign:PackIcon Kind="ShieldAccountOutline"
-                                             Width="13"
-                                             Height="13"
+                                             Width="13" Height="13"
                                              Foreground="{StaticResource TextMutedColor}"
                                              VerticalAlignment="Center"/>
-
                     <TextBlock Text="Authorized account"
                                Margin="5,0,0,0"
                                FontSize="10"
                                Foreground="{StaticResource TextMutedColor}"/>
-
                 </StackPanel>
-
             </StackPanel>
 
-            <!-- STATUS -->
             <Border Grid.Column="3"
                     Padding="12,7"
-                    CornerRadius="10"
+                    CornerRadius="{StaticResource RadiusSmall}"
                     VerticalAlignment="Center"
                     Background="{StaticResource SuccessLightColor}">
-
                 <StackPanel Orientation="Horizontal">
-
-                    <Ellipse Width="7"
-                             Height="7"
+                    <Ellipse Width="7" Height="7"
                              Fill="{StaticResource SuccessColor}"
                              VerticalAlignment="Center"
                              Margin="0,0,7,0"/>
-
                     <TextBlock Text="{Binding IsActive}"
                                FontSize="10"
-                               FontWeight="SemiBold"
+                               FontWeight="{StaticResource FontWeightSemiBold}"
                                Foreground="{StaticResource SuccessColor}"
                                VerticalAlignment="Center"/>
-
                 </StackPanel>
-
             </Border>
 
-            <!-- RIGHT SPACE -->
             <Border Grid.Column="4"/>
-
         </Grid>
-
     </Border>
 </UserControl>
