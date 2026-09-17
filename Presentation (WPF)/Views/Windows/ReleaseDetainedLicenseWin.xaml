@@ -2,143 +2,333 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Release Detained License"
-        Height="760" Width="980"
+        Height="760"
+        Width="980"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
         ResizeMode="NoResize"
         Background="Transparent"
         FontFamily="{StaticResource AppFontFamily}">
-    <Border Margin="10" Background="{StaticResource SurfaceColor}"
-            BorderBrush="{StaticResource BorderColor}" BorderThickness="1"
-            CornerRadius="{StaticResource RadiusXLarge}">
-        <Border.Effect><DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.18"/></Border.Effect>
-        <Grid>
-            <Grid.RowDefinitions><RowDefinition Height="82"/><RowDefinition Height="*"/><RowDefinition Height="78"/></Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="{StaticResource PrimarySoftColor}"
-                    BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1"
-                    CornerRadius="16,16,0,0" Padding="26,15">
+    <Border Margin="10"
+            Background="{StaticResource SurfaceColor}"
+            BorderBrush="{StaticResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource RadiusXLarge}"
+            Effect="{StaticResource ElevationShadow3}">
+
+        <Grid>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="82"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="78"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource PrimarySoftColor}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,0,0,1"
+                    CornerRadius="16,16,0,0"
+                    Padding="26,15">
+
                 <Grid>
+
                     <StackPanel Orientation="Horizontal">
-                        <Border Width="48" Height="48" CornerRadius="14" Background="{StaticResource WarningColor}">
-                            <TextBlock Text="↗" Foreground="White" FontSize="24" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                        <Border Width="48"
+                                Height="48"
+                                CornerRadius="14"
+                                Background="{StaticResource WarningColor}">
+
+                            <TextBlock Text="↗"
+                                       Foreground="White"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
                         </Border>
-                        <StackPanel Margin="15,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="Release Detained License" FontSize="20"
-                                       FontWeight="SemiBold" Foreground="{StaticResource TextColor}"/>
+
+                        <StackPanel Margin="15,0,0,0"
+                                    VerticalAlignment="Center">
+
+                            <TextBlock Text="Release Detained License"
+                                       FontSize="20"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextColor}"/>
+
                             <TextBlock Text="Verify the detention, fees and release operation"
-                                       Margin="0,4,0,0" FontSize="12"
+                                       Margin="0,4,0,0"
+                                       FontSize="12"
                                        Foreground="{StaticResource TextSecondaryColor}"/>
                         </StackPanel>
                     </StackPanel>
-                    <Button HorizontalAlignment="Right" Style="{StaticResource GhostButtonStyle}"
+
+                    <Button HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Style="{StaticResource GhostButtonStyle}"
                             Click="CloseButton_Click">
-                        <TextBlock Text="×" FontSize="24"/>
+
+                        <TextBlock Text="×"
+                                   FontSize="24"/>
                     </Button>
+
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <!-- Main Content -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto">
+
                 <StackPanel Margin="26,22">
-                    <Border Style="{StaticResource CardStyle}" Padding="20">
+
+                    <!-- License Lookup -->
+                    <Border Style="{StaticResource CardStyle}"
+                            Padding="20">
+
                         <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
                             <StackPanel>
-                                <TextBlock Text="License lookup" FontSize="16" FontWeight="SemiBold"
+
+                                <TextBlock Text="License lookup"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
                                            Foreground="{StaticResource TextColor}"/>
+
                                 <TextBlock Text="Enter the license ID to retrieve its active detention record."
-                                           Margin="0,4,0,12" FontSize="12" Foreground="{StaticResource TextMutedColor}"/>
+                                           Margin="0,4,0,12"
+                                           FontSize="12"
+                                           Foreground="{StaticResource TextMutedColor}"/>
+
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox Width="250" Height="40"
+
+                                    <TextBox Width="250"
+                                             Height="40"
                                              IsReadOnly="{Binding IsLicenseIdReadOnly}"
                                              Text="{Binding LicenseIdText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                    <Button Content="Search" Margin="10,0,0,0" Width="100"
+
+                                    <Button Content="Search"
+                                            Margin="10,0,0,0"
+                                            Width="100"
                                             Style="{StaticResource PrimaryButtonStyle}"
                                             Command="{Binding SearchCommand}"/>
+
                                 </StackPanel>
+
                             </StackPanel>
-                            <Border Grid.Column="1" Background="{StaticResource WarningLightColor}"
-                                    CornerRadius="10" Padding="12,8" VerticalAlignment="Top">
-                                <TextBlock Text="DETENTION RELEASE" FontSize="11" FontWeight="SemiBold"
+
+                            <Border Grid.Column="1"
+                                    Background="{StaticResource WarningLightColor}"
+                                    CornerRadius="10"
+                                    Padding="12,8"
+                                    VerticalAlignment="Top">
+
+                                <TextBlock Text="DETENTION RELEASE"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
                                            Foreground="{StaticResource WarningColor}"/>
                             </Border>
+
                         </Grid>
                     </Border>
 
+                    <!-- License / Detention Information -->
                     <Grid Margin="0,18,0,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="20" Margin="0,0,9,0">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- License Card -->
+                        <Border Grid.Column="0"
+                                Style="{StaticResource CardStyle}"
+                                Padding="20"
+                                Margin="0,0,9,0">
+
                             <StackPanel>
-                                <TextBlock Text="License" FontSize="16" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextColor}" Margin="0,0,0,15"/>
-                                <TextBlock Text="License ID" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding LicenseInfo.LicenseId}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="Person" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding LicenseInfo.FullName}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="National No." Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding LicenseInfo.NationalNo}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="License Class" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding LicenseInfo.LicenseClassName}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="Status" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding LicenseInfo.IsActive}" Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="License"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextColor}"
+                                           Margin="0,0,0,15"/>
+
+                                <TextBlock Text="License ID"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding LicenseInfo.LicenseId}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Person"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding LicenseInfo.FullName}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="National No."
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding LicenseInfo.NationalNo}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="License Class"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding LicenseInfo.LicenseClassName}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Status"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding LicenseInfo.IsActive}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="20" Margin="9,0,0,0">
+                        <!-- Detention Card -->
+                        <Border Grid.Column="1"
+                                Style="{StaticResource CardStyle}"
+                                Padding="20"
+                                Margin="9,0,0,0">
+
                             <StackPanel>
-                                <TextBlock Text="Detention" FontSize="16" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextColor}" Margin="0,0,0,15"/>
-                                <TextBlock Text="Detain ID" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding Release.DetainId}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="License ID" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding Release.LicenseId}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="Fine Fees" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding Release.FineFees}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="Release Status" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding Release.IsReleased}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="Release Date" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding Release.ReleaseDate}" Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Detention"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextColor}"
+                                           Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Detain ID"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding Release.DetainId}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="License ID"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding Release.LicenseId}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Fine Fees"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding Release.FineFees}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Release Status"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding Release.IsReleased}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Release Date"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding Release.ReleaseDate}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
                             </StackPanel>
                         </Border>
+
                     </Grid>
 
-                    <Border Style="{StaticResource CardStyle}" Padding="20" Margin="0,18,0,0">
+                    <!-- Financial Summary -->
+                    <Border Style="{StaticResource CardStyle}"
+                            Padding="20"
+                            Margin="0,18,0,0">
+
                         <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
                             <StackPanel>
-                                <TextBlock Text="Financial summary" FontSize="16" FontWeight="SemiBold"
+
+                                <TextBlock Text="Financial summary"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
                                            Foreground="{StaticResource TextColor}"/>
-                                <TextBlock Text="Application fee" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding ApplicationFees}" Style="{StaticResource FieldValueStyle}"/>
-                                <TextBlock Text="Detention fine" Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="{Binding Release.FineFees}" Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Application fee"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding ApplicationFees}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
+                                <TextBlock Text="Detention fine"
+                                           Style="{StaticResource FieldLabelStyle}"/>
+
+                                <TextBlock Text="{Binding Release.FineFees}"
+                                           Style="{StaticResource FieldValueStyle}"/>
+
                             </StackPanel>
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                <TextBlock Text="TOTAL FEES" FontSize="11" FontWeight="SemiBold"
-                                           Foreground="{StaticResource TextMutedColor}" HorizontalAlignment="Right"/>
-                                <TextBlock Text="{Binding TotalFees}" FontSize="28" FontWeight="Bold"
-                                           Foreground="{StaticResource PrimaryColor}" HorizontalAlignment="Right"
+
+                            <StackPanel Grid.Column="1"
+                                        HorizontalAlignment="Right">
+
+                                <TextBlock Text="TOTAL FEES"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextMutedColor}"
+                                           HorizontalAlignment="Right"/>
+
+                                <TextBlock Text="{Binding TotalFees}"
+                                           FontSize="28"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource PrimaryColor}"
+                                           HorizontalAlignment="Right"
                                            Margin="0,4,0,0"/>
+
                             </StackPanel>
+
                         </Grid>
                     </Border>
+
                 </StackPanel>
             </ScrollViewer>
 
-            <Border Grid.Row="2" Background="{StaticResource SurfaceSecondaryColor}"
-                    BorderBrush="{StaticResource BorderColor}" BorderThickness="0,1,0,0"
-                    CornerRadius="0,0,16,16" Padding="26,12">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="License History" Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ShowLicensesHistoryCommand}" Margin="0,0,10,0"/>
-                    <Button Content="License Info" Style="{StaticResource SecondaryButtonStyle}"
-                            Command="{Binding ShowLicensesInfoCommand}" Margin="0,0,10,0"/>
-                    <Button Content="Release License" Style="{StaticResource SuccessButtonStyle}"
+            <!-- Footer -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource SurfaceSecondaryColor}"
+                    BorderBrush="{StaticResource BorderColor}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,16,16"
+                    Padding="26,12">
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+
+                    <Button Content="License History"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ShowLicensesHistoryCommand}"
+                            Margin="0,0,10,0"/>
+
+                    <Button Content="License Info"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ShowLicensesInfoCommand}"
+                            Margin="0,0,10,0"/>
+
+                    <Button Content="Release License"
+                            Style="{StaticResource SuccessButtonStyle}"
                             Command="{Binding ReleaseLicenseCommand}"/>
+
                 </StackPanel>
             </Border>
+
         </Grid>
     </Border>
+
 </Window>
