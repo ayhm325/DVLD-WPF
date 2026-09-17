@@ -14,6 +14,6 @@ public interface IAuthApiClient
         ChangePasswordRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<ApiResult<UserResponse>> GetProfileAsync(
+    Task<ApiResult<UserProfileResponse>> GetProfileAsync(
         CancellationToken cancellationToken = default);
 }

@@ -162,35 +162,44 @@ public partial class AddEditUserViewModel : ObservableObject
             ConfirmPassword = string.Empty;
             SelectedTabIndex = 0;
 
-            var userResult = await _authApiClient.GetProfileAsync();
+            var result = await _authApiClient.GetProfileAsync();
 
-            if (userResult.IsFailure || userResult.Value is null)
+            if (result.IsFailure || result.Value is null)
             {
                 MessageBox.Show(
-                    userResult.Error ?? "Your profile could not be loaded.",
-                    "Profile Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    result.Error ?? "Your profile could not be loaded.",
+                    "Profile Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
 
-            var user = userResult.Value;
+            var profile = result.Value;
 
-            UserId = user.UserId;
-            UserIdDisplay = user.UserId.ToString();
-            UserName = user.UserName;
-            IsActive = user.IsActive;
+            UserId = profile.UserId;
+            UserIdDisplay = profile.UserId.ToString();
+            UserName = profile.UserName;
+            IsActive = profile.IsActive;
 
-            var personResult = await _peopleApiClient.GetByIdAsync(user.PersonId);
-
-            if (personResult.IsFailure || personResult.Value is null)
+            Person = new PersonResponse
             {
-                MessageBox.Show(
-                    personResult.Error ??
-                    "The person associated with your account could not be found.",
-                    "Person Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+                PersonId = profile.PersonId,
+                NationalNo = profile.NationalNo,
+                FirstName = profile.FirstName,
+                SecondName = profile.SecondName,
+                ThirdName = profile.ThirdName,
+                LastName = profile.LastName,
+                FullName = profile.FullName,
+                DateOfBirth = profile.DateOfBirth,
+                Gender = (Gender)profile.Gender,
+                Address = profile.Address,
+                Phone = profile.Phone,
+                Email = profile.Email,
+                NationalityCountryID = profile.NationalityCountryID,
+                CountryName = profile.CountryName,
+                ImagePath = profile.ImagePath
+            };
 
-            Person = personResult.Value;
             CanGoToNextTab = true;
             GoToNextTabCommand.NotifyCanExecuteChanged();
         }
@@ -201,7 +210,9 @@ public partial class AddEditUserViewModel : ObservableObject
 
             MessageBox.Show(
                 $"An error occurred while loading your profile.\n\n{ex.Message}",
-                "Profile Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                "Profile Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
