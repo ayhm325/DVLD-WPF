@@ -1,4 +1,5 @@
 ﻿using DVLD.Contracts.Auth;
+using DVLD.Contracts.User;
 using Presentation.Services.Results;
 using System.Net;
 using System.Net.Http;
@@ -181,5 +182,59 @@ public sealed class AuthApiClient : IAuthApiClient
         }
 
         return content;
+    }
+
+    public async Task<ApiResult<UserResponse>> GetProfileAsync(
+    CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var httpRequest =
+                new HttpRequestMessage(
+                    HttpMethod.Get,
+                    "api/auth/profile");
+
+            if (!string.IsNullOrWhiteSpace(
+                    _currentUser.AccessToken))
+            {
+                httpRequest.Headers.Authorization =
+                    new AuthenticationHeaderValue(
+                        "Bearer",
+                        _currentUser.AccessToken);
+            }
+
+            using var response =
+                await _httpClient.SendAsync(
+                    httpRequest,
+                    cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result =
+                    await response.Content.ReadFromJsonAsync<UserResponse>(
+                        cancellationToken);
+
+                return result is null
+                    ? ApiResult<UserResponse>.Failure(
+                        "The API returned an empty profile response.")
+                    : ApiResult<UserResponse>.Success(result);
+            }
+
+            var error =
+                await ExtractErrorMessageAsync(response);
+
+            return ApiResult<UserResponse>.Failure(error);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult<UserResponse>.Failure(
+                "Unable to connect to the DVLD API.");
+        }
+        catch (TaskCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiResult<UserResponse>.Failure(
+                "The request to the DVLD API timed out.");
+        }
     }
 }

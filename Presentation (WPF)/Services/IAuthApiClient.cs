@@ -1,4 +1,5 @@
 ﻿using DVLD.Contracts.Auth;
+using DVLD.Contracts.User;
 using Presentation.Services.Results;
 
 namespace Presentation.Services;
@@ -11,5 +12,8 @@ public interface IAuthApiClient
 
     Task<ApiResult> ChangePasswordAsync(
         ChangePasswordRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResult<UserResponse>> GetProfileAsync(
         CancellationToken cancellationToken = default);
 }

@@ -8,30 +8,21 @@ public interface IUserService
     Task<Result<List<UserDto>>> GetAllUsersAsync();
 
 
-    Task<Result<UserDto>> GetUserByIdAsync(
-    int id);
+    Task<Result<UserDto>> GetUserByIdAsync(int id);
 
-    Task<Result<UserDto>> GetUserByPersonIdAsync(
-        int personId);
+    Task<Result<UserProfileDto>> GetCurrentProfileAsync(int userId);
 
-    Task<Result<UserDto>> GetUserByUsernameAsync(
-        string username);
+    Task<Result<UserDto>> GetUserByPersonIdAsync(int personId);
 
-    Task<Result<int>> AddUserAsync(
-        CreateUserDto dto);
+    Task<Result<UserDto>> GetUserByUsernameAsync(string username);
 
-    Task<Result> UpdateUserAsync(
-        int id,
-        UpdateUserDto dto);
+    Task<Result<int>> AddUserAsync(CreateUserDto dto);
 
-    Task<Result> DeleteUserAsync(
-        int id);
+    Task<Result> UpdateUserAsync(int id,UpdateUserDto dto);
 
-    Task<bool> IsUsernameTakenForAnotherUserAsync(
-        string username,
-        int userId);
+    Task<Result> DeleteUserAsync(int id);
 
-    Task<Result> ChangePasswordAsync(
-        int userId,
-        ChangePasswordDto dto);
+    Task<bool> IsUsernameTakenForAnotherUserAsync(string username,int userId);
+
+    Task<Result> ChangePasswordAsync(int userId,ChangePasswordDto dto);
 }

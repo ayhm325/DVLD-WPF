@@ -53,4 +53,38 @@ public static class UserMapper
             Role = Domain.Enums.UserRole.Staff
         };
     }
+
+    public static UserProfileDto ToProfileDto(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+
+        var person = user.Person;
+
+        return new UserProfileDto
+        {
+            UserId = user.UserId,
+            PersonId = user.PersonId,
+            UserName = user.UserName,
+            IsActive = user.IsActive,
+
+            FullName = person?.FullName ?? string.Empty,
+
+            NationalNo = person?.NationalNo ?? string.Empty,
+            FirstName = person?.FirstName ?? string.Empty,
+            SecondName = person?.SecondName ?? string.Empty,
+            ThirdName = person?.ThirdName,
+            LastName = person?.LastName ?? string.Empty,
+
+            DateOfBirth = person?.DateOfBirth ?? default,
+            Gender = person is null ? 0 : (int)person.Gender,
+
+            Address = person?.Address ?? string.Empty,
+            Phone = person?.Phone ?? string.Empty,
+            Email = person?.Email,
+
+            NationalityCountryID = person?.NationalityCountryID ?? 0,
+            CountryName = person?.Country?.CountryName,
+            ImagePath = person?.ImagePath
+        };
+    }
 }

@@ -480,8 +480,7 @@ namespace DVLD_WPF
                     .GetRequiredService<
                         AddEditUserViewModel>();
 
-            await userDetailsVm.InitializeAsync(
-                _currentUserSession.UserId);
+            await userDetailsVm.InitializeCurrentProfileAsync();
 
             var window =
                 _serviceProvider

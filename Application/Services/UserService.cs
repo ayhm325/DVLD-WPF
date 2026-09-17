@@ -68,6 +68,32 @@ public sealed class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
+    public async Task<Result<UserProfileDto>>
+    GetCurrentProfileAsync(int userId)
+    {
+        if (userId <= 0)
+        {
+            return Result<UserProfileDto>
+                .FromValidationFailure(
+                    "Invalid user ID.");
+        }
+
+        var user =
+            await _userRepository
+                .GetUserProfileAsync(userId);
+
+        if (user is null)
+        {
+            return Result<UserProfileDto>
+                .FromNotFound(
+                    "User not found.");
+        }
+
+        return Result<UserProfileDto>
+            .Success(
+                UserMapper.ToProfileDto(user));
+    }
+
     public async Task<Result<UserDto>>
         GetUserByPersonIdAsync(int personId)
     {

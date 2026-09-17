@@ -6,6 +6,7 @@ public interface IUserRepository
 {
     Task<User?> GetUserByUserIdAsync(int id);
 
+    Task<User?> GetUserProfileAsync(int userId);
 
     Task<User?> GetUserByPersonIdAsync(int personId);
 

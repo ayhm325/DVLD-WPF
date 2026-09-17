@@ -28,11 +28,9 @@ public sealed class AuthController(
         });
 
         if (result.IsFailure)
-        {
             return result.ErrorType == ErrorType.Validation
                 ? BadRequest(new { error = result.Error })
                 : Unauthorized(new { error = "Invalid username or password." });
-        }
 
         var response = result.Value!;
 
@@ -49,15 +47,44 @@ public sealed class AuthController(
     }
 
     [HttpGet("me")]
-    public IActionResult Me()
+    public IActionResult Me() => Ok(new
     {
-        return Ok(new
-        {
-            userId = currentUserService.UserId,
-            username = currentUserService.Username,
-            fullName = currentUserService.FullName,
-            role = currentUserService.Role.ToString()
-        });
+        userId = currentUserService.UserId,
+        username = currentUserService.Username,
+        fullName = currentUserService.FullName,
+        role = currentUserService.Role.ToString()
+    });
+
+    [HttpGet("profile")]
+    public async Task<IActionResult> Profile()
+    {
+        var result = await userService.GetCurrentProfileAsync(
+            currentUserService.UserId);
+
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var profile = result.Value!;
+
+        return Ok(new DVLD.Contracts.User.UserProfileResponse(
+            profile.UserId,
+            profile.PersonId,
+            profile.UserName,
+            profile.IsActive,
+            profile.FullName,
+            profile.NationalNo,
+            profile.FirstName,
+            profile.SecondName,
+            profile.ThirdName,
+            profile.LastName,
+            profile.DateOfBirth,
+            profile.Gender,
+            profile.Address,
+            profile.Phone,
+            profile.Email,
+            profile.NationalityCountryID,
+            profile.CountryName,
+            profile.ImagePath));
     }
 
     [HttpPost("change-password")]
@@ -72,31 +99,20 @@ public sealed class AuthController(
                 NewPassword = request.NewPassword
             });
 
-        return result.IsSuccess
-            ? NoContent()
-            : HandleFailure(result);
+        return result.IsSuccess ? NoContent() : HandleFailure(result);
     }
 
     private static IActionResult HandleFailure(Result result) =>
         result.ErrorType switch
         {
-            ErrorType.Validation => new BadRequestObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.NotFound => new NotFoundObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Conflict => new ConflictObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Forbidden => new ObjectResult(
-                new { error = result.Error })
+            ErrorType.Validation => new BadRequestObjectResult(new { error = result.Error }),
+            ErrorType.NotFound => new NotFoundObjectResult(new { error = result.Error }),
+            ErrorType.Conflict => new ConflictObjectResult(new { error = result.Error }),
+            ErrorType.Forbidden => new ObjectResult(new { error = result.Error })
             {
                 StatusCode = StatusCodes.Status403Forbidden
             },
-
-            _ => new ObjectResult(
-                new { error = result.Error })
+            _ => new ObjectResult(new { error = result.Error })
             {
                 StatusCode = StatusCodes.Status500InternalServerError
             }

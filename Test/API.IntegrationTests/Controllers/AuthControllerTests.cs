@@ -1,11 +1,12 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using API.IntegrationTests.Infrastructure;
+﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Domain.Enums;
+using DVLD.Contracts.User;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace API.IntegrationTests.Controllers;
 
@@ -20,6 +21,97 @@ public sealed class AuthControllerTests
         var response = await client.GetAsync("api/Auth/me");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Profile_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("api/Auth/profile");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Profile_WhenAuthenticated_ReturnsCurrentUserProfile()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        SetupCurrentUser(factory, 10, "testuser", "Test User", UserRole.Staff);
+
+        factory.UserServiceMock
+            .Setup(x => x.GetCurrentProfileAsync(10))
+            .ReturnsAsync(Result<UserProfileDto>.Success(new()
+            {
+                UserId = 10,
+                PersonId = 20,
+                UserName = "testuser",
+                IsActive = true,
+                FullName = "Test User",
+                NationalNo = "N123",
+                FirstName = "Test",
+                SecondName = "User",
+                LastName = "User",
+                DateOfBirth = new DateTime(1993, 1, 1),
+                Gender = 1,
+                Address = "Test Address",
+                Phone = "0790000000",
+                Email = "test@example.com",
+                NationalityCountryID = 1,
+                CountryName = "Jordan"
+            }));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("api/Auth/profile");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<UserProfileResponse>();
+
+        Assert.NotNull(body);
+        Assert.Equal(10, body!.UserId);
+        Assert.Equal(20, body.PersonId);
+        Assert.Equal("testuser", body.UserName);
+        Assert.True(body.IsActive);
+        Assert.Equal("Test User", body.FullName);
+        Assert.Equal("N123", body.NationalNo);
+        Assert.Equal("Test Address", body.Address);
+        Assert.Equal("0790000000", body.Phone);
+        Assert.Equal("test@example.com", body.Email);
+        Assert.Equal("Jordan", body.CountryName);
+
+        factory.UserServiceMock.Verify(
+            x => x.GetCurrentProfileAsync(10), Times.Once);
+    }
+
+    [Fact]
+    public async Task Profile_WhenUserNotFound_ReturnsNotFound()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        SetupCurrentUser(factory, 10);
+
+        const string error = "User was not found.";
+
+        factory.UserServiceMock
+            .Setup(x => x.GetCurrentProfileAsync(10))
+            .ReturnsAsync(Result<UserProfileDto>.FromNotFound(error));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("api/Auth/profile");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<ErrorResponse>();
+
+        Assert.NotNull(body);
+        Assert.Equal(error, body!.Error);
+
+        factory.UserServiceMock.Verify(
+            x => x.GetCurrentProfileAsync(10), Times.Once);
     }
 
     [Fact]

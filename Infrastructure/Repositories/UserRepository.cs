@@ -28,6 +28,16 @@ public sealed class UserRepository : IUserRepository
                 u => u.UserId == id);
     }
 
+    public Task<User?> GetUserProfileAsync(int userId)
+    {
+        return _context.Users
+            .AsNoTracking()
+            .Include(u => u.Person)
+            .ThenInclude(p => p.Country)
+            .FirstOrDefaultAsync(
+                u => u.UserId == userId);
+    }
+
     public Task<User?> GetUserByPersonIdAsync(int personId)
     {
         return Query()
