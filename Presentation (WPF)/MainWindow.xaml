@@ -1,4 +1,4 @@
-﻿<Window x:Class="DVLD_WPF.MainWindow"
+<Window x:Class="DVLD_WPF.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="DVLD System"
@@ -350,50 +350,23 @@
                                       VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
                             <StackPanel Margin="8,4,8,10">
-                                <TextBlock Text="MAIN"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextMutedColor}"
-                                           Margin="12,8,0,6"/>
-                                <Border x:Name="NavDashboard"
-                                        Style="{StaticResource NavItemActiveStyle}"
-                                        MouseLeftButtonUp="NavDashboard_Click">
+                                <TextBlock Text="MAIN" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedColor}" Margin="12,8,0,6"/>
+                                <Border x:Name="NavDashboard" Style="{StaticResource NavItemActiveStyle}" MouseLeftButtonUp="NavDashboard_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⌂"
-                                                   Width="28"
-                                                   FontSize="17"
-                                                   Foreground="{StaticResource PrimaryColor}"
-                                                   VerticalAlignment="Center"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Dashboard"
-                                                   FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextPrimaryColor}"
-                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="⌂" Width="28" FontSize="17" Foreground="{StaticResource PrimaryColor}" VerticalAlignment="Center" TextAlignment="Center"/>
+                                        <TextBlock Text="Dashboard" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryColor}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
-                                <TextBlock Text="PEOPLE"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextMutedColor}"
-                                           Margin="12,16,0,6"/>
+
+                                <TextBlock x:Name="NavPeopleHeader" Text="PEOPLE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedColor}" Margin="12,16,0,6"/>
                                 <Border x:Name="NavPeople" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavPeople_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="●" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
                                         <TextBlock Text="Manage People" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-                                <Border x:Name="NavDrivers" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavDrivers_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="◆" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
-                                        <TextBlock Text="Manage Drivers" Foreground="{StaticResource TextPrimaryColor}"/>
-                                    </StackPanel>
-                                </Border>
-                                <TextBlock Text="LICENSE SERVICES"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextMutedColor}"
-                                           Margin="12,16,0,6"/>
+
+                                <TextBlock x:Name="NavLicenseServicesHeader" Text="LICENSE SERVICES" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedColor}" Margin="12,16,0,6"/>
                                 <Border x:Name="NavNewLocal" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavNewLocal_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="+" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
@@ -430,11 +403,8 @@
                                         <TextBlock Text="Release Detained" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-                                <TextBlock Text="MANAGEMENT"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextMutedColor}"
-                                           Margin="12,16,0,6"/>
+
+                                <TextBlock x:Name="NavApplicationsHeader" Text="APPLICATIONS" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedColor}" Margin="12,16,0,6"/>
                                 <Border x:Name="NavLocalApps" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavLocalApps_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="▤" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
@@ -447,29 +417,34 @@
                                         <TextBlock Text="Intl. Applications" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-                                <Border x:Name="NavDetained" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavDetained_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="!" Width="28" Foreground="{StaticResource WarningColor}" TextAlignment="Center"/>
-                                        <TextBlock Text="Detained Licenses" Foreground="{StaticResource TextPrimaryColor}"/>
-                                    </StackPanel>
-                                </Border>
                                 <Border x:Name="NavRetakeTest" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavRetakeTest_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="◇" Width="28" Foreground="{StaticResource WarningColor}" TextAlignment="Center"/>
                                         <TextBlock Text="Retake Test" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
+
+                                <TextBlock x:Name="NavLicenseManagementHeader" Text="LICENSE MANAGEMENT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedColor}" Margin="12,16,0,6"/>
+                                <Border x:Name="NavDrivers" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavDrivers_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="◆" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Drivers" Foreground="{StaticResource TextPrimaryColor}"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="NavDetained" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavDetained_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="!" Width="28" Foreground="{StaticResource WarningColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Detained Licenses" Foreground="{StaticResource TextPrimaryColor}"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock x:Name="NavManagementHeader" Text="MANAGEMENT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedColor}" Margin="12,16,0,6"/>
                                 <Border x:Name="NavUsers" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavUsers_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="○" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
                                         <TextBlock Text="Users" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-                                <TextBlock Text="CONFIGURATION"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextMutedColor}"
-                                           Margin="12,16,0,6"/>
                                 <Border x:Name="NavAppTypes" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavAppTypes_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="⚙" Width="28" Foreground="{StaticResource TextSecondaryColor}" TextAlignment="Center"/>
@@ -482,11 +457,8 @@
                                         <TextBlock Text="Test Types" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-                                <TextBlock Text="ACCOUNT"
-                                           FontSize="9"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextMutedColor}"
-                                           Margin="12,16,0,6"/>
+
+                                <TextBlock Text="ACCOUNT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource TextMutedColor}" Margin="12,16,0,6"/>
                                 <Border x:Name="NavMyProfile" Style="{StaticResource NavItemStyle}" MouseLeftButtonUp="NavMyProfile_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="◉" Width="28" Foreground="{StaticResource PrimaryColor}" TextAlignment="Center"/>
@@ -499,9 +471,7 @@
                                         <TextBlock Text="Change Password" Foreground="{StaticResource TextPrimaryColor}"/>
                                     </StackPanel>
                                 </Border>
-                                <Border x:Name="NavSignOut"
-                                        Margin="8,8,8,10"
-                                        MouseLeftButtonUp="NavSignOut_Click">
+                                <Border x:Name="NavSignOut" Margin="8,8,8,10" MouseLeftButtonUp="NavSignOut_Click">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="Transparent"/>
@@ -516,12 +486,8 @@
                                         </Style>
                                     </Border.Style>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="←"
-                                                   Width="28"
-                                                   Foreground="{StaticResource DangerColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Sign Out"
-                                                   Foreground="{StaticResource DangerColor}"/>
+                                        <TextBlock Text="←" Width="28" Foreground="{StaticResource DangerColor}" TextAlignment="Center"/>
+                                        <TextBlock Text="Sign Out" Foreground="{StaticResource DangerColor}"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

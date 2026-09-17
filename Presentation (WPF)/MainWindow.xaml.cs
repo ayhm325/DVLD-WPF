@@ -58,11 +58,10 @@ public partial class MainWindow : Window
 
         _allNavItems =
         [
-            NavDashboard, NavPeople, NavDrivers, NavNewLocal,
-            NavNewInternational, NavRenew, NavReplace, NavReleaseDetained,
-            NavLocalApps, NavIntlApps, NavDetained, NavDetainLicense,
-            NavRetakeTest, NavUsers, NavAppTypes, NavTestTypes,
-            NavMyProfile, NavChangePassword, NavSignOut
+            NavDashboard, NavPeople, NavDrivers, NavNewLocal, NavNewInternational,
+            NavRenew, NavReplace, NavReleaseDetained, NavLocalApps, NavIntlApps,
+            NavDetained, NavDetainLicense, NavRetakeTest, NavUsers, NavAppTypes,
+            NavTestTypes, NavMyProfile, NavChangePassword, NavSignOut
         ];
 
         _activeNavItem = NavDashboard;
@@ -73,12 +72,46 @@ public partial class MainWindow : Window
     private bool IsAdmin() =>
         string.Equals(_currentUserSession.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
+    private bool IsStaff() =>
+        string.Equals(_currentUserSession.Role, "Staff", StringComparison.OrdinalIgnoreCase);
+
+    private static void SetVisibility(Visibility visibility, params UIElement[] elements)
+    {
+        foreach (var element in elements)
+            element.Visibility = visibility;
+    }
+
     private void ApplyRoleVisibility()
     {
-        var visibility = IsAdmin() ? Visibility.Visible : Visibility.Collapsed;
-        NavUsers.Visibility = visibility;
-        NavAppTypes.Visibility = visibility;
-        NavTestTypes.Visibility = visibility;
+        var isAdmin = IsAdmin();
+        var isStaff = IsStaff();
+
+        SetVisibility(
+            isStaff ? Visibility.Visible : Visibility.Collapsed,
+            NavPeople,
+            NavNewLocal,
+            NavNewInternational,
+            NavRenew,
+            NavReplace,
+            NavDetainLicense,
+            NavReleaseDetained,
+            NavLocalApps,
+            NavIntlApps,
+            NavRetakeTest,
+            NavDrivers,
+            NavDetained,
+            NavPeopleHeader,
+            NavLicenseServicesHeader,
+            NavApplicationsHeader,
+            NavLicenseManagementHeader,
+            QuickActionsSection);
+
+        SetVisibility(
+            isAdmin ? Visibility.Visible : Visibility.Collapsed,
+            NavUsers,
+            NavAppTypes,
+            NavTestTypes,
+            NavManagementHeader);
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -111,12 +144,9 @@ public partial class MainWindow : Window
         WindowState = WindowState.Minimized;
 
     private void MaxBtn_Click(object sender, MouseButtonEventArgs e) =>
-        WindowState = WindowState == WindowState.Maximized
-            ? WindowState.Normal
-            : WindowState.Maximized;
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
 
-    private void CloseBtn_Click(object sender, MouseButtonEventArgs e) =>
-        Close();
+    private void CloseBtn_Click(object sender, MouseButtonEventArgs e) => Close();
 
     private void UpdateClock(object? sender, EventArgs? e)
     {
@@ -262,23 +292,18 @@ public partial class MainWindow : Window
         var vm = _serviceProvider.GetRequiredService<ChangePasswordViewModel>();
         vm.UserId = _currentUserSession.UserId;
         vm.UserName = _currentUserSession.Username;
-
         OpenWindow(new ChangePasswordWindow(vm));
     }
 
     private void NavSignOut_Click(object sender, MouseButtonEventArgs e)
     {
-        var result = _userNotifications.ShowConfirmation(
-            "Are you sure you want to sign out?",
-            "Sign Out");
+        var result = _userNotifications.ShowConfirmation("Are you sure you want to sign out?", "Sign Out");
 
         if (result != MessageBoxResult.Yes)
             return;
 
         _currentUserSession.Clear();
-
-        var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
-        loginWindow.Show();
+        _serviceProvider.GetRequiredService<LoginWindow>().Show();
         Close();
     }
 
@@ -308,11 +333,7 @@ public partial class MainWindow : Window
         _cursorBlinkStoryboard = (Storyboard)FindResource("CursorBlinkStoryboard");
         _cursorBlinkStoryboard.Begin(TypewriterCursor, true);
 
-        _typewriterTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(25)
-        };
-
+        _typewriterTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(25) };
         _typewriterTimer.Tick += TypewriterTimer_Tick;
         _typewriterTimer.Start();
     }
@@ -329,13 +350,8 @@ public partial class MainWindow : Window
         if (_cursorBlinkStoryboard is null)
             return;
 
-        try
-        {
-            _cursorBlinkStoryboard.Remove(TypewriterCursor);
-        }
-        catch
-        {
-        }
+        try { _cursorBlinkStoryboard.Remove(TypewriterCursor); }
+        catch { }
 
         _cursorBlinkStoryboard = null;
     }
