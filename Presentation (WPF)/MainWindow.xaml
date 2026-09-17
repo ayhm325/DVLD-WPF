@@ -520,7 +520,8 @@
                                         Background="{StaticResource PrimaryLightColor}"
                                         BorderBrush="{StaticResource PrimaryColor}"
                                         BorderThickness="1">
-                                    <TextBlock Text="AM" Foreground="{StaticResource PrimaryColor}"
+                                    <TextBlock x:Name="PeriodText"
+                                               Text="AM" Foreground="{StaticResource PrimaryColor}"
                                                FontSize="10" FontWeight="Bold"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>

@@ -153,6 +153,7 @@ public partial class MainWindow : Window
         var now = DateTime.Now;
         ClockText.Text = now.ToString("hh:mm tt");
         DateText.Text = now.ToString("ddd, MMM dd");
+        PeriodText.Text = now.ToString("tt");
     }
 
     private void SetActiveNav(Border item)
