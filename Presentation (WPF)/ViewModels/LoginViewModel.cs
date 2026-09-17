@@ -38,10 +38,7 @@ public partial class LoginViewModel : ObservableObject
         RememberMe = Properties.Settings.Default.RememberMe;
 
         if (RememberMe)
-        {
             Username = Properties.Settings.Default.Username;
-            Password = Properties.Settings.Default.Password;
-        }
     }
 
     [RelayCommand]
@@ -100,14 +97,12 @@ public partial class LoginViewModel : ObservableObject
     {
         if (RememberMe)
         {
-            Properties.Settings.Default.Username = Username;
-            Properties.Settings.Default.Password = Password;
+            Properties.Settings.Default.Username = Username.Trim();
             Properties.Settings.Default.RememberMe = true;
         }
         else
         {
             Properties.Settings.Default.Username = string.Empty;
-            Properties.Settings.Default.Password = string.Empty;
             Properties.Settings.Default.RememberMe = false;
         }
 

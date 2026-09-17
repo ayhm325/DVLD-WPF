@@ -12,14 +12,16 @@ public partial class IssueDrivingLicenseForTheFirstTimeWin : Window
     private readonly IApiNotificationService _notifications;
 
     public IssueDrivingLicenseForTheFirstTimeWin(
-        IssueDrivingLicenseForTheFirstTimeViewModel vm,
+        IssueDrivingLicenseForTheFirstTimeViewModel? vm,
         IPeopleApiClient peopleApiClient,
         ILicensesApiClient licensesApiClient,
         IApiNotificationService notifications)
     {
         InitializeComponent();
 
-        DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
+        if (vm is not null)
+            DataContext = vm;
+
         _peopleApiClient = peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
         _licensesApiClient = licensesApiClient ?? throw new ArgumentNullException(nameof(licensesApiClient));
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));

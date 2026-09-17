@@ -256,7 +256,7 @@ public partial class LDLAppViewModel : ObservableObject
         var localApplicationId = SelectedApplication.LocalDrivingLicenseApplicationId;
 
         var window = new IssueDrivingLicenseForTheFirstTimeWin(
-            null!,
+            null,
             _peopleApiClient,
             _licensesApiClient,
             _notifications)
@@ -265,7 +265,9 @@ public partial class LDLAppViewModel : ObservableObject
         };
 
         var vm = ActivatorUtilities.CreateInstance<IssueDrivingLicenseForTheFirstTimeViewModel>(
-            _serviceProvider, localApplicationId, window);
+            _serviceProvider,
+            localApplicationId,
+            window);
 
         window.DataContext = vm;
         window.ShowDialog();
