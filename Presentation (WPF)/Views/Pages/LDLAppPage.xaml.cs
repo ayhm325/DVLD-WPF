@@ -2,25 +2,22 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace Presentation.Views.Pages
+namespace Presentation.Views.Pages;
+
+public partial class LDLAppPage : Page
 {
-    public partial class LDLAppPage : Page
+    public LDLAppPage(LDLAppViewModel viewModel)
     {
-        public LDLAppPage(LDLAppViewModel viewModel)
-        {
-            InitializeComponent();
-            DataContext = viewModel;
-        }
+        InitializeComponent();
+        DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+    }
 
-        private void DataGridRow_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    private void DataGridRow_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is DataGridRow row)
         {
-            var row = sender as DataGridRow;
-            if (row != null && !row.IsSelected)
-            {
-                row.Focus();
-                row.IsSelected = true;
-            }
+            row.Focus();
+            row.IsSelected = true;
         }
-
     }
 }

@@ -161,7 +161,8 @@ public partial class NewInternationalLicenseApplicationViewModel : ObservableObj
 
         var window = new DriverInterNationalLicenseInfoWin(
             ApplicationInfo.InternationalLicenseId,
-            _internationalLicensesApiClient)
+            _internationalLicensesApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };

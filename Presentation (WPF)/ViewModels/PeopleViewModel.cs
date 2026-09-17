@@ -84,12 +84,14 @@ public partial class PeopleViewModel : ObservableObject
         SelectedGender = "All";
         IsSearchTextVisible = SelectedFilterType is "Name" or "National No";
         IsGenderComboVisible = SelectedFilterType == "Gender";
+
         SearchToolTip = SelectedFilterType switch
         {
             "Name" => "Search by Name...",
             "National No" => "Search by National No...",
             _ => "Search..."
         };
+
         ApplyFilter();
     }
 
@@ -97,10 +99,22 @@ public partial class PeopleViewModel : ObservableObject
     {
         IEnumerable<PersonListResponse> query = _allPeople;
 
-        if (SelectedFilterType == "National No" && !string.IsNullOrWhiteSpace(SearchText))
-            query = query.Where(p => p.NationalNo.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase));
-        else if (SelectedFilterType == "Name" && !string.IsNullOrWhiteSpace(SearchText))
-            query = query.Where(p => p.FullName.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase));
+        if (SelectedFilterType == "National No" &&
+            !string.IsNullOrWhiteSpace(SearchText))
+        {
+            query = query.Where(p =>
+                p.NationalNo.Contains(
+                    SearchText,
+                    StringComparison.CurrentCultureIgnoreCase));
+        }
+        else if (SelectedFilterType == "Name" &&
+                 !string.IsNullOrWhiteSpace(SearchText))
+        {
+            query = query.Where(p =>
+                p.FullName.Contains(
+                    SearchText,
+                    StringComparison.CurrentCultureIgnoreCase));
+        }
         else if (SelectedFilterType == "Gender")
         {
             if (SelectedGender == "Male")
@@ -110,6 +124,7 @@ public partial class PeopleViewModel : ObservableObject
         }
 
         var filtered = query.ToList();
+
         FilteredPeople = new(filtered);
         PeopleCount = filtered.Count;
     }
@@ -120,8 +135,10 @@ public partial class PeopleViewModel : ObservableObject
         if (person is null)
             return;
 
-        var apiClient = App.ServiceProvider.GetRequiredService<IPeopleApiClient>();
-        var window = new PersonDetailsWindow(person.PersonId, apiClient)
+        var window = new PersonDetailsWindow(
+            person.PersonId,
+            _peopleApiClient,
+            _notifications)
         {
             Owner = Application.Current.MainWindow,
             WindowStartupLocation = WindowStartupLocation.CenterOwner
@@ -134,6 +151,7 @@ public partial class PeopleViewModel : ObservableObject
     private async Task AddNewPerson()
     {
         var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
+
         await vm.InitializeAsync(null);
 
         var window = new AddEditPersonWin(vm)
@@ -153,6 +171,7 @@ public partial class PeopleViewModel : ObservableObject
             return;
 
         var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
+
         await vm.InitializeAsync(person.PersonId);
 
         var window = new AddEditPersonWin(vm)
@@ -172,9 +191,11 @@ public partial class PeopleViewModel : ObservableObject
             return;
 
         if (_userNotifications.ShowConfirmation(
-         $"Are you sure you want to delete {person.FullName}?",
-         "Confirm Delete") != MessageBoxResult.Yes)
+                $"Are you sure you want to delete {person.FullName}?",
+                "Confirm Delete") != MessageBoxResult.Yes)
+        {
             return;
+        }
 
         var result = await _peopleApiClient.DeleteAsync(person.PersonId);
 

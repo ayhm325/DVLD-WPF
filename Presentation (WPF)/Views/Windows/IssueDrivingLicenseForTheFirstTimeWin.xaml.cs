@@ -1,4 +1,5 @@
 ﻿using Presentation.Services.Api;
+using Presentation.Services.UI;
 using Presentation.ViewModels;
 using System.Windows;
 
@@ -7,52 +8,58 @@ namespace Presentation.Views.Windows;
 public partial class IssueDrivingLicenseForTheFirstTimeWin : Window
 {
     private readonly IPeopleApiClient _peopleApiClient;
+    private readonly ILicensesApiClient _licensesApiClient;
+    private readonly IApiNotificationService _notifications;
 
     public IssueDrivingLicenseForTheFirstTimeWin(
         IssueDrivingLicenseForTheFirstTimeViewModel vm,
-        IPeopleApiClient peopleApiClient)
+        IPeopleApiClient peopleApiClient,
+        ILicensesApiClient licensesApiClient,
+        IApiNotificationService notifications)
     {
         InitializeComponent();
 
-        DataContext = vm;
-
-        _peopleApiClient =
-            peopleApiClient
-            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+        DataContext = vm ?? throw new ArgumentNullException(nameof(vm));
+        _peopleApiClient = peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
+        _licensesApiClient = licensesApiClient ?? throw new ArgumentNullException(nameof(licensesApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         applicationBasicInfo.OpenPersonRequested += OpenPerson;
-
         drivingLicenseInfo.OpenLicenseRequested += OpenLicense;
     }
 
     private void OpenPerson(int personId)
     {
-        var window =
-            new PersonDetailsWindow(
-                personId,
-                _peopleApiClient);
+        var window = new PersonDetailsWindow(
+            personId,
+            _peopleApiClient,
+            _notifications)
+        {
+            Owner = this
+        };
 
         window.ShowDialog();
     }
 
     private void OpenLicense(int applicationId)
     {
-        var window =
-            new DriverLicenseInfoWin(applicationId);
+        var window = new DriverLicenseInfoWin(
+            applicationId,
+            _licensesApiClient,
+            _notifications)
+        {
+            Owner = this
+        };
 
         window.ShowDialog();
     }
 
-    private void CloseButton_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        Close();
-    }
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void drivingLicenseInfo_Loaded(
-        object sender,
-        RoutedEventArgs e)
+    protected override void OnClosed(EventArgs e)
     {
+        applicationBasicInfo.OpenPersonRequested -= OpenPerson;
+        drivingLicenseInfo.OpenLicenseRequested -= OpenLicense;
+        base.OnClosed(e);
     }
 }

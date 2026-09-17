@@ -17,13 +17,10 @@ public partial class DriversViewModel(
 {
     private readonly IServiceProvider _serviceProvider =
         serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-
     private readonly IDriversApiClient _driversApiClient =
         driversApiClient ?? throw new ArgumentNullException(nameof(driversApiClient));
-
     private readonly IPeopleApiClient _peopleApiClient =
         peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
-
     private readonly IApiNotificationService _notifications =
         notifications ?? throw new ArgumentNullException(nameof(notifications));
 
@@ -76,20 +73,11 @@ public partial class DriversViewModel(
             filtered = filterBy switch
             {
                 "Driver ID" => _allDrivers.Where(d =>
-                    d.DriverId.ToString().Contains(
-                        value,
-                        StringComparison.OrdinalIgnoreCase)),
-
+                    d.DriverId.ToString().Contains(value, StringComparison.OrdinalIgnoreCase)),
                 "Person ID" => _allDrivers.Where(d =>
-                    d.PersonId.ToString().Contains(
-                        value,
-                        StringComparison.OrdinalIgnoreCase)),
-
+                    d.PersonId.ToString().Contains(value, StringComparison.OrdinalIgnoreCase)),
                 "Full Name" => _allDrivers.Where(d =>
-                    d.FullName.Contains(
-                        value,
-                        StringComparison.OrdinalIgnoreCase)),
-
+                    d.FullName.Contains(value, StringComparison.OrdinalIgnoreCase)),
                 _ => _allDrivers
             };
         }
@@ -129,7 +117,8 @@ public partial class DriversViewModel(
 
         var window = new PersonDetailsWindow(
             SelectedDriver.PersonId,
-            _peopleApiClient)
+            _peopleApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };

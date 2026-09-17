@@ -1,5 +1,7 @@
 ﻿using DVLD.Contracts.Person;
 using Presentation.Services.Api;
+using Presentation.Services.Results;
+using Presentation.Services.UI;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -10,158 +12,100 @@ public partial class PersonDetailsWindow : Window
 {
     private readonly int _personId;
     private readonly IPeopleApiClient _peopleApiClient;
+    private readonly IApiNotificationService _notifications;
 
     public PersonDetailsWindow(
         int personId,
-        IPeopleApiClient peopleApiClient)
+        IPeopleApiClient peopleApiClient,
+        IApiNotificationService notifications)
     {
         InitializeComponent();
 
         if (personId <= 0)
-            throw new ArgumentOutOfRangeException(
-                nameof(personId));
+            throw new ArgumentOutOfRangeException(nameof(personId));
 
         _personId = personId;
-
-        _peopleApiClient =
-            peopleApiClient
-            ?? throw new ArgumentNullException(
-                nameof(peopleApiClient));
+        _peopleApiClient = peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
+        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
 
         Loaded += PersonDetailsWindow_Loaded;
     }
 
-    private async void PersonDetailsWindow_Loaded(
-        object sender,
-        RoutedEventArgs e)
+    private async void PersonDetailsWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        try
+        var result = await _peopleApiClient.GetByIdAsync(_personId);
+
+        if (result.IsFailure)
         {
-            var result =
-                await _peopleApiClient.GetByIdAsync(
-                    _personId);
-
-            if (result.IsFailure)
-            {
-                MessageBox.Show(
-                    $"Person ID = {_personId}\n\n" +
-                    $"Error = {result.Error}",
-                    "Person Loading Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            LoadPersonData(
-                result.Value!);
+            _notifications.ShowFailure(result, "Person Loading Error");
+            return;
         }
-        catch (Exception ex)
+
+        if (result.Value is null)
         {
-            MessageBox.Show(
-                $"Error loading person data: {ex.Message}",
-                "Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            _notifications.ShowFailure(
+                ApiResult.Failure("Person information was not returned by the API."),
+                "Person Loading Error");
+            return;
         }
+
+        LoadPersonData(result.Value);
     }
 
-    private void LoadPersonData(
-        PersonResponse person)
+    private void LoadPersonData(PersonResponse person)
     {
-        LblPersonId.Text =
-            person.PersonId.ToString();
-
-        LblNationalNo.Text =
-            person.NationalNo;
-
-        LblFullName.Text =
-            person.FullName;
-
-        LblGender.Text =
-            person.Gender.ToString();
-
-        LblDateOfBirth.Text =
-            person.DateOfBirth.ToString("dd/MM/yyyy");
-
-        LblPhone.Text =
-            person.Phone;
-
-        LblEmail.Text =
-            string.IsNullOrEmpty(person.Email)
-                ? "N/A"
-                : person.Email;
-
-        LblAddress.Text =
-            person.Address;
-
-        LblCountry.Text =
-            string.IsNullOrEmpty(person.CountryName)
-                ? "N/A"
-                : person.CountryName;
-
+        LblPersonId.Text = person.PersonId.ToString();
+        LblNationalNo.Text = person.NationalNo;
+        LblFullName.Text = person.FullName;
+        LblGender.Text = person.Gender.ToString();
+        LblDateOfBirth.Text = person.DateOfBirth.ToString("dd/MM/yyyy");
+        LblPhone.Text = person.Phone;
+        LblEmail.Text = string.IsNullOrEmpty(person.Email) ? "N/A" : person.Email;
+        LblAddress.Text = person.Address;
+        LblCountry.Text = string.IsNullOrEmpty(person.CountryName) ? "N/A" : person.CountryName;
         LoadImage(person);
     }
 
-    private void LoadImage(
-        PersonResponse person)
+    private void LoadImage(PersonResponse person)
     {
         try
         {
-            var path =
-                person.ImagePath?.Trim();
+            var path = person.ImagePath?.Trim();
 
-            if (!string.IsNullOrEmpty(path) &&
-                File.Exists(path))
+            if (!string.IsNullOrEmpty(path) && File.Exists(path))
             {
-                var bitmap =
-                    new BitmapImage();
-
+                var bitmap = new BitmapImage();
                 bitmap.BeginInit();
-
-                bitmap.UriSource =
-                    new Uri(
-                        path,
-                        UriKind.Absolute);
-
-                bitmap.CacheOption =
-                    BitmapCacheOption.OnLoad;
-
+                bitmap.UriSource = new Uri(path, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
                 bitmap.EndInit();
                 bitmap.Freeze();
 
                 ImgPerson.Source = bitmap;
-
                 return;
             }
-
-            LoadDefaultImage(person.Gender);
         }
         catch
         {
-            LoadDefaultImage(person.Gender);
         }
+
+        LoadDefaultImage(person.Gender);
     }
 
-    private void LoadDefaultImage(
-        Gender gender)
+    private void LoadDefaultImage(Gender gender)
     {
-        var defaultImage =
-            gender == Gender.Male
-                ? "pack://application:,,,/Resources/Default_Male.png"
-                : "pack://application:,,,/Resources/Default_Female.png";
+        var image = gender == Gender.Male
+            ? "pack://application:,,,/Resources/Default_Male.png"
+            : "pack://application:,,,/Resources/Default_Female.png";
 
-        ImgPerson.Source =
-            new BitmapImage(
-                new Uri(
-                    defaultImage,
-                    UriKind.Absolute));
+        ImgPerson.Source = new BitmapImage(new Uri(image, UriKind.Absolute));
     }
 
-    private void Close_Click(
-        object sender,
-        RoutedEventArgs e)
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    protected override void OnClosed(EventArgs e)
     {
-        Close();
+        Loaded -= PersonDetailsWindow_Loaded;
+        base.OnClosed(e);
     }
 }

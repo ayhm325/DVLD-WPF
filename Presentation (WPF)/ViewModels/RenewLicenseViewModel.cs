@@ -26,7 +26,8 @@ public partial class RenewLicenseViewModel : ObservableObject
     [ObservableProperty] private string? _notes;
     [ObservableProperty] private int? _renewedLicenseId;
 
-    public bool CanSearch => int.TryParse(LicenseIdText?.Trim(), out var id) && id > 0;
+    public bool CanSearch =>
+        int.TryParse(LicenseIdText?.Trim(), out var id) && id > 0;
 
     public RenewLicenseViewModel(
         IApplicationsApiClient applicationsApiClient,
@@ -263,7 +264,9 @@ public partial class RenewLicenseViewModel : ObservableObject
         }
 
         var window = new DriverLicenseInfoWin(
-            RenewedLicenseId.Value)
+            RenewedLicenseId.Value,
+            _licensesApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };

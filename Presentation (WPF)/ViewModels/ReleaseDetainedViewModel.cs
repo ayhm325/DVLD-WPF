@@ -238,7 +238,9 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             return;
 
         var window = new DriverLicenseInfoWin(
-            LicenseInfo.LicenseId)
+            LicenseInfo.LicenseId,
+            _licensesApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };

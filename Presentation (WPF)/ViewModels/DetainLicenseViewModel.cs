@@ -40,9 +40,7 @@ public partial class DetainLicenseViewModel : ObservableObject
     {
         if (!int.TryParse(LicenseIdText, out var licenseId) || licenseId <= 0)
         {
-            _userNotifications.ShowWarning(
-                "Please enter a valid License ID.",
-                "Validation");
+            _userNotifications.ShowWarning("Please enter a valid License ID.", "Validation");
             return;
         }
 
@@ -61,24 +59,19 @@ public partial class DetainLicenseViewModel : ObservableObject
 
         if (result.Value is null)
         {
-            _userNotifications.ShowWarning(
-                "License information was not found.",
-                "License Search");
+            _userNotifications.ShowWarning("License information was not found.", "License Search");
             return;
         }
 
         LicenseInfo = result.Value;
         IsLicenseIssued = true;
 
-        var detentionResult =
-            await _detainedLicensesApiClient.GetActiveByLicenseIdAsync(
-                LicenseInfo.LicenseId);
+        var detentionResult = await _detainedLicensesApiClient
+            .GetActiveByLicenseIdAsync(LicenseInfo.LicenseId);
 
         if (detentionResult.IsFailure)
         {
-            _notifications.ShowFailure(
-                detentionResult,
-                "Detention Status");
+            _notifications.ShowFailure(detentionResult, "Detention Status");
             return;
         }
 
@@ -91,37 +84,28 @@ public partial class DetainLicenseViewModel : ObservableObject
     {
         if (LicenseInfo is null)
         {
-            _userNotifications.ShowWarning(
-                "Please search for a license first.",
-                "Detain License");
+            _userNotifications.ShowWarning("Please search for a license first.", "Detain License");
             return;
         }
 
-        var alreadyDetained =
-            await _detainedLicensesApiClient.IsLicenseDetainedAsync(
-                LicenseInfo.LicenseId);
+        var alreadyDetained = await _detainedLicensesApiClient
+            .IsLicenseDetainedAsync(LicenseInfo.LicenseId);
 
         if (alreadyDetained.IsFailure)
         {
-            _notifications.ShowFailure(
-                alreadyDetained,
-                "Detain License");
+            _notifications.ShowFailure(alreadyDetained, "Detain License");
             return;
         }
 
         if (alreadyDetained.Value)
         {
-            _userNotifications.ShowWarning(
-                "This license is already detained.",
-                "Detain License");
+            _userNotifications.ShowWarning("This license is already detained.", "Detain License");
             return;
         }
 
         if (FineFees < 0)
         {
-            _userNotifications.ShowWarning(
-                "Fine fees cannot be negative.",
-                "Validation");
+            _userNotifications.ShowWarning("Fine fees cannot be negative.", "Validation");
             return;
         }
 
@@ -134,9 +118,7 @@ public partial class DetainLicenseViewModel : ObservableObject
 
         if (result.IsFailure)
         {
-            _notifications.ShowFailure(
-                result,
-                "Detain License");
+            _notifications.ShowFailure(result, "Detain License");
             return;
         }
 
@@ -161,12 +143,9 @@ public partial class DetainLicenseViewModel : ObservableObject
         if (LicenseInfo is null)
             return;
 
-        var vm = App.ServiceProvider
-            .GetRequiredService<LicenseHistoryViewModel>();
+        var vm = App.ServiceProvider.GetRequiredService<LicenseHistoryViewModel>();
 
-        var window = new LicenseHistoryWin(
-            vm,
-            LicenseInfo.PersonId)
+        var window = new LicenseHistoryWin(vm, LicenseInfo.PersonId)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };
@@ -181,7 +160,9 @@ public partial class DetainLicenseViewModel : ObservableObject
             return;
 
         var window = new DriverLicenseInfoWin(
-            LicenseInfo.LicenseId)
+            LicenseInfo.LicenseId,
+            _licensesApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };

@@ -1,24 +1,15 @@
-﻿
-
-using Presentation.ViewModels;
+﻿using Presentation.ViewModels;
 using System.Windows;
 
-namespace Presentation.Views.Windows
+namespace Presentation.Views.Windows;
+
+public partial class NewInternationalLicenseApplicationWin : Window
 {
-    public partial class NewInternationalLicenseApplicationWin : Window
+    public NewInternationalLicenseApplicationWin(NewInternationalLicenseApplicationViewModel viewModel)
     {
-        public NewInternationalLicenseApplicationWin(
-            NewInternationalLicenseApplicationViewModel viewModel)
-        {
-            InitializeComponent();
-
-            DataContext = viewModel;
-        }
-
-
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
+        InitializeComponent();
+        DataContext = viewModel;
     }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 }

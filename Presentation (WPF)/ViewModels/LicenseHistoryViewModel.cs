@@ -80,24 +80,33 @@ public partial class LicenseHistoryViewModel(
 
         var driverId = driverResult.Value.DriverId;
 
-        var licensesResult = await _licensesApiClient.GetByDriverIdAsync(driverId);
+        var licensesResult =
+            await _licensesApiClient.GetByDriverIdAsync(driverId);
 
         if (licensesResult.IsFailure)
-            _notifications.ShowFailure(licensesResult, "Local Licenses");
-
+        {
+            _notifications.ShowFailure(
+                licensesResult,
+                "Local Licenses");
+        }
         else if (licensesResult.Value is not null)
+        {
             LocalLicenses = new(licensesResult.Value);
+        }
 
         var internationalResult =
             await _internationalLicensesApiClient.GetByDriverIdAsync(driverId);
 
         if (internationalResult.IsFailure)
+        {
             _notifications.ShowFailure(
                 internationalResult,
                 "International Licenses");
-
+        }
         else if (internationalResult.Value is not null)
+        {
             InternationalLicenses = new(internationalResult.Value);
+        }
     }
 
     [RelayCommand]
@@ -112,7 +121,9 @@ public partial class LicenseHistoryViewModel(
         }
 
         var window = new DriverLicenseInfoWin(
-            SelectedLocalLicense.LicenseId)
+            SelectedLocalLicense.LicenseId,
+            _licensesApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };

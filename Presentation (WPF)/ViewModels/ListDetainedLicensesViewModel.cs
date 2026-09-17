@@ -14,6 +14,7 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IDetainedLicensesApiClient _detainedLicensesApiClient;
+    private readonly ILicensesApiClient _licensesApiClient;
     private readonly IPeopleApiClient _peopleApiClient;
     private readonly IApiNotificationService _notifications;
     private readonly IUserNotificationService _userNotifications;
@@ -46,14 +47,33 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
         IDetainedLicensesApiClient detainedLicensesApiClient,
         IServiceProvider serviceProvider,
         IPeopleApiClient peopleApiClient,
+        ILicensesApiClient licensesApiClient,
         IApiNotificationService notifications,
         IUserNotificationService userNotifications)
     {
-        _detainedLicensesApiClient = detainedLicensesApiClient ?? throw new ArgumentNullException(nameof(detainedLicensesApiClient));
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _peopleApiClient = peopleApiClient ?? throw new ArgumentNullException(nameof(peopleApiClient));
-        _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
-        _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
+        _detainedLicensesApiClient =
+            detainedLicensesApiClient
+            ?? throw new ArgumentNullException(nameof(detainedLicensesApiClient));
+
+        _serviceProvider =
+            serviceProvider
+            ?? throw new ArgumentNullException(nameof(serviceProvider));
+
+        _peopleApiClient =
+            peopleApiClient
+            ?? throw new ArgumentNullException(nameof(peopleApiClient));
+
+        _licensesApiClient =
+            licensesApiClient
+            ?? throw new ArgumentNullException(nameof(licensesApiClient));
+
+        _notifications =
+            notifications
+            ?? throw new ArgumentNullException(nameof(notifications));
+
+        _userNotifications =
+            userNotifications
+            ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
     public async Task LoadAsync()
@@ -62,7 +82,9 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
 
         if (result.IsFailure)
         {
-            _notifications.ShowFailure(result, "Load Detained Licenses Failed");
+            _notifications.ShowFailure(
+                result,
+                "Load Detained Licenses Failed");
             return;
         }
 
@@ -70,7 +92,8 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
         ApplyFilter();
     }
 
-    partial void OnSearchTextChanged(string value) => ApplyFilter();
+    partial void OnSearchTextChanged(string value) =>
+        ApplyFilter();
 
     partial void OnSelectedFilterChanged(string value)
     {
@@ -79,7 +102,8 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
         ApplyFilter();
     }
 
-    partial void OnSelectedReleaseFilterChanged(string value) => ApplyFilter();
+    partial void OnSelectedReleaseFilterChanged(string value) =>
+        ApplyFilter();
 
     private void ApplyFilter()
     {
@@ -101,14 +125,28 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
 
             query = SelectedFilter switch
             {
-                "Detain ID" => query.Where(x => x.DetainId.ToString().Contains(text)),
-                "License ID" => query.Where(x => x.LicenseId.ToString().Contains(text)),
-                "National No" => query.Where(x =>
-                    !string.IsNullOrWhiteSpace(x.NationalNo) &&
-                    x.NationalNo.Contains(text, StringComparison.OrdinalIgnoreCase)),
-                "Full Name" => query.Where(x =>
-                    !string.IsNullOrWhiteSpace(x.FullName) &&
-                    x.FullName.Contains(text, StringComparison.OrdinalIgnoreCase)),
+                "Detain ID" =>
+                    query.Where(x =>
+                        x.DetainId.ToString().Contains(text)),
+
+                "License ID" =>
+                    query.Where(x =>
+                        x.LicenseId.ToString().Contains(text)),
+
+                "National No" =>
+                    query.Where(x =>
+                        !string.IsNullOrWhiteSpace(x.NationalNo) &&
+                        x.NationalNo.Contains(
+                            text,
+                            StringComparison.OrdinalIgnoreCase)),
+
+                "Full Name" =>
+                    query.Where(x =>
+                        !string.IsNullOrWhiteSpace(x.FullName) &&
+                        x.FullName.Contains(
+                            text,
+                            StringComparison.OrdinalIgnoreCase)),
+
                 _ => query
             };
         }
@@ -120,7 +158,8 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private Task RefreshAsync() => LoadAsync();
+    private Task RefreshAsync() =>
+        LoadAsync();
 
     [RelayCommand]
     private void ShowPersonDetails()
@@ -130,7 +169,8 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
 
         var window = new PersonDetailsWindow(
             SelectedDetainedLicense.PersonId,
-            _peopleApiClient)
+            _peopleApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };
@@ -145,7 +185,9 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
             return;
 
         var window = new DriverLicenseInfoWin(
-            SelectedDetainedLicense.LicenseId)
+            SelectedDetainedLicense.LicenseId,
+            _licensesApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };
@@ -160,7 +202,8 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
             return;
 
         var personId = SelectedDetainedLicense.PersonId;
-        var vm = _serviceProvider.GetRequiredService<LicenseHistoryViewModel>();
+        var vm = _serviceProvider
+            .GetRequiredService<LicenseHistoryViewModel>();
 
         await vm.LoadAsync(personId);
 
@@ -179,8 +222,10 @@ public partial class ListDetainedLicensesViewModel : ObservableObject
             return;
 
         var licenseId = SelectedDetainedLicense.LicenseId;
-        var detainedResult = await _detainedLicensesApiClient
-            .GetActiveByLicenseIdAsync(licenseId);
+
+        var detainedResult =
+            await _detainedLicensesApiClient
+                .GetActiveByLicenseIdAsync(licenseId);
 
         if (detainedResult.IsFailure)
         {

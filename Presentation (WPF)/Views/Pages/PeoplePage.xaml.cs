@@ -1,56 +1,55 @@
-﻿using DVLD_WPF;
-using Microsoft.Extensions.DependencyInjection;
-using Presentation.Helpers;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Presentation.ViewModels;
 using Presentation.Views.Windows;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Presentation.Views
+namespace Presentation.Views;
+
+public partial class PeoplePage : Page
 {
-    public partial class PeoplePage : Page
+    private PeopleViewModel? ViewModel => DataContext as PeopleViewModel;
+
+    private readonly IServiceProvider _serviceProvider;
+
+    public PeoplePage(
+        PeopleViewModel viewModel,
+        IServiceProvider serviceProvider)
     {
-        // يقرأ الـ ViewModel الحالي المرتبط بالواجهة بشكل آمن
-        private PeopleViewModel? _viewModel => DataContext as PeopleViewModel;
+        InitializeComponent();
 
-        public PeoplePage()
+        DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+
+        IsVisibleChanged += PeoplePage_IsVisibleChanged;
+        Unloaded += PeoplePage_Unloaded;
+    }
+
+    private async void PeoplePage_IsVisibleChanged(
+        object sender,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true && ViewModel is not null)
+            await ViewModel.LoadPeopleAsync();
+    }
+
+    private async void AddPerson_Click(object sender, RoutedEventArgs e)
+    {
+        var viewModel = _serviceProvider.GetRequiredService<AddEditPersonViewModel>();
+
+        await viewModel.InitializeAsync(null);
+
+        var window = new AddEditPersonWin(viewModel)
         {
-            InitializeComponent();
+            Owner = Window.GetWindow(this)
+        };
 
-            // ✅ التعديل الأول: الاستدعاء الصحيح للمتغير الـ static عبر اسم الكلاس مباشرة
-            if (DVLD_WPF.App.ServiceProvider != null)
-            {
-                this.DataContext = DVLD_WPF.App.ServiceProvider.GetRequiredService<PeopleViewModel>();
-            }
+        window.ShowDialog();
+    }
 
-            this.IsVisibleChanged += PeoplePage_IsVisibleChanged;
-        }
-
-        private async void PeoplePage_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if ((bool)e.NewValue == true && _viewModel != null)
-            {
-                // استدعاء دالة تحميل البيانات عند فتح الصفحة
-                await _viewModel.LoadPeopleAsync();
-            }
-        }
-
-        private async void AddPerson_Click(object sender, RoutedEventArgs e)
-        {
-            if (DVLD_WPF.App.ServiceProvider != null)
-            {
-                var addEditVm = DVLD_WPF.App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
-
-                // 🔴 هذا السطر مفقود في كود الـ Click الخاص بك!
-                await addEditVm.InitializeAsync(null);
-
-                var win = new AddEditPersonWin(addEditVm)
-                {
-                    Owner = System.Windows.Application.Current.MainWindow
-                };
-
-                win.ShowDialog();
-            }
-        }
+    private void PeoplePage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        IsVisibleChanged -= PeoplePage_IsVisibleChanged;
+        Unloaded -= PeoplePage_Unloaded;
     }
 }

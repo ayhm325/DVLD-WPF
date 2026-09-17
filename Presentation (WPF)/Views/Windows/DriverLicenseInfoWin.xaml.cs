@@ -1,7 +1,7 @@
 ﻿using DVLD.Contracts.License;
-using DVLD_WPF;
-using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
+using Presentation.Services.Results;
+using Presentation.Services.UI;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -13,17 +13,12 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
 {
     private readonly int _licenseId;
     private readonly ILicensesApiClient _licensesApiClient;
-
-    // =========================================================
-    // LICENSE DATA
-    // =========================================================
-
+    private readonly IApiNotificationService _notifications;
     private DriverLicenseInfoResponse? _licenseData;
 
     public DriverLicenseInfoResponse? LicenseData
     {
         get => _licenseData;
-
         set
         {
             _licenseData = value;
@@ -31,157 +26,76 @@ public partial class DriverLicenseInfoWin : Window, INotifyPropertyChanged
         }
     }
 
-    // =========================================================
-    // COMMAND
-    // =========================================================
-
     public ICommand CloseCommand { get; }
 
-    // =========================================================
-    // CONSTRUCTOR
-    // =========================================================
-
-    public DriverLicenseInfoWin(int licenseId)
+    public DriverLicenseInfoWin(
+        int licenseId,
+        ILicensesApiClient licensesApiClient,
+        IApiNotificationService notifications)
     {
         InitializeComponent();
 
-        _licenseId = licenseId;
+        if (licenseId <= 0)
+            throw new ArgumentOutOfRangeException(nameof(licenseId));
 
-        _licensesApiClient =
-            App.ServiceProvider
-                .GetRequiredService<ILicensesApiClient>();
+        _licenseId = licenseId;
+        _licensesApiClient = licensesApiClient
+            ?? throw new ArgumentNullException(nameof(licensesApiClient));
+        _notifications = notifications
+            ?? throw new ArgumentNullException(nameof(notifications));
 
         DataContext = this;
-
-        CloseCommand =
-            new RelayCommand(
-                _ => Close());
-
-        Loaded +=
-            DriverLicenseInfoWin_Loaded;
+        CloseCommand = new RelayCommand(_ => Close());
+        Loaded += DriverLicenseInfoWin_Loaded;
     }
 
-    // =========================================================
-    // LOADED
-    // =========================================================
-
-    private async void DriverLicenseInfoWin_Loaded(
-        object sender,
-        RoutedEventArgs e)
+    private async void DriverLicenseInfoWin_Loaded(object sender, RoutedEventArgs e)
     {
-        try
+        Loaded -= DriverLicenseInfoWin_Loaded;
+
+        var result = await _licensesApiClient.GetDetailsByIdAsync(_licenseId);
+
+        if (result.IsFailure)
         {
-            var result =
-                await _licensesApiClient
-                    .GetDetailsByIdAsync(
-                        _licenseId);
-
-            if (result.IsFailure)
-            {
-                MessageBox.Show(
-                    result.Error,
-                    "License Information",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            if (result.Value is null)
-            {
-                MessageBox.Show(
-                    "License information was not found.",
-                    "License Information",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                return;
-            }
-
-            LicenseData =
-                result.Value;
+            _notifications.ShowFailure(result, "License Information");
+            return;
         }
-        catch (Exception ex)
+
+        if (result.Value is null)
         {
-            MessageBox.Show(
-                $"Error: {ex.Message}",
-                "License Information",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            _notifications.ShowFailure(
+                ApiResult.Failure(
+                    "License information was not returned by the API."),
+                "License Information");
+            return;
         }
+
+        LicenseData = result.Value;
     }
 
-    // =========================================================
-    // PROPERTY CHANGED
-    // =========================================================
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    public event PropertyChangedEventHandler?
-        PropertyChanged;
-
-    protected void OnPropertyChanged(
-        [CallerMemberName] string? name = null)
-    {
+    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(
             this,
             new PropertyChangedEventArgs(name));
-    }
 
-    // =========================================================
-    // CLOSE
-    // =========================================================
-
-    private void CloseButton_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
+    private void CloseButton_Click(object sender, RoutedEventArgs e) =>
         Close();
-    }
 }
 
-// =============================================================
-// RELAY COMMAND
-// =============================================================
-
-public class RelayCommand : ICommand
+public sealed class RelayCommand(Action<object?> execute) : ICommand
 {
-    private readonly Action<object?> _execute;
+    private readonly Action<object?> _execute =
+        execute ?? throw new ArgumentNullException(nameof(execute));
 
-    private readonly Func<object?, bool>?
-        _canExecute;
+    public bool CanExecute(object? parameter) => true;
 
-    public RelayCommand(
-        Action<object?> execute,
-        Func<object?, bool>? canExecute = null)
+    public void Execute(object? parameter) => _execute(parameter);
+
+    public event EventHandler? CanExecuteChanged
     {
-        _execute =
-            execute
-            ?? throw new ArgumentNullException(
-                nameof(execute));
-
-        _canExecute =
-            canExecute;
-    }
-
-    public bool CanExecute(
-        object? parameter)
-    {
-        return _canExecute?.Invoke(parameter)
-            ?? true;
-    }
-
-    public void Execute(
-        object? parameter)
-    {
-        _execute(parameter);
-    }
-
-    public event EventHandler?
-        CanExecuteChanged;
-
-    public void RaiseCanExecuteChanged()
-    {
-        CanExecuteChanged?.Invoke(
-            this,
-            EventArgs.Empty);
+        add { }
+        remove { }
     }
 }

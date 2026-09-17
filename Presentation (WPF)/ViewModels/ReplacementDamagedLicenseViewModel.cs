@@ -56,8 +56,7 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
     [RelayCommand]
     private async Task Search()
     {
-        if (!int.TryParse(LicenseIdText.Trim(), out var licenseId) ||
-            licenseId <= 0)
+        if (!int.TryParse(LicenseIdText.Trim(), out var licenseId) || licenseId <= 0)
         {
             _userNotifications.ShowWarning(
                 "Please enter a valid License ID.",
@@ -67,14 +66,11 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
 
         ClearReplacementData();
 
-        var result =
-            await _licensesApiClient.GetDetailsByIdAsync(licenseId);
+        var result = await _licensesApiClient.GetDetailsByIdAsync(licenseId);
 
         if (result.IsFailure)
         {
-            _notifications.ShowFailure(
-                result,
-                "Replacement License");
+            _notifications.ShowFailure(result, "Replacement License");
             ClearLicenseData();
             return;
         }
@@ -273,7 +269,9 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
         }
 
         var window = new DriverLicenseInfoWin(
-            ReplacementInfo.ReplacementLicenseId.Value)
+            ReplacementInfo.ReplacementLicenseId.Value,
+            _licensesApiClient,
+            _notifications)
         {
             Owner = System.Windows.Application.Current.MainWindow
         };

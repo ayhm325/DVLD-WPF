@@ -1,23 +1,15 @@
 ﻿using Presentation.ViewModels;
 using System.Windows;
 
+namespace Presentation.Views.Windows;
 
-namespace Presentation.Views.Windows
+public partial class ReplacementDamagedLicense : Window
 {
-    /// <summary>
-    /// Interaction logic for ReplacementDamagedLicense.xaml
-    /// </summary>
-    public partial class ReplacementDamagedLicense : Window
+    public ReplacementDamagedLicense(ReplacementDamagedLicenseViewModel vm)
     {
-        public ReplacementDamagedLicense(ReplacementDamagedLicenseViewModel vm)
-        {
-            InitializeComponent();
-            DataContext = vm;
-        }
-
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
-        }
+        InitializeComponent();
+        DataContext = vm;
     }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 }

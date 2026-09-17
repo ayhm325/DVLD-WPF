@@ -1,20 +1,15 @@
 ﻿using Presentation.ViewModels;
 using System.Windows;
 
-namespace Presentation.Views.Windows
-{
-    public partial class ChangePasswordWindow : Window
-    {
-        public ChangePasswordWindow(ChangePasswordViewModel viewModel)
-        {
-            InitializeComponent();
-            DataContext = viewModel;
-            
-        }
+namespace Presentation.Views.Windows;
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
+public partial class ChangePasswordWindow : Window
+{
+    public ChangePasswordWindow(ChangePasswordViewModel viewModel)
+    {
+        InitializeComponent();
+        DataContext = viewModel;
     }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 }
