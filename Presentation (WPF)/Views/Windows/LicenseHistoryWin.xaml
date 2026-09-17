@@ -122,7 +122,8 @@
                                           CanUserAddRows="False"
                                           CanUserDeleteRows="False"
                                           SelectionMode="Single"
-                                          MouseRightButtonUp="Row_RightClick">
+                                          MouseRightButtonUp="Row_RightClick"
+>
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="License ID" Binding="{Binding LicenseId}" Width="90"/>
                                         <DataGridTextColumn Header="Class" Binding="{Binding LicenseClassName}" Width="*"/>
@@ -168,12 +169,12 @@
                                                    Foreground="{StaticResource TextMutedColor}"/>
                                     </StackPanel>
                                     <Border Grid.Column="1"
-                                            Background="{StaticResource InfoColor}"
+                                            Background="{StaticResource InfoLightColor}"
                                             CornerRadius="{StaticResource RadiusPill}"
                                             Padding="10,5">
                                         <TextBlock Text="{Binding InternationalLicenses.Count}"
                                                    FontWeight="SemiBold"
-                                                   Foreground="{StaticResource InfoLightColor}"/>
+                                                   Foreground="{StaticResource InfoColor}"/>
                                     </Border>
                                 </Grid>
 
@@ -186,7 +187,8 @@
                                           HeadersVisibility="Column"
                                           CanUserAddRows="False"
                                           CanUserDeleteRows="False"
-                                          SelectionMode="Single">
+                                          SelectionMode="Single"
+>
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="ID" Binding="{Binding InternationalLicenseId}" Width="80"/>
                                         <DataGridTextColumn Header="Local License" Binding="{Binding IssuedUsingLocalLicenseId}" Width="100"/>

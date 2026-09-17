@@ -115,7 +115,7 @@
                     Style="{StaticResource SearchButtonStyle}"
                     Command="{Binding SearchCommand}"
                     VerticalAlignment="Center"
-                    Margin="0,0,10,0">
+                    Margin="0,0,10,0}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Magnify"
                                              Width="18" Height="18"

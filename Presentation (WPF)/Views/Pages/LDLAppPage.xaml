@@ -1,113 +1,59 @@
-﻿<Page x:Class="Presentation.Views.Pages.LDLAppPage"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<Page xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:controls="clr-namespace:Presentation.Views.Controls"
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      mc:Ignorable="d"
+      x:Class="Presentation.Views.Pages.LDLAppPage"
       Title="Driving License Applications"
       Background="{StaticResource BackgroundColor}">
 
-    <Page.Resources>
-        <Style TargetType="{x:Type DataGrid}">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="{StaticResource SurfaceSecondaryColor}"/>
-            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="AutoGenerateColumns" Value="False"/>
-            <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="SelectionMode" Value="Single"/>
-            <Setter Property="SelectionUnit" Value="FullRow"/>
-            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="RowHeaderWidth" Value="0"/>
-            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
-        </Style>
-
-        <Style TargetType="{x:Type DataGridColumnHeader}">
-            <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
-            <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-        </Style>
-
-        <Style TargetType="{x:Type DataGridCell}">
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="14,0"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="Foreground" Value="{StaticResource SelectionForegroundColor}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style TargetType="{x:Type ContextMenu}">
-            <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="6"/>
-            <Setter Property="Effect" Value="{StaticResource PopupShadow}"/>
-        </Style>
-
-        <Style TargetType="{x:Type MenuItem}">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
-        </Style>
-    </Page.Resources>
-
     <Grid Margin="28">
+
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- Header -->
         <Border Grid.Row="0"
                 Style="{StaticResource CardStyle}"
                 Padding="22"
                 Margin="0,0,0,18">
+
             <Grid>
+
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel VerticalAlignment="Center">
+
                     <TextBlock Text="LOCAL LICENSE APPLICATIONS"
                                FontSize="{StaticResource FontSizeCaption}"
                                FontWeight="{StaticResource FontWeightSemiBold}"
-                               Foreground="{StaticResource PrimaryColor}"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                               Foreground="{StaticResource PrimaryColor}" />
+
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,3,0,0">
+
                         <TextBlock Text="Driving License Applications"
-                                   Style="{StaticResource HeaderStyle}"/>
+                                   Style="{StaticResource HeaderStyle}" />
+
                         <TextBlock Text="  •  "
                                    Style="{StaticResource HeaderStyle}"
-                                   Foreground="{StaticResource TextMutedColor}"/>
+                                   Foreground="{StaticResource TextMutedColor}" />
+
                         <TextBlock Text="{Binding Applications.Count}"
                                    Style="{StaticResource HeaderStyle}"
-                                   Foreground="{StaticResource PrimaryColor}"/>
+                                   Foreground="{StaticResource PrimaryColor}" />
+
                     </StackPanel>
+
                     <TextBlock Text="Manage local driving-license application workflows"
                                Foreground="{StaticResource TextMutedColor}"
                                FontSize="{StaticResource FontSizeCaption}"
-                               Margin="0,4,0,0"/>
+                               Margin="0,4,0,0" />
+
                 </StackPanel>
 
                 <Button Grid.Column="1"
@@ -116,128 +62,316 @@
                         Command="{Binding AddNewCommand}"
                         Width="140"
                         Height="40"
-                        VerticalAlignment="Center"/>
+                        VerticalAlignment="Center" />
+
             </Grid>
+
         </Border>
 
+        <!-- Filter -->
         <Border Grid.Row="1"
                 Style="{StaticResource CardStyle}"
                 Padding="12"
                 Margin="0,0,0,16">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center">
+
                 <TextBlock Text="FILTER"
                            FontSize="{StaticResource FontSizeCaption}"
                            FontWeight="{StaticResource FontWeightSemiBold}"
                            Foreground="{StaticResource TextMutedColor}"
                            VerticalAlignment="Center"
-                           Margin="0,0,14,0"/>
+                           Margin="0,0,14,0" />
 
                 <ComboBox Width="150"
                           Height="36"
                           Margin="0,0,12,0"
-                          SelectedItem="{Binding SelectedFilter,Mode=TwoWay}">
-                    <ComboBoxItem Content="Full Name"/>
-                    <ComboBoxItem Content="National No."/>
+                          SelectedItem="{Binding SelectedFilter, Mode=TwoWay}">
+
+                    <ComboBoxItem Content="Full Name" />
+                    <ComboBoxItem Content="National No." />
+
                 </ComboBox>
 
                 <TextBox Width="220"
                          Height="36"
-                         Text="{Binding SearchText,UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,18,0"/>
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,18,0" />
 
                 <TextBlock Text="Status"
                            Style="{StaticResource LabelStyle}"
                            VerticalAlignment="Center"
-                           Margin="0,0,10,0"/>
+                           Margin="0,0,10,0" />
 
                 <ComboBox Width="145"
                           Height="36"
                           ItemsSource="{Binding StatusFilterOptions}"
-                          SelectedItem="{Binding SelectedStatusFilter,UpdateSourceTrigger=PropertyChanged}"/>
+                          SelectedItem="{Binding SelectedStatusFilter,
+                              UpdateSourceTrigger=PropertyChanged}" />
+
             </StackPanel>
+
         </Border>
 
+        <!-- Applications -->
         <Border Grid.Row="2"
                 Style="{StaticResource CardStyle}"
                 Padding="0"
                 ClipToBounds="True">
+
             <DataGrid ItemsSource="{Binding Applications}"
                       SelectedItem="{Binding SelectedApplication}">
 
                 <DataGrid.RowStyle>
-                    <Style TargetType="{x:Type DataGridRow}">
-                        <Setter Property="Height" Value="46"/>
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="BorderBrush" Value="Transparent"/>
-                        <Setter Property="Tag"
-                                Value="{Binding DataContext,RelativeSource={RelativeSource AncestorType={x:Type Page}}}"/>
-                        <EventSetter Event="MouseRightButtonDown"
-                                     Handler="DataGridRow_MouseRightButtonDown"/>
 
+                    <Style TargetType="{x:Type DataGridRow}"
+                           BasedOn="{StaticResource DataGridRowStyle}">
+
+                        <!-- ViewModel reference -->
+                        <Setter Property="Tag"
+                                Value="{Binding DataContext,
+                                    RelativeSource={RelativeSource AncestorType={x:Type Page}}}" />
+
+                        <!-- Select row before opening ContextMenu -->
+                        <EventSetter Event="MouseRightButtonDown"
+                                     Handler="DataGridRow_MouseRightButtonDown" />
+
+                        <!-- Context Menu -->
                         <Setter Property="ContextMenu">
+
                             <Setter.Value>
+
                                 <ContextMenu>
+
+                                    <!-- Application Details -->
                                     <MenuItem Header="Show Application Details"
-                                              Command="{Binding PlacementTarget.Tag.ShowDetailsCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-                                    <Separator/>
-                                    <MenuItem Header="Edit Application"
-                                              Command="{Binding PlacementTarget.Tag.EditCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-                                    <MenuItem Header="Delete Application"
-                                              Command="{Binding PlacementTarget.Tag.DeleteCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext.LocalDrivingLicenseApplicationId,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-                                    <MenuItem Header="Cancel Application"
-                                              Command="{Binding PlacementTarget.Tag.CancelCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext.LocalDrivingLicenseApplicationId,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-                                    <Separator/>
-                                    <MenuItem Header="Schedule Tests"
-                                              IsEnabled="{Binding PlacementTarget.Tag.CanScheduleTests,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
-                                        <MenuItem Header="Schedule Vision Test"
-                                                  Command="{Binding PlacementTarget.Tag.ScheduleVisionCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                                  CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-                                        <MenuItem Header="Schedule Written Test"
-                                                  Command="{Binding PlacementTarget.Tag.ScheduleWrittenCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                                  CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
-                                        <MenuItem Header="Schedule Street Test"
-                                                  Command="{Binding PlacementTarget.Tag.ScheduleStreetCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                                  CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+                                              Command="{Binding PlacementTarget.Tag.ShowDetailsCommand,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="FileDocumentOutline"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource PrimaryColor}" />
+                                        </MenuItem.Icon>
+
                                     </MenuItem>
-                                    <Separator/>
+
+                                    <Separator />
+
+                                    <!-- Edit -->
+                                    <MenuItem Header="Edit Application"
+                                              Command="{Binding PlacementTarget.Tag.EditCommand,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="PencilOutline"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource WarningColor}" />
+                                        </MenuItem.Icon>
+
+                                    </MenuItem>
+
+                                    <!-- Delete -->
+                                    <MenuItem Header="Delete Application"
+                                              Command="{Binding PlacementTarget.Tag.DeleteCommand,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext.LocalDrivingLicenseApplicationId,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="DeleteOutline"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource DangerColor}" />
+                                        </MenuItem.Icon>
+
+                                    </MenuItem>
+
+                                    <!-- Cancel -->
+                                    <MenuItem Header="Cancel Application"
+                                              Command="{Binding PlacementTarget.Tag.CancelCommand,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext.LocalDrivingLicenseApplicationId,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="Cancel"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource DangerColor}" />
+                                        </MenuItem.Icon>
+
+                                    </MenuItem>
+
+                                    <Separator />
+
+                                    <!-- Schedule Tests -->
+                                    <MenuItem Header="Schedule Tests"
+                                              IsEnabled="{Binding PlacementTarget.Tag.CanScheduleTests,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="CalendarClock"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource InfoColor}" />
+                                        </MenuItem.Icon>
+
+                                        <!-- Vision Test -->
+                                        <MenuItem Header="Schedule Vision Test"
+                                                  Command="{Binding PlacementTarget.Tag.ScheduleVisionCommand,
+                                                      RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext,
+                                                      RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                            <MenuItem.Icon>
+                                                <materialDesign:PackIcon Kind="EyeOutline"
+                                                                         Width="18"
+                                                                         Height="18"
+                                                                         Foreground="{StaticResource PrimaryColor}" />
+                                            </MenuItem.Icon>
+
+                                        </MenuItem>
+
+                                        <!-- Written Test -->
+                                        <MenuItem Header="Schedule Written Test"
+                                                  Command="{Binding PlacementTarget.Tag.ScheduleWrittenCommand,
+                                                      RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext,
+                                                      RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                            <MenuItem.Icon>
+                                                <materialDesign:PackIcon Kind="FileDocumentEditOutline"
+                                                                         Width="18"
+                                                                         Height="18"
+                                                                         Foreground="{StaticResource InfoColor}" />
+                                            </MenuItem.Icon>
+
+                                        </MenuItem>
+
+                                        <!-- Street Test -->
+                                        <MenuItem Header="Schedule Street Test"
+                                                  Command="{Binding PlacementTarget.Tag.ScheduleStreetCommand,
+                                                      RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                                  CommandParameter="{Binding PlacementTarget.DataContext,
+                                                      RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                            <MenuItem.Icon>
+                                                <materialDesign:PackIcon Kind="CarOutline"
+                                                                         Width="18"
+                                                                         Height="18"
+                                                                         Foreground="{StaticResource SuccessColor}" />
+                                            </MenuItem.Icon>
+
+                                        </MenuItem>
+
+                                    </MenuItem>
+
+                                    <Separator />
+
+                                    <!-- Issue License -->
                                     <MenuItem Header="Issue Driving License"
-                                              Command="{Binding PlacementTarget.Tag.IssueLicenseCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+                                              Command="{Binding PlacementTarget.Tag.IssueLicenseCommand,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="CardAccountDetailsOutline"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource SuccessColor}" />
+                                        </MenuItem.Icon>
+
+                                    </MenuItem>
+
+                                    <!-- Show License -->
                                     <MenuItem Header="Show License"
-                                              Command="{Binding PlacementTarget.Tag.ShowLicenseCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+                                              Command="{Binding PlacementTarget.Tag.ShowLicenseCommand,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="CardAccountDetails"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource PrimaryColor}" />
+                                        </MenuItem.Icon>
+
+                                    </MenuItem>
+
+                                    <!-- License History -->
                                     <MenuItem Header="Show Person License History"
-                                              Command="{Binding PlacementTarget.Tag.ShowHistoryCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"/>
+                                              Command="{Binding PlacementTarget.Tag.ShowHistoryCommand,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext,
+                                                  RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="History"
+                                                                     Width="18"
+                                                                     Height="18"
+                                                                     Foreground="{StaticResource SuccessColor}" />
+                                        </MenuItem.Icon>
+
+                                    </MenuItem>
+
                                 </ContextMenu>
+
                             </Setter.Value>
+
                         </Setter>
 
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{StaticResource SelectionBackgroundColor}"/>
-                            </Trigger>
-                        </Style.Triggers>
                     </Style>
+
                 </DataGrid.RowStyle>
 
+                <!-- Columns -->
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="ID" Binding="{Binding LocalDrivingLicenseApplicationId}" Width="75"/>
-                    <DataGridTextColumn Header="Driving Class" Binding="{Binding LicenseClassName}" Width="280"/>
-                    <DataGridTextColumn Header="National No." Binding="{Binding NationalNo}" Width="145"/>
-                    <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
-                    <DataGridTextColumn Header="Date" Binding="{Binding ApplicationDate,StringFormat=yyyy/MM/dd}" Width="125"/>
-                    <DataGridTextColumn Header="Passed Test" Binding="{Binding PassedTest}" Width="125"/>
-                    <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="135"/>
+
+                    <DataGridTextColumn Header="ID"
+                                        Binding="{Binding LocalDrivingLicenseApplicationId}"
+                                        Width="75" />
+
+                    <DataGridTextColumn Header="Driving Class"
+                                        Binding="{Binding LicenseClassName}"
+                                        Width="280" />
+
+                    <DataGridTextColumn Header="National No."
+                                        Binding="{Binding NationalNo}"
+                                        Width="145" />
+
+                    <DataGridTextColumn Header="Full Name"
+                                        Binding="{Binding FullName}"
+                                        Width="*" />
+
+                    <DataGridTextColumn Header="Date"
+                                        Binding="{Binding ApplicationDate,
+                                            StringFormat=yyyy/MM/dd}"
+                                        Width="125" />
+
+                    <DataGridTextColumn Header="Passed Test"
+                                        Binding="{Binding PassedTest}"
+                                        Width="125" />
+
+                    <DataGridTextColumn Header="Status"
+                                        Binding="{Binding StatusText}"
+                                        Width="135" />
+
                 </DataGrid.Columns>
+
             </DataGrid>
+
         </Border>
+
     </Grid>
+
 </Page>

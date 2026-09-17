@@ -8,18 +8,11 @@
         Title="Get Driver License For The First Time"
         Width="820"
         Height="650"
-        WindowStartupLocation="CenterScreen"       
+        WindowStartupLocation="CenterScreen"
         Background="Transparent"
         ResizeMode="NoResize">
 
     <Window.Resources>
-        <!-- تدرج الهيدر الموحد -->
-        <LinearGradientBrush x:Key="HeaderBgGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#F8FAFC" Offset="0"/>
-            <GradientStop Color="#F1F5F9" Offset="1"/>
-        </LinearGradientBrush>
-
-        <!-- ستايل زر الإغلاق -->
         <Style x:Key="CloseButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
@@ -31,7 +24,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="{StaticResource RadiusMedium}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -45,8 +40,9 @@
             </Setter>
         </Style>
 
-        <!-- تجاوز ارتفاع الـ TextBox للنصوص الطويلة -->
-        <Style x:Key="NotesTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Style x:Key="NotesTextBoxStyle"
+               TargetType="TextBox"
+               BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Height" Value="Auto"/>
             <Setter Property="MinHeight" Value="70"/>
             <Setter Property="AcceptsReturn" Value="True"/>
@@ -56,62 +52,57 @@
         </Style>
     </Window.Resources>
 
-    <!-- الحاوية الرئيسية -->
-    <Border Background="{StaticResource BackgroundColor}" 
-            BorderBrush="{StaticResource BorderColor}" 
-            BorderThickness="1" 
-            CornerRadius="12" 
-            Margin="15">
-
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" Direction="270" ShadowDepth="2" BlurRadius="12" Opacity="0.08"/>
-        </Border.Effect>
-
+    <Border Background="{StaticResource SurfaceColor}"
+            BorderBrush="{StaticResource BorderColor}"
+            BorderThickness="1"
+            CornerRadius="{StaticResource RadiusXLarge}"
+            Margin="15"
+            SnapsToDevicePixels="True"
+            Effect="{StaticResource ElevationShadow2}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- Header -->
                 <RowDefinition Height="*"/>
-                <!-- Scrollable Content -->
                 <RowDefinition Height="Auto"/>
-                <!-- Buttons -->
             </Grid.RowDefinitions>
 
-            <!-- ================= الهيدر الموحد ================= -->
-            <Border Grid.Row="0" Background="{StaticResource HeaderBgGradient}" 
-                    CornerRadius="12,12,0,0" 
-                    Padding="25,18,25,18"
+            <Border Grid.Row="0"
+                    Background="{StaticResource SurfaceSecondaryColor}"
+                    CornerRadius="16,16,0,0"
+                    Padding="25,18"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="38" Height="38" CornerRadius="10" 
-                                Background="{StaticResource PrimaryColor}" 
-                                Opacity="0.1"
+                        <Border Width="38"
+                                Height="38"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                Background="{StaticResource PrimaryLightColor}"
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1"
                                 Margin="0,0,14,0"
                                 Padding="8"
                                 VerticalAlignment="Center">
-                            <Path Data="M4,16V12C4,9.79 5.79,8 8,8H14.5L12.5,6H8A2,2 0 0,0 6,8V16A2,2 0 0,0 8,18H19A2,2 0 0,0 21,16V12C21,9.79 19.21,8 17,8H15.5L17.5,10H19A2,2 0 0,1 21,12V16A2,2 0 0,1 19,18H8A2,2 0 0,1 6,16M12,4L15,7H9L12,4M18,14H6V12H18V14Z" 
-                                  Stroke="{StaticResource PrimaryColor}" StrokeThickness="1.6" 
-                                  Fill="Transparent" Stretch="Uniform" Height="20" Width="20"/>
+                            <Path Data="M4,16V12C4,9.79 5.79,8 8,8H14.5L12.5,6H8A2,2 0 0,0 6,8V16A2,2 0 0,0 8,18H19A2,2 0 0,0 21,16V12C21,9.79 19.21,8 17,8H15.5L17.5,10H19A2,2 0 0,1 21,12V16A2,2 0 0,1 19,18H8A2,2 0 0,1 6,16M12,4L15,7H9L12,4M18,14H6V12H18V14Z"
+                                  Stroke="{StaticResource PrimaryColor}"
+                                  StrokeThickness="1.6"
+                                  Fill="Transparent"
+                                  Stretch="Uniform"
+                                  Height="20"
+                                  Width="20"/>
                         </Border>
-                        <TextBlock Text="Get Driver License For The First Time" 
-                                   FontSize="18" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextColor}" 
+                        <TextBlock Text="Get Driver License For The First Time"
+                                   Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- ================= المحتوى ================= -->
-            <ScrollViewer Grid.Row="1" 
+            <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Margin="20,15,20,20">
-
                 <StackPanel>
-
-                    <!-- Driving License Application Info -->
                     <controls:DrivingLicenseApplicationInfo
                         x:Name="drivingLicenseInfo"
                         DrivingLicenseApplicationId="{Binding DrivingLicenseApplicationId}"
@@ -120,52 +111,43 @@
                         TotalTests="{Binding TotalTests}"
                         Margin="0,0,0,15"/>
 
-                    <!-- Application Basic Info -->
                     <controls:ApplicationBasicInfo
                         x:Name="applicationBasicInfo"
                         Application="{Binding BasicApplicationInfo}"
                         Margin="0,0,0,15"/>
 
-                    <!-- Notes Section -->
                     <Border Style="{StaticResource CardStyle}" Padding="20">
                         <StackPanel>
-                            <TextBlock Text="Notes" 
-                                       Style="{StaticResource LabelStyle}" 
-                                       FontWeight="SemiBold"
+                            <TextBlock Text="Notes"
+                                       Style="{StaticResource LabelStyle}"
+                                       FontWeight="{StaticResource FontWeightSemiBold}"
                                        Margin="0,0,0,8"/>
                             <TextBox x:Name="txtNotes"
                                      Style="{StaticResource NotesTextBoxStyle}"
                                      Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
                     </Border>
-
                 </StackPanel>
-
             </ScrollViewer>
 
-            <!-- ================= شريط الأزرار السفلي ================= -->
-            <Border Grid.Row="2" 
-                    Background="{StaticResource BackgroundColor}" 
+            <Border Grid.Row="2"
+                    Background="{StaticResource SurfaceColor}"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,1,0,0"
-                    Padding="20,15,25,20" 
-                    CornerRadius="0,0,12,12">
+                    Padding="20,15,25,20"
+                    CornerRadius="0,0,16,16">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-
                     <Button Content="Close"
-                            Style="{StaticResource SecondaryButtonStyle}" 
+                            Style="{StaticResource SecondaryButtonStyle}"
                             Width="120"
                             Margin="0,0,15,0"
                             Command="{Binding CloseCommand}"/>
-
                     <Button Content="Issue License"
                             Style="{StaticResource PrimaryButtonStyle}"
                             Width="140"
                             Command="{Binding IssueCommand}"/>
-
                 </StackPanel>
             </Border>
-
         </Grid>
     </Border>
 </Window>
