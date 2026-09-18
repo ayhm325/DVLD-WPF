@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "StaffOnly")]
+[Authorize(Policy = "StaffOrAdmin")]
 [Route("api/[controller]")]
 public sealed class PeopleController(
     IPersonService personService) : ControllerBase

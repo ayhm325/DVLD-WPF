@@ -102,6 +102,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(
         "StaffOnly",
         policy => policy.RequireRole("Staff"));
+
+    options.AddPolicy(
+        "StaffOrAdmin",
+        policy => policy.RequireRole("Staff", "Admin"));
 });
 
 builder.Services.AddHttpContextAccessor();
