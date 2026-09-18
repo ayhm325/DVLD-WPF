@@ -1,6 +1,8 @@
-﻿using Application.Interfaces;
+﻿using Application.DTOs.UserDTO;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace Infrastructure.Repositories;
 
@@ -36,6 +38,43 @@ public sealed class UserRepository : IUserRepository
             .ThenInclude(p => p.Country)
             .FirstOrDefaultAsync(
                 u => u.UserId == userId);
+    }
+
+    public async Task<UserDetailsDto?> GetUserDetailsByIdAsync(int userId)
+    {
+        return await _context.Users
+            .AsNoTracking()
+            .Where(u => u.UserId == userId && u.Person != null)
+            .Select(u => new UserDetailsDto
+            {
+                UserId = u.UserId,
+                PersonId = u.PersonId,
+                UserName = u.UserName,
+                IsActive = u.IsActive,
+
+                Role = (int)u.Role,
+
+                NationalNo = u.Person.NationalNo,
+                FirstName = u.Person.FirstName,
+                SecondName = u.Person.SecondName,
+                ThirdName = u.Person.ThirdName,
+                LastName = u.Person.LastName,
+                DateOfBirth = u.Person.DateOfBirth,
+
+                Gender = u.Person.Gender.ToString(),
+
+                Address = u.Person.Address,
+                Phone = u.Person.Phone,
+                Email = u.Person.Email,
+
+                NationalityCountryID = u.Person.NationalityCountryID,
+                CountryName = u.Person.Country != null
+                    ? u.Person.Country.CountryName
+                    : null,
+
+                ImagePath = u.Person.ImagePath
+            })
+            .FirstOrDefaultAsync();
     }
 
     public Task<User?> GetUserByPersonIdAsync(int personId)

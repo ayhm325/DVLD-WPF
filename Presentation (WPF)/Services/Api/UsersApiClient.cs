@@ -1,4 +1,5 @@
 ﻿using DVLD.Contracts.User;
+using DVLD.Contracts.Users;
 using Presentation.Services.Results;
 
 namespace Presentation.Services.Api;
@@ -18,6 +19,13 @@ public sealed class UsersApiClient(
         => apiClient.GetAsync<UserResponse>(
             $"api/users/{userId}",
             cancellationToken);
+
+    public Task<ApiResult<UserDetailsResponse>> GetDetailsAsync(
+    int userId,
+    CancellationToken cancellationToken = default)
+    => apiClient.GetAsync<UserDetailsResponse>(
+        $"api/users/{userId}/details",
+        cancellationToken);
 
     public Task<ApiResult<UserResponse>> GetByPersonIdAsync(
         int personId,

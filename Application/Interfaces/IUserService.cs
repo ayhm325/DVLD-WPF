@@ -7,6 +7,7 @@ public interface IUserService
 {
     Task<Result<List<UserDto>>> GetAllUsersAsync();
 
+    Task<Result<UserDetailsDto>> GetUserDetailsAsync(int userId);
 
     Task<Result<UserDto>> GetUserByIdAsync(int id);
 

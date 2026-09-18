@@ -2,6 +2,7 @@
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using DVLD.Contracts.User;
+using DVLD.Contracts.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -44,6 +45,39 @@ public sealed class UsersController(
             return HandleFailure(result);
 
         return Ok(MapToResponse(result.Value!));
+    }
+
+    [HttpGet("{id:int}/details")]
+    public async Task<IActionResult> GetDetails(int id)
+    {
+        var result = await service.GetUserDetailsAsync(id);
+
+        if (!result.IsSuccess)
+            return HandleFailure(result);
+
+        var dto = result.Value!;
+
+        var response = new UserDetailsResponse(
+            dto.UserId,
+            dto.PersonId,
+            dto.UserName,
+            dto.IsActive,
+            dto.Role,
+            dto.NationalNo,
+            dto.FirstName,
+            dto.SecondName,
+            dto.ThirdName,
+            dto.LastName,
+            dto.DateOfBirth,
+            dto.Gender,
+            dto.Address,
+            dto.Phone,
+            dto.Email,
+            dto.NationalityCountryID,
+            dto.CountryName,
+            dto.ImagePath);
+
+        return Ok(response);
     }
 
     [HttpGet("username/{username}")]

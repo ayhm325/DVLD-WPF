@@ -1,14 +1,16 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Presentation.Enums;
 using DVLD.Contracts.Person;
 using DVLD.Contracts.User;
+using DVLD.Contracts.Users;
 using DVLD_WPF;
 using Microsoft.Extensions.DependencyInjection;
+using Presentation.Enums;
 using Presentation.Services;
 using Presentation.Services.Api;
 using Presentation.Services.UI;
 using Presentation.Views.Windows;
+using System.Net;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -77,101 +79,81 @@ public partial class AddEditUserViewModel : ObservableObject
     {
         try
         {
-            CanGoToNextTab = false;
-            GoToNextTabCommand.NotifyCanExecuteChanged();
+            SetCanGoToNextTab(false);
 
             if (userId is > 0)
             {
-                Mode = OperationMode.Edit;
-                UserId = userId.Value;
-                UserIdDisplay = userId.Value.ToString();
-
-                PasswordVisibility = Visibility.Collapsed;
-                ConfirmPasswordVisibility = Visibility.Collapsed;
-                Password = string.Empty;
-                ConfirmPassword = string.Empty;
-
-                var userResult = await _usersApiClient.GetByIdAsync(userId.Value);
-
-                if (userResult.IsFailure)
-                {
-                    _notifications.ShowFailure(userResult, "User Not Found");
-                    return;
-                }
-
-                if (userResult.Value is null)
-                {
-                    _userNotifications.ShowWarning(
-                        "User data could not be loaded.",
-                        "User Not Found");
-                    return;
-                }
-
-                var user = userResult.Value;
-                UserName = user.UserName;
-                IsActive = user.IsActive;
-
-                var personResult = await _peopleApiClient.GetByIdAsync(user.PersonId);
-
-                if (personResult.IsFailure)
-                {
-                    _notifications.ShowFailure(personResult, "Person Not Found");
-                    return;
-                }
-
-                if (personResult.Value is null)
-                {
-                    _userNotifications.ShowWarning(
-                        "The person associated with this user could not be found.",
-                        "Person Not Found");
-                    return;
-                }
-
-                Person = personResult.Value;
-                CanGoToNextTab = true;
-                GoToNextTabCommand.NotifyCanExecuteChanged();
+                await InitializeEditAsync(userId.Value);
                 return;
             }
 
-            Mode = OperationMode.Add;
-            UserId = 0;
-            UserIdDisplay = null;
-            Person = null;
-            FilterText = string.Empty;
-            SelectedFilterIndex = 0;
-            UserName = string.Empty;
-            PasswordVisibility = Visibility.Visible;
-            ConfirmPasswordVisibility = Visibility.Visible;
-            Password = string.Empty;
-            ConfirmPassword = string.Empty;
-            IsActive = true;
-            SelectedTabIndex = 0;
-            CanGoToNextTab = false;
-            UserNameValidationMessage =
-                "3-20 chars, start with a letter, numbers & _ allowed.";
-            UserNameValidationColor = "Gray";
-            GoToNextTabCommand.NotifyCanExecuteChanged();
+            InitializeAdd();
         }
         catch (Exception ex)
         {
-            _userNotifications.ShowError(
-                GetExceptionMessage(ex),
-                "Initialization Error");
+            _userNotifications.ShowError(GetExceptionMessage(ex), "Initialization Error");
         }
+    }
+
+    private async Task InitializeEditAsync(int userId)
+    {
+        Mode = OperationMode.Edit;
+        UserId = userId;
+        UserIdDisplay = userId.ToString();
+        SetPasswordVisibility(false);
+        Password = ConfirmPassword = string.Empty;
+
+        var result = await _usersApiClient.GetDetailsAsync(userId);
+
+        if (result.IsFailure)
+        {
+            _notifications.ShowFailure(result, "User Details");
+            return;
+        }
+
+        if (result.Value is null)
+        {
+            _userNotifications.ShowWarning(
+                "User details could not be loaded.",
+                "User Details");
+            return;
+        }
+
+        var details = result.Value;
+
+        UserName = details.UserName;
+        IsActive = details.IsActive;
+        Person = MapPerson(details);
+
+        SetCanGoToNextTab(true);
+    }
+
+    private void InitializeAdd()
+    {
+        Mode = OperationMode.Add;
+        UserId = 0;
+        UserIdDisplay = null;
+        Person = null;
+        FilterText = string.Empty;
+        SelectedFilterIndex = 0;
+        UserName = string.Empty;
+        Password = ConfirmPassword = string.Empty;
+        IsActive = true;
+        SelectedTabIndex = 0;
+        UserNameValidationMessage =
+            "3-20 chars, start with a letter, numbers & _ allowed.";
+        UserNameValidationColor = "Gray";
+        SetPasswordVisibility(true);
     }
 
     public async Task InitializeCurrentProfileAsync()
     {
         try
         {
-            CanGoToNextTab = false;
-            GoToNextTabCommand.NotifyCanExecuteChanged();
-
+            SetCanGoToNextTab(false);
             Mode = OperationMode.Edit;
-            PasswordVisibility = Visibility.Collapsed;
-            ConfirmPasswordVisibility = Visibility.Collapsed;
-            Password = string.Empty;
-            ConfirmPassword = string.Empty;
+            SetPasswordVisibility(false);
+            Password = ConfirmPassword = string.Empty;
             SelectedTabIndex = 0;
 
             var result = await _authApiClient.GetProfileAsync();
@@ -196,7 +178,6 @@ public partial class AddEditUserViewModel : ObservableObject
             UserIdDisplay = profile.UserId.ToString();
             UserName = profile.UserName;
             IsActive = profile.IsActive;
-
             Person = new PersonResponse
             {
                 PersonId = profile.PersonId,
@@ -216,14 +197,11 @@ public partial class AddEditUserViewModel : ObservableObject
                 ImagePath = profile.ImagePath
             };
 
-            CanGoToNextTab = true;
-            GoToNextTabCommand.NotifyCanExecuteChanged();
+            SetCanGoToNextTab(true);
         }
         catch (Exception ex)
         {
-            _userNotifications.ShowError(
-                GetExceptionMessage(ex),
-                "Profile Error");
+            _userNotifications.ShowError(GetExceptionMessage(ex), "Profile Error");
         }
     }
 
@@ -238,73 +216,23 @@ public partial class AddEditUserViewModel : ObservableObject
             return;
         }
 
-        CanGoToNextTab = false;
-        GoToNextTabCommand.NotifyCanExecuteChanged();
+        SetCanGoToNextTab(false);
 
         try
         {
-            PersonResponse? person;
+            var person = await FindPersonAsync();
 
-            if (SelectedFilterIndex == 0)
-            {
-                if (!int.TryParse(FilterText.Trim(), out var personId))
-                {
-                    _userNotifications.ShowWarning(
-                        "Please enter a valid Person ID.",
-                        "Invalid ID");
-                    return;
-                }
-
-                var result = await _peopleApiClient.GetByIdAsync(personId);
-
-                if (result.IsFailure)
-                {
-                    _notifications.ShowFailure(result, "Person Not Found");
-                    return;
-                }
-
-                if (result.Value is null)
-                {
-                    _userNotifications.ShowWarning(
-                        "Person data could not be loaded.",
-                        "Person Not Found");
-                    return;
-                }
-
-                person = result.Value;
-            }
-            else
-            {
-                var result = await _peopleApiClient.GetByNationalNoAsync(
-                    FilterText.Trim());
-
-                if (result.IsFailure)
-                {
-                    _notifications.ShowFailure(result, "Person Not Found");
-                    return;
-                }
-
-                if (result.Value is null)
-                {
-                    _userNotifications.ShowWarning(
-                        "Person data could not be loaded.",
-                        "Person Not Found");
-                    return;
-                }
-
-                person = result.Value;
-            }
+            if (person is null)
+                return;
 
             var existingUserResult =
                 await _usersApiClient.GetByPersonIdAsync(person.PersonId);
 
-            if (existingUserResult.IsSuccess &&
-                existingUserResult.Value is not null)
+            if (existingUserResult.IsSuccess && existingUserResult.Value is not null)
             {
                 var existingUser = existingUserResult.Value;
 
-                if (Mode == OperationMode.Add ||
-                    existingUser.UserId != UserId)
+                if (Mode == OperationMode.Add || existingUser.UserId != UserId)
                 {
                     _userNotifications.ShowInfo(
                         $"This person is already associated with the user account '{existingUser.UserName}'.",
@@ -317,23 +245,65 @@ public partial class AddEditUserViewModel : ObservableObject
             }
 
             Person = person;
-            CanGoToNextTab = true;
-            GoToNextTabCommand.NotifyCanExecuteChanged();
+            SetCanGoToNextTab(true);
         }
         catch (Exception ex)
         {
-            _userNotifications.ShowError(
-                GetExceptionMessage(ex),
-                "Search Error");
+            _userNotifications.ShowError(GetExceptionMessage(ex), "Search Error");
         }
+    }
+
+    private async Task<PersonResponse?> FindPersonAsync()
+    {
+        if (SelectedFilterIndex == 0)
+        {
+            if (!int.TryParse(FilterText.Trim(), out var personId))
+            {
+                _userNotifications.ShowWarning(
+                    "Please enter a valid Person ID.",
+                    "Invalid ID");
+                return null;
+            }
+
+            var result = await _peopleApiClient.GetByIdAsync(personId);
+
+            if (result.IsFailure)
+            {
+                _notifications.ShowFailure(result, "Person Not Found");
+                return null;
+            }
+
+            return HandlePersonResult(result.Value);
+        }
+
+        var nationalNoResult =
+            await _peopleApiClient.GetByNationalNoAsync(FilterText.Trim());
+
+        if (nationalNoResult.IsFailure)
+        {
+            _notifications.ShowFailure(nationalNoResult, "Person Not Found");
+            return null;
+        }
+
+        return HandlePersonResult(nationalNoResult.Value);
+    }
+
+    private PersonResponse? HandlePersonResult(PersonResponse? person)
+    {
+        if (person is not null)
+            return person;
+
+        _userNotifications.ShowWarning(
+            "Person data could not be loaded.",
+            "Person Not Found");
+
+        return null;
     }
 
     [RelayCommand]
     private void AddPerson()
     {
-        var vm = App.ServiceProvider
-            .GetRequiredService<AddEditPersonViewModel>();
-
+        var vm = App.ServiceProvider.GetRequiredService<AddEditPersonViewModel>();
         var window = new AddEditPersonWin(vm)
         {
             Owner = Application.Current.MainWindow
@@ -347,146 +317,137 @@ public partial class AddEditUserViewModel : ObservableObject
     {
         try
         {
-            if (Person is null)
-            {
-                _userNotifications.ShowWarning(
-                    "You must search for and select a person first.",
-                    "Validation Error");
+            if (!ValidateSave())
                 return;
-            }
 
-            var isEdit = Mode == OperationMode.Edit;
-
-            if (!isEdit && string.IsNullOrWhiteSpace(Password))
-            {
-                _userNotifications.ShowWarning(
-                    "Password is required.",
-                    "Validation Error");
-                return;
-            }
-
-            if ((!isEdit || !string.IsNullOrWhiteSpace(Password)) &&
-                Password != ConfirmPassword)
-            {
-                _userNotifications.ShowWarning(
-                    "The entered passwords do not match.",
-                    "Validation Error");
-                return;
-            }
-
-            if (!isEdit)
-            {
-                var request = new CreateUserRequest(
-                    Person.PersonId,
-                    UserName.Trim(),
-                    Password,
-                    IsActive);
-
-                var existingUserResult =
-                    await _usersApiClient.GetByUsernameAsync(request.UserName);
-
-                if (existingUserResult.IsFailure &&
-                    existingUserResult.StatusCode is not System.Net.HttpStatusCode.NotFound)
-                {
-                    _notifications.ShowFailure(
-                        existingUserResult,
-                        "Validation Error");
-                    return;
-                }
-
-                if (existingUserResult.IsSuccess &&
-                    existingUserResult.Value is not null)
-                {
-                    _userNotifications.ShowWarning(
-                        "This username is already taken. Please choose another.",
-                        "Validation Error");
-                    return;
-                }
-
-                var result = await _usersApiClient.CreateAsync(request);
-
-                if (result.IsFailure)
-                {
-                    _notifications.ShowFailure(
-                        result,
-                        "Save Failed");
-                    SaveCompleted?.Invoke(false);
-                    return;
-                }
-
-                UserId = result.Value;
-                UserIdDisplay = result.Value.ToString();
-                Mode = OperationMode.Edit;
-                PasswordVisibility = Visibility.Collapsed;
-                ConfirmPasswordVisibility = Visibility.Collapsed;
-                Password = string.Empty;
-                ConfirmPassword = string.Empty;
-
-                _userNotifications.ShowInfo(
-                    $"The user account has been created successfully.\n\nUser ID: {UserId}",
-                    "Operation Completed");
-
-                SaveCompleted?.Invoke(true);
-                return;
-            }
-
-            var updateRequest = new UpdateUserRequest(
-                Person.PersonId,
-                UserName.Trim(),
-                IsActive);
-
-            var existingUserByNameResult =
-                await _usersApiClient.GetByUsernameAsync(
-                    updateRequest.UserName);
-
-            if (existingUserByNameResult.IsFailure &&
-                existingUserByNameResult.StatusCode is not System.Net.HttpStatusCode.NotFound)
-            {
-                _notifications.ShowFailure(
-                    existingUserByNameResult,
-                    "Validation Error");
-                return;
-            }
-
-            if (existingUserByNameResult.IsSuccess &&
-                existingUserByNameResult.Value is not null &&
-                existingUserByNameResult.Value.UserId != UserId)
-            {
-                _userNotifications.ShowWarning(
-                    "This username is already taken by another user. Please choose another.",
-                    "Validation Error");
-                return;
-            }
-
-            var updateResult =
-                await _usersApiClient.UpdateAsync(UserId, updateRequest);
-
-            if (updateResult.IsFailure)
-            {
-                _notifications.ShowFailure(
-                    updateResult,
-                    "Save Failed");
-                SaveCompleted?.Invoke(false);
-                return;
-            }
-
-            Password = string.Empty;
-            ConfirmPassword = string.Empty;
-
-            _userNotifications.ShowInfo(
-                "The user account has been updated successfully.",
-                "Operation Completed");
-
-            SaveCompleted?.Invoke(true);
+            if (Mode == OperationMode.Add)
+                await CreateUserAsync();
+            else
+                await UpdateUserAsync();
         }
         catch (Exception ex)
         {
-            _userNotifications.ShowError(
-                GetExceptionMessage(ex),
-                "Save Error");
-
+            _userNotifications.ShowError(GetExceptionMessage(ex), "Save Error");
             SaveCompleted?.Invoke(false);
         }
+    }
+
+    private bool ValidateSave()
+    {
+        if (Person is null)
+        {
+            _userNotifications.ShowWarning(
+                "You must search for and select a person first.",
+                "Validation Error");
+            return false;
+        }
+
+        var isEdit = Mode == OperationMode.Edit;
+
+        if (!isEdit && string.IsNullOrWhiteSpace(Password))
+        {
+            _userNotifications.ShowWarning(
+                "Password is required.",
+                "Validation Error");
+            return false;
+        }
+
+        if ((!isEdit || !string.IsNullOrWhiteSpace(Password)) &&
+            Password != ConfirmPassword)
+        {
+            _userNotifications.ShowWarning(
+                "The entered passwords do not match.",
+                "Validation Error");
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task CreateUserAsync()
+    {
+        var request = new CreateUserRequest(
+            Person!.PersonId,
+            UserName.Trim(),
+            Password,
+            IsActive);
+
+        if (!await ValidateUsernameAsync(request.UserName))
+            return;
+
+        var result = await _usersApiClient.CreateAsync(request);
+
+        if (result.IsFailure)
+        {
+            _notifications.ShowFailure(result, "Save Failed");
+            SaveCompleted?.Invoke(false);
+            return;
+        }
+
+        UserId = result.Value;
+        UserIdDisplay = result.Value.ToString();
+        Mode = OperationMode.Edit;
+        SetPasswordVisibility(false);
+        Password = ConfirmPassword = string.Empty;
+
+        _userNotifications.ShowInfo(
+            $"The user account has been created successfully.\n\nUser ID: {UserId}",
+            "Operation Completed");
+
+        SaveCompleted?.Invoke(true);
+    }
+
+    private async Task UpdateUserAsync()
+    {
+        var request = new UpdateUserRequest(
+            Person!.PersonId,
+            UserName.Trim(),
+            IsActive);
+
+        if (!await ValidateUsernameAsync(request.UserName))
+            return;
+
+        var result = await _usersApiClient.UpdateAsync(UserId, request);
+
+        if (result.IsFailure)
+        {
+            _notifications.ShowFailure(result, "Save Failed");
+            SaveCompleted?.Invoke(false);
+            return;
+        }
+
+        Password = ConfirmPassword = string.Empty;
+
+        _userNotifications.ShowInfo(
+            "The user account has been updated successfully.",
+            "Operation Completed");
+
+        SaveCompleted?.Invoke(true);
+    }
+
+    private async Task<bool> ValidateUsernameAsync(string username)
+    {
+        var result = await _usersApiClient.GetByUsernameAsync(username);
+
+        if (result.IsFailure && result.StatusCode != HttpStatusCode.NotFound)
+        {
+            _notifications.ShowFailure(result, "Validation Error");
+            return false;
+        }
+
+        if (result.IsSuccess &&
+            result.Value is not null &&
+            (Mode == OperationMode.Add || result.Value.UserId != UserId))
+        {
+            _userNotifications.ShowWarning(
+                Mode == OperationMode.Add
+                    ? "This username is already taken. Please choose another."
+                    : "This username is already taken by another user. Please choose another.",
+                "Validation Error");
+            return false;
+        }
+
+        return true;
     }
 
     [RelayCommand]
@@ -521,6 +482,43 @@ public partial class AddEditUserViewModel : ObservableObject
             "Username format will be validated by the server.";
         UserNameValidationColor = "Gray";
     }
+
+    private void SetCanGoToNextTab(bool value)
+    {
+        CanGoToNextTab = value;
+        GoToNextTabCommand.NotifyCanExecuteChanged();
+    }
+
+    private void SetPasswordVisibility(bool visible)
+    {
+        PasswordVisibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        ConfirmPasswordVisibility = visible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static PersonResponse MapPerson(UserDetailsResponse details) =>
+        new()
+        {
+            PersonId = details.PersonId,
+            NationalNo = details.NationalNo,
+            FirstName = details.FirstName,
+            SecondName = details.SecondName,
+            ThirdName = details.ThirdName,
+            LastName = details.LastName,
+            FullName = string.Join(
+                " ",
+                new[] { details.FirstName, details.SecondName, details.ThirdName, details.LastName }
+                    .Where(x => !string.IsNullOrWhiteSpace(x))),
+            DateOfBirth = details.DateOfBirth,
+            Gender = Enum.TryParse<Gender>(details.Gender, out var gender)
+                ? gender
+                : default,
+            Address = details.Address,
+            Phone = details.Phone,
+            Email = details.Email,
+            NationalityCountryID = details.NationalityCountryID,
+            CountryName = details.CountryName,
+            ImagePath = details.ImagePath
+        };
 
     private static string GetExceptionMessage(Exception ex) =>
         ex.InnerException is null

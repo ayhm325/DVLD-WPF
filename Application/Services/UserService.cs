@@ -68,6 +68,26 @@ public sealed class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
+    public async Task<Result<UserDetailsDto>> GetUserDetailsAsync(int userId)
+    {
+        if (userId <= 0)
+        {
+            return Result<UserDetailsDto>.FromValidationFailure(
+                "User ID must be greater than zero.");
+        }
+
+        var user = await _userRepository
+            .GetUserDetailsByIdAsync(userId);
+
+        if (user is null)
+        {
+            return Result<UserDetailsDto>.FromNotFound(
+                $"User with ID {userId} was not found.");
+        }
+
+        return Result<UserDetailsDto>.Success(user);
+    }
+
     public async Task<Result<UserProfileDto>>
     GetCurrentProfileAsync(int userId)
     {

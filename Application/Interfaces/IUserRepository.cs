@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.DTOs.UserDTO;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
@@ -7,6 +8,8 @@ public interface IUserRepository
     Task<User?> GetUserByUserIdAsync(int id);
 
     Task<User?> GetUserProfileAsync(int userId);
+
+    Task<UserDetailsDto?> GetUserDetailsByIdAsync(int userId);
 
     Task<User?> GetUserByPersonIdAsync(int personId);
 

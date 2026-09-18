@@ -1,4 +1,5 @@
 ﻿using DVLD.Contracts.User;
+using DVLD.Contracts.Users;
 using Presentation.Services.Results;
 
 namespace Presentation.Services.Api;
@@ -11,6 +12,10 @@ public interface IUsersApiClient
     Task<ApiResult<UserResponse>> GetByIdAsync(
         int userId,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResult<UserDetailsResponse>> GetDetailsAsync(
+    int userId,
+    CancellationToken cancellationToken = default);
 
     Task<ApiResult<UserResponse>> GetByPersonIdAsync(
         int personId,

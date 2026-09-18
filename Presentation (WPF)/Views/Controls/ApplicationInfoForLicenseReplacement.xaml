@@ -81,11 +81,11 @@
 
                 <StackPanel Grid.Column="0" Margin="0,0,12,15">
                     <TextBlock Text="L.R.APPLICATION ID" Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ReplacementApplicationID, ElementName=Root}" Style="{StaticResource FieldValue}"/>
+                    <TextBlock Text="{Binding Application.ReplacementApplicationId, ElementName=Root}" Style="{StaticResource FieldValue}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,12,15">
                     <TextBlock Text="REPLACED LICENSE ID" Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.ReplacementLicenseID, ElementName=Root}" Style="{StaticResource FieldValue}"/>
+                    <TextBlock Text="{Binding Application.ReplacementLicenseId, ElementName=Root}" Style="{StaticResource FieldValue}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2" Margin="0,0,0,15">
                     <TextBlock Text="APPLICATION DATE" Style="{StaticResource FieldLabel}"/>
@@ -94,7 +94,7 @@
 
                 <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,5,12,0">
                     <TextBlock Text="OLD LICENSE ID" Style="{StaticResource FieldLabel}"/>
-                    <TextBlock Text="{Binding Application.OldLicenseID, ElementName=Root}" Style="{StaticResource FieldValue}"/>
+                    <TextBlock Text="{Binding Application.OldLicenseId, ElementName=Root}" Style="{StaticResource FieldValue}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,5,12,0">
                     <TextBlock Text="APPLICATION FEES" Style="{StaticResource FieldLabel}"/>
