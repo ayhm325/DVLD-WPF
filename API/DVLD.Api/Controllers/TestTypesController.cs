@@ -1,6 +1,6 @@
-﻿using Application.Common.Results;
-using Application.DTOs.TestTypeDTO;
+﻿using Application.DTOs.TestTypeDTO;
 using Application.Interfaces;
+using DVLD.Api.Results;
 using DVLD.Contracts.TestType;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,23 +16,29 @@ public sealed class TestTypesController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result = await service.GetAllTestTypesAsync();
+        var result =
+            await service.GetAllTestTypesAsync();
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(
+            result.Value!
+                .Select(MapToResponse)
+                .ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await service.GetTestTypeByIdAsync(id);
+        var result =
+            await service.GetTestTypeByIdAsync(id);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(MapToResponse(result.Value!));
+        return Ok(
+            MapToResponse(result.Value!));
     }
 
     [HttpPut("{id:int}")]
@@ -41,51 +47,33 @@ public sealed class TestTypesController(
         int id,
         [FromBody] UpdateTestTypeRequest request)
     {
-        var result = await service.UpdateTestTypeAsync(
-            id,
-            new TestTypeDto
-            {
-                TestTypeId = id,
-                TestTypeTitle = request.TestTypeTitle,
-                TestTypeDescription = request.TestTypeDescription,
-                TestTypeFees = request.TestTypeFees
-            });
+        var result =
+            await service.UpdateTestTypeAsync(
+                id,
+                new TestTypeDto
+                {
+                    TestTypeId = id,
+                    TestTypeTitle =
+                        request.TestTypeTitle,
+                    TestTypeDescription =
+                        request.TestTypeDescription,
+                    TestTypeFees =
+                        request.TestTypeFees
+                });
 
         return result.IsSuccess
             ? NoContent()
-            : HandleFailure(result);
+            : result.ToActionResult(this);
     }
 
     private static TestTypeResponse MapToResponse(
-        TestTypeDto dto) => new()
+        TestTypeDto dto)
+        => new()
         {
             TestTypeId = dto.TestTypeId,
             TestTypeTitle = dto.TestTypeTitle,
-            TestTypeDescription = dto.TestTypeDescription,
+            TestTypeDescription =
+                dto.TestTypeDescription,
             TestTypeFees = dto.TestTypeFees
-        };
-
-    private IActionResult HandleFailure<T>(Result<T> result) =>
-        result.ErrorType switch
-        {
-            ErrorType.NotFound => NotFound(new { error = result.Error }),
-            ErrorType.Conflict => Conflict(new { error = result.Error }),
-            ErrorType.Validation => BadRequest(new { error = result.Error }),
-            ErrorType.Forbidden => Forbid(),
-            _ => StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new { error = result.Error })
-        };
-
-    private IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
-        {
-            ErrorType.NotFound => NotFound(new { error = result.Error }),
-            ErrorType.Conflict => Conflict(new { error = result.Error }),
-            ErrorType.Validation => BadRequest(new { error = result.Error }),
-            ErrorType.Forbidden => Forbid(),
-            _ => StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new { error = result.Error })
         };
 }

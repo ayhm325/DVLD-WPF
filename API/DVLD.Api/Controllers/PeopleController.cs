@@ -1,6 +1,6 @@
-using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
+using DVLD.Api.Results;
 using ContractPerson = DVLD.Contracts.Person;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,61 +19,75 @@ public sealed class PeopleController(
         var result = await personService.GetAllPeopleAsync();
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(result.Value!.Select(ToListResponse).ToList());
+        return Ok(
+            result.Value!
+                .Select(ToListResponse)
+                .ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await personService.GetPersonByIdAsync(id);
+        var result =
+            await personService.GetPersonByIdAsync(id);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(ToResponse(result.Value!));
+        return Ok(
+            ToResponse(result.Value!));
     }
 
     [HttpGet("national/{nationalNo}")]
-    public async Task<IActionResult> GetByNationalNo(string nationalNo)
+    public async Task<IActionResult> GetByNationalNo(
+        string nationalNo)
     {
         var result =
-            await personService.GetPersonByNationalNoAsync(nationalNo);
+            await personService.GetPersonByNationalNoAsync(
+                nationalNo);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(ToResponse(result.Value!));
+        return Ok(
+            ToResponse(result.Value!));
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] ContractPerson.CreatePersonRequest request)
+        [FromBody]
+        ContractPerson.CreatePersonRequest request)
     {
-        var result = await personService.AddPersonAsync(
-            new PersonCreateDto
-            {
-                NationalNo = request.NationalNo,
-                FirstName = request.FirstName,
-                SecondName = request.SecondName,
-                ThirdName = request.ThirdName,
-                LastName = request.LastName,
-                DateOfBirth = request.DateOfBirth,
-                Gender = (int)request.Gender,
-                Address = request.Address,
-                Phone = request.Phone,
-                Email = request.Email,
-                NationalityCountryID = request.NationalityCountryID,
-                ImagePath = request.ImagePath
-            });
+        var result =
+            await personService.AddPersonAsync(
+                new PersonCreateDto
+                {
+                    NationalNo = request.NationalNo,
+                    FirstName = request.FirstName,
+                    SecondName = request.SecondName,
+                    ThirdName = request.ThirdName,
+                    LastName = request.LastName,
+                    DateOfBirth = request.DateOfBirth,
+                    Gender = (int)request.Gender,
+                    Address = request.Address,
+                    Phone = request.Phone,
+                    Email = request.Email,
+                    NationalityCountryID =
+                        request.NationalityCountryID,
+                    ImagePath = request.ImagePath
+                });
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
         return CreatedAtAction(
             nameof(GetById),
-            new { id = result.Value },
+            new
+            {
+                id = result.Value
+            },
             new ContractPerson.CreatePersonResponse
             {
                 PersonId = result.Value
@@ -83,43 +97,48 @@ public sealed class PeopleController(
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] ContractPerson.UpdatePersonRequest request)
+        [FromBody]
+        ContractPerson.UpdatePersonRequest request)
     {
-        var result = await personService.UpdatePersonAsync(
-            id,
-            new PersonUpdateDto
-            {
-                NationalNo = request.NationalNo,
-                FirstName = request.FirstName,
-                SecondName = request.SecondName,
-                ThirdName = request.ThirdName,
-                LastName = request.LastName,
-                DateOfBirth = request.DateOfBirth,
-                Gender = (int)request.Gender,
-                Address = request.Address,
-                Phone = request.Phone,
-                Email = request.Email,
-                NationalityCountryID = request.NationalityCountryID,
-                ImagePath = request.ImagePath
-            });
+        var result =
+            await personService.UpdatePersonAsync(
+                id,
+                new PersonUpdateDto
+                {
+                    NationalNo = request.NationalNo,
+                    FirstName = request.FirstName,
+                    SecondName = request.SecondName,
+                    ThirdName = request.ThirdName,
+                    LastName = request.LastName,
+                    DateOfBirth = request.DateOfBirth,
+                    Gender = (int)request.Gender,
+                    Address = request.Address,
+                    Phone = request.Phone,
+                    Email = request.Email,
+                    NationalityCountryID =
+                        request.NationalityCountryID,
+                    ImagePath = request.ImagePath
+                });
 
         return result.IsSuccess
             ? NoContent()
-            : HandleFailure(result);
+            : result.ToActionResult(this);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await personService.DeletePersonAsync(id);
+        var result =
+            await personService.DeletePersonAsync(id);
 
         return result.IsSuccess
             ? NoContent()
-            : HandleFailure(result);
+            : result.ToActionResult(this);
     }
 
     private static ContractPerson.PersonResponse ToResponse(
-        PersonDto dto) => new()
+        PersonDto dto)
+        => new()
         {
             PersonId = dto.PersonId,
             NationalNo = dto.NationalNo,
@@ -133,46 +152,24 @@ public sealed class PeopleController(
             Address = dto.Address,
             Phone = dto.Phone,
             Email = dto.Email,
-            NationalityCountryID = dto.NationalityCountryID,
+            NationalityCountryID =
+                dto.NationalityCountryID,
             CountryName = dto.CountryName,
             ImagePath = dto.ImagePath
         };
 
-    private static IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
+    private static ContractPerson.PersonListResponse
+        ToListResponse(PersonDto dto)
+        => new()
         {
-            ErrorType.Validation => new BadRequestObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.NotFound => new NotFoundObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Conflict => new ConflictObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Forbidden => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            },
-
-            _ => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            }
+            PersonId = dto.PersonId,
+            NationalNo = dto.NationalNo,
+            FullName = dto.FullName,
+            DateOfBirth = dto.DateOfBirth,
+            Gender = (ContractPerson.Gender)dto.Gender,
+            Address = dto.Address,
+            Phone = dto.Phone,
+            Email = dto.Email,
+            CountryName = dto.CountryName
         };
-
-    private static ContractPerson.PersonListResponse ToListResponse(PersonDto dto) => new()
-    {
-        PersonId = dto.PersonId,
-        NationalNo = dto.NationalNo,
-        FullName = dto.FullName,
-        DateOfBirth = dto.DateOfBirth,
-        Gender = (ContractPerson.Gender)dto.Gender,
-        Address = dto.Address,
-        Phone = dto.Phone,
-        Email = dto.Email,
-        CountryName = dto.CountryName
-    };
 }

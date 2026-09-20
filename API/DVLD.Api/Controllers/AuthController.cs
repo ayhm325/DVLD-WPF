@@ -2,6 +2,7 @@
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
+using DVLD.Api.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ContractAuth = DVLD.Contracts.Auth;
@@ -21,16 +22,22 @@ public sealed class AuthController(
     public async Task<IActionResult> Login(
         [FromBody] ContractAuth.LoginRequest request)
     {
-        var result = await authService.LoginAsync(new LoginRequestDto
-        {
-            UserName = request.UserName,
-            Password = request.Password
-        });
+        var result = await authService.LoginAsync(
+            new LoginRequestDto
+            {
+                UserName = request.UserName,
+                Password = request.Password
+            });
 
         if (result.IsFailure)
+        {
             return result.ErrorType == ErrorType.Validation
                 ? BadRequest(new { error = result.Error })
-                : Unauthorized(new { error = "Invalid username or password." });
+                : Unauthorized(new
+                {
+                    error = "Invalid username or password."
+                });
+        }
 
         var response = result.Value!;
 
@@ -47,74 +54,65 @@ public sealed class AuthController(
     }
 
     [HttpGet("me")]
-    public IActionResult Me() => Ok(new
-    {
-        userId = currentUserService.UserId,
-        username = currentUserService.Username,
-        fullName = currentUserService.FullName,
-        role = currentUserService.Role.ToString()
-    });
+    public IActionResult Me()
+        => Ok(new
+        {
+            userId = currentUserService.UserId,
+            username = currentUserService.Username,
+            fullName = currentUserService.FullName,
+            role = currentUserService.Role.ToString()
+        });
 
     [HttpGet("profile")]
     public async Task<IActionResult> Profile()
     {
-        var result = await userService.GetCurrentProfileAsync(
-            currentUserService.UserId);
+        var result =
+            await userService.GetCurrentProfileAsync(
+                currentUserService.UserId);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
         var profile = result.Value!;
 
-        return Ok(new DVLD.Contracts.User.UserProfileResponse(
-            profile.UserId,
-            profile.PersonId,
-            profile.UserName,
-            profile.IsActive,
-            profile.FullName,
-            profile.NationalNo,
-            profile.FirstName,
-            profile.SecondName,
-            profile.ThirdName,
-            profile.LastName,
-            profile.DateOfBirth,
-            profile.Gender,
-            profile.Address,
-            profile.Phone,
-            profile.Email,
-            profile.NationalityCountryID,
-            profile.CountryName,
-            profile.ImagePath));
+        return Ok(
+            new DVLD.Contracts.User.UserProfileResponse(
+                profile.UserId,
+                profile.PersonId,
+                profile.UserName,
+                profile.IsActive,
+                profile.FullName,
+                profile.NationalNo,
+                profile.FirstName,
+                profile.SecondName,
+                profile.ThirdName,
+                profile.LastName,
+                profile.DateOfBirth,
+                profile.Gender,
+                profile.Address,
+                profile.Phone,
+                profile.Email,
+                profile.NationalityCountryID,
+                profile.CountryName,
+                profile.ImagePath));
     }
 
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword(
-        [FromBody] ContractAuth.ChangePasswordRequest request)
+        [FromBody]
+        ContractAuth.ChangePasswordRequest request)
     {
-        var result = await userService.ChangePasswordAsync(
-            currentUserService.UserId,
-            new ChangePasswordDto
-            {
-                CurrentPassword = request.CurrentPassword,
-                NewPassword = request.NewPassword
-            });
+        var result =
+            await userService.ChangePasswordAsync(
+                currentUserService.UserId,
+                new ChangePasswordDto
+                {
+                    CurrentPassword = request.CurrentPassword,
+                    NewPassword = request.NewPassword
+                });
 
-        return result.IsSuccess ? NoContent() : HandleFailure(result);
+        return result.IsSuccess
+            ? NoContent()
+            : result.ToActionResult(this);
     }
-
-    private static IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
-        {
-            ErrorType.Validation => new BadRequestObjectResult(new { error = result.Error }),
-            ErrorType.NotFound => new NotFoundObjectResult(new { error = result.Error }),
-            ErrorType.Conflict => new ConflictObjectResult(new { error = result.Error }),
-            ErrorType.Forbidden => new ObjectResult(new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            },
-            _ => new ObjectResult(new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            }
-        };
 }

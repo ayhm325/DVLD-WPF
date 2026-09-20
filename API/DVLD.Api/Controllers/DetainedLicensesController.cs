@@ -1,6 +1,6 @@
-﻿using Application.Common.Results;
-using Application.DTOs.DetainedLicenseDTO;
+﻿using Application.DTOs.DetainedLicenseDTO;
 using Application.Interfaces;
+using DVLD.Api.Results;
 using DVLD.Contracts.DetainedLicense;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,77 +16,117 @@ public sealed class DetainedLicensesController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result = await service.GetAllAsync();
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetAllAsync();
 
-        return result.Value is null
-            ? ServerError("Detained license service returned no data.")
-            : Ok(result.Value.Select(MapToResponse).ToList());
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        if (result.Value is null)
+            throw new InvalidOperationException(
+                "Detained license service returned a successful result without data.");
+
+        return Ok(
+            result.Value
+                .Select(MapToResponse)
+                .ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await service.GetByIdAsync(id);
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetByIdAsync(id);
 
-        return result.Value is null
-            ? ServerError("Detained license service returned no data.")
-            : Ok(MapToResponse(result.Value));
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        if (result.Value is null)
+            throw new InvalidOperationException(
+                "Detained license service returned a successful result without data.");
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpGet("license/{licenseId:int}/active")]
-    public async Task<IActionResult> GetActiveByLicenseId(int licenseId)
+    public async Task<IActionResult> GetActiveByLicenseId(
+        int licenseId)
     {
-        var result = await service.GetActiveDetainByLicenseIdAsync(licenseId);
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetActiveDetainByLicenseIdAsync(
+                licenseId);
 
-        return result.Value is null
-            ? ServerError("Detained license service returned no data.")
-            : Ok(MapToResponse(result.Value));
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        if (result.Value is null)
+            throw new InvalidOperationException(
+                "Detained license service returned a successful result without data.");
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpGet("license/{licenseId:int}/detained")]
-    public async Task<IActionResult> IsDetained(int licenseId)
+    public async Task<IActionResult> IsDetained(
+        int licenseId)
     {
-        var result = await service.IsLicenseDetainedAsync(licenseId);
-        return Ok(new { detained = result });
+        var result =
+            await service.IsLicenseDetainedAsync(
+                licenseId);
+
+        return Ok(
+            new
+            {
+                detained = result
+            });
     }
 
     [HttpPost]
     public async Task<IActionResult> Detain(
-        [FromBody] CreateDetainedLicenseRequest request)
+        [FromBody]
+        CreateDetainedLicenseRequest request)
     {
-        var result = await service.AddAsync(new CreateDetainedLicenseDto
-        {
-            LicenseID = request.LicenseId,
-            FineFees = request.FineFees
-        });
+        var result =
+            await service.AddAsync(
+                new CreateDetainedLicenseDto
+                {
+                    LicenseID = request.LicenseId,
+                    FineFees = request.FineFees
+                });
 
-        if (result.IsFailure) return HandleFailure(result);
+        if (result.IsFailure)
+            return result.ToActionResult(this);
 
-        return result.Value is null
-            ? ServerError("Detained license service returned no data.")
-            : Ok(MapToResponse(result.Value));
+        if (result.Value is null)
+            throw new InvalidOperationException(
+                "Detained license service returned a successful result without data.");
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpPost("release")]
     public async Task<IActionResult> Release(
-        [FromBody] ReleaseDetainedLicenseRequest request)
+        [FromBody]
+        ReleaseDetainedLicenseRequest request)
     {
-        var result = await service.ReleaseAsync(
-            new ReleaseDetainedLicenseDto
-            {
-                DetainID = request.DetainId
-            });
+        var result =
+            await service.ReleaseAsync(
+                new ReleaseDetainedLicenseDto
+                {
+                    DetainID = request.DetainId
+                });
 
         return result.IsSuccess
             ? NoContent()
-            : HandleFailure(result);
+            : result.ToActionResult(this);
     }
 
     private static DetainedLicenseResponse MapToResponse(
-        DetainedLicenseDto dto) => new()
+        DetainedLicenseDto dto)
+        => new()
         {
             DetainId = dto.DetainID,
             LicenseId = dto.LicenseID,
@@ -100,33 +140,7 @@ public sealed class DetainedLicensesController(
             IsReleased = dto.IsReleased,
             ReleaseDate = dto.ReleaseDate,
             ReleasedByUserId = dto.ReleasedByUserID,
-            ReleaseApplicationId = dto.ReleaseApplicationID
-        };
-
-    private static IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
-        {
-            ErrorType.Validation => new BadRequestObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.NotFound => new NotFoundObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Conflict => new ConflictObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Forbidden => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            },
-
-            _ => ServerError(result.Error)
-        };
-
-    private static IActionResult ServerError(string error) =>
-        new ObjectResult(new { error })
-        {
-            StatusCode = StatusCodes.Status500InternalServerError
+            ReleaseApplicationId =
+                dto.ReleaseApplicationID
         };
 }

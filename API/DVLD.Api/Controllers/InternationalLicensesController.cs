@@ -1,7 +1,7 @@
-﻿using Application.Common.Results;
-using Application.DTOs.InternationalLicenseDTO;
+﻿using Application.DTOs.InternationalLicenseDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
+using DVLD.Api.Results;
 using DVLD.Contracts.InternationalLicense;
 using DVLD.Contracts.License;
 using Microsoft.AspNetCore.Authorization;
@@ -18,163 +18,271 @@ public sealed class InternationalLicensesController(
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result = await service.GetAllAsync();
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetAllAsync();
 
-        return Ok(result.Value!.Select(MapToListResponse).ToList());
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        return Ok(
+            result.Value!
+                .Select(MapToListResponse)
+                .ToList());
     }
 
     [HttpGet("{internationalLicenseId:int}")]
-    public async Task<IActionResult> GetById(int internationalLicenseId)
+    public async Task<IActionResult> GetById(
+        int internationalLicenseId)
     {
-        var result = await service.GetByIdAsync(internationalLicenseId);
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetByIdAsync(
+                internationalLicenseId);
 
-        return result.Value is null
-            ? NotFound(new { error = "International license not found." })
-            : Ok(MapToResponse(result.Value));
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        if (result.Value is null)
+            throw new InvalidOperationException(
+                "International license service returned a successful result without data.");
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpGet("driver/{driverId:int}")]
-    public async Task<IActionResult> GetByDriverId(int driverId)
+    public async Task<IActionResult> GetByDriverId(
+        int driverId)
     {
-        var result = await service.GetByDriverIdAsync(driverId);
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetByDriverIdAsync(driverId);
 
-        return Ok(result.Value!.Select(MapToListResponse).ToList());
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        return Ok(
+            result.Value!
+                .Select(MapToListResponse)
+                .ToList());
     }
 
     [HttpGet("application/{applicationId:int}")]
-    public async Task<IActionResult> GetByApplicationId(int applicationId)
+    public async Task<IActionResult> GetByApplicationId(
+        int applicationId)
     {
-        var result = await service.GetByApplicationIdAsync(applicationId);
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetByApplicationIdAsync(
+                applicationId);
 
-        return result.Value is null
-            ? NotFound(new { error = "International license not found." })
-            : Ok(MapToResponse(result.Value));
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        if (result.Value is null)
+            throw new InvalidOperationException(
+                "International license service returned a successful result without data.");
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpGet("license/{localLicenseId:int}")]
-    public async Task<IActionResult> GetByLocalLicenseId(int localLicenseId)
+    public async Task<IActionResult> GetByLocalLicenseId(
+        int localLicenseId)
     {
-        var result = await service.GetByLocalLicenseIdAsync(localLicenseId);
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetByLocalLicenseIdAsync(
+                localLicenseId);
 
-        return Ok(result.Value!.Select(MapToListResponse).ToList());
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        return Ok(
+            result.Value!
+                .Select(MapToListResponse)
+                .ToList());
     }
 
     [HttpGet("license/{licenseId:int}/info")]
-    public async Task<IActionResult> GetLocalLicenseInfo(int licenseId)
+    public async Task<IActionResult> GetLocalLicenseInfo(
+        int licenseId)
     {
-        var result = await service.GetLocalLicenseInfoAsync(licenseId);
-        if (result.IsFailure) return HandleFailure(result);
+        var result =
+            await service.GetLocalLicenseInfoAsync(
+                licenseId);
 
-        return result.Value is null
-            ? NotFound(new { error = "License not found." })
-            : Ok(MapToResponse(result.Value));
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        if (result.Value is null)
+            throw new InvalidOperationException(
+                "License service returned a successful result without data.");
+
+        return Ok(
+            MapToResponse(result.Value));
     }
 
     [HttpPost]
     public async Task<IActionResult> Issue(
-        [FromBody] IssueInternationalLicenseRequest request)
+        [FromBody]
+        IssueInternationalLicenseRequest request)
     {
-        var result = await service.IssueInternationalLicenseAsync(
-            request.LocalLicenseId);
+        var result =
+            await service.IssueInternationalLicenseAsync(
+                request.LocalLicenseId);
 
-        if (result.IsFailure) return HandleFailure(result);
+        if (result.IsFailure)
+            return result.ToActionResult(this);
 
         var internationalLicense =
-            await service.GetByIdAsync(result.Value);
+            await service.GetByIdAsync(
+                result.Value);
 
         if (internationalLicense.IsFailure)
-            return HandleFailure(internationalLicense);
+            return internationalLicense.ToActionResult(this);
 
-        return internationalLicense.Value is null
-            ? NotFound(new
-            {
-                error = "International license was issued but could not be retrieved."
-            })
-            : Ok(MapToResponse(internationalLicense.Value));
+        if (internationalLicense.Value is null)
+            throw new InvalidOperationException(
+                "International license was issued successfully but could not be retrieved.");
+
+        return Ok(
+            MapToResponse(
+                internationalLicense.Value));
     }
 
-    private static InternationalLicenseResponse MapToResponse(
-        InternationalDto dto) => new()
+    private static InternationalLicenseResponse
+        MapToResponse(
+            InternationalDto dto)
+        => new()
         {
-            InternationalLicenseId = dto.InternationalLicenseID,
-            ApplicationId = dto.ApplicationID,
-            DriverId = dto.DriverID,
-            IssuedUsingLocalLicenseId = dto.IssuedUsingLocalLicenseID,
-            IssueDate = dto.IssueDate,
-            ExpirationDate = dto.ExpirationDate,
-            IsActive = dto.IsActive,
-            CreatedByUserId = dto.CreatedByUserID,
-            PersonId = dto.PersonID,
-            FullName = dto.FullName,
-            DateOfBirth = dto.DateOfBirth,
-            ImagePath = dto.ImagePath,
-            NationalNo = dto.NationalNo,
-            Gender = dto.Gender,
-            Fees = dto.Fees,
-            CreatedByUserName = dto.CreatedByUserName
+            InternationalLicenseId =
+                dto.InternationalLicenseID,
+
+            ApplicationId =
+                dto.ApplicationID,
+
+            DriverId =
+                dto.DriverID,
+
+            IssuedUsingLocalLicenseId =
+                dto.IssuedUsingLocalLicenseID,
+
+            IssueDate =
+                dto.IssueDate,
+
+            ExpirationDate =
+                dto.ExpirationDate,
+
+            IsActive =
+                dto.IsActive,
+
+            CreatedByUserId =
+                dto.CreatedByUserID,
+
+            PersonId =
+                dto.PersonID,
+
+            FullName =
+                dto.FullName,
+
+            DateOfBirth =
+                dto.DateOfBirth,
+
+            ImagePath =
+                dto.ImagePath,
+
+            NationalNo =
+                dto.NationalNo,
+
+            Gender =
+                dto.Gender,
+
+            Fees =
+                dto.Fees,
+
+            CreatedByUserName =
+                dto.CreatedByUserName
         };
 
-    private static DriverLicenseInfoResponse MapToResponse(
-        DriverLicenseInfoDto dto) => new()
+    private static DriverLicenseInfoResponse
+        MapToResponse(
+            DriverLicenseInfoDto dto)
+        => new()
         {
-            LicenseId = dto.LicenseId,
-            LicenseClass = dto.LicenseClass,
-            IssueDate = dto.IssueDate,
-            ExpirationDate = dto.ExpirationDate,
-            IsActive = dto.IsActive,
-            IsDetained = dto.IsDetained,
-            IssueReason = dto.IssueReason,
-            Notes = dto.Notes,
-            LicenseClassFees = dto.LicenseClassFees,
-            DriverId = dto.DriverId,
-            PersonId = dto.PersonID,
-            FullName = dto.FullName,
-            NationalNo = dto.NationalNo,
-            DateOfBirth = dto.DateOfBirth,
-            Gender = dto.Gender,
-            ImagePath = dto.ImagePath
+            LicenseId =
+                dto.LicenseId,
+
+            LicenseClass =
+                dto.LicenseClass,
+
+            IssueDate =
+                dto.IssueDate,
+
+            ExpirationDate =
+                dto.ExpirationDate,
+
+            IsActive =
+                dto.IsActive,
+
+            IsDetained =
+                dto.IsDetained,
+
+            IssueReason =
+                dto.IssueReason,
+
+            Notes =
+                dto.Notes,
+
+            LicenseClassFees =
+                dto.LicenseClassFees,
+
+            DriverId =
+                dto.DriverId,
+
+            PersonId =
+                dto.PersonID,
+
+            FullName =
+                dto.FullName,
+
+            NationalNo =
+                dto.NationalNo,
+
+            DateOfBirth =
+                dto.DateOfBirth,
+
+            Gender =
+                dto.Gender,
+
+            ImagePath =
+                dto.ImagePath
         };
 
-    private static IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
+    private static InternationalLicenseListResponse
+        MapToListResponse(
+            InternationalDto dto)
+        => new()
         {
-            ErrorType.Validation => new BadRequestObjectResult(
-                new { error = result.Error }),
+            InternationalLicenseId =
+                dto.InternationalLicenseID,
 
-            ErrorType.NotFound => new NotFoundObjectResult(
-                new { error = result.Error }),
+            ApplicationId =
+                dto.ApplicationID,
 
-            ErrorType.Conflict => new ConflictObjectResult(
-                new { error = result.Error }),
+            DriverId =
+                dto.DriverID,
 
-            ErrorType.Forbidden => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            },
+            IssuedUsingLocalLicenseId =
+                dto.IssuedUsingLocalLicenseID,
 
-            _ => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            }
+            PersonId =
+                dto.PersonID,
+
+            IssueDate =
+                dto.IssueDate,
+
+            ExpirationDate =
+                dto.ExpirationDate,
+
+            IsActive =
+                dto.IsActive
         };
-
-    private static InternationalLicenseListResponse MapToListResponse(
-    InternationalDto dto) => new()
-    {
-        InternationalLicenseId = dto.InternationalLicenseID,
-        ApplicationId = dto.ApplicationID,
-        DriverId = dto.DriverID,
-        IssuedUsingLocalLicenseId = dto.IssuedUsingLocalLicenseID,
-        PersonId = dto.PersonID,
-        IssueDate = dto.IssueDate,
-        ExpirationDate = dto.ExpirationDate,
-        IsActive = dto.IsActive
-    };
 }

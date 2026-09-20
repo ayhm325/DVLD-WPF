@@ -1,7 +1,7 @@
-﻿using Application.Common.Results;
-using Application.DTOs.TestAppointmentDTO;
+﻿using Application.DTOs.TestAppointmentDTO;
 using Application.DTOs.TestDTO;
 using Application.Interfaces;
+using DVLD.Api.Results;
 using DVLD.Contracts.Test;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +20,12 @@ public sealed class TestsController(
         var result = await service.GetAllAsync();
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(
+            result.Value!
+                .Select(MapToResponse)
+                .ToList());
     }
 
     [HttpGet("{id:int}")]
@@ -31,32 +34,42 @@ public sealed class TestsController(
         var result = await service.GetByIdAsync(id);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(MapToResponse(result.Value!));
+        return Ok(
+            MapToResponse(result.Value!));
     }
 
     [HttpGet("appointment/{appointmentId:int}")]
-    public async Task<IActionResult> GetByAppointmentId(int appointmentId)
+    public async Task<IActionResult> GetByAppointmentId(
+        int appointmentId)
     {
         var result =
-            await service.GetByTestAppointmentIdAsync(appointmentId);
+            await service.GetByTestAppointmentIdAsync(
+                appointmentId);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(
+            result.Value!
+                .Select(MapToResponse)
+                .ToList());
     }
 
     [HttpGet("created-by/{userId:int}")]
     public async Task<IActionResult> GetByUserId(int userId)
     {
-        var result = await service.GetByUserIdAsync(userId);
+        var result =
+            await service.GetByUserIdAsync(userId);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(result.Value!.Select(MapToResponse).ToList());
+        return Ok(
+            result.Value!
+                .Select(MapToResponse)
+                .ToList());
     }
 
     [HttpPost]
@@ -66,18 +79,24 @@ public sealed class TestsController(
         var result = await service.AddAsync(
             new SaveTestResultDto
             {
-                TestAppointmentID = request.TestAppointmentId,
-                TestResult = request.TestResult,
-                Notes = request.Notes
+                TestAppointmentID =
+                    request.TestAppointmentId,
+
+                TestResult =
+                    request.TestResult,
+
+                Notes =
+                    request.Notes
             });
 
         return result.IsSuccess
             ? Ok(result.Value)
-            : HandleFailure(result);
+            : result.ToActionResult(this);
     }
 
     private static TestResponse MapToResponse(
-        TestDto dto) => new(
+        TestDto dto)
+        => new(
             TestId: dto.TestID,
             TestAppointmentId: dto.TestAppointmentID,
             TestResult: dto.TestResult,
@@ -86,29 +105,4 @@ public sealed class TestsController(
             CreatedByUserName: dto.CreatedByUserName,
             TestTypeName: dto.TestTypeName,
             AppointmentDate: dto.AppointmentDate);
-
-    private static IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
-        {
-            ErrorType.Validation => new BadRequestObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.NotFound => new NotFoundObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Conflict => new ConflictObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Forbidden => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            },
-
-            _ => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            }
-        };
 }

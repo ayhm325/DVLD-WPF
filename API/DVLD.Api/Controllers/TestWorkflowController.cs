@@ -1,5 +1,5 @@
-﻿using Application.Common.Results;
-using Application.Interfaces;
+﻿using Application.Interfaces;
+using DVLD.Api.Results;
 using DVLD.Contracts.TestAppointment;
 using DVLD.Contracts.TestWorkflow;
 using Domain.Enums;
@@ -19,101 +19,75 @@ public sealed class TestWorkflowController(
         [FromQuery] int localAppId,
         [FromQuery] TestType testType)
     {
-        var result = await service.CanScheduleTestAsync(
-            localAppId,
-            ToDomainTestType(testType));
+        var result =
+            await service.CanScheduleTestAsync(
+                localAppId,
+                ToDomainTestType(testType));
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(new TestWorkflowResponse(
-            Allowed: true,
-            Error: null,
-            ErrorType: null,
-            NextTestType: null));
+        return Ok(
+            new TestWorkflowResponse(
+                Allowed: true,
+                Error: null,
+                ErrorType: null,
+                NextTestType: null));
     }
 
     [HttpGet("next-test/{localAppId:int}")]
-    public async Task<IActionResult> GetNextTest(int localAppId)
+    public async Task<IActionResult> GetNextTest(
+        int localAppId)
     {
-        var result = await service.GetNextTestTypeAsync(localAppId);
+        var result =
+            await service.GetNextTestTypeAsync(
+                localAppId);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(new TestWorkflowResponse(
-            Allowed: true,
-            Error: null,
-            ErrorType: null,
-            NextTestType: (int)result.Value));
+        return Ok(
+            new TestWorkflowResponse(
+                Allowed: true,
+                Error: null,
+                ErrorType: null,
+                NextTestType: (int)result.Value));
     }
 
     [HttpGet("can-take/{appointmentId:int}")]
-    public async Task<IActionResult> CanTake(int appointmentId)
+    public async Task<IActionResult> CanTake(
+        int appointmentId)
     {
-        var result = await service.CanTakeTestAsync(appointmentId);
+        var result =
+            await service.CanTakeTestAsync(
+                appointmentId);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(new TestWorkflowResponse(
-            Allowed: true,
-            Error: null,
-            ErrorType: null,
-            NextTestType: null));
+        return Ok(
+            new TestWorkflowResponse(
+                Allowed: true,
+                Error: null,
+                ErrorType: null,
+                NextTestType: null));
     }
 
-    private static TestTypeEnum ToDomainTestType(TestType testType) =>
-        testType switch
+    private static TestTypeEnum ToDomainTestType(
+        TestType testType)
+        => testType switch
         {
-            TestType.Theory => TestTypeEnum.Theory,
-            TestType.Written => TestTypeEnum.Written,
-            TestType.Practical => TestTypeEnum.Practical,
-            _ => throw new ArgumentOutOfRangeException(nameof(testType))
-        };
+            TestType.Theory =>
+                TestTypeEnum.Theory,
 
-    private static IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
-        {
-            ErrorType.Validation => new BadRequestObjectResult(
-                new TestWorkflowResponse(
-                    Allowed: false,
-                    Error: result.Error,
-                    ErrorType: nameof(ErrorType.Validation),
-                    NextTestType: null)),
+            TestType.Written =>
+                TestTypeEnum.Written,
 
-            ErrorType.NotFound => new NotFoundObjectResult(
-                new TestWorkflowResponse(
-                    Allowed: false,
-                    Error: result.Error,
-                    ErrorType: nameof(ErrorType.NotFound),
-                    NextTestType: null)),
+            TestType.Practical =>
+                TestTypeEnum.Practical,
 
-            ErrorType.Conflict => new ConflictObjectResult(
-                new TestWorkflowResponse(
-                    Allowed: false,
-                    Error: result.Error,
-                    ErrorType: nameof(ErrorType.Conflict),
-                    NextTestType: null)),
-
-            ErrorType.Forbidden => new ObjectResult(
-                new TestWorkflowResponse(
-                    Allowed: false,
-                    Error: result.Error,
-                    ErrorType: nameof(ErrorType.Forbidden),
-                    NextTestType: null))
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            },
-
-            _ => new ObjectResult(
-                new TestWorkflowResponse(
-                    Allowed: false,
-                    Error: result.Error,
-                    ErrorType: nameof(ErrorType.Failure),
-                    NextTestType: null))
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            }
+            _ =>
+                throw new ArgumentOutOfRangeException(
+                    nameof(testType))
         };
 }

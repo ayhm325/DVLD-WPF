@@ -1,5 +1,5 @@
-﻿using Application.Common.Results;
-using Application.Interfaces;
+﻿using Application.Interfaces;
+using DVLD.Api.Results;
 using DVLD.Contracts.LicenseRenewal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,41 +16,18 @@ public sealed class LicenseRenewalController(
     public async Task<IActionResult> Renew(
         [FromBody] RenewLicenseRequest request)
     {
-        var result = await service.RenewLicenseAsync(
-            request.OldLicenseId,
-            request.Notes);
+        var result =
+            await service.RenewLicenseAsync(
+                request.OldLicenseId,
+                request.Notes);
 
         if (result.IsFailure)
-            return HandleFailure(result);
+            return result.ToActionResult(this);
 
-        return Ok(new RenewLicenseResponse
-        {
-            LicenseId = result.Value
-        });
+        return Ok(
+            new RenewLicenseResponse
+            {
+                LicenseId = result.Value
+            });
     }
-
-    private static IActionResult HandleFailure(Result result) =>
-        result.ErrorType switch
-        {
-            ErrorType.Validation => new BadRequestObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.NotFound => new NotFoundObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Conflict => new ConflictObjectResult(
-                new { error = result.Error }),
-
-            ErrorType.Forbidden => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status403Forbidden
-            },
-
-            _ => new ObjectResult(
-                new { error = result.Error })
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            }
-        };
 }
