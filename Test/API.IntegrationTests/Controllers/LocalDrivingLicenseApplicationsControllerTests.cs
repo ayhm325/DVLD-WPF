@@ -65,7 +65,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
                 dto
                 },
                 PageNumber = 1,
-                PageSize = 20,
+                PageSize = 10,
                 TotalCount = 1
             };
 
@@ -95,7 +95,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         Assert.Single(result.Items);
 
         Assert.Equal(1, result.PageNumber);
-        Assert.Equal(20, result.PageSize);
+        Assert.Equal(10, result.PageSize);
         Assert.Equal(1, result.TotalCount);
         Assert.Equal(1, result.TotalPages);
         Assert.False(result.HasPreviousPage);
