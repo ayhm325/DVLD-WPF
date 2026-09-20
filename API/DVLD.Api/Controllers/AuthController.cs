@@ -2,9 +2,13 @@
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
+
 using DVLD.Api.Results;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+
 using ContractAuth = DVLD.Contracts.Auth;
 
 namespace DVLD.Api.Controllers;
@@ -19,6 +23,7 @@ public sealed class AuthController(
 {
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("LoginRateLimit")]
     public async Task<IActionResult> Login(
         [FromBody] ContractAuth.LoginRequest request)
     {

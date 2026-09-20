@@ -59,11 +59,13 @@ public sealed class AuthControllerTests
                 CountryName = "Jordan"
             }));
 
-        var response = await Authenticated(factory, 10).GetAsync("/api/Auth/profile");
+        var response = await Authenticated(factory, 10)
+            .GetAsync("/api/Auth/profile");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var body = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
+        var body = await response.Content
+            .ReadFromJsonAsync<UserProfileResponse>();
 
         Assert.NotNull(body);
         Assert.Equal(10, body.UserId);
@@ -89,9 +91,11 @@ public sealed class AuthControllerTests
 
         factory.UserServiceMock
             .Setup(x => x.GetCurrentProfileAsync(10))
-            .ReturnsAsync(Result<UserProfileDto>.FromNotFound("User was not found."));
+            .ReturnsAsync(
+                Result<UserProfileDto>.FromNotFound("User was not found."));
 
-        var response = await Authenticated(factory, 10).GetAsync("/api/Auth/profile");
+        var response = await Authenticated(factory, 10)
+            .GetAsync("/api/Auth/profile");
 
         await AssertProblemDetailsAsync(
             response,
@@ -106,7 +110,8 @@ public sealed class AuthControllerTests
         await using var factory = new ApiWebApplicationFactory();
         SetupCurrentUser(factory, 10);
 
-        var response = await Authenticated(factory, 10).GetAsync("/api/Auth/me");
+        var response = await Authenticated(factory, 10)
+            .GetAsync("/api/Auth/me");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -128,7 +133,8 @@ public sealed class AuthControllerTests
 
         factory.AuthServiceMock
             .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
-            .ReturnsAsync(Result<LoginResponseDto>.FromValidationFailure(error));
+            .ReturnsAsync(
+                Result<LoginResponseDto>.FromValidationFailure(error));
 
         var response = await factory.CreateClient().PostAsJsonAsync(
             "/api/Auth/login",
@@ -145,14 +151,17 @@ public sealed class AuthControllerTests
 
         factory.AuthServiceMock
             .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
-            .ReturnsAsync(Result<LoginResponseDto>.FromFailure("internal failure"));
+            .ReturnsAsync(
+                Result<LoginResponseDto>.FromFailure("internal failure"));
 
         var response = await factory.CreateClient().PostAsJsonAsync(
             "/api/Auth/login",
             new { UserName = "wronguser", Password = "wrongpassword" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        await AssertLoginErrorAsync(response, "Invalid username or password.");
+        await AssertLoginErrorAsync(
+            response,
+            "Invalid username or password.");
     }
 
     [Fact]
@@ -199,17 +208,82 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
+    public async Task Login_WhenRateLimitIsExceeded_ReturnsTooManyRequests()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        var client = factory.CreateClient();
+
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            var response = await client.PostAsJsonAsync(
+                "/api/Auth/login",
+                new
+                {
+                    UserName = "testuser",
+                    Password = "WrongPassword123"
+                });
+
+            Assert.NotEqual(
+                HttpStatusCode.TooManyRequests,
+                response.StatusCode);
+        }
+
+        var sixthResponse = await client.PostAsJsonAsync(
+            "/api/Auth/login",
+            new
+            {
+                UserName = "testuser",
+                Password = "WrongPassword123"
+            });
+
+        Assert.Equal(
+            HttpStatusCode.TooManyRequests,
+            sixthResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task LoginRateLimit_DoesNotAffectAuthenticatedEndpoints()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        SetupCurrentUser(factory, 10);
+
+        var client = Authenticated(factory, 10);
+
+        for (var attempt = 1; attempt <= 6; attempt++)
+        {
+            await client.PostAsJsonAsync(
+                "/api/Auth/login",
+                new
+                {
+                    UserName = "testuser",
+                    Password = "WrongPassword123"
+                });
+        }
+
+        var response = await client.GetAsync("/api/Auth/me");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ChangePassword_WithoutAuthentication_ReturnsUnauthorized()
     {
         await using var factory = new ApiWebApplicationFactory();
 
         var response = await factory.CreateClient().PostAsJsonAsync(
             "/api/Auth/change-password",
-            new { CurrentPassword = "OldPassword123", NewPassword = "NewPassword123" });
+            new
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
         factory.UserServiceMock.Verify(
-            x => x.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<ChangePasswordDto>()),
+            x => x.ChangePasswordAsync(
+                It.IsAny<int>(),
+                It.IsAny<ChangePasswordDto>()),
             Times.Never);
     }
 
@@ -220,25 +294,47 @@ public sealed class AuthControllerTests
         SetupCurrentUser(factory, 10);
 
         factory.UserServiceMock
-            .Setup(x => x.ChangePasswordAsync(10, It.IsAny<ChangePasswordDto>()))
+            .Setup(x => x.ChangePasswordAsync(
+                10,
+                It.IsAny<ChangePasswordDto>()))
             .ReturnsAsync(Result.Success());
 
         var response = await Authenticated(factory, 10).PostAsJsonAsync(
             "/api/Auth/change-password",
-            new { CurrentPassword = "OldPassword123", NewPassword = "NewPassword123" });
+            new
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            });
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
         factory.UserServiceMock.Verify(
-            x => x.ChangePasswordAsync(10, It.Is<ChangePasswordDto>(d =>
-                d.CurrentPassword == "OldPassword123" &&
-                d.NewPassword == "NewPassword123")), Times.Once);
+            x => x.ChangePasswordAsync(
+                10,
+                It.Is<ChangePasswordDto>(d =>
+                    d.CurrentPassword == "OldPassword123" &&
+                    d.NewPassword == "NewPassword123")),
+            Times.Once);
     }
 
     [Theory]
-    [InlineData("Current password is required.", 400, "Validation error")]
-    [InlineData("User was not found.", 404, "Resource not found")]
-    [InlineData("Password change conflict.", 409, "Conflict")]
-    [InlineData("You are not allowed to change this password.", 403, "Forbidden")]
+    [InlineData(
+        "Current password is required.",
+        400,
+        "Validation error")]
+    [InlineData(
+        "User was not found.",
+        404,
+        "Resource not found")]
+    [InlineData(
+        "Password change conflict.",
+        409,
+        "Conflict")]
+    [InlineData(
+        "You are not allowed to change this password.",
+        403,
+        "Forbidden")]
     public async Task ChangePassword_WhenServiceReturnsFailure_ReturnsExpectedProblemDetails(
         string error,
         int status,
@@ -257,7 +353,9 @@ public sealed class AuthControllerTests
         };
 
         factory.UserServiceMock
-            .Setup(x => x.ChangePasswordAsync(10, It.IsAny<ChangePasswordDto>()))
+            .Setup(x => x.ChangePasswordAsync(
+                10,
+                It.IsAny<ChangePasswordDto>()))
             .ReturnsAsync(result);
 
         var response = await Authenticated(factory, 10).PostAsJsonAsync(
@@ -282,8 +380,11 @@ public sealed class AuthControllerTests
         SetupCurrentUser(factory, 10);
 
         factory.UserServiceMock
-            .Setup(x => x.ChangePasswordAsync(10, It.IsAny<ChangePasswordDto>()))
-            .ReturnsAsync(Result.Failure("Unexpected password change failure."));
+            .Setup(x => x.ChangePasswordAsync(
+                10,
+                It.IsAny<ChangePasswordDto>()))
+            .ReturnsAsync(
+                Result.Failure("Unexpected password change failure."));
 
         var response = await Authenticated(factory, 10).PostAsJsonAsync(
             "/api/Auth/change-password",
@@ -307,10 +408,21 @@ public sealed class AuthControllerTests
         string fullName = "Test User",
         UserRole role = UserRole.Staff)
     {
-        factory.CurrentUserServiceMock.SetupGet(x => x.UserId).Returns(userId);
-        factory.CurrentUserServiceMock.SetupGet(x => x.Username).Returns(username);
-        factory.CurrentUserServiceMock.SetupGet(x => x.FullName).Returns(fullName);
-        factory.CurrentUserServiceMock.SetupGet(x => x.Role).Returns(role);
+        factory.CurrentUserServiceMock
+            .SetupGet(x => x.UserId)
+            .Returns(userId);
+
+        factory.CurrentUserServiceMock
+            .SetupGet(x => x.Username)
+            .Returns(username);
+
+        factory.CurrentUserServiceMock
+            .SetupGet(x => x.FullName)
+            .Returns(fullName);
+
+        factory.CurrentUserServiceMock
+            .SetupGet(x => x.Role)
+            .Returns(role);
     }
 
     private static HttpClient Authenticated(
@@ -318,7 +430,10 @@ public sealed class AuthControllerTests
         int userId)
     {
         var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Test-User-Id", userId.ToString());
+        client.DefaultRequestHeaders.Add(
+            "X-Test-User-Id",
+            userId.ToString());
+
         return client;
     }
 
@@ -326,7 +441,8 @@ public sealed class AuthControllerTests
         HttpResponseMessage response,
         string expected)
     {
-        var body = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        var body = await response.Content
+            .ReadFromJsonAsync<ErrorResponse>();
 
         Assert.NotNull(body);
         Assert.Equal(expected, body.Error);
@@ -339,6 +455,7 @@ public sealed class AuthControllerTests
         string expectedDetail)
     {
         Assert.Equal(expectedStatus, response.StatusCode);
+
         Assert.Equal(
             "application/problem+json",
             response.Content.Headers.ContentType?.MediaType);
@@ -348,12 +465,27 @@ public sealed class AuthControllerTests
 
         var body = document.RootElement;
 
-        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
-        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
-        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
-        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("instance").GetString()));
-        Assert.True(body.TryGetProperty("traceId", out var traceId));
-        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
+        Assert.Equal(
+            (int)expectedStatus,
+            body.GetProperty("status").GetInt32());
+
+        Assert.Equal(
+            expectedTitle,
+            body.GetProperty("title").GetString());
+
+        Assert.Equal(
+            expectedDetail,
+            body.GetProperty("detail").GetString());
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(
+                body.GetProperty("instance").GetString()));
+
+        Assert.True(
+            body.TryGetProperty("traceId", out var traceId));
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(traceId.GetString()));
     }
 
     private sealed class ErrorResponse

@@ -1,11 +1,17 @@
 using System.Text;
+using System.Threading.RateLimiting;
+
 using Application.Interfaces;
 using Application.Options;
 using Application.Services;
+
 using DVLD.Api.Security;
+
 using Infrastructure;
 using Infrastructure.Repositories;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -13,52 +19,69 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ============================================================
+// JWT OPTIONS
+// ============================================================
+
 builder.Services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
 
 builder.Services.AddOptions<JwtOptions>()
     .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .ValidateOnStart();
 
-var jwtOptions = builder.Configuration
-    .GetSection(JwtOptions.SectionName)
-    .Get<JwtOptions>()
-    ?? throw new InvalidOperationException("JWT configuration is missing.");
+var jwtOptions =
+    builder.Configuration
+        .GetSection(JwtOptions.SectionName)
+        .Get<JwtOptions>()
+    ?? throw new InvalidOperationException(
+        "JWT configuration is missing.");
 
 if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey))
-    throw new InvalidOperationException("JWT SecretKey is required.");
+    throw new InvalidOperationException(
+        "JWT SecretKey is required.");
 
 if (Encoding.UTF8.GetByteCount(jwtOptions.SecretKey) < 32)
-    throw new InvalidOperationException("JWT SecretKey must be at least 32 bytes long.");
+    throw new InvalidOperationException(
+        "JWT SecretKey must be at least 32 bytes long.");
 
 if (string.IsNullOrWhiteSpace(jwtOptions.Issuer))
-    throw new InvalidOperationException("JWT Issuer is required.");
+    throw new InvalidOperationException(
+        "JWT Issuer is required.");
 
 if (string.IsNullOrWhiteSpace(jwtOptions.Audience))
-    throw new InvalidOperationException("JWT Audience is required.");
+    throw new InvalidOperationException(
+        "JWT Audience is required.");
 
 if (jwtOptions.ExpirationMinutes <= 0)
-    throw new InvalidOperationException("JWT ExpirationMinutes must be greater than zero.");
+    throw new InvalidOperationException(
+        "JWT ExpirationMinutes must be greater than zero.");
 
 var key = new SymmetricSecurityKey(
     Encoding.UTF8.GetBytes(jwtOptions.SecretKey));
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+// ============================================================
+// AUTHENTICATION
+// ============================================================
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwtOptions.Issuer,
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = jwtOptions.Issuer,
 
-            ValidateAudience = true,
-            ValidAudience = jwtOptions.Audience,
+                ValidateAudience = true,
+                ValidAudience = jwtOptions.Audience,
 
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = key,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key,
 
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
-        };
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
 
         options.Events = new JwtBearerEvents
         {
@@ -66,10 +89,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var userIdClaim =
                     context.Principal?
-                        .FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?
+                        .FindFirst(
+                            System.Security.Claims.ClaimTypes.NameIdentifier)?
                         .Value;
 
-                if (!int.TryParse(userIdClaim, out var userId) || userId <= 0)
+                if (!int.TryParse(userIdClaim, out var userId) ||
+                    userId <= 0)
                 {
                     context.Fail("Invalid user identity.");
                     return;
@@ -83,15 +108,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     await dbContext.Users
                         .AsNoTracking()
                         .AnyAsync(
-                            user => user.UserId == userId &&
-                                    user.IsActive,
+                            user =>
+                                user.UserId == userId &&
+                                user.IsActive,
                             context.HttpContext.RequestAborted);
 
                 if (!userExistsAndActive)
-                    context.Fail("User account is inactive or no longer exists.");
+                {
+                    context.Fail(
+                        "User account is inactive or no longer exists.");
+                }
             }
         };
     });
+
+// ============================================================
+// AUTHORIZATION
+// ============================================================
 
 builder.Services.AddAuthorization(options =>
 {
@@ -108,7 +141,44 @@ builder.Services.AddAuthorization(options =>
         policy => policy.RequireRole("Staff", "Admin"));
 });
 
+// ============================================================
+// RATE LIMITING
+// ============================================================
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode =
+        StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(
+        "LoginRateLimit",
+        httpContext =>
+        {
+            var partitionKey =
+                httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        });
+});
+
+// ============================================================
+// HTTP CONTEXT
+// ============================================================
+
 builder.Services.AddHttpContextAccessor();
+
+// ============================================================
+// DATABASE
+// ============================================================
 
 var connectionString =
     builder.Configuration.GetConnectionString("DVLDConnection")
@@ -116,14 +186,21 @@ var connectionString =
         "Connection string 'DVLDConnection' was not found.");
 
 builder.Services.AddDbContext<DVLDDbContext>(
-    options => options.UseSqlServer(
-        connectionString,
-        sql => sql.EnableRetryOnFailure()));
+    options =>
+        options.UseSqlServer(
+            connectionString,
+            sql => sql.EnableRetryOnFailure()));
 
-// Unit of Work
+// ============================================================
+// UNIT OF WORK
+// ============================================================
+
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// Repositories
+// ============================================================
+// REPOSITORIES
+// ============================================================
+
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<IApplicationTypeRepository, ApplicationTypeRepository>();
@@ -132,16 +209,25 @@ builder.Services.AddScoped<IDetainedLicenseRepository, DetainedLicenseRepository
 builder.Services.AddScoped<IDriverRepository, DriverRepository>();
 builder.Services.AddScoped<ILicenseClassRepository, LicenseClassRepository>();
 builder.Services.AddScoped<ILicenseRepository, LicenseRepository>();
-builder.Services.AddScoped<ILocalDrivingLicenseApplicationRepository,
+
+builder.Services.AddScoped<
+    ILocalDrivingLicenseApplicationRepository,
     LocalDrivingLicenseApplicationRepository>();
+
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
-builder.Services.AddScoped<ITestAppointmentRepository, TestAppointmentRepository>();
+builder.Services.AddScoped<
+    ITestAppointmentRepository,
+    TestAppointmentRepository>();
+
 builder.Services.AddScoped<ITestRepository, TestRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITestTypeRepository, TestTypeRepository>();
 builder.Services.AddScoped<IInternationalRepository, InternationalRepository>();
 
-// Application Services
+// ============================================================
+// APPLICATION SERVICES
+// ============================================================
+
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICurrentUserService, ApiCurrentUserService>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
@@ -150,67 +236,116 @@ builder.Services.AddScoped<ICountryService, CountryService>();
 builder.Services.AddScoped<IDetainedLicenseService, DetainedLicenseService>();
 builder.Services.AddScoped<IDriverService, DriverService>();
 builder.Services.AddScoped<ILicenseClassService, LicenseClassService>();
-builder.Services.AddScoped<ILocalDrivingLicenseApplicationService,
+builder.Services.AddScoped<
+    ILocalDrivingLicenseApplicationService,
     LocalDrivingLicenseApplicationService>();
+
 builder.Services.AddScoped<IPersonService, PersonService>();
-builder.Services.AddScoped<ITestAppointmentService, TestAppointmentService>();
+builder.Services.AddScoped<
+    ITestAppointmentService,
+    TestAppointmentService>();
+
 builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<ITestTypeService, TestTypeService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IInternationalService, InternationalService>();
 
-// Authentication & License Workflows
+// ============================================================
+// AUTHENTICATION & LICENSE WORKFLOWS
+// ============================================================
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<ILicenseService, LicenseService>();
-builder.Services.AddScoped<ILicenseRenewalService, LicenseRenewalService>();
-builder.Services.AddScoped<ILicenseIssuanceService, LicenseIssuanceService>();
-builder.Services.AddScoped<ILicenseReplacementService, LicenseReplacementService>();
-builder.Services.AddScoped<ITestWorkflowService, TestWorkflowService>();
-builder.Services.AddScoped<ILicenseQueryService, LicenseQueryService>();
 
+builder.Services.AddScoped<ILicenseService, LicenseService>();
+builder.Services.AddScoped<
+    ILicenseRenewalService,
+    LicenseRenewalService>();
+
+builder.Services.AddScoped<
+    ILicenseIssuanceService,
+    LicenseIssuanceService>();
+
+builder.Services.AddScoped<
+    ILicenseReplacementService,
+    LicenseReplacementService>();
+
+builder.Services.AddScoped<
+    ITestWorkflowService,
+    TestWorkflowService>();
+
+builder.Services.AddScoped<
+    ILicenseQueryService,
+    LicenseQueryService>();
+
+// ============================================================
 // API
+// ============================================================
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// ============================================================
+// SWAGGER
+// ============================================================
+
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "DVLD API",
-        Version = "v1"
-    });
-
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter your JWT token. Example: Bearer eyJhbGciOi..."
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+    options.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
         {
-            new OpenApiSecurityScheme
+            Title = "DVLD API",
+            Version = "v1"
+        });
+
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description =
+                "Enter your JWT token. Example: Bearer eyJhbGciOi..."
+        });
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
             {
-                Reference = new OpenApiReference
+                new OpenApiSecurityScheme
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+                    Reference =
+                        new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                },
+                Array.Empty<string>()
+            }
+        });
 });
+
+// ============================================================
+// EXCEPTION HANDLING
+// ============================================================
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// ============================================================
+// APPLICATION
+// ============================================================
+
 var app = builder.Build();
+
+// ============================================================
+// DEVELOPMENT
+// ============================================================
 
 if (app.Environment.IsDevelopment())
 {
@@ -218,11 +353,27 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// ============================================================
+// HTTP PIPELINE
+// ============================================================
+
 app.UseExceptionHandler();
+
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseRateLimiter();
+
 app.UseAuthentication();
+
 app.UseAuthorization();
+
 app.MapControllers();
+
+// ============================================================
+// PROGRAM ENTRY POINT
+// ============================================================
 
 app.Run();
 
