@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using Application.Common.Pagination;
+using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +20,29 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
                 .ThenInclude(x => x.Person)
             .Include(x => x.LicenseClass);
 
-    public Task<List<LocalDrivingLicenseApplication>> GetAllAsync() =>
-        Query().ToListAsync();
+    public async Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
+    PaginationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var query = Query();
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(x => x.LocalDrivingLicenseApplicationID)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<LocalDrivingLicenseApplication>
+        {
+            Items = items,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            TotalCount = totalCount
+        };
+    }
 
     public Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id) =>
         id <= 0

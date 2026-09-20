@@ -1,13 +1,15 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using API.IntegrationTests.Infrastructure;
+﻿using API.IntegrationTests.Infrastructure;
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Domain.Enums;
-using DVLD.Contracts.LocalDrivingLicenseApplication;
 using DVLD.Contracts.Application;
+using DVLD.Contracts.Common;
+using DVLD.Contracts.LocalDrivingLicenseApplication;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace API.IntegrationTests.Controllers;
 
@@ -55,17 +57,26 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         var dto =
             CreateApplicationDto(10);
 
+        var pagedResult =
+            new PagedResult<LocalDrivingLicenseApplicationListDto>
+            {
+                Items = new List<LocalDrivingLicenseApplicationListDto>
+                {
+                dto
+                },
+                PageNumber = 1,
+                PageSize = 20,
+                TotalCount = 1
+            };
+
         _factory
             .LocalDrivingLicenseApplicationServiceMock
             .Setup(x =>
-                x.GetAllLocalDrivingLicenseApplicationsAsync())
+                x.GetAllLocalDrivingLicenseApplicationsAsync(
+                    It.IsAny<PaginationRequest>()))
             .ReturnsAsync(
-                Result<List<LocalDrivingLicenseApplicationListDto>>
-                    .Success(
-                        new List<LocalDrivingLicenseApplicationListDto>
-                        {
-                            dto
-                        }));
+                Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
+                    .Success(pagedResult));
 
         var response =
             await GetAuthenticatedAsync(
@@ -78,20 +89,30 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         var result =
             await response.Content
                 .ReadFromJsonAsync<
-                    List<LocalDrivingLicenseApplicationResponse>>();
+                    PagedResponse<LocalDrivingLicenseApplicationResponse>>();
 
         Assert.NotNull(result);
-        Assert.Single(result);
+        Assert.Single(result.Items);
+
+        Assert.Equal(1, result.PageNumber);
+        Assert.Equal(20, result.PageSize);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(1, result.TotalPages);
+        Assert.False(result.HasPreviousPage);
+        Assert.False(result.HasNextPage);
 
         AssertApplicationResponse(
             dto,
-            result[0]);
+            result.Items[0]);
 
         _factory
             .LocalDrivingLicenseApplicationServiceMock
             .Verify(
                 x =>
-                    x.GetAllLocalDrivingLicenseApplicationsAsync(),
+                    x.GetAllLocalDrivingLicenseApplicationsAsync(
+                        It.Is<PaginationRequest>(request =>
+                            request.PageNumber == 1 &&
+                            request.PageSize == 10)),
                 Times.Once);
     }
 
@@ -101,9 +122,10 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         _factory
             .LocalDrivingLicenseApplicationServiceMock
             .Setup(x =>
-                x.GetAllLocalDrivingLicenseApplicationsAsync())
+                x.GetAllLocalDrivingLicenseApplicationsAsync(
+                    It.IsAny<PaginationRequest>()))
             .ReturnsAsync(
-                Result<List<LocalDrivingLicenseApplicationListDto>>
+                Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
                     .FromValidationFailure(
                         "Invalid application data."));
 
@@ -126,9 +148,10 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         _factory
             .LocalDrivingLicenseApplicationServiceMock
             .Setup(x =>
-                x.GetAllLocalDrivingLicenseApplicationsAsync())
+                x.GetAllLocalDrivingLicenseApplicationsAsync(
+                    It.IsAny<PaginationRequest>()))
             .ReturnsAsync(
-                Result<List<LocalDrivingLicenseApplicationListDto>>
+                Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
                     .FromFailure(
                         "Database failure."));
 

@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+﻿using Application.Common.Pagination;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 
@@ -6,8 +7,9 @@ namespace Application.Interfaces;
 
 public interface ILocalDrivingLicenseApplicationService
 {
-    Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
-        GetAllLocalDrivingLicenseApplicationsAsync();
+    Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
+    GetAllLocalDrivingLicenseApplicationsAsync(
+        PaginationRequest request);
 
     Task<Result<LocalDrivingLicenseApplicationListDto>>
         GetLocalDrivingLicenseApplicationByIdAsync(int id);

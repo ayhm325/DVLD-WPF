@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+﻿using Application.Common.Pagination;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
@@ -16,13 +17,27 @@ public sealed class LocalDrivingLicenseApplicationsController(
     ILocalDrivingLicenseApplicationService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+    [FromQuery] PaginationRequest request)
     {
-        var result = await service.GetAllLocalDrivingLicenseApplicationsAsync();
+        var result =
+            await service.GetAllLocalDrivingLicenseApplicationsAsync(request);
 
-        return result.IsSuccess
-            ? Ok(result.Value!.Select(Map).ToList())
-            : HandleFailure(result);
+        if (result.IsFailure)
+            return HandleFailure(result);
+
+        var page = result.Value!;
+
+        return Ok(new
+        {
+            items = page.Items.Select(Map).ToList(),
+            pageNumber = page.PageNumber,
+            pageSize = page.PageSize,
+            totalCount = page.TotalCount,
+            totalPages = page.TotalPages,
+            hasPreviousPage = page.HasPreviousPage,
+            hasNextPage = page.HasNextPage
+        });
     }
 
     [HttpGet("{id:int}")]

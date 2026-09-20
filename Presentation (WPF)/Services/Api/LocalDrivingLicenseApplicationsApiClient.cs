@@ -1,4 +1,5 @@
 ﻿using DVLD.Contracts.Application;
+using DVLD.Contracts.Common;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
 using Presentation.Services.Results;
 
@@ -7,11 +8,15 @@ namespace Presentation.Services.Api;
 public sealed class LocalDrivingLicenseApplicationsApiClient(
     IApiClient apiClient) : ILocalDrivingLicenseApplicationsApiClient
 {
-    public Task<ApiResult<List<LocalDrivingLicenseApplicationResponse>>>
-        GetAllAsync(CancellationToken cancellationToken = default)
-        => apiClient.GetAsync<List<LocalDrivingLicenseApplicationResponse>>(
-            "api/localdrivinglicenseapplications",
-            cancellationToken);
+    public Task<ApiResult<PagedResponse<LocalDrivingLicenseApplicationResponse>>>
+    GetAllAsync(
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    => apiClient.GetAsync<
+        PagedResponse<LocalDrivingLicenseApplicationResponse>>(
+        $"api/localdrivinglicenseapplications?pageNumber={pageNumber}&pageSize={pageSize}",
+        cancellationToken);
 
     public Task<ApiResult<LocalDrivingLicenseApplicationResponse>>
         GetByIdAsync(

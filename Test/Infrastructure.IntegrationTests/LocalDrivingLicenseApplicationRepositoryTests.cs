@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Common.Pagination;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
@@ -43,18 +44,60 @@ public sealed class LocalDrivingLicenseApplicationRepositoryTests
         var repository =
             new LocalDrivingLicenseApplicationRepository(context);
 
+        var request = new PaginationRequest
+        {
+            PageNumber = 1,
+            PageSize = 10
+        };
+
         var result =
-            await repository.GetAllAsync();
+            await repository.GetAllAsync(request);
+
+        Assert.Equal(1, result.PageNumber);
+        Assert.Equal(10, result.PageSize);
+        Assert.Equal(2, result.TotalCount);
 
         Assert.Contains(
-            result,
+            result.Items,
             x => x.LocalDrivingLicenseApplicationID ==
                  first.LocalApplicationId);
 
         Assert.Contains(
-            result,
+            result.Items,
             x => x.LocalDrivingLicenseApplicationID ==
                  second.LocalApplicationId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ShouldReturnRequestedPage()
+    {
+        var first = await SeedLocalApplicationAsync();
+        var second = await SeedLocalApplicationAsync();
+        var third = await SeedLocalApplicationAsync();
+
+        await using var context = _database.CreateContext();
+
+        var repository =
+            new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new PaginationRequest
+        {
+            PageNumber = 2,
+            PageSize = 2
+        };
+
+        var result =
+            await repository.GetAllAsync(request);
+
+        Assert.Equal(2, result.PageNumber);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(3, result.TotalCount);
+
+        Assert.Single(result.Items);
+
+        Assert.Equal(
+            third.LocalApplicationId,
+            result.Items[0].LocalDrivingLicenseApplicationID);
     }
 
     [Fact]
@@ -68,9 +111,18 @@ public sealed class LocalDrivingLicenseApplicationRepositoryTests
         var repository =
             new LocalDrivingLicenseApplicationRepository(context);
 
+        var request = new PaginationRequest
+        {
+            PageNumber = 1,
+            PageSize = 10
+        };
+
+        var result =
+            await repository.GetAllAsync(request);
+
         var entity =
             Assert.Single(
-                (await repository.GetAllAsync())
+                result.Items
                     .Where(
                         x =>
                             x.LocalDrivingLicenseApplicationID ==
@@ -107,12 +159,18 @@ public sealed class LocalDrivingLicenseApplicationRepositoryTests
         var repository =
             new LocalDrivingLicenseApplicationRepository(context);
 
+        var request = new PaginationRequest
+        {
+            PageNumber = 1,
+            PageSize = 10
+        };
+
         var result =
-            await repository.GetAllAsync();
+            await repository.GetAllAsync(request);
 
         var entity =
             Assert.Single(
-                result.Where(
+                result.Items.Where(
                     x =>
                         x.LocalDrivingLicenseApplicationID ==
                         seed.LocalApplicationId));

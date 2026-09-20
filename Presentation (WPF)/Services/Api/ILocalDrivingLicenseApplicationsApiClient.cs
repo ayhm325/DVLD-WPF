@@ -1,4 +1,5 @@
 ﻿using DVLD.Contracts.Application;
+using DVLD.Contracts.Common;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
 using Presentation.Services.Results;
 
@@ -6,9 +7,11 @@ namespace Presentation.Services.Api;
 
 public interface ILocalDrivingLicenseApplicationsApiClient
 {
-    Task<ApiResult<List<LocalDrivingLicenseApplicationResponse>>>
-        GetAllAsync(
-            CancellationToken cancellationToken = default);
+    Task<ApiResult<PagedResponse<LocalDrivingLicenseApplicationResponse>>>
+    GetAllAsync(
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 
     Task<ApiResult<LocalDrivingLicenseApplicationResponse>>
         GetByIdAsync(

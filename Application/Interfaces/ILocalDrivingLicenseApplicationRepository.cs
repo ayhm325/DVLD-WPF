@@ -1,10 +1,12 @@
-﻿using Domain.Entities;
+﻿using Application.Common.Pagination;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
 public interface ILocalDrivingLicenseApplicationRepository
 {
-    Task<List<LocalDrivingLicenseApplication>> GetAllAsync();
+    Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
+       PaginationRequest request);
 
     Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id);
 

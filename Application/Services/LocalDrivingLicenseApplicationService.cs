@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+﻿using Application.Common.Pagination;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
@@ -39,10 +40,27 @@ public sealed class LocalDrivingLicenseApplicationService(
     private readonly IApplicationService _applicationService =
         applicationService ?? throw new ArgumentNullException(nameof(applicationService));
 
-    public async Task<Result<List<LocalDrivingLicenseApplicationListDto>>> GetAllLocalDrivingLicenseApplicationsAsync()
+    public async Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
+    GetAllLocalDrivingLicenseApplicationsAsync(
+        PaginationRequest request)
     {
-        var entities = await _repository.GetAllAsync();
-        return Result<List<LocalDrivingLicenseApplicationListDto>>.Success(await MapListToDtoAsync(entities));
+        ArgumentNullException.ThrowIfNull(request);
+
+        var pagedEntities = await _repository.GetAllAsync(request);
+
+        var items = await MapListToDtoAsync(
+            pagedEntities.Items);
+
+        var result = new PagedResult<LocalDrivingLicenseApplicationListDto>
+        {
+            Items = items,
+            PageNumber = pagedEntities.PageNumber,
+            PageSize = pagedEntities.PageSize,
+            TotalCount = pagedEntities.TotalCount
+        };
+
+        return Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
+            .Success(result);
     }
 
     public async Task<Result<LocalDrivingLicenseApplicationListDto>> GetLocalDrivingLicenseApplicationByIdAsync(int id)
@@ -405,7 +423,8 @@ public sealed class LocalDrivingLicenseApplicationService(
         }
     }
 
-    private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(List<LocalDrivingLicenseApplication> entities)
+    private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(
+        IReadOnlyList<LocalDrivingLicenseApplication> entities)
     {
         if (entities.Count == 0) return [];
 
