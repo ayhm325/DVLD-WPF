@@ -1,791 +1,321 @@
 ﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
-using Application.Interfaces;
 using Domain.Enums;
-using DVLD.Contracts.TestAppointment;
 using DVLD.Contracts.TestWorkflow;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
-public sealed class TestWorkflowControllerTests
-    : IClassFixture<ApiWebApplicationFactory>
+public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicationFactory>
 {
     private readonly ApiWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public TestWorkflowControllerTests(
-        ApiWebApplicationFactory factory)
+    public TestWorkflowControllerTests(ApiWebApplicationFactory factory)
     {
         _factory = factory;
-
         _factory.TestWorkflowServiceMock.Reset();
-
         _client = factory.CreateClient();
     }
 
-    // ============================================================
     // CanSchedule
-    // ============================================================
 
     [Fact]
     public async Task CanSchedule_WithoutAuthentication_ReturnsUnauthorized()
     {
-        var response =
-            await _client.GetAsync(
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
+        var response = await _client.GetAsync(
+            "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanScheduleTestAsync(
-                It.IsAny<int>(),
-                It.IsAny<TestTypeEnum>()),
+            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>()),
             Times.Never);
     }
 
-    [Fact]
-    public async Task CanSchedule_WithTheory_MapsToDomainTheoryAndReturnsAllowed()
+    [Theory]
+    [InlineData("Theory", TestTypeEnum.Theory)]
+    [InlineData("Written", TestTypeEnum.Written)]
+    [InlineData("Practical", TestTypeEnum.Practical)]
+    public async Task CanSchedule_WhenSuccessful_ReturnsAllowed(
+        string testType, TestTypeEnum expectedType)
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory))
-            .ReturnsAsync(
-                Result.Success());
+            .Setup(x => x.CanScheduleTestAsync(10, expectedType))
+            .ReturnsAsync(Result.Success());
 
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            $"/api/TestWorkflow/can-schedule?localAppId=10&testType={testType}");
 
-        var response =
-            await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestWorkflowResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<TestWorkflowResponse>();
         Assert.NotNull(result);
-
         Assert.True(result.Allowed);
         Assert.Null(result.Error);
         Assert.Null(result.ErrorType);
         Assert.Null(result.NextTestType);
 
         _factory.TestWorkflowServiceMock.Verify(
-            x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory),
-            Times.Once);
+            x => x.CanScheduleTestAsync(10, expectedType), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(400, "Validation error", "Test cannot be scheduled.")]
+    [InlineData(404, "Resource not found", "Application not found.")]
+    [InlineData(409, "Conflict", "Test already exists.")]
+    [InlineData(403, "Forbidden", "Access denied.")]
+    public async Task CanSchedule_WhenServiceReturnsExpectedError_ReturnsProblemDetails(
+        int status, string title, string detail)
+    {
+        var result = status switch
+        {
+            400 => Result.ValidationFailure(detail),
+            404 => Result.NotFound(detail),
+            409 => Result.Conflict(detail),
+            _ => Result.Forbidden(detail)
+        };
+
+        _factory.TestWorkflowServiceMock
+            .Setup(x => x.CanScheduleTestAsync(10, TestTypeEnum.Theory))
+            .ReturnsAsync(result);
+
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
+
+        await AssertProblemDetailsAsync(
+            response, (HttpStatusCode)status, title, detail);
     }
 
     [Fact]
-    public async Task CanSchedule_WithWritten_MapsToDomainWrittenAndReturnsAllowed()
+    public async Task CanSchedule_WhenFailureOccurs_Returns500ProblemDetails()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Written))
-            .ReturnsAsync(
-                Result.Success());
+            .Setup(x => x.CanScheduleTestAsync(10, TestTypeEnum.Theory))
+            .ReturnsAsync(Result.Failure("Unexpected failure."));
 
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Written");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
 
-        var response =
-            await _client.SendAsync(request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestWorkflowResponse>();
-
-        Assert.NotNull(result);
-
-        Assert.True(result.Allowed);
-        Assert.Null(result.Error);
-        Assert.Null(result.ErrorType);
-        Assert.Null(result.NextTestType);
-
-        _factory.TestWorkflowServiceMock.Verify(
-            x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Written),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task CanSchedule_WithPractical_MapsToDomainPracticalAndReturnsAllowed()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Practical))
-            .ReturnsAsync(
-                Result.Success());
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Practical");
-
-        var response =
-            await _client.SendAsync(request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestWorkflowResponse>();
-
-        Assert.NotNull(result);
-
-        Assert.True(result.Allowed);
-        Assert.Null(result.Error);
-        Assert.Null(result.ErrorType);
-        Assert.Null(result.NextTestType);
-
-        _factory.TestWorkflowServiceMock.Verify(
-            x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Practical),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task CanSchedule_WhenValidationFails_ReturnsBadRequestResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory))
-            .ReturnsAsync(
-                Result.ValidationFailure(
-                    "Test cannot be scheduled."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.BadRequest,
-            "Test cannot be scheduled.",
-            nameof(ErrorType.Validation));
-
-        _factory.TestWorkflowServiceMock.Verify(
-            x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task CanSchedule_WhenNotFound_ReturnsNotFoundResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory))
-            .ReturnsAsync(
-                Result.NotFound(
-                    "Application not found."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.NotFound,
-            "Application not found.",
-            nameof(ErrorType.NotFound));
-    }
-
-    [Fact]
-    public async Task CanSchedule_WhenConflictOccurs_ReturnsConflictResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory))
-            .ReturnsAsync(
-                Result.Conflict(
-                    "Test already exists."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.Conflict,
-            "Test already exists.",
-            nameof(ErrorType.Conflict));
-    }
-
-    [Fact]
-    public async Task CanSchedule_WhenForbidden_ReturnsForbiddenResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory))
-            .ReturnsAsync(
-                Result.Forbidden(
-                    "Access denied."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.Forbidden,
-            "Access denied.",
-            nameof(ErrorType.Forbidden));
-    }
-
-    [Fact]
-    public async Task CanSchedule_WhenUnexpectedFailureOccurs_ReturnsInternalServerError()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanScheduleTestAsync(
-                    10,
-                    TestTypeEnum.Theory))
-            .ReturnsAsync(
-                Result.Failure(
-                    "Unexpected failure."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-schedule?localAppId=10&testType=Theory");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
+        await AssertProblemDetailsAsync(
             response,
             HttpStatusCode.InternalServerError,
-            "Unexpected failure.",
-            nameof(ErrorType.Failure));
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
-    // ============================================================
     // GetNextTest
-    // ============================================================
 
     [Fact]
     public async Task GetNextTest_WithoutAuthentication_ReturnsUnauthorized()
     {
-        var response =
-            await _client.GetAsync(
-                "/api/TestWorkflow/next-test/10");
+        var response = await _client.GetAsync("/api/TestWorkflow/next-test/10");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.GetNextTestTypeAsync(
-                It.IsAny<int>()),
-            Times.Never);
+            x => x.GetNextTestTypeAsync(It.IsAny<int>()), Times.Never);
     }
 
-    [Fact]
-    public async Task GetNextTest_WhenSuccessful_ReturnsNextTestType()
+    [Theory]
+    [InlineData(TestTypeEnum.Written)]
+    [InlineData(TestTypeEnum.Practical)]
+    public async Task GetNextTest_WhenSuccessful_ReturnsNextTestType(
+        TestTypeEnum expectedType)
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.GetNextTestTypeAsync(10))
-            .ReturnsAsync(
-                Result<TestTypeEnum>.Success(
-                    TestTypeEnum.Written));
+            .Setup(x => x.GetNextTestTypeAsync(10))
+            .ReturnsAsync(Result<TestTypeEnum>.Success(expectedType));
 
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/next-test/10");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/next-test/10");
 
-        var response =
-            await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestWorkflowResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<TestWorkflowResponse>();
         Assert.NotNull(result);
-
         Assert.True(result.Allowed);
         Assert.Null(result.Error);
         Assert.Null(result.ErrorType);
-
-        Assert.Equal(
-            (int)TestTypeEnum.Written,
-            result.NextTestType);
+        Assert.Equal((int)expectedType, result.NextTestType);
 
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.GetNextTestTypeAsync(10),
-            Times.Once);
+            x => x.GetNextTestTypeAsync(10), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(400, "Validation error", "Invalid application.")]
+    [InlineData(404, "Resource not found", "Application not found.")]
+    [InlineData(409, "Conflict", "Workflow conflict.")]
+    [InlineData(403, "Forbidden", "Access denied.")]
+    public async Task GetNextTest_WhenServiceReturnsExpectedError_ReturnsProblemDetails(
+        int status, string title, string detail)
+    {
+        var result = status switch
+        {
+            400 => Result<TestTypeEnum>.FromValidationFailure(detail),
+            404 => Result<TestTypeEnum>.FromNotFound(detail),
+            409 => Result<TestTypeEnum>.FromConflict(detail),
+            _ => Result<TestTypeEnum>.FromForbidden(detail)
+        };
+
+        _factory.TestWorkflowServiceMock
+            .Setup(x => x.GetNextTestTypeAsync(10))
+            .ReturnsAsync(result);
+
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/next-test/10");
+
+        await AssertProblemDetailsAsync(
+            response, (HttpStatusCode)status, title, detail);
     }
 
     [Fact]
-    public async Task GetNextTest_WhenNextTestIsPractical_ReturnsPracticalValue()
+    public async Task GetNextTest_WhenFailureOccurs_Returns500ProblemDetails()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.GetNextTestTypeAsync(10))
-            .ReturnsAsync(
-                Result<TestTypeEnum>.Success(
-                    TestTypeEnum.Practical));
+            .Setup(x => x.GetNextTestTypeAsync(10))
+            .ReturnsAsync(Result<TestTypeEnum>.FromFailure("Unexpected failure."));
 
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/next-test/10");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/next-test/10");
 
-        var response =
-            await _client.SendAsync(request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestWorkflowResponse>();
-
-        Assert.NotNull(result);
-
-        Assert.True(result.Allowed);
-
-        Assert.Equal(
-            (int)TestTypeEnum.Practical,
-            result.NextTestType);
-    }
-
-    [Fact]
-    public async Task GetNextTest_WhenValidationFails_ReturnsBadRequestResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.GetNextTestTypeAsync(10))
-            .ReturnsAsync(
-                Result<TestTypeEnum>
-                    .FromValidationFailure(
-                        "Invalid application."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/next-test/10");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.BadRequest,
-            "Invalid application.",
-            nameof(ErrorType.Validation));
-    }
-
-    [Fact]
-    public async Task GetNextTest_WhenNotFound_ReturnsNotFoundResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.GetNextTestTypeAsync(10))
-            .ReturnsAsync(
-                Result<TestTypeEnum>
-                    .FromNotFound(
-                        "Application not found."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/next-test/10");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.NotFound,
-            "Application not found.",
-            nameof(ErrorType.NotFound));
-    }
-
-    [Fact]
-    public async Task GetNextTest_WhenConflictOccurs_ReturnsConflictResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.GetNextTestTypeAsync(10))
-            .ReturnsAsync(
-                Result<TestTypeEnum>
-                    .FromConflict(
-                        "Workflow conflict."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/next-test/10");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.Conflict,
-            "Workflow conflict.",
-            nameof(ErrorType.Conflict));
-    }
-
-    [Fact]
-    public async Task GetNextTest_WhenForbidden_ReturnsForbiddenResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.GetNextTestTypeAsync(10))
-            .ReturnsAsync(
-                Result<TestTypeEnum>
-                    .FromForbidden(
-                        "Access denied."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/next-test/10");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.Forbidden,
-            "Access denied.",
-            nameof(ErrorType.Forbidden));
-    }
-
-    [Fact]
-    public async Task GetNextTest_WhenUnexpectedFailureOccurs_ReturnsInternalServerError()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.GetNextTestTypeAsync(10))
-            .ReturnsAsync(
-                Result<TestTypeEnum>
-                    .FromFailure(
-                        "Unexpected failure."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/next-test/10");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
+        await AssertProblemDetailsAsync(
             response,
             HttpStatusCode.InternalServerError,
-            "Unexpected failure.",
-            nameof(ErrorType.Failure));
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
-    // ============================================================
     // CanTake
-    // ============================================================
 
     [Fact]
     public async Task CanTake_WithoutAuthentication_ReturnsUnauthorized()
     {
-        var response =
-            await _client.GetAsync(
-                "/api/TestWorkflow/can-take/20");
+        var response = await _client.GetAsync("/api/TestWorkflow/can-take/20");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanTakeTestAsync(
-                It.IsAny<int>()),
-            Times.Never);
+            x => x.CanTakeTestAsync(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
     public async Task CanTake_WhenSuccessful_ReturnsAllowed()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanTakeTestAsync(20))
-            .ReturnsAsync(
-                Result.Success());
+            .Setup(x => x.CanTakeTestAsync(20))
+            .ReturnsAsync(Result.Success());
 
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-take/20");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/can-take/20");
 
-        var response =
-            await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestWorkflowResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<TestWorkflowResponse>();
         Assert.NotNull(result);
-
         Assert.True(result.Allowed);
         Assert.Null(result.Error);
         Assert.Null(result.ErrorType);
         Assert.Null(result.NextTestType);
 
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanTakeTestAsync(20),
-            Times.Once);
+            x => x.CanTakeTestAsync(20), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(400, "Validation error", "Appointment is invalid.")]
+    [InlineData(404, "Resource not found", "Appointment not found.")]
+    [InlineData(409, "Conflict", "Test already taken.")]
+    [InlineData(403, "Forbidden", "Access denied.")]
+    public async Task CanTake_WhenServiceReturnsExpectedError_ReturnsProblemDetails(
+        int status, string title, string detail)
+    {
+        var result = status switch
+        {
+            400 => Result.ValidationFailure(detail),
+            404 => Result.NotFound(detail),
+            409 => Result.Conflict(detail),
+            _ => Result.Forbidden(detail)
+        };
+
+        _factory.TestWorkflowServiceMock
+            .Setup(x => x.CanTakeTestAsync(20))
+            .ReturnsAsync(result);
+
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/can-take/20");
+
+        await AssertProblemDetailsAsync(
+            response, (HttpStatusCode)status, title, detail);
     }
 
     [Fact]
-    public async Task CanTake_WhenValidationFails_ReturnsBadRequestResponse()
+    public async Task CanTake_WhenFailureOccurs_Returns500ProblemDetails()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanTakeTestAsync(20))
-            .ReturnsAsync(
-                Result.ValidationFailure(
-                    "Appointment is invalid."));
+            .Setup(x => x.CanTakeTestAsync(20))
+            .ReturnsAsync(Result.Failure("Unexpected failure."));
 
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-take/20");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/can-take/20");
 
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.BadRequest,
-            "Appointment is invalid.",
-            nameof(ErrorType.Validation));
-    }
-
-    [Fact]
-    public async Task CanTake_WhenNotFound_ReturnsNotFoundResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanTakeTestAsync(20))
-            .ReturnsAsync(
-                Result.NotFound(
-                    "Appointment not found."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-take/20");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.NotFound,
-            "Appointment not found.",
-            nameof(ErrorType.NotFound));
-    }
-
-    [Fact]
-    public async Task CanTake_WhenConflictOccurs_ReturnsConflictResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanTakeTestAsync(20))
-            .ReturnsAsync(
-                Result.Conflict(
-                    "Test already taken."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-take/20");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.Conflict,
-            "Test already taken.",
-            nameof(ErrorType.Conflict));
-    }
-
-    [Fact]
-    public async Task CanTake_WhenForbidden_ReturnsForbiddenResponse()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanTakeTestAsync(20))
-            .ReturnsAsync(
-                Result.Forbidden(
-                    "Access denied."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-take/20");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
-            response,
-            HttpStatusCode.Forbidden,
-            "Access denied.",
-            nameof(ErrorType.Forbidden));
-    }
-
-    [Fact]
-    public async Task CanTake_WhenUnexpectedFailureOccurs_ReturnsInternalServerError()
-    {
-        _factory.TestWorkflowServiceMock
-            .Setup(x =>
-                x.CanTakeTestAsync(20))
-            .ReturnsAsync(
-                Result.Failure(
-                    "Unexpected failure."));
-
-        using var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                "/api/TestWorkflow/can-take/20");
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertWorkflowFailureAsync(
+        await AssertProblemDetailsAsync(
             response,
             HttpStatusCode.InternalServerError,
-            "Unexpected failure.",
-            nameof(ErrorType.Failure));
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
-    // ============================================================
     // Helpers
-    // ============================================================
 
-    private static HttpRequestMessage
-        CreateAuthenticatedRequest(
-            HttpMethod method,
-            string uri)
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpMethod method, string uri, object? content = null)
     {
-        var request =
-            new HttpRequestMessage(
-                method,
-                uri);
+        using var request = new HttpRequestMessage(method, uri);
+        request.Headers.Add("X-Test-User-Id", "1");
+        request.Headers.Add("X-Test-Username", "testuser");
+        request.Headers.Add("X-Test-FullName", "Test User");
+        request.Headers.Add("X-Test-Role", "Staff");
 
-        request.Headers.Add(
-            "X-Test-User-Id",
-            "1");
+        if (content is not null)
+            request.Content = JsonContent.Create(content);
 
-        request.Headers.Add(
-            "X-Test-Username",
-            "testuser");
-
-        request.Headers.Add(
-            "X-Test-FullName",
-            "Test User");
-
-        request.Headers.Add(
-            "X-Test-Role",
-            "Staff");
-
-        return request;
+        return await _client.SendAsync(request);
     }
 
-    private static async Task
-        AssertWorkflowFailureAsync(
-            HttpResponseMessage response,
-            HttpStatusCode expectedStatus,
-            string expectedError,
-            string expectedErrorType)
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
+        Assert.Equal(expectedStatus, response.StatusCode);
         Assert.Equal(
-            expectedStatus,
-            response.StatusCode);
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestWorkflowResponse>();
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        Assert.NotNull(result);
+        var body = document.RootElement;
 
-        Assert.False(result.Allowed);
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
 
-        Assert.Equal(
-            expectedError,
-            result.Error);
-
-        Assert.Equal(
-            expectedErrorType,
-            result.ErrorType);
-
-        Assert.Null(result.NextTestType);
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
 }

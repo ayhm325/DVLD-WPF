@@ -1,10 +1,11 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using API.IntegrationTests.Infrastructure;
+﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs;
 using DVLD.Contracts.LicenseClass;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
@@ -19,8 +20,7 @@ public sealed class LicenseClassesControllerTests
         var response = await client.GetAsync("/api/LicenseClasses");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.LicenseClassServiceMock.Verify(
-            x => x.GetAllLicenseClassesAsync(), Times.Never);
+        factory.LicenseClassServiceMock.Verify(x => x.GetAllLicenseClassesAsync(), Times.Never);
     }
 
     [Fact]
@@ -57,10 +57,11 @@ public sealed class LicenseClassesControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<List<LicenseClassResponse>>();
+        var result =
+            await response.Content.ReadFromJsonAsync<List<LicenseClassResponse>>();
 
         Assert.NotNull(result);
+
         Assert.Collection(result,
             item =>
             {
@@ -82,11 +83,12 @@ public sealed class LicenseClassesControllerTests
             });
 
         factory.LicenseClassServiceMock.Verify(
-            x => x.GetAllLicenseClassesAsync(), Times.Once);
+            x => x.GetAllLicenseClassesAsync(),
+            Times.Once);
     }
 
     [Fact]
-    public async Task GetAll_WhenServiceFails_Returns500()
+    public async Task GetAll_WhenServiceFails_Returns500ProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
 
@@ -98,8 +100,11 @@ public sealed class LicenseClassesControllerTests
         using var client = CreateAuthenticatedClient(factory);
         var response = await client.GetAsync("/api/LicenseClasses");
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        Assert.Equal("Failed to load license classes.", await ReadErrorAsync(response));
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
@@ -124,11 +129,11 @@ public sealed class LicenseClassesControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<LicenseClassResponse>();
+        var result =
+            await response.Content.ReadFromJsonAsync<LicenseClassResponse>();
 
         Assert.NotNull(result);
-        Assert.Equal(3, result!.LicenseClassId);
+        Assert.Equal(3, result.LicenseClassId);
         Assert.Equal("Private Car", result.LicenseClassName);
         Assert.Equal("License for private cars.", result.LicenseClassDescription);
         Assert.Equal((byte)18, result.MinAllowedAge);
@@ -136,45 +141,49 @@ public sealed class LicenseClassesControllerTests
         Assert.Equal(25m, result.LicenseClassFees);
 
         factory.LicenseClassServiceMock.Verify(
-            x => x.GetLicenseClassByIdAsync(3), Times.Once);
+            x => x.GetLicenseClassByIdAsync(3),
+            Times.Once);
     }
 
-    [Fact]
-    public async Task GetById_WhenNotFound_Returns404()
+    [Theory]
+    [InlineData(
+        99,
+        "License class not found.",
+        404,
+        "Resource not found")]
+    [InlineData(
+        0,
+        "Invalid license class ID.",
+        400,
+        "Validation error")]
+    public async Task GetById_WhenRequestFails_ReturnsProblemDetails(
+        int id,
+        string detail,
+        int statusCode,
+        string title)
     {
         await using var factory = new ApiWebApplicationFactory();
 
+        var result = id == 99
+            ? Result<LicenseClassDto>.FromNotFound(detail)
+            : Result<LicenseClassDto>.FromValidationFailure(detail);
+
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(99))
-            .ReturnsAsync(Result<LicenseClassDto>.FromNotFound(
-                "License class not found."));
+            .Setup(x => x.GetLicenseClassByIdAsync(id))
+            .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory);
-        var response = await client.GetAsync("/api/LicenseClasses/99");
+        var response = await client.GetAsync($"/api/LicenseClasses/{id}");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        Assert.Equal("License class not found.", await ReadErrorAsync(response));
+        await AssertProblemDetailsAsync(
+            response,
+            (HttpStatusCode)statusCode,
+            title,
+            detail);
     }
 
     [Fact]
-    public async Task GetById_WhenValidationFails_Returns400()
-    {
-        await using var factory = new ApiWebApplicationFactory();
-
-        factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(0))
-            .ReturnsAsync(Result<LicenseClassDto>.FromValidationFailure(
-                "Invalid license class ID."));
-
-        using var client = CreateAuthenticatedClient(factory);
-        var response = await client.GetAsync("/api/LicenseClasses/0");
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("Invalid license class ID.", await ReadErrorAsync(response));
-    }
-
-    [Fact]
-    public async Task GetById_WhenServiceFails_Returns500()
+    public async Task GetById_WhenServiceFails_Returns500ProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
 
@@ -186,12 +195,15 @@ public sealed class LicenseClassesControllerTests
         using var client = CreateAuthenticatedClient(factory);
         var response = await client.GetAsync("/api/LicenseClasses/5");
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        Assert.Equal("Failed to load license class.", await ReadErrorAsync(response));
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
-    public async Task GetById_WhenValueIsNull_Returns500WithSpecificError()
+    public async Task GetById_WhenValueIsNull_Returns500ProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
 
@@ -202,15 +214,19 @@ public sealed class LicenseClassesControllerTests
         using var client = CreateAuthenticatedClient(factory);
         var response = await client.GetAsync("/api/LicenseClasses/5");
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        Assert.Equal("License class data is unavailable.", await ReadErrorAsync(response));
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
 
         factory.LicenseClassServiceMock.Verify(
-            x => x.GetLicenseClassByIdAsync(5), Times.Once);
+            x => x.GetLicenseClassByIdAsync(5),
+            Times.Once);
     }
 
     [Fact]
-    public async Task GetById_WhenConflictFailure_Returns500()
+    public async Task GetById_WhenConflictFailure_Returns409ProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
 
@@ -222,12 +238,15 @@ public sealed class LicenseClassesControllerTests
         using var client = CreateAuthenticatedClient(factory);
         var response = await client.GetAsync("/api/LicenseClasses/5");
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        Assert.Equal("License class conflict.", await ReadErrorAsync(response));
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.Conflict,
+            "Conflict",
+            "License class conflict.");
     }
 
     [Fact]
-    public async Task GetById_WhenForbiddenFailure_ReturnsForbidden()
+    public async Task GetById_WhenForbiddenFailure_Returns403ProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
 
@@ -239,22 +258,57 @@ public sealed class LicenseClassesControllerTests
         using var client = CreateAuthenticatedClient(factory);
         var response = await client.GetAsync("/api/LicenseClasses/5");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        Assert.Equal("Access denied.", await ReadErrorAsync(response));
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.Forbidden,
+            "Forbidden",
+            "Access denied.");
     }
 
-    private static HttpClient CreateAuthenticatedClient(ApiWebApplicationFactory factory)
+    private static HttpClient CreateAuthenticatedClient(
+        ApiWebApplicationFactory factory)
     {
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Test-User-Id", "1");
         return client;
     }
 
-    private static async Task<string?> ReadErrorAsync(HttpResponseMessage response)
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        var body = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-        return body?.Error;
-    }
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-    private sealed record ErrorResponse(string? Error);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal(
+            (int)expectedStatus,
+            body.GetProperty("status").GetInt32());
+
+        Assert.Equal(
+            expectedTitle,
+            body.GetProperty("title").GetString());
+
+        Assert.Equal(
+            expectedDetail,
+            body.GetProperty("detail").GetString());
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(
+                body.GetProperty("instance").GetString()));
+
+        Assert.True(
+            body.TryGetProperty("traceId", out var traceId));
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(traceId.GetString()));
+    }
 }

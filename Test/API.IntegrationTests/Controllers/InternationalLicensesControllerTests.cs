@@ -7,11 +7,11 @@ using DVLD.Contracts.License;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
-public sealed class InternationalLicensesControllerTests
-    : IClassFixture<ApiWebApplicationFactory>
+public sealed class InternationalLicensesControllerTests : IClassFixture<ApiWebApplicationFactory>
 {
     private readonly ApiWebApplicationFactory _factory;
     private readonly HttpClient _client;
@@ -34,167 +34,112 @@ public sealed class InternationalLicensesControllerTests
     public async Task GetAll_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateInternationalDto();
-
         _factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
             .ReturnsAsync(Result<List<InternationalDto>>.Success([dto]));
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses"));
-
+        var response = await _client.SendAsync(CreateAuthenticatedRequest("/api/InternationalLicenses"));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<List<InternationalLicenseListResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<InternationalLicenseListResponse>>();
         Assert.NotNull(result);
-        var license = Assert.Single(result);
-
-        Assert.Equal(dto.InternationalLicenseID, license.InternationalLicenseId);
-        Assert.Equal(dto.ApplicationID, license.ApplicationId);
-        Assert.Equal(dto.DriverID, license.DriverId);
-        Assert.Equal(dto.IssuedUsingLocalLicenseID, license.IssuedUsingLocalLicenseId);
-        Assert.Equal(dto.PersonID, license.PersonId);
-        Assert.Equal(dto.IssueDate, license.IssueDate);
-        Assert.Equal(dto.ExpirationDate, license.ExpirationDate);
-        Assert.Equal(dto.IsActive, license.IsActive);
+        AssertLicenseListResponse(dto, Assert.Single(result));
     }
 
-    [Fact]
-    public async Task GetAll_WhenValidationFailure_ReturnsBadRequest()
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest, "Validation error", "Invalid license data.")]
+    [InlineData(HttpStatusCode.NotFound, "Resource not found", "International licenses not found.")]
+    [InlineData(HttpStatusCode.Conflict, "Conflict", "International license conflict.")]
+    [InlineData(HttpStatusCode.Forbidden, "Forbidden", "Access denied.")]
+    public async Task GetAll_WhenServiceFails_ReturnsProblemDetails(
+        HttpStatusCode status, string title, string detail)
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
-            .ReturnsAsync(Result<List<InternationalDto>>.FromValidationFailure(
-                "Invalid license data."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses"));
+        var result = status switch
+        {
+            HttpStatusCode.BadRequest => Result<List<InternationalDto>>.FromValidationFailure(detail),
+            HttpStatusCode.NotFound => Result<List<InternationalDto>>.FromNotFound(detail),
+            HttpStatusCode.Conflict => Result<List<InternationalDto>>.FromConflict(detail),
+            HttpStatusCode.Forbidden => Result<List<InternationalDto>>.FromForbidden(detail),
+            _ => throw new ArgumentOutOfRangeException(nameof(status))
+        };
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await AssertErrorAsync(response, "Invalid license data.");
-    }
+        factory.InternationalServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
 
-    [Fact]
-    public async Task GetAll_WhenNotFoundFailure_ReturnsNotFound()
-    {
-        _factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
-            .ReturnsAsync(Result<List<InternationalDto>>.FromNotFound(
-                "International licenses not found."));
-
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses"));
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertErrorAsync(response, "International licenses not found.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenConflictFailure_ReturnsConflict()
-    {
-        _factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
-            .ReturnsAsync(Result<List<InternationalDto>>.FromConflict(
-                "International license conflict."));
-
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses"));
-
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        await AssertErrorAsync(response, "International license conflict.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenForbiddenFailure_ReturnsForbidden()
-    {
-        _factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
-            .ReturnsAsync(Result<List<InternationalDto>>.FromForbidden(
-                "Access denied."));
-
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses"));
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        await AssertErrorAsync(response, "Access denied.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses"),
+            status, title, detail);
     }
 
     [Fact]
     public async Task GetAll_WhenFailure_ReturnsInternalServerError()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
-            .ReturnsAsync(Result<List<InternationalDto>>.FromFailure(
-                "Database failure."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses"));
+        factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
+            .ReturnsAsync(Result<List<InternationalDto>>.FromFailure("Database failure."));
 
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        await AssertErrorAsync(response, "Database failure.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses"),
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
     public async Task GetById_WhenSuccessful_ReturnsMappedLicense()
     {
         var dto = CreateInternationalDto(internationalLicenseId: 10);
-
         _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10))
             .ReturnsAsync(Result<InternationalDto>.Success(dto));
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/10"));
-
+        var response = await _client.SendAsync(CreateAuthenticatedRequest("/api/InternationalLicenses/10"));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<InternationalLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<InternationalLicenseResponse>();
         Assert.NotNull(result);
         AssertLicenseResponse(dto, result);
     }
 
-    [Fact]
-    public async Task GetById_WhenNotFoundFailure_ReturnsNotFound()
+    [Theory]
+    [InlineData(10, HttpStatusCode.NotFound, "Resource not found", "International license not found.")]
+    [InlineData(0, HttpStatusCode.BadRequest, "Validation error", "Invalid international license ID.")]
+    public async Task GetById_WhenServiceFails_ReturnsProblemDetails(
+        int id, HttpStatusCode status, string title, string detail)
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10))
-            .ReturnsAsync(Result<InternationalDto>.FromNotFound(
-                "International license not found."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/10"));
+        var result = status == HttpStatusCode.NotFound
+            ? Result<InternationalDto>.FromNotFound(detail)
+            : Result<InternationalDto>.FromValidationFailure(detail);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertErrorAsync(response, "International license not found.");
-    }
+        factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(id))
+            .ReturnsAsync(result);
 
-    [Fact]
-    public async Task GetById_WhenValidationFailure_ReturnsBadRequest()
-    {
-        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(0))
-            .ReturnsAsync(Result<InternationalDto>.FromValidationFailure(
-                "Invalid international license ID."));
-
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/0"));
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await AssertErrorAsync(response, "Invalid international license ID.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync($"/api/InternationalLicenses/{id}"),
+            status, title, detail);
     }
 
     [Fact]
     public async Task GetById_WhenResultValueIsNull_ReturnsNotFound()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10))
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10))
             .ReturnsAsync(Result<InternationalDto>.Success(null!));
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/10"));
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertErrorAsync(response, "International license not found.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses/10"),
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "International license not found.");
     }
 
     [Fact]
     public async Task GetByDriverId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateInternationalDto(internationalLicenseId: 20);
-
         _factory.InternationalServiceMock.Setup(x => x.GetByDriverIdAsync(5))
             .ReturnsAsync(Result<List<InternationalDto>>.Success([dto]));
 
@@ -203,41 +148,30 @@ public sealed class InternationalLicensesControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<List<InternationalLicenseListResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<InternationalLicenseListResponse>>();
         Assert.NotNull(result);
-        var license = Assert.Single(result);
-
-        Assert.Equal(dto.InternationalLicenseID, license.InternationalLicenseId);
-        Assert.Equal(dto.ApplicationID, license.ApplicationId);
-        Assert.Equal(dto.DriverID, license.DriverId);
-        Assert.Equal(dto.IssuedUsingLocalLicenseID, license.IssuedUsingLocalLicenseId);
-        Assert.Equal(dto.PersonID, license.PersonId);
-        Assert.Equal(dto.IssueDate, license.IssueDate);
-        Assert.Equal(dto.ExpirationDate, license.ExpirationDate);
-        Assert.Equal(dto.IsActive, license.IsActive);
+        AssertLicenseListResponse(dto, Assert.Single(result));
     }
 
     [Fact]
-    public async Task GetByDriverId_WhenServiceFails_ReturnsMappedFailure()
+    public async Task GetByDriverId_WhenServiceFails_ReturnsBadRequest()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetByDriverIdAsync(5))
-            .ReturnsAsync(Result<List<InternationalDto>>.FromValidationFailure(
-                "Invalid driver ID."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/driver/5"));
+        factory.InternationalServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+            .ReturnsAsync(Result<List<InternationalDto>>.FromValidationFailure("Invalid driver ID."));
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await AssertErrorAsync(response, "Invalid driver ID.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses/driver/5"),
+            HttpStatusCode.BadRequest,
+            "Validation error",
+            "Invalid driver ID.");
     }
 
     [Fact]
     public async Task GetByApplicationId_WhenSuccessful_ReturnsMappedLicense()
     {
         var dto = CreateInternationalDto(applicationId: 30);
-
         _factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
             .ReturnsAsync(Result<InternationalDto>.Success(dto));
 
@@ -246,9 +180,7 @@ public sealed class InternationalLicensesControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<InternationalLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<InternationalLicenseResponse>();
         Assert.NotNull(result);
         AssertLicenseResponse(dto, result);
     }
@@ -256,35 +188,37 @@ public sealed class InternationalLicensesControllerTests
     [Fact]
     public async Task GetByApplicationId_WhenNotFoundFailure_ReturnsNotFound()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
-            .ReturnsAsync(Result<InternationalDto>.FromNotFound(
-                "International license not found."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/application/30"));
+        factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
+            .ReturnsAsync(Result<InternationalDto>.FromNotFound("International license not found."));
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertErrorAsync(response, "International license not found.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses/application/30"),
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "International license not found.");
     }
 
     [Fact]
     public async Task GetByApplicationId_WhenResultValueIsNull_ReturnsNotFound()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
             .ReturnsAsync(Result<InternationalDto>.Success(null!));
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/application/30"));
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertErrorAsync(response, "International license not found.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses/application/30"),
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "International license not found.");
     }
 
     [Fact]
     public async Task GetByLocalLicenseId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateInternationalDto(issuedUsingLocalLicenseId: 40);
-
         _factory.InternationalServiceMock.Setup(x => x.GetByLocalLicenseIdAsync(40))
             .ReturnsAsync(Result<List<InternationalDto>>.Success([dto]));
 
@@ -293,34 +227,25 @@ public sealed class InternationalLicensesControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<List<InternationalLicenseListResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<InternationalLicenseListResponse>>();
         Assert.NotNull(result);
-        var license = Assert.Single(result);
-
-        Assert.Equal(dto.InternationalLicenseID, license.InternationalLicenseId);
-        Assert.Equal(dto.ApplicationID, license.ApplicationId);
-        Assert.Equal(dto.DriverID, license.DriverId);
-        Assert.Equal(dto.IssuedUsingLocalLicenseID, license.IssuedUsingLocalLicenseId);
-        Assert.Equal(dto.PersonID, license.PersonId);
-        Assert.Equal(dto.IssueDate, license.IssueDate);
-        Assert.Equal(dto.ExpirationDate, license.ExpirationDate);
-        Assert.Equal(dto.IsActive, license.IsActive);
+        AssertLicenseListResponse(dto, Assert.Single(result));
     }
 
     [Fact]
-    public async Task GetByLocalLicenseId_WhenServiceFails_ReturnsMappedFailure()
+    public async Task GetByLocalLicenseId_WhenServiceFails_ReturnsConflict()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetByLocalLicenseIdAsync(40))
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.InternationalServiceMock.Setup(x => x.GetByLocalLicenseIdAsync(40))
             .ReturnsAsync(Result<List<InternationalDto>>.FromConflict(
                 "International license conflict."));
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/license/40"));
-
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        await AssertErrorAsync(response, "International license conflict.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses/license/40"),
+            HttpStatusCode.Conflict,
+            "Conflict",
+            "International license conflict.");
     }
 
     [Fact]
@@ -336,10 +261,9 @@ public sealed class InternationalLicensesControllerTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<DriverLicenseInfoResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<DriverLicenseInfoResponse>();
         Assert.NotNull(result);
+
         Assert.Equal(dto.LicenseId, result.LicenseId);
         Assert.Equal(dto.LicenseClass, result.LicenseClass);
         Assert.Equal(dto.IssueDate, result.IssueDate);
@@ -361,83 +285,71 @@ public sealed class InternationalLicensesControllerTests
     [Fact]
     public async Task GetLocalLicenseInfo_WhenNotFoundFailure_ReturnsNotFound()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50))
-            .ReturnsAsync(Result<DriverLicenseInfoDto>.FromNotFound(
-                "License not found."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/license/50/info"));
+        factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50))
+            .ReturnsAsync(Result<DriverLicenseInfoDto>.FromNotFound("License not found."));
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertErrorAsync(response, "License not found.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses/license/50/info"),
+            HttpStatusCode.NotFound, "Resource not found", "License not found.");
     }
 
     [Fact]
     public async Task GetLocalLicenseInfo_WhenResultValueIsNull_ReturnsNotFound()
     {
-        _factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50))
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(null!));
 
-        var response = await _client.SendAsync(
-            CreateAuthenticatedRequest("/api/InternationalLicenses/license/50/info"));
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        await AssertErrorAsync(response, "License not found.");
+        await AssertProblemDetailsAsync(
+            await Authenticated(factory).GetAsync("/api/InternationalLicenses/license/50/info"),
+            HttpStatusCode.NotFound, "Resource not found", "License not found.");
     }
 
     [Fact]
     public async Task Issue_WhenSuccessful_ReturnsIssuedLicense()
     {
-        var dto = CreateInternationalDto(
-            internationalLicenseId: 100,
-            issuedUsingLocalLicenseId: 25);
+        var dto = CreateInternationalDto(100, issuedUsingLocalLicenseId: 25);
 
         _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
             .ReturnsAsync(Result<int>.Success(100));
-
         _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(Result<InternationalDto>.Success(dto));
 
-        var request = CreateAuthenticatedRequest(
-            "/api/InternationalLicenses", HttpMethod.Post);
-
-        request.Content = JsonContent.Create(
-            new IssueInternationalLicenseRequest(25));
+        var request = CreateAuthenticatedRequest("/api/InternationalLicenses", HttpMethod.Post);
+        request.Content = JsonContent.Create(new IssueInternationalLicenseRequest(25));
 
         var response = await _client.SendAsync(request);
-
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<InternationalLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<InternationalLicenseResponse>();
         Assert.NotNull(result);
         AssertLicenseResponse(dto, result);
 
         _factory.InternationalServiceMock.Verify(
             x => x.IssueInternationalLicenseAsync(25), Times.Once);
-
         _factory.InternationalServiceMock.Verify(
             x => x.GetByIdAsync(100), Times.Once);
     }
 
     [Fact]
-    public async Task Issue_WhenIssuanceFails_ReturnsMappedFailure()
+    public async Task Issue_WhenIssuanceFails_ReturnsConflict()
     {
+        await using var factory = new ApiWebApplicationFactory();
+
         _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
-            .ReturnsAsync(Result<int>.FromConflict(
-                "An international license already exists."));
+            .ReturnsAsync(Result<int>.FromConflict("An international license already exists."));
 
-        var request = CreateAuthenticatedRequest(
-            "/api/InternationalLicenses", HttpMethod.Post);
+        var request = CreateAuthenticatedRequest("/api/InternationalLicenses", HttpMethod.Post);
+        request.Content = JsonContent.Create(new IssueInternationalLicenseRequest(25));
 
-        request.Content = JsonContent.Create(
-            new IssueInternationalLicenseRequest(25));
-
-        var response = await _client.SendAsync(request);
-
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        await AssertErrorAsync(response, "An international license already exists.");
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(request),
+            HttpStatusCode.Conflict,
+            "Conflict",
+            "An international license already exists.");
 
         _factory.InternationalServiceMock.Verify(
             x => x.GetByIdAsync(It.IsAny<int>()), Times.Never);
@@ -446,69 +358,68 @@ public sealed class InternationalLicensesControllerTests
     [Fact]
     public async Task Issue_WhenIssuedLicenseCannotBeRetrieved_ReturnsNotFound()
     {
+        await using var factory = new ApiWebApplicationFactory();
+
         _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
             .ReturnsAsync(Result<int>.Success(100));
-
         _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(Result<InternationalDto>.Success(null!));
 
-        var request = CreateAuthenticatedRequest(
-            "/api/InternationalLicenses", HttpMethod.Post);
+        var request = CreateAuthenticatedRequest("/api/InternationalLicenses", HttpMethod.Post);
+        request.Content = JsonContent.Create(new IssueInternationalLicenseRequest(25));
 
-        request.Content = JsonContent.Create(
-            new IssueInternationalLicenseRequest(25));
-
-        var response = await _client.SendAsync(request);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(request),
+            HttpStatusCode.NotFound,
+            "Resource not found",
             "International license was issued but could not be retrieved.");
     }
 
     [Fact]
-    public async Task Issue_WhenRetrievalFails_ReturnsMappedFailure()
+    public async Task Issue_WhenRetrievalFails_ReturnsInternalServerError()
     {
+        await using var factory = new ApiWebApplicationFactory();
+
         _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
             .ReturnsAsync(Result<int>.Success(100));
-
         _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(Result<InternationalDto>.FromFailure(
                 "Failed to retrieve international license."));
 
-        var request = CreateAuthenticatedRequest(
-            "/api/InternationalLicenses", HttpMethod.Post);
+        var request = CreateAuthenticatedRequest("/api/InternationalLicenses", HttpMethod.Post);
+        request.Content = JsonContent.Create(new IssueInternationalLicenseRequest(25));
 
-        request.Content = JsonContent.Create(
-            new IssueInternationalLicenseRequest(25));
-
-        var response = await _client.SendAsync(request);
-
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
-        await AssertErrorAsync(
-            response,
-            "Failed to retrieve international license.");
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(request),
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     private static HttpRequestMessage CreateAuthenticatedRequest(
         string url, HttpMethod? method = null, string role = "Staff")
     {
         var request = new HttpRequestMessage(method ?? HttpMethod.Get, url);
-
         request.Headers.Add("X-Test-User-Id", "1");
         request.Headers.Add("X-Test-Username", "testuser");
         request.Headers.Add("X-Test-FullName", "Test User");
         request.Headers.Add("X-Test-Role", role);
-
         return request;
     }
 
+    private static HttpClient Authenticated(ApiWebApplicationFactory factory)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User-Id", "1");
+        client.DefaultRequestHeaders.Add("X-Test-Username", "testuser");
+        client.DefaultRequestHeaders.Add("X-Test-FullName", "Test User");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Staff");
+        return client;
+    }
+
     private static InternationalDto CreateInternationalDto(
-        int internationalLicenseId = 1,
-        int applicationId = 10,
-        int driverId = 20,
-        int issuedUsingLocalLicenseId = 30) => new()
+        int internationalLicenseId = 1, int applicationId = 10,
+        int driverId = 20, int issuedUsingLocalLicenseId = 30) => new()
         {
             InternationalLicenseID = internationalLicenseId,
             ApplicationID = applicationId,
@@ -548,6 +459,19 @@ public sealed class InternationalLicensesControllerTests
         ImagePath = "test.jpg"
     };
 
+    private static void AssertLicenseListResponse(
+        InternationalDto dto, InternationalLicenseListResponse response)
+    {
+        Assert.Equal(dto.InternationalLicenseID, response.InternationalLicenseId);
+        Assert.Equal(dto.ApplicationID, response.ApplicationId);
+        Assert.Equal(dto.DriverID, response.DriverId);
+        Assert.Equal(dto.IssuedUsingLocalLicenseID, response.IssuedUsingLocalLicenseId);
+        Assert.Equal(dto.PersonID, response.PersonId);
+        Assert.Equal(dto.IssueDate, response.IssueDate);
+        Assert.Equal(dto.ExpirationDate, response.ExpirationDate);
+        Assert.Equal(dto.IsActive, response.IsActive);
+    }
+
     private static void AssertLicenseResponse(
         InternationalDto dto, InternationalLicenseResponse response)
     {
@@ -569,14 +493,25 @@ public sealed class InternationalLicensesControllerTests
         Assert.Equal(dto.CreatedByUserName, response.CreatedByUserName);
     }
 
-    private static async Task AssertErrorAsync(
-        HttpResponseMessage response, string expectedError)
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response, HttpStatusCode status,
+        string title, string detail)
     {
-        var body = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        Assert.Equal(status, response.StatusCode);
+        Assert.Equal("application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-        Assert.NotNull(body);
-        Assert.Equal(expectedError, body.Error);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)status, body.GetProperty("status").GetInt32());
+        Assert.Equal(title, body.GetProperty("title").GetString());
+        Assert.Equal(detail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
-
-    private sealed record ErrorResponse(string Error);
 }

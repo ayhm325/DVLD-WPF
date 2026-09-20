@@ -1,9 +1,10 @@
-﻿using System.Net;
-using System.Net.Http.Json;
+﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
-using API.IntegrationTests.Infrastructure;
 using DVLD.Contracts.LicenseRenewal;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
@@ -15,24 +16,13 @@ public sealed class LicenseRenewalControllerTests
         await using var factory = new ApiWebApplicationFactory();
         using var client = factory.CreateClient();
 
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 10,
-                Notes: "Renewal");
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseRenewal",
+            new RenewLicenseRequest(10, "Renewal"));
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.LicenseRenewalServiceMock.Verify(
-            x => x.RenewLicenseAsync(
-                It.IsAny<int>(),
-                It.IsAny<string?>()),
+            x => x.RenewLicenseAsync(It.IsAny<int>(), It.IsAny<string?>()),
             Times.Never);
     }
 
@@ -42,45 +32,22 @@ public sealed class LicenseRenewalControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseRenewalServiceMock
-            .Setup(x =>
-                x.RenewLicenseAsync(
-                    10,
-                    "Renewal notes"))
-            .ReturnsAsync(
-                Result<int>.Success(300));
+            .Setup(x => x.RenewLicenseAsync(10, "Renewal notes"))
+            .ReturnsAsync(Result<int>.Success(300));
 
-        using var client =
-            CreateAuthenticatedClient(factory);
+        using var client = CreateAuthenticatedClient(factory);
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseRenewal",
+            new RenewLicenseRequest(10, "Renewal notes"));
 
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 10,
-                Notes: "Renewal notes");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<RenewLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<RenewLicenseResponse>();
         Assert.NotNull(result);
-
-        Assert.Equal(
-            300,
-            result.LicenseId);
+        Assert.Equal(300, result.LicenseId);
 
         factory.LicenseRenewalServiceMock.Verify(
-            x =>
-                x.RenewLicenseAsync(
-                    10,
-                    "Renewal notes"),
+            x => x.RenewLicenseAsync(10, "Renewal notes"),
             Times.Once);
     }
 
@@ -90,264 +57,110 @@ public sealed class LicenseRenewalControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseRenewalServiceMock
-            .Setup(x =>
-                x.RenewLicenseAsync(
-                    10,
-                    null))
-            .ReturnsAsync(
-                Result<int>.Success(301));
+            .Setup(x => x.RenewLicenseAsync(10, null))
+            .ReturnsAsync(Result<int>.Success(301));
 
-        using var client =
-            CreateAuthenticatedClient(factory);
+        using var client = CreateAuthenticatedClient(factory);
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseRenewal",
+            new RenewLicenseRequest(10, null));
 
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 10,
-                Notes: null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<RenewLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<RenewLicenseResponse>();
         Assert.NotNull(result);
-
-        Assert.Equal(
-            301,
-            result.LicenseId);
+        Assert.Equal(301, result.LicenseId);
 
         factory.LicenseRenewalServiceMock.Verify(
-            x =>
-                x.RenewLicenseAsync(
-                    10,
-                    null),
+            x => x.RenewLicenseAsync(10, null),
             Times.Once);
     }
 
-    [Fact]
-    public async Task Renew_WhenValidationFails_Returns400()
+    [Theory]
+    [InlineData(0, null, 400, "Validation error", "Invalid license ID.")]
+    [InlineData(999, null, 404, "Resource not found", "License not found.")]
+    [InlineData(20, null, 409, "Conflict", "License cannot be renewed.")]
+    [InlineData(20, null, 403, "Forbidden", "Authenticated user is required.")]
+    public async Task Renew_WhenResultFails_ReturnsProblemDetails(
+        int licenseId,
+        string? notes,
+        int statusCode,
+        string title,
+        string detail)
     {
         await using var factory = new ApiWebApplicationFactory();
 
+        var result = statusCode switch
+        {
+            400 => Result<int>.FromValidationFailure(detail),
+            404 => Result<int>.FromNotFound(detail),
+            409 => Result<int>.FromConflict(detail),
+            403 => Result<int>.FromForbidden(detail),
+            _ => throw new ArgumentOutOfRangeException(nameof(statusCode))
+        };
+
         factory.LicenseRenewalServiceMock
-            .Setup(x =>
-                x.RenewLicenseAsync(
-                    0,
-                    null))
-            .ReturnsAsync(
-                Result<int>.FromValidationFailure(
-                    "Invalid license ID."));
+            .Setup(x => x.RenewLicenseAsync(licenseId, notes))
+            .ReturnsAsync(result);
 
-        using var client =
-            CreateAuthenticatedClient(factory);
+        using var client = CreateAuthenticatedClient(factory);
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseRenewal",
+            new RenewLicenseRequest(licenseId, notes));
 
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 0,
-                Notes: null);
-
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Invalid license ID.",
-            error);
+        await AssertProblemDetailsAsync(
+            response,
+            (HttpStatusCode)statusCode,
+            title,
+            detail);
     }
 
     [Fact]
-    public async Task Renew_WhenNotFound_Returns404()
+    public async Task Renew_WhenServiceFails_Returns500ProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseRenewalServiceMock
-            .Setup(x =>
-                x.RenewLicenseAsync(
-                    999,
-                    null))
-            .ReturnsAsync(
-                Result<int>.FromNotFound(
-                    "License not found."));
+            .Setup(x => x.RenewLicenseAsync(20, null))
+            .ReturnsAsync(Result<int>.FromFailure(
+                "Failed to renew license."));
 
-        using var client =
-            CreateAuthenticatedClient(factory);
+        using var client = CreateAuthenticatedClient(factory);
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseRenewal",
+            new RenewLicenseRequest(20, null));
 
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 999,
-                Notes: null);
-
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "License not found.",
-            error);
-    }
-
-    [Fact]
-    public async Task Renew_WhenConflict_Returns409()
-    {
-        await using var factory = new ApiWebApplicationFactory();
-
-        factory.LicenseRenewalServiceMock
-            .Setup(x =>
-                x.RenewLicenseAsync(
-                    20,
-                    null))
-            .ReturnsAsync(
-                Result<int>.FromConflict(
-                    "License cannot be renewed."));
-
-        using var client =
-            CreateAuthenticatedClient(factory);
-
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 20,
-                Notes: null);
-
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "License cannot be renewed.",
-            error);
-    }
-
-    [Fact]
-    public async Task Renew_WhenForbidden_Returns403()
-    {
-        await using var factory = new ApiWebApplicationFactory();
-
-        factory.LicenseRenewalServiceMock
-            .Setup(x =>
-                x.RenewLicenseAsync(
-                    20,
-                    null))
-            .ReturnsAsync(
-                Result<int>.FromForbidden(
-                    "Authenticated user is required."));
-
-        using var client =
-            CreateAuthenticatedClient(factory);
-
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 20,
-                Notes: null);
-
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Authenticated user is required.",
-            error);
-    }
-
-    [Fact]
-    public async Task Renew_WhenServiceFails_Returns500()
-    {
-        await using var factory = new ApiWebApplicationFactory();
-
-        factory.LicenseRenewalServiceMock
-            .Setup(x =>
-                x.RenewLicenseAsync(
-                    20,
-                    null))
-            .ReturnsAsync(
-                Result<int>.FromFailure(
-                    "Failed to renew license."));
-
-        using var client =
-            CreateAuthenticatedClient(factory);
-
-        var request =
-            new RenewLicenseRequest(
-                OldLicenseId: 20,
-                Notes: null);
-
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/LicenseRenewal",
-                request);
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Failed to renew license.",
-            error);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
-    private static HttpClient CreateAuthenticatedClient(
-        ApiWebApplicationFactory factory)
+    private static HttpClient CreateAuthenticatedClient(ApiWebApplicationFactory factory)
     {
         var client = factory.CreateClient();
-
-        client.DefaultRequestHeaders.Add(
-            "X-Test-User-Id",
-            "1");
-
+        client.DefaultRequestHeaders.Add("X-Test-User-Id", "1");
         return client;
     }
 
-    private static async Task<string?> ReadErrorAsync(
-        HttpResponseMessage response)
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
 
-        return body?.Error;
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("instance").GetString()));
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
-
-    private sealed record ErrorResponse(string? Error);
 }

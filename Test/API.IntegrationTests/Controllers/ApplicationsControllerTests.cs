@@ -6,6 +6,7 @@ using DVLD.Contracts.Application;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
@@ -27,19 +28,16 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         var response = await _client.GetAsync("/api/Applications");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        _factory.ApplicationServiceMock.Verify(
-            x => x.GetAllApplicationsAsync(), Times.Never);
+        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(), Times.Never);
     }
 
     [Fact]
     public async Task GetAll_WhenAdmin_ReturnsForbidden()
     {
-        var response = await SendAuthenticatedAsync(
-            HttpMethod.Get, "/api/Applications", role: "Admin");
+        var response = await SendAsync(HttpMethod.Get, "/api/Applications", role: "Admin");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        _factory.ApplicationServiceMock.Verify(
-            x => x.GetAllApplicationsAsync(), Times.Never);
+        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(), Times.Never);
     }
 
     [Fact]
@@ -48,26 +46,23 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         var date = new DateTime(2026, 1, 10);
         var lastDate = new DateTime(2026, 1, 11);
 
-        _factory.ApplicationServiceMock
-            .Setup(x => x.GetAllApplicationsAsync())
-            .ReturnsAsync(Result<List<ApplicationDto>>.Success(
-            [
-                new()
-                {
-                    ApplicationID = 10,
-                    ApplicantPersonID = 20,
-                    ApplicationDate = date,
-                    ApplicationTypeID = 30,
-                    ApplicationStatus = AppStatus.New,
-                    LastStatusDate = lastDate,
-                    PaidFees = 25.50m,
-                    CreatedByUserID = 40,
-                    CreatedByUserName = "admin"
-                }
-            ]));
+        SetupGetAll(Result<List<ApplicationDto>>.Success(
+        [
+            new()
+            {
+                ApplicationID = 10,
+                ApplicantPersonID = 20,
+                ApplicationDate = date,
+                ApplicationTypeID = 30,
+                ApplicationStatus = AppStatus.New,
+                LastStatusDate = lastDate,
+                PaidFees = 25.50m,
+                CreatedByUserID = 40,
+                CreatedByUserName = "admin"
+            }
+        ]));
 
-        var response = await SendAuthenticatedAsync(
-            HttpMethod.Get, "/api/Applications");
+        var response = await SendAsync(HttpMethod.Get, "/api/Applications");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -85,8 +80,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Equal(40, item.CreatedByUserId);
         Assert.Equal("admin", item.CreatedByUserName);
 
-        _factory.ApplicationServiceMock.Verify(
-            x => x.GetAllApplicationsAsync(), Times.Once);
+        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(), Times.Once);
     }
 
     [Fact]
@@ -95,8 +89,10 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         SetupGetAll(Result<List<ApplicationDto>>.FromValidationFailure("validation error"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(HttpMethod.Get, "/api/Applications"),
-            HttpStatusCode.BadRequest, "validation error");
+            await SendAsync(HttpMethod.Get, "/api/Applications"),
+            HttpStatusCode.BadRequest,
+            "Validation error",
+            "validation error");
     }
 
     [Fact]
@@ -105,8 +101,10 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         SetupGetAll(Result<List<ApplicationDto>>.FromNotFound("not found"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(HttpMethod.Get, "/api/Applications"),
-            HttpStatusCode.NotFound, "not found");
+            await SendAsync(HttpMethod.Get, "/api/Applications"),
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "not found");
     }
 
     [Fact]
@@ -115,8 +113,10 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         SetupGetAll(Result<List<ApplicationDto>>.FromConflict("conflict"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(HttpMethod.Get, "/api/Applications"),
-            HttpStatusCode.Conflict, "conflict");
+            await SendAsync(HttpMethod.Get, "/api/Applications"),
+            HttpStatusCode.Conflict,
+            "Conflict",
+            "conflict");
     }
 
     [Fact]
@@ -125,8 +125,10 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         SetupGetAll(Result<List<ApplicationDto>>.FromFailure("failure"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(HttpMethod.Get, "/api/Applications"),
-            HttpStatusCode.InternalServerError, "failure");
+            await SendAsync(HttpMethod.Get, "/api/Applications"),
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
@@ -149,8 +151,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .Setup(x => x.GetApplicationByIdAsync(100))
             .ReturnsAsync(Result<ApplicationDto>.Success(dto));
 
-        var response = await SendAuthenticatedAsync(
-            HttpMethod.Get, "/api/Applications/100");
+        var response = await SendAsync(HttpMethod.Get, "/api/Applications/100");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -178,9 +179,10 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .ReturnsAsync(Result<ApplicationDto>.FromNotFound("application not found"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
-                HttpMethod.Get, "/api/Applications/100"),
-            HttpStatusCode.NotFound, "application not found");
+            await SendAsync(HttpMethod.Get, "/api/Applications/100"),
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "application not found");
     }
 
     [Fact]
@@ -203,13 +205,13 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .Setup(x => x.GetBasicInfoAsync(20))
             .ReturnsAsync(Result<ApplicationBasicInfoDto>.Success(dto));
 
-        var response = await SendAuthenticatedAsync(
-            HttpMethod.Get, "/api/Applications/20/basic-info");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/Applications/20/basic-info");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<ApplicationBasicInfoResponse>();
+        var result = await response.Content.ReadFromJsonAsync<ApplicationBasicInfoResponse>();
 
         Assert.NotNull(result);
         Assert.Equal(10, result.ApplicantPersonId);
@@ -223,8 +225,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Equal(new DateTime(2026, 3, 2), result.LastStatusDate);
         Assert.Equal("admin", result.CreatedByUserName);
 
-        _factory.ApplicationServiceMock.Verify(
-            x => x.GetBasicInfoAsync(20), Times.Once);
+        _factory.ApplicationServiceMock.Verify(x => x.GetBasicInfoAsync(20), Times.Once);
     }
 
     [Fact]
@@ -235,9 +236,10 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .ReturnsAsync(Result<ApplicationBasicInfoDto>.FromNotFound("not found"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
-                HttpMethod.Get, "/api/Applications/20/basic-info"),
-            HttpStatusCode.NotFound, "not found");
+            await SendAsync(HttpMethod.Get, "/api/Applications/20/basic-info"),
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "not found");
     }
 
     [Fact]
@@ -248,7 +250,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
                 d => d.ApplicantPersonID == 100 && d.ApplicationTypeID == 200)))
             .ReturnsAsync(Result<int>.Success(500));
 
-        var response = await SendAuthenticatedAsync(
+        var response = await SendAsync(
             HttpMethod.Post,
             "/api/Applications",
             new CreateApplicationRequest
@@ -259,8 +261,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<CreateApplicationResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CreateApplicationResponse>();
 
         Assert.NotNull(result);
         Assert.Equal(500, result.ApplicationId);
@@ -279,7 +280,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .ReturnsAsync(Result<int>.FromValidationFailure("validation error"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
+            await SendAsync(
                 HttpMethod.Post,
                 "/api/Applications",
                 new CreateApplicationRequest
@@ -287,7 +288,9 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
                     ApplicantPersonId = 100,
                     ApplicationTypeId = 200
                 }),
-            HttpStatusCode.BadRequest, "validation error");
+            HttpStatusCode.BadRequest,
+            "Validation error",
+            "validation error");
     }
 
     [Fact]
@@ -298,7 +301,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .ReturnsAsync(Result<int>.FromConflict("conflict"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
+            await SendAsync(
                 HttpMethod.Post,
                 "/api/Applications",
                 new CreateApplicationRequest
@@ -306,13 +309,15 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
                     ApplicantPersonId = 100,
                     ApplicationTypeId = 200
                 }),
-            HttpStatusCode.Conflict, "conflict");
+            HttpStatusCode.Conflict,
+            "Conflict",
+            "conflict");
     }
 
     [Fact]
     public async Task Update_WhenRouteIdDoesNotMatchRequestId_ReturnsBadRequest()
     {
-        var response = await SendAuthenticatedAsync(
+        var response = await SendAsync(
             HttpMethod.Put,
             "/api/Applications/100",
             new UpdateApplicationRequest
@@ -324,6 +329,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         await AssertFailureAsync(
             response,
             HttpStatusCode.BadRequest,
+            "Validation error",
             "Route application ID does not match request application ID.");
 
         _factory.ApplicationServiceMock.Verify(
@@ -339,7 +345,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
                 d => d.ApplicationID == 100 && d.ApplicationTypeID == 300)))
             .ReturnsAsync(Result.Success());
 
-        var response = await SendAuthenticatedAsync(
+        var response = await SendAsync(
             HttpMethod.Put,
             "/api/Applications/100",
             new UpdateApplicationRequest
@@ -362,7 +368,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         SetupUpdate(Result.NotFound("application not found"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
+            await SendAsync(
                 HttpMethod.Put,
                 "/api/Applications/100",
                 new UpdateApplicationRequest
@@ -370,7 +376,9 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
                     ApplicationId = 100,
                     ApplicationTypeId = 300
                 }),
-            HttpStatusCode.NotFound, "application not found");
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "application not found");
     }
 
     [Fact]
@@ -379,7 +387,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         SetupUpdate(Result.ValidationFailure("validation error"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
+            await SendAsync(
                 HttpMethod.Put,
                 "/api/Applications/100",
                 new UpdateApplicationRequest
@@ -387,7 +395,9 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
                     ApplicationId = 100,
                     ApplicationTypeId = 300
                 }),
-            HttpStatusCode.BadRequest, "validation error");
+            HttpStatusCode.BadRequest,
+            "Validation error",
+            "validation error");
     }
 
     [Fact]
@@ -397,8 +407,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .Setup(x => x.DeleteApplicationAsync(100))
             .ReturnsAsync(Result.Success());
 
-        var response = await SendAuthenticatedAsync(
-            HttpMethod.Delete, "/api/Applications/100");
+        var response = await SendAsync(HttpMethod.Delete, "/api/Applications/100");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         _factory.ApplicationServiceMock.Verify(
@@ -413,9 +422,9 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .ReturnsAsync(Result.NotFound("application not found"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
-                HttpMethod.Delete, "/api/Applications/100"),
+            await SendAsync(HttpMethod.Delete, "/api/Applications/100"),
             HttpStatusCode.NotFound,
+            "Resource not found",
             "application not found");
     }
 
@@ -426,8 +435,9 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .Setup(x => x.CompleteApplicationAsync(100))
             .ReturnsAsync(Result.Success());
 
-        var response = await SendAuthenticatedAsync(
-            HttpMethod.Post, "/api/Applications/100/complete");
+        var response = await SendAsync(
+            HttpMethod.Post,
+            "/api/Applications/100/complete");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         _factory.ApplicationServiceMock.Verify(
@@ -442,9 +452,11 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .ReturnsAsync(Result.Conflict("cannot complete application"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
-                HttpMethod.Post, "/api/Applications/100/complete"),
+            await SendAsync(
+                HttpMethod.Post,
+                "/api/Applications/100/complete"),
             HttpStatusCode.Conflict,
+            "Conflict",
             "cannot complete application");
     }
 
@@ -455,8 +467,9 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .Setup(x => x.CancelApplicationAsync(100))
             .ReturnsAsync(Result.Success());
 
-        var response = await SendAuthenticatedAsync(
-            HttpMethod.Post, "/api/Applications/100/cancel");
+        var response = await SendAsync(
+            HttpMethod.Post,
+            "/api/Applications/100/cancel");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         _factory.ApplicationServiceMock.Verify(
@@ -471,9 +484,11 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .ReturnsAsync(Result.Forbidden("forbidden"));
 
         await AssertFailureAsync(
-            await SendAuthenticatedAsync(
-                HttpMethod.Post, "/api/Applications/100/cancel"),
+            await SendAsync(
+                HttpMethod.Post,
+                "/api/Applications/100/cancel"),
             HttpStatusCode.Forbidden,
+            "Forbidden",
             "forbidden");
     }
 
@@ -487,14 +502,13 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             .Setup(x => x.UpdateApplicationAsync(It.IsAny<UpdateApplicationDto>()))
             .ReturnsAsync(result);
 
-    private async Task<HttpResponseMessage> SendAuthenticatedAsync(
+    private async Task<HttpResponseMessage> SendAsync(
         HttpMethod method,
         string url,
         object? content = null,
         string role = "Staff")
     {
         using var request = new HttpRequestMessage(method, url);
-
         request.Headers.Add("X-Test-User-Id", "1");
         request.Headers.Add("X-Test-Username", "testuser");
         request.Headers.Add("X-Test-FullName", "Test User");
@@ -509,15 +523,29 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     private static async Task AssertFailureAsync(
         HttpResponseMessage response,
         HttpStatusCode expectedStatus,
-        string expectedError)
+        string expectedTitle,
+        string expectedDetail)
     {
         Assert.Equal(expectedStatus, response.StatusCode);
-        Assert.Equal(expectedError, await ReadErrorAsync(response));
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+
+        var path = body.GetProperty("instance").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(path));
+
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
 
-    private static async Task<string?> ReadErrorAsync(HttpResponseMessage response) =>
-        (await response.Content.ReadFromJsonAsync<ErrorResponse>())?.Error;
-
-    private sealed record ErrorResponse(string? Error);
     private sealed record CreateApplicationResponse(int ApplicationId);
 }

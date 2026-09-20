@@ -5,6 +5,7 @@ using DVLD.Contracts.ApplicationType;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
@@ -15,8 +16,7 @@ public sealed class ApplicationTypesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        var response = await SendAsync(
-            factory, HttpMethod.Get, "/api/ApplicationTypes", role: null);
+        var response = await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes", role: null);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         VerifyGetNever(factory);
@@ -27,8 +27,7 @@ public sealed class ApplicationTypesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        var response = await SendAsync(
-            factory, HttpMethod.Get, "/api/ApplicationTypes", role: "Staff");
+        var response = await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes", role: "Staff");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         VerifyGetNever(factory);
@@ -57,32 +56,24 @@ public sealed class ApplicationTypesControllerTests
                 }
             ]));
 
-        var response = await SendAsync(
-            factory, HttpMethod.Get, "/api/ApplicationTypes");
+        var response = await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<List<ApplicationTypeResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<List<ApplicationTypeResponse>>();
 
         Assert.NotNull(result);
-
-        Assert.Collection(
-            result,
+        Assert.Collection(result,
             x =>
             {
                 Assert.Equal(1, x.ApplicationTypeId);
-                Assert.Equal(
-                    "New Local Driving License Service",
-                    x.ApplicationTypeTitle);
+                Assert.Equal("New Local Driving License Service", x.ApplicationTypeTitle);
                 Assert.Equal(20.50m, x.ApplicationTypeFees);
             },
             x =>
             {
                 Assert.Equal(2, x.ApplicationTypeId);
-                Assert.Equal(
-                    "Renew Driving License",
-                    x.ApplicationTypeTitle);
+                Assert.Equal("Renew Driving License", x.ApplicationTypeTitle);
                 Assert.Equal(15.75m, x.ApplicationTypeFees);
             });
 
@@ -100,11 +91,11 @@ public sealed class ApplicationTypesControllerTests
             .ReturnsAsync(Result<List<ApplicationTypeDto>>.FromFailure(
                 "Failed to load application types."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory, HttpMethod.Get, "/api/ApplicationTypes"),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes"),
             HttpStatusCode.InternalServerError,
-            "Failed to load application types.");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
@@ -121,13 +112,11 @@ public sealed class ApplicationTypesControllerTests
                 ApplicationTypeFees = 25m
             }));
 
-        var response = await SendAsync(
-            factory, HttpMethod.Get, "/api/ApplicationTypes/3");
+        var response = await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes/3");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<ApplicationTypeResponse>();
+        var result = await response.Content.ReadFromJsonAsync<ApplicationTypeResponse>();
 
         Assert.NotNull(result);
         Assert.Equal(3, result.ApplicationTypeId);
@@ -148,10 +137,10 @@ public sealed class ApplicationTypesControllerTests
             .ReturnsAsync(Result<ApplicationTypeDto>.FromNotFound(
                 "Application type not found."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory, HttpMethod.Get, "/api/ApplicationTypes/99"),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes/99"),
             HttpStatusCode.NotFound,
+            "Resource not found",
             "Application type not found.");
     }
 
@@ -165,10 +154,10 @@ public sealed class ApplicationTypesControllerTests
             .ReturnsAsync(Result<ApplicationTypeDto>.FromValidationFailure(
                 "Invalid application type ID."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory, HttpMethod.Get, "/api/ApplicationTypes/0"),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes/0"),
             HttpStatusCode.BadRequest,
+            "Validation error",
             "Invalid application type ID.");
     }
 
@@ -182,11 +171,11 @@ public sealed class ApplicationTypesControllerTests
             .ReturnsAsync(Result<ApplicationTypeDto>.FromFailure(
                 "Unexpected application type failure."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory, HttpMethod.Get, "/api/ApplicationTypes/5"),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes/5"),
             HttpStatusCode.InternalServerError,
-            "Unexpected application type failure.");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
@@ -195,11 +184,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         var response = await SendAsync(
-            factory,
-            HttpMethod.Put,
-            "/api/ApplicationTypes/10",
-            ValidRequest(),
-            null);
+            factory, HttpMethod.Put, "/api/ApplicationTypes/10", ValidRequest(), null);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         VerifyUpdateNever(factory);
@@ -211,11 +196,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         var response = await SendAsync(
-            factory,
-            HttpMethod.Put,
-            "/api/ApplicationTypes/10",
-            ValidRequest(),
-            "Staff");
+            factory, HttpMethod.Put, "/api/ApplicationTypes/10", ValidRequest(), "Staff");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         VerifyUpdateNever(factory);
@@ -264,24 +245,18 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(
-                4,
-                It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(Result.ValidationFailure(
-                "Invalid application type data."));
+            .Setup(x => x.UpdateApplicationTypeAsync(4, It.IsAny<ApplicationTypeDto>()))
+            .ReturnsAsync(Result.ValidationFailure("Invalid application type data."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory,
-                HttpMethod.Put,
-                "/api/ApplicationTypes/4",
-                new UpdateApplicationTypeRequest
-                {
-                    ApplicationTypeId = 4,
-                    ApplicationTypeTitle = "",
-                    ApplicationTypeFees = 0m
-                }),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Put, "/api/ApplicationTypes/4", new UpdateApplicationTypeRequest
+            {
+                ApplicationTypeId = 4,
+                ApplicationTypeTitle = "",
+                ApplicationTypeFees = 0m
+            }),
             HttpStatusCode.BadRequest,
+            "Validation error",
             "Invalid application type data.");
     }
 
@@ -291,19 +266,13 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(
-                10,
-                It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(Result.NotFound(
-                "Application type not found."));
+            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>()))
+            .ReturnsAsync(Result.NotFound("Application type not found."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory,
-                HttpMethod.Put,
-                "/api/ApplicationTypes/10",
-                ValidRequest()),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Put, "/api/ApplicationTypes/10", ValidRequest()),
             HttpStatusCode.NotFound,
+            "Resource not found",
             "Application type not found.");
     }
 
@@ -313,19 +282,14 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(
-                10,
-                It.IsAny<ApplicationTypeDto>()))
+            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>()))
             .ReturnsAsync(Result.Conflict(
                 "Application type update conflicts with existing data."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory,
-                HttpMethod.Put,
-                "/api/ApplicationTypes/10",
-                ValidRequest()),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Put, "/api/ApplicationTypes/10", ValidRequest()),
             HttpStatusCode.Conflict,
+            "Conflict",
             "Application type update conflicts with existing data.");
     }
 
@@ -335,20 +299,14 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(
-                10,
-                It.IsAny<ApplicationTypeDto>()))
-            .ReturnsAsync(Result.Failure(
-                "Failed to save application type changes."));
+            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>()))
+            .ReturnsAsync(Result.Failure("Failed to save application type changes."));
 
-        await AssertErrorAsync(
-            await SendAsync(
-                factory,
-                HttpMethod.Put,
-                "/api/ApplicationTypes/10",
-                ValidRequest()),
+        await AssertProblemDetailsAsync(
+            await SendAsync(factory, HttpMethod.Put, "/api/ApplicationTypes/10", ValidRequest()),
             HttpStatusCode.InternalServerError,
-            "Failed to save application type changes.");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     private static UpdateApplicationTypeRequest ValidRequest() => new()
@@ -392,18 +350,30 @@ public sealed class ApplicationTypesControllerTests
                 It.IsAny<ApplicationTypeDto>()),
             Times.Never);
 
-    private static async Task AssertErrorAsync(
+    private static async Task AssertProblemDetailsAsync(
         HttpResponseMessage response,
-        HttpStatusCode status,
-        string message)
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        Assert.Equal(status, response.StatusCode);
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-        var body = await response.Content
-            .ReadFromJsonAsync<ErrorResponse>();
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        Assert.Equal(message, body?.Error);
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
-
-    private sealed record ErrorResponse(string? Error);
 }

@@ -1,420 +1,161 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using API.IntegrationTests.Infrastructure;
+﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
-using Application.Interfaces;
 using DVLD.Contracts.LicenseReplacement;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
 public sealed class LicenseReplacementControllerTests
-    : IClassFixture<ApiWebApplicationFactory>
 {
-    private readonly ApiWebApplicationFactory _factory;
-    private readonly HttpClient _client;
-
-    public LicenseReplacementControllerTests(
-        ApiWebApplicationFactory factory)
+    [Fact]
+    public async Task Replace_WithoutAuthentication_Returns401()
     {
-        _factory = factory;
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
 
-        _factory.LicenseReplacementServiceMock.Reset();
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseReplacement",
+            new ReplaceLicenseRequest(10, "Lost License"));
 
-        _client = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.LicenseReplacementServiceMock.Verify(
+            x => x.ReplaceLicenseAsync(It.IsAny<int>(), It.IsAny<string>()),
+            Times.Never);
     }
 
-    // =========================================================
-    // AUTHENTICATION
-    // =========================================================
-
-    [Fact]
-    public async Task Replace_WithoutAuthentication_ReturnsUnauthorized()
+    [Theory]
+    [InlineData(10, "Lost License", 100)]
+    [InlineData(20, "Damaged License", 200)]
+    public async Task Replace_WhenSuccessful_ReturnsLicenseId(
+        int licenseId,
+        string reason,
+        int expectedLicenseId)
     {
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 10,
-                ReplacementReason: "Lost License");
+        await using var factory = new ApiWebApplicationFactory();
 
-        var response =
-            await _client.PostAsJsonAsync(
-                "/api/LicenseReplacement",
-                request);
+        factory.LicenseReplacementServiceMock
+            .Setup(x => x.ReplaceLicenseAsync(licenseId, reason))
+            .ReturnsAsync(Result<int>.Success(expectedLicenseId));
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-    }
+        using var client = CreateAuthenticatedClient(factory);
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseReplacement",
+            new ReplaceLicenseRequest(licenseId, reason));
 
-    // =========================================================
-    // SUCCESS - LOST LICENSE
-    // =========================================================
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-    [Fact]
-    public async Task Replace_WhenSuccessful_ReturnsNewLicenseId()
-    {
-        _factory.LicenseReplacementServiceMock
-            .Setup(x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"))
-            .ReturnsAsync(
-                Result<int>.Success(100));
-
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 10,
-                ReplacementReason: "Lost License");
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/LicenseReplacement",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<ReplaceLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<ReplaceLicenseResponse>();
         Assert.NotNull(result);
+        Assert.Equal(expectedLicenseId, result.LicenseId);
 
-        Assert.Equal(
-            100,
-            result.LicenseId);
-
-        _factory.LicenseReplacementServiceMock.Verify(
-            x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"),
+        factory.LicenseReplacementServiceMock.Verify(
+            x => x.ReplaceLicenseAsync(licenseId, reason),
             Times.Once);
     }
 
-    // =========================================================
-    // VALIDATION FAILURE
-    // =========================================================
-
-    [Fact]
-    public async Task Replace_WhenValidationFailure_ReturnsBadRequest()
+    [Theory]
+    [InlineData(400, "Validation error", "Invalid replacement request.")]
+    [InlineData(404, "Resource not found", "License not found.")]
+    [InlineData(409, "Conflict", "License replacement conflict.")]
+    [InlineData(403, "Forbidden", "Access denied.")]
+    public async Task Replace_WhenResultFails_ReturnsProblemDetails(
+        int statusCode,
+        string title,
+        string detail)
     {
-        _factory.LicenseReplacementServiceMock
-            .Setup(x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"))
-            .ReturnsAsync(
-                Result<int>
-                    .FromValidationFailure(
-                        "Invalid replacement request."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 10,
-                ReplacementReason: "Lost License");
+        var result = statusCode switch
+        {
+            400 => Result<int>.FromValidationFailure(detail),
+            404 => Result<int>.FromNotFound(detail),
+            409 => Result<int>.FromConflict(detail),
+            403 => Result<int>.FromForbidden(detail),
+            _ => throw new ArgumentOutOfRangeException(nameof(statusCode))
+        };
 
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/LicenseReplacement",
-                request);
+        factory.LicenseReplacementServiceMock
+            .Setup(x => x.ReplaceLicenseAsync(10, "Lost License"))
+            .ReturnsAsync(result);
 
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
+        using var client = CreateAuthenticatedClient(factory);
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseReplacement",
+            new ReplaceLicenseRequest(10, "Lost License"));
 
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "Invalid replacement request.");
+            (HttpStatusCode)statusCode,
+            title,
+            detail);
 
-        _factory.LicenseReplacementServiceMock.Verify(
-            x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"),
+        factory.LicenseReplacementServiceMock.Verify(
+            x => x.ReplaceLicenseAsync(10, "Lost License"),
             Times.Once);
     }
 
-    // =========================================================
-    // NOT FOUND
-    // =========================================================
-
     [Fact]
-    public async Task Replace_WhenLicenseNotFound_ReturnsNotFound()
+    public async Task Replace_WhenUnexpectedFailure_Returns500ProblemDetails()
     {
-        _factory.LicenseReplacementServiceMock
-            .Setup(x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"))
-            .ReturnsAsync(
-                Result<int>
-                    .FromNotFound(
-                        "License not found."));
+        await using var factory = new ApiWebApplicationFactory();
 
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 10,
-                ReplacementReason: "Lost License");
+        factory.LicenseReplacementServiceMock
+            .Setup(x => x.ReplaceLicenseAsync(10, "Lost License"))
+            .ReturnsAsync(Result<int>.FromFailure(
+                "Unexpected replacement failure."));
 
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/LicenseReplacement",
-                request);
+        using var client = CreateAuthenticatedClient(factory);
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseReplacement",
+            new ReplaceLicenseRequest(10, "Lost License"));
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License not found.");
-
-        _factory.LicenseReplacementServiceMock.Verify(
-            x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"),
-            Times.Once);
-    }
-
-    // =========================================================
-    // CONFLICT
-    // =========================================================
-
-    [Fact]
-    public async Task Replace_WhenConflict_ReturnsConflict()
-    {
-        _factory.LicenseReplacementServiceMock
-            .Setup(x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"))
-            .ReturnsAsync(
-                Result<int>
-                    .FromConflict(
-                        "License replacement conflict."));
-
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 10,
-                ReplacementReason: "Lost License");
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/LicenseReplacement",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "License replacement conflict.");
-
-        _factory.LicenseReplacementServiceMock.Verify(
-            x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"),
-            Times.Once);
-    }
-
-    // =========================================================
-    // FORBIDDEN
-    // =========================================================
-
-    [Fact]
-    public async Task Replace_WhenForbidden_ReturnsForbidden()
-    {
-        _factory.LicenseReplacementServiceMock
-            .Setup(x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"))
-            .ReturnsAsync(
-                Result<int>
-                    .FromForbidden(
-                        "Access denied."));
-
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 10,
-                ReplacementReason: "Lost License");
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/LicenseReplacement",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Access denied.");
-
-        _factory.LicenseReplacementServiceMock.Verify(
-            x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"),
-            Times.Once);
-    }
-
-    // =========================================================
-    // UNEXPECTED FAILURE
-    // =========================================================
-
-    [Fact]
-    public async Task Replace_WhenUnexpectedFailure_ReturnsInternalServerError()
-    {
-        _factory.LicenseReplacementServiceMock
-            .Setup(x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"))
-            .ReturnsAsync(
-                Result<int>
-                    .FromFailure(
-                        "Unexpected replacement failure."));
-
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 10,
-                ReplacementReason: "Lost License");
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/LicenseReplacement",
-                request);
-
-        Assert.Equal(
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
 
-        await AssertErrorAsync(
-            response,
-            "Unexpected replacement failure.");
-
-        _factory.LicenseReplacementServiceMock.Verify(
-            x =>
-                x.ReplaceLicenseAsync(
-                    10,
-                    "Lost License"),
+        factory.LicenseReplacementServiceMock.Verify(
+            x => x.ReplaceLicenseAsync(10, "Lost License"),
             Times.Once);
     }
 
-    // =========================================================
-    // SUCCESS - DAMAGED LICENSE
-    // =========================================================
-
-    [Fact]
-    public async Task Replace_WithDamagedLicenseReason_PassesCorrectRequest()
+    private static HttpClient CreateAuthenticatedClient(ApiWebApplicationFactory factory)
     {
-        _factory.LicenseReplacementServiceMock
-            .Setup(x =>
-                x.ReplaceLicenseAsync(
-                    20,
-                    "Damaged License"))
-            .ReturnsAsync(
-                Result<int>.Success(200));
-
-        var request =
-            new ReplaceLicenseRequest(
-                OldLicenseId: 20,
-                ReplacementReason: "Damaged License");
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/LicenseReplacement",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<ReplaceLicenseResponse>();
-
-        Assert.NotNull(result);
-
-        Assert.Equal(
-            200,
-            result.LicenseId);
-
-        _factory.LicenseReplacementServiceMock.Verify(
-            x =>
-                x.ReplaceLicenseAsync(
-                    20,
-                    "Damaged License"),
-            Times.Once);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User-Id", "1");
+        client.DefaultRequestHeaders.Add("X-Test-Username", "testuser");
+        client.DefaultRequestHeaders.Add("X-Test-FullName", "Test User");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Staff");
+        return client;
     }
 
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
-    private async Task<HttpResponseMessage> PostAuthenticatedAsync(
-        string url,
-        object body)
-    {
-        var request =
-            CreateAuthenticatedRequest(url);
-
-        request.Content =
-            JsonContent.Create(body);
-
-        return await _client.SendAsync(request);
-    }
-
-    private static HttpRequestMessage CreateAuthenticatedRequest(
-        string url,
-        string role = "Staff")
-    {
-        var request =
-            new HttpRequestMessage(
-                HttpMethod.Post,
-                url);
-
-        request.Headers.Add(
-            "X-Test-User-Id",
-            "1");
-
-        request.Headers.Add(
-            "X-Test-Username",
-            "testuser");
-
-        request.Headers.Add(
-            "X-Test-FullName",
-            "Test User");
-
-        request.Headers.Add(
-            "X-Test-Role",
-            role);
-
-        return request;
-    }
-
-    private static async Task AssertErrorAsync(
+    private static async Task AssertProblemDetailsAsync(
         HttpResponseMessage response,
-        string expectedError)
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
+        Assert.Equal(expectedStatus, response.StatusCode);
         Assert.Equal(
-            expectedError,
-            body.Error);
-    }
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-    private sealed record ErrorResponse(
-        string Error);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
+    }
 }

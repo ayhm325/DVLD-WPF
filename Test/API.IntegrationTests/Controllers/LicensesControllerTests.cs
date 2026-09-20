@@ -6,1219 +6,579 @@ using DVLD.Contracts.License;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
-public sealed class LicensesControllerTests
-    : IClassFixture<ApiWebApplicationFactory>
+public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFactory>
 {
     private readonly ApiWebApplicationFactory _factory;
-    private readonly HttpClient _client;
 
-    public LicensesControllerTests(
-        ApiWebApplicationFactory factory)
+    public LicensesControllerTests(ApiWebApplicationFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient();
+        _factory.LicenseServiceMock.Reset();
     }
-
-    // =========================================================
-    // AUTHORIZATION
-    // =========================================================
 
     [Fact]
-    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
+    public async Task GetAll_WithoutAuthentication_Returns401()
     {
-        var response =
-            await _client.GetAsync("/api/Licenses");
+        using var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/Licenses");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-
-    // =========================================================
-    // GET ALL
-    // =========================================================
 
     [Fact]
     public async Task GetAll_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto();
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync())
+            .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<LicenseDto>>.Success(
-                    new List<LicenseDto>
-                    {
-                        dto
-                    }));
+        var response = await GetAsync("/api/Licenses");
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<LicenseResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<LicenseResponse>>();
         Assert.NotNull(result);
-        Assert.Single(result);
+        var item = Assert.Single(result);
 
-        var item = result[0];
+        AssertLicense(item, dto);
+    }
 
-        Assert.Equal(
-            dto.LicenseID,
-            item.LicenseId);
+    [Theory]
+    [InlineData(400, "Validation error", "Invalid license data.")]
+    [InlineData(404, "Resource not found", "Licenses not found.")]
+    [InlineData(409, "Conflict", "License conflict.")]
+    [InlineData(403, "Forbidden", "Access denied.")]
+    public async Task GetAll_WhenResultFails_ReturnsProblemDetails(
+        int statusCode, string title, string detail)
+    {
+        var result = statusCode switch
+        {
+            400 => Result<List<LicenseDto>>.FromValidationFailure(detail),
+            404 => Result<List<LicenseDto>>.FromNotFound(detail),
+            409 => Result<List<LicenseDto>>.FromConflict(detail),
+            403 => Result<List<LicenseDto>>.FromForbidden(detail),
+            _ => throw new ArgumentOutOfRangeException(nameof(statusCode))
+        };
 
-        Assert.Equal(
-            dto.ApplicationID,
-            item.ApplicationId);
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
 
-        Assert.Equal(
-            dto.DriverID,
-            item.DriverId);
+        var response = await GetAsync("/api/Licenses");
 
-        Assert.Equal(
-            dto.DriverName,
-            item.DriverName);
-
-        Assert.Equal(
-            dto.LicenseClassID,
-            item.LicenseClassId);
-
-        Assert.Equal(
-            dto.LicenseClassName,
-            item.LicenseClassName);
-
-        Assert.Equal(
-            dto.IssueDate,
-            item.IssueDate);
-
-        Assert.Equal(
-            dto.ExpirationDate,
-            item.ExpirationDate);
-
-        Assert.Equal(
-            dto.Notes,
-            item.Notes);
-
-        Assert.Equal(
-            dto.PaidFees,
-            item.PaidFees);
-
-        Assert.Equal(
-            dto.IsActive,
-            item.IsActive);
-
-        Assert.Equal(
-            dto.IssueReason,
-            item.IssueReason);
-
-        Assert.Equal(
-            dto.IssueReasonText,
-            item.IssueReasonText);
-
-        Assert.Equal(
-            dto.CreatedByUserID,
-            item.CreatedByUserId);
-
-        Assert.Equal(
-            dto.CreatedByUserName,
-            item.CreatedByUserName);
+        await AssertProblemDetailsAsync(response, (HttpStatusCode)statusCode, title, detail);
     }
 
     [Fact]
-    public async Task GetAll_WhenValidationFailure_ReturnsBadRequest()
+    public async Task GetAll_WhenFailure_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromValidationFailure(
-                        "Invalid license data."));
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync())
+            .ReturnsAsync(Result<List<LicenseDto>>.FromFailure("Database failure."));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses"));
+        var response = await GetAsync("/api/Licenses");
 
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "Invalid license data.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenNotFoundFailure_ReturnsNotFound()
-    {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromNotFound(
-                        "Licenses not found."));
-
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses"));
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Licenses not found.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenConflictFailure_ReturnsConflict()
-    {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromConflict(
-                        "License conflict."));
-
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses"));
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "License conflict.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenForbiddenFailure_ReturnsForbidden()
-    {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromForbidden(
-                        "Access denied."));
-
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses"));
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Access denied.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenFailure_ReturnsInternalServerError()
-    {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromFailure(
-                        "Database failure."));
-
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses"));
-
-        Assert.Equal(
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Database failure.");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
-    public async Task GetAll_WhenResultValueIsNull_ReturnsInternalServerError()
+    public async Task GetAll_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .Success(null!));
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync())
+            .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses"));
+        var response = await GetAsync("/api/Licenses");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License service returned no data.");
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET BY ID
-    // =========================================================
 
     [Fact]
     public async Task GetById_WhenSuccessful_ReturnsMappedLicense()
     {
         var dto = CreateLicenseDto(10);
+        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(10))
+            .ReturnsAsync(Result<LicenseDto>.Success(dto));
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByIdAsync(10))
-            .ReturnsAsync(
-                Result<LicenseDto>.Success(dto));
+        var response = await GetAsync("/api/Licenses/10");
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/10"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<LicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<LicenseResponse>();
         Assert.NotNull(result);
 
-        Assert.Equal(
-            dto.LicenseID,
-            result.LicenseId);
+        AssertLicense(result, dto);
+    }
 
-        Assert.Equal(
-            dto.ApplicationID,
-            result.ApplicationId);
+    [Theory]
+    [InlineData(10, 404, "Resource not found", "License not found.")]
+    [InlineData(0, 400, "Validation error", "Invalid license ID.")]
+    public async Task GetById_WhenResultFails_ReturnsProblemDetails(
+        int id, int statusCode, string title, string detail)
+    {
+        var result = statusCode == 404
+            ? Result<LicenseDto>.FromNotFound(detail)
+            : Result<LicenseDto>.FromValidationFailure(detail);
 
-        Assert.Equal(
-            dto.DriverID,
-            result.DriverId);
+        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(result);
 
-        Assert.Equal(
-            dto.DriverName,
-            result.DriverName);
+        var response = await GetAsync($"/api/Licenses/{id}");
 
-        Assert.Equal(
-            dto.LicenseClassID,
-            result.LicenseClassId);
-
-        Assert.Equal(
-            dto.LicenseClassName,
-            result.LicenseClassName);
-
-        Assert.Equal(
-            dto.IssueDate,
-            result.IssueDate);
-
-        Assert.Equal(
-            dto.ExpirationDate,
-            result.ExpirationDate);
-
-        Assert.Equal(
-            dto.Notes,
-            result.Notes);
-
-        Assert.Equal(
-            dto.PaidFees,
-            result.PaidFees);
-
-        Assert.Equal(
-            dto.IsActive,
-            result.IsActive);
-
-        Assert.Equal(
-            dto.IssueReason,
-            result.IssueReason);
-
-        Assert.Equal(
-            dto.IssueReasonText,
-            result.IssueReasonText);
-
-        Assert.Equal(
-            dto.CreatedByUserID,
-            result.CreatedByUserId);
-
-        Assert.Equal(
-            dto.CreatedByUserName,
-            result.CreatedByUserName);
+        await AssertProblemDetailsAsync(response, (HttpStatusCode)statusCode, title, detail);
     }
 
     [Fact]
-    public async Task GetById_WhenNotFoundFailure_ReturnsNotFound()
+    public async Task GetById_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByIdAsync(10))
-            .ReturnsAsync(
-                Result<LicenseDto>
-                    .FromNotFound(
-                        "License not found."));
+        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(10))
+            .ReturnsAsync(Result<LicenseDto>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/10"));
+        var response = await GetAsync("/api/Licenses/10");
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License not found.");
-    }
-
-    [Fact]
-    public async Task GetById_WhenValidationFailure_ReturnsBadRequest()
-    {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByIdAsync(0))
-            .ReturnsAsync(
-                Result<LicenseDto>
-                    .FromValidationFailure(
-                        "Invalid license ID."));
-
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/0"));
-
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Invalid license ID.");
-    }
-
-    [Fact]
-    public async Task GetById_WhenResultValueIsNull_ReturnsInternalServerError()
-    {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByIdAsync(10))
-            .ReturnsAsync(
-                Result<LicenseDto>
-                    .Success(null!));
-
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/10"));
-
-        Assert.Equal(
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "License service returned no data.");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET BY DRIVER ID
-    // =========================================================
 
     [Fact]
     public async Task GetByDriverId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(20);
+        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByDriverIdAsync(5))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>.Success(
-                    new List<LicenseDto>
-                    {
-                        dto
-                    }));
+        var response = await GetAsync("/api/Licenses/driver/5");
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/driver/5"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<LicenseResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<LicenseResponse>>();
         Assert.NotNull(result);
-        Assert.Single(result);
+        var item = Assert.Single(result);
 
-        Assert.Equal(
-            dto.LicenseID,
-            result[0].LicenseId);
-
-        Assert.Equal(
-            dto.DriverID,
-            result[0].DriverId);
+        Assert.Equal(dto.LicenseID, item.LicenseId);
+        Assert.Equal(dto.DriverID, item.DriverId);
     }
 
     [Fact]
-    public async Task GetByDriverId_WhenServiceFails_ReturnsMappedFailure()
+    public async Task GetByDriverId_WhenServiceFails_ReturnsProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByDriverIdAsync(5))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromNotFound(
-                        "Driver licenses not found."));
+        const string detail = "Driver licenses not found.";
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/driver/5"));
+        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+            .ReturnsAsync(Result<List<LicenseDto>>.FromNotFound(detail));
 
-        Assert.Equal(
+        var response = await GetAsync("/api/Licenses/driver/5");
+
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Driver licenses not found.");
+            "Resource not found",
+            detail);
     }
 
     [Fact]
-    public async Task GetByDriverId_WhenResultValueIsNull_ReturnsInternalServerError()
+    public async Task GetByDriverId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByDriverIdAsync(5))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .Success(null!));
+        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/driver/5"));
+        var response = await GetAsync("/api/Licenses/driver/5");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License service returned no data.");
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET BY APPLICATION ID
-    // =========================================================
 
     [Fact]
     public async Task GetByApplicationId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(30);
+        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByApplicationIdAsync(7))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>.Success(
-                    new List<LicenseDto>
-                    {
-                        dto
-                    }));
+        var response = await GetAsync("/api/Licenses/application/7");
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/application/7"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<LicenseResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<LicenseResponse>>();
         Assert.NotNull(result);
-        Assert.Single(result);
+        var item = Assert.Single(result);
 
-        Assert.Equal(
-            dto.LicenseID,
-            result[0].LicenseId);
-
-        Assert.Equal(
-            dto.ApplicationID,
-            result[0].ApplicationId);
+        Assert.Equal(dto.LicenseID, item.LicenseId);
+        Assert.Equal(dto.ApplicationID, item.ApplicationId);
     }
 
     [Fact]
-    public async Task GetByApplicationId_WhenServiceFails_ReturnsMappedFailure()
+    public async Task GetByApplicationId_WhenServiceFails_ReturnsProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByApplicationIdAsync(7))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromValidationFailure(
-                        "Invalid application ID."));
+        const string detail = "Invalid application ID.";
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/application/7"));
+        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7))
+            .ReturnsAsync(Result<List<LicenseDto>>.FromValidationFailure(detail));
 
-        Assert.Equal(
+        var response = await GetAsync("/api/Licenses/application/7");
+
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Invalid application ID.");
+            "Validation error",
+            detail);
     }
 
     [Fact]
-    public async Task GetByApplicationId_WhenResultValueIsNull_ReturnsInternalServerError()
+    public async Task GetByApplicationId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByApplicationIdAsync(7))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .Success(null!));
+        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/application/7"));
+        var response = await GetAsync("/api/Licenses/application/7");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License service returned no data.");
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET BY LICENSE CLASS ID
-    // =========================================================
 
     [Fact]
     public async Task GetByLicenseClassId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(40);
+        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByLicenseClassIdAsync(2))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>.Success(
-                    new List<LicenseDto>
-                    {
-                        dto
-                    }));
+        var response = await GetAsync("/api/Licenses/license-class/2");
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/license-class/2"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<LicenseResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<LicenseResponse>>();
         Assert.NotNull(result);
-        Assert.Single(result);
+        var item = Assert.Single(result);
 
-        Assert.Equal(
-            dto.LicenseID,
-            result[0].LicenseId);
-
-        Assert.Equal(
-            dto.LicenseClassID,
-            result[0].LicenseClassId);
+        Assert.Equal(dto.LicenseID, item.LicenseId);
+        Assert.Equal(dto.LicenseClassID, item.LicenseClassId);
     }
 
     [Fact]
-    public async Task GetByLicenseClassId_WhenServiceFails_ReturnsMappedFailure()
+    public async Task GetByLicenseClassId_WhenServiceFails_ReturnsProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByLicenseClassIdAsync(2))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromConflict(
-                        "License class conflict."));
+        const string detail = "License class conflict.";
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/license-class/2"));
+        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2))
+            .ReturnsAsync(Result<List<LicenseDto>>.FromConflict(detail));
 
-        Assert.Equal(
+        var response = await GetAsync("/api/Licenses/license-class/2");
+
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "License class conflict.");
+            "Conflict",
+            detail);
     }
 
     [Fact]
-    public async Task GetByLicenseClassId_WhenResultValueIsNull_ReturnsInternalServerError()
+    public async Task GetByLicenseClassId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetByLicenseClassIdAsync(2))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .Success(null!));
+        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/license-class/2"));
+        var response = await GetAsync("/api/Licenses/license-class/2");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License service returned no data.");
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET BY PERSON ID
-    // =========================================================
 
     [Fact]
     public async Task GetByPersonId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(50);
+        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetLicensesByPersonIdAsync(15))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>.Success(
-                    new List<LicenseDto>
-                    {
-                        dto
-                    }));
+        var response = await GetAsync("/api/Licenses/person/15");
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/person/15"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<LicenseResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<LicenseResponse>>();
         Assert.NotNull(result);
-        Assert.Single(result);
+        var item = Assert.Single(result);
 
-        Assert.Equal(
-            dto.LicenseID,
-            result[0].LicenseId);
-
-        Assert.Equal(
-            dto.DriverID,
-            result[0].DriverId);
+        Assert.Equal(dto.LicenseID, item.LicenseId);
+        Assert.Equal(dto.DriverID, item.DriverId);
     }
 
     [Fact]
-    public async Task GetByPersonId_WhenServiceFails_ReturnsMappedFailure()
+    public async Task GetByPersonId_WhenServiceFails_ReturnsProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetLicensesByPersonIdAsync(15))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .FromForbidden(
-                        "Access denied."));
+        const string detail = "Access denied.";
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/person/15"));
+        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15))
+            .ReturnsAsync(Result<List<LicenseDto>>.FromForbidden(detail));
 
-        Assert.Equal(
+        var response = await GetAsync("/api/Licenses/person/15");
+
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Access denied.");
+            "Forbidden",
+            detail);
     }
 
     [Fact]
-    public async Task GetByPersonId_WhenResultValueIsNull_ReturnsInternalServerError()
+    public async Task GetByPersonId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetLicensesByPersonIdAsync(15))
-            .ReturnsAsync(
-                Result<List<LicenseDto>>
-                    .Success(null!));
+        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15))
+            .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/person/15"));
+        var response = await GetAsync("/api/Licenses/person/15");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License service returned no data.");
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET DETAILS BY LOCAL APPLICATION
-    // =========================================================
 
     [Fact]
     public async Task GetDetails_WhenSuccessful_ReturnsMappedDetails()
     {
         var dto = CreateDriverLicenseInfoDto();
+        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100))
+            .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(dto));
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetDetailsAsync(100))
-            .ReturnsAsync(
-                Result<DriverLicenseInfoDto>
-                    .Success(dto));
+        var response = await GetAsync("/api/Licenses/local-application/100/details");
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/local-application/100/details"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<DriverLicenseInfoResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<DriverLicenseInfoResponse>();
         Assert.NotNull(result);
 
-        Assert.Equal(
-            dto.LicenseId,
-            result.LicenseId);
-
-        Assert.Equal(
-            dto.LicenseClass,
-            result.LicenseClass);
-
-        Assert.Equal(
-            dto.IssueDate,
-            result.IssueDate);
-
-        Assert.Equal(
-            dto.ExpirationDate,
-            result.ExpirationDate);
-
-        Assert.Equal(
-            dto.IsActive,
-            result.IsActive);
-
-        Assert.Equal(
-            dto.IsDetained,
-            result.IsDetained);
-
-        Assert.Equal(
-            dto.IssueReason,
-            result.IssueReason);
-
-        Assert.Equal(
-            dto.Notes,
-            result.Notes);
-
-        Assert.Equal(
-            dto.LicenseClassFees,
-            result.LicenseClassFees);
-
-        Assert.Equal(
-            dto.DriverId,
-            result.DriverId);
-
-        Assert.Equal(
-            dto.PersonID,
-            result.PersonId);
-
-        Assert.Equal(
-            dto.FullName,
-            result.FullName);
-
-        Assert.Equal(
-            dto.NationalNo,
-            result.NationalNo);
-
-        Assert.Equal(
-            dto.DateOfBirth,
-            result.DateOfBirth);
-
-        Assert.Equal(
-            dto.Gender,
-            result.Gender);
-
-        Assert.Equal(
-            dto.ImagePath,
-            result.ImagePath);
+        AssertDetails(result, dto);
     }
 
     [Fact]
-    public async Task GetDetails_WhenNotFoundFailure_ReturnsNotFound()
+    public async Task GetDetails_WhenNotFound_Returns404ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetDetailsAsync(100))
-            .ReturnsAsync(
-                Result<DriverLicenseInfoDto>
-                    .FromNotFound(
-                        "License details not found."));
+        const string detail = "License details not found.";
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/local-application/100/details"));
+        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100))
+            .ReturnsAsync(Result<DriverLicenseInfoDto>.FromNotFound(detail));
 
-        Assert.Equal(
+        var response = await GetAsync("/api/Licenses/local-application/100/details");
+
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "License details not found.");
+            "Resource not found",
+            detail);
     }
 
     [Fact]
-    public async Task GetDetails_WhenResultValueIsNull_ReturnsInternalServerError()
+    public async Task GetDetails_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetDetailsAsync(100))
-            .ReturnsAsync(
-                Result<DriverLicenseInfoDto>
-                    .Success(null!));
+        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100))
+            .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/local-application/100/details"));
+        var response = await GetAsync("/api/Licenses/local-application/100/details");
 
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License service returned no data.");
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET DETAILS BY LICENSE ID
-    // =========================================================
 
     [Fact]
     public async Task GetDetailsById_WhenSuccessful_ReturnsMappedDetails()
     {
         var dto = CreateDriverLicenseInfoDto();
-
         dto.LicenseId = 200;
 
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetLicenseDetailsByIdAsync(200))
-            .ReturnsAsync(
-                Result<DriverLicenseInfoDto>
-                    .Success(dto));
+        _factory.LicenseServiceMock.Setup(x => x.GetLicenseDetailsByIdAsync(200))
+            .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(dto));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/200/details"));
+        var response = await GetAsync("/api/Licenses/200/details");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<DriverLicenseInfoResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<DriverLicenseInfoResponse>();
         Assert.NotNull(result);
 
-        Assert.Equal(
-            dto.LicenseId,
-            result.LicenseId);
-
-        Assert.Equal(
-            dto.LicenseClass,
-            result.LicenseClass);
-
-        Assert.Equal(
-            dto.IssueDate,
-            result.IssueDate);
-
-        Assert.Equal(
-            dto.ExpirationDate,
-            result.ExpirationDate);
-
-        Assert.Equal(
-            dto.IsActive,
-            result.IsActive);
-
-        Assert.Equal(
-            dto.IsDetained,
-            result.IsDetained);
-
-        Assert.Equal(
-            dto.IssueReason,
-            result.IssueReason);
-
-        Assert.Equal(
-            dto.Notes,
-            result.Notes);
-
-        Assert.Equal(
-            dto.LicenseClassFees,
-            result.LicenseClassFees);
-
-        Assert.Equal(
-            dto.DriverId,
-            result.DriverId);
-
-        Assert.Equal(
-            dto.PersonID,
-            result.PersonId);
-
-        Assert.Equal(
-            dto.FullName,
-            result.FullName);
-
-        Assert.Equal(
-            dto.NationalNo,
-            result.NationalNo);
-
-        Assert.Equal(
-            dto.DateOfBirth,
-            result.DateOfBirth);
-
-        Assert.Equal(
-            dto.Gender,
-            result.Gender);
-
-        Assert.Equal(
-            dto.ImagePath,
-            result.ImagePath);
+        AssertDetails(result, dto);
     }
 
-    [Fact]
-    public async Task GetDetailsById_WhenNotFoundFailure_ReturnsNotFound()
+    [Theory]
+    [InlineData(200, 404, "Resource not found", "License not found.")]
+    [InlineData(0, 400, "Validation error", "Invalid license ID.")]
+    public async Task GetDetailsById_WhenResultFails_ReturnsProblemDetails(
+        int id, int statusCode, string title, string detail)
     {
+        var result = statusCode == 404
+            ? Result<DriverLicenseInfoDto>.FromNotFound(detail)
+            : Result<DriverLicenseInfoDto>.FromValidationFailure(detail);
+
         _factory.LicenseServiceMock
-            .Setup(x => x.GetLicenseDetailsByIdAsync(200))
-            .ReturnsAsync(
-                Result<DriverLicenseInfoDto>
-                    .FromNotFound(
-                        "License not found."));
+            .Setup(x => x.GetLicenseDetailsByIdAsync(id))
+            .ReturnsAsync(result);
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/200/details"));
+        var response = await GetAsync($"/api/Licenses/{id}/details");
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "License not found.");
+            (HttpStatusCode)statusCode,
+            title,
+            detail);
     }
 
     [Fact]
-    public async Task GetDetailsById_WhenValidationFailure_ReturnsBadRequest()
+    public async Task GetDetailsById_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetLicenseDetailsByIdAsync(0))
-            .ReturnsAsync(
-                Result<DriverLicenseInfoDto>
-                    .FromValidationFailure(
-                        "Invalid license ID."));
+        _factory.LicenseServiceMock.Setup(x => x.GetLicenseDetailsByIdAsync(200))
+            .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(null!));
 
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/0/details"));
+        var response = await GetAsync("/api/Licenses/200/details");
 
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "Invalid license ID.");
-    }
-
-    [Fact]
-    public async Task GetDetailsById_WhenResultValueIsNull_ReturnsInternalServerError()
-    {
-        _factory.LicenseServiceMock
-            .Setup(x => x.GetLicenseDetailsByIdAsync(200))
-            .ReturnsAsync(
-                Result<DriverLicenseInfoDto>
-                    .Success(null!));
-
-        var response =
-            await _client.SendAsync(
-                CreateAuthenticatedRequest(
-                    "/api/Licenses/200/details"));
-
-        Assert.Equal(
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "License service returned no data.");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
-    // =========================================================
-    // HELPERS
-    // =========================================================
+    private async Task<HttpResponseMessage> GetAsync(string url)
+    {
+        using var request = CreateAuthenticatedRequest(url);
+        return await _factory.CreateClient().SendAsync(request);
+    }
 
     private static HttpRequestMessage CreateAuthenticatedRequest(
-        string url,
-        string role = "Staff")
+        string url, string role = "Staff")
     {
-        var request =
-            new HttpRequestMessage(
-                HttpMethod.Get,
-                url);
-
-        request.Headers.Add(
-            "X-Test-User-Id",
-            "1");
-
-        request.Headers.Add(
-            "X-Test-Username",
-            "testuser");
-
-        request.Headers.Add(
-            "X-Test-FullName",
-            "Test User");
-
-        request.Headers.Add(
-            "X-Test-Role",
-            role);
-
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("X-Test-User-Id", "1");
+        request.Headers.Add("X-Test-Username", "testuser");
+        request.Headers.Add("X-Test-FullName", "Test User");
+        request.Headers.Add("X-Test-Role", role);
         return request;
     }
 
-    private static LicenseDto CreateLicenseDto(
-        int licenseId = 1)
+    private static void AssertLicense(LicenseResponse actual, LicenseDto expected)
     {
-        return new LicenseDto
-        {
-            LicenseID = licenseId,
-            ApplicationID = 10,
-            DriverID = 20,
-            DriverName = "Test Driver",
-            LicenseClassID = 3,
-            LicenseClassName = "Private",
-            IssueDate = new DateTime(
-                2026,
-                1,
-                1),
-            ExpirationDate = new DateTime(
-                2031,
-                1,
-                1),
-            Notes = "Test license",
-            PaidFees = 50m,
-            IsActive = true,
-            IssueReason =
-                (byte)IssueReason.FirstTime,
-            IssueReasonText =
-                IssueReason.FirstTime.ToString(),
-            CreatedByUserID = 30,
-            CreatedByUserName = "admin"
-        };
+        Assert.Equal(expected.LicenseID, actual.LicenseId);
+        Assert.Equal(expected.ApplicationID, actual.ApplicationId);
+        Assert.Equal(expected.DriverID, actual.DriverId);
+        Assert.Equal(expected.DriverName, actual.DriverName);
+        Assert.Equal(expected.LicenseClassID, actual.LicenseClassId);
+        Assert.Equal(expected.LicenseClassName, actual.LicenseClassName);
+        Assert.Equal(expected.IssueDate, actual.IssueDate);
+        Assert.Equal(expected.ExpirationDate, actual.ExpirationDate);
+        Assert.Equal(expected.Notes, actual.Notes);
+        Assert.Equal(expected.PaidFees, actual.PaidFees);
+        Assert.Equal(expected.IsActive, actual.IsActive);
+        Assert.Equal(expected.IssueReason, actual.IssueReason);
+        Assert.Equal(expected.IssueReasonText, actual.IssueReasonText);
+        Assert.Equal(expected.CreatedByUserID, actual.CreatedByUserId);
+        Assert.Equal(expected.CreatedByUserName, actual.CreatedByUserName);
     }
 
-    private static DriverLicenseInfoDto
-        CreateDriverLicenseInfoDto()
+    private static void AssertDetails(
+        DriverLicenseInfoResponse actual,
+        DriverLicenseInfoDto expected)
     {
-        return new DriverLicenseInfoDto
-        {
-            LicenseId = 100,
-            LicenseClass = "Private",
-            IssueDate = new DateTime(
-                2026,
-                1,
-                1),
-            ExpirationDate = new DateTime(
-                2031,
-                1,
-                1),
-            IsActive = true,
-            IsDetained = false,
-            IssueReason = "FirstTime",
-            Notes = "Test notes",
-            LicenseClassFees = 50m,
-            DriverId = 20,
-            PersonID = 30,
-            FullName = "Test Person",
-            NationalNo = "123456789",
-            DateOfBirth = new DateTime(
-                1990,
-                1,
-                1),
-            Gender = "Male",
-            ImagePath = "test.jpg"
-        };
+        Assert.Equal(expected.LicenseId, actual.LicenseId);
+        Assert.Equal(expected.LicenseClass, actual.LicenseClass);
+        Assert.Equal(expected.IssueDate, actual.IssueDate);
+        Assert.Equal(expected.ExpirationDate, actual.ExpirationDate);
+        Assert.Equal(expected.IsActive, actual.IsActive);
+        Assert.Equal(expected.IsDetained, actual.IsDetained);
+        Assert.Equal(expected.IssueReason, actual.IssueReason);
+        Assert.Equal(expected.Notes, actual.Notes);
+        Assert.Equal(expected.LicenseClassFees, actual.LicenseClassFees);
+        Assert.Equal(expected.DriverId, actual.DriverId);
+        Assert.Equal(expected.PersonID, actual.PersonId);
+        Assert.Equal(expected.FullName, actual.FullName);
+        Assert.Equal(expected.NationalNo, actual.NationalNo);
+        Assert.Equal(expected.DateOfBirth, actual.DateOfBirth);
+        Assert.Equal(expected.Gender, actual.Gender);
+        Assert.Equal(expected.ImagePath, actual.ImagePath);
     }
 
-    private static async Task AssertErrorAsync(
+    private static LicenseDto CreateLicenseDto(int licenseId = 1) => new()
+    {
+        LicenseID = licenseId,
+        ApplicationID = 10,
+        DriverID = 20,
+        DriverName = "Test Driver",
+        LicenseClassID = 3,
+        LicenseClassName = "Private",
+        IssueDate = new DateTime(2026, 1, 1),
+        ExpirationDate = new DateTime(2031, 1, 1),
+        Notes = "Test license",
+        PaidFees = 50m,
+        IsActive = true,
+        IssueReason = (byte)IssueReason.FirstTime,
+        IssueReasonText = IssueReason.FirstTime.ToString(),
+        CreatedByUserID = 30,
+        CreatedByUserName = "admin"
+    };
+
+    private static DriverLicenseInfoDto CreateDriverLicenseInfoDto() => new()
+    {
+        LicenseId = 100,
+        LicenseClass = "Private",
+        IssueDate = new DateTime(2026, 1, 1),
+        ExpirationDate = new DateTime(2031, 1, 1),
+        IsActive = true,
+        IsDetained = false,
+        IssueReason = "FirstTime",
+        Notes = "Test notes",
+        LicenseClassFees = 50m,
+        DriverId = 20,
+        PersonID = 30,
+        FullName = "Test Person",
+        NationalNo = "123456789",
+        DateOfBirth = new DateTime(1990, 1, 1),
+        Gender = "Male",
+        ImagePath = "test.jpg"
+    };
+
+    private static async Task AssertProblemDetailsAsync(
         HttpResponseMessage response,
-        string expectedError)
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
+        Assert.Equal(expectedStatus, response.StatusCode);
         Assert.Equal(
-            expectedError,
-            body.Error);
-    }
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-    private sealed record ErrorResponse(
-        string Error);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
+    }
 }

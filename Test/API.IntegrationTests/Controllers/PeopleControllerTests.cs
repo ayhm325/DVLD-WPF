@@ -4,7 +4,6 @@ using System.Text.Json;
 using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.PersonDTO;
-using Application.Interfaces;
 using Domain.Enums;
 using Moq;
 
@@ -13,392 +12,195 @@ namespace API.IntegrationTests.Controllers;
 public sealed class PeopleControllerTests
 {
     [Fact]
-    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
+    public async Task GetAll_WithoutAuthentication_Returns401()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
 
-        using var client =
-            factory.CreateClient();
+        var response = await client.GetAsync("/api/People");
 
-        var response =
-            await client.GetAsync("api/People");
-
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-
-        factory.PersonServiceMock.Verify(
-            x => x.GetAllPeopleAsync(),
-            Times.Never);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(), Times.Never);
     }
 
     [Fact]
-    public async Task GetAll_WhenAuthenticated_ReturnsOkWithMappedPeople()
+    public async Task GetAll_WhenAuthenticated_ReturnsMappedPeople()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
 
         var people = new List<PersonDto>
-    {
-        CreatePersonDto(
-            id: 1,
-            nationalNo: "9901234567",
-            firstName: "Ahmad",
-            secondName: "Mohammed",
-            thirdName: "Ali",
-            lastName: "Obeidat",
-            fullName: "Ahmad Mohammed Ali Obeidat",
-            gender: (int)Gender.Male,
-            countryName: "Jordan"),
+        {
+            CreatePersonDto(1, "9901234567", "Ahmad", "Mohammed", "Ali",
+                "Obeidat", "Ahmad Mohammed Ali Obeidat", (int)Gender.Male, "Jordan"),
+            CreatePersonDto(2, "9901234568", "Sara", "Mohammed", null,
+                "Ali", "Sara Mohammed Ali", (int)Gender.Female, "Jordan")
+        };
 
-        CreatePersonDto(
-            id: 2,
-            nationalNo: "9901234568",
-            firstName: "Sara",
-            secondName: "Mohammed",
-            thirdName: null,
-            lastName: "Ali",
-            fullName: "Sara Mohammed Ali",
-            gender: (int)Gender.Female,
-            countryName: "Jordan")
-    };
+        factory.PersonServiceMock.Setup(x => x.GetAllPeopleAsync())
+            .ReturnsAsync(Result<List<PersonDto>>.Success(people));
 
-        factory.PersonServiceMock
-            .Setup(x => x.GetAllPeopleAsync())
-            .ReturnsAsync(
-                Result<List<PersonDto>>.Success(people));
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People");
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var response =
-            await client.GetAsync("api/People");
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        var root = document.RootElement;
 
-        using var document =
-            await JsonDocument.ParseAsync(
-                await response.Content.ReadAsStreamAsync());
+        Assert.Equal(JsonValueKind.Array, root.ValueKind);
+        Assert.Equal(2, root.GetArrayLength());
+        Assert.Equal(1, root[0].GetProperty("personId").GetInt32());
+        Assert.Equal("9901234567", root[0].GetProperty("nationalNo").GetString());
+        Assert.Equal("Ahmad Mohammed Ali Obeidat", root[0].GetProperty("fullName").GetString());
+        Assert.Equal("Amman", root[0].GetProperty("address").GetString());
+        Assert.Equal("0791234567", root[0].GetProperty("phone").GetString());
+        Assert.Equal("ahmad@example.com", root[0].GetProperty("email").GetString());
+        Assert.Equal("Jordan", root[0].GetProperty("countryName").GetString());
 
-        var root =
-            document.RootElement;
-
-        Assert.Equal(
-            JsonValueKind.Array,
-            root.ValueKind);
-
-        Assert.Equal(
-            2,
-            root.GetArrayLength());
-
-        var firstPerson =
-            root[0];
-
-        Assert.Equal(
-            1,
-            firstPerson.GetProperty("personId").GetInt32());
-
-        Assert.Equal(
-            "9901234567",
-            firstPerson.GetProperty("nationalNo").GetString());
-
-        Assert.Equal(
-            "Ahmad Mohammed Ali Obeidat",
-            firstPerson.GetProperty("fullName").GetString());
-
-        Assert.Equal(
-            "Amman",
-            firstPerson.GetProperty("address").GetString());
-
-        Assert.Equal(
-            "0791234567",
-            firstPerson.GetProperty("phone").GetString());
-
-        Assert.Equal(
-            "ahmad@example.com",
-            firstPerson.GetProperty("email").GetString());
-
-        Assert.Equal(
-            "Jordan",
-            firstPerson.GetProperty("countryName").GetString());
-
-        factory.PersonServiceMock.Verify(
-            x => x.GetAllPeopleAsync(),
-            Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(), Times.Once);
     }
 
     [Fact]
-    public async Task GetAll_WhenServiceReturnsFailure_ReturnsInternalServerError()
+    public async Task GetAll_WhenServiceFails_Returns500ProblemDetails()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
 
-        const string error =
-            "Unexpected person retrieval failure.";
+        factory.PersonServiceMock.Setup(x => x.GetAllPeopleAsync())
+            .ReturnsAsync(Result<List<PersonDto>>.FromFailure(
+                "Unexpected person retrieval failure."));
 
-        factory.PersonServiceMock
-            .Setup(x => x.GetAllPeopleAsync())
-            .ReturnsAsync(
-                Result<List<PersonDto>>.FromFailure(error));
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People");
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
-
-        var response =
-            await client.GetAsync("api/People");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
-    public async Task GetById_WhenPersonExists_ReturnsOkWithMappedPerson()
+    public async Task GetById_WhenPersonExists_ReturnsMappedPerson()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
 
-        var person =
-            CreatePersonDto(
-                id: 25,
-                nationalNo: "9901234599",
-                firstName: "Ahmad",
-                secondName: "Mohammed",
-                thirdName: "Ali",
-                lastName: "Obeidat",
-                fullName: "Ahmad Mohammed Ali Obeidat",
-                gender: (int)Gender.Male,
-                countryName: "Jordan");
+        var person = CreatePersonDto(
+            25, "9901234599", "Ahmad", "Mohammed", "Ali",
+            "Obeidat", "Ahmad Mohammed Ali Obeidat",
+            (int)Gender.Male, "Jordan");
 
-        factory.PersonServiceMock
-            .Setup(x =>
-                x.GetPersonByIdAsync(25))
-            .ReturnsAsync(
-                Result<PersonDto>.Success(person));
+        factory.PersonServiceMock.Setup(x => x.GetPersonByIdAsync(25))
+            .ReturnsAsync(Result<PersonDto>.Success(person));
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People/25");
 
-        var response =
-            await client.GetAsync("api/People/25");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        using var document =
-            await JsonDocument.ParseAsync(
-                await response.Content.ReadAsStreamAsync());
+        var body = document.RootElement;
 
-        var body =
-            document.RootElement;
+        Assert.Equal(25, body.GetProperty("personId").GetInt32());
+        Assert.Equal("9901234599", body.GetProperty("nationalNo").GetString());
+        Assert.Equal("Ahmad Mohammed Ali Obeidat", body.GetProperty("fullName").GetString());
+        Assert.Equal("Jordan", body.GetProperty("countryName").GetString());
 
-        Assert.Equal(
-            25,
-            body.GetProperty("personId").GetInt32());
-
-        Assert.Equal(
-            "9901234599",
-            body.GetProperty("nationalNo").GetString());
-
-        Assert.Equal(
-            "Ahmad Mohammed Ali Obeidat",
-            body.GetProperty("fullName").GetString());
-
-        Assert.Equal(
-            "Jordan",
-            body.GetProperty("countryName").GetString());
-
-        factory.PersonServiceMock.Verify(
-            x => x.GetPersonByIdAsync(25),
-            Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetPersonByIdAsync(25), Times.Once);
     }
 
     [Fact]
-    public async Task GetById_WhenPersonDoesNotExist_ReturnsNotFound()
+    public async Task GetById_WhenPersonDoesNotExist_Returns404ProblemDetails()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        const string detail = "Person not found.";
 
-        const string error =
-            "Person not found.";
+        await using var factory = new ApiWebApplicationFactory();
 
-        factory.PersonServiceMock
-            .Setup(x =>
-                x.GetPersonByIdAsync(999))
-            .ReturnsAsync(
-                Result<PersonDto>.FromNotFound(error));
+        factory.PersonServiceMock.Setup(x => x.GetPersonByIdAsync(999))
+            .ReturnsAsync(Result<PersonDto>.FromNotFound(detail));
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People/999");
 
-        var response =
-            await client.GetAsync("api/People/999");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.NotFound,
-            response.StatusCode);
+            "Resource not found",
+            detail);
 
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
-
-        factory.PersonServiceMock.Verify(
-            x => x.GetPersonByIdAsync(999),
-            Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetPersonByIdAsync(999), Times.Once);
     }
 
     [Fact]
-    public async Task GetByNationalNo_WhenPersonExists_ReturnsOkWithMappedPerson()
+    public async Task GetByNationalNo_WhenPersonExists_ReturnsMappedPerson()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        const string nationalNo = "9901234567";
 
-        const string nationalNo =
-            "9901234567";
+        await using var factory = new ApiWebApplicationFactory();
 
-        var person =
-            CreatePersonDto(
-                id: 30,
-                nationalNo: nationalNo,
-                firstName: "Khaled",
-                secondName: "Ali",
-                thirdName: null,
-                lastName: "Omar",
-                fullName: "Khaled Ali Omar",
-                gender: (int)Gender.Male,
-                countryName: "Jordan");
+        var person = CreatePersonDto(
+            30, nationalNo, "Khaled", "Ali", null,
+            "Omar", "Khaled Ali Omar",
+            (int)Gender.Male, "Jordan");
 
-        factory.PersonServiceMock
-            .Setup(x =>
-                x.GetPersonByNationalNoAsync(nationalNo))
-            .ReturnsAsync(
-                Result<PersonDto>.Success(person));
+        factory.PersonServiceMock.Setup(
+                x => x.GetPersonByNationalNoAsync(nationalNo))
+            .ReturnsAsync(Result<PersonDto>.Success(person));
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync($"/api/People/national/{nationalNo}");
 
-        var response =
-            await client.GetAsync(
-                $"api/People/national/{nationalNo}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        using var document =
-            await JsonDocument.ParseAsync(
-                await response.Content.ReadAsStreamAsync());
+        var body = document.RootElement;
 
-        var body =
-            document.RootElement;
-
-        Assert.Equal(
-            30,
-            body.GetProperty("personId").GetInt32());
-
-        Assert.Equal(
-            nationalNo,
-            body.GetProperty("nationalNo").GetString());
-
-        Assert.Equal(
-            "Khaled Ali Omar",
-            body.GetProperty("fullName").GetString());
+        Assert.Equal(30, body.GetProperty("personId").GetInt32());
+        Assert.Equal(nationalNo, body.GetProperty("nationalNo").GetString());
+        Assert.Equal("Khaled Ali Omar", body.GetProperty("fullName").GetString());
 
         factory.PersonServiceMock.Verify(
-            x =>
-                x.GetPersonByNationalNoAsync(nationalNo),
-            Times.Once);
+            x => x.GetPersonByNationalNoAsync(nationalNo), Times.Once);
     }
 
     [Fact]
-    public async Task GetByNationalNo_WhenPersonDoesNotExist_ReturnsNotFound()
+    public async Task GetByNationalNo_WhenPersonDoesNotExist_Returns404ProblemDetails()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        const string nationalNo = "9999999999";
+        const string detail = "Person not found.";
 
-        const string nationalNo =
-            "9999999999";
+        await using var factory = new ApiWebApplicationFactory();
 
-        const string error =
-            "Person not found.";
+        factory.PersonServiceMock.Setup(
+                x => x.GetPersonByNationalNoAsync(nationalNo))
+            .ReturnsAsync(Result<PersonDto>.FromNotFound(detail));
 
-        factory.PersonServiceMock
-            .Setup(x =>
-                x.GetPersonByNationalNoAsync(nationalNo))
-            .ReturnsAsync(
-                Result<PersonDto>.FromNotFound(error));
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync(
+            $"/api/People/national/{nationalNo}");
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
-
-        var response =
-            await client.GetAsync(
-                $"api/People/national/{nationalNo}");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
+            "Resource not found",
+            detail);
     }
 
     [Fact]
-    public async Task Create_WhenServiceSucceeds_ReturnsCreatedWithPersonId()
+    public async Task Create_WhenServiceSucceeds_Returns201WithPersonId()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x =>
-                x.AddPersonAsync(
-                    It.IsAny<PersonCreateDto>()))
-            .ReturnsAsync(
-                Result<int>.Success(77));
+            .Setup(x => x.AddPersonAsync(It.IsAny<PersonCreateDto>()))
+            .ReturnsAsync(Result<int>.Success(77));
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
 
         var request = new
         {
@@ -407,10 +209,7 @@ public sealed class PeopleControllerTests
             SecondName = "Mohammed",
             ThirdName = "Ali",
             LastName = "Obeidat",
-            DateOfBirth = new DateTime(
-                1996,
-                5,
-                10),
+            DateOfBirth = new DateTime(1996, 5, 10),
             Gender = (int)Gender.Male,
             Address = "Amman",
             Phone = "0791234567",
@@ -419,521 +218,233 @@ public sealed class PeopleControllerTests
             ImagePath = "ahmad.jpg"
         };
 
-        var response =
-            await client.PostAsJsonAsync(
-                "api/People",
-                request);
+        var response = await client.PostAsJsonAsync("/api/People", request);
 
-        Assert.Equal(
-            HttpStatusCode.Created,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        using var document =
-            await JsonDocument.ParseAsync(
-                await response.Content.ReadAsStreamAsync());
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        var body =
-            document.RootElement;
-
-        Assert.Equal(
-            77,
-            body.GetProperty("personId").GetInt32());
-
-        Assert.NotNull(
-            response.Headers.Location);
-
-        Assert.EndsWith(
-            "/api/People/77",
-            response.Headers.Location!.ToString());
+        Assert.Equal(77, document.RootElement.GetProperty("personId").GetInt32());
+        Assert.NotNull(response.Headers.Location);
+        Assert.EndsWith("/api/People/77", response.Headers.Location.ToString());
 
         factory.PersonServiceMock.Verify(
-            x =>
-                x.AddPersonAsync(
-                    It.Is<PersonCreateDto>(
-                        dto =>
-                            dto.NationalNo == "9901234577" &&
-                            dto.FirstName == "Ahmad" &&
-                            dto.SecondName == "Mohammed" &&
-                            dto.ThirdName == "Ali" &&
-                            dto.LastName == "Obeidat" &&
-                            dto.DateOfBirth ==
-                                new DateTime(1996, 5, 10) &&
-                            dto.Gender == (int)Gender.Male &&
-                            dto.Address == "Amman" &&
-                            dto.Phone == "0791234567" &&
-                            dto.Email == "ahmad@example.com" &&
-                            dto.NationalityCountryID == 1 &&
-                            dto.ImagePath == "ahmad.jpg")),
+            x => x.AddPersonAsync(It.Is<PersonCreateDto>(dto =>
+                dto.NationalNo == "9901234577" &&
+                dto.FirstName == "Ahmad" &&
+                dto.SecondName == "Mohammed" &&
+                dto.ThirdName == "Ali" &&
+                dto.LastName == "Obeidat" &&
+                dto.DateOfBirth == new DateTime(1996, 5, 10) &&
+                dto.Gender == (int)Gender.Male &&
+                dto.Address == "Amman" &&
+                dto.Phone == "0791234567" &&
+                dto.Email == "ahmad@example.com" &&
+                dto.NationalityCountryID == 1 &&
+                dto.ImagePath == "ahmad.jpg")),
             Times.Once);
     }
 
-    [Fact]
-    public async Task Create_WhenServiceReturnsValidationFailure_ReturnsBadRequest()
+    [Theory]
+    [InlineData(400, "Validation error", "National number is required.")]
+    [InlineData(409, "Conflict", "The national number is already registered.")]
+    public async Task Create_WhenResultFails_ReturnsProblemDetails(
+        int statusCode,
+        string title,
+        string detail)
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
 
-        const string error =
-            "National number is required.";
+        var result = statusCode == 400
+            ? Result<int>.FromValidationFailure(detail)
+            : Result<int>.FromConflict(detail);
 
         factory.PersonServiceMock
-            .Setup(x =>
-                x.AddPersonAsync(
-                    It.IsAny<PersonCreateDto>()))
-            .ReturnsAsync(
-                Result<int>.FromValidationFailure(error));
+            .Setup(x => x.AddPersonAsync(It.IsAny<PersonCreateDto>()))
+            .ReturnsAsync(result);
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
 
-        var response =
-            await client.PostAsJsonAsync(
-                "api/People",
-                new
-                {
-                    NationalNo = "",
-                    FirstName = "Ahmad",
-                    SecondName = "Mohammed",
-                    ThirdName = (string?)null,
-                    LastName = "Obeidat",
-                    DateOfBirth = new DateTime(
-                        1996,
-                        5,
-                        10),
-                    Gender = (int)Gender.Male,
-                    Address = "Amman",
-                    Phone = "0791234567",
-                    Email = "ahmad@example.com",
-                    NationalityCountryID = 1,
-                    ImagePath = (string?)null
-                });
+        var response = await client.PostAsJsonAsync("/api/People", new
+        {
+            NationalNo = statusCode == 400 ? "" : "9901234577",
+            FirstName = "Ahmad",
+            SecondName = "Mohammed",
+            ThirdName = (string?)null,
+            LastName = "Obeidat",
+            DateOfBirth = new DateTime(1996, 5, 10),
+            Gender = (int)Gender.Male,
+            Address = "Amman",
+            Phone = "0791234567",
+            Email = "ahmad@example.com",
+            NationalityCountryID = 1,
+            ImagePath = (string?)null
+        });
 
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
+        await AssertProblemDetailsAsync(
+            response,
+            (HttpStatusCode)statusCode,
+            title,
+            detail);
     }
 
     [Fact]
-    public async Task Create_WhenNationalNumberConflicts_ReturnsConflict()
+    public async Task Update_WhenServiceSucceeds_Returns204()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
-
-        const string error =
-            "The national number is already registered.";
+        await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x =>
-                x.AddPersonAsync(
-                    It.IsAny<PersonCreateDto>()))
-            .ReturnsAsync(
-                Result<int>.FromConflict(error));
+            .Setup(x => x.UpdatePersonAsync(55, It.IsAny<PersonUpdateDto>()))
+            .ReturnsAsync(Result.Success());
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
 
-        var response =
-            await client.PostAsJsonAsync(
-                "api/People",
-                new
-                {
-                    NationalNo = "9901234577",
-                    FirstName = "Ahmad",
-                    SecondName = "Mohammed",
-                    ThirdName = (string?)null,
-                    LastName = "Obeidat",
-                    DateOfBirth = new DateTime(
-                        1996,
-                        5,
-                        10),
-                    Gender = (int)Gender.Male,
-                    Address = "Amman",
-                    Phone = "0791234567",
-                    Email = "ahmad@example.com",
-                    NationalityCountryID = 1,
-                    ImagePath = (string?)null
-                });
+        var response = await client.PutAsJsonAsync("/api/People/55", CreateUpdateRequest());
 
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
-    }
-
-    [Fact]
-    public async Task Update_WhenServiceSucceeds_ReturnsNoContent()
-    {
-        await using var factory =
-            new ApiWebApplicationFactory();
-
-        factory.PersonServiceMock
-            .Setup(x =>
-                x.UpdatePersonAsync(
-                    55,
-                    It.IsAny<PersonUpdateDto>()))
-            .ReturnsAsync(
-                Result.Success());
-
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
-
-        var response =
-            await client.PutAsJsonAsync(
-                "api/People/55",
-                new
-                {
-                    NationalNo = "9901234555",
-                    FirstName = "Updated",
-                    SecondName = "Person",
-                    ThirdName = "Ali",
-                    LastName = "Obeidat",
-                    DateOfBirth = new DateTime(
-                        1995,
-                        4,
-                        20),
-                    Gender = (int)Gender.Female,
-                    Address = "Irbid",
-                    Phone = "0781234567",
-                    Email = "updated@example.com",
-                    NationalityCountryID = 2,
-                    ImagePath = "updated.jpg"
-                });
-
-        Assert.Equal(
-            HttpStatusCode.NoContent,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         factory.PersonServiceMock.Verify(
-            x =>
-                x.UpdatePersonAsync(
-                    55,
-                    It.Is<PersonUpdateDto>(
-                        dto =>
-                            dto.NationalNo == "9901234555" &&
-                            dto.FirstName == "Updated" &&
-                            dto.SecondName == "Person" &&
-                            dto.ThirdName == "Ali" &&
-                            dto.LastName == "Obeidat" &&
-                            dto.DateOfBirth ==
-                                new DateTime(1995, 4, 20) &&
-                            dto.Gender == (int)Gender.Female &&
-                            dto.Address == "Irbid" &&
-                            dto.Phone == "0781234567" &&
-                            dto.Email == "updated@example.com" &&
-                            dto.NationalityCountryID == 2 &&
-                            dto.ImagePath == "updated.jpg")),
+            x => x.UpdatePersonAsync(55, It.Is<PersonUpdateDto>(dto =>
+                dto.NationalNo == "9901234555" &&
+                dto.FirstName == "Updated" &&
+                dto.SecondName == "Person" &&
+                dto.ThirdName == "Ali" &&
+                dto.LastName == "Obeidat" &&
+                dto.DateOfBirth == new DateTime(1995, 4, 20) &&
+                dto.Gender == (int)Gender.Female &&
+                dto.Address == "Irbid" &&
+                dto.Phone == "0781234567" &&
+                dto.Email == "updated@example.com" &&
+                dto.NationalityCountryID == 2 &&
+                dto.ImagePath == "updated.jpg")),
             Times.Once);
     }
 
-    [Fact]
-    public async Task Update_WhenPersonDoesNotExist_ReturnsNotFound()
+    [Theory]
+    [InlineData(404, "Resource not found", "Person not found.")]
+    [InlineData(409, "Conflict",
+        "The national number is already registered to another person.")]
+    public async Task Update_WhenResultFails_ReturnsProblemDetails(
+        int statusCode,
+        string title,
+        string detail)
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
 
-        const string error =
-            "Person not found.";
+        var result = statusCode == 404
+            ? Result.NotFound(detail)
+            : Result.Conflict(detail);
 
         factory.PersonServiceMock
-            .Setup(x =>
-                x.UpdatePersonAsync(
-                    55,
-                    It.IsAny<PersonUpdateDto>()))
-            .ReturnsAsync(
-                Result.NotFound(error));
+            .Setup(x => x.UpdatePersonAsync(55, It.IsAny<PersonUpdateDto>()))
+            .ReturnsAsync(result);
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.PutAsJsonAsync(
+            "/api/People/55",
+            CreateUpdateRequest());
 
-        var response =
-            await client.PutAsJsonAsync(
-                "api/People/55",
-                new
-                {
-                    NationalNo = "9901234555",
-                    FirstName = "Updated",
-                    SecondName = "Person",
-                    ThirdName = (string?)null,
-                    LastName = "Obeidat",
-                    DateOfBirth = new DateTime(
-                        1995,
-                        4,
-                        20),
-                    Gender = (int)Gender.Female,
-                    Address = "Irbid",
-                    Phone = "0781234567",
-                    Email = "updated@example.com",
-                    NationalityCountryID = 2,
-                    ImagePath = (string?)null
-                });
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
+        await AssertProblemDetailsAsync(
+            response,
+            (HttpStatusCode)statusCode,
+            title,
+            detail);
     }
 
     [Fact]
-    public async Task Update_WhenNationalNumberConflicts_ReturnsConflict()
+    public async Task Delete_WhenSuccessful_Returns204()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
-
-        const string error =
-            "The national number is already registered to another person.";
+        await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x =>
-                x.UpdatePersonAsync(
-                    55,
-                    It.IsAny<PersonUpdateDto>()))
-            .ReturnsAsync(
-                Result.Conflict(error));
+            .Setup(x => x.DeletePersonAsync(66))
+            .ReturnsAsync(Result.Success());
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.DeleteAsync("/api/People/66");
 
-        var response =
-            await client.PutAsJsonAsync(
-                "api/People/55",
-                new
-                {
-                    NationalNo = "9901234555",
-                    FirstName = "Updated",
-                    SecondName = "Person",
-                    ThirdName = (string?)null,
-                    LastName = "Obeidat",
-                    DateOfBirth = new DateTime(
-                        1995,
-                        4,
-                        20),
-                    Gender = (int)Gender.Female,
-                    Address = "Irbid",
-                    Phone = "0781234567",
-                    Email = "updated@example.com",
-                    NationalityCountryID = 2,
-                    ImagePath = (string?)null
-                });
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
-    }
-
-    [Fact]
-    public async Task Delete_WhenServiceSucceeds_ReturnsNoContent()
-    {
-        await using var factory =
-            new ApiWebApplicationFactory();
-
-        factory.PersonServiceMock
-            .Setup(x =>
-                x.DeletePersonAsync(66))
-            .ReturnsAsync(
-                Result.Success());
-
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
-
-        var response =
-            await client.DeleteAsync(
-                "api/People/66");
-
-        Assert.Equal(
-            HttpStatusCode.NoContent,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         factory.PersonServiceMock.Verify(
-            x =>
-                x.DeletePersonAsync(66),
-            Times.Once);
+            x => x.DeletePersonAsync(66), Times.Once);
     }
 
-    [Fact]
-    public async Task Delete_WhenPersonHasApplications_ReturnsConflict()
+    [Theory]
+    [InlineData(404, "Resource not found", "Person not found.")]
+    [InlineData(409, "Conflict",
+        "Cannot delete this person because they have one or more applications.")]
+    public async Task Delete_WhenResultFails_ReturnsProblemDetails(
+        int statusCode,
+        string title,
+        string detail)
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
+        await using var factory = new ApiWebApplicationFactory();
 
-        const string error =
-            "Cannot delete this person because they have one or more applications.";
+        var result = statusCode == 404
+            ? Result.NotFound(detail)
+            : Result.Conflict(detail);
 
         factory.PersonServiceMock
-            .Setup(x =>
-                x.DeletePersonAsync(66))
-            .ReturnsAsync(
-                Result.Conflict(error));
+            .Setup(x => x.DeletePersonAsync(66))
+            .ReturnsAsync(result);
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.DeleteAsync("/api/People/66");
 
-        var response =
-            await client.DeleteAsync(
-                "api/People/66");
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
+        await AssertProblemDetailsAsync(
+            response,
+            (HttpStatusCode)statusCode,
+            title,
+            detail);
 
         factory.PersonServiceMock.Verify(
-            x =>
-                x.DeletePersonAsync(66),
-            Times.Once);
+            x => x.DeletePersonAsync(66), Times.Once);
     }
 
     [Fact]
-    public async Task Delete_WhenPersonDoesNotExist_ReturnsNotFound()
+    public async Task Delete_WhenServiceFails_Returns500ProblemDetails()
     {
-        await using var factory =
-            new ApiWebApplicationFactory();
-
-        const string error =
-            "Person not found.";
+        await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x =>
-                x.DeletePersonAsync(66))
-            .ReturnsAsync(
-                Result.NotFound(error));
+            .Setup(x => x.DeletePersonAsync(66))
+            .ReturnsAsync(Result.Failure("Failed to delete person."));
 
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.DeleteAsync("/api/People/66");
 
-        var response =
-            await client.DeleteAsync(
-                "api/People/66");
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
-    }
-
-    [Fact]
-    public async Task Delete_WhenServiceFails_ReturnsInternalServerError()
-    {
-        await using var factory =
-            new ApiWebApplicationFactory();
-
-        const string error =
-            "Failed to delete person.";
-
-        factory.PersonServiceMock
-            .Setup(x =>
-                x.DeletePersonAsync(66))
-            .ReturnsAsync(
-                Result.Failure(error));
-
-        using var client =
-            CreateAuthenticatedClient(
-                factory,
-                userId: 10);
-
-        var response =
-            await client.DeleteAsync(
-                "api/People/66");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            response,
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
-        Assert.Equal(
-            error,
-            body!.Error);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     private static HttpClient CreateAuthenticatedClient(
         ApiWebApplicationFactory factory,
         int userId)
     {
-        var client =
-            factory.CreateClient();
-
-        client.DefaultRequestHeaders.Add(
-            "X-Test-User-Id",
-            userId.ToString());
-
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User-Id", userId.ToString());
         return client;
     }
+
+    private static object CreateUpdateRequest() => new
+    {
+        NationalNo = "9901234555",
+        FirstName = "Updated",
+        SecondName = "Person",
+        ThirdName = "Ali",
+        LastName = "Obeidat",
+        DateOfBirth = new DateTime(1995, 4, 20),
+        Gender = (int)Gender.Female,
+        Address = "Irbid",
+        Phone = "0781234567",
+        Email = "updated@example.com",
+        NationalityCountryID = 2,
+        ImagePath = "updated.jpg"
+    };
 
     private static PersonDto CreatePersonDto(
         int id,
@@ -944,9 +455,7 @@ public sealed class PeopleControllerTests
         string lastName,
         string fullName,
         int gender,
-        string countryName)
-    {
-        return new PersonDto
+        string countryName) => new()
         {
             PersonId = id,
             NationalNo = nationalNo,
@@ -955,10 +464,7 @@ public sealed class PeopleControllerTests
             ThirdName = thirdName,
             LastName = lastName,
             FullName = fullName,
-            DateOfBirth = new DateTime(
-                1996,
-                5,
-                10),
+            DateOfBirth = new DateTime(1996, 5, 10),
             Gender = gender,
             Address = "Amman",
             Phone = "0791234567",
@@ -967,11 +473,30 @@ public sealed class PeopleControllerTests
             CountryName = countryName,
             ImagePath = "ahmad.jpg"
         };
-    }
 
-    private sealed class ErrorResponse
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        public string Error { get; init; } =
-            string.Empty;
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
 }

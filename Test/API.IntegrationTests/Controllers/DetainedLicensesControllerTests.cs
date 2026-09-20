@@ -1,50 +1,37 @@
 ﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.DetainedLicenseDTO;
-using Application.Interfaces;
 using DVLD.Contracts.DetainedLicense;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
-public sealed class DetainedLicensesControllerTests
-    : IClassFixture<ApiWebApplicationFactory>
+public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplicationFactory>
 {
     private readonly ApiWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public DetainedLicensesControllerTests(
-        ApiWebApplicationFactory factory)
+    public DetainedLicensesControllerTests(ApiWebApplicationFactory factory)
     {
         _factory = factory;
         _factory.DetainedLicenseServiceMock.Reset();
-
         _client = factory.CreateClient();
     }
 
     [Fact]
     public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
     {
-        var response =
-            await _client.GetAsync(
-                "/api/DetainedLicenses");
+        var response = await _client.GetAsync("/api/DetainedLicenses");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
     public async Task GetAll_WhenSuccessful_ReturnsMappedResponses()
     {
-        var detainDate =
-            new DateTime(2026, 1, 10);
-
-        var releaseDate =
-            new DateTime(2026, 2, 10);
-
         var dto = new DetainedLicenseDto
         {
             DetainID = 10,
@@ -52,221 +39,97 @@ public sealed class DetainedLicensesControllerTests
             PersonID = 30,
             NationalNo = "N100",
             FullName = "Test Person",
-            DetainDate = detainDate,
+            DetainDate = new DateTime(2026, 1, 10),
             FineFees = 150.50m,
             CreatedByUserID = 40,
             CreatedByUserName = "admin",
             IsReleased = true,
-            ReleaseDate = releaseDate,
+            ReleaseDate = new DateTime(2026, 2, 10),
             ReleasedByUserID = 50,
             ReleaseApplicationID = 60
         };
 
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DetainedLicenseDto>>.Success(
-                    new List<DetainedLicenseDto>
-                    {
-                        dto
-                    }));
+        SetupGetAll(Result<List<DetainedLicenseDto>>.Success([dto]));
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses");
+        var response = await SendAsync(HttpMethod.Get, "/api/DetainedLicenses");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    List<DetainedLicenseResponse>>();
-
-        Assert.NotNull(result);
-
-        var item = Assert.Single(result);
+        var result = await response.Content.ReadFromJsonAsync<List<DetainedLicenseResponse>>();
+        var item = Assert.Single(result!);
 
         Assert.Equal(10, item.DetainId);
         Assert.Equal(20, item.LicenseId);
         Assert.Equal(30, item.PersonId);
         Assert.Equal("N100", item.NationalNo);
         Assert.Equal("Test Person", item.FullName);
-        Assert.Equal(detainDate, item.DetainDate);
+        Assert.Equal(new DateTime(2026, 1, 10), item.DetainDate);
         Assert.Equal(150.50m, item.FineFees);
         Assert.Equal(40, item.CreatedByUserId);
         Assert.Equal("admin", item.CreatedByUserName);
         Assert.True(item.IsReleased);
-        Assert.Equal(releaseDate, item.ReleaseDate);
+        Assert.Equal(new DateTime(2026, 2, 10), item.ReleaseDate);
         Assert.Equal(50, item.ReleasedByUserId);
         Assert.Equal(60, item.ReleaseApplicationId);
 
         _factory.DetainedLicenseServiceMock.Verify(
-            x => x.GetAllAsync(),
-            Times.Once);
+            x => x.GetAllAsync(), Times.Once);
     }
 
     [Fact]
     public async Task GetAll_WhenServiceReturnsNullValue_ReturnsInternalServerError()
     {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DetainedLicenseDto>>.Success(
-                    null!));
+        SetupGetAll(Result<List<DetainedLicenseDto>>.Success(null!));
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            await SendAsync(HttpMethod.Get, "/api/DetainedLicenses"),
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Detained license service returned no data.",
-            error);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
-    [Fact]
-    public async Task GetAll_WhenValidationFails_ReturnsBadRequest()
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest, "Validation error", "validation error")]
+    [InlineData(HttpStatusCode.NotFound, "Resource not found", "not found")]
+    [InlineData(HttpStatusCode.Conflict, "Conflict", "conflict")]
+    [InlineData(HttpStatusCode.Forbidden, "Forbidden", "forbidden")]
+    public async Task GetAll_WhenServiceReturnsFailure_ReturnsExpectedProblemDetails(
+        HttpStatusCode status,
+        string title,
+        string detail)
     {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DetainedLicenseDto>>
-                    .FromValidationFailure(
-                        "validation error"));
+        var result = status switch
+        {
+            HttpStatusCode.BadRequest =>
+                Result<List<DetainedLicenseDto>>.FromValidationFailure(detail),
+            HttpStatusCode.NotFound =>
+                Result<List<DetainedLicenseDto>>.FromNotFound(detail),
+            HttpStatusCode.Conflict =>
+                Result<List<DetainedLicenseDto>>.FromConflict(detail),
+            HttpStatusCode.Forbidden =>
+                Result<List<DetainedLicenseDto>>.FromForbidden(detail),
+            _ => throw new ArgumentOutOfRangeException(nameof(status))
+        };
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses");
+        SetupGetAll(result);
 
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "validation error",
-            error);
-    }
-
-    [Fact]
-    public async Task GetAll_WhenNotFound_ReturnsNotFound()
-    {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DetainedLicenseDto>>
-                    .FromNotFound(
-                        "not found"));
-
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses");
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "not found",
-            error);
-    }
-
-    [Fact]
-    public async Task GetAll_WhenConflict_ReturnsConflict()
-    {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DetainedLicenseDto>>
-                    .FromConflict(
-                        "conflict"));
-
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses");
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "conflict",
-            error);
-    }
-
-    [Fact]
-    public async Task GetAll_WhenForbidden_ReturnsForbidden()
-    {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DetainedLicenseDto>>
-                    .FromForbidden(
-                        "forbidden"));
-
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses");
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "forbidden",
-            error);
+        await AssertProblemDetailsAsync(
+            await SendAsync(HttpMethod.Get, "/api/DetainedLicenses"),
+            status,
+            title,
+            detail);
     }
 
     [Fact]
     public async Task GetAll_WhenFailureOccurs_ReturnsInternalServerError()
     {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<DetainedLicenseDto>>
-                    .FromFailure(
-                        "failure"));
+        SetupGetAll(Result<List<DetainedLicenseDto>>.FromFailure("failure"));
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            await SendAsync(HttpMethod.Get, "/api/DetainedLicenses"),
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "failure",
-            error);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
@@ -288,25 +151,15 @@ public sealed class DetainedLicensesControllerTests
 
         _factory.DetainedLicenseServiceMock
             .Setup(x => x.GetByIdAsync(1))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>.Success(dto));
+            .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses/1");
+        var response = await SendAsync(HttpMethod.Get, "/api/DetainedLicenses/1");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    DetainedLicenseResponse>();
+        var result = await response.Content.ReadFromJsonAsync<DetainedLicenseResponse>();
 
         Assert.NotNull(result);
-
         Assert.Equal(1, result.DetainId);
         Assert.Equal(2, result.LicenseId);
         Assert.Equal(3, result.PersonId);
@@ -316,8 +169,7 @@ public sealed class DetainedLicensesControllerTests
         Assert.False(result.IsReleased);
 
         _factory.DetainedLicenseServiceMock.Verify(
-            x => x.GetByIdAsync(1),
-            Times.Once);
+            x => x.GetByIdAsync(1), Times.Once);
     }
 
     [Fact]
@@ -325,25 +177,13 @@ public sealed class DetainedLicensesControllerTests
     {
         _factory.DetainedLicenseServiceMock
             .Setup(x => x.GetByIdAsync(7))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>.Success(
-                    null!));
+            .ReturnsAsync(Result<DetainedLicenseDto>.Success(null!));
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses/7");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            await SendAsync(HttpMethod.Get, "/api/DetainedLicenses/7"),
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Detained license service returned no data.",
-            error);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
@@ -351,26 +191,13 @@ public sealed class DetainedLicensesControllerTests
     {
         _factory.DetainedLicenseServiceMock
             .Setup(x => x.GetByIdAsync(7))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>
-                    .FromNotFound(
-                        "not found"));
+            .ReturnsAsync(Result<DetainedLicenseDto>.FromNotFound("not found"));
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses/7");
-
-        Assert.Equal(
+        await AssertProblemDetailsAsync(
+            await SendAsync(HttpMethod.Get, "/api/DetainedLicenses/7"),
             HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "not found",
-            error);
+            "Resource not found",
+            "not found");
     }
 
     [Fact]
@@ -391,118 +218,66 @@ public sealed class DetainedLicensesControllerTests
         };
 
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.GetActiveDetainByLicenseIdAsync(20))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>.Success(dto));
+            .Setup(x => x.GetActiveDetainByLicenseIdAsync(20))
+            .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses/license/20/active");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/DetainedLicenses/license/20/active");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    DetainedLicenseResponse>();
+        var result = await response.Content.ReadFromJsonAsync<DetainedLicenseResponse>();
 
         Assert.NotNull(result);
-
         Assert.Equal(10, result.DetainId);
         Assert.Equal(20, result.LicenseId);
         Assert.Equal("Active Driver", result.FullName);
         Assert.False(result.IsReleased);
 
         _factory.DetainedLicenseServiceMock.Verify(
-            x =>
-                x.GetActiveDetainByLicenseIdAsync(20),
-            Times.Once);
+            x => x.GetActiveDetainByLicenseIdAsync(20), Times.Once);
     }
 
     [Fact]
     public async Task GetActiveByLicenseId_WhenNotFound_ReturnsNotFound()
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.GetActiveDetainByLicenseIdAsync(20))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>
-                    .FromNotFound(
-                        "not found"));
+            .Setup(x => x.GetActiveDetainByLicenseIdAsync(20))
+            .ReturnsAsync(Result<DetainedLicenseDto>.FromNotFound("not found"));
 
-        var response =
-            await SendAuthenticatedAsync(
+        await AssertProblemDetailsAsync(
+            await SendAsync(
                 HttpMethod.Get,
-                "/api/DetainedLicenses/license/20/active");
-
-        Assert.Equal(
+                "/api/DetainedLicenses/license/20/active"),
             HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "not found",
-            error);
+            "Resource not found",
+            "not found");
     }
 
-    [Fact]
-    public async Task IsDetained_WhenServiceReturnsTrue_ReturnsTrue()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task IsDetained_ReturnsExpectedResult(bool detained)
     {
         _factory.DetainedLicenseServiceMock
             .Setup(x => x.IsLicenseDetainedAsync(20))
-            .ReturnsAsync(true);
+            .ReturnsAsync(detained);
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses/license/20/detained");
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/DetainedLicenses/license/20/detained");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    DetainedStatusResponse>();
+        var result = await response.Content
+            .ReadFromJsonAsync<DetainedStatusResponse>();
 
         Assert.NotNull(result);
-        Assert.True(result.Detained);
+        Assert.Equal(detained, result.Detained);
 
         _factory.DetainedLicenseServiceMock.Verify(
-            x => x.IsLicenseDetainedAsync(20),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task IsDetained_WhenServiceReturnsFalse_ReturnsFalse()
-    {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.IsLicenseDetainedAsync(20))
-            .ReturnsAsync(false);
-
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses/license/20/detained");
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    DetainedStatusResponse>();
-
-        Assert.NotNull(result);
-        Assert.False(result.Detained);
+            x => x.IsLicenseDetainedAsync(20), Times.Once);
     }
 
     [Fact]
@@ -523,50 +298,31 @@ public sealed class DetainedLicensesControllerTests
         };
 
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.Is<CreateDetainedLicenseDto>(
-                        d =>
-                            d.LicenseID == 200 &&
-                            d.FineFees == 250m)))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>.Success(dto));
+            .Setup(x => x.AddAsync(It.Is<CreateDetainedLicenseDto>(
+                d => d.LicenseID == 200 && d.FineFees == 250m)))
+            .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
-        var request =
+        var response = await SendAsync(
+            HttpMethod.Post,
+            "/api/DetainedLicenses",
             new CreateDetainedLicenseRequest
             {
                 LicenseId = 200,
                 FineFees = 250m
-            };
+            });
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Post,
-                "/api/DetainedLicenses",
-                request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    DetainedLicenseResponse>();
+        var result = await response.Content.ReadFromJsonAsync<DetainedLicenseResponse>();
 
         Assert.NotNull(result);
-
         Assert.Equal(100, result.DetainId);
         Assert.Equal(200, result.LicenseId);
         Assert.Equal(250m, result.FineFees);
 
         _factory.DetainedLicenseServiceMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<CreateDetainedLicenseDto>(
-                        d =>
-                            d.LicenseID == 200 &&
-                            d.FineFees == 250m)),
+            x => x.AddAsync(It.Is<CreateDetainedLicenseDto>(
+                d => d.LicenseID == 200 && d.FineFees == 250m)),
             Times.Once);
     }
 
@@ -574,230 +330,139 @@ public sealed class DetainedLicensesControllerTests
     public async Task Detain_WhenValidationFails_ReturnsBadRequest()
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.IsAny<CreateDetainedLicenseDto>()))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>
-                    .FromValidationFailure(
-                        "validation error"));
+            .Setup(x => x.AddAsync(It.IsAny<CreateDetainedLicenseDto>()))
+            .ReturnsAsync(Result<DetainedLicenseDto>
+                .FromValidationFailure("validation error"));
 
-        var request =
-            new CreateDetainedLicenseRequest
-            {
-                LicenseId = 1,
-                FineFees = 10m
-            };
-
-        var response =
-            await SendAuthenticatedAsync(
+        await AssertProblemDetailsAsync(
+            await SendAsync(
                 HttpMethod.Post,
                 "/api/DetainedLicenses",
-                request);
-
-        Assert.Equal(
+                new CreateDetainedLicenseRequest
+                {
+                    LicenseId = 1,
+                    FineFees = 10m
+                }),
             HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "validation error",
-            error);
+            "Validation error",
+            "validation error");
     }
 
     [Fact]
     public async Task Detain_WhenServiceReturnsNullValue_ReturnsInternalServerError()
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.IsAny<CreateDetainedLicenseDto>()))
-            .ReturnsAsync(
-                Result<DetainedLicenseDto>.Success(
-                    null!));
+            .Setup(x => x.AddAsync(It.IsAny<CreateDetainedLicenseDto>()))
+            .ReturnsAsync(Result<DetainedLicenseDto>.Success(null!));
 
-        var request =
-            new CreateDetainedLicenseRequest
-            {
-                LicenseId = 1,
-                FineFees = 10m
-            };
-
-        var response =
-            await SendAuthenticatedAsync(
+        await AssertProblemDetailsAsync(
+            await SendAsync(
                 HttpMethod.Post,
                 "/api/DetainedLicenses",
-                request);
-
-        Assert.Equal(
+                new CreateDetainedLicenseRequest
+                {
+                    LicenseId = 1,
+                    FineFees = 10m
+                }),
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "Detained license service returned no data.",
-            error);
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
     public async Task Release_WhenSuccessful_ReturnsNoContent()
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.ReleaseAsync(
-                    It.Is<ReleaseDetainedLicenseDto>(
-                        d => d.DetainID == 500)))
-            .ReturnsAsync(
-                Result.Success());
+            .Setup(x => x.ReleaseAsync(It.Is<ReleaseDetainedLicenseDto>(
+                d => d.DetainID == 500)))
+            .ReturnsAsync(Result.Success());
 
-        var request =
-            new ReleaseDetainedLicenseRequest
-            {
-                DetainId = 500
-            };
+        var response = await SendAsync(
+            HttpMethod.Post,
+            "/api/DetainedLicenses/release",
+            new ReleaseDetainedLicenseRequest { DetainId = 500 });
 
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Post,
-                "/api/DetainedLicenses/release",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.NoContent,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         _factory.DetainedLicenseServiceMock.Verify(
-            x =>
-                x.ReleaseAsync(
-                    It.Is<ReleaseDetainedLicenseDto>(
-                        d => d.DetainID == 500)),
-            Times.Once);
+            x => x.ReleaseAsync(It.Is<ReleaseDetainedLicenseDto>(
+                d => d.DetainID == 500)), Times.Once);
     }
 
-    [Fact]
-    public async Task Release_WhenNotFound_ReturnsNotFound()
+    [Theory]
+    [InlineData(HttpStatusCode.NotFound, "Resource not found", "not found")]
+    [InlineData(HttpStatusCode.Forbidden, "Forbidden", "forbidden")]
+    public async Task Release_WhenServiceFails_ReturnsExpectedProblemDetails(
+        HttpStatusCode status,
+        string title,
+        string detail)
     {
+        var result = status == HttpStatusCode.NotFound
+            ? Result.NotFound(detail)
+            : Result.Forbidden(detail);
+
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.ReleaseAsync(
-                    It.IsAny<ReleaseDetainedLicenseDto>()))
-            .ReturnsAsync(
-                Result.NotFound(
-                    "not found"));
+            .Setup(x => x.ReleaseAsync(It.IsAny<ReleaseDetainedLicenseDto>()))
+            .ReturnsAsync(result);
 
-        var request =
-            new ReleaseDetainedLicenseRequest
-            {
-                DetainId = 500
-            };
-
-        var response =
-            await SendAuthenticatedAsync(
+        await AssertProblemDetailsAsync(
+            await SendAsync(
                 HttpMethod.Post,
                 "/api/DetainedLicenses/release",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "not found",
-            error);
+                new ReleaseDetainedLicenseRequest { DetainId = 500 }),
+            status,
+            title,
+            detail);
     }
 
-    [Fact]
-    public async Task Release_WhenForbidden_ReturnsForbidden()
-    {
+    private void SetupGetAll(Result<List<DetainedLicenseDto>> result) =>
         _factory.DetainedLicenseServiceMock
-            .Setup(x =>
-                x.ReleaseAsync(
-                    It.IsAny<ReleaseDetainedLicenseDto>()))
-            .ReturnsAsync(
-                Result.Forbidden(
-                    "forbidden"));
+            .Setup(x => x.GetAllAsync())
+            .ReturnsAsync(result);
 
-        var request =
-            new ReleaseDetainedLicenseRequest
-            {
-                DetainId = 500
-            };
-
-        var response =
-            await SendAuthenticatedAsync(
-                HttpMethod.Post,
-                "/api/DetainedLicenses/release",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        var error =
-            await ReadErrorAsync(response);
-
-        Assert.Equal(
-            "forbidden",
-            error);
-    }
-
-    private async Task<HttpResponseMessage>
-        SendAuthenticatedAsync(
-            HttpMethod method,
-            string url,
-            object? content = null)
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpMethod method,
+        string url,
+        object? content = null)
     {
-        using var request =
-            new HttpRequestMessage(
-                method,
-                url);
+        using var request = new HttpRequestMessage(method, url);
 
-        request.Headers.Add(
-            "X-Test-User-Id",
-            "1");
-
-        request.Headers.Add(
-            "X-Test-Username",
-            "testuser");
-
-        request.Headers.Add(
-            "X-Test-FullName",
-            "Test User");
-
-        request.Headers.Add(
-            "X-Test-Role",
-            "Staff");
+        request.Headers.Add("X-Test-User-Id", "1");
+        request.Headers.Add("X-Test-Username", "testuser");
+        request.Headers.Add("X-Test-FullName", "Test User");
+        request.Headers.Add("X-Test-Role", "Staff");
 
         if (content is not null)
-        {
-            request.Content =
-                JsonContent.Create(content);
-        }
+            request.Content = JsonContent.Create(content);
 
         return await _client.SendAsync(request);
     }
 
-    private static async Task<string?>
-        ReadErrorAsync(
-            HttpResponseMessage response)
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
+        Assert.Equal(expectedStatus, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-        return body?.Error;
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
 
-    private sealed record ErrorResponse(
-        string? Error);
-
-    private sealed record DetainedStatusResponse(
-        bool Detained);
+    private sealed record DetainedStatusResponse(bool Detained);
 }

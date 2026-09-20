@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
@@ -9,823 +10,334 @@ using Moq;
 
 namespace API.IntegrationTests.Controllers;
 
-public sealed class TestsControllerTests
-    : IClassFixture<ApiWebApplicationFactory>
+public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactory>
 {
     private readonly ApiWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public TestsControllerTests(
-        ApiWebApplicationFactory factory)
+    public TestsControllerTests(ApiWebApplicationFactory factory)
     {
         _factory = factory;
-
         _factory.TestServiceMock.Reset();
-
         _client = factory.CreateClient();
     }
-
-    // =========================================================
-    // AUTHENTICATION
-    // =========================================================
 
     [Fact]
     public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
     {
-        var response =
-            await _client.GetAsync(
-                "/api/Tests");
+        var response = await _client.GetAsync("/api/Tests");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-
-    // =========================================================
-    // GET ALL
-    // =========================================================
 
     [Fact]
     public async Task GetAll_WhenSuccessful_ReturnsMappedTests()
     {
-        var dto =
-            CreateTestDto(10);
+        var dto = CreateTestDto(10);
 
-        _factory.TestServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<TestDto>>.Success(
-                    new List<TestDto>
-                    {
-                        dto
-                    }));
+        _factory.TestServiceMock.Setup(x => x.GetAllAsync())
+            .ReturnsAsync(Result<List<TestDto>>.Success([dto]));
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests");
+        var response = await GetAsync("/api/Tests");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<TestResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<TestResponse>>();
         Assert.NotNull(result);
         Assert.Single(result);
+        AssertTestResponse(dto, result[0]);
 
-        AssertTestResponse(
-            dto,
-            result[0]);
+        _factory.TestServiceMock.Verify(x => x.GetAllAsync(), Times.Once);
+    }
 
-        _factory.TestServiceMock.Verify(
-            x => x.GetAllAsync(),
-            Times.Once);
+    [Theory]
+    [InlineData("Validation", "Invalid test data.", 400, "Validation error")]
+    [InlineData("NotFound", "Tests not found.", 404, "Resource not found")]
+    [InlineData("Conflict", "Test conflict.", 409, "Conflict")]
+    [InlineData("Forbidden", "You must be logged in first.", 403, "Forbidden")]
+    public async Task GetAll_WhenServiceReturnsError_ReturnsProblemDetails(
+        string type, string detail, int status, string title)
+    {
+        var result = type switch
+        {
+            "Validation" => Result<List<TestDto>>.FromValidationFailure(detail),
+            "NotFound" => Result<List<TestDto>>.FromNotFound(detail),
+            "Conflict" => Result<List<TestDto>>.FromConflict(detail),
+            _ => Result<List<TestDto>>.FromForbidden(detail)
+        };
+
+        _factory.TestServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
+
+        var response = await GetAsync("/api/Tests");
+
+        await AssertProblemDetailsAsync(
+            response, (HttpStatusCode)status, title, detail);
     }
 
     [Fact]
-    public async Task GetAll_WhenValidationFailure_ReturnsBadRequest()
+    public async Task GetAll_WhenFailure_Returns500ProblemDetails()
     {
-        _factory.TestServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<TestDto>>
-                    .FromValidationFailure(
-                        "Invalid test data."));
+        _factory.TestServiceMock.Setup(x => x.GetAllAsync())
+            .ReturnsAsync(Result<List<TestDto>>.FromFailure("Database failure."));
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests");
+        var response = await GetAsync("/api/Tests");
 
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        await AssertErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
-            "Invalid test data.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenNotFound_ReturnsNotFound()
-    {
-        _factory.TestServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<TestDto>>
-                    .FromNotFound(
-                        "Tests not found."));
-
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests");
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Tests not found.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenConflict_ReturnsConflict()
-    {
-        _factory.TestServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<TestDto>>
-                    .FromConflict(
-                        "Test conflict."));
-
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests");
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Test conflict.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenForbidden_ReturnsForbiddenWithErrorBody()
-    {
-        _factory.TestServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<TestDto>>
-                    .FromForbidden(
-                        "You must be logged in first."));
-
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests");
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "You must be logged in first.");
-    }
-
-    [Fact]
-    public async Task GetAll_WhenFailure_ReturnsInternalServerError()
-    {
-        _factory.TestServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(
-                Result<List<TestDto>>
-                    .FromFailure(
-                        "Database failure."));
-
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests");
-
-        Assert.Equal(
             HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Database failure.");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
-
-    // =========================================================
-    // GET BY ID
-    // =========================================================
 
     [Fact]
     public async Task GetById_WhenSuccessful_ReturnsMappedTest()
     {
-        var dto =
-            CreateTestDto(20);
+        var dto = CreateTestDto(20);
 
-        _factory.TestServiceMock
-            .Setup(x => x.GetByIdAsync(20))
-            .ReturnsAsync(
-                Result<TestDto>.Success(dto));
+        _factory.TestServiceMock.Setup(x => x.GetByIdAsync(20))
+            .ReturnsAsync(Result<TestDto>.Success(dto));
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests/20");
+        var response = await GetAsync("/api/Tests/20");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<TestResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<TestResponse>();
         Assert.NotNull(result);
+        AssertTestResponse(dto, result);
 
-        AssertTestResponse(
-            dto,
-            result);
-
-        _factory.TestServiceMock.Verify(
-            x => x.GetByIdAsync(20),
-            Times.Once);
+        _factory.TestServiceMock.Verify(x => x.GetByIdAsync(20), Times.Once);
     }
 
-    [Fact]
-    public async Task GetById_WhenNotFound_ReturnsNotFound()
+    [Theory]
+    [InlineData(20, "NotFound", "Test not found.", 404, "Resource not found")]
+    [InlineData(0, "Validation", "Invalid test ID.", 400, "Validation error")]
+    public async Task GetById_WhenServiceReturnsError_ReturnsProblemDetails(
+        int id, string type, string detail, int status, string title)
     {
-        _factory.TestServiceMock
-            .Setup(x => x.GetByIdAsync(20))
-            .ReturnsAsync(
-                Result<TestDto>
-                    .FromNotFound(
-                        "Test not found."));
+        var result = type == "NotFound"
+            ? Result<TestDto>.FromNotFound(detail)
+            : Result<TestDto>.FromValidationFailure(detail);
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests/20");
+        _factory.TestServiceMock.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(result);
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
+        var response = await GetAsync($"/api/Tests/{id}");
 
-        await AssertErrorAsync(
-            response,
-            "Test not found.");
+        await AssertProblemDetailsAsync(
+            response, (HttpStatusCode)status, title, detail);
     }
-
-    [Fact]
-    public async Task GetById_WhenValidationFailure_ReturnsBadRequest()
-    {
-        _factory.TestServiceMock
-            .Setup(x => x.GetByIdAsync(0))
-            .ReturnsAsync(
-                Result<TestDto>
-                    .FromValidationFailure(
-                        "Invalid test ID."));
-
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests/0");
-
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Invalid test ID.");
-    }
-
-    // =========================================================
-    // GET BY APPOINTMENT
-    // =========================================================
 
     [Fact]
     public async Task GetByAppointmentId_WhenSuccessful_ReturnsMappedTests()
     {
-        var dto =
-            CreateTestDto(30);
+        var dto = CreateTestDto(30);
 
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.GetByTestAppointmentIdAsync(50))
-            .ReturnsAsync(
-                Result<List<TestDto>>.Success(
-                    new List<TestDto>
-                    {
-                        dto
-                    }));
+        _factory.TestServiceMock.Setup(x => x.GetByTestAppointmentIdAsync(50))
+            .ReturnsAsync(Result<List<TestDto>>.Success([dto]));
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests/appointment/50");
+        var response = await GetAsync("/api/Tests/appointment/50");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<TestResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<TestResponse>>();
         Assert.NotNull(result);
         Assert.Single(result);
-
-        AssertTestResponse(
-            dto,
-            result[0]);
+        AssertTestResponse(dto, result[0]);
 
         _factory.TestServiceMock.Verify(
-            x =>
-                x.GetByTestAppointmentIdAsync(50),
-            Times.Once);
+            x => x.GetByTestAppointmentIdAsync(50), Times.Once);
     }
 
     [Fact]
-    public async Task GetByAppointmentId_WhenNotFound_ReturnsNotFound()
+    public async Task GetByAppointmentId_WhenNotFound_ReturnsProblemDetails()
     {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.GetByTestAppointmentIdAsync(50))
-            .ReturnsAsync(
-                Result<List<TestDto>>
-                    .FromNotFound(
-                        "Tests not found for appointment."));
+        const string detail = "Tests not found for appointment.";
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests/appointment/50");
+        _factory.TestServiceMock.Setup(x => x.GetByTestAppointmentIdAsync(50))
+            .ReturnsAsync(Result<List<TestDto>>.FromNotFound(detail));
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
+        var response = await GetAsync("/api/Tests/appointment/50");
 
-        await AssertErrorAsync(
-            response,
-            "Tests not found for appointment.");
+        await AssertProblemDetailsAsync(
+            response, HttpStatusCode.NotFound, "Resource not found", detail);
     }
-
-    // =========================================================
-    // GET BY USER
-    // =========================================================
 
     [Fact]
     public async Task GetByUserId_WhenSuccessful_ReturnsMappedTests()
     {
-        var dto =
-            CreateTestDto(40);
+        var dto = CreateTestDto(40);
 
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.GetByUserIdAsync(7))
-            .ReturnsAsync(
-                Result<List<TestDto>>.Success(
-                    new List<TestDto>
-                    {
-                        dto
-                    }));
+        _factory.TestServiceMock.Setup(x => x.GetByUserIdAsync(7))
+            .ReturnsAsync(Result<List<TestDto>>.Success([dto]));
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests/created-by/7");
+        var response = await GetAsync("/api/Tests/created-by/7");
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<List<TestResponse>>();
-
+        var result = await response.Content.ReadFromJsonAsync<List<TestResponse>>();
         Assert.NotNull(result);
         Assert.Single(result);
-
-        AssertTestResponse(
-            dto,
-            result[0]);
+        AssertTestResponse(dto, result[0]);
 
         _factory.TestServiceMock.Verify(
-            x =>
-                x.GetByUserIdAsync(7),
-            Times.Once);
+            x => x.GetByUserIdAsync(7), Times.Once);
     }
 
     [Fact]
-    public async Task GetByUserId_WhenForbidden_ReturnsForbiddenWithErrorBody()
+    public async Task GetByUserId_WhenForbidden_ReturnsProblemDetails()
     {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.GetByUserIdAsync(7))
-            .ReturnsAsync(
-                Result<List<TestDto>>
-                    .FromForbidden(
-                        "Access denied."));
+        const string detail = "Access denied.";
 
-        var response =
-            await GetAuthenticatedAsync(
-                "/api/Tests/created-by/7");
+        _factory.TestServiceMock.Setup(x => x.GetByUserIdAsync(7))
+            .ReturnsAsync(Result<List<TestDto>>.FromForbidden(detail));
 
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
+        var response = await GetAsync("/api/Tests/created-by/7");
 
-        await AssertErrorAsync(
-            response,
-            "Access denied.");
+        await AssertProblemDetailsAsync(
+            response, HttpStatusCode.Forbidden, "Forbidden", detail);
     }
 
-    // =========================================================
-    // ADD TEST RESULT
-    // =========================================================
-
-    [Fact]
-    public async Task AddResult_WhenSuccessful_ReturnsCreatedTestId()
+    [Theory]
+    [InlineData(100, true, "Passed successfully", 500)]
+    [InlineData(101, false, "Failed", 501)]
+    public async Task AddResult_WhenSuccessful_ReturnsCreatedTestId(
+        int appointmentId, bool testResult, string notes, int testId)
     {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.Is<SaveTestResultDto>(
-                        dto =>
-                            dto.TestAppointmentID == 100 &&
-                            dto.TestResult &&
-                            dto.Notes == "Passed successfully")))
-            .ReturnsAsync(
-                Result<int>.Success(500));
+        _factory.TestServiceMock.Setup(x =>
+                x.AddAsync(It.Is<SaveTestResultDto>(dto =>
+                    dto.TestAppointmentID == appointmentId &&
+                    dto.TestResult == testResult &&
+                    dto.Notes == notes)))
+            .ReturnsAsync(Result<int>.Success(testId));
 
-        var request =
-            new SaveTestResultRequest(
-                TestAppointmentId: 100,
-                TestResult: true,
-                Notes: "Passed successfully");
+        var request = new SaveTestResultRequest(
+            appointmentId, testResult, notes);
 
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/Tests",
-                request);
+        var response = await PostAsync("/api/Tests", request);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(testId, await response.Content.ReadFromJsonAsync<int>());
 
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<int>();
-
-        Assert.Equal(
-            500,
-            result);
-
-        _factory.TestServiceMock.Verify(
-            x =>
-                x.AddAsync(
-                    It.Is<SaveTestResultDto>(
-                        dto =>
-                            dto.TestAppointmentID == 100 &&
-                            dto.TestResult &&
-                            dto.Notes == "Passed successfully")),
-            Times.Once);
+        _factory.TestServiceMock.Verify(x =>
+            x.AddAsync(It.Is<SaveTestResultDto>(dto =>
+                dto.TestAppointmentID == appointmentId &&
+                dto.TestResult == testResult &&
+                dto.Notes == notes)), Times.Once);
     }
 
-    [Fact]
-    public async Task AddResult_WhenFailedTestResult_ReturnsCreatedTestId()
+    [Theory]
+    [InlineData("Validation", "Invalid test result.", 400, "Validation error")]
+    [InlineData("NotFound", "Appointment not found.", 404, "Resource not found")]
+    [InlineData("Conflict", "Appointment is already locked.", 409, "Conflict")]
+    [InlineData("Forbidden", "You must be logged in first.", 403, "Forbidden")]
+    public async Task AddResult_WhenServiceReturnsError_ReturnsProblemDetails(
+        string type, string detail, int status, string title)
     {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.Is<SaveTestResultDto>(
-                        dto =>
-                            dto.TestAppointmentID == 101 &&
-                            !dto.TestResult &&
-                            dto.Notes == "Failed")))
-            .ReturnsAsync(
-                Result<int>.Success(501));
-
-        var request =
-            new SaveTestResultRequest(
-                TestAppointmentId: 101,
-                TestResult: false,
-                Notes: "Failed");
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/Tests",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<int>();
-
-        Assert.Equal(
-            501,
-            result);
-    }
-
-    [Fact]
-    public async Task AddResult_WhenValidationFailure_ReturnsBadRequest()
-    {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.IsAny<SaveTestResultDto>()))
-            .ReturnsAsync(
-                Result<int>
-                    .FromValidationFailure(
-                        "Invalid test result."));
-
-        var request =
-            new SaveTestResultRequest(
-                TestAppointmentId: 100,
-                TestResult: true,
-                Notes: null);
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/Tests",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.BadRequest,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Invalid test result.");
-    }
-
-    [Fact]
-    public async Task AddResult_WhenNotFound_ReturnsNotFound()
-    {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.IsAny<SaveTestResultDto>()))
-            .ReturnsAsync(
-                Result<int>
-                    .FromNotFound(
-                        "Appointment not found."));
-
-        var request =
-            new SaveTestResultRequest(
-                TestAppointmentId: 100,
-                TestResult: true,
-                Notes: null);
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/Tests",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Appointment not found.");
-    }
-
-    [Fact]
-    public async Task AddResult_WhenConflict_ReturnsConflict()
-    {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.IsAny<SaveTestResultDto>()))
-            .ReturnsAsync(
-                Result<int>
-                    .FromConflict(
-                        "Appointment is already locked."));
-
-        var request =
-            new SaveTestResultRequest(
-                TestAppointmentId: 100,
-                TestResult: true,
-                Notes: null);
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/Tests",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Appointment is already locked.");
-    }
-
-    [Fact]
-    public async Task AddResult_WhenForbidden_ReturnsForbiddenWithErrorBody()
-    {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.IsAny<SaveTestResultDto>()))
-            .ReturnsAsync(
-                Result<int>
-                    .FromForbidden(
-                        "You must be logged in first."));
-
-        var request =
-            new SaveTestResultRequest(
-                TestAppointmentId: 100,
-                TestResult: true,
-                Notes: null);
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/Tests",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.Forbidden,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "You must be logged in first.");
-    }
-
-    [Fact]
-    public async Task AddResult_WhenFailure_ReturnsInternalServerError()
-    {
-        _factory.TestServiceMock
-            .Setup(x =>
-                x.AddAsync(
-                    It.IsAny<SaveTestResultDto>()))
-            .ReturnsAsync(
-                Result<int>
-                    .FromFailure(
-                        "Failed to save test result."));
-
-        var request =
-            new SaveTestResultRequest(
-                TestAppointmentId: 100,
-                TestResult: true,
-                Notes: null);
-
-        var response =
-            await PostAuthenticatedAsync(
-                "/api/Tests",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.InternalServerError,
-            response.StatusCode);
-
-        await AssertErrorAsync(
-            response,
-            "Failed to save test result.");
-    }
-
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
-    private async Task<HttpResponseMessage> GetAuthenticatedAsync(
-        string url)
-    {
-        var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Get,
-                url);
-
-        return await _client.SendAsync(request);
-    }
-
-    private async Task<HttpResponseMessage> PostAuthenticatedAsync(
-        string url,
-        object body)
-    {
-        var request =
-            CreateAuthenticatedRequest(
-                HttpMethod.Post,
-                url);
-
-        request.Content =
-            JsonContent.Create(body);
-
-        return await _client.SendAsync(request);
-    }
-
-    private static HttpRequestMessage CreateAuthenticatedRequest(
-        HttpMethod method,
-        string url)
-    {
-        var request =
-            new HttpRequestMessage(
-                method,
-                url);
-
-        request.Headers.Add(
-            "X-Test-User-Id",
-            "1");
-
-        request.Headers.Add(
-            "X-Test-Username",
-            "testuser");
-
-        request.Headers.Add(
-            "X-Test-FullName",
-            "Test User");
-
-        request.Headers.Add(
-            "X-Test-Role",
-            "Staff");
-
-        return request;
-    }
-
-    // =========================================================
-    // DTO FACTORY
-    // =========================================================
-
-    private static TestDto CreateTestDto(
-        int testId)
-    {
-        return new TestDto
+        var result = type switch
         {
-            TestID =
-                testId,
-
-            TestAppointmentID =
-                100,
-
-            TestResult =
-                true,
-
-            Notes =
-                "Passed successfully",
-
-            CreatedByUserID =
-                1,
-
-            CreatedByUserName =
-                "testuser",
-
-            TestTypeName =
-                "Theory",
-
-            AppointmentDate =
-                new DateTime(
-                    2026,
-                    10,
-                    1,
-                    10,
-                    30,
-                    0)
+            "Validation" => Result<int>.FromValidationFailure(detail),
+            "NotFound" => Result<int>.FromNotFound(detail),
+            "Conflict" => Result<int>.FromConflict(detail),
+            _ => Result<int>.FromForbidden(detail)
         };
+
+        _factory.TestServiceMock.Setup(x =>
+                x.AddAsync(It.IsAny<SaveTestResultDto>()))
+            .ReturnsAsync(result);
+
+        var response = await PostAsync(
+            "/api/Tests",
+            new SaveTestResultRequest(100, true, null));
+
+        await AssertProblemDetailsAsync(
+            response, (HttpStatusCode)status, title, detail);
     }
 
-    // =========================================================
-    // MAPPING ASSERTION
-    // =========================================================
-
-    private static void AssertTestResponse(
-        TestDto dto,
-        TestResponse response)
+    [Fact]
+    public async Task AddResult_WhenFailure_Returns500ProblemDetails()
     {
-        Assert.Equal(
-            dto.TestID,
-            response.TestId);
+        _factory.TestServiceMock.Setup(x =>
+                x.AddAsync(It.IsAny<SaveTestResultDto>()))
+            .ReturnsAsync(Result<int>.FromFailure("Failed to save test result."));
 
-        Assert.Equal(
-            dto.TestAppointmentID,
-            response.TestAppointmentId);
+        var response = await PostAsync(
+            "/api/Tests",
+            new SaveTestResultRequest(100, true, null));
 
-        Assert.Equal(
-            dto.TestResult,
-            response.TestResult);
-
-        Assert.Equal(
-            dto.Notes,
-            response.Notes);
-
-        Assert.Equal(
-            dto.CreatedByUserID,
-            response.CreatedByUserId);
-
-        Assert.Equal(
-            dto.CreatedByUserName,
-            response.CreatedByUserName);
-
-        Assert.Equal(
-            dto.TestTypeName,
-            response.TestTypeName);
-
-        Assert.Equal(
-            dto.AppointmentDate,
-            response.AppointmentDate);
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
-    private static async Task AssertErrorAsync(
+    private Task<HttpResponseMessage> GetAsync(string url) =>
+        SendAsync(HttpMethod.Get, url);
+
+    private Task<HttpResponseMessage> PostAsync(string url, object body) =>
+        SendAsync(HttpMethod.Post, url, body);
+
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpMethod method, string url, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, url);
+        request.Headers.Add("X-Test-User-Id", "1");
+        request.Headers.Add("X-Test-Username", "testuser");
+        request.Headers.Add("X-Test-FullName", "Test User");
+        request.Headers.Add("X-Test-Role", "Staff");
+
+        if (body is not null)
+            request.Content = JsonContent.Create(body);
+
+        return await _client.SendAsync(request);
+    }
+
+    private static TestDto CreateTestDto(int testId) => new()
+    {
+        TestID = testId,
+        TestAppointmentID = 100,
+        TestResult = true,
+        Notes = "Passed successfully",
+        CreatedByUserID = 1,
+        CreatedByUserName = "testuser",
+        TestTypeName = "Theory",
+        AppointmentDate = new DateTime(2026, 10, 1, 10, 30, 0)
+    };
+
+    private static void AssertTestResponse(TestDto dto, TestResponse response)
+    {
+        Assert.Equal(dto.TestID, response.TestId);
+        Assert.Equal(dto.TestAppointmentID, response.TestAppointmentId);
+        Assert.Equal(dto.TestResult, response.TestResult);
+        Assert.Equal(dto.Notes, response.Notes);
+        Assert.Equal(dto.CreatedByUserID, response.CreatedByUserId);
+        Assert.Equal(dto.CreatedByUserName, response.CreatedByUserName);
+        Assert.Equal(dto.TestTypeName, response.TestTypeName);
+        Assert.Equal(dto.AppointmentDate, response.AppointmentDate);
+    }
+
+    private static async Task AssertProblemDetailsAsync(
         HttpResponseMessage response,
-        string expectedError)
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-
+        Assert.Equal(expectedStatus, response.StatusCode);
         Assert.Equal(
-            expectedError,
-            body.Error);
-    }
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-    private sealed record ErrorResponse(
-        string Error);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
+        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
+        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
+    }
 }

@@ -1,43 +1,34 @@
 ﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.CountryDTO;
-using Application.Interfaces;
 using DVLD.Contracts.Country;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Controllers;
 
-public sealed class CountriesControllerTests
-    : IClassFixture<ApiWebApplicationFactory>
+public sealed class CountriesControllerTests : IClassFixture<ApiWebApplicationFactory>
 {
     private readonly ApiWebApplicationFactory _factory;
     private readonly HttpClient _client;
 
-    public CountriesControllerTests(
-        ApiWebApplicationFactory factory)
+    public CountriesControllerTests(ApiWebApplicationFactory factory)
     {
         _factory = factory;
-
         _factory.CountryServiceMock.Reset();
-
         _client = factory.CreateClient();
     }
 
     [Fact]
     public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
     {
-        var response =
-            await _client.GetAsync("/api/Countries");
+        var response = await _client.GetAsync("/api/Countries");
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.CountryServiceMock.Verify(
-            x => x.GetAllCountriesAsync(),
-            Times.Never);
+            x => x.GetAllCountriesAsync(), Times.Never);
     }
 
     [Fact]
@@ -45,171 +36,96 @@ public sealed class CountriesControllerTests
     {
         var countries = new List<CountryDto>
         {
-            new()
-            {
-                CountryId = 1,
-                CountryName = "Jordan"
-            },
-            new()
-            {
-                CountryId = 2,
-                CountryName = "United States"
-            }
+            new() { CountryId = 1, CountryName = "Jordan" },
+            new() { CountryId = 2, CountryName = "United States" }
         };
 
         _factory.CountryServiceMock
             .Setup(x => x.GetAllCountriesAsync())
-            .ReturnsAsync(
-                Result<List<CountryDto>>.Success(
-                    countries));
+            .ReturnsAsync(Result<List<CountryDto>>.Success(countries));
 
-        using var request =
-            CreateAuthenticatedRequest();
+        var response = await _client.SendAsync(CreateAuthenticatedRequest());
 
-        var response =
-            await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    List<CountryResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<List<CountryResponse>>();
 
         Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-
-        Assert.Equal(
-            1,
-            result[0].CountryId);
-
-        Assert.Equal(
-            "Jordan",
-            result[0].CountryName);
-
-        Assert.Equal(
-            2,
-            result[1].CountryId);
-
-        Assert.Equal(
-            "United States",
-            result[1].CountryName);
+        Assert.Collection(
+            result,
+            country =>
+            {
+                Assert.Equal(1, country.CountryId);
+                Assert.Equal("Jordan", country.CountryName);
+            },
+            country =>
+            {
+                Assert.Equal(2, country.CountryId);
+                Assert.Equal("United States", country.CountryName);
+            });
 
         _factory.CountryServiceMock.Verify(
-            x => x.GetAllCountriesAsync(),
-            Times.Once);
+            x => x.GetAllCountriesAsync(), Times.Once);
     }
 
     [Fact]
     public async Task GetAll_WhenValidationFails_ReturnsBadRequest()
     {
-        _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
-            .ReturnsAsync(
-                Result<List<CountryDto>>
-                    .FromValidationFailure(
-                        "validation error"));
+        SetupFailure(Result<List<CountryDto>>.FromValidationFailure("validation error"));
 
-        using var request =
-            CreateAuthenticatedRequest();
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertErrorResponseAsync(
-            response,
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(CreateAuthenticatedRequest()),
             HttpStatusCode.BadRequest,
+            "Validation error",
             "validation error");
     }
 
     [Fact]
     public async Task GetAll_WhenNotFound_ReturnsNotFound()
     {
-        _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
-            .ReturnsAsync(
-                Result<List<CountryDto>>
-                    .FromNotFound(
-                        "countries not found"));
+        SetupFailure(Result<List<CountryDto>>.FromNotFound("countries not found"));
 
-        using var request =
-            CreateAuthenticatedRequest();
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertErrorResponseAsync(
-            response,
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(CreateAuthenticatedRequest()),
             HttpStatusCode.NotFound,
+            "Resource not found",
             "countries not found");
     }
 
     [Fact]
     public async Task GetAll_WhenConflictOccurs_ReturnsConflict()
     {
-        _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
-            .ReturnsAsync(
-                Result<List<CountryDto>>
-                    .FromConflict(
-                        "conflict"));
+        SetupFailure(Result<List<CountryDto>>.FromConflict("conflict"));
 
-        using var request =
-            CreateAuthenticatedRequest();
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertErrorResponseAsync(
-            response,
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(CreateAuthenticatedRequest()),
             HttpStatusCode.Conflict,
+            "Conflict",
             "conflict");
     }
 
     [Fact]
     public async Task GetAll_WhenForbidden_ReturnsForbidden()
     {
-        _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
-            .ReturnsAsync(
-                Result<List<CountryDto>>
-                    .FromForbidden(
-                        "access denied"));
+        SetupFailure(Result<List<CountryDto>>.FromForbidden("access denied"));
 
-        using var request =
-            CreateAuthenticatedRequest();
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertErrorResponseAsync(
-            response,
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(CreateAuthenticatedRequest()),
             HttpStatusCode.Forbidden,
+            "Forbidden",
             "access denied");
     }
 
     [Fact]
     public async Task GetAll_WhenUnexpectedFailureOccurs_ReturnsInternalServerError()
     {
-        _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
-            .ReturnsAsync(
-                Result<List<CountryDto>>
-                    .FromFailure(
-                        "unexpected failure"));
+        SetupFailure(Result<List<CountryDto>>.FromFailure("unexpected failure"));
 
-        using var request =
-            CreateAuthenticatedRequest();
-
-        var response =
-            await _client.SendAsync(request);
-
-        await AssertErrorResponseAsync(
-            response,
+        await AssertProblemDetailsAsync(
+            await _client.SendAsync(CreateAuthenticatedRequest()),
             HttpStatusCode.InternalServerError,
-            "unexpected failure");
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
     }
 
     [Fact]
@@ -217,77 +133,73 @@ public sealed class CountriesControllerTests
     {
         _factory.CountryServiceMock
             .Setup(x => x.GetAllCountriesAsync())
-            .ReturnsAsync(
-                Result<List<CountryDto>>.Success(
-                    new List<CountryDto>()));
+            .ReturnsAsync(Result<List<CountryDto>>.Success([]));
 
-        using var request =
-            CreateAuthenticatedRequest();
+        var response = await _client.SendAsync(CreateAuthenticatedRequest());
 
-        var response =
-            await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<
-                    List<CountryResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<List<CountryResponse>>();
 
         Assert.NotNull(result);
         Assert.Empty(result);
     }
 
-    private static HttpRequestMessage
-        CreateAuthenticatedRequest()
+    private void SetupFailure(Result<List<CountryDto>> result)
     {
-        var request =
-            new HttpRequestMessage(
-                HttpMethod.Get,
-                "/api/Countries");
+        _factory.CountryServiceMock
+            .Setup(x => x.GetAllCountriesAsync())
+            .ReturnsAsync(result);
+    }
 
-        request.Headers.Add(
-            "X-Test-User-Id",
-            "1");
+    private static HttpRequestMessage CreateAuthenticatedRequest()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/Countries");
 
-        request.Headers.Add(
-            "X-Test-Username",
-            "testuser");
-
-        request.Headers.Add(
-            "X-Test-FullName",
-            "Test User");
-
-        request.Headers.Add(
-            "X-Test-Role",
-            "Staff");
+        request.Headers.Add("X-Test-User-Id", "1");
+        request.Headers.Add("X-Test-Username", "testuser");
+        request.Headers.Add("X-Test-FullName", "Test User");
+        request.Headers.Add("X-Test-Role", "Staff");
 
         return request;
     }
 
-    private static async Task
-        AssertErrorResponseAsync(
-            HttpResponseMessage response,
-            HttpStatusCode expectedStatus,
-            string expectedError)
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus,
+        string expectedTitle,
+        string expectedDetail)
     {
+        Assert.Equal(expectedStatus, response.StatusCode);
         Assert.Equal(
-            expectedStatus,
-            response.StatusCode);
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
 
-        var body =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
 
-        Assert.NotNull(body);
+        var body = document.RootElement;
 
         Assert.Equal(
-            expectedError,
-            body.Error);
+            (int)expectedStatus,
+            body.GetProperty("status").GetInt32());
+
+        Assert.Equal(
+            expectedTitle,
+            body.GetProperty("title").GetString());
+
+        Assert.Equal(
+            expectedDetail,
+            body.GetProperty("detail").GetString());
+
+        Assert.Equal(
+            "/api/Countries",
+            body.GetProperty("instance").GetString());
+
+        Assert.True(
+            body.TryGetProperty("traceId", out var traceId));
+
+        Assert.False(
+            string.IsNullOrWhiteSpace(traceId.GetString()));
     }
-
-    private sealed record ErrorResponse(
-        string? Error);
 }
