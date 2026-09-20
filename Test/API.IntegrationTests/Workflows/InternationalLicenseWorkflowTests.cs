@@ -4,8 +4,10 @@ using Domain.Enums;
 using DVLD.Contracts.InternationalLicense;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Workflows;
 
@@ -18,1189 +20,501 @@ public sealed class InternationalLicenseWorkflowTests
     [Fact]
     public async Task IssueInternationalLicense_WhenWorkflowIsValid_CreatesLicenseAndCompletesApplication()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
+        using var client = AuthClient(factory, seed.UserId);
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        var response = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-        using var client =
-            factory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        ConfigureAuthenticatedClient(
-            client,
-            seed.UserId);
-
-        var request =
-            new IssueInternationalLicenseRequest(
-                seed.LocalLicenseId);
-
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                request);
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            response.StatusCode);
-
-        var result =
-            await response.Content
-                .ReadFromJsonAsync<InternationalLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<InternationalLicenseResponse>();
         Assert.NotNull(result);
+        Assert.True(result.InternationalLicenseId > 0);
+        Assert.True(result.ApplicationId > 0);
+        Assert.Equal(seed.LocalLicenseId, result.IssuedUsingLocalLicenseId);
+        Assert.Equal(seed.DriverId, result.DriverId);
+        Assert.Equal(seed.PersonId, result.PersonId);
+        Assert.Equal(seed.UserId, result.CreatedByUserId);
+        Assert.Equal(seed.FullName, result.FullName);
+        Assert.Equal(seed.NationalNo, result.NationalNo);
+        Assert.Equal("Male", result.Gender);
+        Assert.True(result.IsActive);
+        Assert.InRange(result.IssueDate, seed.BeforeRequest, DateTime.UtcNow);
+        Assert.Equal(result.IssueDate.AddYears(1), result.ExpirationDate);
+        Assert.Equal(50m, result.Fees);
+        Assert.Equal(seed.Username, result.CreatedByUserName);
 
-        Assert.True(
-            result.InternationalLicenseId > 0);
+        await using var context = factory.CreateDbContext();
 
-        Assert.True(
-            result.ApplicationId > 0);
+        var license = await context.InternationalLicenses.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.InternationalLicenseID == result.InternationalLicenseId);
 
-        Assert.Equal(
-            seed.LocalLicenseId,
-            result.IssuedUsingLocalLicenseId);
+        Assert.NotNull(license);
+        Assert.Equal(result.ApplicationId, license.ApplicationID);
+        Assert.Equal(seed.DriverId, license.DriverID);
+        Assert.Equal(seed.LocalLicenseId, license.IssuedUsingLocalLicenseID);
+        Assert.Equal(seed.UserId, license.CreatedByUserID);
+        Assert.True(license.IsActive);
+        Assert.Equal(result.IssueDate, license.IssueDate);
+        Assert.Equal(result.ExpirationDate, license.ExpirationDate);
 
-        Assert.Equal(
-            seed.DriverId,
-            result.DriverId);
+        var application = await context.Applications.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.ApplicationID == result.ApplicationId);
 
-        Assert.Equal(
-            seed.PersonId,
-            result.PersonId);
+        Assert.NotNull(application);
+        Assert.Equal(seed.PersonId, application.ApplicantPersonID);
+        Assert.Equal(InternationalApplicationTypeId, application.ApplicationTypeID);
+        Assert.Equal(AppStatus.Completed, application.ApplicationStatus);
+        Assert.Equal(50m, application.PaidFees);
+        Assert.Equal(seed.UserId, application.CreatedByUserID);
 
-        Assert.Equal(
-            seed.UserId,
-            result.CreatedByUserId);
-
-        Assert.Equal(
-            seed.FullName,
-            result.FullName);
-
-        Assert.Equal(
-            seed.NationalNo,
-            result.NationalNo);
-
-        Assert.Equal(
-            "Male",
-            result.Gender);
-
-        Assert.True(
-            result.IsActive);
-
-        Assert.True(
-            result.IssueDate >= seed.BeforeRequest);
-
-        Assert.True(
-            result.IssueDate <= DateTime.UtcNow);
-
-        Assert.Equal(
-            result.IssueDate.AddYears(1),
-            result.ExpirationDate);
-
-        Assert.Equal(
-            50m,
-            result.Fees);
-
-        Assert.Equal(
-            seed.Username,
-            result.CreatedByUserName);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        var internationalLicense =
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .SingleOrDefaultAsync(
-                    x =>
-                        x.InternationalLicenseID ==
-                        result.InternationalLicenseId);
-
-        Assert.NotNull(
-            internationalLicense);
-
-        Assert.Equal(
-            result.ApplicationId,
-            internationalLicense.ApplicationID);
-
-        Assert.Equal(
-            seed.DriverId,
-            internationalLicense.DriverID);
-
-        Assert.Equal(
-            seed.LocalLicenseId,
-            internationalLicense.IssuedUsingLocalLicenseID);
-
-        Assert.Equal(
-            seed.UserId,
-            internationalLicense.CreatedByUserID);
-
-        Assert.True(
-            internationalLicense.IsActive);
-
-        Assert.Equal(
-            result.IssueDate,
-            internationalLicense.IssueDate);
-
-        Assert.Equal(
-            result.ExpirationDate,
-            internationalLicense.ExpirationDate);
-
-        var application =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .SingleOrDefaultAsync(
-                    x =>
-                        x.ApplicationID ==
-                        result.ApplicationId);
-
-        Assert.NotNull(
-            application);
-
-        Assert.Equal(
-            seed.PersonId,
-            application.ApplicantPersonID);
-
-        Assert.Equal(
-            InternationalApplicationTypeId,
-            application.ApplicationTypeID);
-
-        Assert.Equal(
-            AppStatus.Completed,
-            application.ApplicationStatus);
-
-        Assert.Equal(
-            50m,
-            application.PaidFees);
-
-        Assert.Equal(
-            seed.UserId,
-            application.CreatedByUserID);
-
-        var internationalLicensesForLocalLicense =
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.IssuedUsingLocalLicenseID ==
-                        seed.LocalLicenseId)
-                .ToListAsync();
-
-        Assert.Single(
-            internationalLicensesForLocalLicense);
+        Assert.Single(await context.InternationalLicenses.AsNoTracking()
+            .Where(x => x.IssuedUsingLocalLicenseID == seed.LocalLicenseId)
+            .ToListAsync());
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WhenLocalLicenseDoesNotExist_ReturnsNotFoundAndCreatesNothing()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
+        using var client = AuthClient(factory, seed.UserId);
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        var response = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(999999));
 
-        using var client =
-            factory.CreateClient();
+        await AssertProblemDetailsAsync(response, HttpStatusCode.NotFound,
+            "Resource not found", "License not found.");
 
-        ConfigureAuthenticatedClient(
-            client,
-            seed.UserId);
+        await using var context = factory.CreateDbContext();
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                new IssueInternationalLicenseRequest(
-                    999999));
-
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
-
-        var error =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(error);
-
-        Assert.Equal(
-            "License not found.",
-            error.Error);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        var internationalLicenses =
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .ToListAsync();
-
-        Assert.Empty(
-            internationalLicenses);
-
-        var internationalApplications =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.ApplicationTypeID ==
-                        InternationalApplicationTypeId &&
-                        x.ApplicantPersonID ==
-                        seed.PersonId)
-                .ToListAsync();
-
-        Assert.Empty(
-            internationalApplications);
+        Assert.Empty(await context.InternationalLicenses.AsNoTracking().ToListAsync());
+        Assert.Empty(await context.Applications.AsNoTracking()
+            .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                        x.ApplicantPersonID == seed.PersonId)
+            .ToListAsync());
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WhenLicenseClassIsNotOrdinary_ReturnsConflictAndCreatesNothing()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        await using (var context = factory.CreateDbContext())
+            Assert.Equal(1, await context.Licenses
+                .Where(x => x.LicenseID == seed.LocalLicenseId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.LicenseClass, AlternativeLicenseClassId)));
 
-        await using (
-            var context =
-                factory.CreateDbContext())
-        {
-            var affectedRows =
-                await context
-                    .Licenses
-                    .Where(
-                        x =>
-                            x.LicenseID ==
-                            seed.LocalLicenseId)
-                    .ExecuteUpdateAsync(
-                        setters =>
-                            setters.SetProperty(
-                                x =>
-                                    x.LicenseClass,
-                                AlternativeLicenseClassId));
+        using var client = AuthClient(factory, seed.UserId);
 
-            Assert.Equal(
-                1,
-                affectedRows);
-        }
+        var response = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-        using var client =
-            factory.CreateClient();
+        await AssertProblemDetailsAsync(response, HttpStatusCode.Conflict,
+            "Conflict", "Only class 3 licenses can be issued internationally.");
 
-        ConfigureAuthenticatedClient(
-            client,
-            seed.UserId);
+        await using var context2 = factory.CreateDbContext();
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                new IssueInternationalLicenseRequest(
-                    seed.LocalLicenseId));
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var error =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(error);
-
-        Assert.Equal(
-            "Only class 3 licenses can be issued internationally.",
-            error.Error);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        Assert.Empty(
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .ToListAsync());
-
-        var internationalApplications =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.ApplicationTypeID ==
-                        InternationalApplicationTypeId &&
-                        x.ApplicantPersonID ==
-                        seed.PersonId)
-                .ToListAsync();
-
-        Assert.Empty(
-            internationalApplications);
+        Assert.Empty(await context2.InternationalLicenses.AsNoTracking().ToListAsync());
+        Assert.Empty(await context2.Applications.AsNoTracking()
+            .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                        x.ApplicantPersonID == seed.PersonId)
+            .ToListAsync());
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WhenLocalLicenseIsInactive_ReturnsConflictAndCreatesNothing()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        await using (var context = factory.CreateDbContext())
+            Assert.Equal(1, await context.Licenses
+                .Where(x => x.LicenseID == seed.LocalLicenseId)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, false)));
 
-        await using (
-            var context =
-                factory.CreateDbContext())
-        {
-            var affectedRows =
-                await context
-                    .Licenses
-                    .Where(
-                        x =>
-                            x.LicenseID ==
-                            seed.LocalLicenseId)
-                    .ExecuteUpdateAsync(
-                        setters =>
-                            setters.SetProperty(
-                                x =>
-                                    x.IsActive,
-                                false));
+        using var client = AuthClient(factory, seed.UserId);
 
-            Assert.Equal(
-                1,
-                affectedRows);
-        }
+        var response = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-        using var client =
-            factory.CreateClient();
+        await AssertProblemDetailsAsync(response, HttpStatusCode.Conflict,
+            "Conflict", "The local license is not active.");
 
-        ConfigureAuthenticatedClient(
-            client,
-            seed.UserId);
+        await using var context2 = factory.CreateDbContext();
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                new IssueInternationalLicenseRequest(
-                    seed.LocalLicenseId));
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var error =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(error);
-
-        Assert.Equal(
-            "The local license is not active.",
-            error.Error);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        Assert.Empty(
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .ToListAsync());
-
-        var internationalApplications =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.ApplicationTypeID ==
-                        InternationalApplicationTypeId &&
-                        x.ApplicantPersonID ==
-                        seed.PersonId)
-                .ToListAsync();
-
-        Assert.Empty(
-            internationalApplications);
+        Assert.Empty(await context2.InternationalLicenses.AsNoTracking().ToListAsync());
+        Assert.Empty(await context2.Applications.AsNoTracking()
+            .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                        x.ApplicantPersonID == seed.PersonId)
+            .ToListAsync());
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WhenLocalLicenseIsExpired_ReturnsConflictAndCreatesNothing()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        await using (var context = factory.CreateDbContext())
+            Assert.Equal(1, await context.Licenses
+                .Where(x => x.LicenseID == seed.LocalLicenseId)
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.ExpirationDate, DateTime.UtcNow.AddDays(-1))));
 
-        await using (
-            var context =
-                factory.CreateDbContext())
-        {
-            var affectedRows =
-                await context
-                    .Licenses
-                    .Where(
-                        x =>
-                            x.LicenseID ==
-                            seed.LocalLicenseId)
-                    .ExecuteUpdateAsync(
-                        setters =>
-                            setters.SetProperty(
-                                x =>
-                                    x.ExpirationDate,
-                                DateTime.UtcNow.AddDays(-1)));
+        using var client = AuthClient(factory, seed.UserId);
 
-            Assert.Equal(
-                1,
-                affectedRows);
-        }
+        var response = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-        using var client =
-            factory.CreateClient();
+        await AssertProblemDetailsAsync(response, HttpStatusCode.Conflict,
+            "Conflict", "The local license is expired.");
 
-        ConfigureAuthenticatedClient(
-            client,
-            seed.UserId);
+        await using var context2 = factory.CreateDbContext();
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                new IssueInternationalLicenseRequest(
-                    seed.LocalLicenseId));
-
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            response.StatusCode);
-
-        var error =
-            await response.Content
-                .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(error);
-
-        Assert.Equal(
-            "The local license is expired.",
-            error.Error);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        Assert.Empty(
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .ToListAsync());
-
-        var internationalApplications =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.ApplicationTypeID ==
-                        InternationalApplicationTypeId &&
-                        x.ApplicantPersonID ==
-                        seed.PersonId)
-                .ToListAsync();
-
-        Assert.Empty(
-            internationalApplications);
+        Assert.Empty(await context2.InternationalLicenses.AsNoTracking().ToListAsync());
+        Assert.Empty(await context2.Applications.AsNoTracking()
+            .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                        x.ApplicantPersonID == seed.PersonId)
+            .ToListAsync());
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WhenInternationalLicenseAlreadyExistsForLocalLicense_ReturnsConflictAndDoesNotCreateSecondApplication()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
+        using var client = AuthClient(factory, seed.UserId);
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        var firstResponse = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-        using var client =
-            factory.CreateClient();
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
 
-        ConfigureAuthenticatedClient(
-            client,
-            seed.UserId);
+        var firstResult = await firstResponse.Content
+            .ReadFromJsonAsync<InternationalLicenseResponse>();
 
-        var firstResponse =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                new IssueInternationalLicenseRequest(
-                    seed.LocalLicenseId));
+        Assert.NotNull(firstResult);
 
-        Assert.Equal(
-            HttpStatusCode.OK,
-            firstResponse.StatusCode);
+        var secondResponse = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-        var firstResult =
-            await firstResponse.Content
-                .ReadFromJsonAsync<InternationalLicenseResponse>();
+        await AssertProblemDetailsAsync(secondResponse, HttpStatusCode.Conflict,
+            "Conflict", "An international license already exists for this local license.");
 
-        Assert.NotNull(
-            firstResult);
+        await using var context = factory.CreateDbContext();
 
-        var secondResponse =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                new IssueInternationalLicenseRequest(
-                    seed.LocalLicenseId));
+        var licenses = await context.InternationalLicenses.AsNoTracking()
+            .Where(x => x.IssuedUsingLocalLicenseID == seed.LocalLicenseId)
+            .ToListAsync();
 
-        Assert.Equal(
-            HttpStatusCode.Conflict,
-            secondResponse.StatusCode);
+        Assert.Single(licenses);
+        Assert.Equal(firstResult.InternationalLicenseId, licenses[0].InternationalLicenseID);
 
-        var error =
-            await secondResponse.Content
-                .ReadFromJsonAsync<ErrorResponse>();
+        var applications = await context.Applications.AsNoTracking()
+            .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                        x.ApplicantPersonID == seed.PersonId)
+            .ToListAsync();
 
-        Assert.NotNull(error);
-
-        Assert.Equal(
-            "An international license already exists for this local license.",
-            error.Error);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        var licenses =
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.IssuedUsingLocalLicenseID ==
-                        seed.LocalLicenseId)
-                .ToListAsync();
-
-        Assert.Single(
-            licenses);
-
-        Assert.Equal(
-            firstResult.InternationalLicenseId,
-            licenses[0].InternationalLicenseID);
-
-        var applications =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.ApplicationTypeID ==
-                        InternationalApplicationTypeId &&
-                        x.ApplicantPersonID ==
-                        seed.PersonId)
-                .ToListAsync();
-
-        Assert.Single(
-            applications);
-
-        Assert.Equal(
-            firstResult.ApplicationId,
-            applications[0].ApplicationID);
-
-        Assert.Equal(
-            AppStatus.Completed,
-            applications[0].ApplicationStatus);
+        Assert.Single(applications);
+        Assert.Equal(firstResult.ApplicationId, applications[0].ApplicationID);
+        Assert.Equal(AppStatus.Completed, applications[0].ApplicationStatus);
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WhenSavingInternationalLicenseFails_RollsBackCreatedApplication()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
-
-        var seed =
-            await SeedValidScenarioAsync(factory);
-
-        await CreateAlwaysFailingInternationalLicenseConstraintAsync(
-            factory);
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
+        await CreateAlwaysFailingInternationalLicenseConstraintAsync(factory);
 
         try
         {
-            using var client =
-                factory.CreateClient();
+            using var client = AuthClient(factory, seed.UserId);
 
-            ConfigureAuthenticatedClient(
-                client,
-                seed.UserId);
+            var response = await client.PostAsJsonAsync("/api/InternationalLicenses",
+                new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-            var response =
-                await client.PostAsJsonAsync(
-                    "/api/InternationalLicenses",
-                    new IssueInternationalLicenseRequest(
-                        seed.LocalLicenseId));
-
-            Assert.Equal(
+            await AssertProblemDetailsAsync(
+                response,
                 HttpStatusCode.InternalServerError,
-                response.StatusCode);
+                "An unexpected error occurred.",
+                "The server could not complete the request.",
+                requireProblemContentType: false);
 
-            await using var verificationContext =
-                factory.CreateDbContext();
+            await using var context = factory.CreateDbContext();
 
-            var internationalLicenses =
-                await verificationContext
-                    .InternationalLicenses
-                    .AsNoTracking()
-                    .ToListAsync();
-
-            Assert.Empty(
-                internationalLicenses);
-
-            var internationalApplications =
-                await verificationContext
-                    .Applications
-                    .AsNoTracking()
-                    .Where(
-                        x =>
-                            x.ApplicationTypeID ==
-                            InternationalApplicationTypeId &&
-                            x.ApplicantPersonID ==
-                            seed.PersonId)
-                    .ToListAsync();
-
-            Assert.Empty(
-                internationalApplications);
+            Assert.Empty(await context.InternationalLicenses.AsNoTracking().ToListAsync());
+            Assert.Empty(await context.Applications.AsNoTracking()
+                .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                            x.ApplicantPersonID == seed.PersonId)
+                .ToListAsync());
         }
         finally
         {
-            await RemoveAlwaysFailingInternationalLicenseConstraintAsync(
-                factory);
+            await RemoveAlwaysFailingInternationalLicenseConstraintAsync(factory);
         }
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WhenTwoRequestsRunConcurrently_AllowsOnlyOneInternationalLicense()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
+        using var client1 = AuthClient(factory, seed.UserId);
+        using var client2 = AuthClient(factory, seed.UserId);
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        var request = new IssueInternationalLicenseRequest(seed.LocalLicenseId);
+        var gate = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
 
-        using var client1 =
-            factory.CreateClient();
-
-        using var client2 =
-            factory.CreateClient();
-
-        ConfigureAuthenticatedClient(
-            client1,
-            seed.UserId);
-
-        ConfigureAuthenticatedClient(
-            client2,
-            seed.UserId);
-
-        var request =
-            new IssueInternationalLicenseRequest(
-                seed.LocalLicenseId);
-
-        var startGate =
-            new TaskCompletionSource(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-
-        async Task<HttpResponseMessage> SendAsync(
-            HttpClient client)
+        async Task<HttpResponseMessage> SendAsync(HttpClient client)
         {
-            await startGate.Task;
-
-            return await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                request);
+            await gate.Task;
+            return await client.PostAsJsonAsync("/api/InternationalLicenses", request);
         }
 
-        var request1 =
-            SendAsync(client1);
+        var task1 = SendAsync(client1);
+        var task2 = SendAsync(client2);
+        gate.SetResult();
 
-        var request2 =
-            SendAsync(client2);
+        var responses = await Task.WhenAll(task1, task2);
 
-        startGate.SetResult();
+        Assert.Equal(1, responses.Count(x => x.StatusCode == HttpStatusCode.OK));
+        Assert.Equal(1, responses.Count(x => x.StatusCode == HttpStatusCode.Conflict));
 
-        var responses =
-            await Task.WhenAll(
-                request1,
-                request2);
+        await using var context = factory.CreateDbContext();
 
-        var statusCodes =
-            responses
-                .Select(x => x.StatusCode)
-                .OrderBy(x => x)
-                .ToArray();
+        Assert.Single(await context.InternationalLicenses.AsNoTracking()
+            .Where(x => x.IssuedUsingLocalLicenseID == seed.LocalLicenseId)
+            .ToListAsync());
 
-        Assert.Equal(
-            2,
-            statusCodes.Length);
+        var applications = await context.Applications.AsNoTracking()
+            .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                        x.ApplicantPersonID == seed.PersonId)
+            .ToListAsync();
 
-        Assert.Equal(
-            1,
-            statusCodes.Count(
-                x =>
-                    x == HttpStatusCode.OK));
-
-        Assert.Equal(
-            1,
-            statusCodes.Count(
-                x =>
-                    x == HttpStatusCode.Conflict));
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        var internationalLicenses =
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.IssuedUsingLocalLicenseID ==
-                        seed.LocalLicenseId)
-                .ToListAsync();
-
-        Assert.Single(
-            internationalLicenses);
-
-        var internationalApplications =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.ApplicationTypeID ==
-                        InternationalApplicationTypeId &&
-                        x.ApplicantPersonID ==
-                        seed.PersonId)
-                .ToListAsync();
-
-        Assert.Single(
-            internationalApplications);
-
-        Assert.Equal(
-            AppStatus.Completed,
-            internationalApplications[0].ApplicationStatus);
+        Assert.Single(applications);
+        Assert.Equal(AppStatus.Completed, applications[0].ApplicationStatus);
     }
 
     [Fact]
     public async Task IssueInternationalLicense_WithoutAuthentication_ReturnsUnauthorized()
     {
-        await using var factory =
-            new SqlServerApiWebApplicationFactory();
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedValidScenarioAsync(factory);
+        using var client = factory.CreateClient();
 
-        var seed =
-            await SeedValidScenarioAsync(factory);
+        var response = await client.PostAsJsonAsync("/api/InternationalLicenses",
+            new IssueInternationalLicenseRequest(seed.LocalLicenseId));
 
-        using var client =
-            factory.CreateClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
 
-        var response =
-            await client.PostAsJsonAsync(
-                "/api/InternationalLicenses",
-                new IssueInternationalLicenseRequest(
-                    seed.LocalLicenseId));
+        await using var context = factory.CreateDbContext();
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        Assert.Empty(
-            await verificationContext
-                .InternationalLicenses
-                .AsNoTracking()
-                .ToListAsync());
-
-        var internationalApplications =
-            await verificationContext
-                .Applications
-                .AsNoTracking()
-                .Where(
-                    x =>
-                        x.ApplicationTypeID ==
-                        InternationalApplicationTypeId &&
-                        x.ApplicantPersonID ==
-                        seed.PersonId)
-                .ToListAsync();
-
-        Assert.Empty(
-            internationalApplications);
+        Assert.Empty(await context.InternationalLicenses.AsNoTracking().ToListAsync());
+        Assert.Empty(await context.Applications.AsNoTracking()
+            .Where(x => x.ApplicationTypeID == InternationalApplicationTypeId &&
+                        x.ApplicantPersonID == seed.PersonId)
+            .ToListAsync());
     }
 
-    private static void ConfigureAuthenticatedClient(
-        HttpClient client,
-        int userId)
+    private static HttpClient AuthClient(
+        SqlServerApiWebApplicationFactory factory, int userId)
     {
-        client.DefaultRequestHeaders.Add(
-            "X-Test-User-Id",
-            userId.ToString());
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User-Id", userId.ToString());
+        client.DefaultRequestHeaders.Add("X-Test-Username", "integration.test");
+        client.DefaultRequestHeaders.Add("X-Test-FullName", "Integration Test User");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Staff");
+        return client;
+    }
 
-        client.DefaultRequestHeaders.Add(
-            "X-Test-Username",
-            "integration.test");
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode status,
+        string title,
+        string detail,
+        bool requireProblemContentType = true)
+    {
+        Assert.Equal(status, response.StatusCode);
 
-        client.DefaultRequestHeaders.Add(
-            "X-Test-FullName",
-            "Integration Test User");
+        if (requireProblemContentType)
+            Assert.Equal("application/problem+json",
+                response.Content.Headers.ContentType?.MediaType);
 
-        client.DefaultRequestHeaders.Add(
-            "X-Test-Role",
-            "Staff");
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal((int)status, body.GetProperty("status").GetInt32());
+        Assert.Equal(title, body.GetProperty("title").GetString());
+        Assert.Equal(detail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(
+            body.GetProperty("instance").GetString()));
+
+        Assert.True(body.TryGetProperty("traceId", out var traceId));
+        Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }
 
     private static async Task<SeedData> SeedValidScenarioAsync(
         SqlServerApiWebApplicationFactory factory)
     {
-        await using var context =
-            factory.CreateDbContext();
+        await using var context = factory.CreateDbContext();
+        await SeedLookupDataAsync(context);
 
-        await SeedLookupDataAsync(
-            context);
+        var country = new Country
+        {
+            CountryName = $"International Test Country {Guid.NewGuid():N}"
+        };
 
-        var country =
-            new Country
-            {
-                CountryName =
-                    $"International Test Country {Guid.NewGuid():N}"
-            };
-
-        context.Countries.Add(
-            country);
-
+        context.Countries.Add(country);
         await context.SaveChangesAsync();
 
-        var userPerson =
-            new Person
-            {
-                NationalNo =
-                    CreateNationalNumber(),
+        var userPerson = new Person
+        {
+            NationalNo = CreateNationalNumber(),
+            FirstName = "Integration",
+            SecondName = "International",
+            LastName = "User",
+            DateOfBirth = new(1990, 1, 1),
+            Gender = Gender.Male,
+            Address = "Integration Test Address",
+            Phone = CreatePhone(),
+            Email = $"user-{Guid.NewGuid():N}@test.local",
+            NationalityCountryID = country.CountryId
+        };
 
-                FirstName =
-                    "Integration",
+        var applicantPerson = new Person
+        {
+            NationalNo = CreateNationalNumber(),
+            FirstName = "International",
+            SecondName = "License",
+            LastName = "Applicant",
+            DateOfBirth = new(1990, 1, 1),
+            Gender = Gender.Male,
+            Address = "International Applicant Address",
+            Phone = CreatePhone(),
+            Email = $"applicant-{Guid.NewGuid():N}@test.local",
+            NationalityCountryID = country.CountryId
+        };
 
-                SecondName =
-                    "International",
-
-                ThirdName =
-                    null,
-
-                LastName =
-                    "User",
-
-                DateOfBirth =
-                    new DateTime(
-                        1990,
-                        1,
-                        1),
-
-                Gender =
-                    Gender.Male,
-
-                Address =
-                    "Integration Test Address",
-
-                Phone =
-                    CreatePhone(),
-
-                Email =
-                    $"user-{Guid.NewGuid():N}@test.local",
-
-                NationalityCountryID =
-                    country.CountryId
-            };
-
-        var applicantPerson =
-            new Person
-            {
-                NationalNo =
-                    CreateNationalNumber(),
-
-                FirstName =
-                    "International",
-
-                SecondName =
-                    "License",
-
-                ThirdName =
-                    null,
-
-                LastName =
-                    "Applicant",
-
-                DateOfBirth =
-                    new DateTime(
-                        1990,
-                        1,
-                        1),
-
-                Gender =
-                    Gender.Male,
-
-                Address =
-                    "International Applicant Address",
-
-                Phone =
-                    CreatePhone(),
-
-                Email =
-                    $"applicant-{Guid.NewGuid():N}@test.local",
-
-                NationalityCountryID =
-                    country.CountryId
-            };
-
-        context.People.AddRange(
-            userPerson,
-            applicantPerson);
-
+        context.People.AddRange(userPerson, applicantPerson);
         await context.SaveChangesAsync();
 
-        var username =
-            $"integration-{Guid.NewGuid():N}";
+        var username = $"integration-{Guid.NewGuid():N}";
+        var user = new User
+        {
+            PersonId = userPerson.PersonId,
+            UserName = username,
+            Password = "TestPassword",
+            IsActive = true,
+            Role = UserRole.Staff
+        };
 
-        var user =
-            new User
-            {
-                PersonId =
-                    userPerson.PersonId,
-
-                UserName =
-                    username,
-
-                Password =
-                    "TestPassword",
-
-                IsActive =
-                    true,
-
-                Role =
-                    UserRole.Staff
-            };
-
-        context.Users.Add(
-            user);
-
+        context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        var application =
-            new ApplicationD
-            {
-                ApplicantPersonID =
-                    applicantPerson.PersonId,
+        var application = new ApplicationD
+        {
+            ApplicantPersonID = applicantPerson.PersonId,
+            ApplicationDate = DateTime.UtcNow.AddDays(-30),
+            ApplicationTypeID = 1,
+            ApplicationStatus = AppStatus.Completed,
+            LastStatusDate = DateTime.UtcNow.AddDays(-30),
+            PaidFees = 100m,
+            CreatedByUserID = user.UserId
+        };
 
-                ApplicationDate =
-                    DateTime.UtcNow.AddDays(-30),
-
-                ApplicationTypeID =
-                    1,
-
-                ApplicationStatus =
-                    AppStatus.Completed,
-
-                LastStatusDate =
-                    DateTime.UtcNow.AddDays(-30),
-
-                PaidFees =
-                    100m,
-
-                CreatedByUserID =
-                    user.UserId
-            };
-
-        context.Applications.Add(
-            application);
-
+        context.Applications.Add(application);
         await context.SaveChangesAsync();
 
-        var driver =
-            new Driver
-            {
-                PersonID =
-                    applicantPerson.PersonId,
+        var driver = new Driver
+        {
+            PersonID = applicantPerson.PersonId,
+            CreatedByUserID = user.UserId,
+            CreatedDate = DateTime.UtcNow.AddDays(-20)
+        };
 
-                CreatedByUserID =
-                    user.UserId,
-
-                CreatedDate =
-                    DateTime.UtcNow.AddDays(-20)
-            };
-
-        context.Drivers.Add(
-            driver);
-
+        context.Drivers.Add(driver);
         await context.SaveChangesAsync();
 
-        var localLicense =
-            new License
-            {
-                ApplicationID =
-                    application.ApplicationID,
+        var localLicense = new License
+        {
+            ApplicationID = application.ApplicationID,
+            DriverID = driver.DriverID,
+            LicenseClass = OrdinaryLicenseClassId,
+            IssueDate = DateTime.UtcNow.AddDays(-10),
+            ExpirationDate = DateTime.UtcNow.AddYears(2),
+            Notes = "International workflow test license",
+            PaidFees = 100m,
+            IsActive = true,
+            IssueReason = IssueReason.FirstTime,
+            CreatedByUserID = user.UserId
+        };
 
-                DriverID =
-                    driver.DriverID,
-
-                LicenseClass =
-                    OrdinaryLicenseClassId,
-
-                IssueDate =
-                    DateTime.UtcNow.AddDays(-10),
-
-                ExpirationDate =
-                    DateTime.UtcNow.AddYears(2),
-
-                Notes =
-                    "International workflow test license",
-
-                PaidFees =
-                    100m,
-
-                IsActive =
-                    true,
-
-                IssueReason =
-                    IssueReason.FirstTime,
-
-                CreatedByUserID =
-                    user.UserId
-            };
-
-        context.Licenses.Add(
-            localLicense);
-
+        context.Licenses.Add(localLicense);
         await context.SaveChangesAsync();
 
-        return new SeedData(
-            UserId:
-                user.UserId,
-
-            Username:
-                username,
-
-            PersonId:
-                applicantPerson.PersonId,
-
-            DriverId:
-                driver.DriverID,
-
-            LocalLicenseId:
-                localLicense.LicenseID,
-
-            NationalNo:
-                applicantPerson.NationalNo,
-
-            FullName:
-                applicantPerson.FullName,
-
-            BeforeRequest:
-                DateTime.UtcNow);
+        return new(
+            user.UserId,
+            username,
+            applicantPerson.PersonId,
+            driver.DriverID,
+            localLicense.LicenseID,
+            applicantPerson.NationalNo,
+            applicantPerson.FullName,
+            DateTime.UtcNow);
     }
 
-    private static async Task SeedLookupDataAsync(
-        DVLDDbContext context)
+    private static async Task SeedLookupDataAsync(DVLDDbContext context)
     {
+        await InsertApplicationTypeAsync(context, 1, "Local Driving License", 100m);
         await InsertApplicationTypeAsync(
-            context,
-            1,
-            "Local Driving License",
-            100m);
-
-        await InsertApplicationTypeAsync(
-            context,
-            InternationalApplicationTypeId,
-            "International License",
-            50m);
+            context, InternationalApplicationTypeId, "International License", 50m);
 
         await InsertLicenseClassAsync(
-            context,
-            AlternativeLicenseClassId,
-            "Alternative Class",
-            "International workflow alternative class",
-            18,
-            5,
-            75m);
+            context, AlternativeLicenseClassId, "Alternative Class",
+            "International workflow alternative class", 18, 5, 75m);
 
         await InsertLicenseClassAsync(
-            context,
-            OrdinaryLicenseClassId,
-            "Ordinary Class",
-            "International workflow ordinary class",
-            18,
-            5,
-            100m);
+            context, OrdinaryLicenseClassId, "Ordinary Class",
+            "International workflow ordinary class", 18, 5, 100m);
     }
 
     private static async Task InsertApplicationTypeAsync(
-        DVLDDbContext context,
-        int id,
-        string title,
-        decimal fees)
-    {
+        DVLDDbContext context, int id, string title, decimal fees) =>
         await context.Database.ExecuteSqlInterpolatedAsync(
             $"""
             SET IDENTITY_INSERT [ApplicationTypes] ON;
-
             INSERT INTO [ApplicationTypes]
-            (
-                [ApplicationTypeId],
-                [ApplicationTypeTitle],
-                [ApplicationFees]
-            )
-            VALUES
-            (
-                {id},
-                {title},
-                {fees}
-            );
-
+                ([ApplicationTypeId], [ApplicationTypeTitle], [ApplicationFees])
+            VALUES ({id}, {title}, {fees});
             SET IDENTITY_INSERT [ApplicationTypes] OFF;
             """);
-    }
 
     private static async Task InsertLicenseClassAsync(
-        DVLDDbContext context,
-        int id,
-        string name,
-        string description,
-        byte minimumAge,
-        byte validityYears,
-        decimal fees)
-    {
+        DVLDDbContext context, int id, string name, string description,
+        byte minimumAge, byte validityYears, decimal fees) =>
         await context.Database.ExecuteSqlInterpolatedAsync(
             $"""
             SET IDENTITY_INSERT [LicenseClasses] ON;
-
             INSERT INTO [LicenseClasses]
-            (
-                [LicenseClassID],
-                [ClassName],
-                [ClassDescription],
-                [MinimumAllowedAge],
-                [DefaultValidityLength],
-                [ClassFees]
-            )
-            VALUES
-            (
-                {id},
-                {name},
-                {description},
-                {minimumAge},
-                {validityYears},
-                {fees}
-            );
-
+                ([LicenseClassID], [ClassName], [ClassDescription],
+                 [MinimumAllowedAge], [DefaultValidityLength], [ClassFees])
+            VALUES ({id}, {name}, {description}, {minimumAge}, {validityYears}, {fees});
             SET IDENTITY_INSERT [LicenseClasses] OFF;
             """);
-    }
 
     private static async Task CreateAlwaysFailingInternationalLicenseConstraintAsync(
         SqlServerApiWebApplicationFactory factory)
     {
-#pragma warning disable EF1002
-        await using var context =
-            factory.CreateDbContext();
+        await using var context = factory.CreateDbContext();
 
         await context.Database.ExecuteSqlRawAsync(
             """
@@ -1208,22 +522,18 @@ public sealed class InternationalLicenseWorkflowTests
             ADD CONSTRAINT [CK_Test_InternationalLicenses_ForceFailure]
             CHECK (1 = 0);
             """);
-#pragma warning restore EF1002
     }
 
     private static async Task RemoveAlwaysFailingInternationalLicenseConstraintAsync(
         SqlServerApiWebApplicationFactory factory)
     {
-#pragma warning disable EF1002
-        await using var context =
-            factory.CreateDbContext();
+        await using var context = factory.CreateDbContext();
 
         await context.Database.ExecuteSqlRawAsync(
             """
             ALTER TABLE [InternationalLicenses]
             DROP CONSTRAINT [CK_Test_InternationalLicenses_ForceFailure];
             """);
-#pragma warning restore EF1002
     }
 
     private static string CreateNationalNumber() =>
@@ -1241,7 +551,4 @@ public sealed class InternationalLicenseWorkflowTests
         string NationalNo,
         string FullName,
         DateTime BeforeRequest);
-
-    private sealed record ErrorResponse(
-        string Error);
 }

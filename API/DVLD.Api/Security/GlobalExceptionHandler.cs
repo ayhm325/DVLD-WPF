@@ -4,37 +4,36 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Security;
 
 public sealed class GlobalExceptionHandler(
-    ILogger<GlobalExceptionHandler> logger)
-    : IExceptionHandler
+    ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async ValueTask<bool> TryHandleAsync(
-        HttpContext httpContext,
+        HttpContext context,
         Exception exception,
         CancellationToken cancellationToken)
     {
         _logger.LogError(
             exception,
             "Unhandled exception occurred while processing {Method} {Path}.",
-            httpContext.Request.Method,
-            httpContext.Request.Path);
+            context.Request.Method,
+            context.Request.Path);
 
         var problemDetails = new ProblemDetails
         {
             Status = StatusCodes.Status500InternalServerError,
             Title = "An unexpected error occurred.",
-            Detail = "The server could not complete the request."
+            Detail = "The server could not complete the request.",
+            Instance = context.Request.Path
         };
 
-        problemDetails.Extensions["traceId"] =
-            httpContext.TraceIdentifier;
+        problemDetails.Extensions["traceId"] = context.TraceIdentifier;
 
-        httpContext.Response.StatusCode =
-            StatusCodes.Status500InternalServerError;
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/problem+json";
 
-        await httpContext.Response.WriteAsJsonAsync(
+        await context.Response.WriteAsJsonAsync(
             problemDetails,
             cancellationToken);
 

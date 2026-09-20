@@ -1,11 +1,14 @@
 ﻿using Application.Common.Results;
 using Application.DTOs;
+using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DriverDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
+using DVLD.Contracts.Application;
 using DVLD.Contracts.Driver;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace DVLD.Api.Controllers;
 
@@ -90,7 +93,7 @@ public sealed class DriversController(IDriverService service) : ControllerBase
     {
         if (id != request.DriverId)
         {
-            return Result.Failure(
+            return Result.ValidationFailure(
                 "The route driver id does not match the request driver id.")
                 .ToActionResult(this);
         }

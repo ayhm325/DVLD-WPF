@@ -22,12 +22,9 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     }
 
     [Fact]
-    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized()
-    {
-        var response = await _client.GetAsync("/api/DetainedLicenses");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
+    public async Task GetAll_WithoutAuthentication_ReturnsUnauthorized() =>
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await _client.GetAsync("/api/DetainedLicenses")).StatusCode);
 
     [Fact]
     public async Task GetAll_WhenSuccessful_ReturnsMappedResponses()
@@ -39,12 +36,12 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             PersonID = 30,
             NationalNo = "N100",
             FullName = "Test Person",
-            DetainDate = new DateTime(2026, 1, 10),
+            DetainDate = new(2026, 1, 10),
             FineFees = 150.50m,
             CreatedByUserID = 40,
             CreatedByUserName = "admin",
             IsReleased = true,
-            ReleaseDate = new DateTime(2026, 2, 10),
+            ReleaseDate = new(2026, 2, 10),
             ReleasedByUserID = 50,
             ReleaseApplicationID = 60
         };
@@ -52,11 +49,10 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         SetupGetAll(Result<List<DetainedLicenseDto>>.Success([dto]));
 
         var response = await SendAsync(HttpMethod.Get, "/api/DetainedLicenses");
-
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<List<DetainedLicenseResponse>>();
-        var item = Assert.Single(result!);
+        var item = Assert.Single(
+            await response.Content.ReadFromJsonAsync<List<DetainedLicenseResponse>>() ?? []);
 
         Assert.Equal(10, item.DetainId);
         Assert.Equal(20, item.LicenseId);
@@ -72,8 +68,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(50, item.ReleasedByUserId);
         Assert.Equal(60, item.ReleaseApplicationId);
 
-        _factory.DetainedLicenseServiceMock.Verify(
-            x => x.GetAllAsync(), Times.Once);
+        _factory.DetainedLicenseServiceMock.Verify(x => x.GetAllAsync(), Times.Once);
     }
 
     [Fact]
@@ -94,20 +89,14 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     [InlineData(HttpStatusCode.Conflict, "Conflict", "conflict")]
     [InlineData(HttpStatusCode.Forbidden, "Forbidden", "forbidden")]
     public async Task GetAll_WhenServiceReturnsFailure_ReturnsExpectedProblemDetails(
-        HttpStatusCode status,
-        string title,
-        string detail)
+        HttpStatusCode status, string title, string detail)
     {
         var result = status switch
         {
-            HttpStatusCode.BadRequest =>
-                Result<List<DetainedLicenseDto>>.FromValidationFailure(detail),
-            HttpStatusCode.NotFound =>
-                Result<List<DetainedLicenseDto>>.FromNotFound(detail),
-            HttpStatusCode.Conflict =>
-                Result<List<DetainedLicenseDto>>.FromConflict(detail),
-            HttpStatusCode.Forbidden =>
-                Result<List<DetainedLicenseDto>>.FromForbidden(detail),
+            HttpStatusCode.BadRequest => Result<List<DetainedLicenseDto>>.FromValidationFailure(detail),
+            HttpStatusCode.NotFound => Result<List<DetainedLicenseDto>>.FromNotFound(detail),
+            HttpStatusCode.Conflict => Result<List<DetainedLicenseDto>>.FromConflict(detail),
+            HttpStatusCode.Forbidden => Result<List<DetainedLicenseDto>>.FromForbidden(detail),
             _ => throw new ArgumentOutOfRangeException(nameof(status))
         };
 
@@ -115,9 +104,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
 
         await AssertProblemDetailsAsync(
             await SendAsync(HttpMethod.Get, "/api/DetainedLicenses"),
-            status,
-            title,
-            detail);
+            status, title, detail);
     }
 
     [Fact]
@@ -142,19 +129,17 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             PersonID = 3,
             NationalNo = "N1",
             FullName = "John Doe",
-            DetainDate = new DateTime(2026, 3, 1),
+            DetainDate = new(2026, 3, 1),
             FineFees = 100m,
             CreatedByUserID = 4,
             CreatedByUserName = "admin",
             IsReleased = false
         };
 
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetByIdAsync(1))
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(1))
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
         var response = await SendAsync(HttpMethod.Get, "/api/DetainedLicenses/1");
-
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var result = await response.Content.ReadFromJsonAsync<DetainedLicenseResponse>();
@@ -168,15 +153,13 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(100m, result.FineFees);
         Assert.False(result.IsReleased);
 
-        _factory.DetainedLicenseServiceMock.Verify(
-            x => x.GetByIdAsync(1), Times.Once);
+        _factory.DetainedLicenseServiceMock.Verify(x => x.GetByIdAsync(1), Times.Once);
     }
 
     [Fact]
     public async Task GetById_WhenServiceReturnsNullValue_ReturnsInternalServerError()
     {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetByIdAsync(7))
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(7))
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(null!));
 
         await AssertProblemDetailsAsync(
@@ -189,15 +172,12 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     [Fact]
     public async Task GetById_WhenNotFound_ReturnsNotFound()
     {
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetByIdAsync(7))
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(7))
             .ReturnsAsync(Result<DetainedLicenseDto>.FromNotFound("not found"));
 
         await AssertProblemDetailsAsync(
             await SendAsync(HttpMethod.Get, "/api/DetainedLicenses/7"),
-            HttpStatusCode.NotFound,
-            "Resource not found",
-            "not found");
+            HttpStatusCode.NotFound, "Resource not found", "not found");
     }
 
     [Fact]
@@ -210,7 +190,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             PersonID = 30,
             NationalNo = "N20",
             FullName = "Active Driver",
-            DetainDate = new DateTime(2026, 4, 1),
+            DetainDate = new(2026, 4, 1),
             FineFees = 200m,
             CreatedByUserID = 40,
             CreatedByUserName = "staff",
@@ -222,8 +202,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
         var response = await SendAsync(
-            HttpMethod.Get,
-            "/api/DetainedLicenses/license/20/active");
+            HttpMethod.Get, "/api/DetainedLicenses/license/20/active");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -247,12 +226,8 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             .ReturnsAsync(Result<DetainedLicenseDto>.FromNotFound("not found"));
 
         await AssertProblemDetailsAsync(
-            await SendAsync(
-                HttpMethod.Get,
-                "/api/DetainedLicenses/license/20/active"),
-            HttpStatusCode.NotFound,
-            "Resource not found",
-            "not found");
+            await SendAsync(HttpMethod.Get, "/api/DetainedLicenses/license/20/active"),
+            HttpStatusCode.NotFound, "Resource not found", "not found");
     }
 
     [Theory]
@@ -261,21 +236,17 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     public async Task IsDetained_ReturnsExpectedResult(bool detained)
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x => x.IsLicenseDetainedAsync(20))
-            .ReturnsAsync(detained);
+            .Setup(x => x.IsLicenseDetainedAsync(20)).ReturnsAsync(detained);
 
         var response = await SendAsync(
-            HttpMethod.Get,
-            "/api/DetainedLicenses/license/20/detained");
+            HttpMethod.Get, "/api/DetainedLicenses/license/20/detained");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<DetainedStatusResponse>();
+        var result = await response.Content.ReadFromJsonAsync<DetainedStatusResponse>();
 
         Assert.NotNull(result);
         Assert.Equal(detained, result.Detained);
-
         _factory.DetainedLicenseServiceMock.Verify(
             x => x.IsLicenseDetainedAsync(20), Times.Once);
     }
@@ -290,7 +261,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             PersonID = 300,
             NationalNo = "N300",
             FullName = "Detained Person",
-            DetainDate = new DateTime(2026, 5, 1),
+            DetainDate = new(2026, 5, 1),
             FineFees = 250m,
             CreatedByUserID = 400,
             CreatedByUserName = "admin",
@@ -303,13 +274,8 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
         var response = await SendAsync(
-            HttpMethod.Post,
-            "/api/DetainedLicenses",
-            new CreateDetainedLicenseRequest
-            {
-                LicenseId = 200,
-                FineFees = 250m
-            });
+            HttpMethod.Post, "/api/DetainedLicenses",
+            new CreateDetainedLicenseRequest { LicenseId = 200, FineFees = 250m });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -322,8 +288,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
 
         _factory.DetainedLicenseServiceMock.Verify(
             x => x.AddAsync(It.Is<CreateDetainedLicenseDto>(
-                d => d.LicenseID == 200 && d.FineFees == 250m)),
-            Times.Once);
+                d => d.LicenseID == 200 && d.FineFees == 250m)), Times.Once);
     }
 
     [Fact]
@@ -331,21 +296,12 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     {
         _factory.DetainedLicenseServiceMock
             .Setup(x => x.AddAsync(It.IsAny<CreateDetainedLicenseDto>()))
-            .ReturnsAsync(Result<DetainedLicenseDto>
-                .FromValidationFailure("validation error"));
+            .ReturnsAsync(Result<DetainedLicenseDto>.FromValidationFailure("validation error"));
 
         await AssertProblemDetailsAsync(
-            await SendAsync(
-                HttpMethod.Post,
-                "/api/DetainedLicenses",
-                new CreateDetainedLicenseRequest
-                {
-                    LicenseId = 1,
-                    FineFees = 10m
-                }),
-            HttpStatusCode.BadRequest,
-            "Validation error",
-            "validation error");
+            await SendAsync(HttpMethod.Post, "/api/DetainedLicenses",
+                new CreateDetainedLicenseRequest { LicenseId = 1, FineFees = 10m }),
+            HttpStatusCode.BadRequest, "Validation error", "validation error");
     }
 
     [Fact]
@@ -356,14 +312,8 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(null!));
 
         await AssertProblemDetailsAsync(
-            await SendAsync(
-                HttpMethod.Post,
-                "/api/DetainedLicenses",
-                new CreateDetainedLicenseRequest
-                {
-                    LicenseId = 1,
-                    FineFees = 10m
-                }),
+            await SendAsync(HttpMethod.Post, "/api/DetainedLicenses",
+                new CreateDetainedLicenseRequest { LicenseId = 1, FineFees = 10m }),
             HttpStatusCode.InternalServerError,
             "An unexpected error occurred.",
             "The server could not complete the request.");
@@ -378,8 +328,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(
-            HttpMethod.Post,
-            "/api/DetainedLicenses/release",
+            HttpMethod.Post, "/api/DetainedLicenses/release",
             new ReleaseDetainedLicenseRequest { DetainId = 500 });
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -393,9 +342,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     [InlineData(HttpStatusCode.NotFound, "Resource not found", "not found")]
     [InlineData(HttpStatusCode.Forbidden, "Forbidden", "forbidden")]
     public async Task Release_WhenServiceFails_ReturnsExpectedProblemDetails(
-        HttpStatusCode status,
-        string title,
-        string detail)
+        HttpStatusCode status, string title, string detail)
     {
         var result = status == HttpStatusCode.NotFound
             ? Result.NotFound(detail)
@@ -406,60 +353,41 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             .ReturnsAsync(result);
 
         await AssertProblemDetailsAsync(
-            await SendAsync(
-                HttpMethod.Post,
-                "/api/DetainedLicenses/release",
+            await SendAsync(HttpMethod.Post, "/api/DetainedLicenses/release",
                 new ReleaseDetainedLicenseRequest { DetainId = 500 }),
-            status,
-            title,
-            detail);
+            status, title, detail);
     }
 
     private void SetupGetAll(Result<List<DetainedLicenseDto>> result) =>
-        _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetAllAsync())
-            .ReturnsAsync(result);
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method,
-        string url,
-        object? content = null)
+        HttpMethod method, string url, object? content = null)
     {
         using var request = new HttpRequestMessage(method, url);
-
         request.Headers.Add("X-Test-User-Id", "1");
         request.Headers.Add("X-Test-Username", "testuser");
         request.Headers.Add("X-Test-FullName", "Test User");
         request.Headers.Add("X-Test-Role", "Staff");
-
-        if (content is not null)
-            request.Content = JsonContent.Create(content);
-
+        if (content is not null) request.Content = JsonContent.Create(content);
         return await _client.SendAsync(request);
     }
 
     private static async Task AssertProblemDetailsAsync(
-        HttpResponseMessage response,
-        HttpStatusCode expectedStatus,
-        string expectedTitle,
-        string expectedDetail)
+        HttpResponseMessage response, HttpStatusCode status, string title, string detail)
     {
-        Assert.Equal(expectedStatus, response.StatusCode);
-        Assert.Equal(
-            "application/problem+json",
+        Assert.Equal(status, response.StatusCode);
+        Assert.Equal("application/problem+json",
             response.Content.Headers.ContentType?.MediaType);
 
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
 
         var body = document.RootElement;
-
-        Assert.Equal((int)expectedStatus, body.GetProperty("status").GetInt32());
-        Assert.Equal(expectedTitle, body.GetProperty("title").GetString());
-        Assert.Equal(expectedDetail, body.GetProperty("detail").GetString());
-        Assert.False(string.IsNullOrWhiteSpace(
-            body.GetProperty("instance").GetString()));
-
+        Assert.Equal((int)status, body.GetProperty("status").GetInt32());
+        Assert.Equal(title, body.GetProperty("title").GetString());
+        Assert.Equal(detail, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("instance").GetString()));
         Assert.True(body.TryGetProperty("traceId", out var traceId));
         Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
     }

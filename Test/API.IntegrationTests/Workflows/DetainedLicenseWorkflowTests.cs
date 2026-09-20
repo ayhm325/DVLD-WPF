@@ -6,6 +6,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace API.IntegrationTests.Workflows;
 
@@ -16,50 +17,33 @@ public sealed class DetainedLicenseWorkflowTests
     {
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedActiveLicenseScenarioAsync(factory);
+        using var client = AuthClient(factory, seed.UserId);
 
-        using var client = factory.CreateClient();
-        ConfigureAuthenticatedClient(client, seed.UserId);
-
-        var request = new CreateDetainedLicenseRequest
-        {
-            LicenseId = seed.LicenseId,
-            FineFees = 150m
-        };
-
-        using var response = await client.PostAsJsonAsync(
-            "/api/DetainedLicenses",
-            request);
+        var response = await client.PostAsJsonAsync("/api/DetainedLicenses",
+            new CreateDetainedLicenseRequest { LicenseId = seed.LicenseId, FineFees = 150m });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content
-            .ReadFromJsonAsync<DetainedLicenseResponse>();
-
+        var result = await response.Content.ReadFromJsonAsync<DetainedLicenseResponse>();
         Assert.NotNull(result);
-
         Assert.True(result.DetainId > 0);
         Assert.Equal(seed.LicenseId, result.LicenseId);
         Assert.Equal(150m, result.FineFees);
         Assert.Equal(seed.UserId, result.CreatedByUserId);
         Assert.False(result.IsReleased);
 
-        await using var verificationContext = factory.CreateDbContext();
+        await using var context = factory.CreateDbContext();
 
-        var license = await verificationContext.Licenses
-            .AsNoTracking()
-            .SingleOrDefaultAsync(
-                x => x.LicenseID == seed.LicenseId);
+        var license = await context.Licenses.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.LicenseID == seed.LicenseId);
 
         Assert.NotNull(license);
         Assert.False(license.IsActive);
 
-        var detention = await verificationContext.DetainedLicenses
-            .AsNoTracking()
-            .SingleOrDefaultAsync(
-                x => x.DetainID == result.DetainId);
+        var detention = await context.DetainedLicenses.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.DetainID == result.DetainId);
 
         Assert.NotNull(detention);
-
         Assert.Equal(seed.LicenseId, detention.LicenseID);
         Assert.Equal(150m, detention.FineFees);
         Assert.Equal(seed.UserId, detention.CreatedByUserID);
@@ -75,48 +59,30 @@ public sealed class DetainedLicenseWorkflowTests
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedActiveLicenseScenarioAsync(factory);
 
-        await using (var seedContext = factory.CreateDbContext())
+        await using (var context = factory.CreateDbContext())
         {
-            seedContext.DetainedLicenses.Add(
-                new DetainedLicense
-                {
-                    LicenseID = seed.LicenseId,
-                    DetainDate = DateTime.UtcNow.AddMinutes(-5),
-                    FineFees = 100m,
-                    CreatedByUserID = seed.UserId,
-                    IsReleased = false
-                });
-
-            await seedContext.SaveChangesAsync();
+            context.DetainedLicenses.Add(new DetainedLicense
+            {
+                LicenseID = seed.LicenseId,
+                DetainDate = DateTime.UtcNow.AddMinutes(-5),
+                FineFees = 100m,
+                CreatedByUserID = seed.UserId,
+                IsReleased = false
+            });
+            await context.SaveChangesAsync();
         }
 
-        using var client = factory.CreateClient();
-        ConfigureAuthenticatedClient(client, seed.UserId);
+        using var client = AuthClient(factory, seed.UserId);
 
-        var request = new CreateDetainedLicenseRequest
-        {
-            LicenseId = seed.LicenseId,
-            FineFees = 200m
-        };
+        var response = await client.PostAsJsonAsync("/api/DetainedLicenses",
+            new CreateDetainedLicenseRequest { LicenseId = seed.LicenseId, FineFees = 200m });
 
-        using var response = await client.PostAsJsonAsync(
-            "/api/DetainedLicenses",
-            request);
+        await AssertProblemDetailsAsync(response, HttpStatusCode.Conflict,
+            "Conflict", "License is already detained.");
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await using var context2 = factory.CreateDbContext();
 
-        var conflictBody = await response.Content
-            .ReadFromJsonAsync<ConflictResponse>();
-
-        Assert.NotNull(conflictBody);
-        Assert.Equal(
-            "License is already detained.",
-            conflictBody.Error);
-
-        await using var verificationContext = factory.CreateDbContext();
-
-        var detentions = await verificationContext.DetainedLicenses
-            .AsNoTracking()
+        var detentions = await context2.DetainedLicenses.AsNoTracking()
             .Where(x => x.LicenseID == seed.LicenseId)
             .ToListAsync();
 
@@ -124,10 +90,8 @@ public sealed class DetainedLicenseWorkflowTests
         Assert.Equal(100m, detentions[0].FineFees);
         Assert.False(detentions[0].IsReleased);
 
-        var license = await verificationContext.Licenses
-            .AsNoTracking()
-            .SingleAsync(
-                x => x.LicenseID == seed.LicenseId);
+        var license = await context2.Licenses.AsNoTracking()
+            .SingleAsync(x => x.LicenseID == seed.LicenseId);
 
         Assert.True(license.IsActive);
     }
@@ -138,48 +102,28 @@ public sealed class DetainedLicenseWorkflowTests
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedActiveLicenseScenarioAsync(factory);
 
-        await using (var updateContext = factory.CreateDbContext())
-        {
-            var affectedRows = await updateContext.Licenses
+        await using (var context = factory.CreateDbContext())
+            Assert.Equal(1, await context.Licenses
                 .Where(x => x.LicenseID == seed.LicenseId)
-                .ExecuteUpdateAsync(setters =>
-                    setters.SetProperty(
-                        x => x.IsActive,
-                        false));
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, false)));
 
-            Assert.Equal(1, affectedRows);
-        }
+        using var client = AuthClient(factory, seed.UserId);
 
-        using var client = factory.CreateClient();
-        ConfigureAuthenticatedClient(client, seed.UserId);
+        var response = await client.PostAsJsonAsync("/api/DetainedLicenses",
+            new CreateDetainedLicenseRequest { LicenseId = seed.LicenseId, FineFees = 100m });
 
-        var request = new CreateDetainedLicenseRequest
-        {
-            LicenseId = seed.LicenseId,
-            FineFees = 100m
-        };
+        await AssertProblemDetailsAsync(response, HttpStatusCode.Conflict,
+            "Conflict", "Only an active license can be detained.");
 
-        using var response = await client.PostAsJsonAsync(
-            "/api/DetainedLicenses",
-            request);
+        await using var context2 = factory.CreateDbContext();
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-
-        await using var verificationContext = factory.CreateDbContext();
-
-        var license = await verificationContext.Licenses
-            .AsNoTracking()
-            .SingleAsync(
-                x => x.LicenseID == seed.LicenseId);
+        var license = await context2.Licenses.AsNoTracking()
+            .SingleAsync(x => x.LicenseID == seed.LicenseId);
 
         Assert.False(license.IsActive);
-
-        var detentions = await verificationContext.DetainedLicenses
-            .AsNoTracking()
+        Assert.Empty(await context2.DetainedLicenses.AsNoTracking()
             .Where(x => x.LicenseID == seed.LicenseId)
-            .ToListAsync();
-
-        Assert.Empty(detentions);
+            .ToListAsync());
     }
 
     [Fact]
@@ -188,51 +132,31 @@ public sealed class DetainedLicenseWorkflowTests
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedActiveLicenseScenarioAsync(factory);
 
-        var expiredDate = DateTime.UtcNow.AddDays(-1);
-
-        await using (var updateContext = factory.CreateDbContext())
-        {
-            var affectedRows = await updateContext.Licenses
+        await using (var context = factory.CreateDbContext())
+            Assert.Equal(1, await context.Licenses
                 .Where(x => x.LicenseID == seed.LicenseId)
-                .ExecuteUpdateAsync(setters =>
-                    setters.SetProperty(
-                        x => x.ExpirationDate,
-                        expiredDate));
+                .ExecuteUpdateAsync(s => s.SetProperty(
+                    x => x.ExpirationDate, DateTime.UtcNow.AddDays(-1))));
 
-            Assert.Equal(1, affectedRows);
-        }
+        using var client = AuthClient(factory, seed.UserId);
 
-        using var client = factory.CreateClient();
-        ConfigureAuthenticatedClient(client, seed.UserId);
+        var response = await client.PostAsJsonAsync("/api/DetainedLicenses",
+            new CreateDetainedLicenseRequest { LicenseId = seed.LicenseId, FineFees = 100m });
 
-        var request = new CreateDetainedLicenseRequest
-        {
-            LicenseId = seed.LicenseId,
-            FineFees = 100m
-        };
+        await AssertProblemDetailsAsync(response, HttpStatusCode.Conflict,
+            "Conflict", "An expired license cannot be detained.");
 
-        using var response = await client.PostAsJsonAsync(
-            "/api/DetainedLicenses",
-            request);
+        await using var context2 = factory.CreateDbContext();
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-
-        await using var verificationContext = factory.CreateDbContext();
-
-        var license = await verificationContext.Licenses
-            .AsNoTracking()
-            .SingleAsync(
-                x => x.LicenseID == seed.LicenseId);
+        var license = await context2.Licenses.AsNoTracking()
+            .SingleAsync(x => x.LicenseID == seed.LicenseId);
 
         Assert.True(license.IsActive);
         Assert.True(license.ExpirationDate <= DateTime.UtcNow);
 
-        var detentions = await verificationContext.DetainedLicenses
-            .AsNoTracking()
+        Assert.Empty(await context2.DetainedLicenses.AsNoTracking()
             .Where(x => x.LicenseID == seed.LicenseId)
-            .ToListAsync();
-
-        Assert.Empty(detentions);
+            .ToListAsync());
     }
 
     [Fact]
@@ -240,86 +164,39 @@ public sealed class DetainedLicenseWorkflowTests
     {
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedActiveLicenseScenarioAsync(factory);
-
-        await using (var setupContext = factory.CreateDbContext())
-        {
-            await setupContext.Database.OpenConnectionAsync();
-
-            try
-            {
-                await setupContext.Database.ExecuteSqlRawAsync(
-                    """
-                    ALTER TABLE DetainedLicenses
-                    ADD CONSTRAINT CK_DetainedLicenses_IntegrationTest_ForceFailure
-                    CHECK (FineFees < 0)
-                    """);
-            }
-            finally
-            {
-                await setupContext.Database.CloseConnectionAsync();
-            }
-        }
+        await AddFailureConstraintAsync(factory);
 
         try
         {
-            using var client = factory.CreateClient();
-            ConfigureAuthenticatedClient(client, seed.UserId);
+            using var client = AuthClient(factory, seed.UserId);
 
-            var request = new CreateDetainedLicenseRequest
-            {
-                LicenseId = seed.LicenseId,
-                FineFees = 150m
-            };
+            var response = await client.PostAsJsonAsync("/api/DetainedLicenses",
+                new CreateDetainedLicenseRequest
+                {
+                    LicenseId = seed.LicenseId,
+                    FineFees = 150m
+                });
 
-            using var response = await client.PostAsJsonAsync(
-                "/api/DetainedLicenses",
-                request);
+            await AssertProblemDetailsAsync(response, HttpStatusCode.InternalServerError,
+                "An unexpected error occurred.",
+                "The server could not complete the request.",
+                requireProblemContentType: false);
 
-            Assert.Equal(
-                HttpStatusCode.InternalServerError,
-                response.StatusCode);
+            await using var context = factory.CreateDbContext();
 
-            await using var verificationContext =
-                factory.CreateDbContext();
-
-            var license = await verificationContext.Licenses
-                .AsNoTracking()
-                .SingleOrDefaultAsync(
-                    x => x.LicenseID == seed.LicenseId);
+            var license = await context.Licenses.AsNoTracking()
+                .SingleOrDefaultAsync(x => x.LicenseID == seed.LicenseId);
 
             Assert.NotNull(license);
             Assert.True(license.IsActive);
 
-            var detentions = await verificationContext.DetainedLicenses
-                .AsNoTracking()
+            Assert.Empty(await context.DetainedLicenses.AsNoTracking()
                 .Where(x => x.LicenseID == seed.LicenseId)
-                .ToListAsync();
-
-            Assert.Empty(detentions);
+                .ToListAsync());
         }
         finally
         {
-            await using var cleanupContext =
-                factory.CreateDbContext();
-
-            await cleanupContext.Database.OpenConnectionAsync();
-
-            try
-            {
-                await cleanupContext.Database.ExecuteSqlRawAsync(
-                    """
-                    ALTER TABLE DetainedLicenses
-                    DROP CONSTRAINT CK_DetainedLicenses_IntegrationTest_ForceFailure
-                    """);
-            }
-            catch
-            {
-                // The factory may already be cleaning up the isolated test database.
-            }
-            finally
-            {
-                await cleanupContext.Database.CloseConnectionAsync();
-            }
+            await RemoveFailureConstraintAsync(factory);
         }
     }
 
@@ -328,12 +205,8 @@ public sealed class DetainedLicenseWorkflowTests
     {
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedActiveLicenseScenarioAsync(factory);
-
-        using var clientA = factory.CreateClient();
-        using var clientB = factory.CreateClient();
-
-        ConfigureAuthenticatedClient(clientA, seed.UserId);
-        ConfigureAuthenticatedClient(clientB, seed.UserId);
+        using var clientA = AuthClient(factory, seed.UserId);
+        using var clientB = AuthClient(factory, seed.UserId);
 
         var request = new CreateDetainedLicenseRequest
         {
@@ -341,131 +214,164 @@ public sealed class DetainedLicenseWorkflowTests
             FineFees = 150m
         };
 
-        var startGate = new TaskCompletionSource(
+        var gate = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
-        async Task<HttpResponseMessage> SendAsync(
-            HttpClient client)
+        async Task<HttpResponseMessage> SendAsync(HttpClient client)
         {
-            await startGate.Task;
-
-            return await client.PostAsJsonAsync(
-                "/api/DetainedLicenses",
-                request);
+            await gate.Task;
+            return await client.PostAsJsonAsync("/api/DetainedLicenses", request);
         }
 
         var taskA = SendAsync(clientA);
         var taskB = SendAsync(clientB);
-
-        startGate.SetResult();
+        gate.SetResult();
 
         using var responseA = await taskA;
         using var responseB = await taskB;
 
-        var responses = new[]
+        var responses = new[] { responseA, responseB };
+
+        Assert.Single(responses, x => x.StatusCode == HttpStatusCode.OK);
+        Assert.Single(responses, x => x.StatusCode == HttpStatusCode.Conflict);
+
+        var conflict = responses.Single(x => x.StatusCode == HttpStatusCode.Conflict);
+        var conflictBody = await ReadProblemDetailsAsync(conflict);
+
+        Assert.Contains(conflictBody.Detail, new[]
         {
-            responseA,
-            responseB
-        };
+            "Only an active license can be detained.",
+            "License is already detained."
+        });
 
-        var successfulResponses = responses
-            .Where(x => x.StatusCode == HttpStatusCode.OK)
-            .ToList();
+        var successfulResponse = responses.Single(x => x.StatusCode == HttpStatusCode.OK);
+        var result = await successfulResponse.Content
+            .ReadFromJsonAsync<DetainedLicenseResponse>();
 
-        var conflictResponses = responses
-            .Where(x => x.StatusCode == HttpStatusCode.Conflict)
-            .ToList();
+        Assert.NotNull(result);
+        Assert.Equal(seed.LicenseId, result.LicenseId);
+        Assert.Equal(150m, result.FineFees);
+        Assert.Equal(seed.UserId, result.CreatedByUserId);
+        Assert.False(result.IsReleased);
 
-        Assert.Single(successfulResponses);
-        Assert.Single(conflictResponses);
+        await using var context = factory.CreateDbContext();
 
-        var conflictBody = await conflictResponses[0].Content
-            .ReadFromJsonAsync<ConflictResponse>();
-
-        Assert.NotNull(conflictBody);
-
-        Assert.Contains(
-            conflictBody.Error,
-            new[]
-            {
-                "Only an active license can be detained.",
-                "License is already detained."
-            });
-
-        var successfulResult =
-            await successfulResponses[0].Content
-                .ReadFromJsonAsync<DetainedLicenseResponse>();
-
-        Assert.NotNull(successfulResult);
-        Assert.Equal(seed.LicenseId, successfulResult.LicenseId);
-        Assert.Equal(150m, successfulResult.FineFees);
-        Assert.Equal(seed.UserId, successfulResult.CreatedByUserId);
-        Assert.False(successfulResult.IsReleased);
-
-        await using var verificationContext =
-            factory.CreateDbContext();
-
-        var detentions = await verificationContext.DetainedLicenses
-            .AsNoTracking()
+        var detentions = await context.DetainedLicenses.AsNoTracking()
             .Where(x => x.LicenseID == seed.LicenseId)
             .ToListAsync();
 
         Assert.Single(detentions);
-
-        Assert.Equal(
-            successfulResult.DetainId,
-            detentions[0].DetainID);
-
-        Assert.Equal(
-            seed.UserId,
-            detentions[0].CreatedByUserID);
-
-        Assert.Equal(
-            150m,
-            detentions[0].FineFees);
-
+        Assert.Equal(result.DetainId, detentions[0].DetainID);
+        Assert.Equal(seed.UserId, detentions[0].CreatedByUserID);
+        Assert.Equal(150m, detentions[0].FineFees);
         Assert.False(detentions[0].IsReleased);
 
-        var license = await verificationContext.Licenses
-            .AsNoTracking()
-            .SingleAsync(
-                x => x.LicenseID == seed.LicenseId);
+        var license = await context.Licenses.AsNoTracking()
+            .SingleAsync(x => x.LicenseID == seed.LicenseId);
 
         Assert.False(license.IsActive);
     }
 
-    private static void ConfigureAuthenticatedClient(
-        HttpClient client,
-        int userId)
+    private static HttpClient AuthClient(
+        SqlServerApiWebApplicationFactory factory, int userId)
     {
-        client.DefaultRequestHeaders.Add(
-            "X-Test-User-Id",
-            userId.ToString());
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User-Id", userId.ToString());
+        client.DefaultRequestHeaders.Add("X-Test-Username", "integration.test");
+        client.DefaultRequestHeaders.Add("X-Test-FullName", "Integration Test User");
+        client.DefaultRequestHeaders.Add("X-Test-Role", "Staff");
+        return client;
+    }
 
-        client.DefaultRequestHeaders.Add(
-            "X-Test-Username",
-            "integration.test");
+    private static async Task AssertProblemDetailsAsync(
+        HttpResponseMessage response,
+        HttpStatusCode status,
+        string title,
+        string detail,
+        bool requireProblemContentType = true)
+    {
+        var problem = await ReadProblemDetailsAsync(response);
 
-        client.DefaultRequestHeaders.Add(
-            "X-Test-FullName",
-            "Integration Test User");
+        Assert.Equal(status, response.StatusCode);
 
-        client.DefaultRequestHeaders.Add(
-            "X-Test-Role",
-            "Staff");
+        if (requireProblemContentType)
+            Assert.Equal("application/problem+json",
+                response.Content.Headers.ContentType?.MediaType);
+
+        Assert.Equal((int)status, problem.Status);
+        Assert.Equal(title, problem.Title);
+        Assert.Equal(detail, problem.Detail);
+        Assert.False(string.IsNullOrWhiteSpace(problem.Instance));
+        Assert.False(string.IsNullOrWhiteSpace(problem.TraceId));
+    }
+
+    private static async Task<ProblemDetailsBody> ReadProblemDetailsAsync(
+        HttpResponseMessage response)
+    {
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        return new(
+            body.GetProperty("status").GetInt32(),
+            body.GetProperty("title").GetString(),
+            body.GetProperty("detail").GetString(),
+            body.GetProperty("instance").GetString(),
+            body.GetProperty("traceId").GetString());
+    }
+
+    private static async Task AddFailureConstraintAsync(
+        SqlServerApiWebApplicationFactory factory)
+    {
+        await using var context = factory.CreateDbContext();
+        await context.Database.OpenConnectionAsync();
+
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync(
+                """
+                ALTER TABLE DetainedLicenses
+                ADD CONSTRAINT CK_DetainedLicenses_IntegrationTest_ForceFailure
+                CHECK (FineFees < 0)
+                """);
+        }
+        finally
+        {
+            await context.Database.CloseConnectionAsync();
+        }
+    }
+
+    private static async Task RemoveFailureConstraintAsync(
+        SqlServerApiWebApplicationFactory factory)
+    {
+        await using var context = factory.CreateDbContext();
+        await context.Database.OpenConnectionAsync();
+
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync(
+                """
+                ALTER TABLE DetainedLicenses
+                DROP CONSTRAINT CK_DetainedLicenses_IntegrationTest_ForceFailure
+                """);
+        }
+        catch { }
+        finally
+        {
+            await context.Database.CloseConnectionAsync();
+        }
     }
 
     private static async Task<SeedData> SeedActiveLicenseScenarioAsync(
         SqlServerApiWebApplicationFactory factory)
     {
         await using var context = factory.CreateDbContext();
-
         await SeedLookupDataAsync(context);
 
         var country = new Country
         {
-            CountryName =
-                $"Integration Country {Guid.NewGuid():N}"
+            CountryName = $"Integration Country {Guid.NewGuid():N}"
         };
 
         context.Countries.Add(country);
@@ -477,7 +383,7 @@ public sealed class DetainedLicenseWorkflowTests
             FirstName = "Integration",
             SecondName = "Test",
             LastName = "User",
-            DateOfBirth = new DateTime(1990, 1, 1),
+            DateOfBirth = new(1990, 1, 1),
             Gender = Gender.Male,
             Address = "Integration Test Address",
             Phone = CreatePhone(),
@@ -491,7 +397,7 @@ public sealed class DetainedLicenseWorkflowTests
             FirstName = "Detain",
             SecondName = "Integration",
             LastName = "Applicant",
-            DateOfBirth = new DateTime(1990, 1, 1),
+            DateOfBirth = new(1990, 1, 1),
             Gender = Gender.Male,
             Address = "Detain Applicant Address",
             Phone = CreatePhone(),
@@ -499,10 +405,7 @@ public sealed class DetainedLicenseWorkflowTests
             NationalityCountryID = country.CountryId
         };
 
-        context.People.AddRange(
-            userPerson,
-            applicantPerson);
-
+        context.People.AddRange(userPerson, applicantPerson);
         await context.SaveChangesAsync();
 
         var user = new User
@@ -558,13 +461,10 @@ public sealed class DetainedLicenseWorkflowTests
         context.Licenses.Add(license);
         await context.SaveChangesAsync();
 
-        return new SeedData(
-            UserId: user.UserId,
-            LicenseId: license.LicenseID);
+        return new(user.UserId, license.LicenseID);
     }
 
-    private static async Task SeedLookupDataAsync(
-        DVLDDbContext context)
+    private static async Task SeedLookupDataAsync(DVLDDbContext context)
     {
         await context.Database.OpenConnectionAsync();
 
@@ -576,17 +476,9 @@ public sealed class DetainedLicenseWorkflowTests
             await context.Database.ExecuteSqlRawAsync(
                 """
                 INSERT INTO ApplicationTypes
-                    (
-                        ApplicationTypeId,
-                        ApplicationTypeTitle,
-                        ApplicationFees
-                    )
+                    (ApplicationTypeId, ApplicationTypeTitle, ApplicationFees)
                 VALUES
-                    (
-                        1,
-                        N'New Local Driving License',
-                        20
-                    )
+                    (1, N'New Local Driving License', 20)
                 """);
 
             await context.Database.ExecuteSqlRawAsync(
@@ -598,23 +490,12 @@ public sealed class DetainedLicenseWorkflowTests
             await context.Database.ExecuteSqlRawAsync(
                 """
                 INSERT INTO LicenseClasses
-                    (
-                        LicenseClassID,
-                        ClassName,
-                        ClassDescription,
-                        MinimumAllowedAge,
-                        DefaultValidityLength,
-                        ClassFees
-                    )
+                    (LicenseClassID, ClassName, ClassDescription,
+                     MinimumAllowedAge, DefaultValidityLength, ClassFees)
                 VALUES
-                    (
-                        1,
-                        N'Integration Class',
-                        N'Integration test license class',
-                        18,
-                        5,
-                        100
-                    )
+                    (1, N'Integration Class',
+                     N'Integration test license class',
+                     18, 5, 100)
                 """);
 
             await context.Database.ExecuteSqlRawAsync(
@@ -632,10 +513,12 @@ public sealed class DetainedLicenseWorkflowTests
     private static string CreatePhone() =>
         $"07{Random.Shared.NextInt64(100000000, 999999999)}";
 
-    private sealed record ConflictResponse(
-        string? Error);
+    private sealed record ProblemDetailsBody(
+        int Status,
+        string? Title,
+        string? Detail,
+        string? Instance,
+        string? TraceId);
 
-    private sealed record SeedData(
-        int UserId,
-        int LicenseId);
+    private sealed record SeedData(int UserId, int LicenseId);
 }

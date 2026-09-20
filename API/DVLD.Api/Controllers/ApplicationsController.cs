@@ -1,4 +1,5 @@
-﻿using Application.DTOs.ApplicationDTO;
+﻿using Application.Common.Results;
+using Application.DTOs.ApplicationDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
 using DVLD.Contracts.Application;
@@ -10,201 +11,118 @@ namespace DVLD.Api.Controllers;
 [ApiController]
 [Authorize(Policy = "StaffOnly")]
 [Route("api/[controller]")]
-public sealed class ApplicationsController(
-    IApplicationService service) : ControllerBase
+public sealed class ApplicationsController(IApplicationService service) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var result =
-            await service.GetAllApplicationsAsync();
+        var result = await service.GetAllApplicationsAsync();
+        if (result.IsFailure) return result.ToActionResult(this);
 
-        if (result.IsFailure)
-            return result.ToActionResult(this);
-
-        return Ok(
-            result.Value!
-                .Select(MapToResponse)
-                .ToList());
+        return result.Value is null
+            ? UnexpectedResult("Application service returned a successful result without applications.")
+            : Ok(result.Value.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result =
-            await service.GetApplicationByIdAsync(id);
+        var result = await service.GetApplicationByIdAsync(id);
+        if (result.IsFailure) return result.ToActionResult(this);
 
-        if (result.IsFailure)
-            return result.ToActionResult(this);
-
-        return Ok(
-            MapToResponse(result.Value!));
+        return result.Value is null
+            ? UnexpectedResult("Application service returned a successful result without an application.")
+            : Ok(MapToResponse(result.Value));
     }
 
     [HttpGet("{id:int}/basic-info")]
-    public async Task<IActionResult> GetBasicInfo(
-        int id)
+    public async Task<IActionResult> GetBasicInfo(int id)
     {
-        var result =
-            await service.GetBasicInfoAsync(id);
+        var result = await service.GetBasicInfoAsync(id);
+        if (result.IsFailure) return result.ToActionResult(this);
 
-        if (result.IsFailure)
-            return result.ToActionResult(this);
-
-        return Ok(
-            MapToBasicInfoResponse(result.Value!));
+        return result.Value is null
+            ? UnexpectedResult("Application service returned a successful result without application information.")
+            : Ok(MapToBasicInfoResponse(result.Value));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(
-        [FromBody] CreateApplicationRequest request)
+    public async Task<IActionResult> Create(CreateApplicationRequest request)
     {
-        var dto = new CreateApplicationDto
+        var result = await service.AddNewApplicationAsync(new CreateApplicationDto
         {
-            ApplicantPersonID =
-                request.ApplicantPersonId,
+            ApplicantPersonID = request.ApplicantPersonId,
+            ApplicationTypeID = request.ApplicationTypeId
+        });
 
-            ApplicationTypeID =
-                request.ApplicationTypeId
-        };
+        if (result.IsFailure) return result.ToActionResult(this);
 
-        var result =
-            await service.AddNewApplicationAsync(dto);
-
-        if (result.IsFailure)
-            return result.ToActionResult(this);
-
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = result.Value },
-            new
-            {
-                applicationId = result.Value
-            });
+        return CreatedAtAction(nameof(GetById), new { id = result.Value }, new { applicationId = result.Value });
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(
-        int id,
-        [FromBody] UpdateApplicationRequest request)
+    public async Task<IActionResult> Update(int id, UpdateApplicationRequest request)
     {
         if (id != request.ApplicationId)
+            return Result.ValidationFailure("Route application ID does not match request application ID.").ToActionResult(this);
+
+        var result = await service.UpdateApplicationAsync(new UpdateApplicationDto
         {
-            return BadRequest(new
-            {
-                error =
-                    "Route application ID does not match request application ID."
-            });
-        }
+            ApplicationID = request.ApplicationId,
+            ApplicationTypeID = request.ApplicationTypeId
+        });
 
-        var dto = new UpdateApplicationDto
-        {
-            ApplicationID =
-                request.ApplicationId,
-
-            ApplicationTypeID =
-                request.ApplicationTypeId
-        };
-
-        var result =
-            await service.UpdateApplicationAsync(dto);
-
-        return result.IsSuccess
-            ? NoContent()
-            : result.ToActionResult(this);
+        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result =
-            await service.DeleteApplicationAsync(id);
-
-        return result.IsSuccess
-            ? NoContent()
-            : result.ToActionResult(this);
+        var result = await service.DeleteApplicationAsync(id);
+        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
     [HttpPost("{id:int}/complete")]
     public async Task<IActionResult> Complete(int id)
     {
-        var result =
-            await service.CompleteApplicationAsync(id);
-
-        return result.IsSuccess
-            ? NoContent()
-            : result.ToActionResult(this);
+        var result = await service.CompleteApplicationAsync(id);
+        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
     [HttpPost("{id:int}/cancel")]
     public async Task<IActionResult> Cancel(int id)
     {
-        var result =
-            await service.CancelApplicationAsync(id);
-
-        return result.IsSuccess
-            ? NoContent()
-            : result.ToActionResult(this);
+        var result = await service.CancelApplicationAsync(id);
+        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
-    private static ApplicationResponse MapToResponse(
-        ApplicationDto dto)
-        => new()
-        {
-            ApplicationId = dto.ApplicationID,
-            ApplicantPersonId =
-                dto.ApplicantPersonID,
-            ApplicationDate =
-                dto.ApplicationDate,
-            ApplicationTypeId =
-                dto.ApplicationTypeID,
-            ApplicationStatus =
-                dto.ApplicationStatus.ToString(),
-            StatusText =
-                dto.StatusText,
-            LastStatusDate =
-                dto.LastStatusDate,
-            PaidFees =
-                dto.PaidFees,
-            CreatedByUserId =
-                dto.CreatedByUserID,
-            CreatedByUserName =
-                dto.CreatedByUserName
-        };
+    private IActionResult UnexpectedResult(string message) => Result.Failure(message).ToActionResult(this);
 
-    private static ApplicationBasicInfoResponse
-        MapToBasicInfoResponse(
-            ApplicationBasicInfoDto dto)
-        => new()
-        {
-            ApplicantPersonId =
-                dto.ApplicantPersonID,
+    private static ApplicationResponse MapToResponse(ApplicationDto dto) => new()
+    {
+        ApplicationId = dto.ApplicationID,
+        ApplicantPersonId = dto.ApplicantPersonID,
+        ApplicationDate = dto.ApplicationDate,
+        ApplicationTypeId = dto.ApplicationTypeID,
+        ApplicationStatus = dto.ApplicationStatus.ToString(),
+        StatusText = dto.StatusText,
+        LastStatusDate = dto.LastStatusDate,
+        PaidFees = dto.PaidFees,
+        CreatedByUserId = dto.CreatedByUserID,
+        CreatedByUserName = dto.CreatedByUserName
+    };
 
-            ApplicationId =
-                dto.ApplicationID,
-
-            ApplicationStatus =
-                dto.ApplicationStatus.ToString(),
-
-            StatusText =
-                dto.StatusText,
-
-            PaidFees =
-                dto.PaidFees,
-
-            ApplicationTypeName =
-                dto.ApplicationTypeName,
-
-            ApplicantFullName =
-                dto.ApplicantFullName,
-
-            ApplicationDate =
-                dto.ApplicationDate,
-
-            LastStatusDate =
-                dto.LastStatusDate,
-
-            CreatedByUserName =
-                dto.CreatedByUserName
-        };
+    private static ApplicationBasicInfoResponse MapToBasicInfoResponse(ApplicationBasicInfoDto dto) => new()
+    {
+        ApplicantPersonId = dto.ApplicantPersonID,
+        ApplicationId = dto.ApplicationID,
+        ApplicationStatus = dto.ApplicationStatus.ToString(),
+        StatusText = dto.StatusText,
+        PaidFees = dto.PaidFees,
+        ApplicationTypeName = dto.ApplicationTypeName,
+        ApplicantFullName = dto.ApplicantFullName,
+        ApplicationDate = dto.ApplicationDate,
+        LastStatusDate = dto.LastStatusDate,
+        CreatedByUserName = dto.CreatedByUserName
+    };
 }
