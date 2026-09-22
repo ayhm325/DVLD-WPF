@@ -1,69 +1,289 @@
 # DVLD Business Workflows
 
-## Local license workflow
+This document describes business workflows supported by the current Application, Infrastructure, API, and test implementation.
+
+## 1. Local driving-license workflow
 
 ```text
 Person
- ↓
+  ↓
 Application
- ↓
+  ↓
 LocalDrivingLicenseApplication
- ↓
-Test scheduling
- ↓
-Theory / Written / Practical
- ↓
-Required tests passed
- ↓
-License issuance
+  ↓
+Theory test
+  ↓
+Written test
+  ↓
+Practical test
+  ↓
+All required tests passed
+  ↓
+First-license issuance
 ```
 
-## Test result workflow
+The current required test sequence is:
 
-1. Require authenticated user.
-2. Begin Serializable transaction.
-3. Retrieve appointment.
-4. Reject missing appointment.
-5. Reject locked appointment.
-6. Validate workflow eligibility.
-7. Reject duplicate result.
-8. Create Test.
-9. Lock appointment.
-10. SaveChanges.
-11. Commit.
-12. Roll back on failure.
+1. Theory
+2. Written
+3. Practical
 
-Integration tests cover locked, future, invalid-order, duplicate, rollback, and concurrent cases.
+The backend remains authoritative even when the WPF client disables unavailable actions.
 
-## First-license issuance
+## 2. Test scheduling
 
-Dedicated controller/service workflow coordinating license/application changes as a multi-step operation.
+Test scheduling is a business workflow rather than an unrestricted CRUD insert.
 
-## Renewal
+The scheduling area tracks:
 
-Dedicated controller/service. Request contains OldLicenseId and Notes.
+- local application
+- test type
+- appointment date
+- trial number
+- fees
+- retake application
+- test result state
+- appointment lock state
 
-## Replacement
+The service exposes preparation information, fees, trial count, and whether an appointment is already scheduled.
 
-Dedicated controller/service. Request contains OldLicenseId and ReplacementReason.
+The workflow checks the application's current test state and required test order.
 
-## Detention/release
+## 3. Test-result workflow
 
-Detention records LicenseId and FineFees. Release uses DetainId. The database prevents multiple unreleased detention records for one license.
+Recording a test result is concurrency-sensitive.
 
-## International license
+```text
+Authenticated user
+      ↓
+Serializable transaction
+      ↓
+Retrieve appointment for protected operation
+      ↓
+Appointment exists?
+      ↓
+Appointment locked?
+      ↓
+Workflow eligibility valid?
+      ↓
+Duplicate result?
+      ↓
+Create Test
+      ↓
+Lock appointment
+      ↓
+SaveChanges
+      ↓
+Commit
+```
 
-Confirmed checks:
+The operation rejects invalid states such as:
 
-- Source license exists.
-- Active.
-- Not expired.
-- Required class satisfied.
-- Driver exists.
-- No active international license already exists.
+- missing appointment
+- locked appointment
+- invalid workflow order/state
+- duplicate result
 
-Application and international-license creation are performed in a Serializable transaction.
+The result model supports:
 
-## Rule location
+```text
+NotTaken
+Pass
+Fail
+```
 
-The backend is authoritative. UI disabling is for usability only; business rules must still be enforced by Application/Domain logic.
+## 4. First-license issuance
+
+The first-license workflow coordinates multiple records transactionally.
+
+```text
+Validate local application
+        ↓
+Authenticated user
+        ↓
+Application type is New
+        ↓
+Re-check application state
+        ↓
+All required tests passed
+        ↓
+No existing license for application
+        ↓
+Find or create Driver
+        ↓
+No active license for Driver + LicenseClass
+        ↓
+Create License
+        ↓
+SaveChanges
+        ↓
+Complete Application
+        ↓
+Commit
+```
+
+Concurrent attempts are protected through transaction/concurrency controls and database uniqueness constraints.
+
+## 5. License renewal
+
+Renewal requires an eligible existing license.
+
+The workflow verifies conditions including:
+
+- source license exists
+- source license is active
+- source license is expired
+- required driver/license-class information exists
+
+Then:
+
+```text
+Create renewal Application
+        ↓
+Deactivate old License
+        ↓
+Create new License
+        ↓
+Apply license-class validity/fees
+        ↓
+SaveChanges
+        ↓
+Complete Application
+        ↓
+Commit
+```
+
+The operation is transactional.
+
+## 6. License replacement
+
+Replacement supports:
+
+- Lost
+- Damaged
+
+The corresponding application types are:
+
+| Reason | Application Type |
+|---|---:|
+| Lost | 3 |
+| Damaged | 4 |
+
+The source license must be active and not expired.
+
+The old license is deactivated and a replacement is created.
+
+The replacement keeps the old license expiration date rather than starting a new validity period.
+
+The operation is transactional.
+
+## 7. License detention
+
+Detention validates that the source license is eligible for detention.
+
+The operation creates a detention record containing license, fine, date, and creator information and deactivates the license within the same transaction.
+
+A filtered unique database index prevents more than one unreleased detention for the same license.
+
+## 8. Release of detained license
+
+Release starts from the detention row.
+
+```text
+Load detention for update
+       ↓
+Already released?
+       ↓
+Reject if already released
+       ↓
+Create release Application
+       ↓
+Mark detention as released
+       ↓
+Evaluate license reactivation conditions
+       ↓
+SaveChanges
+       ↓
+Complete Application
+       ↓
+Commit
+```
+
+The license is reactivated only when the implementation's conditions allow it, including checking for another active license for the same driver/class and checking expiration.
+
+The workflow is transactional.
+
+## 9. International license issuance
+
+The current workflow requires:
+
+- source local license exists
+- source license is active
+- source license is not expired
+- source license belongs to the required class
+- driver exists
+- no conflicting active international license exists
+- source local license has not already been used for a conflicting international license
+
+The current required class is **Class 3**.
+
+The workflow creates:
+
+- application type **6**
+- international license
+
+The international license validity is one year.
+
+Creation uses a Serializable transaction.
+
+Database constraints reinforce the relevant uniqueness rules.
+
+## 10. Application completion and cancellation
+
+Applications expose explicit completion and cancellation operations.
+
+The Application service remains responsible for deciding whether a status transition is valid.
+
+## 11. Business rules vs UI behavior
+
+The WPF client may disable or hide actions according to:
+
+- role
+- workflow state
+- test state
+- license state
+
+These are usability behaviors.
+
+The Application services and API authorization policies are the authoritative enforcement mechanisms.
+
+## 12. Transaction and concurrency philosophy
+
+The project treats multi-record workflows as business transactions rather than unrelated CRUD operations.
+
+Concurrency-sensitive workflows use transaction isolation and database uniqueness together.
+
+Examples include:
+
+- test-result recording
+- first-license issuance
+- renewal
+- replacement
+- detention
+- detention release
+- international-license issuance
+- test appointment workflows
+- local application workflows
+
+## 13. Responsibility boundaries
+
+| Concern | Owner |
+|---|---|
+| HTTP request/response | API |
+| Authentication/authorization | API |
+| Business workflow | Application |
+| Core concepts | Domain |
+| Database persistence | Infrastructure |
+| Transaction coordination | Unit of Work / workflow |
+| Database invariants | SQL Server / EF Core |
+| UI usability | Presentation |

@@ -1,16 +1,72 @@
-# DVLD — System Documentation
+# DVLD — Complete System Documentation
 
-> **Documentation status:** Source-oriented documentation for the current repository state. Implemented behavior is documented as current. Anything not confirmed from source is marked **Needs verification**.
+## 1. Executive summary
 
-## 1. Executive Summary
+DVLD (Driving & Vehicle License Department) is a .NET 8 application for managing people, users, drivers, applications, tests, licenses, detention/release, and international licensing workflows.
 
-DVLD (Driving & Vehicle License Department) is a C#/.NET 8 system for managing the operational records and workflows of a driving-license department.
+The solution separates:
 
-The solution separates domain concepts, application use cases, infrastructure/database access, API contracts, HTTP endpoints, and the WPF presentation layer.
+- Domain concepts
+- Application use cases and business workflows
+- Infrastructure/database access
+- API transport contracts
+- ASP.NET Core HTTP/security concerns
+- WPF presentation
+- Automated tests
 
-Current solution areas include Domain, Application, Infrastructure, DVLD.Contracts, ASP.NET Core Web API, WPF/MVVM presentation, automated tests, and Azure DevOps CI configuration.
+## 2. Solution structure
 
-## 2. Project Overview
+```text
+DVLD-WPF/
+├── Domain/
+├── Application/
+├── Infrastructure/
+├── DVLD.Contracts/
+├── API/
+│   └── DVLD.Api/
+├── Presentation/
+├── Test/
+└── docs/
+```
+
+## 3. Runtime architecture
+
+```text
+WPF
+ ↓ HTTP + JSON + JWT
+DVLD.Api
+ ↓
+Application
+ ↓
+Infrastructure
+ ↓
+SQL Server
+```
+
+The WPF project shares `DVLD.Contracts` with the API but does not reference the API project directly.
+
+## 4. Technology stack
+
+| Area | Technology |
+|---|---|
+| Language | C# |
+| Runtime | .NET 8 |
+| API | ASP.NET Core Web API |
+| ORM | Entity Framework Core 8 |
+| Database | SQL Server |
+| Desktop UI | WPF |
+| UI pattern | MVVM-oriented |
+| MVVM toolkit | CommunityToolkit.Mvvm |
+| Authentication | JWT bearer |
+| Authorization | ASP.NET Core policies |
+| Password hashing | BCrypt |
+| Persistence | Repository + Unit of Work |
+| API contracts | DVLD.Contracts |
+| HTTP client | HttpClientFactory |
+| Testing | Unit + integration tests |
+| CI | Azure DevOps Pipelines |
+
+## 5. Functional scope
 
 The system manages:
 
@@ -30,107 +86,111 @@ The system manages:
 - International licenses
 - Dashboard statistics
 
-## 3. Goals and Scope
+Major workflows:
 
-### In scope
-
-- CRUD/query operations for core entities
-- Application lifecycle
-- Local driving-license workflow
-- Test scheduling and result recording
+- Local license application
+- Test scheduling
+- Test result recording
 - First-license issuance
 - Renewal
 - Replacement
-- Detention and release
+- Detention
+- Release
 - International-license issuance
-- User authentication and profile management
-- SQL Server persistence
-- Automated testing
-- WPF client
 
-### Needs verification
+## 6. Layer responsibilities
 
-Any capability not represented by source code, tests, or configuration should not be documented as implemented.
+### Domain
 
-## 4. Technology Stack
+Core entities, enums, and domain concepts.
 
-| Area | Technology |
-|---|---|
-| Language | C# |
-| Runtime | .NET 8 |
-| API | ASP.NET Core Web API |
-| ORM | Entity Framework Core 8 |
-| Database | SQL Server |
-| Desktop UI | WPF |
-| UI pattern | MVVM |
-| Authentication | JWT |
-| Authorization | ASP.NET Core policies |
-| Password hashing | BCrypt |
-| Persistence | Repository + Unit of Work |
-| Contracts | DVLD.Contracts |
-| Testing | Unit + integration tests |
-| CI | Azure DevOps Pipelines |
-| Source control | Git / GitHub |
+### Application
 
-## 5. Solution Architecture
+Use cases, business workflows, validation, DTOs, Result types, repository abstractions, Unit of Work abstractions, and current-user abstraction.
 
-### 5.1 Architecture Overview
+### Infrastructure
 
-```mermaid
-flowchart LR
-    P["Presentation (WPF)"] --> A["API"]
-    A --> APP["Application"]
-    APP --> D["Domain"]
-    I["Infrastructure"] --> APP
-    I --> D
-    A --> I
-    A --> C["DVLD.Contracts"]
-    I --> DB[("SQL Server")]
-```
+EF Core DbContext/configuration, repositories, Unit of Work implementation, transactions, and SQL Server persistence.
 
-### 5.2 Layer Responsibilities
+### DVLD.Contracts
 
-**Domain:** core entities, enums, and business concepts. It should not depend on ASP.NET Core, WPF, or SQL Server.
+HTTP request/response models shared between API and WPF client.
 
-**Application:** use cases, service interfaces/implementations, DTOs, validation, workflow coordination, Result types, pagination, and current-user abstractions.
+### API
 
-**Infrastructure:** EF Core DbContext/configuration, repositories, Unit of Work, transactions, SQL Server persistence, and infrastructure implementations of Application interfaces.
+HTTP routing, model binding, authentication/authorization integration, contract mapping, Result-to-HTTP mapping, and global exception handling.
 
-**DVLD.Contracts:** API-facing request and response contracts, keeping transport models separate from internal Application DTOs.
+### Presentation
 
-**API:** HTTP routing, authentication/authorization integration, request binding, Application-service calls, response mapping, and API-wide error handling.
+WPF Views, ViewModels, Pages, Windows, UserControls, commands, API clients, session state, navigation, and notifications.
 
-**Presentation (WPF):** Views, ViewModels, Commands, UserControls, and desktop presentation state.
+## 7. Dependency Injection
 
-### 5.3 Dependency Direction
+### API
 
-```text
-Presentation → API → Application → Domain
-Infrastructure → Application
-Infrastructure → Domain
-API → Infrastructure
-Infrastructure → SQL Server
-API → DVLD.Contracts
-```
+`Program.cs` is the composition root and registers:
 
-### 5.4 Project Structure
+- DbContext
+- Unit of Work
+- repositories
+- Application services
+- current-user implementation
+- authentication/authorization
+- rate limiting
+- exception handling
+- controllers/Swagger
+
+Runtime DbContext, Unit of Work, repositories, and Application services are scoped.
+
+### WPF
+
+`App.xaml.cs` is the Presentation composition root.
+
+It registers:
+
+- current-user session
+- API host service
+- window/navigation services
+- notification services
+- HttpClientFactory API clients
+- feature API clients
+- ViewModels
+- Windows
+- Pages
+
+## 8. WPF/API interaction
 
 ```text
-DVLD-WPF/
-├── Domain/
-├── Application/
-├── Infrastructure/
-├── DVLD.Contracts/
-├── API/
-│   └── DVLD.Api/
-├── Presentation (WPF)/
-├── Test/
-└── docs/
+View
+ ↓
+ViewModel
+ ↓
+Feature API Client
+ ↓
+IApiClient
+ ↓
+HttpClient
+ ↓
+HTTP API
 ```
 
-## 6. Domain Model
+`ApiClient` centralizes bearer-token handling, JSON requests, common HTTP errors, network failures, and timeout handling.
 
-The EF model currently contains:
+The access token is kept in the in-memory current-user session.
+
+Remember Me persists username/preferences, not a persistent authentication token.
+
+## 9. Presentation architecture qualification
+
+The WPF layer uses MVVM as its primary pattern.
+
+It is not documented as pure MVVM because some view-specific navigation, window behavior, animations, and UI interactions remain in code-behind.
+
+Role-based visibility is a usability feature. API authorization is the security boundary.
+
+## 10. Database model
+
+Current entities/tables:
 
 - Applications
 - ApplicationTypes
@@ -147,52 +207,21 @@ The EF model currently contains:
 - TestTypes
 - Users
 
-### 6.1 Main Relationships
+Important integrity rules include:
 
-- Person is referenced by Applications, Drivers, and Users.
-- Person belongs to a Country.
-- Application references applicant Person, ApplicationType, and creating User.
-- LocalDrivingLicenseApplication references Application and LicenseClass.
-- TestAppointment references LocalDrivingLicenseApplication, TestType, creating User, and optionally a retake application.
-- Test is one-to-one with TestAppointment.
-- License references Application, Driver, LicenseClass, and creating User.
-- DetainedLicense references License, creating User, and optional release application/releasing User.
-- InternationalLicense references Application, Driver, source local license, and creating User.
+- unique NationalNo
+- unique UserName
+- unique User.PersonId
+- unique Driver.PersonId
+- unique LocalDrivingLicenseApplication.ApplicationID
+- one Test per TestAppointment
+- one active license per Driver + LicenseClass
+- one active InternationalLicense per Driver
+- one unreleased detention per License
 
-### 6.2 Important Business Rules Confirmed in Source
+## 11. Result architecture
 
-- National numbers are unique.
-- Usernames are unique.
-- A Person can have at most one User through a unique PersonId constraint.
-- A Driver is uniquely associated with a Person.
-- A License has at most one active record for a Driver + LicenseClass combination.
-- A Driver cannot have more than one active InternationalLicense.
-- A License cannot have more than one unreleased detention record.
-- A TestAppointment can have at most one Test result.
-
-## 7. Application Layer
-
-### 7.1 Services
-
-The Application layer contains service abstractions/implementations for authentication, users, people, applications, local driving-license applications, test appointments/workflow/tests, drivers, licenses, issuance, renewal, replacement, detention, international licenses, dashboard, countries, application types, license classes, and test types.
-
-### 7.2 DTOs
-
-Application DTOs represent use-case data and keep services/controllers from depending directly on persistence entities.
-
-### 7.3 Interfaces
-
-Application interfaces provide abstractions for repositories, Unit of Work, current-user access, and application services.
-
-### 7.4 Validation
-
-Validation occurs at request boundaries, Application services, workflow rules, and database constraints.
-
-Backend validation is authoritative because a client UI can be bypassed.
-
-### 7.5 Result Pattern
-
-The project uses Result and Result<T> for explicit operation outcomes.
+Application operations return `Result` or `Result<T>`.
 
 Known categories include:
 
@@ -202,252 +231,159 @@ Known categories include:
 - Forbidden
 - Failure
 
-The API converts these results into HTTP responses through a shared mapping layer.
+The API maps these outcomes to HTTP responses through a shared mapper.
 
-## 8. Infrastructure
+## 12. Unit of Work and transactions
 
-### 8.1 DbContext
+The runtime uses one scoped DbContext per request scope.
 
-EF Core is used to persist the domain model to SQL Server.
+The Unit of Work coordinates repository operations against that shared persistence context.
 
-### 8.2 EF Core
+Critical multi-write workflows use explicit transactions.
 
-The model snapshot reports EF Core 8.0.18.
+Serializable isolation is used for concurrency-sensitive operations.
 
-Configuration includes required properties, max lengths, decimal precision, foreign keys, delete behaviors, unique indexes, and filtered unique indexes.
+The transaction helper uses EF Core execution-strategy support and rolls back/clears tracked state on failure.
 
-### 8.3 Repositories
+The workflow callback remains responsible for SaveChanges and Commit.
 
-Repositories encapsulate database operations and keep persistence-specific queries out of Application services.
+## 13. Business workflow summary
 
-### 8.4 Unit of Work
-
-Unit of Work coordinates related repository operations within one persistence boundary.
-
-This is important for multi-step operations where several writes must succeed or fail together.
-
-### 8.5 Transactions
-
-Critical workflows use explicit transactions.
-
-The test-result workflow is protected by a Serializable transaction and coordinates appointment validation, Test creation, appointment locking, SaveChanges, and commit/rollback.
-
-International-license issuance is also transactional.
-
-### 8.6 Database Access
-
-SQL Server is accessed through Infrastructure/EF Core rather than directly from controllers.
-
-## 9. API
-
-### 9.1 API Architecture
-
-```text
-HTTP Request
-    ↓
-Controller
-    ↓
-Application Service
-    ↓
-Repository / Unit of Work
-    ↓
-EF Core
-    ↓
-SQL Server
-```
-
-### 9.2 Controllers
-
-Current controller areas include:
-
-Auth, People, Applications, ApplicationTypes, Countries, Dashboard, DetainedLicenses, Drivers, InternationalLicenses, LicenseClasses, LicenseIssuance, LicenseRenewal, LicenseReplacement, Licenses, LocalDrivingLicenseApplications, TestAppointments, TestTypes, TestWorkflow, Tests, and Users.
-
-### 9.3 Endpoints
-
-See API.md for the route inventory.
-
-### 9.4 Request/Response
-
-Confirmed examples:
-
-- LoginRequest / LoginResponse
-- IssueFirstLicenseRequest / IssueFirstLicenseResponse
-- RenewLicenseRequest
-- ReplaceLicenseRequest
-- CreateDetainedLicenseRequest
-- ReleaseDetainedLicenseRequest
-- ScheduleTestRequest
-- SaveTestResultRequest
-
-### 9.5 Error Handling
-
-Controllers use the shared Result-to-HTTP mapping mechanism. Global API error handling is used for unexpected exceptions.
-
-### 9.6 Authentication/Authorization
-
-JWT authentication is implemented. Policies such as StaffOnly, StaffOrAdmin, and AdminOnly are applied at controller/action level.
-
-The login action is anonymous and rate limited.
-
-## 10. Presentation
-
-The WPF client uses MVVM.
-
-- **WPF:** desktop UI.
-- **MVVM:** Views bind to ViewModels.
-- **ViewModels:** expose UI state and commands.
-- **Commands:** connect user actions to ViewModel operations.
-- **UserControls:** reusable presentation components.
-
-## 11. Major Business Workflows
-
-### 11.1 Local Driving License Application
+### Local license
 
 ```text
 Person
-  ↓
+ ↓
 Application
-  ↓
+ ↓
 LocalDrivingLicenseApplication
-  ↓
-Test scheduling
-  ↓
-Theory / Written / Practical
-  ↓
+ ↓
+Theory
+ ↓
+Written
+ ↓
+Practical
+ ↓
 All required tests passed
-  ↓
-License issuance
+ ↓
+First license
 ```
 
-### 11.2 Test
+### Test result
 
-The current TestService flow:
+Authenticated user → Serializable transaction → protected appointment read → validation → Test creation → appointment lock → SaveChanges → Commit.
 
-1. Require an authenticated user.
-2. Start a Serializable transaction.
-3. Get the appointment for the protected operation.
-4. Reject missing appointment.
-5. Reject locked appointment.
-6. Validate workflow eligibility.
-7. Reject duplicate Test result.
-8. Create Test.
-9. Lock appointment.
-10. Save changes.
-11. Commit.
-12. Roll back on failure.
+### First license
 
-Integration tests cover locked, future, invalid-order, duplicate, rollback, and concurrent scenarios.
+New local application → all required tests passed → driver resolution → no conflicting active license → create license → complete application → commit.
 
-### 11.3 First License Issuance
+### Renewal
 
-The first-license workflow is exposed through a dedicated controller/service and is coordinated as a multi-step business operation.
+Expired active license → renewal application → deactivate old license → create new license → complete application → commit.
 
-### 11.4 Renewal
+### Replacement
 
-Renewal is exposed through a dedicated controller/service and accepts the old license and notes.
+Active/non-expired license + Lost/Damaged reason → replacement application → deactivate old license → create replacement with old expiration → commit.
 
-### 11.5 Replacement
+### Detention/release
 
-Replacement is exposed through a dedicated controller/service and accepts the old license and replacement reason.
+Detain eligible license → create detention → deactivate license.
 
-### 11.6 Detention / Release
+Release detention → create release application → mark detention released → reactivate only when conditions allow → commit.
 
-Detention records a license and fine. Release uses the detained-license identifier and release workflow.
+### International
 
-The database prevents multiple unreleased detention records for one license.
+Class 3 active/non-expired local license → validation → application type 6 → one-year international license → commit.
 
-### 11.7 International License
+## 14. API
 
-Confirmed checks include:
+The API currently contains 20 controllers and **101 HTTP actions**.
 
-- License exists.
-- License is active.
-- License is not expired.
-- Required license class is satisfied.
-- Driver exists.
-- No active international license already exists.
+See `API.md` for the complete endpoint inventory.
 
-The application and international-license records are created inside a Serializable transaction.
+## 15. Security
 
-## 12. Database Design
+Implemented security controls include:
 
-See DATABASE.md.
+- JWT bearer authentication
+- issuer/audience/signing-key/lifetime validation
+- zero clock skew
+- active-user validation
+- policy-based authorization
+- BCrypt password hashing
+- login rate limiting
+- current-user abstraction
+- global exception handling
+- generic ProblemDetails
+- database integrity constraints
+- transactional/concurrency protection
 
-Important integrity mechanisms:
+## 16. Testing
 
-- Primary keys
-- Foreign keys
-- Restrictive delete behavior
-- Unique indexes
-- Filtered unique indexes
-- Decimal precision
-- Required fields
-- Length constraints
-
-## 13. API Reference
-
-See API.md. Update it whenever routes, contracts, or authorization policies change.
-
-## 14. Testing Strategy
-
-Test projects:
+Three test projects exist:
 
 - Application.UnitTests
 - API.IntegrationTests
 - Infrastructure.IntegrationTests
 
-Coverage includes normal behavior, validation, persistence constraints, transactions, rollback, and concurrency.
+API integration testing distinguishes controller boundary tests from real workflow integration tests.
 
-Latest user-reported historical run:
+Workflow tests exercise:
 
-| Project | Passed | Failed | Skipped |
+```text
+HTTP
+ → Controller
+ → real Application
+ → real Infrastructure
+ → EF Core
+ → isolated SQL Server
+```
+
+## 17. Historical test result
+
+| Suite | Passed | Failed | Skipped |
 |---|---:|---:|---:|
 | Application.UnitTests | 631 | 0 | 0 |
 | API.IntegrationTests | 364 | 0 | 0 |
 | Infrastructure.IntegrationTests | 492 | 0 | 0 |
+| **Total** | **1487** | **0** | **0** |
 
-These numbers are historical user-reported results, not a fresh execution claim.
+These are historical user-reported results, not a fresh execution claim.
 
-## 15. CI/CD
+## 18. CI
 
-Azure DevOps Pipeline configuration is present.
-
-The previously documented pipeline installs .NET 8, restores the solution, and builds Release configuration. Verify the current YAML before claiming a specific test/publish step is active.
-
-Recommended CI flow:
+Azure DevOps currently provides Continuous Integration:
 
 ```text
-Restore → Build → Unit Tests → Integration Tests → Reports
+main
+ ↓
+.NET 8
+ ↓
+restore
+ ↓
+Release build
+ ↓
+tests
+ ↓
+publish test results
 ```
 
-## 16. Error Handling
+No production deployment/CD stage is claimed.
 
-Expected business failures use Result types and are mapped to appropriate HTTP responses.
+## 19. Database migrations
 
-Typical categories:
+```text
+20260901000000_InitialCreate
+20260903234022_AddUniqueLocalApplicationApplicationId
+20260906111058_AddLicenseInternationalAndDetainedConstraints
+20260907233340_AddUserRole
+```
 
-- 400 Validation
-- 401 Authentication
-- 403 Authorization
-- 404 Not Found
-- 409 Conflict
-- 500 Unexpected failure
+See `DATABASE.md` for schema details.
 
-## 17. Security
+## 20. Design patterns
 
-Implemented:
-
-- JWT authentication
-- Policy-based authorization
-- BCrypt password hashing
-- Login rate limiting
-- Current-user abstraction
-- Database integrity constraints
-- Transactional concurrency protection
-
-See SECURITY.md.
-
-## 18. Design Patterns
+Implemented patterns include:
 
 - Dependency Injection
 - Repository
@@ -455,85 +391,32 @@ See SECURITY.md.
 - Service Layer
 - DTO
 - Result Pattern
-- MVVM
+- MVVM-oriented presentation
 
-## 19. Important Design Decisions
+This is not presented as a textbook implementation of one named architecture framework.
 
-### Thin Controllers
-Controllers adapt HTTP requests to Application services and should not contain business workflows.
-
-### Unit of Work
-A shared persistence boundary avoids partial commits across multi-step operations.
-
-### Transactions
-Serializable transactions are used where concurrent requests could violate business invariants.
-
-### Query/Command Separation Inside Services
-License query responsibilities are separated from issuance/renewal/replacement responsibilities.
-
-### Contracts vs DTOs
-DVLD.Contracts is kept separate from internal Application DTOs.
-
-## 20. Potential Improvements
+## 21. Future improvements
 
 These are future improvements, not current implementation claims:
 
-- Expand OpenAPI/Swagger documentation if needed.
-- Add API versioning.
-- Add structured logging/correlation IDs.
-- Standardize ProblemDetails responses.
-- Add health checks.
-- Add secret-vault integration.
-- Add automated dependency vulnerability scanning.
-- Add architecture tests for dependency direction.
-- Add performance tests for high-contention workflows.
-- Ensure CI executes and publishes all test results.
+- API versioning
+- health checks
+- production secret-vault integration
+- security headers
+- structured/correlation logging enhancements
+- dependency vulnerability scanning
+- dedicated architecture tests
+- performance/load testing
+- additional API abuse/security tests
 
-## 21. Running Project
+## 22. Documentation map
 
-```powershell
-dotnet restore
-dotnet build --configuration Release
-dotnet run --project ".\API\DVLD.Api\DVLD.Api.csproj" --launch-profile http
-```
-
-The HTTP profile has previously been used on http://localhost:5260; current launch settings are authoritative if the port changes.
-
-## 22. Running Tests
-
-```powershell
-dotnet test --configuration Release
-```
-
-## 23. Developer Guide
-
-When adding a feature:
-
-1. Identify the business concept.
-2. Modify Domain only when the domain model requires it.
-3. Define Application interfaces/use cases.
-4. Add DTOs.
-5. Implement the Application service.
-6. Add repository abstractions only where persistence access is needed.
-7. Implement Infrastructure access.
-8. Define transaction boundaries for multi-write workflows.
-9. Add API contract types.
-10. Add a thin controller.
-11. Add unit tests.
-12. Add integration tests.
-13. Update documentation.
-14. Build and run tests.
-15. Commit the complete change.
-
-### Responsibility rules
-
-- Business rules: Domain/Application.
-- Database/EF/SQL: Infrastructure.
-- HTTP/status codes: API.
-- UI state/commands: Presentation.
-
-## 24. Conclusion
-
-DVLD is a multi-layered .NET 8 system with separation between Domain, Application, Infrastructure, API contracts, HTTP, and WPF presentation.
-
-Keep this documentation versioned with the code. When behavior changes, update the relevant documentation in the same commit.
+| Document | Purpose |
+|---|---|
+| SYSTEM-DOCUMENTATION.md | System-wide overview |
+| ARCHITECTURE.md | Architectural boundaries |
+| API.md | HTTP endpoint reference |
+| BUSINESS-WORKFLOWS.md | Business rules and workflows |
+| DATABASE.md | SQL/EF model and constraints |
+| SECURITY.md | Security controls |
+| TESTING.md | Test architecture and verification |
