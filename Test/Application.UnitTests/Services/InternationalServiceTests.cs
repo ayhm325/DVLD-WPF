@@ -11,9 +11,7 @@ using Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Data;
-
 namespace Application.UnitTests.Services;
-
 public sealed class InternationalServiceTests
 {
     private readonly Mock<IInternationalRepository> _repository = new();
@@ -24,7 +22,6 @@ public sealed class InternationalServiceTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
     private readonly Mock<ILogger<InternationalService>> _logger = new();
-
     private InternationalService CreateService()
     {
         return new InternationalService(
@@ -36,18 +33,15 @@ public sealed class InternationalServiceTests
             _unitOfWork.Object,
             _logger.Object);
     }
-
     private void SetupAuthenticatedUser(int userId = 10)
     {
         _currentUserService
             .SetupGet(x => x.IsLoggedIn)
             .Returns(true);
-
         _currentUserService
             .SetupGet(x => x.UserId)
             .Returns(userId);
     }
-
     private void SetupTransaction()
     {
         _unitOfWork
@@ -71,7 +65,6 @@ public sealed class InternationalServiceTests
                 }
             });
     }
-
     private void SetupRollback()
     {
         _transaction
@@ -79,7 +72,6 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
-
     private void SetupCommit()
     {
         _transaction
@@ -87,7 +79,6 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
-
     private void SetupApplicationTypeSuccess()
     {
         _applicationTypeService
@@ -99,7 +90,6 @@ public sealed class InternationalServiceTests
                         ApplicationTypeId = 6
                     }));
     }
-
     private void SetupLicenseQuerySuccess(LicenseDto? license = null)
     {
         _licenseQueryService
@@ -108,7 +98,6 @@ public sealed class InternationalServiceTests
                 Result<LicenseDto>.Success(
                     license ?? CreateValidLocalLicense()));
     }
-
     private void SetupLicenseQueryForLocalInfo(LicenseDto license)
     {
         _licenseQueryService
@@ -116,7 +105,6 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(
                 Result<LicenseDto>.Success(license));
     }
-
     private static LicenseDto CreateValidLocalLicense(
         int licenseId = 100,
         int driverId = 20,
@@ -146,28 +134,23 @@ public sealed class InternationalServiceTests
             }
         };
     }
-
     private void SetupSuccessfulIssue()
     {
         SetupAuthenticatedUser();
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
-
         _repository
             .Setup(x => x.AddAsync(
                 It.IsAny<InternationalLicense>()))
@@ -176,20 +159,16 @@ public sealed class InternationalServiceTests
                 entity.InternationalLicenseID = 900;
             })
             .Returns(Task.CompletedTask);
-
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
-
         _applicationService
-            .Setup(x => x.CompleteApplicationAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700))
             .ReturnsAsync(Result.Success());
-
         SetupCommit();
         SetupRollback();
     }
-
     [Fact]
     public async Task GetAllAsync_WhenRepositoryReturnsEntities_ReturnsMappedDtos()
     {
@@ -218,43 +197,31 @@ public sealed class InternationalServiceTests
                 CreatedByUserID = 6
             }
         };
-
         _repository
             .Setup(x => x.GetAllAsync())
             .ReturnsAsync(entities);
-
         var result = await CreateService().GetAllAsync();
-
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         var value = result.Value!;
-
         Assert.Equal(2, value.Count);
-
         Assert.Equal(1, value[0].InternationalLicenseID);
         Assert.Equal(10, value[0].ApplicationID);
         Assert.Equal(20, value[0].DriverID);
-
         Assert.Equal(2, value[1].InternationalLicenseID);
         Assert.False(value[1].IsActive);
     }
-
     [Fact]
     public async Task GetAllAsync_WhenRepositoryReturnsEmptyList_ReturnsEmptySuccess()
     {
         _repository
             .Setup(x => x.GetAllAsync())
             .ReturnsAsync(new List<InternationalLicense>());
-
         var result = await CreateService().GetAllAsync();
-
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         Assert.Empty(result.Value!);
     }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -264,35 +231,29 @@ public sealed class InternationalServiceTests
     {
         var result =
             await CreateService().GetByIdAsync(id);
-
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
             "Invalid international license ID.",
             result.Error);
-
         _repository.Verify(
             x => x.GetByIdAsync(It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task GetByIdAsync_WhenLicenseDoesNotExist_ReturnsNotFound()
     {
         _repository
             .Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync((InternationalLicense?)null);
-
         var result =
             await CreateService().GetByIdAsync(100);
-
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
             "International license not found.",
             result.Error);
     }
-
     [Fact]
     public async Task GetByIdAsync_WhenLicenseExists_ReturnsMappedDto()
     {
@@ -307,25 +268,19 @@ public sealed class InternationalServiceTests
             IsActive = true,
             CreatedByUserID = 50
         };
-
         _repository
             .Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(entity);
-
         var result =
             await CreateService().GetByIdAsync(100);
-
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         var value = result.Value!;
-
         Assert.Equal(100, value.InternationalLicenseID);
         Assert.Equal(200, value.ApplicationID);
         Assert.Equal(300, value.DriverID);
         Assert.Equal(400, value.IssuedUsingLocalLicenseID);
     }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -334,18 +289,15 @@ public sealed class InternationalServiceTests
     {
         var result =
             await CreateService().GetByDriverIdAsync(driverId);
-
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
             "Invalid driver ID.",
             result.Error);
-
         _repository.Verify(
             x => x.GetByDriverIdAsync(It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task GetByDriverIdAsync_WhenRepositoryReturnsEntities_ReturnsMappedDtos()
     {
@@ -363,19 +315,14 @@ public sealed class InternationalServiceTests
                         IsActive = true
                     }
                 });
-
         var result =
             await CreateService().GetByDriverIdAsync(20);
-
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         var value = result.Value!;
-
         Assert.Single(value);
         Assert.Equal(20, value[0].DriverID);
     }
-
     [Fact]
     public async Task GetByDriverIdAsync_WhenRepositoryReturnsEmptyList_ReturnsEmptySuccess()
     {
@@ -383,16 +330,12 @@ public sealed class InternationalServiceTests
             .Setup(x => x.GetByDriverIdAsync(20))
             .ReturnsAsync(
                 new List<InternationalLicense>());
-
         var result =
             await CreateService().GetByDriverIdAsync(20);
-
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         Assert.Empty(result.Value!);
     }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -401,35 +344,29 @@ public sealed class InternationalServiceTests
     {
         var result =
             await CreateService().GetByApplicationIdAsync(applicationId);
-
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
             "Invalid application ID.",
             result.Error);
-
         _repository.Verify(
             x => x.GetByApplicationIdAsync(It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task GetByApplicationIdAsync_WhenLicenseDoesNotExist_ReturnsNotFound()
     {
         _repository
             .Setup(x => x.GetByApplicationIdAsync(100))
             .ReturnsAsync((InternationalLicense?)null);
-
         var result =
             await CreateService().GetByApplicationIdAsync(100);
-
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
             "International license not found.",
             result.Error);
     }
-
     [Fact]
     public async Task GetByApplicationIdAsync_WhenLicenseExists_ReturnsSuccess()
     {
@@ -443,18 +380,14 @@ public sealed class InternationalServiceTests
                     DriverID = 20,
                     IssuedUsingLocalLicenseID = 30
                 });
-
         var result =
             await CreateService().GetByApplicationIdAsync(100);
-
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         Assert.Equal(
             100,
             result.Value!.ApplicationID);
     }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -463,18 +396,15 @@ public sealed class InternationalServiceTests
     {
         var result =
             await CreateService().GetByLocalLicenseIdAsync(localLicenseId);
-
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
             "Invalid local license ID.",
             result.Error);
-
         _repository.Verify(
             x => x.GetByLocalLicenseIdAsync(It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task GetByLocalLicenseIdAsync_WhenRepositoryReturnsEntities_ReturnsSuccess()
     {
@@ -491,144 +421,104 @@ public sealed class InternationalServiceTests
                         IssuedUsingLocalLicenseID = 100
                     }
                 });
-
         var result =
             await CreateService().GetByLocalLicenseIdAsync(100);
-
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         var value = result.Value!;
-
         Assert.Single(value);
         Assert.Equal(
             100,
             value[0].IssuedUsingLocalLicenseID);
     }
-
     [Fact]
     public async Task HasActiveInternationalLicenseAsync_DelegatesToRepository()
     {
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(true);
-
-        var result =
-            await CreateService()
-                .HasActiveInternationalLicenseAsync(20);
-
+        var result = await CreateService().HasActiveInternationalLicenseAsync(20);
         Assert.True(result);
-
         _repository.Verify(
             x => x.HasActiveInternationalLicenseAsync(20),
             Times.Once);
     }
-
     // =========================================================
     // IssueInternationalLicenseAsync
     // Validation / Authentication
     // =========================================================
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
     public async Task IssueInternationalLicenseAsync_WhenLocalLicenseIdIsInvalid_ReturnsValidationFailure(
         int localLicenseId)
     {
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(localLicenseId);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(localLicenseId);
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
             "Invalid local license ID.",
             result.Error);
-
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenUserIsNotAuthenticated_ReturnsForbidden()
     {
         _currentUserService
             .SetupGet(x => x.IsLoggedIn)
             .Returns(false);
-
         _currentUserService
             .SetupGet(x => x.UserId)
             .Returns(0);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Forbidden,
             result.ErrorType);
-
         Assert.Equal(
             "Authenticated user is required.",
             result.Error);
-
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(
                 It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenUserIdIsInvalid_ReturnsForbidden()
     {
         _currentUserService
             .SetupGet(x => x.IsLoggedIn)
             .Returns(true);
-
         _currentUserService
             .SetupGet(x => x.UserId)
             .Returns(0);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Forbidden,
             result.ErrorType);
-
         Assert.Equal(
             "Authenticated user is required.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenApplicationTypeFails_PropagatesFailure()
     {
         SetupAuthenticatedUser();
-
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(6))
             .ReturnsAsync(
-                Result<ApplicationTypeDto>.FromNotFound(
-                    "Application type not found."));
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+                Result<ApplicationTypeDto>.FromNotFound("Application type not found."));
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "Application type not found.",
             result.Error);
-
         _unitOfWork.Verify(
             x => x.ExecuteInTransactionAsync(
                 It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
@@ -636,31 +526,23 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenApplicationTypeValueIsNull_ReturnsNotFound()
     {
         SetupAuthenticatedUser();
-
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(6))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(null!));
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "International application type not found.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenLicenseQueryFails_RollsBackAndPropagates()
     {
@@ -668,37 +550,27 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         _licenseQueryService
             .Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(
-                Result<LicenseDto>.FromNotFound(
-                    "Local license not found."));
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+                Result<LicenseDto>.FromNotFound("Local license not found."));
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "Local license not found.",
             result.Error);
-
         _transaction.Verify(
             x => x.RollbackAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
-
         _transaction.Verify(
             x => x.CommitAsync(
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenLicenseValueIsNull_ReturnsNotFoundAndRollsBack()
     {
@@ -706,31 +578,23 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         _licenseQueryService
             .Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(
                 Result<LicenseDto>.Success(null!));
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "Local license not found.",
             result.Error);
-
         _transaction.Verify(
             x => x.RollbackAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenLicenseClassIsNotThree_ReturnsConflictAndRollsBack()
     {
@@ -738,31 +602,22 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         var license = CreateValidLocalLicense();
         license.LicenseClassID = 2;
-
         SetupLicenseQuerySuccess(license);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "Only class 3 licenses can be issued internationally.",
             result.Error);
-
         _transaction.Verify(
             x => x.RollbackAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenLicenseIsInactive_ReturnsConflict()
     {
@@ -770,26 +625,18 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         var license = CreateValidLocalLicense();
         license.IsActive = false;
-
         SetupLicenseQuerySuccess(license);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "The local license is not active.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenLicenseIsExpired_ReturnsConflict()
     {
@@ -797,27 +644,19 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         var license = CreateValidLocalLicense();
         license.ExpirationDate =
             DateTime.UtcNow.AddMinutes(-1);
-
         SetupLicenseQuerySuccess(license);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "The local license is expired.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenDriverIsMissing_ReturnsNotFound()
     {
@@ -825,26 +664,18 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         var license = CreateValidLocalLicense();
         license.Driver = null;
-
         SetupLicenseQuerySuccess(license);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "Driver information is not available.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenDriverPersonIdIsInvalid_ReturnsFailure()
     {
@@ -852,26 +683,18 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         var license = CreateValidLocalLicense();
         license.Driver!.PersonID = 0;
-
         SetupLicenseQuerySuccess(license);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Failure,
             result.ErrorType);
-
         Assert.Equal(
             "The license has invalid driver information.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenInternationalLicenseAlreadyExists_ReturnsConflict()
     {
@@ -880,30 +703,22 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(true);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "An international license already exists for this local license.",
             result.Error);
-
         _repository.Verify(
             x => x.HasActiveInternationalLicenseAsync(
                 It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenDriverAlreadyHasActiveInternationalLicense_ReturnsConflict()
     {
@@ -912,29 +727,21 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(true);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "The driver already has an active international license.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenApplicationCreationFails_RollsBackAndPropagates()
     {
@@ -943,46 +750,35 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.FromConflict(
                     "Application conflict."));
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "Application conflict.",
             result.Error);
-
         _repository.Verify(
             x => x.AddAsync(
                 It.IsAny<InternationalLicense>()),
             Times.Never);
-
         _unitOfWork.Verify(
             x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenApplicationIdIsInvalid_RollsBack()
     {
@@ -991,40 +787,30 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.Success(0));
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Failure,
             result.ErrorType);
-
         Assert.Equal(
             "Failed to create international application.",
             result.Error);
-
         _repository.Verify(
             x => x.AddAsync(
                 It.IsAny<InternationalLicense>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_CreatesApplicationWithCorrectData()
     {
@@ -1033,45 +819,33 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
-
         _repository
             .Setup(x => x.AddAsync(
                 It.IsAny<InternationalLicense>()))
             .Callback<InternationalLicense>(x =>
                 x.InternationalLicenseID = 900)
             .Returns(Task.CompletedTask);
-
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
-
         _applicationService
-            .Setup(x => x.CompleteApplicationAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700))
             .ReturnsAsync(Result.Success());
-
         SetupCommit();
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsSuccess);
-
         _applicationService.Verify(
             x => x.AddNewApplicationAsync(
                 It.Is<CreateApplicationDto>(dto =>
@@ -1079,7 +853,6 @@ public sealed class InternationalServiceTests
                     dto.ApplicationTypeID == 6)),
             Times.Once);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenSaveReturnsZero_RollsBack()
     {
@@ -1088,57 +861,44 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
-
         _repository
             .Setup(x => x.AddAsync(
                 It.IsAny<InternationalLicense>()))
             .Callback<InternationalLicense>(x =>
                 x.InternationalLicenseID = 900)
             .Returns(Task.CompletedTask);
-
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Failure,
             result.ErrorType);
-
         Assert.Equal(
             "Failed to save international license.",
             result.Error);
-
         _applicationService.Verify(
-            x => x.CompleteApplicationAsync(
+            x => x.CompleteApplicationStateAsync(
                 It.IsAny<int>()),
             Times.Never);
-
         _transaction.Verify(
             x => x.CommitAsync(
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenEntityIdIsNotGenerated_RollsBack()
     {
@@ -1147,45 +907,34 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
-
         _repository
             .Setup(x => x.AddAsync(
                 It.IsAny<InternationalLicense>()))
             .Returns(Task.CompletedTask);
-
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Failure,
             result.ErrorType);
-
         Assert.Equal(
             "Failed to save international license.",
             result.Error);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_CreatesInternationalLicenseWithCorrectData()
     {
@@ -1194,23 +943,18 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
-
         InternationalLicense? createdEntity = null;
-
         _repository
             .Setup(x => x.AddAsync(
                 It.IsAny<InternationalLicense>()))
@@ -1220,50 +964,35 @@ public sealed class InternationalServiceTests
                 x.InternationalLicenseID = 900;
             })
             .Returns(Task.CompletedTask);
-
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
-
         _applicationService
-            .Setup(x => x.CompleteApplicationAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700))
             .ReturnsAsync(Result.Success());
-
         SetupCommit();
-
         var before = DateTime.UtcNow;
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         var after = DateTime.UtcNow;
-
         Assert.True(result.IsSuccess);
         Assert.Equal(900, result.Value);
-
         Assert.NotNull(createdEntity);
-
         var entity = createdEntity!;
-
         Assert.Equal(700, entity.ApplicationID);
         Assert.Equal(20, entity.DriverID);
         Assert.Equal(100, entity.IssuedUsingLocalLicenseID);
         Assert.True(entity.IsActive);
         Assert.Equal(55, entity.CreatedByUserID);
-
         Assert.InRange(
             entity.IssueDate,
             before,
             after);
-
         Assert.InRange(
             entity.ExpirationDate,
             before.AddYears(1),
             after.AddYears(1));
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenCompletingApplicationFails_RollsBack()
     {
@@ -1272,75 +1001,56 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         SetupRollback();
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
         _repository
             .Setup(x => x.HasActiveInternationalLicenseAsync(20))
             .ReturnsAsync(false);
-
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
-
         _repository
             .Setup(x => x.AddAsync(
                 It.IsAny<InternationalLicense>()))
             .Callback<InternationalLicense>(x =>
                 x.InternationalLicenseID = 900)
             .Returns(Task.CompletedTask);
-
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
-
         _applicationService
-            .Setup(x => x.CompleteApplicationAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700))
             .ReturnsAsync(
                 Result.Conflict(
                     "Could not complete application."));
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "Could not complete application.",
             result.Error);
-
         _transaction.Verify(
             x => x.RollbackAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
-
         _transaction.Verify(
             x => x.CommitAsync(
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenEverythingIsValid_ReturnsCreatedLicenseId()
     {
         SetupSuccessfulIssue();
-
-        var result =
-            await CreateService()
-                .IssueInternationalLicenseAsync(100);
-
+        var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsSuccess);
         Assert.Equal(900, result.Value);
-
         _repository.Verify(
             x => x.AddAsync(
                 It.Is<InternationalLicense>(license =>
@@ -1350,27 +1060,22 @@ public sealed class InternationalServiceTests
                     license.IsActive &&
                     license.CreatedByUserID == 10)),
             Times.Once);
-
         _unitOfWork.Verify(
             x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
-
         _applicationService.Verify(
-            x => x.CompleteApplicationAsync(700),
+            x => x.CompleteApplicationStateAsync(700),
             Times.Once);
-
         _transaction.Verify(
             x => x.CommitAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
-
         _transaction.Verify(
             x => x.RollbackAsync(
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
-
     [Fact]
     public async Task IssueInternationalLicenseAsync_WhenUnexpectedExceptionOccurs_RollsBackAndRethrows()
     {
@@ -1378,76 +1083,58 @@ public sealed class InternationalServiceTests
         SetupTransaction();
         SetupApplicationTypeSuccess();
         SetupRollback();
-
         _licenseQueryService
             .Setup(x => x.GetByIdAsync(100))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database failure."));
-
         var exception =
             await Assert.ThrowsAsync<InvalidOperationException>(
                 () => CreateService()
                     .IssueInternationalLicenseAsync(100));
-
         Assert.Equal(
             "Database failure.",
             exception.Message);
-
         _transaction.Verify(
             x => x.RollbackAsync(
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
     public async Task GetLocalLicenseInfoAsync_WhenLicenseIdIsInvalid_ReturnsValidationFailure(
         int licenseId)
     {
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(licenseId);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(licenseId);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Validation,
             result.ErrorType);
-
         Assert.Equal(
             "Invalid local license ID.",
             result.Error);
-
         _licenseQueryService.Verify(
             x => x.GetByIdAsync(
                 It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenLicenseQueryFails_PropagatesFailure()
     {
         _licenseQueryService
             .Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(
-                Result<LicenseDto>.FromNotFound(
-                    "Local license not found."));
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+                Result<LicenseDto>.FromNotFound("Local license not found."));
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "Local license not found.",
             result.Error);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenLicenseValueIsNull_ReturnsNotFound()
     {
@@ -1455,161 +1142,109 @@ public sealed class InternationalServiceTests
             .Setup(x => x.GetByIdAsync(100))
             .ReturnsAsync(
                 Result<LicenseDto>.Success(null!));
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "Local license not found.",
             result.Error);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenLicenseClassIsNotThree_ReturnsConflict()
     {
         var license = CreateValidLocalLicense();
         license.LicenseClassID = 2;
-
         SetupLicenseQueryForLocalInfo(license);
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "Only class 3 licenses can be converted to an international license.",
             result.Error);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenLicenseIsInactive_ReturnsConflict()
     {
         var license = CreateValidLocalLicense();
         license.IsActive = false;
-
         SetupLicenseQueryForLocalInfo(license);
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "The local license is not active.",
             result.Error);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenLicenseIsExpired_ReturnsConflict()
     {
         var license = CreateValidLocalLicense();
-
         license.ExpirationDate =
             DateTime.UtcNow.AddMinutes(-1);
-
         SetupLicenseQueryForLocalInfo(license);
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "The local license is expired.",
             result.Error);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenDriverIsMissing_ReturnsNotFound()
     {
         var license = CreateValidLocalLicense();
         license.Driver = null;
-
         SetupLicenseQueryForLocalInfo(license);
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.NotFound,
             result.ErrorType);
-
         Assert.Equal(
             "Driver information is not available.",
             result.Error);
-
         _repository.Verify(
             x => x.ExistsByLocalLicenseAsync(
                 It.IsAny<int>()),
             Times.Never);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenInternationalLicenseAlreadyExists_ReturnsConflict()
     {
         var license = CreateValidLocalLicense();
-
         SetupLicenseQueryForLocalInfo(license);
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(true);
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
         Assert.Equal(
             ErrorType.Conflict,
             result.ErrorType);
-
         Assert.Equal(
             "An international license already exists for this local license.",
             result.Error);
     }
-
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenEverythingIsValid_ReturnsDriverLicenseInfo()
     {
         var license = CreateValidLocalLicense();
-
         SetupLicenseQueryForLocalInfo(license);
-
         _repository
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
-
-        var result =
-            await CreateService()
-                .GetLocalLicenseInfoAsync(100);
-
+        var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         var value = result.Value!;
-
         Assert.Equal(100, value.LicenseId);
         Assert.Equal(20, value.DriverId);
         Assert.Equal(30, value.PersonID);
