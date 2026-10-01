@@ -17,75 +17,28 @@ public sealed class UnitOfWork : IUnitOfWork
     }
 
     public Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default)
-    {
-        return _context.SaveChangesAsync(cancellationToken);
-    }
+        CancellationToken cancellationToken = default) =>
+        _context.SaveChangesAsync(cancellationToken);
 
     public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(
         CancellationToken cancellationToken = default)
     {
-        var transaction = await _context.Database
-            .BeginTransactionAsync(cancellationToken);
+        var transaction =
+            await _context.Database.BeginTransactionAsync(cancellationToken);
 
-        return new UnitOfWorkTransaction(transaction);
+        return new UnitOfWorkTransaction(_context, transaction);
     }
 
     public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default)
     {
-        var transaction = await _context.Database
-            .BeginTransactionAsync(
+        var transaction =
+            await _context.Database.BeginTransactionAsync(
                 isolationLevel,
                 cancellationToken);
 
-        return new UnitOfWorkTransaction(transaction);
-    }
-
-    private sealed class UnitOfWorkTransaction
-        : IUnitOfWorkTransaction
-    {
-        private readonly IDbContextTransaction _transaction;
-        private bool _isCompleted;
-
-        public UnitOfWorkTransaction(
-            IDbContextTransaction transaction)
-        {
-            _transaction = transaction
-                ?? throw new ArgumentNullException(nameof(transaction));
-        }
-
-        internal bool IsCompleted => _isCompleted;
-
-        public async Task CommitAsync(
-            CancellationToken cancellationToken = default)
-        {
-            if (_isCompleted)
-            {
-                return;
-            }
-
-            await _transaction.CommitAsync(cancellationToken);
-            _isCompleted = true;
-        }
-
-        public async Task RollbackAsync(
-            CancellationToken cancellationToken = default)
-        {
-            if (_isCompleted)
-            {
-                return;
-            }
-
-            await _transaction.RollbackAsync(cancellationToken);
-            _isCompleted = true;
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            return _transaction.DisposeAsync();
-        }
+        return new UnitOfWorkTransaction(_context, transaction);
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
@@ -99,11 +52,15 @@ public sealed class UnitOfWork : IUnitOfWork
 
         return await strategy.ExecuteAsync(async () =>
         {
+            var dbTransaction =
+                await _context.Database.BeginTransactionAsync(
+                    isolationLevel,
+                    cancellationToken);
+
             await using var transaction =
                 new UnitOfWorkTransaction(
-                    await _context.Database.BeginTransactionAsync(
-                        isolationLevel,
-                        cancellationToken));
+                    _context,
+                    dbTransaction);
 
             try
             {
@@ -113,11 +70,12 @@ public sealed class UnitOfWork : IUnitOfWork
                 {
                     await transaction.RollbackAsync(cancellationToken);
                     _context.ChangeTracker.Clear();
+
+                    return result;
                 }
-                else if (!transaction.IsCompleted)
-                {
+
+                if (!transaction.IsCompleted)
                     await transaction.CommitAsync(cancellationToken);
-                }
 
                 return result;
             }
@@ -128,5 +86,52 @@ public sealed class UnitOfWork : IUnitOfWork
                 throw;
             }
         });
+    }
+
+    private sealed class UnitOfWorkTransaction : IUnitOfWorkTransaction
+    {
+        private readonly DVLDDbContext _context;
+        private readonly IDbContextTransaction _transaction;
+
+        private bool _isCompleted;
+
+        public UnitOfWorkTransaction(
+            DVLDDbContext context,
+            IDbContextTransaction transaction)
+        {
+            _context = context
+                ?? throw new ArgumentNullException(nameof(context));
+
+            _transaction = transaction
+                ?? throw new ArgumentNullException(nameof(transaction));
+        }
+
+        internal bool IsCompleted => _isCompleted;
+
+        public async Task CommitAsync(
+            CancellationToken cancellationToken = default)
+        {
+            if (_isCompleted)
+                return;
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await _transaction.CommitAsync(cancellationToken);
+
+            _isCompleted = true;
+        }
+
+        public async Task RollbackAsync(
+            CancellationToken cancellationToken = default)
+        {
+            if (_isCompleted)
+                return;
+
+            await _transaction.RollbackAsync(cancellationToken);
+
+            _isCompleted = true;
+        }
+
+        public ValueTask DisposeAsync() =>
+            _transaction.DisposeAsync();
     }
 }
