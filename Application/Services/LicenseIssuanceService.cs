@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.LicenseDTO;
@@ -231,7 +231,7 @@ public sealed class LicenseIssuanceService(
                     "Failed to save the driving license.");
 
             var completeResult =
-                await _applicationService.CompleteApplicationAsync(applicationId);
+                await _applicationService.CompleteApplicationStateAsync(applicationId);
 
             if (completeResult.IsFailure)
                 return PropagateFailure<int>(completeResult);

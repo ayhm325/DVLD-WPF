@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 
 namespace Application.Interfaces;
@@ -53,4 +53,12 @@ public interface IApplicationService
 
     Task<Result>
         CancelApplicationAsync(int id);
+
+    /// <summary>
+    /// Mutates the application status to Completed without calling SaveChangesAsync.
+    /// Intended for use by outer workflow services that manage their own transaction
+    /// and persistence boundary. The outer caller is responsible for flushing changes.
+    /// </summary>
+    Task<Result>
+        CompleteApplicationStateAsync(int id);
 }

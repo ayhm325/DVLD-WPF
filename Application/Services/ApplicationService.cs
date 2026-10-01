@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.Interfaces;
 using Application.Mappers;
@@ -157,6 +157,20 @@ public sealed class ApplicationService(
 
     public async Task<Result> CompleteApplicationAsync(int applicationId)
     {
+        var stateResult = await CompleteApplicationStateAsync(applicationId);
+        if (stateResult.IsFailure)
+            return stateResult;
+
+        return await SaveAsync("Complete application failed.");
+    }
+
+    /// <summary>
+    /// Mutates the application status to Completed without flushing to the database.
+    /// Use this when called from within an outer Unit of Work transaction so that
+    /// the outer workflow controls the single SaveChangesAsync boundary.
+    /// </summary>
+    public async Task<Result> CompleteApplicationStateAsync(int applicationId)
+    {
         var entityResult = await GetTrackedApplicationAsync(applicationId);
         if (entityResult.IsFailure)
             return Result.FromFailure(entityResult);
@@ -169,7 +183,7 @@ public sealed class ApplicationService(
 
         entity.ApplicationStatus = AppStatus.Completed;
         entity.LastStatusDate = DateTime.UtcNow;
-        return await SaveAsync("Complete application failed.");
+        return Result.Success();
     }
 
     private bool IsAuthenticated() =>

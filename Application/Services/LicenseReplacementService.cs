@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
@@ -165,7 +165,7 @@ public sealed class LicenseReplacementService(
                             "Failed to save the replacement license."));
 
                 var completeResult =
-                    await _applicationService.CompleteApplicationAsync(applicationId);
+                    await _applicationService.CompleteApplicationStateAsync(applicationId);
 
                 if (completeResult.IsFailure)
                     return await RollbackAsync(

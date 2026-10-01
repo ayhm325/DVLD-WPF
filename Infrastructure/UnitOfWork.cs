@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+using Application.Common.Results;
+using Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Data;
@@ -46,6 +47,7 @@ public sealed class UnitOfWork : IUnitOfWork
         : IUnitOfWorkTransaction
     {
         private readonly IDbContextTransaction _transaction;
+        private bool _isCompleted;
 
         public UnitOfWorkTransaction(
             IDbContextTransaction transaction)
@@ -54,16 +56,30 @@ public sealed class UnitOfWork : IUnitOfWork
                 ?? throw new ArgumentNullException(nameof(transaction));
         }
 
-        public Task CommitAsync(
+        internal bool IsCompleted => _isCompleted;
+
+        public async Task CommitAsync(
             CancellationToken cancellationToken = default)
         {
-            return _transaction.CommitAsync(cancellationToken);
+            if (_isCompleted)
+            {
+                return;
+            }
+
+            await _transaction.CommitAsync(cancellationToken);
+            _isCompleted = true;
         }
 
-        public Task RollbackAsync(
+        public async Task RollbackAsync(
             CancellationToken cancellationToken = default)
         {
-            return _transaction.RollbackAsync(cancellationToken);
+            if (_isCompleted)
+            {
+                return;
+            }
+
+            await _transaction.RollbackAsync(cancellationToken);
+            _isCompleted = true;
         }
 
         public ValueTask DisposeAsync()
@@ -73,9 +89,9 @@ public sealed class UnitOfWork : IUnitOfWork
     }
 
     public async Task<T> ExecuteInTransactionAsync<T>(
-    Func<IUnitOfWorkTransaction, Task<T>> operation,
-    IsolationLevel isolationLevel,
-    CancellationToken cancellationToken = default)
+        Func<IUnitOfWorkTransaction, Task<T>> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operation);
 
@@ -92,6 +108,16 @@ public sealed class UnitOfWork : IUnitOfWork
             try
             {
                 var result = await operation(transaction);
+
+                if (result is Result { IsFailure: true })
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    _context.ChangeTracker.Clear();
+                }
+                else if (!transaction.IsCompleted)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                }
 
                 return result;
             }

@@ -10,8 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DVLD.Api.Security;
 
-public sealed class JwtTokenService(IOptions<JwtOptions> options)
-    : IJwtTokenService
+public sealed class JwtTokenService(IOptions<JwtOptions> options) : IJwtTokenService
 {
     private readonly JwtOptions _options =
         options?.Value ?? throw new ArgumentNullException(nameof(options));
@@ -32,8 +31,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options)
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_options.SecretKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
 
         var credentials = new SigningCredentials(
             key,
