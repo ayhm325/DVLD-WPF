@@ -5,17 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public sealed class ApplicationRepository
-    : IApplicationRepository
+public sealed class ApplicationRepository : IApplicationRepository
 {
     private readonly DVLDDbContext _context;
 
-    public ApplicationRepository(
-        DVLDDbContext context)
+    public ApplicationRepository(DVLDDbContext context)
     {
-        _context =
-            context
-            ?? throw new ArgumentNullException(
+        _context = context ?? throw new ArgumentNullException(
                 nameof(context));
     }
 
