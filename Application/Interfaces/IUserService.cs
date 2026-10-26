@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.UserDTO;
 
 namespace Application.Interfaces;
@@ -24,6 +24,10 @@ public interface IUserService
     Task<Result> DeleteUserAsync(int id);
 
     Task<bool> IsUsernameTakenForAnotherUserAsync(string username,int userId);
+
+    Task<bool> IsUserActiveAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
 
     Task<Result> ChangePasswordAsync(int userId,ChangePasswordDto dto);
 }

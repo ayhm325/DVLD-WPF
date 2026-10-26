@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Application.Common.Results;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
@@ -399,6 +400,106 @@ public sealed class AuthControllerTests
             HttpStatusCode.InternalServerError,
             "An unexpected error occurred.",
             "The server could not complete the request.");
+    }
+
+    [Fact]
+    public async Task JwtBearer_WhenTokenIsValidAndUserIsActive_AllowsAccessViaUserService()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock
+            .Setup(x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        SetupCurrentUser(factory, 10, "jwtuser", "Jwt User", UserRole.Staff);
+
+        await using var jwtFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.PostConfigure<Microsoft.AspNetCore.Authentication.AuthenticationOptions>(options =>
+                {
+                    options.DefaultAuthenticateScheme =
+                        Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme =
+                        Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+                });
+            });
+        });
+
+        using var scope = jwtFactory.Services.CreateScope();
+        var jwtTokenService =
+            scope.ServiceProvider.GetRequiredService<Application.Interfaces.IJwtTokenService>();
+
+        var tokenResult = jwtTokenService.GenerateToken(new UserDto
+        {
+            UserId = 10,
+            PersonId = 20,
+            UserName = "jwtuser",
+            FullName = "Jwt User",
+            IsActive = true,
+            Role = UserRole.Staff
+        });
+
+        var client = jwtFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+
+        var response = await client.GetAsync("/api/Auth/me");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        factory.UserServiceMock.Verify(
+            x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task JwtBearer_WhenUserIsInactiveOrMissing_ReturnsUnauthorizedViaUserService()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock
+            .Setup(x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        await using var jwtFactory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.PostConfigure<Microsoft.AspNetCore.Authentication.AuthenticationOptions>(options =>
+                {
+                    options.DefaultAuthenticateScheme =
+                        Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme =
+                        Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+                });
+            });
+        });
+
+        using var scope = jwtFactory.Services.CreateScope();
+        var jwtTokenService =
+            scope.ServiceProvider.GetRequiredService<Application.Interfaces.IJwtTokenService>();
+
+        var tokenResult = jwtTokenService.GenerateToken(new UserDto
+        {
+            UserId = 10,
+            PersonId = 20,
+            UserName = "inactiveuser",
+            FullName = "Inactive User",
+            IsActive = true,
+            Role = UserRole.Staff
+        });
+
+        var client = jwtFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+
+        var response = await client.GetAsync("/api/Auth/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.UserServiceMock.Verify(
+            x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     private static void SetupCurrentUser(

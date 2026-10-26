@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -173,7 +173,11 @@ public sealed class LicenseRepository(DVLDDbContext context)
                     l => l.IsActive,
                     false));
 
-        return affectedRows > 0;
+        if (affectedRows <= 0)
+            return false;
+
+        SyncTrackedLicenseActiveState(licenseId, false);
+        return true;
     }
 
     public Task<bool> HasAnotherActiveLicenseAsync(
@@ -207,6 +211,27 @@ public sealed class LicenseRepository(DVLDDbContext context)
                     l => l.IsActive,
                     true));
 
-        return affectedRows > 0;
+        if (affectedRows <= 0)
+            return false;
+
+        SyncTrackedLicenseActiveState(licenseId, true);
+        return true;
+    }
+
+    private void SyncTrackedLicenseActiveState(
+        int licenseId,
+        bool isActive)
+    {
+        var trackedEntry =
+            _context.ChangeTracker
+                .Entries<License>()
+                .FirstOrDefault(e => e.Entity.LicenseID == licenseId);
+
+        if (trackedEntry is not null)
+        {
+            trackedEntry.Entity.IsActive = isActive;
+            trackedEntry.Property(l => l.IsActive).OriginalValue = isActive;
+            trackedEntry.Property(l => l.IsActive).IsModified = false;
+        }
     }
 }

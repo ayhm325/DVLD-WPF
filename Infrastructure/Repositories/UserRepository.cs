@@ -1,4 +1,4 @@
-﻿using Application.DTOs.UserDTO;
+using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +134,20 @@ public sealed class UserRepository : IUserRepository
             .AsNoTracking()
             .AnyAsync(
                 u => u.PersonId == personId);
+    }
+
+    public Task<bool> IsUserActiveAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+            return Task.FromResult(false);
+
+        return _context.Users
+            .AsNoTracking()
+            .AnyAsync(
+                u => u.UserId == userId && u.IsActive,
+                cancellationToken);
     }
 
     public async Task AddUserAsync(User user)

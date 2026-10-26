@@ -68,7 +68,11 @@ public sealed class UnitOfWork : IUnitOfWork
 
                 if (result is Result { IsFailure: true })
                 {
-                    await transaction.RollbackAsync(cancellationToken);
+                    if (!transaction.IsCompleted)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                    }
+
                     _context.ChangeTracker.Clear();
 
                     return result;
@@ -81,8 +85,22 @@ public sealed class UnitOfWork : IUnitOfWork
             }
             catch
             {
-                await transaction.RollbackAsync(cancellationToken);
-                _context.ChangeTracker.Clear();
+                try
+                {
+                    if (!transaction.IsCompleted)
+                    {
+                        await transaction.RollbackAsync(CancellationToken.None);
+                    }
+                }
+                catch
+                {
+                    // Preserve the original exception if rollback fails.
+                }
+                finally
+                {
+                    _context.ChangeTracker.Clear();
+                }
+
                 throw;
             }
         });
@@ -94,6 +112,7 @@ public sealed class UnitOfWork : IUnitOfWork
         private readonly IDbContextTransaction _transaction;
 
         private bool _isCompleted;
+        private bool _isRolledBack;
 
         public UnitOfWorkTransaction(
             DVLDDbContext context,
@@ -111,6 +130,12 @@ public sealed class UnitOfWork : IUnitOfWork
         public async Task CommitAsync(
             CancellationToken cancellationToken = default)
         {
+            if (_isRolledBack)
+            {
+                throw new InvalidOperationException(
+                    "Cannot commit a transaction that has already been rolled back.");
+            }
+
             if (_isCompleted)
                 return;
 
@@ -126,12 +151,31 @@ public sealed class UnitOfWork : IUnitOfWork
             if (_isCompleted)
                 return;
 
-            await _transaction.RollbackAsync(cancellationToken);
-
-            _isCompleted = true;
+            try
+            {
+                await _transaction.RollbackAsync(cancellationToken);
+            }
+            finally
+            {
+                _context.ChangeTracker.Clear();
+                _isCompleted = true;
+                _isRolledBack = true;
+            }
         }
 
-        public ValueTask DisposeAsync() =>
-            _transaction.DisposeAsync();
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                if (!_isCompleted)
+                {
+                    _context.ChangeTracker.Clear();
+                }
+            }
+            finally
+            {
+                await _transaction.DisposeAsync();
+            }
+        }
     }
 }

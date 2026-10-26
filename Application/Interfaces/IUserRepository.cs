@@ -1,4 +1,4 @@
-﻿using Application.DTOs.UserDTO;
+using Application.DTOs.UserDTO;
 using Domain.Entities;
 
 namespace Application.Interfaces;
@@ -26,6 +26,10 @@ public interface IUserRepository
         int userId);
 
     Task<bool> IsUserExistsByPersonIdAsync(int personId);
+
+    Task<bool> IsUserActiveAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
 
     Task AddUserAsync(User user);
 

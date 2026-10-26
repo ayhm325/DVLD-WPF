@@ -100,18 +100,14 @@ builder.Services
                     return;
                 }
 
-                var dbContext =
+                var userService =
                     context.HttpContext.RequestServices
-                        .GetRequiredService<DVLDDbContext>();
+                        .GetRequiredService<IUserService>();
 
                 var userExistsAndActive =
-                    await dbContext.Users
-                        .AsNoTracking()
-                        .AnyAsync(
-                            user =>
-                                user.UserId == userId &&
-                                user.IsActive,
-                            context.HttpContext.RequestAborted);
+                    await userService.IsUserActiveAsync(
+                        userId,
+                        context.HttpContext.RequestAborted);
 
                 if (!userExistsAndActive)
                 {

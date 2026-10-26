@@ -1,4 +1,4 @@
-﻿using Application.Common.Pagination;
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
@@ -249,29 +249,29 @@ public sealed class LocalDrivingLicenseApplicationService(
         if (validation.IsFailure)
             return Result.ValidationFailure(validation.Error);
 
-        var existing = await _repository.GetForUpdateAsync(id);
-
-        if (existing is null)
-            return Result.NotFound("Local driving license application not found.");
-
-        if (existing.Application is null)
-            return Result.Failure("Main application information is missing.");
-
-        if (existing.Application.ApplicationStatus != AppStatus.New)
-            return Result.Conflict("Only a New application can be updated.");
-
-        var licenseClassResult =
-            await _licenseClassService.GetLicenseClassByIdAsync(dto.LicenseClassID);
-
-        if (licenseClassResult.IsFailure)
-            return Result.Failure(licenseClassResult.Error);
-
-        if (existing.LicenseClassID == dto.LicenseClassID)
-            return Result.Success();
-
         return await _unitOfWork.ExecuteInTransactionAsync(
             async transaction =>
             {
+                var existing = await _repository.GetForUpdateAsync(id);
+
+                if (existing is null)
+                    return Result.NotFound("Local driving license application not found.");
+
+                if (existing.Application is null)
+                    return Result.Failure("Main application information is missing.");
+
+                if (existing.Application.ApplicationStatus != AppStatus.New)
+                    return Result.Conflict("Only a New application can be updated.");
+
+                var licenseClassResult =
+                    await _licenseClassService.GetLicenseClassByIdAsync(dto.LicenseClassID);
+
+                if (licenseClassResult.IsFailure)
+                    return Result.Failure(licenseClassResult.Error);
+
+                if (existing.LicenseClassID == dto.LicenseClassID)
+                    return Result.Success();
+
                 var duplicateApplicationId =
                     await _repository.HasDuplicateApplicationAsync(
                         existing.Application.ApplicantPersonID,
@@ -401,27 +401,6 @@ public sealed class LocalDrivingLicenseApplicationService(
 
     private bool IsAuthenticated() =>
         _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;
-
-    private static async Task<T> RollbackAsync<T>(
-    IUnitOfWorkTransaction transaction,
-    T result)
-    {
-        await transaction.RollbackAsync();
-        return result;
-    }
-
-    private static async Task RollbackSafelyAsync(
-        IUnitOfWorkTransaction transaction)
-    {
-        try
-        {
-            await transaction.RollbackAsync();
-        }
-        catch
-        {
-            // Ignore rollback failure because the original exception must be preserved.
-        }
-    }
 
     private async Task<List<LocalDrivingLicenseApplicationListDto>> MapListToDtoAsync(
         IReadOnlyList<LocalDrivingLicenseApplication> entities)

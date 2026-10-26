@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Application.Services;
@@ -1615,6 +1615,56 @@ public class UserServiceTests
         _unitOfWorkMock.Verify(
             unitOfWork =>
                 unitOfWork.SaveChangesAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    // =========================================================
+    // =========================================================
+    // IsUserActiveAsync
+    // =========================================================
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task IsUserActiveAsync_InvalidUserId_ReturnsFalseWithoutCallingRepository(
+        int invalidUserId)
+    {
+        bool result = await _sut.IsUserActiveAsync(invalidUserId);
+
+        Assert.False(result);
+
+        _userRepositoryMock.Verify(
+            repository =>
+                repository.IsUserActiveAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task IsUserActiveAsync_ValidUserId_ReturnsRepositoryResult(
+        bool expectedActive)
+    {
+        const int userId = 10;
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUserActiveAsync(
+                    userId,
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedActive);
+
+        bool result = await _sut.IsUserActiveAsync(userId);
+
+        Assert.Equal(expectedActive, result);
+
+        _userRepositoryMock.Verify(
+            repository =>
+                repository.IsUserActiveAsync(
+                    userId,
                     It.IsAny<CancellationToken>()),
             Times.Once);
     }

@@ -1,12 +1,14 @@
-﻿using Application.Common.Pagination;
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
+using Application.DTOs;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
 using Application.Services;
 using Domain.Entities;
 using Domain.Enums;
 using Moq;
+using System.Data;
 
 namespace Application.UnitTests.Services;
 
@@ -15,6 +17,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     private readonly Mock<ILocalDrivingLicenseApplicationRepository> _repository = new();
     private readonly Mock<ILicenseRepository> _licenseRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
+    private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
     private readonly Mock<IApplicationRepository> _applicationRepository = new();
     private readonly Mock<IApplicationTypeRepository> _applicationTypeRepository = new();
     private readonly Mock<ILicenseClassService> _licenseClassService = new();
@@ -26,6 +29,28 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _applicationRepository.Object, _applicationTypeRepository.Object,
         _licenseClassService.Object, _currentUserService.Object,
         _applicationService.Object);
+
+    private void SetupTransaction()
+    {
+        _unitOfWork
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result>>>(),
+                IsolationLevel.Serializable,
+                It.IsAny<CancellationToken>()))
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                var result = await operation(_transaction.Object);
+                if (result.IsFailure)
+                {
+                    await _transaction.Object.RollbackAsync();
+                }
+
+                return result;
+            });
+    }
 
     private static LocalDrivingLicenseApplication CreateEntity(
         int id = 1, int applicationId = 10, int licenseClassId = 3) => new()
@@ -299,6 +324,80 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
 
         Assert.Same(expected, result);
         _applicationService.Verify(x => x.CancelApplicationAsync(10), Times.Once);
+    }
+
+    [Fact]
+    public async Task Update_WhenValid_ReadsForUpdateInsideTransactionAndCommits()
+    {
+        SetupTransaction();
+        var entity = CreateEntity(5, 10, 3);
+        bool inTransaction = false;
+
+        _unitOfWork
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result>>>(),
+                IsolationLevel.Serializable,
+                It.IsAny<CancellationToken>()))
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                inTransaction = true;
+                return await operation(_transaction.Object);
+            });
+
+        _repository.Setup(x => x.GetForUpdateAsync(5))
+            .ReturnsAsync(() =>
+            {
+                Assert.True(inTransaction);
+                return entity;
+            });
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(4))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 4 }));
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 4))
+            .ReturnsAsync((int?)null);
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var result = await CreateService().UpdateLocalDrivingLicenseApplicationAsync(
+            5,
+            new UpdateLocalDrivingLicenseApplicationDto { LicenseClassID = 4 });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(4, entity.LicenseClassID);
+        _transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _transaction.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_WhenDuplicateExists_ReturnsConflictAndRollsBack()
+    {
+        SetupTransaction();
+        var entity = CreateEntity(5, 10, 3);
+
+        _repository.Setup(x => x.GetForUpdateAsync(5))
+            .ReturnsAsync(entity);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(4))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 4 }));
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 4))
+            .ReturnsAsync(99);
+
+        var result = await CreateService().UpdateLocalDrivingLicenseApplicationAsync(
+            5,
+            new UpdateLocalDrivingLicenseApplicationDto { LicenseClassID = 4 });
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal(3, entity.LicenseClassID);
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _transaction.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

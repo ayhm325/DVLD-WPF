@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
@@ -1042,6 +1042,93 @@ public sealed class LicenseRepositoryTests
 
         // Assert
         Assert.False(result);
+    }
+
+    [Fact]
+    public async Task DeactivateLicenseAsync_WhenLicenseIsTracked_ShouldSynchronizeTrackedEntityState()
+    {
+        // Arrange
+        var seed =
+            await SeedLicenseAsync(
+                isActive: true);
+
+        await using (var context = _database.CreateContext())
+        {
+            var trackedLicense =
+                await context.Licenses
+                    .SingleAsync(x => x.LicenseID == seed.LicenseId);
+
+            Assert.True(trackedLicense.IsActive);
+
+            var repository =
+                new LicenseRepository(context);
+
+            // Act
+            var result =
+                await repository.DeactivateLicenseAsync(
+                    seed.LicenseId);
+
+            // Assert
+            Assert.True(result);
+            Assert.False(trackedLicense.IsActive);
+            Assert.False(context.Entry(trackedLicense).Property(x => x.IsActive).IsModified);
+
+            await context.SaveChangesAsync();
+        }
+
+        await using var verificationContext =
+            _database.CreateContext();
+
+        var persisted =
+            await verificationContext.Licenses
+                .AsNoTracking()
+                .SingleAsync(x => x.LicenseID == seed.LicenseId);
+
+        Assert.False(persisted.IsActive);
+    }
+
+    [Fact]
+    public async Task ActivateLicenseAsync_WhenLicenseIsTracked_ShouldSynchronizeTrackedEntityState()
+    {
+        // Arrange
+        var seed =
+            await SeedLicenseAsync(
+                isActive: false,
+                expirationDate: DateTime.UtcNow.AddYears(1));
+
+        await using (var context = _database.CreateContext())
+        {
+            var trackedLicense =
+                await context.Licenses
+                    .SingleAsync(x => x.LicenseID == seed.LicenseId);
+
+            Assert.False(trackedLicense.IsActive);
+
+            var repository =
+                new LicenseRepository(context);
+
+            // Act
+            var result =
+                await repository.ActivateLicenseAsync(
+                    seed.LicenseId);
+
+            // Assert
+            Assert.True(result);
+            Assert.True(trackedLicense.IsActive);
+            Assert.False(context.Entry(trackedLicense).Property(x => x.IsActive).IsModified);
+
+            await context.SaveChangesAsync();
+        }
+
+        await using var verificationContext =
+            _database.CreateContext();
+
+        var persisted =
+            await verificationContext.Licenses
+                .AsNoTracking()
+                .SingleAsync(x => x.LicenseID == seed.LicenseId);
+
+        Assert.True(persisted.IsActive);
     }
 
     private async Task<LicenseSeed> SeedLicenseAsync(

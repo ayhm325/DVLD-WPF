@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Application.Mappings;
@@ -185,6 +185,18 @@ public sealed class UserService : IUserService
             .IsUsernameTakenForAnotherUserAsync(
                 username.Trim(),
                 userId);
+    }
+
+    public Task<bool> IsUserActiveAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+            return Task.FromResult(false);
+
+        return _userRepository.IsUserActiveAsync(
+            userId,
+            cancellationToken);
     }
 
     public async Task<Result<int>>
