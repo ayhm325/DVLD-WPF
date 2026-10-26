@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+using Application.Common.Results;
+using Application.Interfaces;
 using DVLD.Api.Results;
 using DVLD.Contracts.TestAppointment;
 using DVLD.Contracts.TestWorkflow;
@@ -19,6 +20,12 @@ public sealed class TestWorkflowController(
         [FromQuery] int localAppId,
         [FromQuery] TestType testType)
     {
+        if (!Enum.IsDefined(testType))
+        {
+            return Result.ValidationFailure("Invalid test type.")
+                .ToActionResult(this);
+        }
+
         var result =
             await service.CanScheduleTestAsync(
                 localAppId,

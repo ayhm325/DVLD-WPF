@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using Application.Services;
@@ -1091,6 +1091,40 @@ public class PersonServiceTests
     }
 
     // =========================================================
+    [Theory]
+    [InlineData(256)]
+    [InlineData(257)]
+    [InlineData(-256)]
+    public async Task AddPersonAsync_GenderExceedsByteRange_ReturnsValidationFailure(
+        int invalidGender)
+    {
+        var dto = new PersonCreateDto
+        {
+            NationalNo = "1234567890",
+            FirstName = "Ayhm",
+            SecondName = "Mohammed",
+            ThirdName = null,
+            LastName = "Obeidat",
+            DateOfBirth = new DateTime(1993, 1, 1),
+            Gender = invalidGender,
+            Address = "Amman",
+            Phone = "0791234567",
+            Email = "ayhm@example.com",
+            NationalityCountryID = 1,
+            ImagePath = null
+        };
+
+        Result<int> result = await _sut.AddPersonAsync(dto);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("Invalid gender value.", result.Error);
+
+        _personRepositoryMock.Verify(
+            repository => repository.AddPersonAsync(It.IsAny<Person>()),
+            Times.Never);
+    }
+
     // Test Data Helpers
     // =========================================================
 

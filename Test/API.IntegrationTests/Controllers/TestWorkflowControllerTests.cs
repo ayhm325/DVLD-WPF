@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Domain.Enums;
 using DVLD.Contracts.TestWorkflow;
@@ -317,5 +317,44 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
 
         Assert.True(body.TryGetProperty("traceId", out var traceId));
         Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
+    }
+
+    [Fact]
+    public async Task CanSchedule_WhenTestTypeIsOmitted_ReturnsBadRequestProblemDetails()
+    {
+        var response = await SendAsync(
+            HttpMethod.Get,
+            "/api/TestWorkflow/can-schedule?localAppId=10");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.BadRequest,
+            "Validation error",
+            "Invalid test type.");
+
+        _factory.TestWorkflowServiceMock.Verify(
+            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(99)]
+    [InlineData(-1)]
+    public async Task CanSchedule_WithInvalidTestTypeValue_ReturnsBadRequestProblemDetails(
+        int invalidTestType)
+    {
+        var response = await SendAsync(
+            HttpMethod.Get,
+            $"/api/TestWorkflow/can-schedule?localAppId=10&testType={invalidTestType}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
+
+        _factory.TestWorkflowServiceMock.Verify(
+            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>()),
+            Times.Never);
     }
 }

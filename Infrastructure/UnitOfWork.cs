@@ -23,6 +23,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(
         CancellationToken cancellationToken = default)
     {
+        EnsureNoActiveTransaction();
+
         var transaction =
             await _context.Database.BeginTransactionAsync(cancellationToken);
 
@@ -33,6 +35,8 @@ public sealed class UnitOfWork : IUnitOfWork
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default)
     {
+        EnsureNoActiveTransaction();
+
         var transaction =
             await _context.Database.BeginTransactionAsync(
                 isolationLevel,
@@ -47,11 +51,14 @@ public sealed class UnitOfWork : IUnitOfWork
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operation);
+        EnsureNoActiveTransaction();
 
         var strategy = _context.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(async () =>
         {
+            EnsureNoActiveTransaction();
+
             var dbTransaction =
                 await _context.Database.BeginTransactionAsync(
                     isolationLevel,
@@ -104,6 +111,15 @@ public sealed class UnitOfWork : IUnitOfWork
                 throw;
             }
         });
+    }
+
+    private void EnsureNoActiveTransaction()
+    {
+        if (_context.Database.CurrentTransaction is not null)
+        {
+            throw new InvalidOperationException(
+                "A transaction is already active on this DbContext instance. Nested transactions are not supported.");
+        }
     }
 
     private sealed class UnitOfWorkTransaction : IUnitOfWorkTransaction

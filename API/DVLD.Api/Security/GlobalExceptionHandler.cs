@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DVLD.Api.Security;
@@ -14,11 +14,33 @@ public sealed class GlobalExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
+        if (exception is OperationCanceledException &&
+            context.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogInformation(
+                "Request {Method} {Path} was canceled by the client.",
+                context.Request.Method,
+                context.Request.Path);
+
+            if (!context.Response.HasStarted)
+            {
+                context.Response.StatusCode =
+                    StatusCodes.Status499ClientClosedRequest;
+            }
+
+            return true;
+        }
+
         _logger.LogError(
             exception,
             "Unhandled exception occurred while processing {Method} {Path}.",
             context.Request.Method,
             context.Request.Path);
+
+        if (context.Response.HasStarted)
+        {
+            return false;
+        }
 
         var problemDetails = new ProblemDetails
         {

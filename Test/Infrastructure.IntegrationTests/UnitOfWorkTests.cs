@@ -375,4 +375,36 @@ public sealed class UnitOfWorkTests
                 .AsNoTracking()
                 .AnyAsync(c => c.CountryName == countryName));
     }
+
+    [Fact]
+    public async Task BeginTransactionAsync_WhenTransactionAlreadyActive_ShouldThrowInvalidOperationException()
+    {
+        await using var context = _database.CreateContext();
+        var unitOfWork = new UnitOfWork(context);
+
+        await using var outerTransaction =
+            await unitOfWork.BeginTransactionAsync();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => unitOfWork.BeginTransactionAsync());
+
+        Assert.Contains("Nested transactions are not supported", exception.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_WhenTransactionAlreadyActive_ShouldThrowInvalidOperationException()
+    {
+        await using var context = _database.CreateContext();
+        var unitOfWork = new UnitOfWork(context);
+
+        await using var outerTransaction =
+            await unitOfWork.BeginTransactionAsync();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => unitOfWork.ExecuteInTransactionAsync(
+                _ => Task.FromResult(Result.Success()),
+                IsolationLevel.Serializable));
+
+        Assert.Contains("Nested transactions are not supported", exception.Message);
+    }
 }

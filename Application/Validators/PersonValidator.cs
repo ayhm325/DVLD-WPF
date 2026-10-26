@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using System.Text.RegularExpressions;
 
@@ -212,8 +212,8 @@ public static class PersonValidator
                 "Address cannot exceed 200 characters.");
         }
 
-        if (!Enum.IsDefined(
-        typeof(Domain.Enums.Gender),(byte)gender))
+        if (gender is < byte.MinValue or > byte.MaxValue ||
+            !Enum.IsDefined(typeof(Domain.Enums.Gender), (byte)gender))
         {
             errors.Add("Invalid gender value.");
         }
