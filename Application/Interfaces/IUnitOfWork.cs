@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 
 namespace Application.Interfaces;
 
@@ -16,6 +16,12 @@ public interface IUnitOfWork
 
     Task<T> ExecuteInTransactionAsync<T>(
         Func<IUnitOfWorkTransaction, Task<T>> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default);
+
+    Task<T> ExecuteInTransactionAsync<T>(
+        Func<IUnitOfWorkTransaction, Task<T>> operation,
+        Func<CancellationToken, Task<bool>> verifySucceeded,
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default);
 }

@@ -4,7 +4,9 @@ using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data;
+using System.Data.Common;
 
 namespace Infrastructure.IntegrationTests;
 
@@ -406,5 +408,412 @@ public sealed class UnitOfWorkTests
                 IsolationLevel.Serializable));
 
         Assert.Contains("Nested transactions are not supported", exception.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_WhenTransientFailureOccursBeforeCommit_ShouldRetryAndPersistSingleEntity()
+    {
+        var className = $"PreCommitTransientRetry_{Guid.NewGuid():N}";
+        var attemptCount = 0;
+
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(
+                _database.ConnectionString,
+                sql => sql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromMilliseconds(20),
+                    errorNumbersToAdd: null))
+            .Options;
+
+        await using (var context = new DVLDDbContext(options))
+        {
+            var unitOfWork = new UnitOfWork(context);
+
+            var result = await unitOfWork.ExecuteInTransactionAsync(
+                async transaction =>
+                {
+                    var currentAttempt = Interlocked.Increment(ref attemptCount);
+
+                    // Ensure ChangeTracker was cleared after the failed first attempt.
+                    Assert.Empty(context.ChangeTracker.Entries());
+
+                    var licenseClass = new LicenseClass
+                    {
+                        ClassName = className,
+                        ClassDescription = "Pre-commit transient failure test",
+                        MinimumAllowedAge = 18,
+                        DefaultValidityLength = 10,
+                        ClassFees = 100
+                    };
+
+                    context.LicenseClasses.Add(licenseClass);
+                    await unitOfWork.SaveChangesAsync();
+
+                    if (currentAttempt == 1)
+                    {
+                        throw new TimeoutException("Simulated transient failure before commit.");
+                    }
+
+                    await transaction.CommitAsync();
+                    return Result<int>.Success(licenseClass.LicenseClassID);
+                },
+                IsolationLevel.Serializable);
+
+            Assert.True(result.IsSuccess);
+            Assert.True(result.Value > 0);
+            Assert.Equal(2, attemptCount);
+        }
+
+        await using var verificationContext = _database.CreateContext();
+        var persisted = await verificationContext.LicenseClasses
+            .AsNoTracking()
+            .Where(x => x.ClassName == className)
+            .ToListAsync();
+
+        Assert.Single(persisted);
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_WhenConnectionDropsAfterServerCommit_ShouldVerifyCommitAndReturnSuccessWithoutRetry()
+    {
+        var className = $"PostCommitDrop_{Guid.NewGuid():N}";
+        var interceptor = new FaultInjectingTransactionInterceptor(
+            failAfterServerCommitOnAttempt: 1);
+        var operationAttempts = 0;
+
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(
+                _database.ConnectionString,
+                sql => sql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromMilliseconds(20),
+                    errorNumbersToAdd: null))
+            .AddInterceptors(interceptor)
+            .Options;
+
+        int returnedLicenseClassId;
+
+        await using (var context = new DVLDDbContext(options))
+        {
+            var unitOfWork = new UnitOfWork(context);
+
+            var result = await unitOfWork.ExecuteInTransactionAsync(
+                async transaction =>
+                {
+                    Interlocked.Increment(ref operationAttempts);
+
+                    var licenseClass = new LicenseClass
+                    {
+                        ClassName = className,
+                        ClassDescription = "Post-commit ambiguous failure test",
+                        MinimumAllowedAge = 18,
+                        DefaultValidityLength = 10,
+                        ClassFees = 150
+                    };
+
+                    context.LicenseClasses.Add(licenseClass);
+                    await unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Result<int>.Success(licenseClass.LicenseClassID);
+                },
+                IsolationLevel.Serializable);
+
+            Assert.True(result.IsSuccess);
+            Assert.True(result.Value > 0);
+            Assert.Equal(1, operationAttempts);
+            Assert.Empty(context.ChangeTracker.Entries());
+            returnedLicenseClassId = result.Value;
+        }
+
+        await using var verificationContext = _database.CreateContext();
+        var persisted = await verificationContext.LicenseClasses
+            .AsNoTracking()
+            .Where(x => x.ClassName == className)
+            .ToListAsync();
+
+        Assert.Single(persisted);
+        Assert.Equal(returnedLicenseClassId, persisted[0].LicenseClassID);
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_WhenCustomVerifySucceededCallbackConfirmsCommit_ShouldReturnResultWithoutRetry()
+    {
+        var className = $"CustomVerifyCommit_{Guid.NewGuid():N}";
+        var interceptor = new FaultInjectingTransactionInterceptor(
+            failAfterServerCommitOnAttempt: 1);
+        var operationAttempts = 0;
+        var verificationCalls = 0;
+
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(
+                _database.ConnectionString,
+                sql => sql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromMilliseconds(20),
+                    errorNumbersToAdd: null))
+            .AddInterceptors(interceptor)
+            .Options;
+
+        await using var context = new DVLDDbContext(options);
+        var unitOfWork = new UnitOfWork(context);
+
+        var result = await unitOfWork.ExecuteInTransactionAsync(
+            async transaction =>
+            {
+                Interlocked.Increment(ref operationAttempts);
+
+                var licenseClass = new LicenseClass
+                {
+                    ClassName = className,
+                    ClassDescription = "Custom verification callback test",
+                    MinimumAllowedAge = 18,
+                    DefaultValidityLength = 10,
+                    ClassFees = 120
+                };
+
+                context.LicenseClasses.Add(licenseClass);
+                await unitOfWork.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Result<int>.Success(licenseClass.LicenseClassID);
+            },
+            verifySucceeded: async ct =>
+            {
+                Interlocked.Increment(ref verificationCalls);
+                return await context.LicenseClasses
+                    .AsNoTracking()
+                    .AnyAsync(x => x.ClassName == className, ct);
+            },
+            IsolationLevel.Serializable);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, operationAttempts);
+        Assert.Equal(1, verificationCalls);
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_WhenTransientFailureOccursBeforeServerCommitsDuringCommitCall_ShouldVerifyNotCommittedAndRetrySafely()
+    {
+        var className = $"RollbackOnCommitAttempt_{Guid.NewGuid():N}";
+        var interceptor = new FaultInjectingTransactionInterceptor(
+            rollbackAndFailBeforeServerCommitOnAttempt: 1);
+        var operationAttempts = 0;
+
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(
+                _database.ConnectionString,
+                sql => sql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromMilliseconds(20),
+                    errorNumbersToAdd: null))
+            .AddInterceptors(interceptor)
+            .Options;
+
+        int returnedLicenseClassId;
+
+        await using (var context = new DVLDDbContext(options))
+        {
+            var unitOfWork = new UnitOfWork(context);
+
+            var result = await unitOfWork.ExecuteInTransactionAsync(
+                async transaction =>
+                {
+                    Interlocked.Increment(ref operationAttempts);
+                    Assert.Empty(context.ChangeTracker.Entries());
+
+                    var licenseClass = new LicenseClass
+                    {
+                        ClassName = className,
+                        ClassDescription = "Commit rolled back on attempt 1",
+                        MinimumAllowedAge = 18,
+                        DefaultValidityLength = 10,
+                        ClassFees = 100
+                    };
+
+                    context.LicenseClasses.Add(licenseClass);
+                    await unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Result<int>.Success(licenseClass.LicenseClassID);
+                },
+                IsolationLevel.Serializable);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(2, operationAttempts);
+            returnedLicenseClassId = result.Value;
+        }
+
+        await using var verificationContext = _database.CreateContext();
+        var persisted = await verificationContext.LicenseClasses
+            .AsNoTracking()
+            .Where(x => x.ClassName == className)
+            .ToListAsync();
+
+        Assert.Single(persisted);
+        Assert.Equal(returnedLicenseClassId, persisted[0].LicenseClassID);
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_WhenCommitAndVerificationBothFail_ShouldThrowInvalidOperationExceptionWithoutRepeatingOperation()
+    {
+        var className = $"UnverifiableCommit_{Guid.NewGuid():N}";
+        var interceptor = new FaultInjectingTransactionInterceptor(
+            failAfterServerCommitOnAttempt: 1);
+        var operationAttempts = 0;
+
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(
+                _database.ConnectionString,
+                sql => sql.EnableRetryOnFailure(
+                    maxRetryCount: 2,
+                    maxRetryDelay: TimeSpan.FromMilliseconds(10),
+                    errorNumbersToAdd: null))
+            .AddInterceptors(interceptor)
+            .Options;
+
+        await using var context = new DVLDDbContext(options);
+        var unitOfWork = new UnitOfWork(context);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            unitOfWork.ExecuteInTransactionAsync(
+                async transaction =>
+                {
+                    Interlocked.Increment(ref operationAttempts);
+
+                    var licenseClass = new LicenseClass
+                    {
+                        ClassName = className,
+                        ClassDescription = "Verification failure test",
+                        MinimumAllowedAge = 18,
+                        DefaultValidityLength = 10,
+                        ClassFees = 100
+                    };
+
+                    context.LicenseClasses.Add(licenseClass);
+                    await unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Result<int>.Success(licenseClass.LicenseClassID);
+                },
+                verifySucceeded: _ => throw new TimeoutException("Database unavailable during verification."),
+                IsolationLevel.Serializable));
+
+        Assert.Contains("could not be verified", exception.Message);
+        Assert.Equal(1, operationAttempts);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_WhenModifiedEntityCommitConfirmationIsLost_ShouldVerifyUpdatedPropertyAndReturnSuccessWithoutRetry()
+    {
+        var initialName = $"UpdateVerifyInitial_{Guid.NewGuid():N}";
+        var updatedDescription = $"UpdatedDesc_{Guid.NewGuid():N}";
+        int licenseClassId;
+
+        await using (var seedContext = _database.CreateContext())
+        {
+            var entity = new LicenseClass
+            {
+                ClassName = initialName,
+                ClassDescription = "Initial description",
+                MinimumAllowedAge = 18,
+                DefaultValidityLength = 10,
+                ClassFees = 100
+            };
+
+            seedContext.LicenseClasses.Add(entity);
+            await seedContext.SaveChangesAsync();
+            licenseClassId = entity.LicenseClassID;
+        }
+
+        var interceptor = new FaultInjectingTransactionInterceptor(
+            failAfterServerCommitOnAttempt: 1);
+        var operationAttempts = 0;
+
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(
+                _database.ConnectionString,
+                sql => sql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromMilliseconds(20),
+                    errorNumbersToAdd: null))
+            .AddInterceptors(interceptor)
+            .Options;
+
+        await using (var context = new DVLDDbContext(options))
+        {
+            var unitOfWork = new UnitOfWork(context);
+
+            var result = await unitOfWork.ExecuteInTransactionAsync(
+                async transaction =>
+                {
+                    Interlocked.Increment(ref operationAttempts);
+
+                    var entity = await context.LicenseClasses
+                        .FirstAsync(x => x.LicenseClassID == licenseClassId);
+
+                    entity.ClassDescription = updatedDescription;
+                    await unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Result.Success();
+                },
+                IsolationLevel.Serializable);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(1, operationAttempts);
+            Assert.Empty(context.ChangeTracker.Entries());
+        }
+
+        await using var verificationContext = _database.CreateContext();
+        var updatedEntity = await verificationContext.LicenseClasses
+            .AsNoTracking()
+            .SingleAsync(x => x.LicenseClassID == licenseClassId);
+
+        Assert.Equal(updatedDescription, updatedEntity.ClassDescription);
+    }
+
+    private sealed class FaultInjectingTransactionInterceptor(
+        int? failAfterServerCommitOnAttempt = null,
+        int? rollbackAndFailBeforeServerCommitOnAttempt = null)
+        : DbTransactionInterceptor
+    {
+        private int _committingCount;
+        private int _committedCount;
+
+        public override async ValueTask<InterceptionResult> TransactionCommittingAsync(
+            DbTransaction transaction,
+            TransactionEventData eventData,
+            InterceptionResult result,
+            CancellationToken cancellationToken = default)
+        {
+            var attempt = Interlocked.Increment(ref _committingCount);
+
+            if (rollbackAndFailBeforeServerCommitOnAttempt == attempt)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw new TimeoutException(
+                    "Simulated transient failure before SQL Server committed the transaction.");
+            }
+
+            return result;
+        }
+
+        public override Task TransactionCommittedAsync(
+            DbTransaction transaction,
+            TransactionEndEventData eventData,
+            CancellationToken cancellationToken = default)
+        {
+            var attempt = Interlocked.Increment(ref _committedCount);
+
+            if (failAfterServerCommitOnAttempt == attempt)
+            {
+                throw new TimeoutException(
+                    "Simulated transient connection drop after SQL Server committed the transaction.");
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

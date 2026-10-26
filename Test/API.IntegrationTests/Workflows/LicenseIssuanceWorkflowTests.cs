@@ -1,10 +1,15 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.LicenseIssuance;
 using Infrastructure;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.VisualStudio.TestPlatform.Utilities;
+using System.Data.Common;
 using System.Net;
 using System.Net.Http.Json;
 using static System.Net.Mime.MediaTypeNames;
@@ -889,6 +894,92 @@ public sealed class LicenseIssuanceWorkflowTests
                 999999999)}";
     }
 
+
+    [Fact]
+    public async Task IssueFirstLicense_WhenCommitConfirmationIsLostAfterServerCommit_VerifiesCommitAndReturnsOkWithoutConflict()
+    {
+        await using var factory =
+            new SqlServerApiWebApplicationFactory();
+
+        var seed =
+            await SeedValidLicenseIssuanceScenarioAsync(factory);
+
+        var interceptor = new PostCommitDropInterceptor();
+
+        await using var interceptedFactory =
+            factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<DbContextOptions<DVLDDbContext>>();
+                    services.AddDbContext<DVLDDbContext>(options =>
+                        options.UseSqlServer(
+                                factory.ConnectionString,
+                                sql => sql.EnableRetryOnFailure(
+                                    maxRetryCount: 3,
+                                    maxRetryDelay: TimeSpan.FromMilliseconds(20),
+                                    errorNumbersToAdd: null))
+                            .AddInterceptors(interceptor));
+                });
+            });
+
+        using var client = interceptedFactory.CreateClient();
+        ConfigureAuthenticatedClient(client, seed.UserId);
+
+        var request = new IssueFirstLicenseRequest(
+            LocalApplicationId: seed.LocalApplicationId,
+            Notes: "Ambiguous commit recovery test");
+
+        var response = await client.PostAsJsonAsync(
+            "/api/LicenseIssuance/first-license",
+            request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content
+            .ReadFromJsonAsync<IssueFirstLicenseResponse>();
+
+        Assert.NotNull(result);
+        Assert.True(result.LicenseId > 0);
+        Assert.Equal(1, interceptor.CommittedCount);
+
+        await using var verificationContext = factory.CreateDbContext();
+
+        var licenses = await verificationContext.Licenses
+            .AsNoTracking()
+            .Where(x => x.ApplicationID == seed.ApplicationId)
+            .ToListAsync();
+
+        Assert.Single(licenses);
+        Assert.Equal(result.LicenseId, licenses[0].LicenseID);
+
+        var application = await verificationContext.Applications
+            .AsNoTracking()
+            .SingleAsync(x => x.ApplicationID == seed.ApplicationId);
+
+        Assert.Equal(AppStatus.Completed, application.ApplicationStatus);
+    }
+
+    private sealed class PostCommitDropInterceptor : DbTransactionInterceptor
+    {
+        private int _committedCount;
+
+        public int CommittedCount => _committedCount;
+
+        public override Task TransactionCommittedAsync(
+            DbTransaction transaction,
+            TransactionEndEventData eventData,
+            CancellationToken cancellationToken = default)
+        {
+            if (Interlocked.Increment(ref _committedCount) == 1)
+            {
+                throw new TimeoutException(
+                    "Simulated connection loss immediately after SQL Server committed license issuance.");
+            }
+
+            return Task.CompletedTask;
+        }
+    }
 
     private sealed record SeedData(
         int UserId,
