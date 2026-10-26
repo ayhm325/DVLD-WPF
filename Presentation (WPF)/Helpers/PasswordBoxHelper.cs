@@ -1,32 +1,88 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 
-namespace Presentation.Helpers
+namespace Presentation.Helpers;
+
+public static class PasswordBoxHelper
 {
-    public static class PasswordBoxHelper
+    public static readonly DependencyProperty PasswordProperty =
+        DependencyProperty.RegisterAttached(
+            "Password",
+            typeof(string),
+            typeof(PasswordBoxHelper),
+            new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPasswordPropertyChanged));
+
+    public static readonly DependencyProperty AttachProperty =
+        DependencyProperty.RegisterAttached(
+            "Attach",
+            typeof(bool),
+            typeof(PasswordBoxHelper),
+            new PropertyMetadata(false, OnAttachPropertyChanged));
+
+    private static readonly DependencyProperty IsUpdatingProperty =
+        DependencyProperty.RegisterAttached(
+            "IsUpdating",
+            typeof(bool),
+            typeof(PasswordBoxHelper));
+
+    public static void SetPassword(DependencyObject d, string value) => d.SetValue(PasswordProperty, value);
+    public static string GetPassword(DependencyObject d) => (string)d.GetValue(PasswordProperty) ?? string.Empty;
+
+    public static void SetAttach(DependencyObject d, bool value) => d.SetValue(AttachProperty, value);
+    public static bool GetAttach(DependencyObject d) => (bool)d.GetValue(AttachProperty);
+
+    private static bool GetIsUpdating(DependencyObject d) => (bool)d.GetValue(IsUpdatingProperty);
+    private static void SetIsUpdating(DependencyObject d, bool value) => d.SetValue(IsUpdatingProperty, value);
+
+    private static void OnAttachPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        // Password Property
-        public static readonly DependencyProperty PasswordProperty =
-            DependencyProperty.RegisterAttached("Password", typeof(string), typeof(PasswordBoxHelper),
-                new PropertyMetadata(string.Empty, PasswordPropertyChanged));
+        if (d is not PasswordBox pb)
+            return;
 
-        private static void PasswordPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        if ((bool)e.OldValue)
+            pb.PasswordChanged -= OnPasswordChanged;
+
+        if ((bool)e.NewValue)
+            pb.PasswordChanged += OnPasswordChanged;
+    }
+
+    private static void OnPasswordPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not PasswordBox pb)
+            return;
+
+        if (GetIsUpdating(pb))
+            return;
+
+        SetIsUpdating(pb, true);
+        try
         {
-            if (d is PasswordBox pb && pb.Password != (string)e.NewValue)
-                pb.Password = (string)e.NewValue;
+            var newPass = (string?)e.NewValue ?? string.Empty;
+            if (pb.Password != newPass)
+                pb.Password = newPass;
         }
+        finally
+        {
+            SetIsUpdating(pb, false);
+        }
+    }
 
-        public static void SetPassword(DependencyObject d, string value) => d.SetValue(PasswordProperty, value);
-        public static string GetPassword(DependencyObject d) => (string)d.GetValue(PasswordProperty); // إضافة Get
+    private static void OnPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (sender is not PasswordBox pb)
+            return;
 
-        // Attach Property
-        public static readonly DependencyProperty AttachProperty =
-            DependencyProperty.RegisterAttached("Attach", typeof(bool), typeof(PasswordBoxHelper),
-                new PropertyMetadata(false, (d, e) => {
-                    if (d is PasswordBox pb) pb.PasswordChanged += (s, ev) => SetPassword(pb, pb.Password);
-                }));
+        if (GetIsUpdating(pb))
+            return;
 
-        public static void SetAttach(DependencyObject d, bool value) => d.SetValue(AttachProperty, value);
-        public static bool GetAttach(DependencyObject d) => (bool)d.GetValue(AttachProperty); // إضافة Get
+        SetIsUpdating(pb, true);
+        try
+        {
+            SetPassword(pb, pb.Password);
+        }
+        finally
+        {
+            SetIsUpdating(pb, false);
+        }
     }
 }

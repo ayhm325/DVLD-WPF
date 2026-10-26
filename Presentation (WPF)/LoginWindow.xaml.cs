@@ -1,4 +1,4 @@
-﻿using Presentation.ViewModels;
+using Presentation.ViewModels;
 using System.Windows;
 
 namespace Presentation;
@@ -19,4 +19,10 @@ public partial class LoginWindow : Window
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == System.Windows.Input.MouseButton.Left)
+            DragMove();
+    }
 }

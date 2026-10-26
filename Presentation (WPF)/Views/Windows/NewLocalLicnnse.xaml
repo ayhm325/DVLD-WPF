@@ -3,10 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Presentation.Views.Controls"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="New Local Driving License Application"
+        Title="{Binding WindowTitle}"
         Height="700" Width="870" MinHeight="650" MinWidth="820"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
         ResizeMode="NoResize">
 
     <Window.Resources>
@@ -37,21 +39,32 @@
 
             <Border Grid.Row="0" Background="{StaticResource SurfaceColor}"
                     BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1"
-                    Padding="24,18" CornerRadius="16,16,0,0">
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="42" Height="42" CornerRadius="{StaticResource RadiusMedium}"
-                            Background="{StaticResource PrimaryLightColor}" Margin="0,0,14,0">
-                        <materialDesign:PackIcon Kind="FileDocumentPlusOutline"
-                                                 Foreground="{StaticResource PrimaryColor}"
-                                                 Width="21" Height="21"
-                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="New Local Driving License Application" Style="{StaticResource HeaderStyle}"/>
-                        <TextBlock Text="Create a new application and assign its license class"
-                                   Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
+                    Padding="24,18" CornerRadius="16,16,0,0"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="42" Height="42" CornerRadius="{StaticResource RadiusMedium}"
+                                Background="{StaticResource PrimaryLightColor}" Margin="0,0,14,0">
+                            <materialDesign:PackIcon Kind="FileDocumentPlusOutline"
+                                                     Foreground="{StaticResource PrimaryColor}"
+                                                     Width="21" Height="21"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding WindowTitle}" Style="{StaticResource HeaderStyle}"/>
+                            <TextBlock Text="Create or update an application and assign its license class"
+                                       Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                    <Button Grid.Column="1" Style="{StaticResource GhostButtonStyle}"
+                            Click="CloseButton_Click" VerticalAlignment="Center" ToolTip="Close">
+                        <TextBlock Text="âœ•" FontSize="18"/>
+                    </Button>
+                </Grid>
             </Border>
 
             <Grid Grid.Row="1" Margin="24,18">

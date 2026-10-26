@@ -40,36 +40,51 @@
                     CornerRadius="16,16,0,0"
                     Padding="{StaticResource HeaderPadding}"
                     BorderBrush="{StaticResource BorderColor}"
-                    BorderThickness="0,0,0,1">
-                <StackPanel Orientation="Horizontal"
-                            VerticalAlignment="Center">
-                    <Border Width="40"
-                            Height="40"
-                            CornerRadius="{StaticResource RadiusMedium}"
-                            Background="{StaticResource PrimaryLightColor}"
-                            BorderBrush="{StaticResource BorderColor}"
-                            BorderThickness="1"
-                            Margin="0,0,16,0"
-                            Padding="8">
-                        <Path Data="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"
-                              Stroke="{StaticResource PrimaryColor}"
-                              StrokeThickness="1.7"
-                              Fill="Transparent"
-                              Stretch="Uniform"
-                              Width="21"
-                              Height="21"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
-                    </Border>
+                    BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Border Width="40"
+                                Height="40"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                Background="{StaticResource PrimaryLightColor}"
+                                BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="1"
+                                Margin="0,0,16,0"
+                                Padding="8">
+                            <Path Data="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0"
+                                  Stroke="{StaticResource PrimaryColor}"
+                                  StrokeThickness="1.7"
+                                  Fill="Transparent"
+                                  Stretch="Uniform"
+                                  Width="21"
+                                  Height="21"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                        </Border>
 
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="User Details"
-                                   Style="{StaticResource HeaderStyle}"/>
-                        <TextBlock Text="View user profile and access information"
-                                   Style="{StaticResource CaptionStyle}"
-                                   Margin="0,3,0,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="User Details"
+                                       Style="{StaticResource HeaderStyle}"/>
+                            <TextBlock Text="View user profile and access information"
+                                       Style="{StaticResource CaptionStyle}"
+                                       Margin="0,3,0,0"/>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Click="CloseButton_Click"
+                            ToolTip="Close"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="âœ•" FontSize="18"/>
+                    </Button>
+                </Grid>
             </Border>
 
             <ScrollViewer Grid.Row="1"

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Presentation;
 using Presentation.Services;
 using Presentation.Services.Api;
@@ -136,17 +136,25 @@ public partial class MainWindow : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton == MouseButton.Left)
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            return;
+        }
+
+        if (e.ChangedButton == MouseButton.Left && WindowState != WindowState.Maximized)
             DragMove();
     }
 
-    private void MinBtn_Click(object sender, MouseButtonEventArgs e) =>
-        WindowState = WindowState.Minimized;
+    private void MinBtn_Click(object sender, MouseButtonEventArgs e) { e.Handled = true; WindowState = WindowState.Minimized; }
 
-    private void MaxBtn_Click(object sender, MouseButtonEventArgs e) =>
-        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
 
-    private void CloseBtn_Click(object sender, MouseButtonEventArgs e) => Close();
+
+    private void MaxBtn_Click(object sender, MouseButtonEventArgs e) { e.Handled = true; WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; }
+
+
+
+    private void CloseBtn_Click(object sender, MouseButtonEventArgs e) { e.Handled = true; Close(); }
 
     private void UpdateClock(object? sender, EventArgs? e)
     {

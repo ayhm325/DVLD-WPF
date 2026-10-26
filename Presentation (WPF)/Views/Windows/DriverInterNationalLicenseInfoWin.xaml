@@ -28,11 +28,13 @@
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1"
                     CornerRadius="16,16,0,0"
-                    Padding="24,14">
+                    Padding="24,14"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
@@ -62,7 +64,9 @@
                     <Border Grid.Column="2"
                             Background="{StaticResource PrimaryLightColor}"
                             CornerRadius="{StaticResource RadiusPill}"
-                            Padding="12,6">
+                            Padding="12,6"
+                            VerticalAlignment="Center"
+                            Margin="0,0,10,0">
                         <TextBlock Foreground="{StaticResource PrimaryColor}"
                                    FontWeight="SemiBold"
                                    FontSize="12">
@@ -70,6 +74,14 @@
                             <Run Text="{Binding LicenseData.InternationalLicenseId}"/>
                         </TextBlock>
                     </Border>
+
+                    <Button Grid.Column="3"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Click="CloseButton_Click"
+                            ToolTip="Close"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="âœ•" FontSize="18"/>
+                    </Button>
                 </Grid>
             </Border>
 

@@ -29,11 +29,13 @@
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="0,0,0,1"
                     CornerRadius="16,16,0,0"
-                    Padding="24,14">
+                    Padding="24,14"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <Border Width="48" Height="48"
@@ -57,6 +59,14 @@
                                    FontSize="{StaticResource FontSizeCaption}"
                                    Foreground="{StaticResource TextMutedColor}"/>
                     </StackPanel>
+
+                    <Button Grid.Column="2"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Click="btnClose_Click"
+                            ToolTip="Close"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="âœ•" FontSize="18"/>
+                    </Button>
                 </Grid>
             </Border>
 

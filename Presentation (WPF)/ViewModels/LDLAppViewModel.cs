@@ -197,8 +197,16 @@ public partial class LDLAppViewModel : ObservableObject
     private bool CanEdit() => SelectedApplication is not null && IsStatus("New");
 
     [RelayCommand(CanExecute = nameof(CanEdit))]
-    private void Edit()
+    private async Task Edit()
     {
+        if (SelectedApplication is null) return;
+
+        var vm = _serviceProvider.GetRequiredService<AddEditLDLAppViewModel>();
+        await vm.InitializeEditAsync(SelectedApplication.LocalDrivingLicenseApplicationId);
+
+        var window = new NewLocalLicnnse(vm) { Owner = System.Windows.Application.Current.MainWindow };
+        window.ShowDialog();
+        await LoadApplicationsAsync();
     }
 
     private bool CanCancel() =>

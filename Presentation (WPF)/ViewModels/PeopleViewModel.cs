@@ -215,10 +215,55 @@ public partial class PeopleViewModel : ObservableObject
     [RelayCommand]
     private void SendEmail(PersonListResponse? person)
     {
+        if (person is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(person.Email))
+        {
+            _userNotifications.ShowInfo("No email address is registered for this person.", "Email");
+            return;
+        }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = $"mailto:{person.Email}",
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowError($"Could not open email client: {ex.Message}", "Email");
+        }
     }
 
     [RelayCommand]
     private void PhoneCall(PersonListResponse? person)
     {
+        if (person is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(person.Phone))
+        {
+            _userNotifications.ShowInfo("No phone number is registered for this person.", "Phone Call");
+            return;
+        }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = $"tel:{person.Phone}",
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch
+        {
+            System.Windows.Clipboard.SetText(person.Phone);
+            _userNotifications.ShowInfo($"Phone number '{person.Phone}' copied to clipboard.", "Phone Call");
+        }
     }
 }

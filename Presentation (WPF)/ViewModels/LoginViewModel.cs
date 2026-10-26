@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.Auth;
 using DVLD_WPF;
@@ -21,6 +21,11 @@ public partial class LoginViewModel : ObservableObject
     [ObservableProperty] private bool _rememberMe;
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _password = string.Empty;
+    [ObservableProperty] private bool _isPasswordVisible;
+
+    [RelayCommand]
+    private void TogglePasswordVisibility() =>
+        IsPasswordVisible = !IsPasswordVisible;
 
     public LoginViewModel(
         IAuthApiClient authApiClient,
@@ -85,6 +90,7 @@ public partial class LoginViewModel : ObservableObject
         SaveRememberMeSettings();
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+        System.Windows.Application.Current.MainWindow = mainWindow;
         mainWindow.Show();
 
         System.Windows.Application.Current.Windows

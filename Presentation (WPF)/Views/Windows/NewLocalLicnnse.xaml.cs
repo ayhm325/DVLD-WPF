@@ -1,5 +1,6 @@
-﻿using Presentation.ViewModels;
+using Presentation.ViewModels;
 using System.Windows;
+using System.Windows.Input;
 
 namespace Presentation.Views.Windows;
 
@@ -12,13 +13,22 @@ public partial class NewLocalLicnnse : Window
         InitializeComponent();
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         DataContext = _viewModel;
+        _viewModel.RequestClose += () => Close();
+        _viewModel.SaveCompleted += (success) => { if (success) Close(); };
         Loaded += NewLocalLicnnse_Loaded;
     }
 
     private async void NewLocalLicnnse_Loaded(object sender, RoutedEventArgs e)
     {
         Loaded -= NewLocalLicnnse_Loaded;
-        await _viewModel.InitializeAsync();
+        if (!_viewModel.IsInitialized)
+            await _viewModel.InitializeAsync();
+    }
+
+    private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Left)
+            DragMove();
     }
 
     private void NextButton_Click(object sender, RoutedEventArgs e) =>

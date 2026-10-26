@@ -36,6 +36,12 @@ public partial class AddEditLDLAppViewModel : ObservableObject
     [ObservableProperty] private string _filterText = string.Empty;
     [ObservableProperty] private int _selectedFilterIndex;
     [ObservableProperty] private decimal _applicationFees;
+    [ObservableProperty] private bool _isEditMode;
+    [ObservableProperty] private string _windowTitle = "New Local Driving License Application";
+
+    public bool IsInitialized { get; private set; }
+    public event Action? RequestClose;
+    public event Action<bool>? SaveCompleted;
 
     public ObservableCollection<LicenseClassResponse> LicenseClasses { get; } = [];
 
@@ -78,8 +84,45 @@ public partial class AddEditLDLAppViewModel : ObservableObject
 
     public async Task InitializeAsync()
     {
+        IsInitialized = true;
+        IsEditMode = false;
+        WindowTitle = "New Local Driving License Application";
         await LoadLicenseClassesAsync();
         await LoadCreateInfoAsync();
+    }
+
+    public async Task InitializeEditAsync(int localApplicationId)
+    {
+        IsInitialized = true;
+        IsEditMode = true;
+        WindowTitle = "Edit Local Driving License Application";
+        LocalApplicationId = localApplicationId;
+
+        await LoadLicenseClassesAsync();
+
+        var appResult = await _localApplicationsApiClient.GetByIdAsync(localApplicationId);
+        if (appResult.IsFailure || appResult.Value is null)
+        {
+            _notifications.ShowFailure(appResult, "Load Application Failed");
+            return;
+        }
+
+        var app = appResult.Value;
+        ApplicationDate = app.ApplicationDate;
+        ApplicationFees = app.ApplicationFees;
+
+        if (app.ApplicantPersonId > 0)
+        {
+            var personResult = await _peopleApiClient.GetByIdAsync(app.ApplicantPersonId);
+            if (personResult.IsSuccess && personResult.Value is not null)
+                Person = personResult.Value;
+        }
+
+        if (LicenseClasses.Count > 0)
+        {
+            SelectedLicenseClass = LicenseClasses.FirstOrDefault(x => x.LicenseClassId == app.LicenseClassId)
+                ?? LicenseClasses[0];
+        }
     }
 
     private async Task LoadLicenseClassesAsync()
@@ -159,35 +202,66 @@ public partial class AddEditLDLAppViewModel : ObservableObject
 
         try
         {
-            var request = new CreateLocalDrivingLicenseApplicationRequest
+            if (IsEditMode)
             {
-                ApplicantPersonId = Person.PersonId,
-                LicenseClassId = SelectedLicenseClass.LicenseClassId
-            };
+                var updateRequest = new UpdateLocalDrivingLicenseApplicationRequest
+                {
+                    LicenseClassId = SelectedLicenseClass.LicenseClassId
+                };
 
-            var result = await _localApplicationsApiClient.CreateAsync(request);
+                var result = await _localApplicationsApiClient.UpdateAsync(LocalApplicationId, updateRequest);
 
-            if (result.IsFailure)
-            {
-                _notifications.ShowFailure(result, "Create Application Failed");
-                return;
+                if (result.IsFailure)
+                {
+                    _notifications.ShowFailure(result, "Update Application Failed");
+                    SaveCompleted?.Invoke(false);
+                    return;
+                }
+
+                _userNotifications.ShowInfo(
+                    "The application has been successfully updated.",
+                    "Success");
+
+                await _gridViewModel.LoadApplicationsAsync();
+                SaveCompleted?.Invoke(true);
+                RequestClose?.Invoke();
             }
-
-            LocalApplicationId = result.Value;
-
-            if (LocalApplicationId <= 0)
+            else
             {
-                _userNotifications.ShowError(
-                    "Failed to create the application.",
-                    "Create Application");
-                return;
+                var request = new CreateLocalDrivingLicenseApplicationRequest
+                {
+                    ApplicantPersonId = Person.PersonId,
+                    LicenseClassId = SelectedLicenseClass.LicenseClassId
+                };
+
+                var result = await _localApplicationsApiClient.CreateAsync(request);
+
+                if (result.IsFailure)
+                {
+                    _notifications.ShowFailure(result, "Create Application Failed");
+                    SaveCompleted?.Invoke(false);
+                    return;
+                }
+
+                LocalApplicationId = result.Value;
+
+                if (LocalApplicationId <= 0)
+                {
+                    _userNotifications.ShowError(
+                        "Failed to create the application.",
+                        "Create Application");
+                    SaveCompleted?.Invoke(false);
+                    return;
+                }
+
+                _userNotifications.ShowInfo(
+                    $"The application has been successfully created and saved to the system.\n\nID: {LocalApplicationId}",
+                    "Success");
+
+                await _gridViewModel.LoadApplicationsAsync();
+                SaveCompleted?.Invoke(true);
+                RequestClose?.Invoke();
             }
-
-            _userNotifications.ShowInfo(
-                $"The application has been successfully created and saved to the system.\n\nID: {LocalApplicationId}",
-                "Success");
-
-            await _gridViewModel.LoadApplicationsAsync();
         }
         catch (Exception ex)
         {

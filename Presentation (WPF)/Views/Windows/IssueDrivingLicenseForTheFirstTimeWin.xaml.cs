@@ -1,4 +1,4 @@
-﻿using Presentation.Services.Api;
+using Presentation.Services.Api;
 using Presentation.Services.UI;
 using Presentation.ViewModels;
 using System.Windows;
@@ -56,6 +56,7 @@ public partial class IssueDrivingLicenseForTheFirstTimeWin : Window
         window.ShowDialog();
     }
 
+    private void Header_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e) { if (e.ChangedButton == System.Windows.Input.MouseButton.Left) DragMove(); }
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
     protected override void OnClosed(EventArgs e)

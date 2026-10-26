@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.Person;
 using DVLD.Contracts.User;
@@ -48,6 +48,7 @@ public partial class AddEditUserViewModel : ObservableObject
     [ObservableProperty] private Visibility _confirmPasswordVisibility = Visibility.Visible;
 
     public event Action<bool>? SaveCompleted;
+    public event Action? RequestClose;
 
     public AddEditUserViewModel(
         IUsersApiClient usersApiClient,
@@ -451,7 +452,7 @@ public partial class AddEditUserViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Cancel() => MainWindow.Navigation.GoBack();
+    private void Cancel() => RequestClose?.Invoke();
 
     [RelayCommand]
     private void TogglePasswordVisibility() =>

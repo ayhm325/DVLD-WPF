@@ -7,6 +7,8 @@
         Title="Schedule Test"
         Height="700" Width="520"
         WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize">
 

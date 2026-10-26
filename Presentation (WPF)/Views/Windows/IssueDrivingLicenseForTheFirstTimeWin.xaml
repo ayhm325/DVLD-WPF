@@ -9,6 +9,8 @@
         Width="820"
         Height="650"
         WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize">
 
@@ -71,8 +73,13 @@
                     CornerRadius="16,16,0,0"
                     Padding="25,18"
                     BorderBrush="{StaticResource BorderColor}"
-                    BorderThickness="0,0,0,1">
+                    BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="38"
                                 Height="38"
@@ -95,6 +102,13 @@
                                    Style="{StaticResource HeaderStyle}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
+                    <Button Grid.Column="1"
+                            Style="{StaticResource CloseButtonStyle}"
+                            Click="CloseButton_Click"
+                            ToolTip="Close"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="âœ•" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
                 </Grid>
             </Border>
 

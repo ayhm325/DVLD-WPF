@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 public partial class UsersViewModel : ObservableObject
 {
     private readonly IUsersApiClient _usersApiClient;
+    private readonly IPeopleApiClient _peopleApiClient;
     private readonly IApiNotificationService _notifications;
     private readonly IUserNotificationService _userNotifications;
     private List<UserResponse> _allUsers = new();
@@ -28,9 +29,14 @@ public partial class UsersViewModel : ObservableObject
     public List<string> FilterOptions { get; } = new() { "None", "UserID", "UserName", "Status" };
     public List<string> StatusOptions { get; } = new() { "All", "Active", "Inactive" };
 
-    public UsersViewModel(IUsersApiClient usersApiClient, IApiNotificationService notifications, IUserNotificationService userNotifications)
+    public UsersViewModel(
+        IUsersApiClient usersApiClient,
+        IPeopleApiClient peopleApiClient,
+        IApiNotificationService notifications,
+        IUserNotificationService userNotifications)
     {
         _usersApiClient = usersApiClient;
+        _peopleApiClient = peopleApiClient;
         _notifications = notifications;
         _userNotifications = userNotifications;
     }
@@ -91,13 +97,9 @@ public partial class UsersViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void AddNewUser()
+    private async Task AddNewUser()
     {
-        var vm = App.ServiceProvider.GetRequiredService<AddEditUserViewModel>();
-        _ = vm.InitializeAsync(null);
-
-        var window = new AddEditUserWin(vm) { Owner = System.Windows.Application.Current.MainWindow };
-        window.ShowDialog();
+        await OpenEditWindowAsync(null);
     }
 
     [RelayCommand]
@@ -188,12 +190,59 @@ public partial class UsersViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SendEmail()
+    private async Task SendEmail()
     {
+        if (SelectedUser is null)
+            return;
+
+        var personResult = await _peopleApiClient.GetByIdAsync(SelectedUser.PersonId);
+        if (personResult.IsFailure || personResult.Value is null || string.IsNullOrWhiteSpace(personResult.Value.Email))
+        {
+            _userNotifications.ShowInfo("No email address is registered for this user.", "Email");
+            return;
+        }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = $"mailto:{personResult.Value.Email}",
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowError($"Could not open email client: {ex.Message}", "Email");
+        }
     }
 
     [RelayCommand]
-    private void PhoneCall()
+    private async Task PhoneCall()
     {
+        if (SelectedUser is null)
+            return;
+
+        var personResult = await _peopleApiClient.GetByIdAsync(SelectedUser.PersonId);
+        if (personResult.IsFailure || personResult.Value is null || string.IsNullOrWhiteSpace(personResult.Value.Phone))
+        {
+            _userNotifications.ShowInfo("No phone number is registered for this user.", "Phone Call");
+            return;
+        }
+
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = $"tel:{personResult.Value.Phone}",
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch
+        {
+            System.Windows.Clipboard.SetText(personResult.Value.Phone);
+            _userNotifications.ShowInfo($"Phone number '{personResult.Value.Phone}' copied to clipboard.", "Phone Call");
+        }
     }
 }
