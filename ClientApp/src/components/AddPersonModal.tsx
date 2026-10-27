@@ -1,0 +1,429 @@
+
+import { useEffect, useState } from 'react'
+import type { FormEvent, ChangeEvent } from 'react'
+
+import { getCountries } from '../services/countryService'
+import type { Country } from '../services/countryService'
+
+import { createPerson } from '../services/personService'
+
+type AddPersonModalProps = {
+  accessToken: string
+  onClose: () => void
+  onPersonAdded: () => void
+}
+
+export default function AddPersonModal({
+  accessToken,
+  onClose,
+  onPersonAdded,
+}: AddPersonModalProps) {
+  const [countries, setCountries] = useState<Country[]>([])
+  const [loadingCountries, setLoadingCountries] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState('')
+
+  // Load countries
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCountries() {
+      try {
+        setLoadingCountries(true)
+        setError('')
+
+        const result = await getCountries(accessToken)
+
+        if (!cancelled) {
+          setCountries(result)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Failed to load countries.',
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCountries(false)
+        }
+      }
+    }
+
+    void loadCountries()
+
+    return () => {
+      cancelled = true
+    }
+  }, [accessToken])
+
+  // Create image preview
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview('')
+      return
+    }
+
+    const previewUrl = URL.createObjectURL(imageFile)
+    setImagePreview(previewUrl)
+
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [imageFile])
+
+  // Validate selected image
+  function handleImageChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0]
+
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.')
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size must not exceed 5 MB.')
+      event.target.value = ''
+      return
+    }
+
+    setError('')
+    setImageFile(file)
+  }
+
+  // Create person
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
+    setError('')
+
+    const form = event.currentTarget
+    const formData = new FormData(form)
+
+    const dateOfBirth = String(
+      formData.get('dateOfBirth') ?? '',
+    )
+
+    const birthDate = new Date(`${dateOfBirth}T00:00:00`)
+    const today = new Date()
+
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDifference = today.getMonth() - birthDate.getMonth()
+
+    if (
+      monthDifference < 0 ||
+      (monthDifference === 0 &&
+        today.getDate() < birthDate.getDate())
+    ) {
+      age--
+    }
+
+    if (age < 18) {
+      setError('The person must be at least 18 years old.')
+      return
+    }
+
+    const nationalNo = String(
+      formData.get('nationalNo') ?? '',
+    ).trim()
+
+    const phone = String(
+      formData.get('phone') ?? '',
+    ).trim()
+
+    if (!/^\d{10}$/.test(nationalNo)) {
+      setError('National number must be exactly 10 digits.')
+      return
+    }
+
+    if (!/^(077|078|079)\d{7}$/.test(phone)) {
+      setError(
+        'Phone number must start with 077, 078, or 079 and contain 10 digits.',
+      )
+      return
+    }
+
+    setSaving(true)
+
+    try {
+      await createPerson(accessToken, {
+        nationalNo,
+        firstName: String(
+          formData.get('firstName') ?? '',
+        ).trim(),
+        secondName: String(
+          formData.get('secondName') ?? '',
+        ).trim(),
+        thirdName:
+          String(formData.get('thirdName') ?? '').trim() || null,
+        lastName: String(
+          formData.get('lastName') ?? '',
+        ).trim(),
+        dateOfBirth,
+        gender: Number(formData.get('gender')),
+        address: String(
+          formData.get('address') ?? '',
+        ).trim(),
+        phone,
+        email:
+          String(formData.get('email') ?? '').trim() || null,
+        nationalityCountryID: Number(
+          formData.get('nationalityCountryID'),
+        ),
+        imagePath: null,
+      })
+
+      onPersonAdded()
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to create person.',
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div
+      className="modal-overlay"
+      onClick={saving ? undefined : onClose}
+    >
+      <section
+        className="person-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-person-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="modal-header">
+          <div>
+            <h2 id="add-person-title">Add New Person</h2>
+            <p>Enter the person's information below.</p>
+          </div>
+
+          <button
+            type="button"
+            className="modal-close-button"
+            onClick={onClose}
+            disabled={saving}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        {loadingCountries ? (
+          <p>Loading countries...</p>
+        ) : (
+          <form
+            className="person-form"
+            onSubmit={handleSubmit}
+          >
+            {/* Personal photo */}
+            <div className="person-photo-section">
+              <div className="person-photo-preview">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Person preview"
+                    className="person-photo-image"
+                  />
+                ) : (
+                  <span className="person-photo-placeholder">
+                    No Photo
+                  </span>
+                )}
+              </div>
+
+              <div className="person-photo-controls">
+                <label htmlFor="person-image">
+                  Personal Photo
+                </label>
+
+                <input
+                  id="person-image"
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  disabled={saving}
+                />
+
+                <p>Optional · Maximum size: 5 MB</p>
+
+                {imageFile && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      setImageFile(null)
+                      setError('')
+                    }}
+                    disabled={saving}
+                  >
+                    Remove Photo
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* National number */}
+            <label>
+              National Number *
+              <input
+                name="nationalNo"
+                required
+                maxLength={10}
+                inputMode="numeric"
+              />
+            </label>
+
+            <div className="form-grid">
+              <label>
+                First Name *
+                <input
+                  name="firstName"
+                  required
+                  maxLength={50}
+                />
+              </label>
+
+              <label>
+                Second Name *
+                <input
+                  name="secondName"
+                  required
+                  maxLength={50}
+                />
+              </label>
+
+              <label>
+                Third Name
+                <input name="thirdName" maxLength={50} />
+              </label>
+
+              <label>
+                Last Name *
+                <input
+                  name="lastName"
+                  required
+                  maxLength={50}
+                />
+              </label>
+
+              <label>
+                Date of Birth *
+                <input
+                  name="dateOfBirth"
+                  type="date"
+                  required
+                  max={new Date().toISOString().slice(0, 10)}
+                  min={`${new Date().getFullYear() - 120}-01-01`}
+                />
+              </label>
+
+              <label>
+                Gender *
+                <select
+                  name="gender"
+                  defaultValue="0"
+                  required
+                >
+                  <option value="0">Male</option>
+                  <option value="1">Female</option>
+                </select>
+              </label>
+
+              <label>
+                Nationality *
+                <select
+                  name="nationalityCountryID"
+                  required
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select a country
+                  </option>
+
+                  {countries.map((country) => (
+                    <option
+                      key={country.countryId}
+                      value={country.countryId}
+                    >
+                      {country.countryName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Phone *
+                <input
+                  name="phone"
+                  type="tel"
+                  required
+                  maxLength={10}
+                  inputMode="numeric"
+                  placeholder="07XXXXXXXX"
+                />
+              </label>
+
+              <label className="form-full-width">
+                Address *
+                <input
+                  name="address"
+                  required
+                  maxLength={200}
+                />
+              </label>
+
+              <label className="form-full-width">
+                Email
+                <input
+                  name="email"
+                  type="email"
+                  maxLength={100}
+                />
+              </label>
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={onClose}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={saving || loadingCountries}
+              >
+                {saving ? 'Saving...' : 'Save Person'}
+              </button>
+            </div>
+          </form>
+        )}
+      </section>
+    </div>
+  )
+}

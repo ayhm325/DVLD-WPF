@@ -279,6 +279,18 @@ builder.Services.AddScoped<
 // ============================================================
 
 builder.Services.AddControllers();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ReactApp", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
 // ============================================================
@@ -358,6 +370,8 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
 app.UseRouting();
+
+app.UseCors("ReactApp");
 
 app.UseRateLimiter();
 

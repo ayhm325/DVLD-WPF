@@ -1,0 +1,1609 @@
+/* =====================================================
+   DVLD — PROFESSIONAL DASHBOARD
+   Sidebar · Topbar · Welcome Banner · Statistics
+   People Table · Add-Person Modal · Responsive
+
+   TABLE OF CONTENTS
+   -----------------------------------------------------
+   01. Design Tokens
+   02. Reset & Base
+   03. App Layout
+   04. Sidebar
+   05. Main Content & Topbar
+   06. Page Content
+   07. Welcome Banner
+   08. Statistics Cards
+   09. Panels
+   10. Buttons & Form Controls
+   11. People Table
+   12. Add Person Modal
+   13. Placeholder Pages
+   14. App Footer
+   15. Focus & Accessibility
+   16. Responsive — Tablet (max-width: 1100px)
+   17. Responsive — Mobile (max-width: 700px)
+   18. Responsive — Small Phones (max-width: 380px)
+   19. Reduced Motion
+===================================================== */
+
+/* =====================================================
+   01. Design Tokens
+===================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Brand — golden amber */
+  --dvld-primary: #f9a825;
+  --dvld-primary-hover: #e69a12;
+  --dvld-primary-light: #fff4cf;
+  --dvld-primary-border: #ffd54f;
+  --dvld-primary-soft: rgba(249, 168, 37, 0.15);
+  --dvld-primary-ring: rgba(249, 168, 37, 0.14);
+
+  /* Sidebar */
+  --dvld-sidebar: #252a32;
+  --dvld-sidebar-hover: #343b45;
+  --dvld-sidebar-text: #cbd0d8;
+  --dvld-sidebar-muted: #89919e;
+  --dvld-sidebar-line: rgba(255, 255, 255, 0.09);
+
+  /* Surfaces */
+  --dvld-page: #f5f6f8;
+  --dvld-surface: #ffffff;
+  --dvld-surface-subtle: #f8f9fb;
+  --dvld-surface-hover: #fffdf6;
+  --dvld-overlay: rgba(15, 23, 42, 0.6);
+
+  /* Text */
+  --dvld-text: #343943;
+  --dvld-heading: #20242c;
+  --dvld-muted: #858c98;
+  --dvld-faint: #a1a6af;
+
+  /* Borders */
+  --dvld-border: #e8eaee;
+  --dvld-border-strong: #d9dde4;
+
+  /* Status */
+  --dvld-success: #21865a;
+  --dvld-success-bg: #e8f6ee;
+  --dvld-success-dot: #27a36a;
+
+  /* Elevation */
+  --dvld-shadow-sm: 0 2px 8px rgba(26, 32, 44, 0.04);
+  --dvld-shadow-md: 0 8px 24px rgba(26, 32, 44, 0.07);
+  --dvld-shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.25);
+
+  /* Shape */
+  --dvld-radius-sm: 7px;
+  --dvld-radius-md: 12px;
+  --dvld-radius-lg: 16px;
+
+  /* Layout */
+  --dvld-sidebar-width: 250px;
+  --dvld-z-modal: 1000;
+}
+
+/* =====================================================
+   02. Reset & Base
+   Scoped to the dashboard shell + modal overlay so the
+   rest of the host application is never affected.
+===================================================== */
+
+.app-shell,
+.app-shell *,
+.app-shell *::before,
+.app-shell *::after,
+.modal-overlay,
+.modal-overlay *,
+.modal-overlay *::before,
+.modal-overlay *::after {
+  box-sizing: border-box;
+}
+
+/* Full-bleed dashboard shell */
+body {
+  margin: 0;
+}
+
+/* =====================================================
+   03. App Layout
+===================================================== */
+
+.app-shell {
+  display: flex;
+
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+
+  color: var(--dvld-text);
+  background: var(--dvld-page);
+
+  text-align: start;
+}
+
+/* =====================================================
+   04. Sidebar
+===================================================== */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+
+  width: var(--dvld-sidebar-width);
+  height: 100vh;
+  height: 100svh;
+
+  padding: 26px 16px 18px;
+
+  overflow-y: auto;
+
+  color: var(--dvld-sidebar-text);
+  background: var(--dvld-sidebar);
+
+  scrollbar-width: thin;
+  scrollbar-color: #3a414c transparent;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 0 8px 30px;
+
+  border-bottom: 1px solid var(--dvld-sidebar-line);
+}
+
+.brand-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 44px;
+  height: 44px;
+
+  color: #28241b;
+  background: var(--dvld-primary);
+
+  border-radius: 13px;
+
+  font-size: 25px;
+  font-weight: 850;
+}
+
+.brand h2 {
+  margin: 0;
+
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 750;
+  letter-spacing: 0.3px;
+}
+
+.brand span {
+  display: block;
+  margin-top: 2px;
+
+  color: var(--dvld-sidebar-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.nav-heading {
+  margin: 30px 10px 12px;
+
+  color: var(--dvld-sidebar-muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 1.3px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  width: 100%;
+  min-height: 46px;
+
+  padding: 11px 13px;
+
+  color: var(--dvld-sidebar-text);
+  background: transparent;
+
+  border: 1px solid transparent;
+  border-radius: var(--dvld-radius-sm);
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  text-align: start;
+
+  cursor: pointer;
+
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.nav-item:hover {
+  color: #ffffff;
+  background: var(--dvld-sidebar-hover);
+}
+
+.nav-item.active {
+  color: #ffffff;
+  background: var(--dvld-primary-soft);
+  border-color: rgba(249, 168, 37, 0.22);
+}
+
+.nav-item.active .nav-icon {
+  color: var(--dvld-primary);
+}
+
+.nav-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 22px;
+  height: 22px;
+
+  color: #aeb5c0;
+
+  font-size: 21px;
+  line-height: 1;
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  margin-top: auto;
+  padding: 20px 7px 0;
+
+  border-top: 1px solid var(--dvld-sidebar-line);
+}
+
+.user-avatar,
+.topbar-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 39px;
+  height: 39px;
+
+  color: #382a08;
+  background: var(--dvld-primary-light);
+
+  border: 1px solid rgba(249, 168, 37, 0.35);
+  border-radius: 50%;
+
+  font-weight: 750;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.user-info strong {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.user-info span {
+  color: var(--dvld-sidebar-muted);
+  font-size: 11px;
+}
+
+/* =====================================================
+   05. Main Content & Topbar
+===================================================== */
+
+.main-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  min-width: 0;
+  min-height: 100vh;
+
+  background: var(--dvld-page);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  min-height: 94px;
+  padding: 20px 34px;
+
+  background: var(--dvld-surface);
+  border-bottom: 1px solid var(--dvld-border);
+}
+
+.breadcrumb {
+  margin: 0 0 5px;
+
+  color: var(--dvld-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.topbar h1 {
+  margin: 0;
+
+  color: var(--dvld-heading);
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -0.6px;
+  line-height: 1.3;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.system-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 7px 11px;
+
+  color: var(--dvld-success);
+  background: var(--dvld-success-bg);
+
+  border-radius: 30px;
+
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+
+  background: var(--dvld-success-dot);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(39, 163, 106, 0.12);
+}
+
+.topbar-avatar {
+  width: 40px;
+  height: 40px;
+
+  color: var(--dvld-heading);
+  background: var(--dvld-primary-light);
+}
+
+/* =====================================================
+   06. Page Content
+===================================================== */
+
+.page-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 25px;
+
+  width: 100%;
+  max-width: 1600px;
+
+  margin-inline: auto;
+  padding: 30px 34px 40px;
+}
+
+/* =====================================================
+   07. Welcome Banner
+===================================================== */
+
+.welcome-banner {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  min-height: 180px;
+  padding: 30px 34px;
+
+  overflow: hidden;
+
+  background: linear-gradient(115deg, #fff9e8 0%, #ffffff 72%);
+
+  border: 1px solid #f1e5c4;
+  border-radius: var(--dvld-radius-lg);
+}
+
+.welcome-banner > div:first-child {
+  position: relative;
+  z-index: 1;
+
+  max-width: 620px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+
+  color: #9b6a08;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.welcome-banner h2 {
+  margin: 0 0 9px;
+
+  color: var(--dvld-heading);
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 750;
+  letter-spacing: -0.8px;
+}
+
+.welcome-banner p:last-child {
+  margin: 0;
+
+  color: var(--dvld-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.banner-mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 104px;
+  height: 104px;
+
+  color: rgba(155, 106, 8, 0.8);
+  background: rgba(249, 168, 37, 0.13);
+
+  border: 1px solid rgba(249, 168, 37, 0.22);
+  border-radius: 27px;
+
+  font-size: 60px;
+  font-weight: 850;
+
+  transform: rotate(5deg);
+}
+
+/* =====================================================
+   08. Statistics Cards
+===================================================== */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.stat-card {
+  min-width: 0;
+  padding: 21px;
+
+  background: var(--dvld-surface);
+  border: 1px solid var(--dvld-border);
+  border-radius: var(--dvld-radius-md);
+
+  box-shadow: var(--dvld-shadow-sm);
+
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+
+  border-color: #f0d995;
+  box-shadow: var(--dvld-shadow-md);
+}
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  margin-bottom: 18px;
+
+  color: var(--dvld-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.stat-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 39px;
+  height: 39px;
+
+  color: #8d6209;
+  background: var(--dvld-primary-light);
+
+  border-radius: 11px;
+
+  font-size: 23px;
+}
+
+.stat-card > strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--dvld-heading);
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+
+.stat-card > p {
+  margin: 0;
+
+  color: var(--dvld-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+/* =====================================================
+   09. Panels
+===================================================== */
+
+.panel {
+  min-width: 0;
+
+  overflow: hidden;
+
+  background: var(--dvld-surface);
+  border: 1px solid var(--dvld-border);
+  border-radius: var(--dvld-radius-md);
+
+  box-shadow: var(--dvld-shadow-sm);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding: 24px 25px 20px;
+}
+
+.panel-header h2 {
+  margin: 0 0 6px;
+
+  color: var(--dvld-heading);
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.3px;
+}
+
+.panel-header p {
+  margin: 0;
+
+  color: var(--dvld-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.people-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.people-count {
+  color: var(--dvld-text);
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.record-count {
+  flex-shrink: 0;
+
+  padding: 7px 10px;
+
+  color: #88600b;
+  background: var(--dvld-primary-light);
+
+  border: 1px solid #f4e1a5;
+  border-radius: 20px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* =====================================================
+   10. Buttons & Form Controls
+===================================================== */
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0 25px 20px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 430px;
+  min-width: 0;
+  min-height: 42px;
+
+  padding: 10px 13px;
+
+  color: var(--dvld-heading);
+  background: var(--dvld-surface-subtle);
+
+  border: 1px solid var(--dvld-border-strong);
+  border-radius: var(--dvld-radius-sm);
+
+  font-family: inherit;
+  font-size: 12px;
+
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.search-input::placeholder {
+  color: var(--dvld-faint);
+}
+
+.search-input:hover {
+  border-color: #c8b16c;
+}
+
+/* Unified focus ring for all text inputs & selects */
+.search-input:focus,
+.person-form input:focus,
+.person-form select:focus {
+  border-color: var(--dvld-primary);
+  outline: none;
+
+  background: var(--dvld-surface);
+  box-shadow: 0 0 0 3px var(--dvld-primary-ring);
+}
+
+.secondary-button,
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 40px;
+  padding: 9px 16px;
+
+  border-radius: var(--dvld-radius-sm);
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+}
+
+.secondary-button {
+  flex-shrink: 0;
+
+  color: var(--dvld-text);
+  background: var(--dvld-surface);
+
+  border: 1px solid var(--dvld-border-strong);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--dvld-surface-subtle);
+  border-color: #c3c8d0;
+}
+
+.primary-button {
+  color: #302408;
+  background: var(--dvld-primary);
+
+  border: 1px solid var(--dvld-primary);
+}
+
+.primary-button:hover {
+  background: var(--dvld-primary-hover);
+  border-color: var(--dvld-primary-hover);
+}
+
+.primary-button:active:not(:disabled) {
+  background: #d18e0f;
+  border-color: #d18e0f;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* =====================================================
+   11. People Table
+===================================================== */
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.people-table {
+  width: 100%;
+  min-width: 650px;
+
+  border-collapse: separate;
+  border-spacing: 0;
+
+  text-align: start;
+}
+
+.people-table thead {
+  background: var(--dvld-surface-subtle);
+}
+
+.people-table th {
+  padding: 14px 18px;
+
+  color: #777f8c;
+  background: var(--dvld-surface-subtle);
+
+  border-top: 1px solid var(--dvld-border);
+  border-bottom: 1px solid var(--dvld-border);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+
+  white-space: nowrap;
+}
+
+.people-table td {
+  padding: 14px 18px;
+
+  color: var(--dvld-text);
+  background: var(--dvld-surface);
+
+  border-bottom: 1px solid #eff0f3;
+
+  font-size: 12px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.people-table tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.people-table tbody tr:hover td {
+  background: var(--dvld-surface-hover);
+}
+
+.people-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.people-table td:first-child {
+  color: #8b919b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.people-table td:nth-child(3) {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+}
+
+/* Person cell */
+
+.person-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-width: 180px;
+}
+
+.person-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 34px;
+  height: 34px;
+
+  color: #74520b;
+  background: var(--dvld-primary-light);
+
+  border: 1px solid #f1e1ad;
+  border-radius: 50%;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.person-cell strong {
+  color: var(--dvld-heading);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+/* Gender badge */
+
+.gender-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 5px 9px;
+
+  color: #5d6470;
+  background: #f0f2f5;
+
+  border-radius: 20px;
+
+  font-size: 10px;
+  font-weight: 650;
+}
+
+/* Empty state */
+
+.empty-state {
+  padding: 40px 20px !important;
+
+  color: var(--dvld-muted) !important;
+  text-align: center;
+
+  white-space: normal !important;
+}
+
+/* Table footer */
+
+.panel-footer {
+  padding: 15px 25px;
+
+  color: var(--dvld-muted);
+  background: var(--dvld-surface);
+
+  border-top: 1px solid var(--dvld-border);
+
+  font-size: 11px;
+}
+
+/* =====================================================
+   12. Add Person Modal
+   NOTE: kept OUTSIDE any media query — in the previous
+   version this whole block was accidentally nested inside
+   @media (prefers-reduced-motion) and never applied.
+===================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--dvld-z-modal);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  overflow-y: auto;
+
+  background: var(--dvld-overlay);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+@keyframes dvld-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.person-modal {
+  width: 100%;
+  max-width: 760px;
+  max-height: calc(100vh - 48px);
+  max-height: calc(100svh - 48px);
+
+  /* Safe centering: keeps long modals scrollable on
+     short viewports instead of clipping the top */
+  margin: auto;
+
+  padding: 28px;
+
+  overflow-y: auto;
+
+  color: var(--dvld-heading);
+  background: var(--dvld-surface);
+
+  border: 1px solid var(--dvld-border);
+  border-radius: var(--dvld-radius-lg);
+  box-shadow: var(--dvld-shadow-lg);
+
+  scrollbar-width: thin;
+  scrollbar-color: #c9cdd4 transparent;
+
+  animation: dvld-modal-in 220ms ease;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 24px;
+}
+
+.modal-header h2 {
+  margin: 0 0 8px;
+
+  color: var(--dvld-heading);
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.4px;
+}
+
+.modal-header p {
+  margin: 0;
+
+  color: var(--dvld-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.modal-close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 36px;
+  height: 36px;
+
+  color: var(--dvld-text);
+  background: var(--dvld-surface-subtle);
+
+  border: 1px solid var(--dvld-border);
+  border-radius: var(--dvld-radius-sm);
+
+  font-size: 24px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.modal-close-button:hover {
+  color: var(--dvld-heading);
+  background: #eef0f4;
+  border-color: var(--dvld-border-strong);
+}
+
+.person-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.person-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  min-width: 0;
+
+  color: var(--dvld-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.person-form input,
+.person-form select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+
+  padding: 10px 12px;
+
+  color: var(--dvld-heading);
+  background: var(--dvld-surface);
+
+  border: 1px solid var(--dvld-border-strong);
+  border-radius: var(--dvld-radius-sm);
+
+  font: inherit;
+  font-weight: 400;
+}
+
+.person-form select {
+  cursor: pointer;
+}
+
+.form-full-width {
+  grid-column: 1 / -1;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  padding-top: 8px;
+}
+
+/* Modal — small screens */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .person-modal {
+    max-height: calc(100vh - 24px);
+    max-height: calc(100svh - 24px);
+
+    padding: 20px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-full-width {
+    grid-column: auto;
+  }
+}
+
+/* =====================================================
+   13. Placeholder Pages
+===================================================== */
+
+.placeholder-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 330px;
+  padding: 40px 24px;
+
+  text-align: center;
+}
+
+.placeholder-icon {
+  display: grid;
+  place-items: center;
+
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+
+  color: #8d6209;
+  background: var(--dvld-primary-light);
+
+  border: 1px solid #f1e1ad;
+  border-radius: 18px;
+
+  font-size: 30px;
+}
+
+.placeholder-panel h2 {
+  margin: 0 0 8px;
+
+  color: var(--dvld-heading);
+  font-size: 21px;
+}
+
+.placeholder-panel p {
+  margin: 0 0 22px;
+
+  color: var(--dvld-muted);
+  font-size: 13px;
+}
+
+/* =====================================================
+   14. App Footer
+===================================================== */
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 20px 34px;
+
+  color: var(--dvld-muted);
+  background: var(--dvld-page);
+
+  border-top: 1px solid var(--dvld-border);
+
+  font-size: 10px;
+}
+
+.app-footer span {
+  color: var(--dvld-faint);
+}
+
+/* =====================================================
+   15. Focus & Accessibility
+   Global (not scoped to .app-shell) so the modal stays
+   keyboard-accessible even when rendered via a portal.
+===================================================== */
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--dvld-primary);
+  outline-offset: 3px;
+}
+
+/* =====================================================
+   16. Responsive — Tablet (max-width: 1100px)
+===================================================== */
+
+@media (max-width: 1100px) {
+  :root {
+    --dvld-sidebar-width: 220px;
+  }
+
+  .page-content {
+    gap: 21px;
+    padding: 25px 22px 32px;
+  }
+
+  .topbar {
+    padding-inline: 24px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-card {
+    padding: 18px;
+  }
+
+  .panel-header,
+  .table-toolbar {
+    padding-inline: 20px;
+  }
+
+  .panel-footer {
+    padding-inline: 20px;
+  }
+}
+
+/* =====================================================
+   17. Responsive — Mobile (max-width: 700px)
+===================================================== */
+
+@media (max-width: 700px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: relative;
+
+    width: 100%;
+    height: auto;
+    max-height: none;
+
+    padding: 14px 16px;
+
+    overflow: visible;
+  }
+
+  .brand {
+    padding: 0 2px 14px;
+  }
+
+  .brand-icon {
+    width: 38px;
+    height: 38px;
+
+    border-radius: 10px;
+
+    font-size: 21px;
+  }
+
+  .brand h2 {
+    font-size: 18px;
+  }
+
+  .nav-heading {
+    margin: 15px 3px 8px;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    gap: 7px;
+
+    padding-bottom: 3px;
+
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+
+    min-height: 39px;
+    padding: 8px 11px;
+    gap: 7px;
+
+    font-size: 11px;
+  }
+
+  .nav-icon {
+    width: 17px;
+    height: 17px;
+
+    font-size: 17px;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .main-content {
+    min-height: auto;
+  }
+
+  .topbar {
+    min-height: 76px;
+    padding: 16px 18px;
+    gap: 10px;
+  }
+
+  .topbar h1 {
+    font-size: 22px;
+  }
+
+  .topbar-actions {
+    gap: 10px;
+  }
+
+  .system-status {
+    padding: 6px 8px;
+
+    font-size: 9px;
+  }
+
+  .topbar-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .page-content {
+    gap: 18px;
+    padding: 20px 14px 26px;
+  }
+
+  .welcome-banner {
+    min-height: 145px;
+    padding: 23px 20px;
+
+    border-radius: var(--dvld-radius-md);
+  }
+
+  .welcome-banner h2 {
+    font-size: 22px;
+  }
+
+  .welcome-banner p:last-child {
+    max-width: 360px;
+
+    font-size: 11px;
+  }
+
+  .banner-mark {
+    width: 64px;
+    height: 64px;
+
+    border-radius: 17px;
+
+    font-size: 38px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+  }
+
+  .stat-card {
+    padding: 14px;
+
+    border-radius: var(--dvld-radius-sm);
+  }
+
+  .stat-card-top {
+    align-items: flex-start;
+    gap: 6px;
+
+    margin-bottom: 12px;
+
+    font-size: 10px;
+  }
+
+  .stat-icon {
+    width: 31px;
+    height: 31px;
+
+    border-radius: 9px;
+
+    font-size: 18px;
+  }
+
+  .stat-card > strong {
+    font-size: 25px;
+  }
+
+  .stat-card > p {
+    font-size: 10px;
+  }
+
+  .panel {
+    border-radius: var(--dvld-radius-sm);
+  }
+
+  .panel-header {
+    align-items: flex-start;
+    gap: 10px;
+
+    padding: 18px 15px 16px;
+  }
+
+  .panel-header h2 {
+    font-size: 15px;
+  }
+
+  .panel-header p {
+    font-size: 11px;
+  }
+
+  .record-count {
+    padding: 6px 8px;
+
+    font-size: 9px;
+  }
+
+  .table-toolbar {
+    gap: 7px;
+
+    padding: 0 15px 15px;
+  }
+
+  .search-input {
+    min-height: 40px;
+
+    padding: 9px 10px;
+
+    font-size: 11px;
+  }
+
+  .secondary-button {
+    min-height: 38px;
+
+    padding: 8px 10px;
+
+    font-size: 11px;
+  }
+
+  .people-table th,
+  .people-table td {
+    padding: 12px;
+  }
+
+  .panel-footer {
+    padding: 13px 15px;
+
+    font-size: 10px;
+  }
+
+  .app-footer {
+    padding: 17px 15px;
+
+    font-size: 9px;
+  }
+}
+
+/* =====================================================
+   18. Responsive — Small Phones (max-width: 380px)
+===================================================== */
+
+@media (max-width: 380px) {
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .topbar-actions {
+    flex-direction: column-reverse;
+    align-items: flex-end;
+  }
+
+  .system-status {
+    font-size: 8px;
+  }
+
+  .welcome-banner {
+    padding: 18px 15px;
+  }
+
+  .banner-mark {
+    width: 48px;
+    height: 48px;
+
+    border-radius: 12px;
+
+    font-size: 29px;
+  }
+
+  .stats-grid {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 11px;
+  }
+
+  .stat-card-top {
+    flex-direction: column-reverse;
+  }
+
+  .panel-header {
+    flex-direction: column;
+  }
+
+  .table-toolbar {
+    align-items: stretch;
+  }
+}
+
+
+.person-photo-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.person-photo-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.person-photo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-photo-placeholder {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.person-photo-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.person-photo-controls p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.form-error {
+  margin: 0 0 16px;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .person-photo-section {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+
+/* =====================================================
+   19. Reduced Motion
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
