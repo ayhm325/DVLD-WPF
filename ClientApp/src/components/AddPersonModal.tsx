@@ -4,7 +4,6 @@ import type { FormEvent, ChangeEvent } from 'react'
 
 import { getCountries } from '../services/countryService'
 import type { Country } from '../services/countryService'
-
 import { createPerson } from '../services/personService'
 
 type AddPersonModalProps = {
@@ -25,7 +24,7 @@ export default function AddPersonModal({
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
 
-  // Load countries
+  // Load countries from the API
   useEffect(() => {
     let cancelled = false
 
@@ -61,20 +60,35 @@ export default function AddPersonModal({
     }
   }, [accessToken])
 
-  // Create image preview
+  // Create and clean up the image preview asynchronously
   useEffect(() => {
     if (!imageFile) {
-      setImagePreview('')
       return
     }
 
-    const previewUrl = URL.createObjectURL(imageFile)
-    setImagePreview(previewUrl)
+    const reader = new FileReader()
 
-    return () => URL.revokeObjectURL(previewUrl)
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setImagePreview(reader.result)
+      }
+    }
+
+    reader.onerror = () => {
+      setError('Failed to preview the selected image.')
+      setImagePreview('')
+    }
+
+    reader.readAsDataURL(imageFile)
+
+    return () => {
+      if (reader.readyState === FileReader.LOADING) {
+        reader.abort()
+      }
+    }
   }, [imageFile])
 
-  // Validate selected image
+  // Validate the selected image
   function handleImageChange(
     event: ChangeEvent<HTMLInputElement>,
   ) {
@@ -95,10 +109,26 @@ export default function AddPersonModal({
     }
 
     setError('')
+    setImagePreview('')
     setImageFile(file)
   }
 
-  // Create person
+  // Remove the selected image
+  function handleRemoveImage() {
+    setImageFile(null)
+    setImagePreview('')
+    setError('')
+
+    const imageInput = document.getElementById(
+      'person-image',
+    ) as HTMLInputElement | null
+
+    if (imageInput) {
+      imageInput.value = ''
+    }
+  }
+
+  // Create a person through the API
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -115,8 +145,11 @@ export default function AddPersonModal({
     const birthDate = new Date(`${dateOfBirth}T00:00:00`)
     const today = new Date()
 
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDifference = today.getMonth() - birthDate.getMonth()
+    let age =
+      today.getFullYear() - birthDate.getFullYear()
+
+    const monthDifference =
+      today.getMonth() - birthDate.getMonth()
 
     if (
       monthDifference < 0 ||
@@ -126,7 +159,7 @@ export default function AddPersonModal({
       age--
     }
 
-    if (age < 18) {
+    if (!Number.isFinite(birthDate.getTime()) || age < 18) {
       setError('The person must be at least 18 years old.')
       return
     }
@@ -163,7 +196,8 @@ export default function AddPersonModal({
           formData.get('secondName') ?? '',
         ).trim(),
         thirdName:
-          String(formData.get('thirdName') ?? '').trim() || null,
+          String(formData.get('thirdName') ?? '').trim() ||
+          null,
         lastName: String(
           formData.get('lastName') ?? '',
         ).trim(),
@@ -174,10 +208,12 @@ export default function AddPersonModal({
         ).trim(),
         phone,
         email:
-          String(formData.get('email') ?? '').trim() || null,
+          String(formData.get('email') ?? '').trim() ||
+          null,
         nationalityCountryID: Number(
           formData.get('nationalityCountryID'),
         ),
+        // The API currently receives a path, not the image file.
         imagePath: null,
       })
 
@@ -271,10 +307,7 @@ export default function AddPersonModal({
                   <button
                     type="button"
                     className="secondary-button"
-                    onClick={() => {
-                      setImageFile(null)
-                      setError('')
-                    }}
+                    onClick={handleRemoveImage}
                     disabled={saving}
                   >
                     Remove Photo
@@ -291,6 +324,8 @@ export default function AddPersonModal({
                 required
                 maxLength={10}
                 inputMode="numeric"
+                pattern="\d{10}"
+                title="Enter exactly 10 digits."
               />
             </label>
 
@@ -380,7 +415,9 @@ export default function AddPersonModal({
                   required
                   maxLength={10}
                   inputMode="numeric"
+                  pattern="(077|078|079)\d{7}"
                   placeholder="07XXXXXXXX"
+                  title="Enter a 10-digit Jordanian mobile number."
                 />
               </label>
 

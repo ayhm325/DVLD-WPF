@@ -1,5 +1,6 @@
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
 import './App.css'
 
 import Sidebar from './components/Sidebar'
@@ -7,6 +8,12 @@ import Topbar from './components/Topbar'
 import PeopleTable from './components/PeopleTable'
 import Login from './components/Login'
 import AddPersonModal from './components/AddPersonModal'
+
+import CountriesPage from './components/CountriesPage'
+import ApplicationTypesPage from './components/ApplicationTypesPage'
+import LicenseClassesPage from './components/LicenseClassesPage'
+import TestTypesPage from './components/TestTypesPage'
+import DriversPage from './components/DriversPage'
 
 import { getPeople } from './services/peopleService'
 import type { Person } from './types/Person'
@@ -21,37 +28,26 @@ const settingsPages = [
   'Countries',
 ]
 
-const pageDescriptions: Record<string, string> = {
-  'Application Types': 'Manage application types and their fees.',
-  'License Classes': 'View the available license classes.',
-  'Test Types': 'Manage test types and their fees.',
-  Countries: 'View the countries available in the system.',
-}
-
 export default function App() {
-  // Authentication
   const [accessToken, setAccessToken] = useState<string | null>(null)
-
-  // Navigation
   const [activePage, setActivePage] = useState('Dashboard')
 
-  // People search
+  // People
   const [searchName, setSearchName] = useState('')
-
-  // People data
   const [people, setPeople] = useState<Person[]>([])
   const [loadingPeople, setLoadingPeople] = useState(false)
   const [peopleError, setPeopleError] = useState('')
 
-  // Drivers data
+  // Drivers
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [loadingDrivers, setLoadingDrivers] = useState(false)
   const [driversError, setDriversError] = useState('')
+  const [driversRefreshKey, setDriversRefreshKey] = useState(0)
 
-  // Add Person Modal
+  // Add person modal
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false)
 
-  // Load people from API
+  // Load people
   useEffect(() => {
     if (accessToken === null) return
 
@@ -89,7 +85,7 @@ export default function App() {
     }
   }, [accessToken])
 
-  // Load drivers from API
+  // Load drivers and refresh when requested
   useEffect(() => {
     if (accessToken === null) return
 
@@ -125,45 +121,44 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [accessToken])
+  }, [accessToken, driversRefreshKey])
 
-  // Filter people by name or national number
-  const filteredPeople = people.filter(
-    (person) =>
-      person.fullName.toLowerCase().includes(searchName.toLowerCase()) ||
-      person.nationalNo.includes(searchName),
+  const refreshDrivers = useCallback(() => {
+    setDriversRefreshKey((current) => current + 1)
+  }, [])
+
+  // Filter people
+  const filteredPeople = useMemo(
+    () =>
+      people.filter(
+        (person) =>
+          person.fullName.toLowerCase().includes(searchName.toLowerCase()) ||
+          person.nationalNo.includes(searchName),
+      ),
+    [people, searchName],
   )
 
-  // Show login page when not authenticated
   if (accessToken === null) {
-    return (
-      <Login onLoginSuccess={(token) => setAccessToken(token)} />
-    )
+    return <Login onLoginSuccess={(token) => setAccessToken(token)} />
   }
 
   return (
     <div className="app-shell">
-      {/* Sidebar */}
       <Sidebar
         activePage={activePage}
         onNavigate={setActivePage}
       />
 
-      {/* Main content */}
       <main className="main-content">
-        {/* Top navigation */}
         <Topbar activePage={activePage} />
 
         {/* Dashboard */}
         {activePage === 'Dashboard' && (
           <section className="page-content">
-            {/* Welcome banner */}
             <div className="welcome-banner">
               <div>
                 <p className="eyebrow">CONTROL CENTER</p>
-
                 <h2>Welcome to DVLD</h2>
-
                 <p>
                   Manage people, drivers, and licensing operations
                   from one place.
@@ -173,68 +168,50 @@ export default function App() {
               <div className="banner-mark">D</div>
             </div>
 
-            {/* Statistics cards */}
             <div className="stats-grid">
-              {/* Total People */}
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Total People</span>
                   <span className="stat-icon">♙</span>
                 </div>
-
-                <strong>
-                  {loadingPeople ? '...' : people.length}
-                </strong>
-
+                <strong>{loadingPeople ? '...' : people.length}</strong>
                 <p>{peopleError || 'Registered people'}</p>
               </article>
 
-              {/* Total Drivers */}
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Total Drivers</span>
                   <span className="stat-icon">♧</span>
                 </div>
-
-                <strong>
-                  {loadingDrivers ? '...' : drivers.length}
-                </strong>
-
+                <strong>{loadingDrivers ? '...' : drivers.length}</strong>
                 <p>{driversError || 'Registered drivers'}</p>
               </article>
 
-              {/* Licenses */}
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Licenses</span>
                   <span className="stat-icon">▤</span>
                 </div>
-
                 <strong>0</strong>
                 <p>Connect API to load data</p>
               </article>
 
-              {/* Applications */}
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Applications</span>
                   <span className="stat-icon">▣</span>
                 </div>
-
                 <strong>0</strong>
                 <p>Connect API to load data</p>
               </article>
             </div>
 
-            {/* People loading state */}
             {loadingPeople && <p>Loading people...</p>}
 
-            {/* People error */}
             {peopleError && (
               <p className="login-error">{peopleError}</p>
             )}
 
-            {/* People table */}
             {!loadingPeople && !peopleError && (
               <PeopleTable
                 people={filteredPeople}
@@ -246,7 +223,7 @@ export default function App() {
           </section>
         )}
 
-        {/* People page */}
+        {/* People */}
         {activePage === 'People' && (
           <section className="page-content">
             <h2>People Management</h2>
@@ -268,58 +245,47 @@ export default function App() {
           </section>
         )}
 
-        {/* Drivers page */}
+        {/* Drivers */}
         {activePage === 'Drivers' && (
-          <section className="page-content">
-            <div className="panel placeholder-panel">
-              <div className="placeholder-icon">♧</div>
-
-              <h2>Drivers Management</h2>
-
-              {loadingDrivers && <p>Loading drivers...</p>}
-
-              {driversError && (
-                <p className="login-error">{driversError}</p>
-              )}
-
-              {!loadingDrivers && !driversError && (
-                <p>Total drivers: {drivers.length}</p>
-              )}
-            </div>
-          </section>
+          <DriversPage
+            drivers={drivers}
+            loading={loadingDrivers}
+            error={driversError}
+            onRetry={refreshDrivers}
+          />
         )}
 
         {/* Settings pages */}
-        {settingsPages.includes(activePage) && (
+        {activePage === 'Countries' && (
+          <CountriesPage accessToken={accessToken} />
+        )}
+
+        {activePage === 'Application Types' && (
+          <ApplicationTypesPage accessToken={accessToken} />
+        )}
+
+        {activePage === 'License Classes' && (
+          <LicenseClassesPage accessToken={accessToken} />
+        )}
+
+        {activePage === 'Test Types' && (
+          <TestTypesPage accessToken={accessToken} />
+        )}
+
+        {/* Remaining settings placeholders, if any */}
+        {settingsPages
+          .filter(
+            (page) =>
+              page !== 'Countries' &&
+              page !== 'Application Types' &&
+              page !== 'License Classes' &&
+              page !== 'Test Types',
+          )
+          .includes(activePage) && (
           <section className="page-content">
             <div className="panel placeholder-panel">
               <div className="placeholder-icon">⚙</div>
-
               <h2>{activePage}</h2>
-
-              <p>{pageDescriptions[activePage]}</p>
-
-              {activePage === 'Application Types' && (
-                <p>
-                  The API supports updating application types
-                  for administrators.
-                </p>
-              )}
-
-              {activePage === 'Test Types' && (
-                <p>
-                  The API supports updating test types
-                  for administrators.
-                </p>
-              )}
-
-              {(activePage === 'Countries' ||
-                activePage === 'License Classes') && (
-                <p>
-                  The current API supports viewing these records,
-                  but does not provide editing endpoints.
-                </p>
-              )}
 
               <button
                 type="button"
@@ -344,7 +310,6 @@ export default function App() {
           <section className="page-content">
             <div className="panel placeholder-panel">
               <div className="placeholder-icon">▤</div>
-
               <h2>{activePage} Management</h2>
 
               <p>
@@ -362,7 +327,7 @@ export default function App() {
           </section>
         )}
 
-        {/* Add Person Modal - shared between pages */}
+        {/* Add Person Modal */}
         {isAddPersonOpen && (
           <AddPersonModal
             accessToken={accessToken}
@@ -388,7 +353,6 @@ export default function App() {
           />
         )}
 
-        {/* Footer */}
         <footer className="app-footer">
           DVLD Management System
           <span>Frontend Preview</span>
