@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.TestAppointment;
 using Presentation.Services.Api;
@@ -19,6 +19,13 @@ public partial class ScheduleTestViewModel : ObservableObject
     [ObservableProperty] private bool _isRetake;
 
     public decimal TotalFees => (Schedule?.Fees ?? 0) + (Schedule?.RetakerFees ?? 0);
+    public string TestTypeTitle => (TestType)(Schedule?.TestTypeId ?? 1) switch
+    {
+        TestType.Theory => "Vision Test",
+        TestType.Written => "Written Test",
+        TestType.Practical => "Practical Street Test",
+        _ => "Test"
+    };
     public DateTime MinDate => DateTime.Now.Date.AddDays(1);
 
     public ScheduleTestViewModel(
@@ -31,8 +38,15 @@ public partial class ScheduleTestViewModel : ObservableObject
         _userNotifications = userNotifications ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
-    partial void OnScheduleChanged(ScheduleTestResponse value) =>
+    partial void OnScheduleChanged(ScheduleTestResponse value)
+    {
+
         OnPropertyChanged(nameof(TotalFees));
+        OnPropertyChanged(nameof(TestTypeTitle));
+    }
+
+
+
 
     public async Task LoadAsync(int localAppId, TestType type)
     {

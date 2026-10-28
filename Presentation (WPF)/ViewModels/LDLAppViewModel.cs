@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
 using DVLD.Contracts.TestAppointment;
@@ -240,18 +240,42 @@ public partial class LDLAppViewModel : ObservableObject
         IsStatus("New") &&
         SelectedApplication.PassedTest < 3;
 
-    private bool CanScheduleVision() => CanScheduleTests && SelectedApplication!.PassedTest == 0;
-    private bool CanScheduleWritten() => CanScheduleTests && SelectedApplication!.PassedTest == 1;
-    private bool CanScheduleStreet() => CanScheduleTests && SelectedApplication!.PassedTest == 2;
+    private bool CanScheduleVision(LocalDrivingLicenseApplicationResponse? app = null)
+    {
+        var target = app ?? SelectedApplication;
+        return target is not null && IsStatus("New", target) && target.PassedTest == 0;
+    }
+    private bool CanScheduleWritten(LocalDrivingLicenseApplicationResponse? app = null)
+    {
+        var target = app ?? SelectedApplication;
+        return target is not null && IsStatus("New", target) && target.PassedTest == 1;
+    }
+    private bool CanScheduleStreet(LocalDrivingLicenseApplicationResponse? app = null)
+    {
+        var target = app ?? SelectedApplication;
+        return target is not null && IsStatus("New", target) && target.PassedTest == 2;
+    }
 
     [RelayCommand(CanExecute = nameof(CanScheduleVision))]
-    private Task ScheduleVision() => OpenTestAppointment(TestType.Theory);
+    private Task ScheduleVision(LocalDrivingLicenseApplicationResponse? app = null)
+    {
+        if (app is not null) SelectedApplication = app;
+        return OpenTestAppointment(TestType.Theory);
+    }
 
     [RelayCommand(CanExecute = nameof(CanScheduleWritten))]
-    private Task ScheduleWritten() => OpenTestAppointment(TestType.Written);
+    private Task ScheduleWritten(LocalDrivingLicenseApplicationResponse? app = null)
+    {
+        if (app is not null) SelectedApplication = app;
+        return OpenTestAppointment(TestType.Written);
+    }
 
     [RelayCommand(CanExecute = nameof(CanScheduleStreet))]
-    private Task ScheduleStreet() => OpenTestAppointment(TestType.Practical);
+    private Task ScheduleStreet(LocalDrivingLicenseApplicationResponse? app = null)
+    {
+        if (app is not null) SelectedApplication = app;
+        return OpenTestAppointment(TestType.Practical);
+    }
 
     private async Task OpenTestAppointment(TestType testType)
     {
@@ -361,8 +385,9 @@ public partial class LDLAppViewModel : ObservableObject
         window.ShowDialog();
     }
 
-    private bool IsStatus(string status) =>
-        string.Equals(SelectedApplication?.StatusText, status, StringComparison.OrdinalIgnoreCase);
+    private bool IsStatus(string status, LocalDrivingLicenseApplicationResponse? app = null) =>
+        string.Equals((app ?? SelectedApplication)?.StatusText, status, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals((app ?? SelectedApplication)?.ApplicationStatus, status, StringComparison.OrdinalIgnoreCase);
 
     private static string GetExceptionMessage(Exception ex) =>
         ex.InnerException is null

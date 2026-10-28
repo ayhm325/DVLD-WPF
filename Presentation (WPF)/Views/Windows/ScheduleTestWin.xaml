@@ -1,4 +1,4 @@
-﻿<Window x:Class="Presentation.Views.Windows.ScheduleTestWin"
+<Window x:Class="Presentation.Views.Windows.ScheduleTestWin"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -67,7 +67,7 @@
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Schedule Test" Style="{StaticResource HeaderStyle}"/>
-                        <TextBlock Text="Vision Test" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding TestTypeTitle}" Style="{StaticResource CaptionStyle}" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

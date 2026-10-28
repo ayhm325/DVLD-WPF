@@ -118,7 +118,7 @@
 
                         <Setter Property="ContextMenu">
                             <Setter.Value>
-                                <ContextMenu>
+                                <ContextMenu DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
 
                                     <MenuItem Header="Show Application Details"
                                               Command="{Binding PlacementTarget.Tag.ShowDetailsCommand, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
@@ -169,7 +169,7 @@
                                     <Separator/>
 
                                     <MenuItem Header="Schedule Tests"
-                                              IsEnabled="{Binding PlacementTarget.Tag.CanScheduleTests, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                                              IsEnabled="{Binding CanScheduleTests}">
                                         <MenuItem.Icon>
                                             <materialDesign:PackIcon Kind="CalendarClock"
                                                                      Width="18"
@@ -178,8 +178,8 @@
                                         </MenuItem.Icon>
 
                                         <MenuItem Header="Schedule Vision Test"
-                                                  Command="{Binding PlacementTarget.Tag.ScheduleVisionCommand, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                                                  Command="{Binding ScheduleVisionCommand}"
+                                                  CommandParameter="{Binding SelectedApplication}">
                                             <MenuItem.Icon>
                                                 <materialDesign:PackIcon Kind="EyeOutline"
                                                                          Width="18"
@@ -189,8 +189,8 @@
                                         </MenuItem>
 
                                         <MenuItem Header="Schedule Written Test"
-                                                  Command="{Binding PlacementTarget.Tag.ScheduleWrittenCommand, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                                                  Command="{Binding ScheduleWrittenCommand}"
+                                                  CommandParameter="{Binding SelectedApplication}">
                                             <MenuItem.Icon>
                                                 <materialDesign:PackIcon Kind="FileDocumentEditOutline"
                                                                          Width="18"
@@ -200,8 +200,8 @@
                                         </MenuItem>
 
                                         <MenuItem Header="Schedule Street Test"
-                                                  Command="{Binding PlacementTarget.Tag.ScheduleStreetCommand, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
-                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                                                  Command="{Binding ScheduleStreetCommand}"
+                                                  CommandParameter="{Binding SelectedApplication}">
                                             <MenuItem.Icon>
                                                 <materialDesign:PackIcon Kind="CarOutline"
                                                                          Width="18"
