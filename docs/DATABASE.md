@@ -8,7 +8,9 @@
 
 Runtime access uses a scoped `DVLDDbContext`.
 
-## 2. Entities / tables
+## 2. Entities, tables, and data access
+
+### Tables (14)
 
 - Applications
 - ApplicationTypes
@@ -24,6 +26,17 @@ Runtime access uses a scoped `DVLDDbContext`.
 - TestAppointments
 - TestTypes
 - Users
+
+### Data access mechanism (no SQL views)
+
+The source does not define or query any SQL Server views. `DVLDDbContext` exposes 14 `DbSet<T>` properties (one per table above) and loads the 14 entity configurations in `Infrastructure/Configurations/` through `ApplyConfigurationsFromAssembly`. No keyless entity (`HasNoKey`/`ToView`) is mapped, and no migration issues raw SQL (`migrationBuilder.Sql`) or creates a view.
+
+Repositories (`Infrastructure/Repositories/`) read data through EF Core LINQ queries (`Include`/`ThenInclude`, `AsNoTracking`, `Select` projections). Raw SQL is used only in these places:
+
+| Purpose | Mechanism | Location |
+|---|---|---|
+| Pessimistic row locks before updates | `FromSqlInterpolated` with `UPDLOCK` table hints against the base tables `Applications` (`UPDLOCK, ROWLOCK`), `DetainedLicenses`, `Licenses`, `TestAppointments`, and `LocalDrivingLicenseApplications` (`UPDLOCK, HOLDLOCK`) | `ApplicationRepository.cs` (~L184), `DetainedLicenseRepository.cs` (~L67), `LicenseRepository.cs` (~L26), `TestAppointmentRepository.cs` (~L47 and ~L220) |
+| Dashboard statistics | A single `SqlQueryRaw<DashboardStatisticsRow>` aggregate query of scalar `COUNT(*)` sub-selects over base tables, projected into a private row type | `DashboardRepository.cs` (~L16–L30) |
 
 ## 3. Important integrity constraints
 
@@ -190,6 +203,10 @@ Current migrations:
 20260907233340_AddUserRole
 ```
 
+### InitialCreate
+
+Creates the 14 core tables, foreign keys, and baseline indexes. It does not create any SQL Server views.
+
 ### AddUniqueLocalApplicationApplicationId
 
 Adds:
@@ -204,15 +221,18 @@ Adds important TestAppointment composite indexes and filtered uniqueness for act
 
 Adds `Users.Role` with the model's Staff default.
 
-## 9. Runtime vs design-time DbContext
+## 9. Runtime vs design-time DbContext and connection resiliency
 
-Runtime:
+Runtime (`API/DVLD.Api/Program.cs`):
 
 ```text
-AddDbContext<DVLDDbContext>(...)
+AddDbContext<DVLDDbContext>(options =>
+    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()))
 ```
 
-Design time:
+`EnableRetryOnFailure()` enables EF Core's `SqlServerRetryingExecutionStrategy`. Multi-write workflows run through `UnitOfWork.ExecuteInTransactionAsync` (`Infrastructure/UnitOfWork.cs`), which defers physical transaction commits until the business delegate succeeds, clears `ChangeTracker` state on rollback or failure `Result`, and verifies commit outcomes (`VerifyCommitOutcomeAsync` / `TransactionVerificationTracker` / `verifySucceeded`) if a transient connection failure occurs during commit confirmation. Verification runs only when an explicit `verifySucceeded` callback was supplied or the tracker has recorded added, modified, or deleted entity probes (`tracker.CanVerify`, `UnitOfWork.cs` ~L199 and ~L374); otherwise `UnitOfWork` throws an `InvalidOperationException` instead of retrying.
+
+Design time (`Infrastructure/DVLDDbContextFactory.cs`):
 
 ```text
 DVLDDbContextFactory : IDesignTimeDbContextFactory<DVLDDbContext>

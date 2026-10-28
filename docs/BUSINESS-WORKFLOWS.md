@@ -246,7 +246,7 @@ The Application service remains responsible for deciding whether a status transi
 
 ## 11. Business rules vs UI behavior
 
-The WPF client may disable or hide actions according to:
+Client applications (`Presentation (WPF)` and `ClientApp`) may disable or hide actions according to:
 
 - role
 - workflow state
@@ -261,7 +261,12 @@ The Application services and API authorization policies are the authoritative en
 
 The project treats multi-record workflows as business transactions rather than unrelated CRUD operations.
 
-Concurrency-sensitive workflows use transaction isolation and database uniqueness together.
+Concurrency-sensitive workflows use transaction isolation (`IsolationLevel.Serializable`), `UnitOfWork.ExecuteInTransactionAsync` (`Infrastructure/UnitOfWork.cs`), and database uniqueness together:
+
+- **Nested-transaction guard:** `EnsureNoActiveTransaction()` prevents accidental nested transactions on the same `UnitOfWork`.
+- **Deferred physical commit:** Calling `transaction.CommitAsync()` inside `ExecuteInTransactionAsync` flushes pending tracked changes (`SaveChangesAsync`) and records the commit intent, while deferring the physical SQL commit until the workflow delegate returns a successful result.
+- **Rollback and state reset on failure `Result`:** If a multi-step workflow returns `Result.Failure` (or throws an exception) after intermediate saves, `UnitOfWork` rolls back the database transaction and clears `DVLDDbContext.ChangeTracker`.
+- **Ambiguous-commit verification:** If a transient disconnect occurs while committing under EF Core's `EnableRetryOnFailure()` strategy, `UnitOfWork` verifies whether the commit succeeded on SQL Server using `TransactionVerificationTracker` (`SavingChanges`/`SavedChanges` probes) before allowing a retry, preventing duplicate execution of already-committed operations. Verification occurs only when `tracker.CanVerify` allows it (the tracker recorded added, modified, or deleted entity probes) or an explicit `verifySucceeded` callback was supplied; if neither is available, `UnitOfWork` throws an `InvalidOperationException` instead of retrying. Production workflows in `Application/Services` call the three-parameter `ExecuteInTransactionAsync(operation, isolationLevel, cancellationToken)` overload and rely on this tracker (when `tracker.CanVerify` permits verification); none of them pass an explicit `verifySucceeded` callback. `IUnitOfWork` also exposes a four-parameter overload accepting an optional `verifySucceeded` delegate, which is exercised separately in `Test/Infrastructure.IntegrationTests/UnitOfWorkTests.cs`.
 
 Examples include:
 

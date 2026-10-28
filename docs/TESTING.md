@@ -47,7 +47,7 @@ These tests focus on Application-layer behavior without requiring the full HTTP/
 
 ### Controller/API boundary tests
 
-These use `WebApplicationFactory<Program>` with Application services mocked where appropriate.
+These use `WebApplicationFactory<Program>` (`ApiWebApplicationFactory`) with Application services mocked where appropriate, covering all 20 controller suites plus `GlobalExceptionHandlerTests` (`Test/API.IntegrationTests/Middleware/GlobalExceptionHandlerTests.cs`).
 
 They verify:
 
@@ -57,7 +57,7 @@ They verify:
 - request binding
 - response mapping
 - status codes
-- ProblemDetails mapping
+- ProblemDetails and client-cancellation (HTTP 499 in `GlobalExceptionHandler`) mapping
 - controller/Application interaction
 
 They should not be described as full-stack tests.
@@ -134,12 +134,15 @@ This is a real SQL Server integration strategy rather than an in-memory EF provi
 
 ## 7. Unit of Work tests
 
-UnitOfWork tests cover transaction-related behavior including:
+`UnitOfWorkTests` (`Test/Infrastructure.IntegrationTests/UnitOfWorkTests.cs`, 11 test methods) covers transaction-related behavior including:
 
-- SaveChanges
-- transaction execution
-- commit
-- rollback
+- `SaveChanges` and explicit transaction commit
+- rollback and `ChangeTracker.Clear()` verification on explicit rollback or uncommitted disposal
+- automatic rollback and `ChangeTracker.Clear()` when an operation inside `ExecuteInTransactionAsync` returns a failure `Result` or throws an exception after intermediate saves
+- nested-transaction rejection (`BeginTransactionAsync` and `ExecuteInTransactionAsync` when a transaction is already active)
+- pre-commit transient failure retry under `EnableRetryOnFailure()`
+- post-commit ambiguous connection-drop recovery without re-executing the operation (`TransactionVerificationTracker` for inserted and modified entities, and custom `verifySucceeded` callbacks)
+- fail-safe exception throwing without duplicate execution when both commit confirmation and post-commit verification fail
 
 ## 8. Concurrency testing
 
@@ -180,6 +183,7 @@ API tests cover relevant:
 - 403 Forbidden
 - 404 Not Found
 - 409 Conflict
+- 499 Client Closed Request (implemented by `GlobalExceptionHandler` when `exception is OperationCanceledException && context.RequestAborted.IsCancellationRequested`)
 - 500 Unexpected failure
 
 ProblemDetails behavior is also tested at the API boundary where applicable.
@@ -188,7 +192,7 @@ ProblemDetails behavior is also tested at the API boundary where applicable.
 
 Production authentication uses JWT.
 
-Integration tests use `TestAuthenticationHandler` with controlled headers:
+Most controller and workflow integration tests use `TestAuthenticationHandler` with controlled headers:
 
 ```text
 X-Test-User-Id
@@ -197,12 +201,16 @@ X-Test-FullName
 X-Test-Role
 ```
 
-This allows authorization policy behavior to be tested deterministically without claiming to test production JWT cryptographic validation end to end.
+This allows authorization policy behavior to be tested deterministically across endpoints.
+
+In addition, `AuthControllerTests` (`Test/API.IntegrationTests/Controllers/AuthControllerTests.cs`) includes two dedicated tests (`JwtBearer_WhenTokenIsValidAndUserIsActive_AllowsAccessViaUserService` and `JwtBearer_WhenUserIsInactiveOrMissing_ReturnsUnauthorizedViaUserService`) that configure `JwtBearerDefaults.AuthenticationScheme`, mint a real JWT via `IJwtTokenService`, and exercise the full `JwtBearerHandler` cryptographic validation and `OnTokenValidated` active-user verification (`IUserService.IsUserActiveAsync`).
 
 ## 12. Run all tests
 
+From the repository root, specify the solution file inside `Presentation (WPF)/`:
+
 ```powershell
-dotnet test --configuration Release
+dotnet test "Presentation (WPF)\DVLD_WPF.sln" --configuration Release
 ```
 
 Individual suites:
@@ -215,9 +223,22 @@ dotnet test ".\Test\API.IntegrationTests\API.IntegrationTests.csproj" --configur
 dotnet test ".\Test\Infrastructure.IntegrationTests\Infrastructure.IntegrationTests.csproj" --configuration Release
 ```
 
-## 13. Historical test result
+## 13. Test inventory and verification status
 
-The latest complete result reported during development was:
+### Current source & VSTest inventory (commit `4f75658`)
+
+| Project | Test Files | Source Methods (`[Fact]+[Theory]`) | Source Test Cases (`[Fact]+[InlineData]`) | VSTest Discovered Entries (`--list-tests` on `Debug` DLLs) | Audit Execution Outcome |
+|---|---:|---:|---:|---:|---|
+| `Application.UnitTests` | 21 | 603 | 642 | 633 | Executed via `dotnet test --no-build`: **633 Passed, 0 Failed, 0 Skipped** (~5 s) |
+| `API.IntegrationTests` | 33 (29 suites + 4 infra) | 362 | 442 | 435 | Discovered via `--list-tests` (`435` entries); not executed against live SQL Server during audit |
+| `Infrastructure.IntegrationTests` | 18 (17 suites + 1 fixture) | 469 | 507 | 494 | Discovered via `--list-tests` (`494` entries); not executed against live SQL Server during audit |
+| **Total** | **72 files (67 suites)** | **1,434** | **1,591** | **1,562** | `Application.UnitTests` passed; integration suites enumerated only |
+
+> **Note on counts and build verification:** Source test case counts (`[Fact] + [InlineData]` = `1,591`) are higher than the VSTest-discovered entries (`1,562`) because the existing `bin/Debug/net8.0` assemblies used by `--no-build` were built on 2026-10-26 (12:39–15:21), before commits `b5dc945`, `3056f88`, and `61cbdcc` added 29 source test cases. Source counts are static attribute counts, not executed test results; only the `633` `Application.UnitTests` entries were actually executed. Discovered counts (`435` and `494`) represent test discovery only and are not claimed as passing test runs. During the audit inside a network-isolated sandbox, `dotnet build` failed (`NU1900` NuGet vulnerability check / sandbox MSBuild restriction), so `--no-build` execution and discovery ran against the existing `bin/Debug/net8.0` assemblies.
+
+### Historical full test run result
+
+The latest complete full-suite result reported during earlier development was:
 
 | Project | Passed | Failed | Skipped | Reported duration |
 |---|---:|---:|---:|---:|
@@ -226,11 +247,9 @@ The latest complete result reported during development was:
 | Infrastructure.IntegrationTests | 492 | 0 | 0 | ~1081 s |
 | **Total** | **1487** | **0** | **0** | — |
 
-These are historical user-reported results, not a fresh execution claim for this documentation update.
-
 ## 14. CI test flow
 
-The Azure DevOps pipeline provides Continuous Integration through:
+The Azure DevOps pipeline (`azure-pipelines.yml`) provides Continuous Integration for `.NET` projects (`"Presentation (WPF)/DVLD_WPF.sln"`) through:
 
 ```text
 Restore
@@ -242,7 +261,7 @@ dotnet test
 Publish Test Results
 ```
 
-No production deployment stage is claimed.
+`azure-pipelines.yml` does not currently include build or lint steps for `ClientApp/` (React), and no production deployment stage is claimed.
 
 ## 15. Test design principles
 

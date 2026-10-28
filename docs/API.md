@@ -8,15 +8,17 @@ The current source contains **20 controllers and 101 HTTP actions**.
 
 The source-based count is authoritative for this documentation. An earlier count of 100 was caused by counting the Users controller as seven actions instead of its current eight.
 
-## 2. Base URL
+## 2. Base URL and CORS
 
-The local HTTP launch profile has been used at:
+The local HTTP launch profile (`API/DVLD.Api/Properties/launchSettings.json`) uses:
 
 ```text
 http://localhost:5260
 ```
 
-Current launch settings are authoritative if the port changes.
+(and `https://localhost:7125;http://localhost:5260` under the `https` profile). Current launch settings are authoritative if the port changes.
+
+`API/DVLD.Api/Program.cs` configures the `"ReactApp"` CORS policy allowing cross-origin requests from `http://localhost:5173` with any header and any HTTP method (`WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod()`).
 
 ## 3. Authentication
 
@@ -46,10 +48,10 @@ Authorization: Bearer <access-token>
 
 | Policy | Meaning |
 |---|---|
-| Authenticated | Any authenticated user |
-| StaffOnly | Staff role |
-| StaffOrAdmin | Staff or Admin |
-| AdminOnly | Admin role |
+| `Authenticated` (`[Authorize]`) | Any authenticated, active user |
+| `StaffOnly` | `Staff` role only (`RequireRole("Staff")`; does not include `Admin`) |
+| `StaffOrAdmin` | `Staff` or `Admin` role (`RequireRole("Staff", "Admin")`) |
+| `AdminOnly` | `Admin` role only (`RequireRole("Admin")`) |
 
 ## 5. HTTP response conventions
 
@@ -59,7 +61,7 @@ Common successful responses:
 - `201 Created`
 - `204 No Content`
 
-Expected Result mapping:
+Expected Result mapping (`API/DVLD.Api/Results/ResultHttpMapper.cs`):
 
 | Result | HTTP |
 |---|---:|
@@ -70,7 +72,7 @@ Expected Result mapping:
 | Conflict | 409 |
 | Unexpected failure | 500 |
 
-Unexpected exceptions are handled centrally by `GlobalExceptionHandler` and returned as generic ProblemDetails.
+Unexpected exceptions are handled centrally by `GlobalExceptionHandler` (`API/DVLD.Api/Security/GlobalExceptionHandler.cs`) and returned as generic HTTP 500 `ProblemDetails`. When `GlobalExceptionHandler` catches an `OperationCanceledException` while `context.RequestAborted.IsCancellationRequested` is true, this project's `GlobalExceptionHandler` logs the cancellation at `Information` level and sets HTTP status `499` (`StatusCodes.Status499ClientClosedRequest`) if the response has not started.
 
 ## 6. Complete endpoint inventory
 
@@ -303,11 +305,11 @@ The main list endpoint uses the application's pagination request model.
 | Users | 8 |
 | **Total** | **101** |
 
-## 8. ProblemDetails
+## 8. ProblemDetails and exception handling
 
 The API uses `application/problem+json` for centralized error responses.
 
-`GlobalExceptionHandler` logs detailed exceptions server-side and returns generic 500 information with a trace identifier.
+`GlobalExceptionHandler` (`API/DVLD.Api/Security/GlobalExceptionHandler.cs`) logs detailed unexpected exceptions server-side and returns generic HTTP 500 `ProblemDetails` with a `traceId` extension. If `exception is OperationCanceledException && context.RequestAborted.IsCancellationRequested`, this project's `GlobalExceptionHandler` logs the cancellation at `Information` level and sets HTTP status code `499` (`StatusCodes.Status499ClientClosedRequest`) if the response has not started.
 
 ## 9. Contracts
 
