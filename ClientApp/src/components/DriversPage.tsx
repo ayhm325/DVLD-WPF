@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { getDrivers } from '../services/driverService'
 import type { Driver } from '../services/driverService'
 import {
   DriversIcon,
@@ -8,19 +9,63 @@ import {
   CloseIcon,
 } from './common/Icons'
 
-type DriversPageProps = {
-  drivers: Driver[]
-  loading: boolean
-  error: string
-  onRetry: () => void
+export type DriversPageProps = {
+  accessToken?: string
+  drivers?: Driver[]
+  loading?: boolean
+  error?: string
+  onRetry?: () => void
 }
 
 export default function DriversPage({
-  drivers,
-  loading,
-  error,
-  onRetry,
+  accessToken,
+  drivers: externalDrivers,
+  loading: externalLoading,
+  error: externalError,
+  onRetry: externalOnRetry,
 }: DriversPageProps) {
+  const [internalDrivers, setInternalDrivers] = useState<Driver[]>([])
+  const [internalLoading, setInternalLoading] = useState(
+    Boolean(accessToken && externalDrivers === undefined),
+  )
+  const [internalError, setInternalError] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  useEffect(() => {
+    if (!accessToken || externalDrivers !== undefined) return
+
+    let cancelled = false
+
+    async function load() {
+      setInternalLoading(true)
+      setInternalError('')
+
+      try {
+        const data = await getDrivers(accessToken!)
+        if (!cancelled) setInternalDrivers(data)
+      } catch (err) {
+        if (!cancelled) {
+          setInternalError(
+            err instanceof Error ? err.message : 'Failed to load drivers.',
+          )
+        }
+      } finally {
+        if (!cancelled) setInternalLoading(false)
+      }
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [accessToken, externalDrivers, refreshKey])
+
+  const drivers = externalDrivers ?? internalDrivers
+  const loading = externalLoading ?? internalLoading
+  const error = externalError ?? internalError
+  const onRetry = externalOnRetry ?? (() => setRefreshKey((k) => k + 1))
+
   const [search, setSearch] = useState('')
 
   const filteredDrivers = useMemo(() => {
