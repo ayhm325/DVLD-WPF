@@ -158,7 +158,7 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
 
           <div className="local-app-header-actions">
             <span className="local-app-count">
-              {page?.totalCount ?? 0} records
+              {loading ? '...' : error ? '—' : `${page?.totalCount ?? 0} records`}
             </span>
 
             <button
@@ -177,9 +177,10 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
             <span>Search field</span>
             <select
               value={searchBy}
-              onChange={(event) =>
+              onChange={(event) => {
                 setSearchBy(event.target.value as 'name' | 'nationalNo')
-              }
+                setPageNumber(1)
+              }}
             >
               <option value="name">Full Name</option>
               <option value="nationalNo">National No.</option>
@@ -190,7 +191,10 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
             <span>Search applications</span>
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value)
+                setPageNumber(1)
+              }}
               placeholder={
                 searchBy === 'name'
                   ? 'Search by applicant name…'
@@ -203,7 +207,10 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
             <span>Status</span>
             <select
               value={status}
-              onChange={(event) => setStatus(event.target.value)}
+              onChange={(event) => {
+                setStatus(event.target.value)
+                setPageNumber(1)
+              }}
             >
               <option>All</option>
               <option>New</option>
@@ -252,8 +259,9 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
 
         <footer className="local-app-pagination">
           <span>
-            Showing {filteredItems.length} of {page?.totalCount ?? 0}{' '}
-            applications
+            {error
+              ? 'Failed to load applications'
+              : `Showing ${filteredItems.length} of ${page?.totalCount ?? 0} applications`}
           </span>
 
           <div className="local-app-pagination-controls">
@@ -269,7 +277,7 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
 
             <span>
               Page <strong>{page?.pageNumber ?? pageNumber}</strong> of{' '}
-              <strong>{page?.totalPages ?? 0}</strong>
+              <strong>{error ? '—' : page?.totalPages ?? 0}</strong>
             </span>
 
             <button

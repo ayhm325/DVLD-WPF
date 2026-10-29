@@ -132,7 +132,7 @@ export default function AddPersonModal({
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
-    event.preventDefault()
+    event.preventDefault(); if (saving) return
     setError('')
 
     const form = event.currentTarget

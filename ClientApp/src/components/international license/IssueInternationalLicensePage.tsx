@@ -50,6 +50,7 @@ export default function IssueInternationalLicensePage({
 
   async function searchLicense(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (loading) return
 
     setError('')
     setNotice('')

@@ -87,7 +87,7 @@ export default function TestTypesPage({ accessToken }: Props) {
   }
 
   async function saveChanges() {
-    if (editingId === null) return
+    if (editingId === null || saving) return
 
     const title = form.testTypeTitle.trim()
     const description = form.testTypeDescription.trim()

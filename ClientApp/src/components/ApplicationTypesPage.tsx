@@ -106,7 +106,7 @@ export default function ApplicationTypesPage({
   }
 
   async function handleSave() {
-    if (editingId === null) return
+    if (editingId === null || saving) return
 
     const title = editForm.applicationTypeTitle.trim()
     const fees = Number(editForm.applicationTypeFees)

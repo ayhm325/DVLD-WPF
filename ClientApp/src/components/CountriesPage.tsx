@@ -78,7 +78,7 @@ export default function CountriesPage({
           </div>
 
           <span className="record-count">
-            {loading ? 'Loading...' : `${countries.length} Countries`}
+            {loading ? 'Loading...' : error ? '—' : `${countries.length} Countries`}
           </span>
         </div>
 

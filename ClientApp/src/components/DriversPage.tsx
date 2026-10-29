@@ -34,7 +34,7 @@ export default function DriversPage({
         String(driver.personId),
         driver.fullName,
         driver.nationalNo,
-      ].some((value) => value.toLowerCase().includes(query)),
+      ].some((value) => (value ?? '').toLowerCase().includes(query)),
     )
   }, [drivers, search])
 
@@ -68,7 +68,7 @@ export default function DriversPage({
                   <DriversIcon size={20} />
                 </span>
               </div>
-              <strong>{drivers.length}</strong>
+              <strong>{loading ? '...' : error ? '—' : drivers.length}</strong>
               <p>Registered drivers</p>
             </article>
 
@@ -80,10 +80,14 @@ export default function DriversPage({
                 </span>
               </div>
               <strong>
-                {drivers.reduce(
-                  (total, driver) => total + driver.activeLicenses,
-                  0,
-                )}
+                {loading
+                  ? '...'
+                  : error
+                    ? '—'
+                    : drivers.reduce(
+                        (total, driver) => total + (driver.activeLicenses || 0),
+                        0,
+                      )}
               </strong>
               <p>Across listed drivers</p>
             </article>

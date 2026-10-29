@@ -73,7 +73,7 @@ export default function LicenseClassesPage({ accessToken }: Props) {
           </div>
 
           <span className="record-count">
-            {loading ? 'Loading...' : `${items.length} Classes`}
+            {loading ? 'Loading...' : error ? '—' : `${items.length} Classes`}
           </span>
         </div>
 

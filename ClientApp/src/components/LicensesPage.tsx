@@ -129,7 +129,7 @@ export default function LicensesPage({
               <LicenseIcon size={20} />
             </span>
           </div>
-          <strong>{licenses.length}</strong>
+          <strong>{loading ? '...' : error ? '—' : licenses.length}</strong>
           <p>All returned records</p>
         </article>
 
@@ -141,7 +141,7 @@ export default function LicensesPage({
             </span>
           </div>
           <strong style={{ color: '#059669' }}>
-            {licenses.filter((license) => license.isActive).length}
+            {loading ? '...' : error ? '—' : licenses.filter((license) => license.isActive).length}
           </strong>
           <p>Marked active by the system</p>
         </article>
@@ -154,7 +154,7 @@ export default function LicensesPage({
             </span>
           </div>
           <strong>
-            {licenses.filter((license) => !license.isActive).length}
+            {loading ? '...' : error ? '—' : licenses.filter((license) => !license.isActive).length}
           </strong>
           <p>Not currently active</p>
         </article>

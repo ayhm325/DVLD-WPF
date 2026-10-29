@@ -122,7 +122,7 @@ export default function InternationalLicensesPage({
             <GlobeIcon size={20} />
           </span>
           <span className="intl-summary-label">Total licenses</span>
-          <strong>{loading ? '—' : items.length}</strong>
+          <strong>{loading || error ? '—' : items.length}</strong>
           <small>International licenses recorded</small>
         </article>
 
@@ -132,7 +132,7 @@ export default function InternationalLicensesPage({
           </span>
           <span className="intl-summary-label">Active</span>
           <strong>
-            {loading ? '—' : items.filter((item) => item.isActive).length}
+            {loading || error ? '—' : items.filter((item) => item.isActive).length}
           </strong>
           <small>Currently active licenses</small>
         </article>
@@ -143,7 +143,7 @@ export default function InternationalLicensesPage({
           </span>
           <span className="intl-summary-label">Inactive</span>
           <strong>
-            {loading ? '—' : items.filter((item) => !item.isActive).length}
+            {loading || error ? '—' : items.filter((item) => !item.isActive).length}
           </strong>
           <small>Not currently active</small>
         </article>

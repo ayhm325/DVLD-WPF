@@ -73,6 +73,7 @@ export default function LocalApplicationForm({ accessToken, mode, application, o
 
   async function searchPerson(event?: FormEvent) {
     event?.preventDefault()
+    if (searching) return
     const query = searchValue.trim()
     if (!query) { setError('Enter a Person ID or national number first.'); return }
     if (searchBy === 'id' && (!/^\d+$/.test(query) || Number(query) <= 0)) { setError('Person ID must be a positive number.'); return }
@@ -89,7 +90,9 @@ export default function LocalApplicationForm({ accessToken, mode, application, o
   }
 
   async function saveApplication(event: FormEvent) {
-    event.preventDefault(); setError(''); setNotice('')
+    event.preventDefault()
+    if (saving) return
+    setError(''); setNotice('')
     if (!isEdit && !person) { setError('Search for and select a person first.'); setStep('person'); return }
     if (!selectedClassId) { setError('Select a license class.'); return }
     setSaving(true)

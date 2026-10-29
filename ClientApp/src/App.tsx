@@ -61,6 +61,7 @@ export default function App() {
   const [people, setPeople] = useState<Person[]>([])
   const [loadingPeople, setLoadingPeople] = useState(false)
   const [peopleError, setPeopleError] = useState('')
+  const [peopleRefreshKey, setPeopleRefreshKey] = useState(0)
 
   // Drivers
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -114,7 +115,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [accessToken, user?.role, activePage])
+  }, [accessToken, user?.role, activePage, peopleRefreshKey])
 
   // Load drivers: only when authenticated, permitted (StaffOnly), and viewing Drivers page
   useEffect(() => {
@@ -198,6 +199,10 @@ export default function App() {
     setDriversRefreshKey((current) => current + 1)
   }, [])
 
+  const refreshPeople = useCallback(() => {
+    setPeopleRefreshKey((current) => current + 1)
+  }, [])
+
   const handleInternationalIssued = useCallback(() => {
     setShowIssueInternational(false)
     setInternationalRefreshKey((current) => current + 1)
@@ -211,6 +216,9 @@ export default function App() {
 
     if (page === 'Dashboard') {
       setStatisticsRefreshKey((current) => current + 1)
+      setPeopleRefreshKey((current) => current + 1)
+    } else if (page === 'People') {
+      setPeopleRefreshKey((current) => current + 1)
     }
   }, [])
 
@@ -224,10 +232,12 @@ export default function App() {
   // Filter people
   const filteredPeople = useMemo(() => {
     const query = searchName.trim().toLowerCase()
+    if (!query) return people
+
     return people.filter(
       (person) =>
-        person.fullName.toLowerCase().includes(query) ||
-        person.nationalNo.includes(searchName.trim()),
+        (person.fullName?.toLowerCase() || '').includes(query) ||
+        (person.nationalNo?.toLowerCase() || '').includes(query),
     )
   }, [people, searchName])
 
@@ -300,8 +310,8 @@ export default function App() {
                     <UsersIcon size={20} />
                   </span>
                 </div>
-                <strong>{loadingStatistics ? '...' : dashboardStatistics?.totalPeople ?? '—'}</strong>
-                <p>{statisticsError || 'Registered people'}</p>
+                <strong>{loadingStatistics ? '...' : statisticsError ? '—' : dashboardStatistics?.totalPeople ?? '—'}</strong>
+                <p>Registered people</p>
               </article>
 
               <article className="stat-card">
@@ -311,8 +321,8 @@ export default function App() {
                     <DriversIcon size={20} />
                   </span>
                 </div>
-                <strong>{loadingStatistics ? '...' : dashboardStatistics?.totalDrivers ?? '—'}</strong>
-                <p>{statisticsError || 'Registered drivers'}</p>
+                <strong>{loadingStatistics ? '...' : statisticsError ? '—' : dashboardStatistics?.totalDrivers ?? '—'}</strong>
+                <p>Registered drivers</p>
               </article>
 
               <article className="stat-card">
@@ -322,8 +332,8 @@ export default function App() {
                     <LicenseIcon size={20} />
                   </span>
                 </div>
-                <strong>{loadingStatistics ? '...' : dashboardStatistics?.activeLicenses ?? '—'}</strong>
-                <p>{statisticsError || 'Currently active licenses'}</p>
+                <strong>{loadingStatistics ? '...' : statisticsError ? '—' : dashboardStatistics?.activeLicenses ?? '—'}</strong>
+                <p>Currently active licenses</p>
               </article>
 
               <article className="stat-card">
@@ -333,8 +343,8 @@ export default function App() {
                     <ApplicationsIcon size={20} />
                   </span>
                 </div>
-                <strong>{loadingStatistics ? '...' : dashboardStatistics?.pendingApplications ?? '—'}</strong>
-                <p>{statisticsError || 'Applications awaiting processing'}</p>
+                <strong>{loadingStatistics ? '...' : statisticsError ? '—' : dashboardStatistics?.pendingApplications ?? '—'}</strong>
+                <p>Applications awaiting processing</p>
               </article>
             </div>
 
@@ -351,10 +361,19 @@ export default function App() {
               </div>
             )}
 
-            {loadingPeople && <p>Loading people...</p>}
+            {loadingPeople && <p className="empty-state">Loading people...</p>}
 
             {peopleError && (
-              <p className="login-error">{peopleError}</p>
+              <div className="login-error" role="alert">
+                <span>{peopleError}</span>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={refreshPeople}
+                >
+                  Retry people
+                </button>
+              </div>
             )}
 
             {!loadingPeople && !peopleError && (
@@ -371,12 +390,19 @@ export default function App() {
         {/* People */}
         {activePage === 'People' && (
           <section className="page-content">
-            <h2>People Management</h2>
-
-            {loadingPeople && <p>Loading people...</p>}
+            {loadingPeople && <p className="empty-state">Loading people...</p>}
 
             {peopleError && (
-              <p className="login-error">{peopleError}</p>
+              <div className="login-error" role="alert">
+                <span>{peopleError}</span>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={refreshPeople}
+                >
+                  Retry people
+                </button>
+              </div>
             )}
 
             {!loadingPeople && !peopleError && (
@@ -521,6 +547,7 @@ export default function App() {
                 setSearchName('')
                 setPeopleError('')
                 setStatisticsRefreshKey((current) => current + 1)
+                setPeopleRefreshKey((current) => current + 1)
               } catch (error) {
                 setPeopleError(
                   error instanceof Error
