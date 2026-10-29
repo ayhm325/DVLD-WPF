@@ -25,7 +25,7 @@ export type DashboardPageProps = {
 export default function DashboardPage({
   accessToken,
   statisticsRefreshKey = 0,
-  filteredPeople,
+  people,
   searchName,
   onSearchChange,
   loadingPeople,
@@ -109,10 +109,8 @@ export default function DashboardPage({
         </div>
       )}
 
-      {loadingPeople && <p className="empty-state">Loading people...</p>}
-
       {peopleError && (
-        <div className="login-error" role="alert">
+        <div className="login-error" style={{ marginBottom: 20 }} role="alert">
           <span>{peopleError}</span>
           <button
             type="button"
@@ -124,14 +122,14 @@ export default function DashboardPage({
         </div>
       )}
 
-      {!loadingPeople && !peopleError && (
-        <PeopleTable
-          people={filteredPeople}
-          searchName={searchName}
-          onSearchChange={onSearchChange}
-          onAddPerson={onAddPerson}
-        />
-      )}
+      <PeopleTable
+        people={people}
+        searchName={searchName}
+        onSearchChange={onSearchChange}
+        onAddPerson={onAddPerson}
+        onRefresh={onRetryPeople}
+        loading={loadingPeople}
+      />
     </section>
   )
 }

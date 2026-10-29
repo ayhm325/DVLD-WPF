@@ -1,18 +1,30 @@
-
 import { useEffect, useMemo, useState } from 'react'
 import { getLicenseClasses } from '../services/licenseClassService'
 import type { LicenseClass } from '../services/licenseClassService'
 import PageHero from './common/PageHero'
+import {
+  SearchIcon,
+  CloseIcon,
+  RefreshIcon,
+  LicenseIcon,
+  FilterIcon,
+} from './common/Icons'
 
 type Props = {
   accessToken: string
 }
 
+type SearchBy = 'all' | 'name' | 'id' | 'desc'
+type AgeFilter = 'all' | '18' | '21'
+
 export default function LicenseClassesPage({ accessToken }: Props) {
   const [items, setItems] = useState<LicenseClass[]>([])
   const [search, setSearch] = useState('')
+  const [searchBy, setSearchBy] = useState<SearchBy>('all')
+  const [ageFilter, setAgeFilter] = useState<AgeFilter>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -43,20 +55,58 @@ export default function LicenseClassesPage({ accessToken }: Props) {
     return () => {
       cancelled = true
     }
-  }, [accessToken])
+  }, [accessToken, refreshKey])
+
+  function handleResetFilters() {
+    setSearch('')
+    setSearchBy('all')
+    setAgeFilter('all')
+  }
+
+  const isFiltered = Boolean(search.trim() || searchBy !== 'all' || ageFilter !== 'all')
 
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase()
 
-    if (!query) return items
+    return items.filter((item) => {
+      // 1. Age check
+      if (ageFilter === '18' && item.minAllowedAge < 18) return false
+      if (ageFilter === '21' && item.minAllowedAge < 21) return false
 
-    return items.filter(
-      (item) =>
+      // 2. Query check
+      if (!query) return true
+
+      if (searchBy === 'name') {
+        return item.licenseClassName.toLowerCase().includes(query)
+      }
+      if (searchBy === 'id') {
+        return String(item.licenseClassId).includes(query)
+      }
+      if (searchBy === 'desc') {
+        return item.licenseClassDescription.toLowerCase().includes(query)
+      }
+
+      // 'all'
+      return (
         item.licenseClassName.toLowerCase().includes(query) ||
         String(item.licenseClassId).includes(query) ||
-        item.licenseClassDescription.toLowerCase().includes(query),
-    )
-  }, [items, search])
+        item.licenseClassDescription.toLowerCase().includes(query)
+      )
+    })
+  }, [items, search, searchBy, ageFilter])
+
+  const placeholderText = useMemo(() => {
+    switch (searchBy) {
+      case 'name':
+        return 'Search by license class name...'
+      case 'id':
+        return 'Search by class ID...'
+      case 'desc':
+        return 'Search by description...'
+      default:
+        return 'Search by name, ID, or description...'
+    }
+  }, [searchBy])
 
   return (
     <section className="page-content">
@@ -66,41 +116,102 @@ export default function LicenseClassesPage({ accessToken }: Props) {
         <div className="panel-header">
           <div>
             <h2>License Classes Directory</h2>
-            <p>License classes configured in DVLD</p>
+            <p>Browse license categories, requirements, validity, and fees.</p>
           </div>
 
           <span className="record-count">
-            {loading ? 'Loading...' : error ? '—' : `${items.length} Classes`}
+            {loading
+              ? 'Loading...'
+              : error
+                ? '—'
+                : filteredItems.length === items.length
+                  ? `${items.length} Classes`
+                  : `${filteredItems.length} of ${items.length} Classes`}
           </span>
         </div>
 
         <div className="table-toolbar">
-          <input
-            type="search"
+          <select
             className="search-input"
-            placeholder="Search by name, ID, or description..."
-            aria-label="Search license classes"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+            style={{ width: 'auto', minWidth: 140 }}
+            value={searchBy}
+            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
+            aria-label="Filter criterion"
+          >
+            <option value="all">All Fields</option>
+            <option value="name">Class Name</option>
+            <option value="id">Class ID</option>
+            <option value="desc">Description</option>
+          </select>
+
+          <div className="search-wrapper">
+            <span className="search-icon-left" aria-hidden="true">
+              <SearchIcon size={16} />
+            </span>
+
+            <input
+              type="text"
+              className="search-input"
+              placeholder={placeholderText}
+              aria-label="Search license classes"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+
+            {search && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+              >
+                <CloseIcon size={14} />
+              </button>
+            )}
+          </div>
+
+          <select
+            className="search-input"
+            style={{ width: 'auto', minWidth: 140 }}
+            value={ageFilter}
+            onChange={(event) => setAgeFilter(event.target.value as AgeFilter)}
+            aria-label="Filter by minimum age"
+          >
+            <option value="all">All Ages</option>
+            <option value="18">Min Age 18+</option>
+            <option value="21">Min Age 21+</option>
+          </select>
+
+          {isFiltered && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleResetFilters}
+              title="Reset all filters"
+            >
+              <FilterIcon size={14} />
+              <span>Reset</span>
+            </button>
+          )}
 
           <button
             type="button"
             className="secondary-button"
             disabled={loading}
-            onClick={() => window.location.reload()}
+            onClick={() => setRefreshKey((k) => k + 1)}
           >
-            Refresh
+            <RefreshIcon size={14} />
+            <span>{loading ? 'Loading...' : 'Refresh'}</span>
           </button>
         </div>
 
         {error && (
-          <div className="empty-state" role="alert">
-            <p className="login-error">{error}</p>
+          <div className="login-error" style={{ margin: '0 25px 20px' }} role="alert">
+            <p>{error}</p>
             <button
               type="button"
-              className="secondary-button"
-              onClick={() => window.location.reload()}
+              className="primary-button"
+              onClick={() => setRefreshKey((k) => k + 1)}
             >
               Retry
             </button>
@@ -110,7 +221,7 @@ export default function LicenseClassesPage({ accessToken }: Props) {
         {loading ? (
           <p className="empty-state">Loading license classes...</p>
         ) : !error ? (
-          <div className="table-wrapper">
+          <div className="table-container">
             <table className="people-table">
               <thead>
                 <tr>
@@ -126,7 +237,11 @@ export default function LicenseClassesPage({ accessToken }: Props) {
               <tbody>
                 {filteredItems.map((item) => (
                   <tr key={item.licenseClassId}>
-                    <td>{item.licenseClassId}</td>
+                    <td>
+                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+                        #{item.licenseClassId}
+                      </span>
+                    </td>
                     <td className="person-name">{item.licenseClassName}</td>
                     <td>{item.licenseClassDescription}</td>
                     <td>{item.minAllowedAge}</td>
@@ -138,9 +253,14 @@ export default function LicenseClassesPage({ accessToken }: Props) {
                 {filteredItems.length === 0 && (
                   <tr>
                     <td colSpan={6} className="empty-state">
-                      {items.length === 0
-                        ? 'No license classes found.'
-                        : 'No license classes match your search.'}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
+                        <LicenseIcon size={36} />
+                        <span>
+                          {items.length === 0
+                            ? 'No license classes found.'
+                            : 'No license classes match your search.'}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 )}

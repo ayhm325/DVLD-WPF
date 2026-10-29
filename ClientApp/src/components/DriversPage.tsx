@@ -8,6 +8,8 @@ import {
   RefreshIcon,
   SearchIcon,
   CloseIcon,
+  FilterIcon,
+  CheckIcon,
 } from './common/Icons'
 
 export type DriversPageProps = {
@@ -17,6 +19,9 @@ export type DriversPageProps = {
   error?: string
   onRetry?: () => void
 }
+
+type SearchBy = 'all' | 'driverId' | 'personId' | 'name' | 'nationalNo'
+type LicenseFilter = 'all' | 'active' | 'none'
 
 export default function DriversPage({
   accessToken,
@@ -31,6 +36,10 @@ export default function DriversPage({
   )
   const [internalError, setInternalError] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+
+  const [search, setSearch] = useState('')
+  const [searchBy, setSearchBy] = useState<SearchBy>('all')
+  const [licenseFilter, setLicenseFilter] = useState<LicenseFilter>('all')
 
   useEffect(() => {
     if (!accessToken || externalDrivers !== undefined) return
@@ -67,26 +76,118 @@ export default function DriversPage({
   const error = externalError ?? internalError
   const onRetry = externalOnRetry ?? (() => setRefreshKey((k) => k + 1))
 
-  const [search, setSearch] = useState('')
+  const handleResetFilters = () => {
+    setSearch('')
+    setSearchBy('all')
+    setLicenseFilter('all')
+  }
+
+  const isFiltered = Boolean(search.trim() || searchBy !== 'all' || licenseFilter !== 'all')
 
   const filteredDrivers = useMemo(() => {
     const query = search.trim().toLowerCase()
 
-    if (!query) return drivers
+    return drivers.filter((driver) => {
+      // 1. License filter
+      if (licenseFilter === 'active' && (driver.activeLicenses || 0) <= 0) {
+        return false
+      }
+      if (licenseFilter === 'none' && (driver.activeLicenses || 0) > 0) {
+        return false
+      }
 
-    return drivers.filter((driver) =>
-      [
+      // 2. Query filter
+      if (!query) return true
+
+      if (searchBy === 'driverId') {
+        return String(driver.driverId).includes(query)
+      }
+      if (searchBy === 'personId') {
+        return String(driver.personId).includes(query)
+      }
+      if (searchBy === 'name') {
+        return (driver.fullName ?? '').toLowerCase().includes(query)
+      }
+      if (searchBy === 'nationalNo') {
+        return (driver.nationalNo ?? '').toLowerCase().includes(query)
+      }
+
+      // 'all'
+      return [
         String(driver.driverId),
         String(driver.personId),
         driver.fullName,
         driver.nationalNo,
-      ].some((value) => (value ?? '').toLowerCase().includes(query)),
-    )
-  }, [drivers, search])
+      ].some((value) => (value ?? '').toLowerCase().includes(query))
+    })
+  }, [drivers, search, searchBy, licenseFilter])
+
+  const placeholderText = useMemo(() => {
+    switch (searchBy) {
+      case 'driverId':
+        return 'Search by driver ID...'
+      case 'personId':
+        return 'Search by person ID...'
+      case 'name':
+        return 'Search by driver full name...'
+      case 'nationalNo':
+        return 'Search by national number...'
+      default:
+        return 'Search by name, national no, driver ID...'
+    }
+  }, [searchBy])
+
+  const totalDrivers = drivers.length
+  const totalActiveLicenses = drivers.reduce(
+    (total, driver) => total + (driver.activeLicenses || 0),
+    0,
+  )
+  const driversWithLicenses = drivers.filter(
+    (d) => (d.activeLicenses || 0) > 0,
+  ).length
 
   return (
     <section className="page-content">
       <PageHero pageId="Drivers" />
+
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+        <article className="stat-card">
+          <div className="stat-card-top">
+            <span>Total Drivers</span>
+            <span className="stat-icon" aria-hidden="true">
+              <DriversIcon size={20} />
+            </span>
+          </div>
+          <strong>{loading ? '...' : error ? '—' : totalDrivers}</strong>
+          <p>Registered drivers</p>
+        </article>
+
+        <article className="stat-card">
+          <div className="stat-card-top">
+            <span>Active Licenses</span>
+            <span className="stat-icon" aria-hidden="true" style={{ color: '#059669', background: '#ecfdf5' }}>
+              <LicenseIcon size={20} />
+            </span>
+          </div>
+          <strong style={{ color: '#059669' }}>
+            {loading ? '...' : error ? '—' : totalActiveLicenses}
+          </strong>
+          <p>Across listed drivers</p>
+        </article>
+
+        <article className="stat-card">
+          <div className="stat-card-top">
+            <span>Licensed Drivers</span>
+            <span className="stat-icon" aria-hidden="true" style={{ color: '#2563eb', background: '#eff6ff' }}>
+              <CheckIcon size={20} />
+            </span>
+          </div>
+          <strong style={{ color: '#2563eb' }}>
+            {loading ? '...' : error ? '—' : driversWithLicenses}
+          </strong>
+          <p>Holding active licenses</p>
+        </article>
+      </div>
 
       <div className="panel">
         <div className="panel-header">
@@ -95,53 +196,30 @@ export default function DriversPage({
             <p>Browse and search registered drivers in the system.</p>
           </div>
 
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={onRetry}
-            disabled={loading}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        </div>
-
-        <div style={{ padding: '0 25px 20px' }}>
-          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-            <article className="stat-card">
-              <div className="stat-card-top">
-                <span>Total Drivers</span>
-                <span className="stat-icon">
-                  <DriversIcon size={20} />
-                </span>
-              </div>
-              <strong>{loading ? '...' : error ? '—' : drivers.length}</strong>
-              <p>Registered drivers</p>
-            </article>
-
-            <article className="stat-card">
-              <div className="stat-card-top">
-                <span>Active Licenses</span>
-                <span className="stat-icon">
-                  <LicenseIcon size={20} />
-                </span>
-              </div>
-              <strong>
-                {loading
-                  ? '...'
-                  : error
-                    ? '—'
-                    : drivers.reduce(
-                        (total, driver) => total + (driver.activeLicenses || 0),
-                        0,
-                      )}
-              </strong>
-              <p>Across listed drivers</p>
-            </article>
-          </div>
+          <span className="record-count">
+            {loading
+              ? 'Loading...'
+              : filteredDrivers.length === drivers.length
+                ? `${drivers.length} Drivers`
+                : `${filteredDrivers.length} of ${drivers.length} Drivers`}
+          </span>
         </div>
 
         <div className="table-toolbar">
+          <select
+            className="search-input"
+            style={{ width: 'auto', minWidth: 140 }}
+            value={searchBy}
+            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
+            aria-label="Filter criterion"
+          >
+            <option value="all">All Fields</option>
+            <option value="name">Full Name</option>
+            <option value="nationalNo">National No.</option>
+            <option value="driverId">Driver ID</option>
+            <option value="personId">Person ID</option>
+          </select>
+
           <div className="search-wrapper">
             <span className="search-icon-left" aria-hidden="true">
               <SearchIcon size={16} />
@@ -152,7 +230,7 @@ export default function DriversPage({
               className="search-input"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name, national number, driver ID..."
+              placeholder={placeholderText}
               aria-label="Search drivers"
             />
 
@@ -168,7 +246,39 @@ export default function DriversPage({
             )}
           </div>
 
-          <span className="record-count">{filteredDrivers.length} Drivers</span>
+          <select
+            className="search-input"
+            style={{ width: 'auto', minWidth: 160 }}
+            value={licenseFilter}
+            onChange={(event) => setLicenseFilter(event.target.value as LicenseFilter)}
+            aria-label="Filter by license status"
+          >
+            <option value="all">All Drivers</option>
+            <option value="active">Has Active License</option>
+            <option value="none">No Active License</option>
+          </select>
+
+          {isFiltered && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleResetFilters}
+              title="Reset all filters"
+            >
+              <FilterIcon size={14} />
+              <span>Reset</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onRetry}
+            disabled={loading}
+          >
+            <RefreshIcon size={14} />
+            <span>{loading ? 'Loading...' : 'Refresh'}</span>
+          </button>
         </div>
 
         {loading && <p className="empty-state">Loading drivers...</p>}
@@ -193,7 +303,7 @@ export default function DriversPage({
               <span>
                 {drivers.length === 0
                   ? 'No drivers found.'
-                  : 'No drivers match your search.'}
+                  : 'No drivers match your search filters.'}
               </span>
             </div>
           </div>

@@ -9,15 +9,15 @@ export type PageHeroProps = {
   description?: string
   icon?: ReactNode
   badgeText?: string
-  action?: ReactNode
   className?: string
-  children?: ReactNode
 }
 
 /**
  * Reusable dark navy PageHero banner for all standalone DVLD pages.
- * Displays centralized eyebrow, heading, description, action slots,
+ * Displays centralized eyebrow, heading, description,
  * and a decorative right-aligned emblem/icon.
+ * Action buttons must be placed in content panel headers or toolbars,
+ * not inside the hero banner.
  */
 export default function PageHero({
   pageId,
@@ -26,9 +26,7 @@ export default function PageHero({
   description,
   icon,
   badgeText,
-  action,
   className = '',
-  children,
 }: PageHeroProps) {
   const config: PageHeroConfigItem | undefined = pageId ? PAGE_HERO_CONFIG[pageId] : undefined
 
@@ -46,8 +44,6 @@ export default function PageHero({
         {finalDescription && (
           <p className="page-hero-description">{finalDescription}</p>
         )}
-        {action && <div className="page-hero-actions">{action}</div>}
-        {children}
       </div>
 
       {(finalIcon || finalBadgeText) && (

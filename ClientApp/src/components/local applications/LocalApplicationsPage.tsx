@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from 'react'
 import LocalApplicationsList from './LocalApplicationsList'
 import LocalApplicationForm from './LocalApplicationForm'
@@ -10,9 +9,14 @@ import type {
 } from '../../types/LocalDrivingLicenseApplication'
 import {
   PlusIcon,
-  RefreshIcon,
+  SearchIcon,
+  CloseIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ApplicationsIcon,
+  CheckIcon,
+  ClockIcon,
+  FilterIcon,
 } from '../common/Icons'
 import './local-applications.css'
 
@@ -27,6 +31,8 @@ type View =
   | { mode: 'create' }
   | { mode: 'edit'; application: LocalDrivingLicenseApplication }
 
+type SearchBy = 'all' | 'name' | 'nationalNo' | 'appId' | 'class'
+
 export default function LocalApplicationsPage({ accessToken }: Props) {
   const [view, setView] = useState<View>({ mode: 'list' })
   const [page, setPage] = useState<PageResult | null>(null)
@@ -34,7 +40,7 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
   const [error, setError] = useState('')
   const [pageNumber, setPageNumber] = useState(1)
   const [search, setSearch] = useState('')
-  const [searchBy, setSearchBy] = useState<'name' | 'nationalNo'>('name')
+  const [searchBy, setSearchBy] = useState<SearchBy>('all')
   const [status, setStatus] = useState('All')
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -75,27 +81,70 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
     }
   }, [accessToken, pageNumber, refreshKey])
 
+  function handleResetFilters() {
+    setSearch('')
+    setSearchBy('all')
+    setStatus('All')
+    setPageNumber(1)
+  }
+
+  const isFiltered = Boolean(search.trim() || searchBy !== 'all' || status !== 'All')
+
   const filteredItems = useMemo(() => {
     const items = page?.items ?? []
     const query = search.trim().toLowerCase()
 
     return items.filter((item) => {
-      const searchable =
-        searchBy === 'name' ? item.fullName : item.nationalNo
-
-      const matchesSearch =
-        !query || (searchable ?? '').toLowerCase().includes(query)
-
+      // 1. Status check
       const statusText = (
-        item.statusText || item.applicationStatus
+        item.statusText || item.applicationStatus || ''
       ).toLowerCase()
 
       const matchesStatus =
         status === 'All' || statusText === status.toLowerCase()
 
-      return matchesSearch && matchesStatus
+      if (!matchesStatus) return false
+
+      // 2. Query check
+      if (!query) return true
+
+      if (searchBy === 'name') {
+        return (item.fullName ?? '').toLowerCase().includes(query)
+      }
+      if (searchBy === 'nationalNo') {
+        return (item.nationalNo ?? '').toLowerCase().includes(query)
+      }
+      if (searchBy === 'appId') {
+        return String(item.localDrivingLicenseApplicationId).includes(query)
+      }
+      if (searchBy === 'class') {
+        return (item.licenseClassName ?? '').toLowerCase().includes(query)
+      }
+
+      // 'all'
+      return (
+        (item.fullName ?? '').toLowerCase().includes(query) ||
+        (item.nationalNo ?? '').toLowerCase().includes(query) ||
+        String(item.localDrivingLicenseApplicationId).includes(query) ||
+        (item.licenseClassName ?? '').toLowerCase().includes(query)
+      )
     })
   }, [page, search, searchBy, status])
+
+  const placeholderText = useMemo(() => {
+    switch (searchBy) {
+      case 'name':
+        return 'Search by applicant name...'
+      case 'nationalNo':
+        return 'Search by national number...'
+      case 'appId':
+        return 'Search by application ID...'
+      case 'class':
+        return 'Search by driving class...'
+      default:
+        return 'Search by name, national no, app ID, class...'
+    }
+  }, [searchBy])
 
   function refreshApplications() {
     setLoading(true)
@@ -112,6 +161,7 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
 
     if (saved) {
       setLoading(true)
+      setPageNumber(1)
       setRefreshKey((value) => value + 1)
     }
   }
@@ -136,103 +186,161 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
     <section className="page-content local-app-page">
       <PageHero pageId="Local Applications" />
 
-      <section className="local-app-panel">
-        <header className="local-app-panel-header">
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+        <article className="stat-card">
+          <div className="stat-card-top">
+            <span>Total Applications</span>
+            <span className="stat-icon" aria-hidden="true">
+              <ApplicationsIcon size={20} />
+            </span>
+          </div>
+          <strong>{loading ? '...' : error ? '—' : (page?.totalCount ?? 0)}</strong>
+          <p>Recorded applications in DVLD</p>
+        </article>
+
+        <article className="stat-card">
+          <div className="stat-card-top">
+            <span>Loaded on Page</span>
+            <span className="stat-icon" aria-hidden="true" style={{ color: '#059669', background: '#ecfdf5' }}>
+              <CheckIcon size={20} />
+            </span>
+          </div>
+          <strong style={{ color: '#059669' }}>
+            {loading ? '...' : error ? '—' : (page?.items.length ?? 0)}
+          </strong>
+          <p>{error ? '—' : `Applications on page ${page?.pageNumber ?? 1} of ${page?.totalPages ?? 1}`}</p>
+        </article>
+
+        <article className="stat-card">
+          <div className="stat-card-top">
+            <span>Required Tests</span>
+            <span className="stat-icon" aria-hidden="true" style={{ color: '#64748b', background: '#f1f5f9' }}>
+              <ClockIcon size={20} />
+            </span>
+          </div>
+          <strong>3</strong>
+          <p>Vision, written, and street tests</p>
+        </article>
+      </div>
+
+      <section className="panel">
+        <header className="panel-header">
           <div>
-            <span className="local-app-kicker">APPLICATION REGISTER</span>
-            <h3>Driving License Applications</h3>
-            <p>Applications are loaded from the DVLD API.</p>
+            <h2>Driving License Applications</h2>
+            <p>Applications registered and loaded from the DVLD system.</p>
           </div>
 
-          <div className="local-app-header-actions">
-            <span className="local-app-count">
-              {loading ? '...' : error ? '—' : `${page?.totalCount ?? 0} records`}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="record-count">
+              {loading
+                ? 'Loading...'
+                : error
+                  ? '—'
+                  : isFiltered
+                    ? `${filteredItems.length} of ${page?.totalCount ?? 0} Applications`
+                    : `${page?.totalCount ?? 0} Applications`}
             </span>
 
             <button
               type="button"
-              className="local-app-primary"
+              className="primary-button"
               onClick={() => setView({ mode: 'create' })}
             >
               <PlusIcon size={16} />
-              <span>New application</span>
+              <span>New Application</span>
             </button>
           </div>
         </header>
 
-        <div className="local-app-filters">
-          <label className="local-app-filter-field">
-            <span>Search field</span>
-            <select
-              value={searchBy}
-              onChange={(event) => {
-                setSearchBy(event.target.value as 'name' | 'nationalNo')
-                setPageNumber(1)
-              }}
-            >
-              <option value="name">Full Name</option>
-              <option value="nationalNo">National No.</option>
-            </select>
-          </label>
+        <div className="table-toolbar">
+          <select
+            className="search-input"
+            style={{ width: 'auto', minWidth: 150 }}
+            value={searchBy}
+            onChange={(event) => {
+              setSearchBy(event.target.value as SearchBy)
+              setPageNumber(1)
+            }}
+            aria-label="Filter criterion"
+          >
+            <option value="all">All Fields</option>
+            <option value="name">Applicant Name</option>
+            <option value="nationalNo">National No.</option>
+            <option value="appId">Application ID</option>
+            <option value="class">Driving Class</option>
+          </select>
 
-          <label className="local-app-search-field">
-            <span>Search applications</span>
+          <div className="search-wrapper">
+            <span className="search-icon-left" aria-hidden="true">
+              <SearchIcon size={16} />
+            </span>
+
             <input
+              type="text"
+              className="search-input"
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value)
                 setPageNumber(1)
               }}
-              placeholder={
-                searchBy === 'name'
-                  ? 'Search by applicant name…'
-                  : 'Search by national number…'
-              }
+              placeholder={placeholderText}
+              aria-label="Search applications"
             />
-          </label>
 
-          <label className="local-app-filter-field local-app-status-filter">
-            <span>Status</span>
-            <select
-              value={status}
-              onChange={(event) => {
-                setStatus(event.target.value)
-                setPageNumber(1)
-              }}
-            >
-              <option>All</option>
-              <option>New</option>
-              <option>Cancelled</option>
-              <option>Completed</option>
-            </select>
-          </label>
+            {search && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => {
+                  setSearch('')
+                  setPageNumber(1)
+                }}
+                aria-label="Clear search"
+              >
+                <CloseIcon size={14} />
+              </button>
+            )}
+          </div>
 
-          <button
-            type="button"
-            className="local-app-icon-button"
-            onClick={refreshApplications}
-            disabled={loading}
-            aria-label="Refresh applications"
-            title="Refresh"
+          <select
+            className="search-input"
+            style={{ width: 'auto', minWidth: 140 }}
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value)
+              setPageNumber(1)
+            }}
+            aria-label="Filter by application status"
           >
-            <RefreshIcon size={16} />
-          </button>
+            <option value="All">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Completed">Completed</option>
+          </select>
+
+          {isFiltered && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleResetFilters}
+              title="Reset all filters"
+            >
+              <FilterIcon size={14} />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
 
         {error && (
-          <div className="local-app-alert" role="alert">
-            <div>
-              <strong>Applications could not be loaded</strong>
-              <p>{error}</p>
-            </div>
-
+          <div className="login-error" style={{ margin: '0 25px 20px' }} role="alert">
+            <p>{error}</p>
             <button
               type="button"
-              className="local-app-secondary"
+              className="primary-button"
               onClick={refreshApplications}
               disabled={loading}
             >
-              Try again
+              Retry
             </button>
           </div>
         )}
@@ -245,17 +353,18 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
           }
         />
 
-        <footer className="local-app-pagination">
+        <footer className="panel-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <span>
             {error
               ? 'Failed to load applications'
               : `Showing ${filteredItems.length} of ${page?.totalCount ?? 0} applications`}
           </span>
 
-          <div className="local-app-pagination-controls">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
               type="button"
-              className="local-app-secondary"
+              className="secondary-button"
+              style={{ minHeight: 34, padding: '6px 12px', fontSize: 11 }}
               disabled={!page?.hasPreviousPage || loading}
               onClick={() => changePage(Math.max(1, pageNumber - 1))}
             >
@@ -263,14 +372,15 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               <span>Previous</span>
             </button>
 
-            <span>
-              Page <strong>{page?.pageNumber ?? pageNumber}</strong> of{' '}
-              <strong>{error ? '—' : page?.totalPages ?? 0}</strong>
+            <span style={{ fontSize: 11, color: 'var(--dvld-muted)' }}>
+              Page <strong style={{ color: 'var(--dvld-heading)' }}>{page?.pageNumber ?? pageNumber}</strong> of{' '}
+              <strong style={{ color: 'var(--dvld-heading)' }}>{error ? '—' : page?.totalPages ?? 0}</strong>
             </span>
 
             <button
               type="button"
-              className="local-app-secondary"
+              className="secondary-button"
+              style={{ minHeight: 34, padding: '6px 12px', fontSize: 11 }}
               disabled={!page?.hasNextPage || loading}
               onClick={() => changePage(pageNumber + 1)}
             >
@@ -278,9 +388,15 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               <ChevronRightIcon size={14} />
             </button>
 
-            <label className="local-app-page-size">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 6, fontSize: 11, color: 'var(--dvld-muted)' }}>
               Rows
-              <select value={PAGE_SIZE} disabled aria-label="Rows per page">
+              <select
+                className="search-input"
+                style={{ width: 'auto', minHeight: 30, padding: '4px 8px', fontSize: 11 }}
+                value={PAGE_SIZE}
+                disabled
+                aria-label="Rows per page"
+              >
                 <option value={10}>10</option>
               </select>
             </label>

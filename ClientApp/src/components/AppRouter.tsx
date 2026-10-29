@@ -95,6 +95,7 @@ export default function AppRouter({
       {/* People */}
       {activePage === 'People' && (
         <PeoplePage
+          people={people}
           filteredPeople={filteredPeople}
           searchName={searchName}
           onSearchChange={onSearchChange}

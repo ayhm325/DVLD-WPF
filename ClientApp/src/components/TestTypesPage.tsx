@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from 'react'
 import {
   getTestTypes,
@@ -6,6 +5,13 @@ import {
 } from '../services/testTypeService'
 import type { TestType } from '../services/testTypeService'
 import PageHero from './common/PageHero'
+import {
+  SearchIcon,
+  CloseIcon,
+  RefreshIcon,
+  TestTypeIcon,
+  FilterIcon,
+} from './common/Icons'
 
 type Props = {
   accessToken: string
@@ -17,9 +23,12 @@ type EditForm = {
   testTypeFees: string
 }
 
+type SearchBy = 'all' | 'title' | 'id' | 'desc'
+
 export default function TestTypesPage({ accessToken }: Props) {
   const [items, setItems] = useState<TestType[]>([])
   const [search, setSearch] = useState('')
+  const [searchBy, setSearchBy] = useState<SearchBy>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -63,18 +72,50 @@ export default function TestTypesPage({ accessToken }: Props) {
     }
   }, [accessToken, refreshKey])
 
+  function handleResetFilters() {
+    setSearch('')
+    setSearchBy('all')
+  }
+
+  const isFiltered = Boolean(search.trim() || searchBy !== 'all')
+
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase()
 
     if (!query) return items
 
-    return items.filter(
-      (item) =>
+    return items.filter((item) => {
+      if (searchBy === 'title') {
+        return item.testTypeTitle.toLowerCase().includes(query)
+      }
+      if (searchBy === 'id') {
+        return String(item.testTypeId).includes(query)
+      }
+      if (searchBy === 'desc') {
+        return item.testTypeDescription.toLowerCase().includes(query)
+      }
+
+      // 'all'
+      return (
         item.testTypeTitle.toLowerCase().includes(query) ||
         item.testTypeDescription.toLowerCase().includes(query) ||
-        String(item.testTypeId).includes(query),
-    )
-  }, [items, search])
+        String(item.testTypeId).includes(query)
+      )
+    })
+  }, [items, search, searchBy])
+
+  const placeholderText = useMemo(() => {
+    switch (searchBy) {
+      case 'title':
+        return 'Search by test type title...'
+      case 'id':
+        return 'Search by test type ID...'
+      case 'desc':
+        return 'Search by description...'
+      default:
+        return 'Search by title, description, or ID...'
+    }
+  }, [searchBy])
 
   function startEditing(item: TestType) {
     setEditingId(item.testTypeId)
@@ -145,19 +186,65 @@ export default function TestTypesPage({ accessToken }: Props) {
           </div>
 
           <span className="record-count">
-            {loading ? 'Loading...' : `${items.length} Test Types`}
+            {loading
+              ? 'Loading...'
+              : filteredItems.length === items.length
+                ? `${items.length} Test Types`
+                : `${filteredItems.length} of ${items.length} Test Types`}
           </span>
         </div>
 
         <div className="table-toolbar">
-          <input
-            type="search"
+          <select
             className="search-input"
-            placeholder="Search by title, description, or ID..."
-            aria-label="Search test types"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
+            style={{ width: 'auto', minWidth: 140 }}
+            value={searchBy}
+            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
+            aria-label="Filter criterion"
+          >
+            <option value="all">All Fields</option>
+            <option value="title">Test Title</option>
+            <option value="id">Test ID</option>
+            <option value="desc">Description</option>
+          </select>
+
+          <div className="search-wrapper">
+            <span className="search-icon-left" aria-hidden="true">
+              <SearchIcon size={16} />
+            </span>
+
+            <input
+              type="text"
+              className="search-input"
+              placeholder={placeholderText}
+              aria-label="Search test types"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+
+            {search && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+              >
+                <CloseIcon size={14} />
+              </button>
+            )}
+          </div>
+
+          {isFiltered && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleResetFilters}
+              title="Reset all filters"
+            >
+              <FilterIcon size={14} />
+              <span>Reset</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -168,18 +255,29 @@ export default function TestTypesPage({ accessToken }: Props) {
               setRefreshKey((key) => key + 1)
             }}
           >
-            Refresh
+            <RefreshIcon size={14} />
+            <span>{loading ? 'Loading...' : 'Refresh'}</span>
           </button>
         </div>
 
         {error && (
-          <p className="login-error" role="alert">
-            {error}
-          </p>
+          <div className="login-error" style={{ margin: '0 25px 20px' }} role="alert">
+            <p>{error}</p>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => {
+                setSuccess('')
+                setRefreshKey((key) => key + 1)
+              }}
+            >
+              Retry
+            </button>
+          </div>
         )}
 
         {success && (
-          <p role="status" style={{ padding: '0 25px', color: '#21865a' }}>
+          <p role="status" style={{ padding: '0 25px 20px', margin: 0, color: '#059669', fontWeight: 600, fontSize: 13 }}>
             {success}
           </p>
         )}
@@ -187,7 +285,7 @@ export default function TestTypesPage({ accessToken }: Props) {
         {loading ? (
           <p className="empty-state">Loading test types...</p>
         ) : (
-          <div className="table-wrapper">
+          <div className="table-container">
             <table className="people-table">
               <thead>
                 <tr>
@@ -205,7 +303,11 @@ export default function TestTypesPage({ accessToken }: Props) {
 
                   return (
                     <tr key={item.testTypeId}>
-                      <td>{item.testTypeId}</td>
+                      <td>
+                        <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+                          #{item.testTypeId}
+                        </span>
+                      </td>
 
                       <td>
                         {isEditing ? (
@@ -307,9 +409,14 @@ export default function TestTypesPage({ accessToken }: Props) {
                 {filteredItems.length === 0 && (
                   <tr>
                     <td colSpan={5} className="empty-state">
-                      {items.length === 0
-                        ? 'No test types found.'
-                        : 'No test types match your search.'}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
+                        <TestTypeIcon size={36} />
+                        <span>
+                          {items.length === 0
+                            ? 'No test types found.'
+                            : 'No test types match your search.'}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 )}
