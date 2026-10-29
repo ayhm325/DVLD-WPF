@@ -57,16 +57,7 @@ export default function Topbar({
             <MenuIcon size={20} />
           </button>
         )}
-        <div>
-          <nav className="breadcrumb" aria-label="Breadcrumb">
-            <span>DVLD</span>
-            <span className="breadcrumb-separator" aria-hidden="true">/</span>
-            <span>Management</span>
-            <span className="breadcrumb-separator" aria-hidden="true">/</span>
-            <span className="breadcrumb-current">{activePage}</span>
-          </nav>
-          <h1>{activePage}</h1>
-        </div>
+        <h1>{activePage}</h1>
       </div>
 
       <div className="topbar-actions">
@@ -88,10 +79,10 @@ export default function Topbar({
             <div className="topbar-avatar">{initial}</div>
             <div className="topbar-user-meta">
               <span className="topbar-user-name">
-                {user?.fullName || user?.userName || 'Administrator'}
+                {user?.fullName || user?.userName || 'User'}
               </span>
               <span className="topbar-user-role">
-                {user?.role || 'Staff Member'}
+                {user?.role || 'User'}
               </span>
             </div>
             <span className="topbar-chevron" aria-hidden="true">
@@ -104,19 +95,21 @@ export default function Topbar({
               <div className="user-menu-header">
                 <div className="user-menu-avatar">{initial}</div>
                 <div className="user-menu-details">
-                  <strong>{user?.fullName || 'Administrator'}</strong>
-                  <span>@{user?.userName || 'admin'}</span>
-                  <div className="role-pill-badge">{user?.role || 'Staff'}</div>
+                  <strong>{user?.fullName || user?.userName || 'User'}</strong>
+                  {user?.userName && <span>@{user.userName}</span>}
+                  <div className="role-pill-badge">{user?.role || 'User'}</div>
                 </div>
               </div>
 
               <div className="user-menu-divider" />
 
               <div className="user-menu-section">
-                <div className="user-menu-info-row">
-                  <UserIcon size={14} className="text-muted" />
-                  <span>User ID: #{user?.userId || 1}</span>
-                </div>
+                {user?.userId && (
+                  <div className="user-menu-info-row">
+                    <UserIcon size={14} className="text-muted" />
+                    <span>User ID: #{user.userId}</span>
+                  </div>
+                )}
 
                 <div className="user-menu-divider" />
 

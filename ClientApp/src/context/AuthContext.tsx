@@ -7,52 +7,14 @@ import type { ReactNode } from 'react'
 import type { AuthSession, AuthUser, LoginResponse } from '../types/Auth'
 import { setUnauthorizedHandler } from '../services/apiClient'
 import { AuthContext, type AuthContextValue } from './authContextInstance'
-
-const AUTH_STORAGE_KEY = 'dvld_auth_session'
-
-function loadStoredSession(): AuthSession | null {
-  try {
-    const raw = sessionStorage.getItem(AUTH_STORAGE_KEY)
-    if (!raw) return null
-
-    const session = JSON.parse(raw) as AuthSession
-    if (!session || !session.accessToken || !session.expiresAtUtc) {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY)
-      return null
-    }
-
-    const expiresAt = new Date(session.expiresAtUtc).getTime()
-    if (Number.isFinite(expiresAt) && expiresAt <= Date.now()) {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY)
-      return null
-    }
-
-    return session
-  } catch {
-    try {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY)
-    } catch {
-      // Ignore storage access errors
-    }
-    return null
-  }
-}
-
-function persistSession(session: AuthSession | null): void {
-  try {
-    if (session) {
-      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
-    } else {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY)
-    }
-  } catch {
-    // Ignore storage quota or access errors in restricted environments
-  }
-}
+import {
+  loadStoredSession,
+  persistSession,
+} from '../utils/sessionStorage'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<AuthSession | null>(() => loadStoredSession())
-  const [isLoading] = useState(false)
+  const [session, setSession] = useState<AuthSession | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [authMessage, setAuthMessage] = useState<string | null>(null)
 
   const logout = useCallback((reason?: string) => {
@@ -62,6 +24,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthMessage(reason)
     } else {
       setAuthMessage('You have successfully signed out.')
+    }
+  }, [])
+
+  // Honest session initialization: starts isLoading true, validates storage asynchronously,
+  // and transitions isLoading to false safely without leaving user stuck
+  useEffect(() => {
+    let active = true
+
+    void Promise.resolve().then(() => {
+      if (!active) return
+
+      try {
+        const restored = loadStoredSession()
+        if (active) {
+          setSession(restored)
+        }
+      } catch {
+        if (active) {
+          setSession(null)
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false)
+        }
+      }
+    })
+
+    return () => {
+      active = false
     }
   }, [])
 
@@ -75,6 +66,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUnauthorizedHandler(null)
     }
   }, [logout])
+
+  // Active session timeout: auto-logout when expiresAtUtc is reached
+  useEffect(() => {
+    if (!session || !session.expiresAtUtc) return
+
+    const expiresAt = new Date(session.expiresAtUtc).getTime()
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+      const immediateTimer = window.setTimeout(() => {
+        logout('Your session has expired. Please log in again.')
+      }, 0)
+      return () => {
+        window.clearTimeout(immediateTimer)
+      }
+    }
+
+    const msUntilExpiry = expiresAt - Date.now()
+    // Set timer for remaining duration (capped to max 32-bit int)
+    const safeTimeout = Math.min(msUntilExpiry, 2147483647)
+    const timerId = window.setTimeout(() => {
+      logout('Your session has expired. Please log in again.')
+    }, safeTimeout)
+
+    return () => {
+      window.clearTimeout(timerId)
+    }
+  }, [session, logout])
 
   const login = useCallback((response: LoginResponse) => {
     const user: AuthUser = {

@@ -10,6 +10,13 @@ type ApiErrorBody = {
 
 type UnauthorizedHandler = (message: string) => void
 
+export class ForbiddenError extends Error {
+  constructor(message = 'You do not have permission to access this page.') {
+    super(message)
+    this.name = 'ForbiddenError'
+  }
+}
+
 let unauthorizedHandler: UnauthorizedHandler | null = null
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
@@ -75,6 +82,15 @@ export async function apiRequest<T>(
       unauthorizedHandler(errorMessage || 'Session expired. Please log in again.')
     }
     throw new Error(errorMessage || 'Unauthorized. Please log in again.')
+  }
+
+  if (response.status === 403) {
+    const errorDetail = await readError(response)
+    const message =
+      errorDetail && errorDetail !== `Request failed (403)`
+        ? errorDetail
+        : 'You do not have permission to access this page.'
+    throw new ForbiddenError(message)
   }
 
   if (!response.ok) {

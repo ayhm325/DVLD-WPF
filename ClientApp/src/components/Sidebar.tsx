@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useAuth } from '../context/useAuth'
+import { isPagePermitted } from '../utils/permissions'
 import {
   DashboardIcon,
   UsersIcon,
@@ -25,6 +26,12 @@ type SidebarProps = {
   onRequestLogout: () => void
 }
 
+interface NavItemDef {
+  page: string
+  icon: ReactNode
+  label?: string
+}
+
 export default function Sidebar({
   activePage,
   onNavigate,
@@ -33,18 +40,39 @@ export default function Sidebar({
   onRequestLogout,
 }: SidebarProps) {
   const { user } = useAuth()
-  const settingsPages = [
-    'Application Types',
-    'License Classes',
-    'Test Types',
-    'Countries',
+
+  const allMainNavItems: NavItemDef[] = [
+    { page: 'Dashboard', icon: <DashboardIcon size={18} /> },
+    { page: 'People', icon: <UsersIcon size={18} /> },
+    { page: 'Drivers', icon: <DriversIcon size={18} /> },
+    { page: 'Licenses', icon: <LicenseIcon size={18} /> },
+    { page: 'International Licenses', icon: <GlobeIcon size={18} /> },
+    { page: 'Local Applications', icon: <ApplicationsIcon size={18} /> },
   ]
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(
-    settingsPages.includes(activePage),
+  const allSettingsPages: NavItemDef[] = [
+    { page: 'Application Types', icon: <ApplicationsIcon size={15} />, label: 'Application Types' },
+    { page: 'License Classes', icon: <AwardIcon size={15} />, label: 'License Classes' },
+    { page: 'Test Types', icon: <TestTypeIcon size={15} />, label: 'Test Types' },
+    { page: 'Countries', icon: <FlagIcon size={15} />, label: 'Countries' },
+  ]
+
+  // Filter items strictly by role-based permissions
+  const visibleMainNavItems = allMainNavItems.filter((item) =>
+    isPagePermitted(item.page, user?.role),
   )
 
-  const isSettingsActive = settingsPages.includes(activePage)
+  const visibleSettingsPages = allSettingsPages.filter((item) =>
+    isPagePermitted(item.page, user?.role),
+  )
+
+  const visibleSettingsPageNames = visibleSettingsPages.map((item) => item.page)
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(
+    visibleSettingsPageNames.includes(activePage),
+  )
+
+  const isSettingsActive = visibleSettingsPageNames.includes(activePage)
 
   const handleNavClick = (page: string) => {
     onNavigate(page)
@@ -80,7 +108,7 @@ export default function Sidebar({
     ? user.fullName.charAt(0).toUpperCase()
     : user?.userName
       ? user.userName.charAt(0).toUpperCase()
-      : 'A'
+      : 'U'
 
   return (
     <>
@@ -124,36 +152,36 @@ export default function Sidebar({
         <div className="nav-group-title">MAIN NAVIGATION</div>
 
         <nav className="sidebar-nav">
-          {renderNavItem('Dashboard', <DashboardIcon size={18} />)}
-          {renderNavItem('People', <UsersIcon size={18} />)}
-          {renderNavItem('Drivers', <DriversIcon size={18} />)}
-          {renderNavItem('Licenses', <LicenseIcon size={18} />)}
-          {renderNavItem('International Licenses', <GlobeIcon size={18} />)}
-          {renderNavItem('Local Applications', <ApplicationsIcon size={18} />)}
+          {visibleMainNavItems.map((item) =>
+            renderNavItem(item.page, item.icon, item.label || item.page),
+          )}
 
           {/* Settings Section */}
-          <button
-            type="button"
-            className={`nav-item settings-toggle ${isSettingsActive ? 'active' : ''}`}
-            aria-expanded={isSettingsOpen}
-            onClick={() => setIsSettingsOpen((previous) => !previous)}
-          >
-            <span className="nav-icon" aria-hidden="true">
-              <SettingsIcon size={18} />
-            </span>
-            <span className="settings-label">Settings</span>
-            <span className="settings-chevron" aria-hidden="true">
-              {isSettingsOpen ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
-            </span>
-          </button>
+          {visibleSettingsPages.length > 0 && (
+            <>
+              <button
+                type="button"
+                className={`nav-item settings-toggle ${isSettingsActive ? 'active' : ''}`}
+                aria-expanded={isSettingsOpen}
+                onClick={() => setIsSettingsOpen((previous) => !previous)}
+              >
+                <span className="nav-icon" aria-hidden="true">
+                  <SettingsIcon size={18} />
+                </span>
+                <span className="settings-label">Settings</span>
+                <span className="settings-chevron" aria-hidden="true">
+                  {isSettingsOpen ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
+                </span>
+              </button>
 
-          {isSettingsOpen && (
-            <div className="settings-submenu">
-              {renderNavItem('Application Types', <ApplicationsIcon size={15} />, 'Application Types', true)}
-              {renderNavItem('License Classes', <AwardIcon size={15} />, 'License Classes', true)}
-              {renderNavItem('Test Types', <TestTypeIcon size={15} />, 'Test Types', true)}
-              {renderNavItem('Countries', <FlagIcon size={15} />, 'Countries', true)}
-            </div>
+              {isSettingsOpen && (
+                <div className="settings-submenu">
+                  {visibleSettingsPages.map((item) =>
+                    renderNavItem(item.page, item.icon, item.label || item.page, true),
+                  )}
+                </div>
+              )}
+            </>
           )}
         </nav>
 
@@ -163,10 +191,10 @@ export default function Sidebar({
             <div className="user-avatar">{initial}</div>
 
             <div className="user-info">
-              <strong title={user?.fullName || 'Administrator'}>
-                {user?.fullName || 'Administrator'}
+              <strong title={user?.fullName || user?.userName || 'User'}>
+                {user?.fullName || user?.userName || 'User'}
               </strong>
-              <span>{user?.role || 'System Admin'}</span>
+              <span>{user?.role || 'User'}</span>
             </div>
 
             <button

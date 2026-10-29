@@ -9,6 +9,7 @@ import Login from './components/Login'
 import AddPersonModal from './components/AddPersonModal'
 import ConfirmModal from './components/common/ConfirmModal'
 import LoadingSpinner from './components/common/LoadingSpinner'
+import AccessDenied from './components/common/AccessDenied'
 import {
   UsersIcon,
   DriversIcon,
@@ -28,6 +29,7 @@ import IssueInternationalLicensePage from './components/international license/Is
 import LocalApplicationsPage from './components/local applications/LocalApplicationsPage'
 
 import { useAuth } from './context/useAuth'
+import { isPagePermitted } from './utils/permissions'
 import { getPeople } from './services/peopleService'
 import type { Person } from './types/Person'
 
@@ -45,7 +47,7 @@ const settingsPages = [
 ]
 
 export default function App() {
-  const { accessToken, isAuthenticated, isLoading, logout } = useAuth()
+  const { accessToken, user, isAuthenticated, isLoading, logout } = useAuth()
   const [activePage, setActivePage] = useState('Dashboard')
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
@@ -75,9 +77,10 @@ export default function App() {
   // Add person modal
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false)
 
-  // Load people
+  // Load people: only when authenticated, permitted for user role, and viewing Dashboard or People
   useEffect(() => {
-    if (!accessToken) return
+    if (!accessToken || !isPagePermitted('People', user?.role)) return
+    if (activePage !== 'Dashboard' && activePage !== 'People') return
 
     let cancelled = false
 
@@ -111,11 +114,13 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [accessToken])
+  }, [accessToken, user?.role, activePage])
 
-  // Load drivers and refresh when requested
+  // Load drivers: only when authenticated, permitted (StaffOnly), and viewing Drivers page
   useEffect(() => {
-    if (!accessToken) return
+    if (!accessToken || !isPagePermitted('Drivers', user?.role) || activePage !== 'Drivers') {
+      return
+    }
 
     let cancelled = false
 
@@ -149,12 +154,11 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [accessToken, driversRefreshKey])
+  }, [accessToken, user?.role, activePage, driversRefreshKey])
 
-  // Load all dashboard counts through one endpoint, rather than counting
-  // whichever people/drivers happen to be loaded in the UI.
+  // Load dashboard counts through one endpoint: only when viewing Dashboard
   useEffect(() => {
-    if (!accessToken) return
+    if (!accessToken || activePage !== 'Dashboard') return
 
     let cancelled = false
 
@@ -188,7 +192,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [accessToken, statisticsRefreshKey])
+  }, [accessToken, activePage, statisticsRefreshKey])
 
   const refreshDrivers = useCallback(() => {
     setDriversRefreshKey((current) => current + 1)
@@ -227,6 +231,8 @@ export default function App() {
     )
   }, [people, searchName])
 
+  const isCurrentPagePermitted = isPagePermitted(activePage, user?.role)
+
   if (isLoading) {
     return (
       <div className="login-page">
@@ -260,8 +266,18 @@ export default function App() {
           onRequestLogout={() => setIsLogoutModalOpen(true)}
         />
 
-        {/* Dashboard */}
-        {activePage === 'Dashboard' && (
+        {!isCurrentPagePermitted ? (
+          <section className="page-content">
+            <AccessDenied
+              pageTitle={activePage}
+              userRole={user?.role}
+              onBackToDashboard={() => setActivePage('Dashboard')}
+            />
+          </section>
+        ) : (
+          <>
+            {/* Dashboard */}
+            {activePage === 'Dashboard' && (
           <section className="page-content">
             <div className="welcome-banner">
               <div>
@@ -487,6 +503,8 @@ export default function App() {
               </button>
             </div>
           </section>
+        )}
+          </>
         )}
 
         {/* Add Person Modal */}
