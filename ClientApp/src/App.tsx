@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import './App.css'
@@ -8,6 +7,8 @@ import Topbar from './components/Topbar'
 import PeopleTable from './components/PeopleTable'
 import Login from './components/Login'
 import AddPersonModal from './components/AddPersonModal'
+import ConfirmModal from './components/common/ConfirmModal'
+import LoadingSpinner from './components/common/LoadingSpinner'
 
 import CountriesPage from './components/CountriesPage'
 import ApplicationTypesPage from './components/ApplicationTypesPage'
@@ -19,11 +20,15 @@ import InternationalLicensesPage from './components/international license/Intern
 import IssueInternationalLicensePage from './components/international license/IssueInternationalLicensePage'
 import LocalApplicationsPage from './components/local applications/LocalApplicationsPage'
 
+import { useAuth } from './context/useAuth'
 import { getPeople } from './services/peopleService'
 import type { Person } from './types/Person'
 
 import { getDrivers } from './services/driverService'
 import type { Driver } from './services/driverService'
+
+import { getDashboardStatistics } from './services/dashboardService'
+import type { DashboardStatistics } from './services/dashboardService'
 
 const settingsPages = [
   'Application Types',
@@ -33,8 +38,10 @@ const settingsPages = [
 ]
 
 export default function App() {
-  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const { accessToken, isAuthenticated, isLoading, logout } = useAuth()
   const [activePage, setActivePage] = useState('Dashboard')
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
 
   // International license navigation and list refresh
   const [showIssueInternational, setShowIssueInternational] = useState(false)
@@ -52,12 +59,18 @@ export default function App() {
   const [driversError, setDriversError] = useState('')
   const [driversRefreshKey, setDriversRefreshKey] = useState(0)
 
+  // Dashboard statistics are loaded together from one API endpoint.
+  const [dashboardStatistics, setDashboardStatistics] = useState<DashboardStatistics | null>(null)
+  const [loadingStatistics, setLoadingStatistics] = useState(false)
+  const [statisticsError, setStatisticsError] = useState('')
+  const [statisticsRefreshKey, setStatisticsRefreshKey] = useState(0)
+
   // Add person modal
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false)
 
   // Load people
   useEffect(() => {
-    if (accessToken === null) return
+    if (!accessToken) return
 
     let cancelled = false
 
@@ -95,7 +108,7 @@ export default function App() {
 
   // Load drivers and refresh when requested
   useEffect(() => {
-    if (accessToken === null) return
+    if (!accessToken) return
 
     let cancelled = false
 
@@ -131,6 +144,45 @@ export default function App() {
     }
   }, [accessToken, driversRefreshKey])
 
+  // Load all dashboard counts through one endpoint, rather than counting
+  // whichever people/drivers happen to be loaded in the UI.
+  useEffect(() => {
+    if (!accessToken) return
+
+    let cancelled = false
+
+    async function loadStatistics() {
+      setLoadingStatistics(true)
+      setStatisticsError('')
+
+      try {
+        const result = await getDashboardStatistics(accessToken!)
+
+        if (!cancelled) {
+          setDashboardStatistics(result)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setStatisticsError(
+            error instanceof Error
+              ? error.message
+              : 'Failed to load dashboard statistics.',
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingStatistics(false)
+        }
+      }
+    }
+
+    void loadStatistics()
+
+    return () => {
+      cancelled = true
+    }
+  }, [accessToken, statisticsRefreshKey])
+
   const refreshDrivers = useCallback(() => {
     setDriversRefreshKey((current) => current + 1)
   }, [])
@@ -138,12 +190,25 @@ export default function App() {
   const handleInternationalIssued = useCallback(() => {
     setShowIssueInternational(false)
     setInternationalRefreshKey((current) => current + 1)
+    setStatisticsRefreshKey((current) => current + 1)
   }, [])
 
   const handleNavigate = useCallback((page: string) => {
     setActivePage(page)
     setShowIssueInternational(false)
+    setIsMobileSidebarOpen(false)
+
+    if (page === 'Dashboard') {
+      setStatisticsRefreshKey((current) => current + 1)
+    }
   }, [])
+
+  const handleConfirmLogout = useCallback(() => {
+    setIsLogoutModalOpen(false)
+    setIsMobileSidebarOpen(false)
+    setActivePage('Dashboard')
+    logout('You have successfully signed out of DVLD.')
+  }, [logout])
 
   // Filter people
   const filteredPeople = useMemo(() => {
@@ -155,8 +220,16 @@ export default function App() {
     )
   }, [people, searchName])
 
-  if (accessToken === null) {
-    return <Login onLoginSuccess={(token) => setAccessToken(token)} />
+  if (isLoading) {
+    return (
+      <div className="login-page">
+        <LoadingSpinner message="Checking DVLD session..." size="lg" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated || accessToken === null) {
+    return <Login />
   }
 
   return (
@@ -164,6 +237,9 @@ export default function App() {
       <Sidebar
         activePage={activePage}
         onNavigate={handleNavigate}
+        isOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        onRequestLogout={() => setIsLogoutModalOpen(true)}
       />
 
       <main className="main-content">
@@ -173,6 +249,8 @@ export default function App() {
               ? 'Issue International License'
               : activePage
           }
+          onToggleSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+          onRequestLogout={() => setIsLogoutModalOpen(true)}
         />
 
         {/* Dashboard */}
@@ -195,39 +273,52 @@ export default function App() {
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Total People</span>
-                  <span className="stat-icon">♙</span>
+                  <span className="stat-icon" aria-hidden="true">♙</span>
                 </div>
-                <strong>{loadingPeople ? '...' : people.length}</strong>
-                <p>{peopleError || 'Registered people'}</p>
+                <strong>{loadingStatistics ? '...' : dashboardStatistics?.totalPeople ?? '—'}</strong>
+                <p>{statisticsError || 'Registered people'}</p>
               </article>
 
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Total Drivers</span>
-                  <span className="stat-icon">♧</span>
+                  <span className="stat-icon" aria-hidden="true">♧</span>
                 </div>
-                <strong>{loadingDrivers ? '...' : drivers.length}</strong>
-                <p>{driversError || 'Registered drivers'}</p>
+                <strong>{loadingStatistics ? '...' : dashboardStatistics?.totalDrivers ?? '—'}</strong>
+                <p>{statisticsError || 'Registered drivers'}</p>
               </article>
 
               <article className="stat-card">
                 <div className="stat-card-top">
-                  <span>Licenses</span>
-                  <span className="stat-icon">▤</span>
+                  <span>Active Licenses</span>
+                  <span className="stat-icon" aria-hidden="true">▤</span>
                 </div>
-                <strong>0</strong>
-                <p>Connect API to load data</p>
+                <strong>{loadingStatistics ? '...' : dashboardStatistics?.activeLicenses ?? '—'}</strong>
+                <p>{statisticsError || 'Currently active licenses'}</p>
               </article>
 
               <article className="stat-card">
                 <div className="stat-card-top">
-                  <span>Applications</span>
-                  <span className="stat-icon">▣</span>
+                  <span>Pending Applications</span>
+                  <span className="stat-icon" aria-hidden="true">▣</span>
                 </div>
-                <strong>0</strong>
-                <p>Connect API to load data</p>
+                <strong>{loadingStatistics ? '...' : dashboardStatistics?.pendingApplications ?? '—'}</strong>
+                <p>{statisticsError || 'Applications awaiting processing'}</p>
               </article>
             </div>
+
+            {statisticsError && (
+              <div className="login-error" role="alert">
+                <span>{statisticsError}</span>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => setStatisticsRefreshKey((current) => current + 1)}
+                >
+                  Retry statistics
+                </button>
+              </div>
+            )}
 
             {loadingPeople && <p>Loading people...</p>}
 
@@ -392,6 +483,7 @@ export default function App() {
                 setIsAddPersonOpen(false)
                 setSearchName('')
                 setPeopleError('')
+                setStatisticsRefreshKey((current) => current + 1)
               } catch (error) {
                 setPeopleError(
                   error instanceof Error
@@ -404,6 +496,18 @@ export default function App() {
             }}
           />
         )}
+
+        {/* Logout Confirmation Dialog */}
+        <ConfirmModal
+          isOpen={isLogoutModalOpen}
+          title="Sign Out of DVLD"
+          message="Are you sure you want to sign out? Your active session token will be cleared and you will be returned to the sign-in screen."
+          confirmText="Sign Out"
+          cancelText="Stay Signed In"
+          confirmVariant="danger"
+          onConfirm={handleConfirmLogout}
+          onCancel={() => setIsLogoutModalOpen(false)}
+        />
 
         <footer className="app-footer">
           DVLD Management System

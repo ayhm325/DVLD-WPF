@@ -1,14 +1,15 @@
-
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { login } from '../services/authService'
+import { login as performLogin } from '../services/authService'
+import { useAuth } from '../context/useAuth'
 import './Login.css'
 
 type LoginProps = {
-  onLoginSuccess: (accessToken: string) => void
+  onLoginSuccess?: (accessToken: string) => void
 }
 
 export default function Login({ onLoginSuccess }: LoginProps) {
+  const { login: setAuthSession, authMessage, clearAuthMessage } = useAuth()
   const [userName, setUserName] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -21,13 +22,21 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     if (loading) return
 
     setError('')
+    clearAuthMessage()
     setLoading(true)
 
     try {
-      const result = await login({ userName: userName.trim(), password })
-      onLoginSuccess(result.accessToken)
-    } catch {
-      setError('اسم المستخدم أو كلمة المرور غير صحيحة.')
+      const result = await performLogin({ userName: userName.trim(), password })
+      setAuthSession(result)
+      if (onLoginSuccess) {
+        onLoginSuccess(result.accessToken)
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Invalid username or password. Please verify your credentials.',
+      )
     } finally {
       setLoading(false)
     }
@@ -98,78 +107,88 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     </svg>
                   </div>
 
-                  <div className="login-license-lines">
-                    <span />
-                    <span />
-                    <span />
+                  <div className="login-license-fields">
+                    <div className="login-license-row">
+                      <span className="line-sm" />
+                      <span className="line-lg" />
+                    </div>
+                    <div className="login-license-row">
+                      <span className="line-md" />
+                      <span className="line-sm" />
+                    </div>
+                    <div className="login-license-row">
+                      <span className="line-lg" />
+                    </div>
                   </div>
                 </div>
 
                 <div className="login-license-footer">
-                  <span>LICENSE MANAGEMENT</span>
+                  <span>VALID • OFFICIAL DOCUMENT</span>
                   <div className="login-license-barcode">
-                    {Array.from({ length: 22 }, (_, index) => (
-                      <i key={index} />
-                    ))}
+                    <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
                   </div>
                 </div>
               </div>
 
-              <div className="login-floating-badge">
-                <span className="login-badge-icon">✓</span>
-                <span>
-                  <strong>One workspace</strong>
-                  <small>Everything organized</small>
-                </span>
+              <div className="login-stat-pill pill-one">
+                <span className="pill-dot green" />
+                <div>
+                  <strong>All Systems Online</strong>
+                  <span>API v1 Connected</span>
+                </div>
               </div>
 
-              <div className="login-visual-caption">
-                <span>01 /</span>
-                <span>LICENSING OPERATIONS</span>
-                <span className="login-caption-line" />
+              <div className="login-stat-pill pill-two">
+                <span className="pill-dot amber" />
+                <div>
+                  <strong>Secure Auth</strong>
+                  <span>JWT Protected</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <footer className="login-showcase-footer">
-            <span>DVLD · DIGITAL LICENSING</span>
-            <span>SECURE ADMINISTRATION</span>
-          </footer>
+            <footer className="login-showcase-footer">
+              <div className="feature-chip">
+                <span>✓</span> Role-based Access
+              </div>
+              <div className="feature-chip">
+                <span>✓</span> Audit Logging
+              </div>
+              <div className="feature-chip">
+                <span>✓</span> Encrypted Transport
+              </div>
+            </footer>
+          </div>
         </section>
 
-        <section className="login-form-panel">
-          <div className="login-form-inner">
-            <div className="login-mobile-brand">
-              <div className="login-brand-mark" aria-hidden="true">
-                <span>D</span>
-                <i />
-              </div>
-              <div className="login-brand-copy">
-                <strong>DVLD</strong>
-                <span>MANAGEMENT SYSTEM</span>
-              </div>
-            </div>
+        <section className="login-form-pane">
+          <div className="login-form-container">
+            <header className="login-form-header">
+              <span className="login-welcome-tag">PORTAL ACCESS</span>
+              <h2>Welcome back</h2>
+              <p>Sign in to access your administrative workspace.</p>
+            </header>
 
-            <div className="login-form-heading">
-              <span className="login-form-kicker">WELCOME BACK</span>
-              <h2>Sign in to your account</h2>
-              <p>
-                Enter your credentials to access the management dashboard.
-              </p>
-            </div>
+            {authMessage && (
+              <div className="login-info-banner" role="status">
+                <span className="login-info-icon">ℹ</span>
+                <span>{authMessage}</span>
+              </div>
+            )}
 
-            <form className="login-form" onSubmit={handleSubmit}>
+            <form className="login-form" onSubmit={handleSubmit} noValidate>
               <div className="login-field">
                 <label htmlFor="login-username">Username</label>
-
-                <div className="login-input-wrap">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
-                  </svg>
-
+                <div className="login-input-shell">
+                  <span className="login-input-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                    </svg>
+                  </span>
                   <input
                     id="login-username"
+                    name="username"
                     type="text"
                     autoComplete="username"
                     placeholder="Enter your username"
@@ -183,20 +202,19 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               </div>
 
               <div className="login-field">
-                <div className="login-label-row">
+                <div className="login-field-row">
                   <label htmlFor="login-password">Password</label>
-                  <span>SECURE ACCESS</span>
                 </div>
-
-                <div className="login-input-wrap">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="4" y="10" width="16" height="11" rx="2" />
-                    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                    <path d="M12 14v3" />
-                  </svg>
-
+                <div className="login-input-shell">
+                  <span className="login-input-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <rect x="5" y="11" width="14" height="10" rx="2" />
+                      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                    </svg>
+                  </span>
                   <input
                     id="login-password"
+                    name="password"
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="Enter your password"

@@ -5,6 +5,15 @@ type ApiErrorBody = {
   title?: string
   detail?: string
   errors?: Record<string, string[]>
+  error?: string
+}
+
+type UnauthorizedHandler = (message: string) => void
+
+let unauthorizedHandler: UnauthorizedHandler | null = null
+
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler
 }
 
 async function readError(response: Response): Promise<string> {
@@ -17,7 +26,14 @@ async function readError(response: Response): Promise<string> {
     const validationMessage = body.errors
       ? Object.values(body.errors).flat().join(' ')
       : ''
-    return body.message || body.detail || validationMessage || body.title || fallback
+    return (
+      body.error ||
+      body.message ||
+      body.detail ||
+      validationMessage ||
+      body.title ||
+      fallback
+    )
   } catch {
     return text
   }
@@ -31,26 +47,48 @@ export async function apiRequest<T>(
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
 
-  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`)
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
+  }
+
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
   let response: Response
+
   try {
-    response = await fetch(`${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`, {
+    response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
       ...init,
       headers,
     })
   } catch {
-    throw new Error('Unable to connect to the DVLD API. Check that the API is running and the base URL is correct.')
+    throw new Error(
+      'Unable to connect to the DVLD API. Check that the API is running and the base URL is correct.',
+    )
   }
 
-  if (!response.ok) throw new Error(await readError(response))
-  if (response.status === 204) return undefined as T
+  if (response.status === 401) {
+    const errorMessage = await readError(response)
+    if (unauthorizedHandler) {
+      unauthorizedHandler(errorMessage || 'Session expired. Please log in again.')
+    }
+    throw new Error(errorMessage || 'Unauthorized. Please log in again.')
+  }
+
+  if (!response.ok) {
+    throw new Error(await readError(response))
+  }
+
+  if (response.status === 204) {
+    return undefined as T
+  }
 
   const contentType = response.headers.get('content-type') ?? ''
-  if (!contentType.includes('application/json')) return undefined as T
+  if (!contentType.includes('application/json')) {
+    return undefined as T
+  }
 
-  return await response.json() as T
+  return (await response.json()) as T
 }

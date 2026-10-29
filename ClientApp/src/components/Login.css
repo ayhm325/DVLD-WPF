@@ -624,6 +624,33 @@
   color: #8c6416;
 }
 
+.login-info-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  color: #1e4a7a;
+  background: #eef5fc;
+  border: 1px solid #c8ddf2;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.login-info-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: #fff;
+  background: #2563eb;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .login-error {
   display: flex;
   align-items: flex-start;
