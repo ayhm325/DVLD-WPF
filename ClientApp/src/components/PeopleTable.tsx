@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { Person } from '../types/Person'
+import SearchInput from './common/SearchInput'
+import EmptyState from './common/EmptyState'
 import {
   PlusIcon,
-  SearchIcon,
-  CloseIcon,
   UsersIcon,
   RefreshIcon,
   FilterIcon,
@@ -138,31 +138,12 @@ export default function PeopleTable({
           <option value="phone">Phone</option>
         </select>
 
-        <div className="search-wrapper">
-          <span className="search-icon-left" aria-hidden="true">
-            <SearchIcon size={16} />
-          </span>
-
-          <input
-            type="text"
-            className="search-input"
-            placeholder={placeholderText}
-            value={search}
-            onChange={(event) => handleSearchChange(event.target.value)}
-            aria-label="Search people"
-          />
-
-          {search && (
-            <button
-              type="button"
-              className="search-clear-btn"
-              onClick={() => handleSearchChange('')}
-              aria-label="Clear search"
-            >
-              <CloseIcon size={14} />
-            </button>
-          )}
-        </div>
+        <SearchInput
+          value={search}
+          onChange={handleSearchChange}
+          placeholder={placeholderText}
+          ariaLabel="Search people"
+        />
 
         <select
           className="search-input"
@@ -248,11 +229,11 @@ export default function PeopleTable({
 
               {filteredPeople.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="empty-state">
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
-                      <UsersIcon size={36} />
-                      <span>No people found matching your criteria.</span>
-                    </div>
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={<UsersIcon size={36} />}
+                      message="No people found matching your criteria."
+                    />
                   </td>
                 </tr>
               )}

@@ -1,5 +1,8 @@
 import PeopleTable from './PeopleTable'
 import PageHero from './common/PageHero'
+import StatsGrid from './common/StatsGrid'
+import StatCard from './common/StatCard'
+import ErrorAlert from './common/ErrorAlert'
 import { UsersIcon, UserIcon } from './common/Icons'
 import type { Person } from '../types/Person'
 
@@ -34,57 +37,37 @@ export default function PeoplePage({
     <section className="page-content">
       <PageHero pageId="People" />
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Total People</span>
-            <span className="stat-icon" aria-hidden="true">
-              <UsersIcon size={20} />
-            </span>
-          </div>
-          <strong>{loadingPeople ? '...' : peopleError ? '—' : totalPeople}</strong>
-          <p>Registered citizens</p>
-        </article>
+      <StatsGrid columns={3}>
+        <StatCard
+          label="Total People"
+          icon={<UsersIcon size={20} />}
+          value={loadingPeople ? '...' : peopleError ? '—' : totalPeople}
+          description="Registered citizens"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Male</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#2563eb', background: '#eff6ff' }}>
-              <UserIcon size={20} />
-            </span>
-          </div>
-          <strong style={{ color: '#2563eb' }}>
-            {loadingPeople ? '...' : peopleError ? '—' : maleCount}
-          </strong>
-          <p>Registered male citizens</p>
-        </article>
+        <StatCard
+          label="Male"
+          icon={<UserIcon size={20} />}
+          iconStyle={{ color: '#2563eb', background: '#eff6ff' }}
+          value={<span style={{ color: '#2563eb' }}>{loadingPeople ? '...' : peopleError ? '—' : maleCount}</span>}
+          description="Registered male citizens"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Female</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#ec4899', background: '#fdf2f8' }}>
-              <UserIcon size={20} />
-            </span>
-          </div>
-          <strong style={{ color: '#ec4899' }}>
-            {loadingPeople ? '...' : peopleError ? '—' : femaleCount}
-          </strong>
-          <p>Registered female citizens</p>
-        </article>
-      </div>
+        <StatCard
+          label="Female"
+          icon={<UserIcon size={20} />}
+          iconStyle={{ color: '#ec4899', background: '#fdf2f8' }}
+          value={<span style={{ color: '#ec4899' }}>{loadingPeople ? '...' : peopleError ? '—' : femaleCount}</span>}
+          description="Registered female citizens"
+        />
+      </StatsGrid>
 
-      {peopleError && (
-        <div className="login-error" style={{ marginBottom: 20 }} role="alert">
-          <span>{peopleError}</span>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={onRetryPeople}
-          >
-            Retry people
-          </button>
-        </div>
-      )}
+      <ErrorAlert
+        message={peopleError}
+        style={{ marginBottom: 20 }}
+        onRetry={onRetryPeople}
+        retryLabel="Retry people"
+      />
 
       <PeopleTable
         people={people}

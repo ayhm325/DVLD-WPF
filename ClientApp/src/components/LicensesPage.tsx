@@ -2,13 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { getLicenses } from '../services/licenseService'
 import type { License } from '../services/licenseService'
 import PageHero from './common/PageHero'
+import StatsGrid from './common/StatsGrid'
+import StatCard from './common/StatCard'
+import SearchInput from './common/SearchInput'
+import ErrorAlert from './common/ErrorAlert'
+import EmptyState from './common/EmptyState'
 import {
   LicenseIcon,
   CheckIcon,
   ClockIcon,
   RefreshIcon,
-  SearchIcon,
-  CloseIcon,
   FilterIcon,
 } from './common/Icons'
 
@@ -145,44 +148,30 @@ export default function LicensesPage({
     <section className="page-content">
       <PageHero pageId="Licenses" />
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Total Licenses</span>
-            <span className="stat-icon" aria-hidden="true">
-              <LicenseIcon size={20} />
-            </span>
-          </div>
-          <strong>{loading ? '...' : error ? '—' : licenses.length}</strong>
-          <p>All returned records</p>
-        </article>
+      <StatsGrid columns={3}>
+        <StatCard
+          label="Total Licenses"
+          icon={<LicenseIcon size={20} />}
+          value={loading ? '...' : error ? '—' : licenses.length}
+          description="All returned records"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Active Licenses</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#059669', background: '#ecfdf5' }}>
-              <CheckIcon size={20} />
-            </span>
-          </div>
-          <strong style={{ color: '#059669' }}>
-            {loading ? '...' : error ? '—' : licenses.filter((license) => license.isActive).length}
-          </strong>
-          <p>Marked active by the system</p>
-        </article>
+        <StatCard
+          label="Active Licenses"
+          icon={<CheckIcon size={20} />}
+          iconStyle={{ color: '#059669', background: '#ecfdf5' }}
+          value={<span style={{ color: '#059669' }}>{loading ? '...' : error ? '—' : licenses.filter((license) => license.isActive).length}</span>}
+          description="Marked active by the system"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Inactive Licenses</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#64748b', background: '#f1f5f9' }}>
-              <ClockIcon size={20} />
-            </span>
-          </div>
-          <strong>
-            {loading ? '...' : error ? '—' : licenses.filter((license) => !license.isActive).length}
-          </strong>
-          <p>Not currently active</p>
-        </article>
-      </div>
+        <StatCard
+          label="Inactive Licenses"
+          icon={<ClockIcon size={20} />}
+          iconStyle={{ color: '#64748b', background: '#f1f5f9' }}
+          value={loading ? '...' : error ? '—' : licenses.filter((license) => !license.isActive).length}
+          description="Not currently active"
+        />
+      </StatsGrid>
 
       <div className="panel">
         <div className="panel-header">
@@ -215,31 +204,12 @@ export default function LicensesPage({
             <option value="class">License Class</option>
           </select>
 
-          <div className="search-wrapper">
-            <span className="search-icon-left" aria-hidden="true">
-              <SearchIcon size={16} />
-            </span>
-
-            <input
-              type="text"
-              className="search-input"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={placeholderText}
-              aria-label="Search licenses"
-            />
-
-            {search && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
-              >
-                <CloseIcon size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={placeholderText}
+            ariaLabel="Search licenses"
+          />
 
           <select
             className="search-input"
@@ -279,15 +249,12 @@ export default function LicensesPage({
         {loading && <p className="empty-state">Loading licenses...</p>}
 
         {!loading && error && (
-          <div className="login-error" style={{ margin: '0 25px 20px' }}>
-            <p>{error}</p>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => setRefreshKey((value) => value + 1)}
-            >
-              Try again
-            </button>
+          <div style={{ margin: '0 25px 20px' }}>
+            <ErrorAlert
+              message={error}
+              onRetry={() => setRefreshKey((value) => value + 1)}
+              retryLabel="Try again"
+            />
           </div>
         )}
 
@@ -343,15 +310,14 @@ export default function LicensesPage({
 
                 {filteredLicenses.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="empty-state">
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
-                        <LicenseIcon size={36} />
-                        <span>
-                          {licenses.length === 0
+                    <td colSpan={8}>
+                      <EmptyState
+                        icon={<LicenseIcon size={36} />}
+                        message={
+                          licenses.length === 0
                             ? 'No licenses found.'
                             : 'No licenses match your filters.'}
-                        </span>
-                      </div>
+                      />
                     </td>
                   </tr>
                 )}

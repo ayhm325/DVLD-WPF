@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { getCountries } from '../services/countryService'
 import type { Country } from '../services/countryService'
 import PageHero from './common/PageHero'
+import SearchInput from './common/SearchInput'
+import ErrorAlert from './common/ErrorAlert'
+import EmptyState from './common/EmptyState'
 import {
-  SearchIcon,
-  CloseIcon,
   RefreshIcon,
   GlobeIcon,
   FilterIcon,
@@ -135,31 +136,12 @@ export default function CountriesPage({
             <option value="id">Country ID</option>
           </select>
 
-          <div className="search-wrapper">
-            <span className="search-icon-left" aria-hidden="true">
-              <SearchIcon size={16} />
-            </span>
-
-            <input
-              type="text"
-              className="search-input"
-              placeholder={placeholderText}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              aria-label="Search countries"
-            />
-
-            {search && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
-              >
-                <CloseIcon size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={placeholderText}
+            ariaLabel="Search countries"
+          />
 
           {isFiltered && (
             <button
@@ -185,15 +167,12 @@ export default function CountriesPage({
         </div>
 
         {error && (
-          <div className="login-error" style={{ margin: '0 25px 20px' }} role="alert">
-            <p>{error}</p>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => setRefreshKey((k) => k + 1)}
-            >
-              Retry
-            </button>
+          <div style={{ margin: '0 25px 20px' }}>
+            <ErrorAlert
+              message={error}
+              onRetry={() => setRefreshKey((k) => k + 1)}
+              retryLabel="Retry"
+            />
           </div>
         )}
 
@@ -223,15 +202,15 @@ export default function CountriesPage({
 
                 {filteredCountries.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="empty-state">
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
-                        <GlobeIcon size={36} />
-                        <span>
-                          {countries.length === 0
+                    <td colSpan={2}>
+                      <EmptyState
+                        icon={<GlobeIcon size={36} />}
+                        message={
+                          countries.length === 0
                             ? 'No countries are registered.'
-                            : 'No countries match your search.'}
-                        </span>
-                      </div>
+                            : 'No countries match your search.'
+                        }
+                      />
                     </td>
                   </tr>
                 )}

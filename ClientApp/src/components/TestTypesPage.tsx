@@ -5,9 +5,11 @@ import {
 } from '../services/testTypeService'
 import type { TestType } from '../services/testTypeService'
 import PageHero from './common/PageHero'
+import SearchInput from './common/SearchInput'
+import ErrorAlert from './common/ErrorAlert'
+import EmptyState from './common/EmptyState'
+import TestTypeRow from './testTypes/TestTypeRow'
 import {
-  SearchIcon,
-  CloseIcon,
   RefreshIcon,
   TestTypeIcon,
   FilterIcon,
@@ -208,31 +210,12 @@ export default function TestTypesPage({ accessToken }: Props) {
             <option value="desc">Description</option>
           </select>
 
-          <div className="search-wrapper">
-            <span className="search-icon-left" aria-hidden="true">
-              <SearchIcon size={16} />
-            </span>
-
-            <input
-              type="text"
-              className="search-input"
-              placeholder={placeholderText}
-              aria-label="Search test types"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-
-            {search && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
-              >
-                <CloseIcon size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={placeholderText}
+            ariaLabel="Search test types"
+          />
 
           {isFiltered && (
             <button
@@ -261,18 +244,14 @@ export default function TestTypesPage({ accessToken }: Props) {
         </div>
 
         {error && (
-          <div className="login-error" style={{ margin: '0 25px 20px' }} role="alert">
-            <p>{error}</p>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => {
+          <div style={{ margin: '0 25px 20px' }}>
+            <ErrorAlert
+              message={error}
+              onRetry={() => {
                 setSuccess('')
                 setRefreshKey((key) => key + 1)
               }}
-            >
-              Retry
-            </button>
+            />
           </div>
         )}
 
@@ -298,125 +277,34 @@ export default function TestTypesPage({ accessToken }: Props) {
               </thead>
 
               <tbody>
-                {filteredItems.map((item) => {
-                  const isEditing = editingId === item.testTypeId
-
-                  return (
-                    <tr key={item.testTypeId}>
-                      <td>
-                        <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-                          #{item.testTypeId}
-                        </span>
-                      </td>
-
-                      <td>
-                        {isEditing ? (
-                          <input
-                            className="search-input"
-                            value={form.testTypeTitle}
-                            maxLength={100}
-                            aria-label="Test type title"
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                testTypeTitle: event.target.value,
-                              }))
-                            }
-                          />
-                        ) : (
-                          item.testTypeTitle
-                        )}
-                      </td>
-
-                      <td>
-                        {isEditing ? (
-                          <input
-                            className="search-input"
-                            value={form.testTypeDescription}
-                            maxLength={500}
-                            aria-label="Test type description"
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                testTypeDescription: event.target.value,
-                              }))
-                            }
-                          />
-                        ) : (
-                          item.testTypeDescription
-                        )}
-                      </td>
-
-                      <td>
-                        {isEditing ? (
-                          <input
-                            className="search-input"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={form.testTypeFees}
-                            aria-label="Test type fees"
-                            onChange={(event) =>
-                              setForm((previous) => ({
-                                ...previous,
-                                testTypeFees: event.target.value,
-                              }))
-                            }
-                          />
-                        ) : (
-                          item.testTypeFees.toFixed(2)
-                        )}
-                      </td>
-
-                      <td>
-                        {isEditing ? (
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button
-                              type="button"
-                              className="primary-button"
-                              disabled={saving}
-                              onClick={() => void saveChanges()}
-                            >
-                              {saving ? 'Saving...' : 'Save'}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="secondary-button"
-                              disabled={saving}
-                              onClick={() => {
-                                setEditingId(null)
-                                setError('')
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            className="secondary-button"
-                            onClick={() => startEditing(item)}
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
+                {filteredItems.map((item) => (
+                  <TestTypeRow
+                    key={item.testTypeId}
+                    item={item}
+                    isEditing={editingId === item.testTypeId}
+                    editForm={form}
+                    saving={saving}
+                    onStartEdit={startEditing}
+                    onFormChange={setForm}
+                    onSave={() => void saveChanges()}
+                    onCancel={() => {
+                      setEditingId(null)
+                      setError('')
+                    }}
+                  />
+                ))}
 
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="empty-state">
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
-                        <TestTypeIcon size={36} />
-                        <span>
-                          {items.length === 0
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon={<TestTypeIcon size={36} />}
+                        message={
+                          items.length === 0
                             ? 'No test types found.'
-                            : 'No test types match your search.'}
-                        </span>
-                      </div>
+                            : 'No test types match your search.'
+                        }
+                      />
                     </td>
                   </tr>
                 )}

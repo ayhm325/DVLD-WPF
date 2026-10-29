@@ -5,6 +5,9 @@ import {
   ApplicationsIcon,
 } from './common/Icons'
 import PageHero from './common/PageHero'
+import StatsGrid from './common/StatsGrid'
+import StatCard from './common/StatCard'
+import ErrorAlert from './common/ErrorAlert'
 import PeopleTable from './PeopleTable'
 import { useDashboardStatistics } from '../hooks/useDashboardStatistics'
 import type { Person } from '../types/Person'
@@ -42,85 +45,48 @@ export default function DashboardPage({
     <section className="page-content">
       <PageHero pageId="Dashboard" />
 
-      <div className="stats-grid">
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Total People</span>
-            <span className="stat-icon" aria-hidden="true">
-              <UsersIcon size={20} />
-            </span>
-          </div>
-          <strong>
-            {loading ? '...' : error ? '—' : statistics?.totalPeople ?? '—'}
-          </strong>
-          <p>Registered people</p>
-        </article>
+      <StatsGrid columns={4}>
+        <StatCard
+          label="Total People"
+          icon={<UsersIcon size={20} />}
+          value={loading ? '...' : error ? '—' : statistics?.totalPeople ?? '—'}
+          description="Registered people"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Total Drivers</span>
-            <span className="stat-icon" aria-hidden="true">
-              <DriversIcon size={20} />
-            </span>
-          </div>
-          <strong>
-            {loading ? '...' : error ? '—' : statistics?.totalDrivers ?? '—'}
-          </strong>
-          <p>Registered drivers</p>
-        </article>
+        <StatCard
+          label="Total Drivers"
+          icon={<DriversIcon size={20} />}
+          value={loading ? '...' : error ? '—' : statistics?.totalDrivers ?? '—'}
+          description="Registered drivers"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Active Licenses</span>
-            <span className="stat-icon" aria-hidden="true">
-              <LicenseIcon size={20} />
-            </span>
-          </div>
-          <strong>
-            {loading ? '...' : error ? '—' : statistics?.activeLicenses ?? '—'}
-          </strong>
-          <p>Currently active licenses</p>
-        </article>
+        <StatCard
+          label="Active Licenses"
+          icon={<LicenseIcon size={20} />}
+          value={loading ? '...' : error ? '—' : statistics?.activeLicenses ?? '—'}
+          description="Currently active licenses"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Pending Applications</span>
-            <span className="stat-icon" aria-hidden="true">
-              <ApplicationsIcon size={20} />
-            </span>
-          </div>
-          <strong>
-            {loading
-              ? '...'
-              : error
-                ? '—'
-                : statistics?.pendingApplications ?? '—'}
-          </strong>
-          <p>Applications awaiting processing</p>
-        </article>
-      </div>
+        <StatCard
+          label="Pending Applications"
+          icon={<ApplicationsIcon size={20} />}
+          value={loading ? '...' : error ? '—' : statistics?.pendingApplications ?? '—'}
+          description="Applications awaiting processing"
+        />
+      </StatsGrid>
 
-      {error && (
-        <div className="login-error" role="alert">
-          <span>{error}</span>
-          <button type="button" className="primary-button" onClick={retry}>
-            Retry statistics
-          </button>
-        </div>
-      )}
+      <ErrorAlert
+        message={error}
+        onRetry={retry}
+        retryLabel="Retry statistics"
+      />
 
-      {peopleError && (
-        <div className="login-error" style={{ marginBottom: 20 }} role="alert">
-          <span>{peopleError}</span>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={onRetryPeople}
-          >
-            Retry people
-          </button>
-        </div>
-      )}
+      <ErrorAlert
+        message={peopleError}
+        style={{ marginBottom: 20 }}
+        onRetry={onRetryPeople}
+        retryLabel="Retry people"
+      />
 
       <PeopleTable
         people={people}

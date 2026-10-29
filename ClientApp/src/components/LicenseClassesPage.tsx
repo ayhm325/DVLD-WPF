@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { getLicenseClasses } from '../services/licenseClassService'
 import type { LicenseClass } from '../services/licenseClassService'
 import PageHero from './common/PageHero'
+import SearchInput from './common/SearchInput'
+import ErrorAlert from './common/ErrorAlert'
+import EmptyState from './common/EmptyState'
 import {
-  SearchIcon,
-  CloseIcon,
   RefreshIcon,
   LicenseIcon,
   FilterIcon,
@@ -144,31 +145,12 @@ export default function LicenseClassesPage({ accessToken }: Props) {
             <option value="desc">Description</option>
           </select>
 
-          <div className="search-wrapper">
-            <span className="search-icon-left" aria-hidden="true">
-              <SearchIcon size={16} />
-            </span>
-
-            <input
-              type="text"
-              className="search-input"
-              placeholder={placeholderText}
-              aria-label="Search license classes"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-
-            {search && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
-              >
-                <CloseIcon size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={placeholderText}
+            ariaLabel="Search license classes"
+          />
 
           <select
             className="search-input"
@@ -206,15 +188,12 @@ export default function LicenseClassesPage({ accessToken }: Props) {
         </div>
 
         {error && (
-          <div className="login-error" style={{ margin: '0 25px 20px' }} role="alert">
-            <p>{error}</p>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => setRefreshKey((k) => k + 1)}
-            >
-              Retry
-            </button>
+          <div style={{ margin: '0 25px 20px' }}>
+            <ErrorAlert
+              message={error}
+              onRetry={() => setRefreshKey((k) => k + 1)}
+              retryLabel="Retry"
+            />
           </div>
         )}
 
@@ -252,15 +231,15 @@ export default function LicenseClassesPage({ accessToken }: Props) {
 
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="empty-state">
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
-                        <LicenseIcon size={36} />
-                        <span>
-                          {items.length === 0
+                    <td colSpan={6}>
+                      <EmptyState
+                        icon={<LicenseIcon size={36} />}
+                        message={
+                          items.length === 0
                             ? 'No license classes found.'
-                            : 'No license classes match your search.'}
-                        </span>
-                      </div>
+                            : 'No license classes match your search.'
+                        }
+                      />
                     </td>
                   </tr>
                 )}

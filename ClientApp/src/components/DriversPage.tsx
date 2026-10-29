@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { getDrivers } from '../services/driverService'
 import type { Driver } from '../services/driverService'
 import PageHero from './common/PageHero'
+import StatsGrid from './common/StatsGrid'
+import StatCard from './common/StatCard'
+import SearchInput from './common/SearchInput'
+import ErrorAlert from './common/ErrorAlert'
+import EmptyState from './common/EmptyState'
 import {
   DriversIcon,
   LicenseIcon,
   RefreshIcon,
-  SearchIcon,
-  CloseIcon,
   FilterIcon,
   CheckIcon,
 } from './common/Icons'
@@ -150,44 +153,30 @@ export default function DriversPage({
     <section className="page-content">
       <PageHero pageId="Drivers" />
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Total Drivers</span>
-            <span className="stat-icon" aria-hidden="true">
-              <DriversIcon size={20} />
-            </span>
-          </div>
-          <strong>{loading ? '...' : error ? '—' : totalDrivers}</strong>
-          <p>Registered drivers</p>
-        </article>
+      <StatsGrid columns={3}>
+        <StatCard
+          label="Total Drivers"
+          icon={<DriversIcon size={20} />}
+          value={loading ? '...' : error ? '—' : totalDrivers}
+          description="Registered drivers"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Active Licenses</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#059669', background: '#ecfdf5' }}>
-              <LicenseIcon size={20} />
-            </span>
-          </div>
-          <strong style={{ color: '#059669' }}>
-            {loading ? '...' : error ? '—' : totalActiveLicenses}
-          </strong>
-          <p>Across listed drivers</p>
-        </article>
+        <StatCard
+          label="Active Licenses"
+          icon={<LicenseIcon size={20} />}
+          iconStyle={{ color: '#059669', background: '#ecfdf5' }}
+          value={<span style={{ color: '#059669' }}>{loading ? '...' : error ? '—' : totalActiveLicenses}</span>}
+          description="Across listed drivers"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Licensed Drivers</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#2563eb', background: '#eff6ff' }}>
-              <CheckIcon size={20} />
-            </span>
-          </div>
-          <strong style={{ color: '#2563eb' }}>
-            {loading ? '...' : error ? '—' : driversWithLicenses}
-          </strong>
-          <p>Holding active licenses</p>
-        </article>
-      </div>
+        <StatCard
+          label="Licensed Drivers"
+          icon={<CheckIcon size={20} />}
+          iconStyle={{ color: '#2563eb', background: '#eff6ff' }}
+          value={<span style={{ color: '#2563eb' }}>{loading ? '...' : error ? '—' : driversWithLicenses}</span>}
+          description="Holding active licenses"
+        />
+      </StatsGrid>
 
       <div className="panel">
         <div className="panel-header">
@@ -220,31 +209,12 @@ export default function DriversPage({
             <option value="personId">Person ID</option>
           </select>
 
-          <div className="search-wrapper">
-            <span className="search-icon-left" aria-hidden="true">
-              <SearchIcon size={16} />
-            </span>
-
-            <input
-              type="text"
-              className="search-input"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={placeholderText}
-              aria-label="Search drivers"
-            />
-
-            {search && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
-              >
-                <CloseIcon size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={placeholderText}
+            ariaLabel="Search drivers"
+          />
 
           <select
             className="search-input"
@@ -284,29 +254,24 @@ export default function DriversPage({
         {loading && <p className="empty-state">Loading drivers...</p>}
 
         {!loading && error && (
-          <div role="alert" className="login-error" style={{ margin: '0 25px 20px' }}>
-            <p>{error}</p>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={onRetry}
-            >
-              Try again
-            </button>
+          <div style={{ margin: '0 25px 20px' }}>
+            <ErrorAlert
+              message={error}
+              onRetry={onRetry}
+              retryLabel="Try again"
+            />
           </div>
         )}
 
         {!loading && !error && filteredDrivers.length === 0 && (
-          <div className="empty-state">
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
-              <DriversIcon size={36} />
-              <span>
-                {drivers.length === 0
-                  ? 'No drivers found.'
-                  : 'No drivers match your search filters.'}
-              </span>
-            </div>
-          </div>
+          <EmptyState
+            icon={<DriversIcon size={36} />}
+            message={
+              drivers.length === 0
+                ? 'No drivers found.'
+                : 'No drivers match your search filters.'
+            }
+          />
         )}
 
         {!loading && !error && filteredDrivers.length > 0 && (

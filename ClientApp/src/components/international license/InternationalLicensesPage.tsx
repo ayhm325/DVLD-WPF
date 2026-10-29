@@ -3,14 +3,16 @@ import type { InternationalLicense } from '../../types/InternationalLicense'
 import { getInternationalLicenses } from '../../services/internationalLicenseService'
 import InternationalLicenseTable from './InternationalLicenseTable'
 import PageHero from '../common/PageHero'
+import StatsGrid from '../common/StatsGrid'
+import StatCard from '../common/StatCard'
+import SearchInput from '../common/SearchInput'
+import ErrorAlert from '../common/ErrorAlert'
 import {
   PlusIcon,
   GlobeIcon,
   CheckIcon,
   ClockIcon,
   RefreshIcon,
-  SearchIcon,
-  CloseIcon,
   FilterIcon,
 } from '../common/Icons'
 import './international-licenses.css'
@@ -133,44 +135,30 @@ export default function InternationalLicensesPage({
     <section className="page-content intl-page">
       <PageHero pageId="International Licenses" />
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Total Licenses</span>
-            <span className="stat-icon" aria-hidden="true">
-              <GlobeIcon size={20} />
-            </span>
-          </div>
-          <strong>{loading || error ? '—' : items.length}</strong>
-          <p>International licenses recorded</p>
-        </article>
+      <StatsGrid columns={3}>
+        <StatCard
+          label="Total Licenses"
+          icon={<GlobeIcon size={20} />}
+          value={loading || error ? '—' : items.length}
+          description="International licenses recorded"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Active Licenses</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#059669', background: '#ecfdf5' }}>
-              <CheckIcon size={20} />
-            </span>
-          </div>
-          <strong style={{ color: '#059669' }}>
-            {loading || error ? '—' : items.filter((item) => item.isActive).length}
-          </strong>
-          <p>Currently active licenses</p>
-        </article>
+        <StatCard
+          label="Active Licenses"
+          icon={<CheckIcon size={20} />}
+          iconStyle={{ color: '#059669', background: '#ecfdf5' }}
+          value={<span style={{ color: '#059669' }}>{loading || error ? '—' : items.filter((item) => item.isActive).length}</span>}
+          description="Currently active licenses"
+        />
 
-        <article className="stat-card">
-          <div className="stat-card-top">
-            <span>Inactive Licenses</span>
-            <span className="stat-icon" aria-hidden="true" style={{ color: '#64748b', background: '#f1f5f9' }}>
-              <ClockIcon size={20} />
-            </span>
-          </div>
-          <strong>
-            {loading || error ? '—' : items.filter((item) => !item.isActive).length}
-          </strong>
-          <p>Not currently active</p>
-        </article>
-      </div>
+        <StatCard
+          label="Inactive Licenses"
+          icon={<ClockIcon size={20} />}
+          iconStyle={{ color: '#64748b', background: '#f1f5f9' }}
+          value={loading || error ? '—' : items.filter((item) => !item.isActive).length}
+          description="Not currently active"
+        />
+      </StatsGrid>
 
       <section className="panel">
         <div className="panel-header">
@@ -218,31 +206,12 @@ export default function InternationalLicensesPage({
             <option value="issuedUsingLocalLicenseId">Local License ID</option>
           </select>
 
-          <div className="search-wrapper">
-            <span className="search-icon-left" aria-hidden="true">
-              <SearchIcon size={16} />
-            </span>
-
-            <input
-              type="text"
-              className="search-input"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={placeholderText}
-              aria-label="Search international licenses"
-            />
-
-            {search && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearch('')}
-                aria-label="Clear search"
-              >
-                <CloseIcon size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={placeholderText}
+            ariaLabel="Search international licenses"
+          />
 
           <select
             className="search-input"
@@ -284,15 +253,12 @@ export default function InternationalLicensesPage({
         {loading && <p className="empty-state">Loading international licenses...</p>}
 
         {!loading && error && (
-          <div className="login-error" style={{ margin: '0 25px 20px' }}>
-            <p>{error}</p>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={refresh}
-            >
-              Try again
-            </button>
+          <div style={{ margin: '0 25px 20px' }}>
+            <ErrorAlert
+              message={error}
+              onRetry={refresh}
+              retryLabel="Try again"
+            />
           </div>
         )}
 
