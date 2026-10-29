@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { CloseIcon, AlertCircleIcon } from './Icons'
 
 type ConfirmModalProps = {
   isOpen: boolean
@@ -49,14 +50,21 @@ export default function ConfirmModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h3 id="confirm-modal-title">{title}</h3>
+          <div className="confirm-modal-title-row">
+            {confirmVariant === 'danger' && (
+              <span className="confirm-modal-alert-icon" aria-hidden="true">
+                <AlertCircleIcon size={20} />
+              </span>
+            )}
+            <h3 id="confirm-modal-title">{title}</h3>
+          </div>
           <button
             type="button"
             className="modal-close-btn"
             onClick={onCancel}
             aria-label="Close dialog"
           >
-            ✕
+            <CloseIcon size={16} />
           </button>
         </div>
 
@@ -78,6 +86,7 @@ export default function ConfirmModal({
               confirmVariant === 'danger' ? 'danger-button' : 'primary-button'
             }
             onClick={onConfirm}
+            autoFocus
           >
             {confirmText}
           </button>

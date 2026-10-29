@@ -1,6 +1,12 @@
-
 import { useMemo, useState } from 'react'
 import type { Driver } from '../services/driverService'
+import {
+  DriversIcon,
+  LicenseIcon,
+  RefreshIcon,
+  SearchIcon,
+  CloseIcon,
+} from './common/Icons'
 
 type DriversPageProps = {
   drivers: Driver[]
@@ -35,7 +41,7 @@ export default function DriversPage({
   return (
     <section className="page-content">
       <div className="panel">
-        <div className="page-header">
+        <div className="panel-header">
           <div>
             <p className="eyebrow">DRIVER DIRECTORY</p>
             <h2>Drivers Management</h2>
@@ -44,55 +50,80 @@ export default function DriversPage({
 
           <button
             type="button"
-            className="primary-button"
+            className="secondary-button"
             onClick={onRetry}
             disabled={loading}
           >
-            {loading ? 'Loading...' : 'Refresh'}
+            <RefreshIcon size={14} />
+            <span>{loading ? 'Loading...' : 'Refresh'}</span>
           </button>
         </div>
 
-        <div className="stats-grid">
-          <article className="stat-card">
-            <div className="stat-card-top">
-              <span>Total Drivers</span>
-              <span className="stat-icon">♧</span>
-            </div>
-            <strong>{drivers.length}</strong>
-            <p>Registered drivers</p>
-          </article>
+        <div style={{ padding: '0 25px 20px' }}>
+          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+            <article className="stat-card">
+              <div className="stat-card-top">
+                <span>Total Drivers</span>
+                <span className="stat-icon">
+                  <DriversIcon size={20} />
+                </span>
+              </div>
+              <strong>{drivers.length}</strong>
+              <p>Registered drivers</p>
+            </article>
 
-          <article className="stat-card">
-            <div className="stat-card-top">
-              <span>Active Licenses</span>
-              <span className="stat-icon">▤</span>
-            </div>
-            <strong>
-              {drivers.reduce(
-                (total, driver) => total + driver.activeLicenses,
-                0,
-              )}
-            </strong>
-            <p>Across listed drivers</p>
-          </article>
+            <article className="stat-card">
+              <div className="stat-card-top">
+                <span>Active Licenses</span>
+                <span className="stat-icon">
+                  <LicenseIcon size={20} />
+                </span>
+              </div>
+              <strong>
+                {drivers.reduce(
+                  (total, driver) => total + driver.activeLicenses,
+                  0,
+                )}
+              </strong>
+              <p>Across listed drivers</p>
+            </article>
+          </div>
         </div>
 
         <div className="table-toolbar">
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by name, national number, driver ID..."
-            aria-label="Search drivers"
-          />
+          <div className="search-wrapper">
+            <span className="search-icon-left" aria-hidden="true">
+              <SearchIcon size={16} />
+            </span>
 
-          <span>{filteredDrivers.length} drivers</span>
+            <input
+              type="text"
+              className="search-input"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name, national number, driver ID..."
+              aria-label="Search drivers"
+            />
+
+            {search && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+              >
+                <CloseIcon size={14} />
+              </button>
+            )}
+          </div>
+
+          <span className="record-count">{filteredDrivers.length} Drivers</span>
         </div>
 
-        {loading && <p>Loading drivers...</p>}
+        {loading && <p className="empty-state">Loading drivers...</p>}
 
         {!loading && error && (
-          <div role="alert" className="login-error">
+          <div role="alert" className="login-error" style={{ margin: '0 25px 20px' }}>
             <p>{error}</p>
             <button
               type="button"
@@ -105,16 +136,21 @@ export default function DriversPage({
         )}
 
         {!loading && !error && filteredDrivers.length === 0 && (
-          <p>
-            {drivers.length === 0
-              ? 'No drivers found.'
-              : 'No drivers match your search.'}
-          </p>
+          <div className="empty-state">
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
+              <DriversIcon size={36} />
+              <span>
+                {drivers.length === 0
+                  ? 'No drivers found.'
+                  : 'No drivers match your search.'}
+              </span>
+            </div>
+          </div>
         )}
 
         {!loading && !error && filteredDrivers.length > 0 && (
           <div className="table-container">
-            <table>
+            <table className="people-table">
               <thead>
                 <tr>
                   <th>Driver ID</th>
@@ -130,16 +166,39 @@ export default function DriversPage({
               <tbody>
                 {filteredDrivers.map((driver) => (
                   <tr key={driver.driverId}>
-                    <td>{driver.driverId}</td>
-                    <td>{driver.personId}</td>
-                    <td>{driver.fullName}</td>
-                    <td>{driver.nationalNo}</td>
+                    <td>
+                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+                        #{driver.driverId}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+                        #{driver.personId}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="person-cell">
+                        <span className="person-avatar" aria-hidden="true">
+                          {driver.fullName ? driver.fullName.charAt(0).toUpperCase() : 'D'}
+                        </span>
+                        <strong>{driver.fullName}</strong>
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.3px', fontWeight: 600 }}>
+                        {driver.nationalNo}
+                      </span>
+                    </td>
                     <td>
                       {driver.dateOfBirth
                         ? new Date(driver.dateOfBirth).toLocaleDateString()
                         : '—'}
                     </td>
-                    <td>{driver.activeLicenses}</td>
+                    <td>
+                      <span className="record-count" style={{ padding: '2px 8px', fontSize: 11 }}>
+                        {driver.activeLicenses}
+                      </span>
+                    </td>
                     <td>
                       {driver.createdDate
                         ? new Date(driver.createdDate).toLocaleDateString()

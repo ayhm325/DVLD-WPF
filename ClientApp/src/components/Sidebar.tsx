@@ -1,5 +1,21 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useAuth } from '../context/useAuth'
+import {
+  DashboardIcon,
+  UsersIcon,
+  DriversIcon,
+  LicenseIcon,
+  GlobeIcon,
+  ApplicationsIcon,
+  SettingsIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  CloseIcon,
+  LogOutIcon,
+  TestTypeIcon,
+  AwardIcon,
+  FlagIcon,
+} from './common/Icons'
 
 type SidebarProps = {
   activePage: string
@@ -39,20 +55,26 @@ export default function Sidebar({
 
   const renderNavItem = (
     page: string,
-    icon: string,
+    icon: ReactNode,
     label: string = page,
-  ) => (
-    <button
-      key={page}
-      type="button"
-      className={`nav-item ${activePage === page ? 'active' : ''}`}
-      onClick={() => handleNavClick(page)}
-    >
-      <span className="nav-icon" aria-hidden="true">{icon}</span>
-      <span className="nav-label">{label}</span>
-      {activePage === page && <span className="nav-active-pill" aria-hidden="true" />}
-    </button>
-  )
+    isSubItem = false,
+  ) => {
+    const isActive = activePage === page
+    return (
+      <button
+        key={page}
+        type="button"
+        className={`nav-item ${isActive ? 'active' : ''} ${isSubItem ? 'nav-sub-item' : ''}`}
+        onClick={() => handleNavClick(page)}
+      >
+        <span className="nav-icon" aria-hidden="true">
+          {icon}
+        </span>
+        <span className="nav-label">{label}</span>
+        {isActive && <span className="nav-active-pill" aria-hidden="true" />}
+      </button>
+    )
+  }
 
   const initial = user?.fullName
     ? user.fullName.charAt(0).toUpperCase()
@@ -73,11 +95,17 @@ export default function Sidebar({
       <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
         {/* Brand header */}
         <div className="brand">
-          <div className="brand-icon">D</div>
+          <div className="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
 
           <div className="brand-text">
             <h2>DVLD</h2>
-            <span>Management System</span>
+            <span>Enterprise Portal</span>
           </div>
 
           {onCloseMobile && (
@@ -87,44 +115,44 @@ export default function Sidebar({
               onClick={onCloseMobile}
               aria-label="Close menu"
             >
-              ✕
+              <CloseIcon size={16} />
             </button>
           )}
         </div>
 
         {/* Navigation Section */}
-        <p className="nav-heading">MAIN MENU</p>
+        <div className="nav-group-title">MAIN NAVIGATION</div>
 
         <nav className="sidebar-nav">
-          {renderNavItem('Dashboard', '▦')}
-          {renderNavItem('People', '♙')}
-          {renderNavItem('Drivers', '♧')}
-          {renderNavItem('Licenses', '▤')}
-          {renderNavItem('International Licenses', '🌐')}
-          {renderNavItem('Local Applications', '▣')}
+          {renderNavItem('Dashboard', <DashboardIcon size={18} />)}
+          {renderNavItem('People', <UsersIcon size={18} />)}
+          {renderNavItem('Drivers', <DriversIcon size={18} />)}
+          {renderNavItem('Licenses', <LicenseIcon size={18} />)}
+          {renderNavItem('International Licenses', <GlobeIcon size={18} />)}
+          {renderNavItem('Local Applications', <ApplicationsIcon size={18} />)}
 
           {/* Settings Section */}
           <button
             type="button"
-            className={`nav-item settings-toggle ${
-              isSettingsActive ? 'active' : ''
-            }`}
+            className={`nav-item settings-toggle ${isSettingsActive ? 'active' : ''}`}
             aria-expanded={isSettingsOpen}
             onClick={() => setIsSettingsOpen((previous) => !previous)}
           >
-            <span className="nav-icon" aria-hidden="true">⚙</span>
+            <span className="nav-icon" aria-hidden="true">
+              <SettingsIcon size={18} />
+            </span>
             <span className="settings-label">Settings</span>
             <span className="settings-chevron" aria-hidden="true">
-              {isSettingsOpen ? '⌄' : '›'}
+              {isSettingsOpen ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
             </span>
           </button>
 
           {isSettingsOpen && (
             <div className="settings-submenu">
-              {renderNavItem('Application Types', '◦')}
-              {renderNavItem('License Classes', '◦')}
-              {renderNavItem('Test Types', '◦')}
-              {renderNavItem('Countries', '◦')}
+              {renderNavItem('Application Types', <ApplicationsIcon size={15} />, 'Application Types', true)}
+              {renderNavItem('License Classes', <AwardIcon size={15} />, 'License Classes', true)}
+              {renderNavItem('Test Types', <TestTypeIcon size={15} />, 'Test Types', true)}
+              {renderNavItem('Countries', <FlagIcon size={15} />, 'Countries', true)}
             </div>
           )}
         </nav>
@@ -145,10 +173,10 @@ export default function Sidebar({
               type="button"
               className="sidebar-logout-btn"
               onClick={onRequestLogout}
-              title="Sign Out"
+              title="Sign Out of Session"
               aria-label="Sign Out"
             >
-              ⇦
+              <LogOutIcon size={16} />
             </button>
           </div>
         </div>

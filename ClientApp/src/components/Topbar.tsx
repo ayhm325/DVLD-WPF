@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../context/useAuth'
+import {
+  MenuIcon,
+  ChevronDownIcon,
+  LogOutIcon,
+  UserIcon,
+} from './common/Icons'
 
 type TopbarProps = {
   activePage: string
@@ -48,30 +54,36 @@ export default function Topbar({
             onClick={onToggleSidebar}
             aria-label="Toggle navigation menu"
           >
-            ☰
+            <MenuIcon size={20} />
           </button>
         )}
         <div>
-          <p className="breadcrumb">DVLD / Management</p>
+          <nav className="breadcrumb" aria-label="Breadcrumb">
+            <span>DVLD</span>
+            <span className="breadcrumb-separator" aria-hidden="true">/</span>
+            <span>Management</span>
+            <span className="breadcrumb-separator" aria-hidden="true">/</span>
+            <span className="breadcrumb-current">{activePage}</span>
+          </nav>
           <h1>{activePage}</h1>
         </div>
       </div>
 
       <div className="topbar-actions">
-        <span className="system-status">
-          <span className="status-dot" />
-          System Online
-        </span>
+        <div className="system-status" title="DVLD Core API Services are operational">
+          <span className="status-dot" aria-hidden="true" />
+          <span>System Online</span>
+        </div>
 
         {/* User profile dropdown */}
         <div className="user-menu-container" ref={menuRef}>
           <button
             type="button"
-            className="topbar-user-btn"
+            className={`topbar-user-btn ${isMenuOpen ? 'open' : ''}`}
             onClick={() => setIsMenuOpen((prev) => !prev)}
             aria-expanded={isMenuOpen}
             aria-haspopup="menu"
-            title="User Profile &amp; Settings"
+            title="User Profile &amp; Session"
           >
             <div className="topbar-avatar">{initial}</div>
             <div className="topbar-user-meta">
@@ -79,10 +91,12 @@ export default function Topbar({
                 {user?.fullName || user?.userName || 'Administrator'}
               </span>
               <span className="topbar-user-role">
-                {user?.role || 'Staff'}
+                {user?.role || 'Staff Member'}
               </span>
             </div>
-            <span className="topbar-chevron">{isMenuOpen ? '▴' : '▾'}</span>
+            <span className="topbar-chevron" aria-hidden="true">
+              <ChevronDownIcon size={14} className={isMenuOpen ? 'rotate-180' : ''} />
+            </span>
           </button>
 
           {isMenuOpen && (
@@ -92,13 +106,20 @@ export default function Topbar({
                 <div className="user-menu-details">
                   <strong>{user?.fullName || 'Administrator'}</strong>
                   <span>@{user?.userName || 'admin'}</span>
-                  <span className="role-pill">{user?.role || 'Staff'}</span>
+                  <div className="role-pill-badge">{user?.role || 'Staff'}</div>
                 </div>
               </div>
 
               <div className="user-menu-divider" />
 
               <div className="user-menu-section">
+                <div className="user-menu-info-row">
+                  <UserIcon size={14} className="text-muted" />
+                  <span>User ID: #{user?.userId || 1}</span>
+                </div>
+
+                <div className="user-menu-divider" />
+
                 <button
                   type="button"
                   className="user-menu-item logout-menu-item"
@@ -109,7 +130,7 @@ export default function Topbar({
                   }}
                 >
                   <span className="user-menu-icon" aria-hidden="true">
-                    ⇦
+                    <LogOutIcon size={16} />
                   </span>
                   <span>Sign Out</span>
                 </button>

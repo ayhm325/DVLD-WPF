@@ -3,6 +3,14 @@ import { useEffect, useMemo, useState } from 'react'
 import type { InternationalLicense } from '../../types/InternationalLicense'
 import { getInternationalLicenses } from '../../services/internationalLicenseService'
 import InternationalLicenseTable from './InternationalLicenseTable'
+import {
+  PlusIcon,
+  GlobeIcon,
+  CheckIcon,
+  ClockIcon,
+  RefreshIcon,
+  SearchIcon,
+} from '../common/Icons'
 import './international-licenses.css'
 
 type Props = {
@@ -103,20 +111,25 @@ export default function InternationalLicensesPage({
           type="button"
           onClick={onIssueNew}
         >
-          <span aria-hidden="true">＋</span> Issue International License
+          <PlusIcon size={16} />
+          <span>Issue International License</span>
         </button>
       </header>
 
       <div className="intl-summary-grid">
         <article className="intl-summary-card">
-          <span className="intl-summary-icon">▤</span>
+          <span className="intl-summary-icon">
+            <GlobeIcon size={20} />
+          </span>
           <span className="intl-summary-label">Total licenses</span>
           <strong>{loading ? '—' : items.length}</strong>
           <small>International licenses recorded</small>
         </article>
 
         <article className="intl-summary-card">
-          <span className="intl-summary-icon active">✓</span>
+          <span className="intl-summary-icon active">
+            <CheckIcon size={20} />
+          </span>
           <span className="intl-summary-label">Active</span>
           <strong>
             {loading ? '—' : items.filter((item) => item.isActive).length}
@@ -125,7 +138,9 @@ export default function InternationalLicensesPage({
         </article>
 
         <article className="intl-summary-card">
-          <span className="intl-summary-icon muted">◷</span>
+          <span className="intl-summary-icon muted">
+            <ClockIcon size={20} />
+          </span>
           <span className="intl-summary-label">Inactive</span>
           <strong>
             {loading ? '—' : items.filter((item) => !item.isActive).length}
@@ -147,13 +162,14 @@ export default function InternationalLicensesPage({
             onClick={refresh}
             disabled={loading}
           >
-            ↻ Refresh
+            <RefreshIcon size={14} />
+            <span>Refresh</span>
           </button>
         </div>
 
         <div className="intl-toolbar">
           <label className="intl-search">
-            <span aria-hidden="true">⌕</span>
+            <SearchIcon size={16} />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}

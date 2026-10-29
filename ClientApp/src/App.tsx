@@ -9,6 +9,13 @@ import Login from './components/Login'
 import AddPersonModal from './components/AddPersonModal'
 import ConfirmModal from './components/common/ConfirmModal'
 import LoadingSpinner from './components/common/LoadingSpinner'
+import {
+  UsersIcon,
+  DriversIcon,
+  LicenseIcon,
+  ApplicationsIcon,
+  SettingsIcon,
+} from './components/common/Icons'
 
 import CountriesPage from './components/CountriesPage'
 import ApplicationTypesPage from './components/ApplicationTypesPage'
@@ -273,7 +280,9 @@ export default function App() {
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Total People</span>
-                  <span className="stat-icon" aria-hidden="true">♙</span>
+                  <span className="stat-icon" aria-hidden="true">
+                    <UsersIcon size={20} />
+                  </span>
                 </div>
                 <strong>{loadingStatistics ? '...' : dashboardStatistics?.totalPeople ?? '—'}</strong>
                 <p>{statisticsError || 'Registered people'}</p>
@@ -282,7 +291,9 @@ export default function App() {
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Total Drivers</span>
-                  <span className="stat-icon" aria-hidden="true">♧</span>
+                  <span className="stat-icon" aria-hidden="true">
+                    <DriversIcon size={20} />
+                  </span>
                 </div>
                 <strong>{loadingStatistics ? '...' : dashboardStatistics?.totalDrivers ?? '—'}</strong>
                 <p>{statisticsError || 'Registered drivers'}</p>
@@ -291,7 +302,9 @@ export default function App() {
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Active Licenses</span>
-                  <span className="stat-icon" aria-hidden="true">▤</span>
+                  <span className="stat-icon" aria-hidden="true">
+                    <LicenseIcon size={20} />
+                  </span>
                 </div>
                 <strong>{loadingStatistics ? '...' : dashboardStatistics?.activeLicenses ?? '—'}</strong>
                 <p>{statisticsError || 'Currently active licenses'}</p>
@@ -300,7 +313,9 @@ export default function App() {
               <article className="stat-card">
                 <div className="stat-card-top">
                   <span>Pending Applications</span>
-                  <span className="stat-icon" aria-hidden="true">▣</span>
+                  <span className="stat-icon" aria-hidden="true">
+                    <ApplicationsIcon size={20} />
+                  </span>
                 </div>
                 <strong>{loadingStatistics ? '...' : dashboardStatistics?.pendingApplications ?? '—'}</strong>
                 <p>{statisticsError || 'Applications awaiting processing'}</p>
@@ -425,7 +440,9 @@ export default function App() {
           .includes(activePage) && (
           <section className="page-content">
             <div className="panel placeholder-panel">
-              <div className="placeholder-icon">⚙</div>
+              <div className="placeholder-icon">
+                <SettingsIcon size={32} />
+              </div>
               <h2>{activePage}</h2>
 
               <button
@@ -452,7 +469,9 @@ export default function App() {
         ].includes(activePage) && (
           <section className="page-content">
             <div className="panel placeholder-panel">
-              <div className="placeholder-icon">▤</div>
+              <div className="placeholder-icon">
+                <LicenseIcon size={32} />
+              </div>
               <h2>{activePage} Management</h2>
 
               <p>

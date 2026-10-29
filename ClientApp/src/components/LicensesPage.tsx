@@ -1,7 +1,14 @@
-
 import { useEffect, useMemo, useState } from 'react'
 import { getLicenses } from '../services/licenseService'
 import type { License } from '../services/licenseService'
+import {
+  LicenseIcon,
+  CheckIcon,
+  ClockIcon,
+  RefreshIcon,
+  SearchIcon,
+  CloseIcon,
+} from './common/Icons'
 
 type LicensesPageProps = {
   accessToken: string
@@ -96,7 +103,7 @@ export default function LicensesPage({
 
   return (
     <section className="page-content">
-      <div className="page-header">
+      <div className="panel-header" style={{ padding: 0 }}>
         <div>
           <p className="eyebrow">LICENSE MANAGEMENT</p>
           <h2>Licenses</h2>
@@ -105,19 +112,22 @@ export default function LicensesPage({
 
         <button
           type="button"
-          className="primary-button"
+          className="secondary-button"
           onClick={() => setRefreshKey((value) => value + 1)}
           disabled={loading}
         >
-          {loading ? 'Loading...' : 'Refresh'}
+          <RefreshIcon size={14} />
+          <span>{loading ? 'Loading...' : 'Refresh'}</span>
         </button>
       </div>
 
-      <div className="stats-grid">
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
         <article className="stat-card">
           <div className="stat-card-top">
             <span>Total Licenses</span>
-            <span className="stat-icon">▤</span>
+            <span className="stat-icon">
+              <LicenseIcon size={20} />
+            </span>
           </div>
           <strong>{licenses.length}</strong>
           <p>All returned records</p>
@@ -126,9 +136,11 @@ export default function LicensesPage({
         <article className="stat-card">
           <div className="stat-card-top">
             <span>Active Licenses</span>
-            <span className="stat-icon">✓</span>
+            <span className="stat-icon" style={{ color: '#059669', background: '#ecfdf5' }}>
+              <CheckIcon size={20} />
+            </span>
           </div>
-          <strong>
+          <strong style={{ color: '#059669' }}>
             {licenses.filter((license) => license.isActive).length}
           </strong>
           <p>Marked active by the system</p>
@@ -137,7 +149,9 @@ export default function LicensesPage({
         <article className="stat-card">
           <div className="stat-card-top">
             <span>Inactive Licenses</span>
-            <span className="stat-icon">○</span>
+            <span className="stat-icon" style={{ color: '#64748b', background: '#f1f5f9' }}>
+              <ClockIcon size={20} />
+            </span>
           </div>
           <strong>
             {licenses.filter((license) => !license.isActive).length}
@@ -147,16 +161,36 @@ export default function LicensesPage({
       </div>
 
       <div className="panel">
-        <div className="license-toolbar">
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by license ID, driver, or class..."
-            aria-label="Search licenses"
-          />
+        <div className="table-toolbar">
+          <div className="search-wrapper">
+            <span className="search-icon-left" aria-hidden="true">
+              <SearchIcon size={16} />
+            </span>
+
+            <input
+              type="text"
+              className="search-input"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by license ID, driver, or class..."
+              aria-label="Search licenses"
+            />
+
+            {search && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+              >
+                <CloseIcon size={14} />
+              </button>
+            )}
+          </div>
 
           <select
+            className="search-input"
+            style={{ width: 'auto', minWidth: 160 }}
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
             aria-label="Filter by license status"
@@ -165,12 +199,14 @@ export default function LicensesPage({
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+
+          <span className="record-count">{filteredLicenses.length} Licenses</span>
         </div>
 
-        {loading && <p className="license-message">Loading licenses...</p>}
+        {loading && <p className="empty-state">Loading licenses...</p>}
 
         {!loading && error && (
-          <div className="license-error">
+          <div className="login-error" style={{ margin: '0 25px 20px' }}>
             <p>{error}</p>
             <button
               type="button"
@@ -183,8 +219,8 @@ export default function LicensesPage({
         )}
 
         {!loading && !error && (
-          <div className="license-table-wrapper">
-            <table className="license-table">
+          <div className="table-container">
+            <table className="people-table">
               <thead>
                 <tr>
                   <th>License ID</th>
@@ -200,30 +236,51 @@ export default function LicensesPage({
               <tbody>
                 {filteredLicenses.map((license) => (
                   <tr key={license.licenseId}>
-                    <td>#{license.licenseId}</td>
+                    <td>
+                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-primary)', fontWeight: 700 }}>
+                        #{license.licenseId}
+                      </span>
+                    </td>
 
                     <td>
                       <strong>
                         {license.driverName || 'Unknown driver'}
                       </strong>
-                      <small>Driver ID: {license.driverId}</small>
+                      <div style={{ fontSize: 11, color: 'var(--dvld-muted)' }}>
+                        Driver ID: {license.driverId}
+                      </div>
                     </td>
 
                     <td>
-                      {license.licenseClassName ||
-                        `Class #${license.licenseClassId}`}
+                      <span style={{ fontWeight: 600 }}>
+                        {license.licenseClassName || `Class #${license.licenseClassId}`}
+                      </span>
                     </td>
 
                     <td>{formatDate(license.issueDate)}</td>
                     <td>{formatDate(license.expirationDate)}</td>
-                    <td>{formatFees(license.paidFees)}</td>
+                    <td style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                      {formatFees(license.paidFees)}
+                    </td>
 
                     <td>
                       <span
-                        className={`license-status ${
-                          license.isActive ? 'is-active' : 'is-inactive'
-                        }`}
+                        className={`gender-badge ${license.isActive ? 'is-male' : ''}`}
+                        style={
+                          license.isActive
+                            ? { color: '#059669', background: '#ecfdf5', borderColor: '#a7f3d0' }
+                            : { color: '#64748b', background: '#f1f5f9', borderColor: '#e2e8f0' }
+                        }
                       >
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            background: 'currentColor',
+                            display: 'inline-block',
+                          }}
+                        />
                         {license.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -232,10 +289,15 @@ export default function LicensesPage({
 
                 {filteredLicenses.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="license-empty">
-                      {licenses.length === 0
-                        ? 'No licenses found.'
-                        : 'No licenses match your search.'}
+                    <td colSpan={7} className="empty-state">
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
+                        <LicenseIcon size={36} />
+                        <span>
+                          {licenses.length === 0
+                            ? 'No licenses found.'
+                            : 'No licenses match your search.'}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -245,9 +307,9 @@ export default function LicensesPage({
         )}
 
         {!loading && !error && (
-          <p className="license-results">
+          <div className="panel-footer">
             Showing {filteredLicenses.length} of {licenses.length} licenses
-          </p>
+          </div>
         )}
       </div>
     </section>

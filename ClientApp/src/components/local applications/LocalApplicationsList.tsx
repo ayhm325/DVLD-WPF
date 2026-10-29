@@ -1,4 +1,5 @@
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
+import { PencilIcon } from '../common/Icons'
 
 type Props = {
   items: LocalDrivingLicenseApplication[]
@@ -31,7 +32,7 @@ export default function LocalApplicationsList({ items, loading, onEdit }: Props)
               <td>{item.applicationDate ? new Date(item.applicationDate).toLocaleDateString() : '—'}</td>
               <td><span className={`local-app-test-count ${item.passedTest >= 3 ? 'all-passed' : ''}`}>{item.passedTest} <span>/ 3</span></span></td>
               <td><span className={`local-app-status ${statusClass(status)}`}><i />{status}</span></td>
-              <td><button type="button" className="local-app-row-action" disabled={status.toLowerCase() !== 'new'} onClick={() => onEdit(item)} title="Edit application" aria-label={`Edit application ${item.localDrivingLicenseApplicationId}`}>↗</button></td>
+              <td><button type="button" className="local-app-row-action" disabled={status.toLowerCase() !== 'new'} onClick={() => onEdit(item)} title="Edit application" aria-label={`Edit application ${item.localDrivingLicenseApplicationId}`}><PencilIcon size={14} /></button></td>
             </tr>
           })}
           {items.length === 0 && <tr><td colSpan={8} className="local-app-empty">{loading ? 'Loading…' : 'No applications match the selected filters.'}</td></tr>}

@@ -2,10 +2,29 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { login as performLogin } from '../services/authService'
 import { useAuth } from '../context/useAuth'
+import LoginScene from './LoginScene'
+import {
+  CheckIcon,
+  InfoIcon,
+  AlertCircleIcon,
+  UserIcon,
+  LockIcon,
+  EyeIcon,
+  EyeOffIcon,
+  ShieldCheckIcon,
+} from './common/Icons'
 import './Login.css'
 
 type LoginProps = {
   onLoginSuccess?: (accessToken: string) => void
+}
+
+function BrandMark() {
+  return (
+    <span className="login-brand-mark" aria-hidden="true">
+      <span>D</span>
+    </span>
+  )
 }
 
 export default function Login({ onLoginSuccess }: LoginProps) {
@@ -44,134 +63,69 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
   return (
     <main className="login-page">
-      <div className="login-background-orb login-orb-one" aria-hidden="true" />
-      <div className="login-background-orb login-orb-two" aria-hidden="true" />
-
       <div className="login-layout">
-        <section className="login-showcase">
-          <div className="login-showcase-content">
-            <div className="login-brand-lockup">
-              <div className="login-brand-mark" aria-hidden="true">
-                <span>D</span>
-                <i />
-              </div>
-
-              <div className="login-brand-copy">
-                <strong>DVLD</strong>
-                <span>MANAGEMENT SYSTEM</span>
-              </div>
+        {/* ---------- Brand / automotive showcase ---------- */}
+        <section className="login-showcase" aria-label="DVLD overview">
+          <header className="login-brand">
+            <BrandMark />
+            <div className="login-brand-copy">
+              <strong>DVLD</strong>
+              <span>Driving &amp; Vehicle Licensing Department</span>
             </div>
+          </header>
 
-            <div className="login-hero">
-              <span className="login-overline">
-                <span className="login-overline-dot" />
-                YOUR OPERATIONS, SIMPLIFIED
-              </span>
-
-              <h1>
-                Driving forward.
-                <br />
-                <span>Managing smarter.</span>
-              </h1>
-
-              <p>
-                A centralized workspace for driving licenses,
-                applications, people, and licensing operations.
-              </p>
-            </div>
-
-            <div className="login-visual" aria-hidden="true">
-              <div className="login-visual-grid" />
-
-              <div className="login-orbit login-orbit-outer" />
-              <div className="login-orbit login-orbit-inner" />
-
-              <div className="login-license-card">
-                <div className="login-license-top">
-                  <div className="login-license-symbol">D</div>
-                  <div>
-                    <span>JORDAN</span>
-                    <strong>DRIVING LICENSE</strong>
-                  </div>
-                  <span className="login-license-chip">DVLD</span>
-                </div>
-
-                <div className="login-license-body">
-                  <div className="login-license-avatar">
-                    <svg viewBox="0 0 48 48" fill="none">
-                      <circle cx="24" cy="17" r="9" fill="currentColor" />
-                      <path
-                        d="M7 43c1-10 7-15 17-15s16 5 17 15"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-
-                  <div className="login-license-fields">
-                    <div className="login-license-row">
-                      <span className="line-sm" />
-                      <span className="line-lg" />
-                    </div>
-                    <div className="login-license-row">
-                      <span className="line-md" />
-                      <span className="line-sm" />
-                    </div>
-                    <div className="login-license-row">
-                      <span className="line-lg" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="login-license-footer">
-                  <span>VALID • OFFICIAL DOCUMENT</span>
-                  <div className="login-license-barcode">
-                    <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
-                  </div>
-                </div>
-              </div>
-
-              <div className="login-stat-pill pill-one">
-                <span className="pill-dot green" />
-                <div>
-                  <strong>All Systems Online</strong>
-                  <span>API v1 Connected</span>
-                </div>
-              </div>
-
-              <div className="login-stat-pill pill-two">
-                <span className="pill-dot amber" />
-                <div>
-                  <strong>Secure Auth</strong>
-                  <span>JWT Protected</span>
-                </div>
-              </div>
-            </div>
-
-            <footer className="login-showcase-footer">
-              <div className="feature-chip">
-                <span>✓</span> Role-based Access
-              </div>
-              <div className="feature-chip">
-                <span>✓</span> Audit Logging
-              </div>
-              <div className="feature-chip">
-                <span>✓</span> Encrypted Transport
-              </div>
-            </footer>
+          <div className="login-hero">
+            <span className="login-overline">
+              <span className="login-overline-dot" aria-hidden="true" />
+              Licensing operations platform
+            </span>
+            <h1>
+              Driving forward.
+              <span>Managing smarter.</span>
+            </h1>
+            <p>
+              One secure workspace for people, drivers, licenses,
+              and licensing applications.
+            </p>
           </div>
+
+          <LoginScene />
+
+          <footer className="login-showcase-footer">
+            <ul className="login-feature-list">
+              <li>
+                <CheckIcon size={13} strokeWidth={2.5} /> Role-based access
+              </li>
+              <li>
+                <CheckIcon size={13} strokeWidth={2.5} /> Audit logging
+              </li>
+              <li>
+                <CheckIcon size={13} strokeWidth={2.5} /> Encrypted transport
+              </li>
+            </ul>
+          </footer>
         </section>
 
-        <section className="login-form-pane">
+        {/* ---------- Sign-in form ---------- */}
+        <section className="login-form-pane" aria-labelledby="login-title">
           <div className="login-form-container">
+            <div className="login-mobile-brand">
+              <BrandMark />
+              <div className="login-brand-copy">
+                <strong>DVLD</strong>
+                <span>Management System</span>
+              </div>
+            </div>
+
             <header className="login-form-header">
-              <span className="login-welcome-tag">PORTAL ACCESS</span>
-              <h2>Welcome back</h2>
-              <p>Sign in to access your administrative workspace.</p>
+              <span className="login-kicker">Sign in</span>
+              <h2 id="login-title">Welcome back</h2>
+              <p>Enter your credentials to access the DVLD administrative workspace.</p>
             </header>
 
             {authMessage && (
               <div className="login-info-banner" role="status">
-                <span className="login-info-icon">ℹ</span>
+                <InfoIcon size={18} />
                 <span>{authMessage}</span>
               </div>
             )}
@@ -181,10 +135,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 <label htmlFor="login-username">Username</label>
                 <div className="login-input-shell">
                   <span className="login-input-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="8" r="4" />
-                      <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-                    </svg>
+                    <UserIcon size={18} />
                   </span>
                   <input
                     id="login-username"
@@ -197,20 +148,16 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     disabled={loading}
                     required
                     autoFocus
+                    aria-invalid={error ? true : undefined}
                   />
                 </div>
               </div>
 
               <div className="login-field">
-                <div className="login-field-row">
-                  <label htmlFor="login-password">Password</label>
-                </div>
-                <div className="login-input-shell">
+                <label htmlFor="login-password">Password</label>
+                <div className="login-input-shell has-toggle">
                   <span className="login-input-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <rect x="5" y="11" width="14" height="10" rx="2" />
-                      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                    </svg>
+                    <LockIcon size={18} />
                   </span>
                   <input
                     id="login-password"
@@ -222,6 +169,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     onChange={(event) => setPassword(event.target.value)}
                     disabled={loading}
                     required
+                    aria-invalid={error ? true : undefined}
                   />
 
                   <button
@@ -234,14 +182,14 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     aria-pressed={showPassword}
                     disabled={loading}
                   >
-                    {showPassword ? 'HIDE' : 'SHOW'}
+                    {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
                   </button>
                 </div>
               </div>
 
               {error && (
-                <div className="login-error" role="alert">
-                  <span className="login-error-icon">!</span>
+                <div className="login-error login-form-error" role="alert">
+                  <AlertCircleIcon size={18} />
                   <span>{error}</span>
                 </div>
               )}
@@ -251,34 +199,34 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 type="submit"
                 disabled={loading || !userName.trim() || !password}
               >
-                <span>{loading ? 'Signing you in...' : 'Sign in'}</span>
-
-                {!loading && (
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
+                {loading ? (
+                  <>
+                    <span className="login-spinner" aria-hidden="true" />
+                    <span>Signing you in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign in</span>
+                    <svg
+                      className="login-submit-arrow"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </>
                 )}
-
-                {loading && <span className="login-spinner" />}
               </button>
-
-              <div className="login-security-note">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <rect x="5" y="10" width="14" height="11" rx="2" />
-                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                </svg>
-                <span>Your session is protected by secure authentication.</span>
-              </div>
             </form>
 
-            <div className="login-divider">
-              <span />
-              <i>DVLD</i>
-              <span />
-            </div>
+            <p className="login-security-note">
+              <ShieldCheckIcon size={16} />
+              <span>Protected by secure token-based authentication.</span>
+            </p>
 
             <footer className="login-form-footer">
-              <span>AUTHORIZED PERSONNEL ONLY</span>
+              <span>Authorized personnel only</span>
               <span>© {new Date().getFullYear()} DVLD</span>
             </footer>
           </div>

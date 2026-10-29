@@ -7,6 +7,12 @@ import type {
   LocalDrivingLicenseApplication,
   LocalDrivingLicenseApplicationsPage as PageResult,
 } from '../../types/LocalDrivingLicenseApplication'
+import {
+  PlusIcon,
+  RefreshIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '../common/Icons'
 import './local-applications.css'
 
 type Props = {
@@ -160,7 +166,8 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               className="local-app-primary"
               onClick={() => setView({ mode: 'create' })}
             >
-              <span aria-hidden="true">＋</span> New application
+              <PlusIcon size={16} />
+              <span>New application</span>
             </button>
           </div>
         </header>
@@ -213,7 +220,7 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
             aria-label="Refresh applications"
             title="Refresh"
           >
-            ↻
+            <RefreshIcon size={16} />
           </button>
         </div>
 
@@ -256,7 +263,8 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               disabled={!page?.hasPreviousPage || loading}
               onClick={() => changePage(Math.max(1, pageNumber - 1))}
             >
-              Previous
+              <ChevronLeftIcon size={14} />
+              <span>Previous</span>
             </button>
 
             <span>
@@ -270,7 +278,8 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               disabled={!page?.hasNextPage || loading}
               onClick={() => changePage(pageNumber + 1)}
             >
-              Next
+              <span>Next</span>
+              <ChevronRightIcon size={14} />
             </button>
 
             <label className="local-app-page-size">
