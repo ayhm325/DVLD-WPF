@@ -14,6 +14,10 @@ import ApplicationTypesPage from './components/ApplicationTypesPage'
 import LicenseClassesPage from './components/LicenseClassesPage'
 import TestTypesPage from './components/TestTypesPage'
 import DriversPage from './components/DriversPage'
+import LicensesPage from './components/LicensesPage'
+import InternationalLicensesPage from './components/international license/InternationalLicensesPage'
+import IssueInternationalLicensePage from './components/international license/IssueInternationalLicensePage'
+import LocalApplicationsPage from './components/local applications/LocalApplicationsPage'
 
 import { getPeople } from './services/peopleService'
 import type { Person } from './types/Person'
@@ -31,6 +35,10 @@ const settingsPages = [
 export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [activePage, setActivePage] = useState('Dashboard')
+
+  // International license navigation and list refresh
+  const [showIssueInternational, setShowIssueInternational] = useState(false)
+  const [internationalRefreshKey, setInternationalRefreshKey] = useState(0)
 
   // People
   const [searchName, setSearchName] = useState('')
@@ -127,16 +135,25 @@ export default function App() {
     setDriversRefreshKey((current) => current + 1)
   }, [])
 
+  const handleInternationalIssued = useCallback(() => {
+    setShowIssueInternational(false)
+    setInternationalRefreshKey((current) => current + 1)
+  }, [])
+
+  const handleNavigate = useCallback((page: string) => {
+    setActivePage(page)
+    setShowIssueInternational(false)
+  }, [])
+
   // Filter people
-  const filteredPeople = useMemo(
-    () =>
-      people.filter(
-        (person) =>
-          person.fullName.toLowerCase().includes(searchName.toLowerCase()) ||
-          person.nationalNo.includes(searchName),
-      ),
-    [people, searchName],
-  )
+  const filteredPeople = useMemo(() => {
+    const query = searchName.trim().toLowerCase()
+    return people.filter(
+      (person) =>
+        person.fullName.toLowerCase().includes(query) ||
+        person.nationalNo.includes(searchName.trim()),
+    )
+  }, [people, searchName])
 
   if (accessToken === null) {
     return <Login onLoginSuccess={(token) => setAccessToken(token)} />
@@ -146,11 +163,17 @@ export default function App() {
     <div className="app-shell">
       <Sidebar
         activePage={activePage}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
       />
 
       <main className="main-content">
-        <Topbar activePage={activePage} />
+        <Topbar
+          activePage={
+            activePage === 'International Licenses' && showIssueInternational
+              ? 'Issue International License'
+              : activePage
+          }
+        />
 
         {/* Dashboard */}
         {activePage === 'Dashboard' && (
@@ -255,6 +278,33 @@ export default function App() {
           />
         )}
 
+        {/* Licenses */}
+        {activePage === 'Licenses' && (
+          <LicensesPage accessToken={accessToken} />
+        )}
+
+        {/* International Licenses */}
+        {activePage === 'International Licenses' && (
+          showIssueInternational ? (
+            <IssueInternationalLicensePage
+              accessToken={accessToken}
+              onBack={() => setShowIssueInternational(false)}
+              onIssued={handleInternationalIssued}
+            />
+          ) : (
+            <InternationalLicensesPage
+              key={internationalRefreshKey}
+              accessToken={accessToken}
+              onIssueNew={() => setShowIssueInternational(true)}
+            />
+          )
+        )}
+
+        {/* Applications */}
+        {activePage === 'Local Applications' && (
+           <LocalApplicationsPage accessToken={accessToken} />
+        )}
+
         {/* Settings pages */}
         {activePage === 'Countries' && (
           <CountriesPage accessToken={accessToken} />
@@ -304,6 +354,8 @@ export default function App() {
           'People',
           'Drivers',
           'Licenses',
+          'International Licenses',
+          'Local Applications',
           'Applications',
           ...settingsPages,
         ].includes(activePage) && (

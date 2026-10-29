@@ -60,7 +60,8 @@ export default function Sidebar({
         {renderNavItem('People', '♙')}
         {renderNavItem('Drivers', '♧')}
         {renderNavItem('Licenses', '▤')}
-        {renderNavItem('Applications', '▣')}
+        {renderNavItem('International Licenses', '🌐')}
+        {renderNavItem('Local Applications', '▣')}
 
         {/* مجموعة الإعدادات */}
         <button

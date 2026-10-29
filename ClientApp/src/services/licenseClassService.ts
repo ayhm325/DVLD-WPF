@@ -14,6 +14,7 @@ export async function getLicenseClasses(
   accessToken: string,
 ): Promise<LicenseClass[]> {
   const response = await fetch(`${API_BASE_URL}/LicenseClasses`, {
+    method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/json',
