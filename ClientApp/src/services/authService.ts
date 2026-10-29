@@ -1,12 +1,11 @@
+import { apiRequest } from './apiClient'
 
-
-type LoginRequest = {
+export type LoginRequest = {
   userName: string
   password: string
 }
 
-
-type LoginResponse = {
+export type LoginResponse = {
   accessToken: string
   expiresAtUtc: string
   userId: number
@@ -16,23 +15,9 @@ type LoginResponse = {
   role: string
 }
 
-
-const API_BASE_URL = 'http://localhost:5260/api'
-
-export async function login(
-  request: LoginRequest
-): Promise<LoginResponse> {
-  const response = await fetch(`${API_BASE_URL}/Auth/login`, {
+export function login(request: LoginRequest): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>('/Auth/login', undefined, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(request),
   })
-
-  if (!response.ok) {
-    throw new Error('Login failed')
-  }
-
-  return response.json()
 }

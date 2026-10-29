@@ -1,3 +1,4 @@
+import { apiRequest } from './apiClient'
 
 export type License = {
   licenseId: number
@@ -17,22 +18,6 @@ export type License = {
   createdByUserName: string | null
 }
 
-const API_BASE_URL = 'http://localhost:5260/api'
-
-export async function getLicenses(
-  accessToken: string,
-): Promise<License[]> {
-  const response = await fetch(`${API_BASE_URL}/Licenses`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to load licenses (${response.status})`)
-  }
-
-  return response.json() as Promise<License[]>
+export function getLicenses(accessToken: string): Promise<License[]> {
+  return apiRequest<License[]>('/Licenses', accessToken)
 }

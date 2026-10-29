@@ -4,7 +4,7 @@ import type {
   LocalLicenseInfo,
 } from '../types/InternationalLicense'
 
-const API_BASE_URL = 'http://localhost:5260/api'
+import { API_BASE_URL } from './apiClient'
 
 async function request<T>(
   accessToken: string,
