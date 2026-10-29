@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getLicenses } from '../services/licenseService'
 import type { License } from '../services/licenseService'
+import PageHero from './common/PageHero'
 import {
   LicenseIcon,
   CheckIcon,
@@ -103,23 +104,20 @@ export default function LicensesPage({
 
   return (
     <section className="page-content">
-      <div className="panel-header" style={{ padding: 0 }}>
-        <div>
-          <p className="eyebrow">LICENSE MANAGEMENT</p>
-          <h2>Licenses</h2>
-          <p>View and search issued driving licenses.</p>
-        </div>
-
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => setRefreshKey((value) => value + 1)}
-          disabled={loading}
-        >
-          <RefreshIcon size={14} />
-          <span>{loading ? 'Loading...' : 'Refresh'}</span>
-        </button>
-      </div>
+      <PageHero
+        pageId="Licenses"
+        action={
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setRefreshKey((value) => value + 1)}
+            disabled={loading}
+          >
+            <RefreshIcon size={14} />
+            <span>{loading ? 'Loading...' : 'Refresh'}</span>
+          </button>
+        }
+      />
 
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
         <article className="stat-card">

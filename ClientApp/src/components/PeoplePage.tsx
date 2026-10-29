@@ -1,4 +1,5 @@
 import PeopleTable from './PeopleTable'
+import PageHero from './common/PageHero'
 import type { Person } from '../types/Person'
 
 export type PeoplePageProps = {
@@ -22,6 +23,8 @@ export default function PeoplePage({
 }: PeoplePageProps) {
   return (
     <section className="page-content">
+      <PageHero pageId="People" />
+
       {loadingPeople && <p className="empty-state">Loading people...</p>}
 
       {peopleError && (

@@ -5,6 +5,7 @@ import {
   updateApplicationType,
 } from '../services/applicationTypeService'
 import type { ApplicationType } from '../services/applicationTypeService'
+import PageHero from './common/PageHero'
 
 type ApplicationTypesPageProps = {
   accessToken: string
@@ -151,11 +152,7 @@ export default function ApplicationTypesPage({
 
   return (
     <section className="page-content">
-      <div>
-        <p className="eyebrow">SYSTEM SETTINGS</p>
-        <h2>Application Types</h2>
-        <p>View and manage application type names and fees.</p>
-      </div>
+      <PageHero pageId="Application Types" />
 
       <section className="panel">
         <div className="panel-header">

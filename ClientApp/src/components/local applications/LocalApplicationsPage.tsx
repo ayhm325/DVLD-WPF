@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import LocalApplicationsList from './LocalApplicationsList'
 import LocalApplicationForm from './LocalApplicationForm'
+import PageHero from '../common/PageHero'
 import { getLocalDrivingLicenseApplications } from '../../services/localDrivingLicenseApplicationService'
 import type {
   LocalDrivingLicenseApplication,
@@ -133,20 +134,7 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
 
   return (
     <section className="page-content local-app-page">
-      <div className="local-app-heading">
-        <div>
-          <p className="eyebrow">LICENSING OPERATIONS</p>
-          <h2>Local Driving License Applications</h2>
-          <p>
-            Track applications, review progress, and start a new driving
-            license request.
-          </p>
-        </div>
-
-        <div className="local-app-heading-mark" aria-hidden="true">
-          LD
-        </div>
-      </div>
+      <PageHero pageId="Local Applications" />
 
       <section className="local-app-panel">
         <header className="local-app-panel-header">

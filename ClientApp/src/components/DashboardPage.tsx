@@ -4,6 +4,7 @@ import {
   LicenseIcon,
   ApplicationsIcon,
 } from './common/Icons'
+import PageHero from './common/PageHero'
 import PeopleTable from './PeopleTable'
 import { useDashboardStatistics } from '../hooks/useDashboardStatistics'
 import type { Person } from '../types/Person'
@@ -39,17 +40,7 @@ export default function DashboardPage({
 
   return (
     <section className="page-content">
-      <div className="welcome-banner">
-        <div>
-          <p className="eyebrow">CONTROL CENTER</p>
-          <h2>Welcome to DVLD</h2>
-          <p>
-            Manage people, drivers, and licensing operations from one place.
-          </p>
-        </div>
-
-        <div className="banner-mark">D</div>
-      </div>
+      <PageHero pageId="Dashboard" />
 
       <div className="stats-grid">
         <article className="stat-card">

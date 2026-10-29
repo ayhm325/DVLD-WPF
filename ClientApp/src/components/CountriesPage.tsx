@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getCountries } from '../services/countryService'
 import type { Country } from '../services/countryService'
+import PageHero from './common/PageHero'
 
 type CountriesPageProps = {
   accessToken: string
@@ -64,11 +65,7 @@ export default function CountriesPage({
 
   return (
     <section className="page-content">
-      <div>
-        <p className="eyebrow">SYSTEM SETTINGS</p>
-        <h2>Countries Management</h2>
-        <p>Browse and search countries registered in DVLD.</p>
-      </div>
+      <PageHero pageId="Countries" />
 
       <section className="panel">
         <div className="panel-header">

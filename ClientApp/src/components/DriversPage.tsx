@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getDrivers } from '../services/driverService'
 import type { Driver } from '../services/driverService'
+import PageHero from './common/PageHero'
 import {
   DriversIcon,
   LicenseIcon,
@@ -85,12 +86,13 @@ export default function DriversPage({
 
   return (
     <section className="page-content">
+      <PageHero pageId="Drivers" />
+
       <div className="panel">
         <div className="panel-header">
           <div>
-            <p className="eyebrow">DRIVER DIRECTORY</p>
-            <h2>Drivers Management</h2>
-            <p>Browse and search registered drivers.</p>
+            <h2>Driver Directory</h2>
+            <p>Browse and search registered drivers in the system.</p>
           </div>
 
           <button

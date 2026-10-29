@@ -46,8 +46,9 @@ export default function Sidebar({
     { page: 'People', icon: <UsersIcon size={18} /> },
     { page: 'Drivers', icon: <DriversIcon size={18} /> },
     { page: 'Licenses', icon: <LicenseIcon size={18} /> },
-    { page: 'International Licenses', icon: <GlobeIcon size={18} /> },
     { page: 'Local Applications', icon: <ApplicationsIcon size={18} /> },
+    { page: 'International Licenses', icon: <GlobeIcon size={18} /> },
+    
   ]
 
   const allSettingsPages: NavItemDef[] = [

@@ -5,6 +5,7 @@ import {
   updateTestType,
 } from '../services/testTypeService'
 import type { TestType } from '../services/testTypeService'
+import PageHero from './common/PageHero'
 
 type Props = {
   accessToken: string
@@ -134,11 +135,7 @@ export default function TestTypesPage({ accessToken }: Props) {
 
   return (
     <section className="page-content">
-      <div>
-        <p className="eyebrow">SYSTEM SETTINGS</p>
-        <h2>Test Types</h2>
-        <p>Manage test names, descriptions, and fees.</p>
-      </div>
+      <PageHero pageId="Test Types" />
 
       <section className="panel">
         <div className="panel-header">

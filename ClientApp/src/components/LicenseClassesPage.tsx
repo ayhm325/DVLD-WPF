@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getLicenseClasses } from '../services/licenseClassService'
 import type { LicenseClass } from '../services/licenseClassService'
+import PageHero from './common/PageHero'
 
 type Props = {
   accessToken: string
@@ -59,11 +60,7 @@ export default function LicenseClassesPage({ accessToken }: Props) {
 
   return (
     <section className="page-content">
-      <div>
-        <p className="eyebrow">SYSTEM SETTINGS</p>
-        <h2>License Classes</h2>
-        <p>Browse license categories, requirements, validity, and fees.</p>
-      </div>
+      <PageHero pageId="License Classes" />
 
       <section className="panel">
         <div className="panel-header">

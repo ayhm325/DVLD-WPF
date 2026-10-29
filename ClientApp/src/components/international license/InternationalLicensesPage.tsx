@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { InternationalLicense } from '../../types/InternationalLicense'
 import { getInternationalLicenses } from '../../services/internationalLicenseService'
 import InternationalLicenseTable from './InternationalLicenseTable'
+import PageHero from '../common/PageHero'
 import {
   PlusIcon,
   GlobeIcon,
@@ -96,25 +97,21 @@ export default function InternationalLicensesPage({
 
   return (
     <section className="page-content intl-page">
-      <header className="intl-page-heading">
-        <div>
-          <p className="eyebrow">LICENSE MANAGEMENT / INTERNATIONAL</p>
-          <h2>International Licenses</h2>
-          <p>
-            Review issued international licenses and issue a new one from an
-            eligible local license.
-          </p>
-        </div>
-
-        <button
-          className="intl-primary-button"
-          type="button"
-          onClick={onIssueNew}
-        >
-          <PlusIcon size={16} />
-          <span>Issue International License</span>
-        </button>
-      </header>
+      <PageHero
+        pageId="International Licenses"
+        action={
+          onIssueNew ? (
+            <button
+              className="intl-primary-button"
+              type="button"
+              onClick={onIssueNew}
+            >
+              <PlusIcon size={16} />
+              <span>Issue International License</span>
+            </button>
+          ) : undefined
+        }
+      />
 
       <div className="intl-summary-grid">
         <article className="intl-summary-card">
