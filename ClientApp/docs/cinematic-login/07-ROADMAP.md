@@ -8,24 +8,27 @@
 
 ## 1. Roadmap Master Summary
 
-| Phase | Title | Primary Objective | Status | Prerequisites |
-|---|---|---|---|---|
-| **00** | Engineering Documentation Foundation | Establish project charter, technical audit, and governance system | `CHANGES REQUESTED` | Repository Access |
-| **00.1** | Documentation Consistency & Governance Correction | Eliminate contradictions, audit ADR approvals, clarify architecture | `APPROVED` | User Phase 01 Prompt |
-| **01** | Reference Analysis & Spatial Composition | Measure reference image, define spatial layout, zones, and bounding boxes | `CHANGES REQUESTED` | Phase 00.1 Approval |
-| **01.1** | Measurement Integrity Correction | Verify reference image SHA-256, separate 2D/3D depths, correct clearances | `APPROVED` | User Phase 02 Prompt |
-| **02** | Design System & Visual Identity | Measure and finalize colors, typography, spacing, and glassmorphic tokens | `CHANGES REQUESTED` | Phase 01.1 Approval |
-| **02.1** | Design System Accuracy Correction | Recalculate contrast, classify values, document 1080p scaling, specify 5 components | `CHANGES REQUESTED` | Phase 02 Execution |
-| **02.2** | Spatial Consistency & Governance Correction | Align spatial coordinates with Phase 01, reclassify glassmorphism, verify status taxonomy | `CHANGES REQUESTED` | Phase 02.1 Execution |
-| **02.3** | Documentation Governance & Coordinate Consistency Correction | Reconcile lifecycle taxonomy with AGENTS.md, enforce continuous half-open coordinates | `TECHNICALLY VERIFIED` | Phase 02.2 Execution |
-| **03** | Scene Composition & Spatial Blockout | Calibrate 3D camera, viewports, frustum, and low-poly architectural blockout | `PLANNED` | Phase 02.3 Approval |
-| **04** | Architectural Asset Production | Upgrade headquarters and Amman Citadel GLB models with photorealistic detail | `PLANNED` | Phase 03 Approval |
-| **05** | Environment & Vehicle Production | Develop foreground luxury sedan, wet road plane, and illuminated neon curbs | `PLANNED` | Phase 04 Approval |
-| **06** | Materials, Lighting & Cinematography | Implement PBR shaders, radiosity HDRI, spotlights, and wet reflections | `PLANNED` | Phase 05 Approval |
-| **07** | Login Interface Implementation | Refine glassmorphic card, input fields, SSO actions, and left branding | `PLANNED` | Phase 02 & 06 Approval |
-| **08** | Scene Integration & Visual Refinement | Unify 3D scene, holographic license HUD, UI card, and global color grading | `PLANNED` | Phase 07 Approval |
-| **09** | Responsive & Performance Optimization | Validate 1920x1080 down to mobile viewports, 60 FPS target, and SVG fallback | `PLANNED` | Phase 08 Approval |
-| **10** | Final Quality Assurance | Conduct end-to-end visual fidelity check, auth verification, and regression tests | `PLANNED` | Phase 09 Approval |
+| Phase | Title | Primary Objective | Lifecycle Status | User Approval | Execution Auth | Prerequisites |
+|---|---|---|---|---|---|---|
+| **00** | Engineering Documentation Foundation | Establish project charter, technical audit, and governance system | `CHANGES REQUESTED` | `PENDING` | `AUTHORIZED` | Repository Access |
+| **00.1** | Documentation Consistency & Governance Correction | Eliminate contradictions, audit ADR approvals, clarify architecture | `APPROVED` | `APPROVED` | `AUTHORIZED` | User Phase 01 Prompt |
+| **01** | Reference Analysis & Spatial Composition | Measure reference image, define spatial layout, zones, and bounding boxes | `CHANGES REQUESTED` | `PENDING` | `AUTHORIZED` | Phase 00.1 Approval |
+| **01.1** | Measurement Integrity Correction | Verify reference image SHA-256, separate 2D/3D depths, correct clearances | `APPROVED` | `APPROVED` | `AUTHORIZED` | User Phase 02 Prompt |
+| **02** | Design System & Visual Identity | Measure and finalize colors, typography, spacing, and glassmorphic tokens | `CHANGES REQUESTED` | `PENDING` | `AUTHORIZED` | Phase 01.1 Approval |
+| **02.1** | Design System Accuracy Correction | Recalculate contrast, classify values, document 1080p scaling, specify 5 components | `CHANGES REQUESTED` | `PENDING` | `AUTHORIZED` | Phase 02 Execution |
+| **02.2** | Spatial Consistency & Governance Correction | Align spatial coordinates with Phase 01, reclassify glassmorphism, verify status taxonomy | `CHANGES REQUESTED` | `PENDING` | `AUTHORIZED` | Phase 02.1 Execution |
+| **02.3** | Documentation Governance & Coordinate Consistency Correction | Reconcile lifecycle taxonomy with AGENTS.md, enforce continuous half-open coordinates | `CHANGES REQUESTED` | `PENDING` | `AUTHORIZED` | Phase 02.2 Execution |
+| **02.3.1** | Final Documentation Consistency Pass | Apply continuous half-open interval notation to all elements and decouple lifecycle fields | `TECHNICALLY VERIFIED` | `PENDING` | `AUTHORIZED` | Phase 02.3 Execution |
+| **02.3.2** | Roadmap Lifecycle & Authorization Consistency Correction | Align Phase 03 prerequisites, strictly separate 3 governance concepts, register Phase 02.3.1 | `TECHNICALLY VERIFIED` | `PENDING` | `AUTHORIZED` | Phase 02.3.1 Execution |
+| **02.3.3** | Final Authorization & Phase Registry Correction | Correct execution authorization semantics, register sub-phases, update Phase 03 prerequisite | `TECHNICALLY VERIFIED` | `PENDING` | `AUTHORIZED` | Phase 02.3.2 Execution |
+| **03** | Scene Composition & Spatial Blockout | Calibrate 3D camera, viewports, frustum, and low-poly architectural blockout | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Final Phase 02.3 Sequence Approval |
+| **04** | Architectural Asset Production | Upgrade headquarters and Amman Citadel GLB models with photorealistic detail | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Phase 03 Approval |
+| **05** | Environment & Vehicle Production | Develop foreground luxury sedan, wet road plane, and illuminated neon curbs | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Phase 04 Approval |
+| **06** | Materials, Lighting & Cinematography | Implement PBR shaders, radiosity HDRI, spotlights, and wet reflections | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Phase 05 Approval |
+| **07** | Login Interface Implementation | Refine glassmorphic card, input fields, SSO actions, and left branding | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Phase 02 & 06 Approval |
+| **08** | Scene Integration & Visual Refinement | Unify 3D scene, holographic license HUD, UI card, and global color grading | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Phase 07 Approval |
+| **09** | Responsive & Performance Optimization | Validate 1920x1080 down to mobile viewports, 60 FPS target, and SVG fallback | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Phase 08 Approval |
+| **10** | Final Quality Assurance | Conduct end-to-end visual fidelity check, auth verification, and regression tests | `PLANNED` | `PENDING` | `UNAUTHORIZED` | Phase 09 Approval |
 
 ---
 
@@ -37,7 +40,9 @@
 - **Deliverables:** `ClientApp/AGENTS.md`, `ClientApp/docs/cinematic-login/` complete documentation suite.
 - **Lifecycle Status:** `CHANGES REQUESTED`
 - **Technical Verification:** `PASSED`
-- **User Approval:** `CHANGES REQUESTED` (User requested consistency pass in Phase 00.1).
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `CHANGES REQUESTED` (User requested consistency pass in Phase 00.1).
 
 ---
 
@@ -48,6 +53,8 @@
 - **Lifecycle Status:** `APPROVED`
 - **Technical Verification:** `PASSED`
 - **User Approval:** `APPROVED` (Approved via User Phase 01 authorization prompt).
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `APPROVED`
 
 ---
 
@@ -57,7 +64,9 @@
 - **Deliverables:** Finalized measurements in `03-COMPOSITION-SPEC.md`, updated `01-VISUAL-REFERENCE.md`, diagnostic overlay in `evidence/phase-01/diagnostic_bounding_boxes.png`.
 - **Lifecycle Status:** `CHANGES REQUESTED`
 - **Technical Verification:** `PASSED`
-- **User Approval:** `CHANGES REQUESTED` (User requested measurement integrity pass in Phase 01.1).
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `CHANGES REQUESTED` (User requested measurement integrity pass in Phase 01.1).
 
 ---
 
@@ -68,6 +77,8 @@
 - **Lifecycle Status:** `APPROVED`
 - **Technical Verification:** `PASSED`
 - **User Approval:** `APPROVED` (Approved via User Phase 02 authorization prompt — **Last User-Approved Phase**).
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `APPROVED`
 
 ---
 
@@ -78,7 +89,9 @@
 - **Deliverables:** Fully populated `02-DESIGN-SYSTEM.md` replacing all pending tokens, updated continuity files.
 - **Lifecycle Status:** `CHANGES REQUESTED`
 - **Technical Verification:** `PASSED`
-- **User Approval:** `CHANGES REQUESTED` (User requested accuracy correction in Phase 02.1).
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `CHANGES REQUESTED` (User requested accuracy correction in Phase 02.1).
 
 ---
 
@@ -89,7 +102,9 @@
 - **Deliverables:** Corrected `02-DESIGN-SYSTEM.md`, updated `08-CURRENT-STATE.md`, updated `07-ROADMAP.md`.
 - **Lifecycle Status:** `CHANGES REQUESTED`
 - **Technical Verification:** `PASSED`
-- **User Approval:** `CHANGES REQUESTED` (User requested spatial consistency and governance correction in Phase 02.2).
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `CHANGES REQUESTED` (User requested spatial consistency and governance correction in Phase 02.2).
 
 ---
 
@@ -100,7 +115,9 @@
 - **Deliverables:** Reconciled `02-DESIGN-SYSTEM.md`, updated `08-CURRENT-STATE.md`, updated `07-ROADMAP.md`.
 - **Lifecycle Status:** `CHANGES REQUESTED`
 - **Technical Verification:** `PASSED`
-- **User Approval:** `CHANGES REQUESTED` (User requested documentation governance and coordinate consistency correction in Phase 02.3).
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `CHANGES REQUESTED` (User requested documentation governance and coordinate consistency correction in Phase 02.3).
 
 ---
 
@@ -109,22 +126,65 @@
 - **Scope:** Eliminate taxonomy conflicts across roadmap and living state; define continuous half-open interval model in `03-COMPOSITION-SPEC.md` and `02-DESIGN-SYSTEM.md`; reconcile login panel dimensions ($[654, 986) \times [52, 466)$, $W: 332, H: 414$), right margin ($38\text{ px}$), and bottom margin ($46\text{ px}$); accurately document local Git repository working tree state.
 - **Prerequisites:** Phase 02.2 Execution.
 - **Deliverables:** Reconciled `03-COMPOSITION-SPEC.md`, `02-DESIGN-SYSTEM.md`, `07-ROADMAP.md`, `08-CURRENT-STATE.md`.
+- **Lifecycle Status:** `CHANGES REQUESTED`
+- **Technical Verification:** `PASSED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `AUTHORIZED`
+- **User Review Decision:** `CHANGES REQUESTED` (User requested final documentation consistency pass in Phase 02.3.1).
+
+---
+
+### Phase 02.3.1 — Final Documentation Consistency Pass
+- **Objective:** Eliminate remaining ambiguous range notations across spatial specifications, strictly enforcing canonical continuous half-open interval notation $[x_{\text{min}}, x_{\text{max}}) \times [y_{\text{min}}, y_{\text{max}})\text{ px}$, and decoupling lifecycle status from user approval.
+- **Scope:** Standardize all 14 visual elements in `03-COMPOSITION-SPEC.md`, update component tables and Section 7 bounds in `02-DESIGN-SYSTEM.md`, decouple status fields in `07-ROADMAP.md` and `08-CURRENT-STATE.md`.
+- **Prerequisites:** Phase 02.3 Execution.
+- **Deliverables:** Reconciled `03-COMPOSITION-SPEC.md`, `02-DESIGN-SYSTEM.md`, `07-ROADMAP.md`, `08-CURRENT-STATE.md`.
 - **Lifecycle Status:** `TECHNICALLY VERIFIED`
 - **Technical Verification:** `PASSED`
 - **User Approval:** `PENDING` (Awaiting explicit user review and approval).
+- **Execution Authorization:** `AUTHORIZED` (Executed under authorized corrective task).
+- **User Review Decision:** `CHANGES REQUESTED` (User requested roadmap lifecycle & authorization consistency correction in Phase 02.3.2).
+
+---
+
+### Phase 02.3.2 — Roadmap Lifecycle & Authorization Consistency Correction
+- **Objective:** Align Phase 03 prerequisites with Phase 02.3.1, strictly separate Lifecycle Status, User Approval, and Execution Authorization into distinct typed fields, and register Phase 02.3.1 in the roadmap master summary.
+- **Scope:** Documentation files `07-ROADMAP.md` and `08-CURRENT-STATE.md`.
+- **Prerequisites:** Phase 02.3.1 Execution.
+- **Deliverables:** Reconciled `07-ROADMAP.md`, updated `08-CURRENT-STATE.md`.
+- **Lifecycle Status:** `TECHNICALLY VERIFIED`
+- **Technical Verification:** `PASSED`
+- **User Approval:** `PENDING` (Awaiting explicit user review and approval).
+- **Execution Authorization:** `AUTHORIZED` (Executed under user corrective instruction).
+- **User Review Decision:** `CHANGES REQUESTED` (User requested final authorization & phase registry correction in Phase 02.3.3).
+
+---
+
+### Phase 02.3.3 — Final Authorization & Phase Registry Correction
+- **Objective:** Correct execution authorization semantics to describe authorization of the specific phase rather than subsequent phases, register Phase 02.3.2 and Phase 02.3.3 in the master summary and detailed specifications, and establish Phase 03 prerequisite as explicit user approval of the final Phase 02.3 documentation sequence.
+- **Scope:** Documentation files `07-ROADMAP.md` and `08-CURRENT-STATE.md`.
+- **Prerequisites:** Phase 02.3.2 Execution.
+- **Deliverables:** Reconciled `07-ROADMAP.md`, updated `08-CURRENT-STATE.md`.
+- **Lifecycle Status:** `TECHNICALLY VERIFIED`
+- **Technical Verification:** `PASSED`
+- **User Approval:** `PENDING` (Awaiting explicit user review and approval).
+- **Execution Authorization:** `AUTHORIZED` (Explicitly authorized by user prompt).
+- **User Review Decision:** `PENDING REVIEW`
 
 ---
 
 ### Phase 03 — Scene Composition & Spatial Blockout
 - **Objective:** Align the Three.js 3D perspective camera, field of view, and layout planes with the reference composition.
 - **Scope:** Update `SceneCamera.tsx`, calibrate camera FOV, target coordinates, and position proxy bounding primitives for headquarters, Citadel, and vehicle.
-- **Prerequisites:** Explicit User Approval of Phase 02.3.
+- **Prerequisites:** Explicit User Approval of the Final Phase 02.3 Documentation Sequence.
 - **Deliverables:** Calibrated camera and low-poly spatial blockout in `src/components/login/scene/`.
 - **Acceptance Criteria:** Spatial alignment between 3D objects and 2D UI overlay matches reference composition without overlapping left branding.
 - **Validation Method:** Viewport screenshot overlay at 1920x1080 and 1366x768.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED` (Phase 03 must not begin until authorized by explicit user prompt).
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED` (Phase 03 must not begin until authorized by explicit user prompt).
+- **User Review Decision:** `NOT STARTED`
 
 ---
 
@@ -137,7 +197,9 @@
 - **Validation Method:** Model inspector verification, visual comparison of silhouettes.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED`
+- **User Review Decision:** `NOT STARTED`
 
 ---
 
@@ -150,7 +212,9 @@
 - **Validation Method:** Visual alignment inspection against reference vehicle position.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED`
+- **User Review Decision:** `NOT STARTED`
 
 ---
 
@@ -163,7 +227,9 @@
 - **Validation Method:** Rendered screenshot inspection and histogram analysis.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED`
+- **User Review Decision:** `NOT STARTED`
 
 ---
 
@@ -176,7 +242,9 @@
 - **Validation Method:** Pixel-diff review, keyboard focus test, screen-reader audit.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED`
+- **User Review Decision:** `NOT STARTED`
 
 ---
 
@@ -189,7 +257,9 @@
 - **Validation Method:** Multi-resolution visual comparison against reference image.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED`
+- **User Review Decision:** `NOT STARTED`
 
 ---
 
@@ -202,7 +272,9 @@
 - **Validation Method:** FPS profiling, Lighthouse audit, fallback simulation test.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED`
+- **User Review Decision:** `NOT STARTED`
 
 ---
 
@@ -215,4 +287,6 @@
 - **Validation Method:** End-to-end login flow test, production bundle size audit, final user visual sign-off.
 - **Lifecycle Status:** `PLANNED`
 - **Technical Verification:** `NOT STARTED`
-- **User Approval:** `UNAUTHORIZED`
+- **User Approval:** `PENDING`
+- **Execution Authorization:** `UNAUTHORIZED`
+- **User Review Decision:** `NOT STARTED`
