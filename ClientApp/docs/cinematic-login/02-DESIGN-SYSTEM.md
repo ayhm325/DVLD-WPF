@@ -1,7 +1,7 @@
 # DVLD Cinematic Login — Visual Design System & Design Tokens
 
 > **Document ID:** `02-DESIGN-SYSTEM`  
-> **Phase:** 02.2 — Spatial Consistency & Governance Correction  
+> **Phase:** 02.3.1 — Final Documentation Consistency Pass
 > **Status:** AUDITED & EMPIRICALLY MEASURED — SPECIFICATION SPEC  
 > **Authoritative For:** Color Palette, Value Origins, Typography Hierarchy, Spacing Scale, Authoritative Phase 01 Coordinates, 1080p Scaling Methodology, Glassmorphism, Lighting Language, Full Component Specifications, and WCAG Contrast Verification  
 > **Visual Source of Truth:** `media_1793445589710_98905759.jpg` (SHA-256: `c94651c3aaf39d38f62824d1e1e784f2c1e65266c35ede15ef1be2b9579c67d0`)  
@@ -53,28 +53,28 @@ Every token distinguishes between its **Value Origin** (whether the raw HEX/RGB 
 
 | # | Token Name | HEX & RGB Equivalent | Value Origin | Reference Source Location / Sampling Method | Semantic Role / Intended Usage | Value Status | Semantic Status | Confidence |
 |:---:|---|---|:---:|---|---|:---:|:---:|:---:|
-| 1 | `color.background.zenith` | `#00102C`<br>`rgb(0, 16, 44)` | Reference-derived | Sampled: Sky zenith ($X: 500\text{--}520, Y: 10\text{--}25$) | Deepest celestial upper sky dome | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 2 | `color.background.base` | `#010311`<br>`rgb(1, 3, 17)` | Reference-derived | Sampled: Upper mid sky ($X: 200\text{--}220, Y: 40\text{--}55$) | Nocturnal atmospheric dark base | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 1 | `color.background.zenith` | `#00102C`<br>`rgb(0, 16, 44)` | Reference-derived | Sampled: Sky zenith ($[500, 520) \times [10, 25)\text{ px}$) | Deepest celestial upper sky dome | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 2 | `color.background.base` | `#010311`<br>`rgb(1, 3, 17)` | Reference-derived | Sampled: Upper mid sky ($[200, 220) \times [40, 55)\text{ px}$) | Nocturnal atmospheric dark base | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 3 | `color.background.horizon` | `#C7F1FF`<br>`rgb(199, 241, 255)` | Reference-derived | Sampled: Horizon glow above HQ roofline | Distant cyan atmospheric horizon haze & moonlight | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 4 | `color.brand.cyan.core` | `#6BDDFF`<br>`rgb(107, 221, 255)` | Reference-derived | Sampled: Left Chevron Logo ($X: 85\text{--}95, Y: 50\text{--}65$) | Primary interactive cyan, HUD lines & logo | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 5 | `color.brand.cyan.accent` | `#64C0F1`<br>`rgb(100, 192, 241)` | Reference-derived | Sampled: Slogan text ($X: 130\text{--}160, Y: 180\text{--}190$) | Headline cyan accent, pills & indicators | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 6 | `color.brand.cyan.neon` | `#16B3FF`<br>`rgb(22, 179, 255)` | Reference-derived | Sampled: Road curb strip ($X: 91, Y: 408$) | Emissive curb strip, card glow & focus rings | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 7 | `color.brand.blue.action` | `#178BFC`<br>`rgb(23, 139, 252)` | Reference-derived | Sampled: Button left edge ($X: 680, Y: 356$) | Primary "Sign in ->" button gradient start | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 8 | `color.brand.blue.deep` | `#1849FB`<br>`rgb(24, 73, 251)` | Reference-derived | Sampled: Button right mid ($X: 910, Y: 356$) | Primary "Sign in ->" button gradient end | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 9 | `color.surface.card.base` | `#001331`<br>`rgb(0, 19, 49)` | Reference-derived | Sampled: Card interior ($X: 810\text{--}830, Y: 240\text{--}260$) | Login glass card dark backdrop base fill | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 10 | `color.surface.card.rim` | `#DFFAFF`<br>`rgb(223, 250, 255)` | Reference-derived | Sampled: Card left border ($X: 654, Y: 200\text{--}220$) | Glass card perimeter border highlight stroke | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 11 | `color.surface.card.glow` | `#3A47AD`<br>`rgb(58, 71, 173)` | Reference-derived | Sampled: Card outer margin ($X: 638\text{--}648, Y: 200\text{--}220$) | Glass card diffuse cyan-blue outer aura | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 4 | `color.brand.cyan.core` | `#6BDDFF`<br>`rgb(107, 221, 255)` | Reference-derived | Sampled: Left Chevron Logo ($[85, 95) \times [50, 65)\text{ px}$) | Primary interactive cyan, HUD lines & logo | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 5 | `color.brand.cyan.accent` | `#64C0F1`<br>`rgb(100, 192, 241)` | Reference-derived | Sampled: Slogan text ($[130, 160) \times [180, 190)\text{ px}$) | Headline cyan accent, pills & indicators | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 6 | `color.brand.cyan.neon` | `#16B3FF`<br>`rgb(22, 179, 255)` | Reference-derived | Sampled: Road curb strip ($x = 91\text{ px}, y = 408\text{ px}$) | Emissive curb strip, card glow & focus rings | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 7 | `color.brand.blue.action` | `#178BFC`<br>`rgb(23, 139, 252)` | Reference-derived | Sampled: Button left edge ($x = 680\text{ px}, y = 356\text{ px}$) | Primary "Sign in ->" button gradient start | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 8 | `color.brand.blue.deep` | `#1849FB`<br>`rgb(24, 73, 251)` | Reference-derived | Sampled: Button right mid ($x = 910\text{ px}, y = 356\text{ px}$) | Primary "Sign in ->" button gradient end | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 9 | `color.surface.card.base` | `#001331`<br>`rgb(0, 19, 49)` | Reference-derived | Sampled: Card interior ($[810, 830) \times [240, 260)\text{ px}$) | Login glass card dark backdrop base fill | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 10 | `color.surface.card.rim` | `#DFFAFF`<br>`rgb(223, 250, 255)` | Reference-derived | Sampled: Card left border ($x = 654\text{ px}, y \in [200, 220)\text{ px}$) | Glass card perimeter border highlight stroke | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 11 | `color.surface.card.glow` | `#3A47AD`<br>`rgb(58, 71, 173)` | Reference-derived | Sampled: Card outer margin ($[638, 648) \times [200, 220)\text{ px}$) | Glass card diffuse cyan-blue outer aura | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 12 | `color.surface.input.fill` | `#212D50`<br>`rgb(33, 45, 80)` | Reference-derived | Sampled: Username input field interior | Input field translucent background fill | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 13 | `color.surface.input.border` | `#13274A`<br>`rgb(19, 39, 74)` | Reference-derived | Sampled: Username input border edge | Input field subtle perimeter border stroke | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 14 | `color.surface.sso.fill` | `#0A203E`<br>`rgb(10, 32, 62)` | Reference-derived | Sampled: SSO button ($X: 700\text{--}720, Y: 415\text{--}425$) | Auxiliary SSO pill button surface fill | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 15 | `color.architectural.amber` | `#FD7E2F`<br>`rgb(253, 126, 47)` | Reference-derived | Sampled: Temple of Hercules ($X: 600, Y: 176$) | Roman columns golden floodlight glow | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 16 | `color.architectural.warm` | `#FFF6E1`<br>`rgb(255, 246, 225)` | Reference-derived | Sampled: HQ lobby ($X: 360\text{--}380, Y: 300$) | Headquarters interior warm lobby lights | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 17 | `color.automotive.red` | `#D60927`<br>`rgb(214, 9, 39)` | Reference-derived | Sampled: Sedan taillight ($X: 327, Y: 379$) | Sedan LED taillight core strip | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 18 | `color.automotive.refl` | `#FC0F61`<br>`rgb(252, 15, 97)` | Reference-derived | Sampled: Road reflection ($X: 252, Y: 449$) | Wet road specular red reflection streak | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 19 | `color.text.primary` | `#FFFFFF`<br>`rgb(255, 255, 255)` | Reference-derived | Sampled: Headline ($X: 80\text{--}100, Y: 155$) | Primary titles, slogans & button labels | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 20 | `color.text.secondary` | `#D5D8E9`<br>`rgb(213, 216, 233)` | Reference-derived | Sampled: Description ($X: 100\text{--}150, Y: 220$) | Explanatory copy, subtitles & metadata | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 14 | `color.surface.sso.fill` | `#0A203E`<br>`rgb(10, 32, 62)` | Reference-derived | Sampled: SSO button ($[700, 720) \times [415, 425)\text{ px}$) | Auxiliary SSO pill button surface fill | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 15 | `color.architectural.amber` | `#FD7E2F`<br>`rgb(253, 126, 47)` | Reference-derived | Sampled: Temple of Hercules ($x = 600\text{ px}, y = 176\text{ px}$) | Roman columns golden floodlight glow | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 16 | `color.architectural.warm` | `#FFF6E1`<br>`rgb(255, 246, 225)` | Reference-derived | Sampled: HQ lobby ($[360, 380) \times [295, 305)\text{ px}$) | Headquarters interior warm lobby lights | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 17 | `color.automotive.red` | `#D60927`<br>`rgb(214, 9, 39)` | Reference-derived | Sampled: Sedan taillight ($x = 327\text{ px}, y = 379\text{ px}$) | Sedan LED taillight core strip | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 18 | `color.automotive.refl` | `#FC0F61`<br>`rgb(252, 15, 97)` | Reference-derived | Sampled: Road reflection ($x = 252\text{ px}, y = 449\text{ px}$) | Wet road specular red reflection streak | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 19 | `color.text.primary` | `#FFFFFF`<br>`rgb(255, 255, 255)` | Reference-derived | Sampled: Headline ($[80, 100) \times [150, 160)\text{ px}$) | Primary titles, slogans & button labels | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 20 | `color.text.secondary` | `#D5D8E9`<br>`rgb(213, 216, 233)` | Reference-derived | Sampled: Description ($[100, 150) \times [215, 225)\text{ px}$) | Explanatory copy, subtitles & metadata | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 21 | `color.text.muted` | `#94A3B8`<br>`rgb(148, 163, 184)` | Proposed | Synthetic UI candidate (Neutral Slate) | Input placeholders & non-critical labels | `SYNTHETIC` | `PROPOSED` | `MEDIUM` |
-| 22 | `color.status.success` | `#218259`<br>`rgb(33, 130, 89)` | Reference-derived | Sampled: Shield badge ($X: 723, Y: 445$) | Security notice verified shield icon & badge | `SAMPLED` | `PROPOSED` | `HIGH` |
+| 22 | `color.status.success` | `#218259`<br>`rgb(33, 130, 89)` | Reference-derived | Sampled: Shield badge ($x = 723\text{ px}, y = 445\text{ px}$) | Security notice verified shield icon & badge | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 23 | `color.status.error` | `#EF4444`<br>`rgb(239, 68, 68)` | Proposed | Synthetic UI candidate (Standard Red-500) | Form validation errors & failure borders | `SYNTHETIC` | `PROPOSED` | `MEDIUM` |
 
 ---
@@ -152,16 +152,16 @@ To preserve visual harmony without distortion, the design system utilizes 5 expl
 | Parameter / Dimension | Authoritative Reference Measured (1024x512) | Value Origin | Proposed 1080p Equivalent | Scaling Method Used | Value Status |
 |---|:---:|:---:|:---:|---|:---:|
 | **Left Viewport Margin (`spacing.viewport.left`)** | `76 px` ($7.42\%$) | Reference-derived | `140 px` | Percentage ($7.42\% \times 1920 \approx 142\text{px}$) | `PROPOSED` |
-| **Right Viewport Margin (`spacing.viewport.right`)** | `39 px` ($3.81\%$, $1024 - 985$) | Reference-derived | `72 px` | Percentage ($3.81\% \times 1920 \approx 73\text{px}$) | `PROPOSED` |
+| **Right Viewport Margin (`spacing.viewport.right`)** | `38 px` ($3.71\%$, $1024 - 986$) | Reference-derived | `71 px` | Percentage ($3.71\% \times 1920 \approx 71\text{px}$) | `PROPOSED` |
 | **Top Viewport Margin (`spacing.viewport.top`)** | `52 px` ($10.16\%$) | Reference-derived | `96 px` | Independent Height ($10.16\% \times 1080 \approx 109\text{px}$) | `PROPOSED` |
-| **Bottom Viewport Margin (`spacing.viewport.bottom`)** | `47 px` ($9.18\%$, $512 - 465$) | Reference-derived | `88 px` | Independent Height ($9.18\% \times 1080 \approx 99\text{px}$) | `PROPOSED` |
-| **Login Card Frame (`E10`) Bounds** | `X: 654–986 px, Y: 52–466 px`<br>($W: 332\text{ px}, H: 414\text{ px}$) | Reference-derived | `420 × 640 px` | Ergonomic UI constraint (capped at 420px) | `PROPOSED` |
-| **Login Card Outer Halo Bounds** | `X: 630–1010 px, Y: 32–486 px`<br>($W: 380\text{ px}, H: 454\text{ px}$) | Reference-derived | `470 × 690 px` | Visual diffusion aura | `PROPOSED` |
-| **Holographic License Card (`E06a`)** | `X: 322–480 px, Y: 40–198 px`<br>($W: 158\text{ px}, H: 158\text{ px}$) | Reference-derived | `240 × 240 px` | Scaled 3D HUD bounding frame | `PROPOSED` |
-| **Holographic Emitter Cone (`E06b`)** | `X: 358–446 px, Y: 160–226 px`<br>($W: 88\text{ px}, H: 66\text{ px}$) | Reference-derived | `140 × 100 px` | 3D projection cone | `PROPOSED` |
-| **Wireframe Jordan Map HUD (`E06c`)** | `X: 490–570 px, Y: 35–140 px`<br>($W: 80\text{ px}, H: 105\text{ px}$) | Reference-derived | `130 × 170 px` | Vector geographic HUD | `PROPOSED` |
-| **Three Lower Mission Statements (`E02b`)** | `X: 76–190 px, Y: 430–475 px`<br>($W: 114\text{ px}, H: 45\text{ px}$) | Reference-derived | `180 × 70 px` | Lower-left margin alignment | `PROPOSED` |
-| **Arabic Canopy Signage (`E04b`)** | `X: 495–625 px, Y: 285–330 px`<br>($W: 130\text{ px}, H: 45\text{ px}$) | Reference-derived | `210 × 72 px` | Architectural canopy fascia | `PROPOSED` |
+| **Bottom Viewport Margin (`spacing.viewport.bottom`)** | `46 px` ($8.98\%$, $512 - 466$) | Reference-derived | `88 px` | Independent Height ($8.98\% \times 1080 \approx 97\text{px}$) | `PROPOSED` |
+| **Login Card Frame (`E10`) Bounds** | `[654, 986) × [52, 466) px`<br>($W: 332\text{ px}, H: 414\text{ px}$) | Reference-derived | `420 × 640 px` | Ergonomic UI constraint (capped at 420px) | `PROPOSED` |
+| **Login Card Outer Halo Bounds** | `[630, 1010) × [32, 486) px`<br>($W: 380\text{ px}, H: 454\text{ px}$) | Reference-derived | `470 × 690 px` | Visual diffusion aura | `PROPOSED` |
+| **Holographic License Card (`E06a`)** | `[322, 480) × [40, 198) px`<br>($W: 158\text{ px}, H: 158\text{ px}$) | Reference-derived | `240 × 240 px` | Scaled 3D HUD bounding frame | `PROPOSED` |
+| **Holographic Emitter Cone (`E06b`)** | `[358, 446) × [160, 226) px`<br>($W: 88\text{ px}, H: 66\text{ px}$) | Reference-derived | `140 × 100 px` | 3D projection cone | `PROPOSED` |
+| **Wireframe Jordan Map HUD (`E06c`)** | `[490, 570) × [35, 140) px`<br>($W: 80\text{ px}, H: 105\text{ px}$) | Reference-derived | `130 × 170 px` | Vector geographic HUD | `PROPOSED` |
+| **Three Lower Mission Statements (`E02b`)** | `[76, 190) × [430, 475) px`<br>($W: 114\text{ px}, H: 45\text{ px}$) | Reference-derived | `180 × 70 px` | Lower-left margin alignment | `PROPOSED` |
+| **Arabic Canopy Signage (`E04b`)** | `[495, 625) × [285, 330) px`<br>($W: 130\text{ px}, H: 45\text{ px}$) | Reference-derived | `210 × 72 px` | Architectural canopy fascia | `PROPOSED` |
 | **Input Field Dimensions (`size.input`)** | `286 × 30 px` | Reference-derived | `356 × 46 px` | Fixed ergonomic touch target | `PROPOSED` |
 | **Input-to-Input Gap (`spacing.form.gap`)** | `12 px` | Reference-derived | `16 px` | 4px Grid scale (`spacing.4`) | `PROPOSED` |
 | **Sign-In Button Height (`size.button.height`)** | `32 px` | Reference-derived | `48 px` | Standard ergonomic button target | `PROPOSED` |
@@ -216,14 +216,14 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 - **Visual Purpose:** Represents smart digital governance, modernized citizen credentials, and official authority floating in 3D space above the department headquarters.
 - **Hierarchy:** Secondary focal anchor after the primary login card, positioned in the upper-mid architectural sky.
 - **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
-  - **Holographic Card Frame (`E06a`):** $X: 322\text{--}480\text{ px}$ ($31.45\%\text{--}46.88\%$, width $158\text{ px} / 15.43\%$), $Y: 40\text{--}198\text{ px}$ ($7.81\%\text{--}38.67\%$, height $158\text{ px} / 30.86\%$). Center: ($401\text{ px}, 119\text{ px}$).
-  - **Conical Projection Emitter Cone (`E06b`):** $X: 358\text{--}446\text{ px}$ ($34.96\%\text{--}43.55\%$, width $88\text{ px} / 8.59\%$), $Y: 160\text{--}226\text{ px}$ ($31.25\%\text{--}44.14\%$, height $66\text{ px} / 12.89\%$).
+  - **Holographic Card Frame (`E06a`):** Canonical Bounds: `[322, 480) × [40, 198) px` ($W: 158\text{ px} / 15.43\%$, $H: 158\text{ px} / 30.86\%$; normalized $[0.3145, 0.4688) \times [0.0781, 0.3867)$). Center: $(401\text{ px}, 119\text{ px})$.
+  - **Conical Projection Emitter Cone (`E06b`):** Canonical Bounds: `[358, 446) × [160, 226) px` ($W: 88\text{ px} / 8.59\%$, $H: 66\text{ px} / 12.89\%$; normalized $[0.3496, 0.4355) \times [0.3125, 0.4414)$).
   - 3D Orientation: Pitched backward $\sim -12^\circ$ with subtle counter-clockwise yaw ($\sim +15^\circ$).
 - **Color Treatment:**
   - Card Perimeter Rim: `color.brand.cyan.core` (`#6BDDFF`) glowing border stroke with cyan halo.
   - Card Fill Plane: Translucent cyan-tinted glass (`rgba(0, 19, 49, 0.40)`).
   - Verified Status Badge: `color.status.success` (`#218259`) background pill with white checkmark and "VERIFIED" label.
-  - Avatar Silhouette: Semi-transparent cyan user silhouette cutout ($X \approx 330\text{--}365, Y \approx 105\text{--}155$).
+  - Avatar Silhouette: Semi-transparent cyan user silhouette cutout (Bounds: `[330, 365) × [105, 155) px`).
 - **Typography & Data Fields (Proposed):**
   - Title: "DRIVING LICENSE" (Bold 700, ~9px in reference / proposed 14px in 1080p, `#6BDDFF`).
   - License Number: `30-8942-019` (Monospace, ~7px in reference / proposed 11px, `#FFFFFF`).
@@ -234,8 +234,8 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 - **Visual Purpose:** National geographic sovereignty HUD; visually anchors the DVLD digital service platform to the sovereign territory of the Hashemite Kingdom of Jordan.
 - **Hierarchy:** Visual extension of the holographic license HUD, situated directly adjacent in the upper-right sky dome.
 - **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
-  - **Bounding Box (`E06c`):** $X: 490\text{--}570\text{ px}$ ($47.85\%\text{--}55.66\%$, width $80\text{ px} / 7.81\%$), $Y: 35\text{--}140\text{ px}$ ($6.84\%\text{--}27.34\%$, height $105\text{ px} / 20.51\%$).
-  - Overlap with Citadel Columns: Shares a 2D bounding region with the Roman columns ($X: 520\text{--}570\text{ px}$, $Y: 85\text{--}140\text{ px}$) as an intentional semi-transparent overlay.
+  - **Bounding Box (`E06c`):** Canonical Bounds: `[490, 570) × [35, 140) px` ($W: 80\text{ px} / 7.81\%$, $H: 105\text{ px} / 20.51\%$; normalized $[0.4785, 0.5566) \times [0.0684, 0.2734)$).
+  - Overlap with Citadel Columns: Shares a 2D bounding region with the Roman columns (Canonical Overlap: `[520, 570) × [85, 140) px`) as an intentional semi-transparent overlay.
 - **Color Treatment & Vector Treatment:**
   - Wireframe Outline: `color.brand.cyan.core` (`#6BDDFF`) 1.5px glowing polygonal stroke following the exact geopolitical border of Jordan.
   - Polygonal Fill: Ultra-translucent cyan wash (`rgba(107, 221, 255, 0.10)`).
@@ -245,9 +245,9 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 ### 7.3 Institutional Footer Bar
 - **Visual Purpose:** Statutory authority accreditation, legal copyright protection, and national vision branding.
 - **Spatial Coordinates (`03-COMPOSITION-SPEC.md` Baseline):**
-  - Center Legal Notice: $X: 433\text{--}590\text{ px}$ ($42.29\%\text{--}57.62\%$, width $\sim 157\text{ px}$), $Y: 492\text{--}504\text{ px}$ ($96.09\%\text{--}98.44\%$, height $12\text{ px}$). Centered horizontally along bottom margin.
-  - Right Vision Tagline: $X: 873\text{--}968\text{ px}$ ($85.25\%\text{--}94.53\%$, width $\sim 95\text{ px}$), $Y: 492\text{--}504\text{ px}$ ($96.09\%\text{--}98.44\%$, height $12\text{ px}$). Aligned right.
-  - Viewport Clearance: $8\text{--}12\text{ px}$ from bottom edge in reference ($16\text{--}24\text{ px}$ proposed in 1080p).
+  - Center Legal Notice: Canonical Bounds: `[433, 590) × [492, 504) px` ($W: 157\text{ px}$, $H: 12\text{ px}$; normalized $[0.4229, 0.5762) \times [0.9609, 0.9844)$). Centered horizontally along bottom margin.
+  - Right Vision Tagline: Canonical Bounds: `[873, 968) × [492, 504) px` ($W: 95\text{ px}$, $H: 12\text{ px}$; normalized $[0.8525, 0.9453) \times [0.9609, 0.9844)$). Aligned right.
+  - Viewport Clearance: $8\text{ to }12\text{ px}$ from bottom edge in reference ($16\text{ to }24\text{ px}$ proposed in 1080p).
 - **Color Treatment & Typography (Proposed):**
   - Legal Copy: `color.text.secondary` (`#D5D8E9`) at 65% opacity. Text: "© 2026 DVLD. Authorized Personnel Only." (Regular 400, ~7px in reference / proposed 11px in 1080p).
   - Tagline Copy: `color.text.secondary` (`#D5D8E9`) with `color.brand.cyan.accent` (`#64C0F1`) indicator em-dash. Text: "Driving Jordan Forward —" (Regular 400, ~7px in reference / proposed 11px in 1080p).
@@ -255,19 +255,19 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 ### 7.4 Three Lower Mission Statements (`E02b`)
 - **Visual Purpose:** Departmental mission pillars communicating safety, digital efficiency, and long-term modernization.
 - **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
-  - **Bounding Box (`E02b`):** $X: 76\text{--}190\text{ px}$ ($7.42\%\text{--}18.55\%$, width $114\text{ px} / 11.13\%$), $Y: 430\text{--}475\text{ px}$ ($83.98\%\text{--}92.77\%$, height $45\text{ px} / 8.79\%$).
-  - Spatial Positioning Note: In the reference image, the three pillars sit down in the lower-left corner alongside the wet roadway plane ($Y: 360\text{--}512\text{ px}$) and to the left of the luxury sedan ($X = 188\text{ px}$), separated from the upper description text ($Y: 210\text{--}248\text{ px}$) by a broad vertical clearance of $\sim 182\text{ px}$.
+  - **Bounding Box (`E02b`):** Canonical Bounds: `[76, 190) × [430, 475) px` ($W: 114\text{ px} / 11.13\%$, $H: 45\text{ px} / 8.79\%$; normalized $[0.0742, 0.1855) \times [0.8398, 0.9277)$).
+  - Spatial Positioning Note: In the reference image, the three pillars sit down in the lower-left corner alongside the wet roadway plane ($Y \in [360, 512)\text{ px}$) and to the left of the luxury sedan ($x_{\text{min}} = 188\text{ px}$), separated from the upper description text ($Y \in [210, 248)\text{ px}$) by a broad vertical clearance of $182\text{ px}$ ($430 - 248 = 182\text{ px}$, interval $[248, 430)\text{ px}$).
 - **Color Treatment & Typography (Proposed):**
   - Line 1: "Safer Roads." (`color.text.secondary` `#D5D8E9`, Medium 500, ~8px in reference / proposed 12px in 1080p).
   - Line 2: "Smarter Services." (`color.text.secondary` `#D5D8E9`, Medium 500, ~8px in reference / proposed 12px in 1080p).
   - Line 3: "A Better Tomorrow." (`color.text.secondary` `#D5D8E9`, Medium 500, ~8px in reference / proposed 12px in 1080p).
-  - Indicator Bar: `color.brand.cyan.accent` (`#64C0F1`) solid bar ($X: 76\text{--}100\text{ px}$, width $24\text{ px}$, height $2\text{ px}$).
+  - Indicator Bar: `color.brand.cyan.accent` (`#64C0F1`) solid bar (Bounds: `[76, 100) × [473, 475) px`, $W: 24\text{ px}$, $H: 2\text{ px}$).
 
 ### 7.5 Arabic Headquarters Canopy Signage (`E04b`)
 - **Visual Purpose:** Official national institutional identification mounted on the physical DVLD building architecture.
 - **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
-  - **Bounding Box (`E04b`):** $X: 495\text{--}625\text{ px}$ ($48.34\%\text{--}61.04\%$, width $130\text{ px} / 12.70\%$), $Y: 285\text{--}330\text{ px}$ ($55.66\%\text{--}64.45\%$, height $45\text{ px} / 8.79\%$).
-  - Clearance to Login Card: The canopy terminates at $X \approx 640\text{ px}$, maintaining a strict $14\text{ px}$ clearance ($1.37\%$ canvas width) to the solid login card border ($X = 654\text{ px}$).
+  - **Bounding Box (`E04b`):** Canonical Bounds: `[495, 625) × [285, 330) px` ($W: 130\text{ px} / 12.70\%$, $H: 45\text{ px} / 8.79\%$; normalized $[0.4834, 0.6104) \times [0.5566, 0.6445)$).
+  - Clearance to Login Card: The canopy terminates at $x_{\text{max}} \approx 640\text{ px}$, maintaining a strict $14\text{ px}$ clearance ($1.37\%$ canvas width) to the solid login card border ($x_{\text{min}} = 654\text{ px}$, clearance interval $[640, 654)\text{ px}$).
 - **Content & Linguistic Direction:**
   - Signage Text: `دائرة ترخيص السواقين والمركبات` (Driving and Vehicle Licensing Department).
   - Reading Direction: Strictly Right-to-Left (RTL) with proper Arabic cursive ligatures.
@@ -279,15 +279,15 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 ### 7.6 Left Branding Showcase (`E01`, `E02`)
 - **Visual Purpose:** Institutional anchor, brand accreditation, and platform introduction.
 - **Authoritative Coordinates (`03-COMPOSITION-SPEC.md`):**
-  - Header Group (`E01`): $X: 76\text{--}300\text{ px}$, $Y: 43\text{--}118\text{ px}$ ($W: 224\text{ px}, H: 75\text{ px}$).
-  - Slogan & Description (`E02`): $X: 76\text{--}336\text{ px}$, $Y: 134\text{--}248\text{ px}$ ($W: 260\text{ px}, H: 114\text{ px}$).
-- **Clearance:** Description terminates at $X = 336\text{ px}$, maintaining $44\text{ px}$ horizontal clearance to the bright entrance portal ($X = 380\text{ px}$).
+  - Header Group (`E01`): Canonical Bounds: `[76, 300) × [43, 118) px` ($W: 224\text{ px}, H: 75\text{ px}$).
+  - Slogan & Description (`E02`): Canonical Bounds: `[76, 336) × [134, 248) px` ($W: 260\text{ px}, H: 114\text{ px}$).
+- **Clearance:** Description terminates at $x_{\text{max}} = 336\text{ px}$, maintaining $44\text{ px}$ horizontal clearance to the bright entrance portal ($x_{\text{min}} = 380\text{ px}$, clearance interval $[336, 380)\text{ px}$).
 
 ### 7.7 Right Login Authentication Card (`E10` – `E13`)
 - **Visual Purpose:** Primary interactive authentication card for departmental personnel.
 - **Authoritative Coordinates (`03-COMPOSITION-SPEC.md`):**
-  - Solid Glass Frame (`E10`): $X: 654\text{--}986\text{ px}$, $Y: 52\text{--}466\text{ px}$ ($W: 332\text{ px}, H: 414\text{ px}$).
-  - Outer Diffuse Cyan Halo: $X: 630\text{--}1010\text{ px}$, $Y: 32\text{--}486\text{ px}$ ($W: 380\text{ px}, H: 454\text{ px}$).
+  - Solid Glass Frame (`E10`): Canonical Bounds: `[654, 986) × [52, 466) px` ($W: 332\text{ px}, H: 414\text{ px}$).
+  - Outer Diffuse Cyan Halo: Canonical Bounds: `[630, 1010) × [32, 486) px` ($W: 380\text{ px}, H: 454\text{ px}$).
 - **Proposed CSS Starting Values:** Card body `rgba(0, 19, 49, 0.72)` with 20px blur and cyan rim; concentric Hashemite crown crest (`E11`); dual credential inputs (`E12`); primary action button (`E12`); 3 SSO pills (`E13`); verified token notice (`E13`).
 
 ---
