@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { SearchIcon, CloseIcon } from './Icons'
+import { Search, X } from 'lucide-react'
 
 interface SearchInputProps {
   value: string
@@ -26,8 +26,8 @@ export default function SearchInput({
 }: SearchInputProps) {
   return (
     <div className={`search-wrapper ${className}`.trim()} style={style}>
-      <span className="search-icon-left" aria-hidden="true">
-        <SearchIcon size={16} />
+      <span className="search-icon-left text-slate-400" aria-hidden="true">
+        <Search size={16} />
       </span>
       <input
         id={id}
@@ -47,7 +47,7 @@ export default function SearchInput({
           onClick={() => onChange('')}
           aria-label="Clear search"
         >
-          <CloseIcon size={14} />
+          <X size={14} />
         </button>
       )}
     </div>

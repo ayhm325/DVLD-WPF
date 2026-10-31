@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { getPeople } from '../services/peopleService'
 import type { Person } from '../types/Person'
 import { isPagePermitted } from '../utils/permissions'
+import { useAsyncData } from './useAsyncData'
 
 export type UsePeopleResult = {
   people: Person[]
@@ -26,50 +27,28 @@ export function usePeople(
   activePage: string,
 ): UsePeopleResult {
   const [searchName, setSearchName] = useState('')
-  const [people, setPeople] = useState<Person[]>([])
-  const [loadingPeople, setLoadingPeople] = useState(false)
-  const [peopleError, setPeopleError] = useState('')
-  const [peopleRefreshKey, setPeopleRefreshKey] = useState(0)
 
-  // Load people: only when authenticated, permitted for role, and viewing Dashboard or People
-  useEffect(() => {
-    if (!accessToken || !isPagePermitted('People', userRole)) return
-    if (activePage !== 'Dashboard' && activePage !== 'People') return
+  const isPermitted = isPagePermitted('People', userRole)
+  const isTargetPage = activePage === 'Dashboard' || activePage === 'People'
+  const isEnabled = Boolean(accessToken && isPermitted && isTargetPage)
 
-    let cancelled = false
+  const fetcher = useCallback(() => {
+    return getPeople(accessToken!)
+  }, [accessToken])
 
-    async function loadPeople() {
-      setLoadingPeople(true)
-      setPeopleError('')
-
-      try {
-        const result = await getPeople(accessToken!)
-        if (!cancelled) {
-          setPeople(result)
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setPeopleError(
-            error instanceof Error ? error.message : 'Failed to load people.',
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingPeople(false)
-        }
-      }
-    }
-
-    void loadPeople()
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken, userRole, activePage, peopleRefreshKey])
-
-  const refreshPeople = useCallback(() => {
-    setPeopleRefreshKey((current) => current + 1)
-  }, [])
+  const {
+    data: people,
+    loading: loadingPeople,
+    error: peopleError,
+    refresh: refreshPeople,
+    setData: setPeople,
+    setError: setPeopleError,
+  } = useAsyncData<Person[]>(fetcher, {
+    enabled: isEnabled,
+    initialData: [],
+    dependencies: [userRole, activePage],
+    defaultErrorMessage: 'Failed to load people.',
+  })
 
   // Case-insensitive, null-safe search filter
   const filteredPeople = useMemo(() => {

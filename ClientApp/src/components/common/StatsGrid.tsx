@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface StatsGridProps {
   columns?: 2 | 3 | 4 | number
@@ -13,13 +14,17 @@ export default function StatsGrid({
   className = '',
   style,
 }: StatsGridProps) {
-  const inlineStyle: CSSProperties = {
-    ...(columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : {}),
-    ...style,
-  }
+  const columnClasses = {
+    2: 'grid-cols-1 sm:grid-cols-2',
+    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  }[columns] || 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
 
   return (
-    <div className={`stats-grid ${className}`.trim()} style={inlineStyle}>
+    <div
+      className={cn('stats-grid grid gap-4 sm:gap-5 mb-6', columnClasses, className)}
+      style={style}
+    >
       {children}
     </div>
   )

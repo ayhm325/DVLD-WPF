@@ -3,8 +3,9 @@ import PageHero from './common/PageHero'
 import StatsGrid from './common/StatsGrid'
 import StatCard from './common/StatCard'
 import ErrorAlert from './common/ErrorAlert'
-import { UsersIcon, UserIcon } from './common/Icons'
+import { Users as UsersIcon, User as UserIcon } from 'lucide-react'
 import type { Person } from '../types/Person'
+import { formatNumber } from '../utils/formatters'
 
 export type PeoplePageProps = {
   people?: Person[]
@@ -40,24 +41,25 @@ export default function PeoplePage({
       <StatsGrid columns={3}>
         <StatCard
           label="Total People"
+          variant="blue"
           icon={<UsersIcon size={20} />}
-          value={loadingPeople ? '...' : peopleError ? '—' : totalPeople}
+          value={loadingPeople ? '...' : peopleError ? '—' : formatNumber(totalPeople)}
           description="Registered citizens"
         />
 
         <StatCard
           label="Male"
+          variant="blue"
           icon={<UserIcon size={20} />}
-          iconStyle={{ color: '#2563eb', background: '#eff6ff' }}
-          value={<span style={{ color: '#2563eb' }}>{loadingPeople ? '...' : peopleError ? '—' : maleCount}</span>}
+          value={loadingPeople ? '...' : peopleError ? '—' : formatNumber(maleCount)}
           description="Registered male citizens"
         />
 
         <StatCard
           label="Female"
+          variant="rose"
           icon={<UserIcon size={20} />}
-          iconStyle={{ color: '#ec4899', background: '#fdf2f8' }}
-          value={<span style={{ color: '#ec4899' }}>{loadingPeople ? '...' : peopleError ? '—' : femaleCount}</span>}
+          value={loadingPeople ? '...' : peopleError ? '—' : formatNumber(femaleCount)}
           description="Registered female citizens"
         />
       </StatsGrid>

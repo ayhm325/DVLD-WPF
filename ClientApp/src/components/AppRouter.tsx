@@ -11,7 +11,7 @@ import CountriesPage from './CountriesPage'
 import ApplicationTypesPage from './ApplicationTypesPage'
 import LicenseClassesPage from './LicenseClassesPage'
 import TestTypesPage from './TestTypesPage'
-import { LicenseIcon, SettingsIcon } from './common/Icons'
+import { IdCard as LicenseIcon, Settings as SettingsIcon } from 'lucide-react'
 import type { Person } from '../types/Person'
 
 export type AppRouterProps = {

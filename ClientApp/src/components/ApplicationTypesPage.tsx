@@ -1,19 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   getApplicationTypes,
   updateApplicationType,
 } from '../services/applicationTypeService'
-import type { ApplicationType } from '../services/applicationTypeService'
+import type { ApplicationType } from '../types/ApplicationType'
+import { useAsyncData, useTableFilters } from '../hooks'
 import PageHero from './common/PageHero'
-import SearchInput from './common/SearchInput'
+import TableToolbar from './common/TableToolbar'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
+import DataTableContainer from './common/DataTableContainer'
 import ApplicationTypeRow from './applicationTypes/ApplicationTypeRow'
-import {
-  RefreshIcon,
-  ApplicationsIcon,
-  FilterIcon,
-} from './common/Icons'
+import { FileText as ApplicationsIcon } from 'lucide-react'
 
 type ApplicationTypesPageProps = {
   accessToken: string
@@ -26,14 +24,15 @@ type EditForm = {
 
 type SearchBy = 'all' | 'title' | 'id'
 
+const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'title', label: 'Type Name' },
+  { value: 'id', label: 'Type ID' },
+]
+
 export default function ApplicationTypesPage({
   accessToken,
 }: ApplicationTypesPageProps) {
-  const [items, setItems] = useState<ApplicationType[]>([])
-  const [search, setSearch] = useState('')
-  const [searchBy, setSearchBy] = useState<SearchBy>('all')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState<EditForm>({
@@ -42,76 +41,38 @@ export default function ApplicationTypesPage({
   })
   const [saving, setSaving] = useState(false)
 
-  async function loadItems() {
-    setLoading(true)
-    setError('')
+  const fetcher = useCallback(() => getApplicationTypes(accessToken), [accessToken])
 
-    try {
-      const result = await getApplicationTypes(accessToken)
-      setItems(result)
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to load application types.',
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    data: items,
+    loading,
+    error,
+    refresh,
+    setError,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken),
+    initialData: [],
+    defaultErrorMessage: 'Failed to load application types.',
+  })
 
-  useEffect(() => {
-    let cancelled = false
+  const {
+    search,
+    setSearch,
+    searchField: searchBy,
+    setSearchField: setSearchBy,
+    filteredData: filteredItems,
+    isFiltered,
+    resetFilters: handleResetFilters,
+  } = useTableFilters<ApplicationType, SearchBy>({
+    data: items,
+    initialSearchField: 'all',
+    filterItem: (item, query, field) => {
+      if (!query) return true
 
-    async function load() {
-      setLoading(true)
-      setError('')
-
-      try {
-        const result = await getApplicationTypes(accessToken)
-
-        if (!cancelled) {
-          setItems(result)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Failed to load application types.',
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken])
-
-  function handleResetFilters() {
-    setSearch('')
-    setSearchBy('all')
-  }
-
-  const isFiltered = Boolean(search.trim() || searchBy !== 'all')
-
-  const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
-    if (!query) return items
-
-    return items.filter((item) => {
-      if (searchBy === 'title') {
+      if (field === 'title') {
         return item.applicationTypeTitle.toLowerCase().includes(query)
       }
-      if (searchBy === 'id') {
+      if (field === 'id') {
         return String(item.applicationTypeId).includes(query)
       }
 
@@ -120,8 +81,8 @@ export default function ApplicationTypesPage({
         item.applicationTypeTitle.toLowerCase().includes(query) ||
         String(item.applicationTypeId).includes(query)
       )
-    })
-  }, [items, search, searchBy])
+    },
+  })
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -174,7 +135,7 @@ export default function ApplicationTypesPage({
         applicationTypeFees: fees,
       })
 
-      await loadItems()
+      await refresh()
       setEditingId(null)
       setSuccess('Application type updated successfully.')
     } catch (err) {
@@ -208,51 +169,21 @@ export default function ApplicationTypesPage({
           </span>
         </div>
 
-        <div className="table-toolbar">
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 150 }}
-            value={searchBy}
-            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
-            aria-label="Filter criterion"
-          >
-            <option value="all">All Fields</option>
-            <option value="title">Type Name</option>
-            <option value="id">Type ID</option>
-          </select>
-
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={placeholderText}
-            ariaLabel="Search application types"
-          />
-
-          {isFiltered && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetFilters}
-              title="Reset all filters"
-            >
-              <FilterIcon size={14} />
-              <span>Reset</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={loading}
-            onClick={() => {
-              setSuccess('')
-              void loadItems()
-            }}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        </div>
+        <TableToolbar<SearchBy>
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={placeholderText}
+          searchField={searchBy}
+          searchFieldOptions={SEARCH_OPTIONS}
+          onSearchFieldChange={setSearchBy}
+          onReset={handleResetFilters}
+          isFiltered={isFiltered}
+          onRefresh={() => {
+            setSuccess('')
+            void refresh()
+          }}
+          refreshing={loading}
+        />
 
         {error && (
           <div style={{ margin: '0 25px 20px' }}>
@@ -260,7 +191,7 @@ export default function ApplicationTypesPage({
               message={error}
               onRetry={() => {
                 setSuccess('')
-                void loadItems()
+                void refresh()
               }}
             />
           </div>
@@ -275,14 +206,14 @@ export default function ApplicationTypesPage({
         {loading ? (
           <p className="empty-state">Loading application types...</p>
         ) : (
-          <div className="table-container">
+          <DataTableContainer minWidth={680}>
             <table className="people-table">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th className="w-16 col-compact">ID</th>
                   <th>Application Type</th>
-                  <th>Fees</th>
-                  <th>Actions</th>
+                  <th className="w-28 whitespace-nowrap">Fees</th>
+                  <th className="w-32 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
 
@@ -320,7 +251,7 @@ export default function ApplicationTypesPage({
                 )}
               </tbody>
             </table>
-          </div>
+          </DataTableContainer>
         )}
 
         {!loading && !error && (

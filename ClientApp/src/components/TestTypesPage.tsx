@@ -1,19 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   getTestTypes,
   updateTestType,
 } from '../services/testTypeService'
-import type { TestType } from '../services/testTypeService'
+import type { TestType } from '../types/TestType'
+import { useAsyncData, useTableFilters } from '../hooks'
 import PageHero from './common/PageHero'
-import SearchInput from './common/SearchInput'
+import TableToolbar from './common/TableToolbar'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
+import DataTableContainer from './common/DataTableContainer'
 import TestTypeRow from './testTypes/TestTypeRow'
-import {
-  RefreshIcon,
-  TestTypeIcon,
-  FilterIcon,
-} from './common/Icons'
+import { ClipboardList as TestTypeIcon } from 'lucide-react'
 
 type Props = {
   accessToken: string
@@ -27,73 +25,58 @@ type EditForm = {
 
 type SearchBy = 'all' | 'title' | 'id' | 'desc'
 
+const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'title', label: 'Test Title' },
+  { value: 'id', label: 'Test ID' },
+  { value: 'desc', label: 'Description' },
+]
+
 export default function TestTypesPage({ accessToken }: Props) {
-  const [items, setItems] = useState<TestType[]>([])
-  const [search, setSearch] = useState('')
-  const [searchBy, setSearchBy] = useState<SearchBy>('all')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
   const [form, setForm] = useState<EditForm>({
     testTypeTitle: '',
     testTypeDescription: '',
     testTypeFees: '',
   })
 
-  useEffect(() => {
-    let cancelled = false
+  const fetcher = useCallback(() => getTestTypes(accessToken), [accessToken])
 
-    async function load() {
-      setLoading(true)
-      setError('')
+  const {
+    data: items,
+    loading,
+    error,
+    refresh,
+    setError,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken),
+    initialData: [],
+    defaultErrorMessage: 'Failed to load test types.',
+  })
 
-      try {
-        const result = await getTestTypes(accessToken)
+  const {
+    search,
+    setSearch,
+    searchField: searchBy,
+    setSearchField: setSearchBy,
+    filteredData: filteredItems,
+    isFiltered,
+    resetFilters: handleResetFilters,
+  } = useTableFilters<TestType, SearchBy>({
+    data: items,
+    initialSearchField: 'all',
+    filterItem: (item, query, field) => {
+      if (!query) return true
 
-        if (!cancelled) setItems(result)
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Failed to load test types.',
-          )
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken, refreshKey])
-
-  function handleResetFilters() {
-    setSearch('')
-    setSearchBy('all')
-  }
-
-  const isFiltered = Boolean(search.trim() || searchBy !== 'all')
-
-  const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
-    if (!query) return items
-
-    return items.filter((item) => {
-      if (searchBy === 'title') {
+      if (field === 'title') {
         return item.testTypeTitle.toLowerCase().includes(query)
       }
-      if (searchBy === 'id') {
+      if (field === 'id') {
         return String(item.testTypeId).includes(query)
       }
-      if (searchBy === 'desc') {
+      if (field === 'desc') {
         return item.testTypeDescription.toLowerCase().includes(query)
       }
 
@@ -103,8 +86,8 @@ export default function TestTypesPage({ accessToken }: Props) {
         item.testTypeDescription.toLowerCase().includes(query) ||
         String(item.testTypeId).includes(query)
       )
-    })
-  }, [items, search, searchBy])
+    },
+  })
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -164,7 +147,7 @@ export default function TestTypesPage({ accessToken }: Props) {
 
       setEditingId(null)
       setSuccess('Test type updated successfully.')
-      setRefreshKey((key) => key + 1)
+      void refresh()
     } catch (err) {
       setError(
         err instanceof Error
@@ -196,52 +179,21 @@ export default function TestTypesPage({ accessToken }: Props) {
           </span>
         </div>
 
-        <div className="table-toolbar">
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={searchBy}
-            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
-            aria-label="Filter criterion"
-          >
-            <option value="all">All Fields</option>
-            <option value="title">Test Title</option>
-            <option value="id">Test ID</option>
-            <option value="desc">Description</option>
-          </select>
-
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={placeholderText}
-            ariaLabel="Search test types"
-          />
-
-          {isFiltered && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetFilters}
-              title="Reset all filters"
-            >
-              <FilterIcon size={14} />
-              <span>Reset</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={loading}
-            onClick={() => {
-              setSuccess('')
-              setRefreshKey((key) => key + 1)
-            }}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        </div>
+        <TableToolbar<SearchBy>
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={placeholderText}
+          searchField={searchBy}
+          searchFieldOptions={SEARCH_OPTIONS}
+          onSearchFieldChange={setSearchBy}
+          onReset={handleResetFilters}
+          isFiltered={isFiltered}
+          onRefresh={() => {
+            setSuccess('')
+            void refresh()
+          }}
+          refreshing={loading}
+        />
 
         {error && (
           <div style={{ margin: '0 25px 20px' }}>
@@ -249,7 +201,7 @@ export default function TestTypesPage({ accessToken }: Props) {
               message={error}
               onRetry={() => {
                 setSuccess('')
-                setRefreshKey((key) => key + 1)
+                void refresh()
               }}
             />
           </div>
@@ -264,15 +216,15 @@ export default function TestTypesPage({ accessToken }: Props) {
         {loading ? (
           <p className="empty-state">Loading test types...</p>
         ) : (
-          <div className="table-container">
+          <DataTableContainer minWidth={820}>
             <table className="people-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Test Type</th>
-                  <th>Description</th>
-                  <th>Fees</th>
-                  <th>Actions</th>
+                  <th className="w-16 col-compact">ID</th>
+                  <th className="w-48 whitespace-nowrap">Test Type</th>
+                  <th className="table-cell-description">Description</th>
+                  <th className="w-28 whitespace-nowrap">Fees</th>
+                  <th className="w-32 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
 
@@ -310,7 +262,7 @@ export default function TestTypesPage({ accessToken }: Props) {
                 )}
               </tbody>
             </table>
-          </div>
+          </DataTableContainer>
         )}
 
         {!loading && !error && (

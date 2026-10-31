@@ -9,22 +9,14 @@ import {
   getLocalLicenseInfo,
   issueInternationalLicense,
 } from '../../services/internationalLicenseService'
+import { formatDate, formatCurrency } from '../../utils/formatters'
+import PageHero from '../common/PageHero'
 import './international-licenses.css'
 
 type Props = {
   accessToken: string
   onBack: () => void
   onIssued: () => void
-}
-
-function date(value?: string) {
-  if (!value) return '—'
-
-  const parsedDate = new Date(value)
-
-  return Number.isNaN(parsedDate.getTime())
-    ? '—'
-    : parsedDate.toLocaleDateString()
 }
 
 export default function IssueInternationalLicensePage({
@@ -122,21 +114,15 @@ export default function IssueInternationalLicensePage({
         <span>Issue new</span>
       </div>
 
-      <header className="intl-page-heading">
-        <div>
-          <p className="eyebrow">LICENSE MANAGEMENT / ISSUE</p>
-          <h2>Issue International License</h2>
-          <p>
-            Find an eligible local driving license, review its details, then
-            issue the international license.
-          </p>
-        </div>
-
-        <span className="intl-step-pill">
-          <span>01</span> Find local license{' '}
-          <span className="intl-step-arrow">→</span> <span>02</span> Issue
-        </span>
-      </header>
+      <PageHero
+        pageId="Issue International License"
+        actions={
+          <span className="intl-step-pill">
+            <span>01</span> Find local license{' '}
+            <span className="intl-step-arrow">→</span> <span>02</span> Issue
+          </span>
+        }
+      />
 
       {error && (
         <div className="intl-error" role="alert">
@@ -239,15 +225,15 @@ export default function IssueInternationalLicensePage({
               </div>
               <div>
                 <span>Issue Date</span>
-                <strong>{date(license.issueDate)}</strong>
+                <strong>{formatDate(license.issueDate)}</strong>
               </div>
               <div>
                 <span>Expiration Date</span>
-                <strong>{date(license.expirationDate)}</strong>
+                <strong>{formatDate(license.expirationDate)}</strong>
               </div>
               <div>
                 <span>Date of Birth</span>
-                <strong>{date(license.dateOfBirth)}</strong>
+                <strong>{formatDate(license.dateOfBirth)}</strong>
               </div>
               <div>
                 <span>Gender</span>
@@ -322,15 +308,15 @@ export default function IssueInternationalLicensePage({
             </div>
             <div>
               <span>Issue Date</span>
-              <strong>{date(issued.issueDate)}</strong>
+              <strong>{formatDate(issued.issueDate)}</strong>
             </div>
             <div>
               <span>Expiration Date</span>
-              <strong>{date(issued.expirationDate)}</strong>
+              <strong>{formatDate(issued.expirationDate)}</strong>
             </div>
             <div>
               <span>Fees</span>
-              <strong>{issued.fees.toFixed(2)}</strong>
+              <strong>{formatCurrency(issued.fees, '')}</strong>
             </div>
             <div>
               <span>Created By</span>

@@ -1,24 +1,11 @@
 import { apiRequest } from './apiClient'
-import type { Person } from '../types/Person'
+import type {
+  Person,
+  CreatePersonRequest,
+  CreatePersonResponse,
+} from '../types/Person'
 
-export type CreatePersonRequest = {
-  nationalNo: string
-  firstName: string
-  secondName: string
-  thirdName: string | null
-  lastName: string
-  dateOfBirth: string
-  gender: number
-  address: string
-  phone: string
-  email: string | null
-  nationalityCountryID: number
-  imagePath: string | null
-}
-
-export type CreatePersonResponse = {
-  personId: number
-}
+export type { Person, CreatePersonRequest, CreatePersonResponse }
 
 export function getPeople(accessToken: string): Promise<Person[]> {
   return apiRequest<Person[]>('/People', accessToken)

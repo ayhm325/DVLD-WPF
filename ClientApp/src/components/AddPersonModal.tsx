@@ -1,10 +1,18 @@
 
 import { useEffect, useState } from 'react'
 import type { FormEvent, ChangeEvent } from 'react'
+import ModalShell from './common/ModalShell'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
 
 import { getCountries } from '../services/countryService'
-import type { Country } from '../services/countryService'
-import { createPerson } from '../services/personService'
+import type { Country } from '../types/Country'
+import { createPerson } from '../services/peopleService'
 
 type AddPersonModalProps = {
   accessToken: string
@@ -21,6 +29,8 @@ export default function AddPersonModal({
   const [loadingCountries, setLoadingCountries] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [gender, setGender] = useState('0')
+  const [nationalityCountryID, setNationalityCountryID] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
 
@@ -186,6 +196,12 @@ export default function AddPersonModal({
 
     setSaving(true)
 
+    if (!nationalityCountryID && !formData.get('nationalityCountryID')) {
+      setError('Please select a nationality country.')
+      setSaving(false)
+      return
+    }
+
     try {
       await createPerson(accessToken, {
         nationalNo,
@@ -202,7 +218,7 @@ export default function AddPersonModal({
           formData.get('lastName') ?? '',
         ).trim(),
         dateOfBirth,
-        gender: Number(formData.get('gender')),
+        gender: Number(gender || formData.get('gender') || 0),
         address: String(
           formData.get('address') ?? '',
         ).trim(),
@@ -211,7 +227,7 @@ export default function AddPersonModal({
           String(formData.get('email') ?? '').trim() ||
           null,
         nationalityCountryID: Number(
-          formData.get('nationalityCountryID'),
+          nationalityCountryID || formData.get('nationalityCountryID'),
         ),
         // The API currently receives a path, not the image file.
         imagePath: null,
@@ -230,47 +246,28 @@ export default function AddPersonModal({
   }
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={saving ? undefined : onClose}
+    <ModalShell
+      isOpen
+      onClose={onClose}
+      preventClose={saving}
+      size="xl"
+      title="Add New Person"
+      description="Enter the person's information below."
+      className="max-h-[calc(100vh-48px)] overflow-y-auto"
     >
-      <section
-        className="person-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-person-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="modal-header">
-          <div>
-            <h2 id="add-person-title">Add New Person</h2>
-            <p>Enter the person's information below.</p>
-          </div>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
 
-          <button
-            type="button"
-            className="modal-close-button"
-            onClick={onClose}
-            disabled={saving}
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-
-        {loadingCountries ? (
-          <p>Loading countries...</p>
-        ) : (
-          <form
-            className="person-form"
-            onSubmit={handleSubmit}
-          >
+      {loadingCountries ? (
+        <p className="py-4 text-center text-slate-400">Loading countries...</p>
+      ) : (
+        <form
+          className="person-form"
+          onSubmit={handleSubmit}
+        >
             {/* Personal photo */}
             <div className="person-photo-section">
               <div className="person-photo-preview">
@@ -375,36 +372,43 @@ export default function AddPersonModal({
 
               <label>
                 Gender *
-                <select
+                <Select
+                  value={gender}
+                  onValueChange={setGender}
                   name="gender"
-                  defaultValue="0"
-                  required
                 >
-                  <option value="0">Male</option>
-                  <option value="1">Female</option>
-                </select>
+                  <SelectTrigger className="w-full min-h-[42px] bg-[#162238] border-[#354a68] text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Male</SelectItem>
+                    <SelectItem value="1">Female</SelectItem>
+                  </SelectContent>
+                </Select>
               </label>
 
               <label>
                 Nationality *
-                <select
+                <Select
+                  value={nationalityCountryID || undefined}
+                  onValueChange={setNationalityCountryID}
                   name="nationalityCountryID"
                   required
-                  defaultValue=""
                 >
-                  <option value="" disabled>
-                    Select a country
-                  </option>
-
-                  {countries.map((country) => (
-                    <option
-                      key={country.countryId}
-                      value={country.countryId}
-                    >
-                      {country.countryName}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full min-h-[42px] bg-[#162238] border-[#354a68] text-white">
+                    <SelectValue placeholder="Select a country" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    {countries.map((country) => (
+                      <SelectItem
+                        key={country.countryId}
+                        value={String(country.countryId)}
+                      >
+                        {country.countryName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
 
               <label>
@@ -460,7 +464,6 @@ export default function AddPersonModal({
             </div>
           </form>
         )}
-      </section>
-    </div>
+    </ModalShell>
   )
 }

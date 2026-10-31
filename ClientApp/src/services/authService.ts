@@ -1,39 +1,20 @@
 import { apiRequest } from './apiClient'
-import type { LoginRequest, LoginResponse, AuthUser } from '../types/Auth'
+import type {
+  LoginRequest,
+  LoginResponse,
+  AuthUser,
+  CurrentUserResponse,
+  UserProfileResponse,
+  ChangePasswordRequest,
+} from '../types/Auth'
 
-export type { LoginRequest, LoginResponse, AuthUser }
-
-export type CurrentUserResponse = {
-  userId: number
-  username: string
-  fullName: string
-  role: string
-}
-
-export type UserProfileResponse = {
-  userId: number
-  personId: number
-  userName: string
-  isActive: boolean
-  fullName: string
-  nationalNo: string
-  firstName: string
-  secondName: string
-  thirdName: string | null
-  lastName: string
-  dateOfBirth: string
-  gender: number
-  address: string
-  phone: string
-  email: string | null
-  nationalityCountryID: number
-  countryName: string
-  imagePath: string | null
-}
-
-export type ChangePasswordRequest = {
-  currentPassword: string
-  newPassword: string
+export type {
+  LoginRequest,
+  LoginResponse,
+  AuthUser,
+  CurrentUserResponse,
+  UserProfileResponse,
+  ChangePasswordRequest,
 }
 
 export function login(request: LoginRequest): Promise<LoginResponse> {

@@ -1,15 +1,30 @@
 import { useMemo, useState } from 'react'
-import type { Person } from '../types/Person'
-import SearchInput from './common/SearchInput'
-import EmptyState from './common/EmptyState'
 import {
-  PlusIcon,
-  UsersIcon,
-  RefreshIcon,
-  FilterIcon,
-} from './common/Icons'
+  UserPlus,
+  Users,
+} from 'lucide-react'
+import type { Person } from '../types/Person'
+import { formatDate } from '../utils/formatters'
+import TableToolbar from './common/TableToolbar'
+import EmptyState from './common/EmptyState'
+import DataTable, { type DataTableColumn } from './common/DataTable'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
 
 type SearchBy = 'all' | 'name' | 'nationalNo' | 'id' | 'phone'
+
+const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'name', label: 'Full Name' },
+  { value: 'nationalNo', label: 'National No.' },
+  { value: 'id', label: 'Person ID' },
+  { value: 'phone', label: 'Phone' },
+]
 type GenderFilter = 'all' | '0' | '1'
 
 export type PeopleTableProps = {
@@ -20,6 +35,59 @@ export type PeopleTableProps = {
   onRefresh?: () => void
   loading?: boolean
 }
+
+const columns: DataTableColumn<Person>[] = [
+  {
+    key: 'personId',
+    header: 'ID',
+    headerClassName: 'w-16 col-compact',
+    className: 'col-compact',
+    render: (person) => (
+      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
+        #{person.personId}
+      </span>
+    ),
+  },
+  {
+    key: 'fullName',
+    header: 'Full Name',
+    render: (person) => (
+      <div className="person-cell">
+        <span className="person-avatar" aria-hidden="true">
+          {person.fullName ? person.fullName.charAt(0).toUpperCase() : 'P'}
+        </span>
+        <strong>{person.fullName}</strong>
+      </div>
+    ),
+  },
+  {
+    key: 'nationalNo',
+    header: 'National No.',
+    render: (person) => (
+      <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
+        {person.nationalNo}
+      </span>
+    ),
+  },
+  {
+    key: 'dateOfBirth',
+    header: 'Date of Birth',
+    render: (person) => (
+      <span style={{ color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
+        {formatDate(person.dateOfBirth)}
+      </span>
+    ),
+  },
+  {
+    key: 'gender',
+    header: 'Gender',
+    render: (person) => (
+      <span className={`gender-badge ${person.gender === 0 ? 'is-male' : 'is-female'}`}>
+        {person.gender === 0 ? 'Male' : 'Female'}
+      </span>
+    ),
+  },
+]
 
 export default function PeopleTable({
   people,
@@ -100,7 +168,7 @@ export default function PeopleTable({
       <div className="panel-header">
         <div>
           <h2>People Directory</h2>
-          <p>Manage and search registered people</p>
+          <p>Manage and search registered citizen and resident records</p>
         </div>
 
         <div className="people-header-actions">
@@ -117,130 +185,59 @@ export default function PeopleTable({
             className="primary-button"
             onClick={onAddPerson}
           >
-            <PlusIcon size={16} />
+            <UserPlus size={15} />
             <span>Add Person</span>
           </button>
         </div>
       </div>
 
-      <div className="table-toolbar">
-        <select
-          className="search-input"
-          style={{ width: 'auto', minWidth: 140 }}
-          value={searchBy}
-          onChange={(event) => setSearchBy(event.target.value as SearchBy)}
-          aria-label="Filter criterion"
-        >
-          <option value="all">All Fields</option>
-          <option value="name">Full Name</option>
-          <option value="nationalNo">National No.</option>
-          <option value="id">Person ID</option>
-          <option value="phone">Phone</option>
-        </select>
+      <TableToolbar<SearchBy>
+        searchValue={search}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder={placeholderText}
+        searchField={searchBy}
+        searchFieldOptions={SEARCH_OPTIONS}
+        onSearchFieldChange={setSearchBy}
+        filters={
+          <div style={{ minWidth: 130 }} className="shrink-0">
+            <Select
+              value={genderFilter}
+              onValueChange={(val) => setGenderFilter(val as GenderFilter)}
+            >
+              <SelectTrigger
+                className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                aria-label="Filter by gender"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Genders</SelectItem>
+                <SelectItem value="0">Male</SelectItem>
+                <SelectItem value="1">Female</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        onReset={handleResetFilters}
+        isFiltered={isFiltered}
+        onRefresh={onRefresh}
+        refreshing={loading}
+      />
 
-        <SearchInput
-          value={search}
-          onChange={handleSearchChange}
-          placeholder={placeholderText}
-          ariaLabel="Search people"
-        />
-
-        <select
-          className="search-input"
-          style={{ width: 'auto', minWidth: 130 }}
-          value={genderFilter}
-          onChange={(event) => setGenderFilter(event.target.value as GenderFilter)}
-          aria-label="Filter by gender"
-        >
-          <option value="all">All Genders</option>
-          <option value="0">Male</option>
-          <option value="1">Female</option>
-        </select>
-
-        {isFiltered && (
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={handleResetFilters}
-            title="Reset all filters"
-          >
-            <FilterIcon size={14} />
-            <span>Reset</span>
-          </button>
-        )}
-
-        {onRefresh && (
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={onRefresh}
-            disabled={loading}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <p className="empty-state">Loading people...</p>
-      ) : (
-        <div className="table-container">
-          <table className="people-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Full Name</th>
-                <th>National No.</th>
-                <th>Date of Birth</th>
-                <th>Gender</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredPeople.map((person) => (
-                <tr key={person.personId}>
-                  <td>
-                    <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-                      #{person.personId}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="person-cell">
-                      <span className="person-avatar" aria-hidden="true">
-                        {person.fullName ? person.fullName.charAt(0).toUpperCase() : 'P'}
-                      </span>
-                      <strong>{person.fullName}</strong>
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.3px', fontWeight: 600 }}>
-                      {person.nationalNo}
-                    </span>
-                  </td>
-                  <td>{person.dateOfBirth ? person.dateOfBirth.slice(0, 10) : '—'}</td>
-                  <td>
-                    <span className={`gender-badge ${person.gender === 0 ? 'is-male' : 'is-female'}`}>
-                      {person.gender === 0 ? 'Male' : 'Female'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-
-              {filteredPeople.length === 0 && (
-                <tr>
-                  <td colSpan={5}>
-                    <EmptyState
-                      icon={<UsersIcon size={36} />}
-                      message="No people found matching your criteria."
-                    />
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable<Person>
+        data={filteredPeople}
+        columns={columns}
+        getRowKey={(person) => person.personId}
+        loading={loading}
+        loadingMessage="Loading people directory..."
+        emptyState={
+          <EmptyState
+            icon={<Users size={36} className="text-slate-400 mx-auto mb-2" />}
+            message="No people found matching your criteria."
+          />
+        }
+        minWidth={750}
+      />
     </section>
   )
 }

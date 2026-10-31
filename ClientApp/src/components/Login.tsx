@@ -2,36 +2,37 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { login as performLogin } from '../services/authService'
 import { useAuth } from '../context/useAuth'
-import LoginScene from './LoginScene'
+import SecurityEmblem from './login/SecurityEmblem'
+import HolographicLicense from './login/HolographicLicense'
+import LoginBranding from './login/LoginBranding'
+import Login3DScene from './login/scene/Login3DScene'
 import {
-  CheckIcon,
-  InfoIcon,
-  AlertCircleIcon,
-  UserIcon,
-  LockIcon,
-  EyeIcon,
-  EyeOffIcon,
-  ShieldCheckIcon,
-} from './common/Icons'
+  User as UserIcon,
+  Lock as LockIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeOffIcon,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  Info,
+  QrCode,
+} from 'lucide-react'
 import './Login.css'
 
 type LoginProps = {
   onLoginSuccess?: (accessToken: string) => void
 }
 
-function BrandMark() {
-  return (
-    <span className="login-brand-mark" aria-hidden="true">
-      <span>D</span>
-    </span>
-  )
-}
-
 export default function Login({ onLoginSuccess }: LoginProps) {
   const { login: setAuthSession, authMessage, clearAuthMessage } = useAuth()
-  const [userName, setUserName] = useState('')
+  const [userName, setUserName] = useState(
+    () => localStorage.getItem('dvld_remembered_username') || '',
+  )
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(
+    () => Boolean(localStorage.getItem('dvld_remembered_username')),
+  )
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -45,7 +46,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     setLoading(true)
 
     try {
-      const result = await performLogin({ userName: userName.trim(), password })
+      const trimmedUser = userName.trim()
+      const result = await performLogin({ userName: trimmedUser, password })
+
+      if (rememberMe) {
+        localStorage.setItem('dvld_remembered_username', trimmedUser)
+      } else {
+        localStorage.removeItem('dvld_remembered_username')
+      }
+
       setAuthSession(result)
       if (onLoginSuccess) {
         onLoginSuccess(result.accessToken)
@@ -62,75 +71,57 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   }
 
   return (
-    <main className="login-page">
-      <div className="login-layout">
-        {/* ---------- Brand / automotive showcase ---------- */}
-        <section className="login-showcase" aria-label="DVLD overview">
-          <header className="login-brand">
-            <BrandMark />
-            <div className="login-brand-copy">
-              <strong>DVLD</strong>
-              <span>Driving &amp; Vehicle Licensing Department</span>
-            </div>
-          </header>
+    <div className="login-page">
+      {/* ---------- 3D Physically-Based Cinematic Environment (with WebGL fallback) ---------- */}
+      <Login3DScene />
 
-          <div className="login-hero">
-            <span className="login-overline">
-              <span className="login-overline-dot" aria-hidden="true" />
-              Licensing operations platform
-            </span>
-            <h1>
-              Driving forward.
-              <span>Managing smarter.</span>
-            </h1>
-            <p>
-              One secure workspace for people, drivers, licenses,
-              and licensing applications.
-            </p>
+      {/* ---------- Main Showcase + Glass Authentication Card ---------- */}
+      <main className="login-content-wrapper">
+        {/* Left Column: Branding, Holographic Scene & Slogan */}
+        <section className="login-left-column" aria-label="DVLD Operations">
+          <LoginBranding />
+
+          {/* Holographic Projection in the Sky above the HQ artwork */}
+          <div className="login-scene-midsection">
+            <HolographicLicense />
           </div>
-
-          <LoginScene />
-
-          <footer className="login-showcase-footer">
-            <ul className="login-feature-list">
-              <li>
-                <CheckIcon size={13} strokeWidth={2.5} /> Role-based access
-              </li>
-              <li>
-                <CheckIcon size={13} strokeWidth={2.5} /> Audit logging
-              </li>
-              <li>
-                <CheckIcon size={13} strokeWidth={2.5} /> Encrypted transport
-              </li>
-            </ul>
-          </footer>
         </section>
 
-        {/* ---------- Sign-in form ---------- */}
-        <section className="login-form-pane" aria-labelledby="login-title">
-          <div className="login-form-container">
-            <div className="login-mobile-brand">
-              <BrandMark />
-              <div className="login-brand-copy">
-                <strong>DVLD</strong>
-                <span>Management System</span>
-              </div>
-            </div>
+        {/* Right Column: Glassmorphism Authentication Card */}
+        <section className="login-card-container" aria-label="Authentication">
+          <div className="login-glass-card">
+            {/* Top Security Crest Emblem */}
+            <SecurityEmblem />
 
-            <header className="login-form-header">
-              <span className="login-kicker">Sign in</span>
-              <h2 id="login-title">Welcome back</h2>
-              <p>Enter your credentials to access the DVLD administrative workspace.</p>
+            {/* Header */}
+            <header className="login-card-header">
+              <h2 className="login-card-title">
+                Welcome <span>back</span>
+              </h2>
+              <p className="login-card-subtitle">
+                Enter your credentials to access the DVLD administrative workspace.
+              </p>
             </header>
 
+            {/* Logout or session notification banner */}
             {authMessage && (
               <div className="login-info-banner" role="status">
-                <InfoIcon size={18} />
+                <Info className="size-4 shrink-0 text-cyan-300" />
                 <span>{authMessage}</span>
               </div>
             )}
 
+            {/* Error banner */}
+            {error && (
+              <div className="login-error-banner" role="alert">
+                <AlertCircle className="size-4 shrink-0 text-red-300" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Login form */}
             <form className="login-form" onSubmit={handleSubmit} noValidate>
+              {/* Username field */}
               <div className="login-field">
                 <label htmlFor="login-username">Username</label>
                 <div className="login-input-shell">
@@ -144,18 +135,22 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     autoComplete="username"
                     placeholder="Enter your username"
                     value={userName}
-                    onChange={(event) => setUserName(event.target.value)}
+                    onChange={(event) => {
+                      setUserName(event.target.value)
+                      if (error) setError('')
+                    }}
                     disabled={loading}
                     required
                     autoFocus
-                    aria-invalid={error ? true : undefined}
+                    className="login-input"
                   />
                 </div>
               </div>
 
+              {/* Password field */}
               <div className="login-field">
                 <label htmlFor="login-password">Password</label>
-                <div className="login-input-shell has-toggle">
+                <div className="login-input-shell">
                   <span className="login-input-icon" aria-hidden="true">
                     <LockIcon size={18} />
                   </span>
@@ -166,19 +161,19 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     autoComplete="current-password"
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      if (error) setError('')
+                    }}
                     disabled={loading}
                     required
-                    aria-invalid={error ? true : undefined}
+                    className="login-input"
                   />
-
                   <button
                     className="login-password-toggle"
                     type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    aria-label={
-                      showPassword ? 'Hide password' : 'Show password'
-                    }
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
                     disabled={loading}
                   >
@@ -187,15 +182,33 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 </div>
               </div>
 
-              {error && (
-                <div className="login-error login-form-error" role="alert">
-                  <AlertCircleIcon size={18} />
-                  <span>{error}</span>
-                </div>
-              )}
+              {/* Remember me and Forgot password row */}
+              <div className="login-options-row">
+                <label className="login-remember-label">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                    className="login-checkbox"
+                    disabled={loading}
+                  />
+                  <span>Remember me</span>
+                </label>
 
+                <button
+                  type="button"
+                  className="login-forgot-link"
+                  onClick={() => {
+                    setError('Password reset requires administrative authorization. Contact DVLD System Admin.')
+                  }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              {/* Submit button */}
               <button
-                className="login-submit"
+                className="login-submit-btn"
                 type="submit"
                 disabled={loading || !userName.trim() || !password}
               >
@@ -207,31 +220,84 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 ) : (
                   <>
                     <span>Sign in</span>
-                    <svg
-                      className="login-submit-arrow"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
                   </>
                 )}
               </button>
+
+              {/* Alternative Authentication Options */}
+              <div className="login-divider">
+                <span className="login-divider-line" />
+                <span className="login-divider-text">OR CONTINUE WITH</span>
+                <span className="login-divider-line" />
+              </div>
+
+              <div className="login-social-grid">
+                <button
+                  type="button"
+                  className="login-social-btn"
+                  title="Enterprise Microsoft Entra ID Authentication"
+                  onClick={() =>
+                    setError(
+                      'Microsoft SSO is reserved for enterprise active directory accounts.',
+                    )
+                  }
+                >
+                  <svg className="size-3.5" viewBox="0 0 21 21" fill="none" aria-hidden="true">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+                  </svg>
+                  <span>Microsoft</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="login-social-btn"
+                  title="Single Sign-On (SAML 2.0 / OIDC)"
+                  onClick={() =>
+                    setError(
+                      'Single Sign-On is configured for government intranet portal access.',
+                    )
+                  }
+                >
+                  <ShieldCheck className="size-3.5 text-cyan-400" />
+                  <span>SSO</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="login-social-btn"
+                  title="Scan Digital ID via DVLD Jordan Mobile App"
+                  onClick={() =>
+                    setError(
+                      'QR Code sign-in requires the DVLD Jordan Mobile Authenticator app.',
+                    )
+                  }
+                >
+                  <QrCode className="size-3.5 text-cyan-400" />
+                  <span>QR Code</span>
+                </button>
+              </div>
             </form>
 
-            <p className="login-security-note">
-              <ShieldCheckIcon size={16} />
+            {/* Security note */}
+            <div className="login-security-indicator">
+              <ShieldCheck className="size-4" />
               <span>Protected by secure token-based authentication.</span>
-            </p>
-
-            <footer className="login-form-footer">
-              <span>Authorized personnel only</span>
-              <span>© {new Date().getFullYear()} DVLD</span>
-            </footer>
+            </div>
           </div>
         </section>
-      </div>
-    </main>
+      </main>
+
+      {/* ---------- Page Footer ---------- */}
+      <footer className="login-footer">
+        <p className="login-footer-copy">
+          &copy; 2026 DVLD. Authorized Personnel Only.
+        </p>
+        <span className="login-footer-tagline">Driving Jordan Forward</span>
+      </footer>
+    </div>
   )
 }

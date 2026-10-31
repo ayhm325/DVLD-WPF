@@ -1,5 +1,12 @@
+import { useCallback } from 'react'
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
-import { PencilIcon } from '../common/Icons'
+import { Pencil as PencilIcon } from 'lucide-react'
+import { formatDate } from '../../utils/formatters'
+import DataTable, {
+  type DataTableColumn,
+  type DataTableRowAction,
+} from '../common/DataTable'
+import StatusBadge, { type StatusVariant } from '../common/StatusBadge'
 
 type Props = {
   items: LocalDrivingLicenseApplication[]
@@ -7,37 +14,135 @@ type Props = {
   onEdit: (application: LocalDrivingLicenseApplication) => void
 }
 
-function statusClass(status: string) {
-  const value = status.toLowerCase()
-  if (value === 'completed') return 'is-completed'
-  if (value === 'cancelled' || value === 'canceled') return 'is-cancelled'
-  return 'is-new'
+function getApplicationStatusVariant(status: string): StatusVariant {
+  switch (status.trim().toLowerCase()) {
+    case 'completed':
+      return 'success'
+    case 'cancelled':
+    case 'canceled':
+      return 'danger'
+    case 'new':
+      return 'warning'
+    default:
+      return 'neutral'
+  }
 }
 
 export default function LocalApplicationsList({ items, loading, onEdit }: Props) {
-  if (loading) return <div className="local-app-state"><span className="local-app-spinner" />Loading applications…</div>
+  const columns: DataTableColumn<LocalDrivingLicenseApplication>[] = [
+    {
+      key: 'id',
+      header: 'Application ID',
+      render: (item) => <span className="local-app-id">#{item.localDrivingLicenseApplicationId}</span>,
+    },
+    {
+      key: 'class',
+      header: 'Driving class',
+      render: (item) => (
+        <>
+          <span className="local-app-class">{item.licenseClassName || `Class ${item.licenseClassId}`}</span>
+          <small className="local-app-cell-sub">Class ID {item.licenseClassId}</small>
+        </>
+      ),
+    },
+    {
+      key: 'nationalNo',
+      header: 'National No.',
+      className: 'local-app-mono',
+      accessor: (item) => item.nationalNo || '—',
+    },
+    {
+      key: 'applicant',
+      header: 'Applicant',
+      render: (item) => <strong className="local-app-person-name">{item.fullName || 'Unknown applicant'}</strong>,
+    },
+    {
+      key: 'date',
+      header: 'Application date',
+      render: (item) => formatDate(item.applicationDate),
+    },
+    {
+      key: 'testsPassed',
+      header: 'Tests passed',
+      render: (item) => (
+        <span className={`local-app-test-count ${item.passedTest >= 3 ? 'all-passed' : ''}`}>
+          {item.passedTest} <span>/ 3</span>
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (item) => {
+        const status = item.statusText || item.applicationStatus || 'New'
+        return (
+          <StatusBadge
+            variant={getApplicationStatusVariant(status)}
+            label={status}
+          />
+        )
+      },
+    },
+    {
+      key: 'actions',
+      header: '',
+      headerClassName: 'w-12',
+      render: (item) => {
+        const status = item.statusText || item.applicationStatus || 'New'
+        return (
+          <button
+            type="button"
+            className="local-app-row-action"
+            disabled={status.toLowerCase() !== 'new'}
+            onClick={() => onEdit(item)}
+            title="Edit application"
+            aria-label={`Edit application #${item.localDrivingLicenseApplicationId}`}
+          >
+            <PencilIcon size={14} />
+          </button>
+        )
+      },
+    },
+  ]
+
+  const getRowContextMenu = useCallback(
+    (
+      item: LocalDrivingLicenseApplication,
+    ): DataTableRowAction<LocalDrivingLicenseApplication>[] => {
+      const status = (item.statusText || item.applicationStatus || 'New')
+        .trim()
+        .toLowerCase()
+
+      return [
+        {
+          key: 'edit',
+          label: 'Edit Application',
+          icon: <PencilIcon className="size-4" />,
+          disabled: status !== 'new',
+          onClick: (application) => onEdit(application),
+        },
+      ]
+    },
+    [onEdit],
+  )
 
   return (
-    <div className="local-app-table-wrap">
-      <table className="local-app-table">
-        <thead><tr><th>Application ID</th><th>Driving class</th><th>National No.</th><th>Applicant</th><th>Application date</th><th>Tests passed</th><th>Status</th><th aria-label="Actions" /></tr></thead>
-        <tbody>
-          {items.map((item) => {
-            const status = item.statusText || item.applicationStatus || 'New'
-            return <tr key={item.localDrivingLicenseApplicationId}>
-              <td><span className="local-app-id">#{item.localDrivingLicenseApplicationId}</span></td>
-              <td><span className="local-app-class">{item.licenseClassName || `Class ${item.licenseClassId}`}</span><small className="local-app-cell-sub">Class ID {item.licenseClassId}</small></td>
-              <td className="local-app-mono">{item.nationalNo || '—'}</td>
-              <td><strong className="local-app-person-name">{item.fullName || 'Unknown applicant'}</strong></td>
-              <td>{item.applicationDate ? new Date(item.applicationDate).toLocaleDateString() : '—'}</td>
-              <td><span className={`local-app-test-count ${item.passedTest >= 3 ? 'all-passed' : ''}`}>{item.passedTest} <span>/ 3</span></span></td>
-              <td><span className={`local-app-status ${statusClass(status)}`}><i />{status}</span></td>
-              <td><button type="button" className="local-app-row-action" disabled={status.toLowerCase() !== 'new'} onClick={() => onEdit(item)} title="Edit application" aria-label={`Edit application ${item.localDrivingLicenseApplicationId}`}><PencilIcon size={14} /></button></td>
-            </tr>
-          })}
-          {items.length === 0 && <tr><td colSpan={8} className="local-app-empty">{loading ? 'Loading…' : 'No applications match the selected filters.'}</td></tr>}
-        </tbody>
-      </table>
-    </div>
+    <DataTable<LocalDrivingLicenseApplication>
+      data={items}
+      columns={columns}
+      getRowKey={(item) => item.localDrivingLicenseApplicationId}
+      loading={loading}
+      loadingComponent={
+        <div className="local-app-state">
+          <span className="local-app-spinner" />
+          Loading applications…
+        </div>
+      }
+      emptyMessage="No applications match the selected filters."
+      tableClassName="local-app-table"
+      containerClassName="local-app-table-wrap"
+      minWidth={920}
+      rowContextMenu={getRowContextMenu}
+    />
   )
 }

@@ -1,4 +1,5 @@
-import type { ApplicationType } from '../../services/applicationTypeService'
+import type { ApplicationType } from '../../types/ApplicationType'
+import { formatCurrency } from '../../utils/formatters'
 
 interface ApplicationTypeRowProps {
   item: ApplicationType
@@ -25,14 +26,14 @@ export default function ApplicationTypeRow({
   onCancel,
 }: ApplicationTypeRowProps) {
   return (
-    <tr>
-      <td>
+    <tr className="align-top">
+      <td className="col-compact">
         <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
           #{item.applicationTypeId}
         </span>
       </td>
 
-      <td>
+      <td className="font-semibold text-[#f1f5f9]">
         {isEditing ? (
           <input
             className="search-input"
@@ -51,7 +52,7 @@ export default function ApplicationTypeRow({
         )}
       </td>
 
-      <td>
+      <td className="font-mono text-[#cbd5e1]">
         {isEditing ? (
           <input
             className="search-input"
@@ -68,7 +69,7 @@ export default function ApplicationTypeRow({
             }
           />
         ) : (
-          item.applicationTypeFees.toFixed(2)
+          formatCurrency(item.applicationTypeFees, '')
         )}
       </td>
 

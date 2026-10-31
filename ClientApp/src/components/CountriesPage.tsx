@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { getCountries } from '../services/countryService'
-import type { Country } from '../services/countryService'
+import type { Country } from '../types/Country'
+import { useAsyncData, useTableFilters } from '../hooks'
 import PageHero from './common/PageHero'
-import SearchInput from './common/SearchInput'
+import TableToolbar from './common/TableToolbar'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
-import {
-  RefreshIcon,
-  GlobeIcon,
-  FilterIcon,
-} from './common/Icons'
+import DataTable, { type DataTableColumn } from './common/DataTable'
+import { Globe as GlobeIcon } from 'lucide-react'
 
 type CountriesPageProps = {
   accessToken: string
@@ -17,68 +15,65 @@ type CountriesPageProps = {
 
 type SearchBy = 'all' | 'name' | 'id'
 
+const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'name', label: 'Country Name' },
+  { value: 'id', label: 'Country ID' },
+]
+
+const columns: DataTableColumn<Country>[] = [
+  {
+    key: 'countryId',
+    header: 'Country ID',
+    headerClassName: 'w-28 col-compact',
+    render: (country) => (
+      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+        #{country.countryId}
+      </span>
+    ),
+  },
+  {
+    key: 'countryName',
+    header: 'Country Name',
+    className: 'person-name',
+    accessor: (country) => country.countryName,
+  },
+]
+
 export default function CountriesPage({
   accessToken,
 }: CountriesPageProps) {
-  const [countries, setCountries] = useState<Country[]>([])
-  const [search, setSearch] = useState('')
-  const [searchBy, setSearchBy] = useState<SearchBy>('all')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0)
+  const fetcher = useCallback(() => getCountries(accessToken), [accessToken])
 
-  useEffect(() => {
-    let cancelled = false
+  const {
+    data: countries,
+    loading,
+    error,
+    refresh,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken),
+    initialData: [],
+    defaultErrorMessage: 'Failed to load countries.',
+  })
 
-    async function loadCountries() {
-      setLoading(true)
-      setError('')
+  const {
+    search,
+    setSearch,
+    searchField: searchBy,
+    setSearchField: setSearchBy,
+    filteredData: filteredCountries,
+    isFiltered,
+    resetFilters: handleResetFilters,
+  } = useTableFilters<Country, SearchBy>({
+    data: countries,
+    initialSearchField: 'all',
+    filterItem: (country, query, field) => {
+      if (!query) return true
 
-      try {
-        const result = await getCountries(accessToken)
-
-        if (!cancelled) {
-          setCountries(result)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Failed to load countries.',
-          )
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadCountries()
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken, refreshKey])
-
-  function handleResetFilters() {
-    setSearch('')
-    setSearchBy('all')
-  }
-
-  const isFiltered = Boolean(search.trim() || searchBy !== 'all')
-
-  const filteredCountries = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
-    if (!query) return countries
-
-    return countries.filter((country) => {
-      if (searchBy === 'name') {
+      if (field === 'name') {
         return country.countryName.toLowerCase().includes(query)
       }
-      if (searchBy === 'id') {
+      if (field === 'id') {
         return String(country.countryId).includes(query)
       }
 
@@ -87,8 +82,8 @@ export default function CountriesPage({
         country.countryName.toLowerCase().includes(query) ||
         String(country.countryId).includes(query)
       )
-    })
-  }, [countries, search, searchBy])
+    },
+  })
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -123,101 +118,51 @@ export default function CountriesPage({
           </span>
         </div>
 
-        <div className="table-toolbar">
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={searchBy}
-            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
-            aria-label="Filter criterion"
-          >
-            <option value="all">All Fields</option>
-            <option value="name">Country Name</option>
-            <option value="id">Country ID</option>
-          </select>
-
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={placeholderText}
-            ariaLabel="Search countries"
-          />
-
-          {isFiltered && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetFilters}
-              title="Reset all filters"
-            >
-              <FilterIcon size={14} />
-              <span>Reset</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="secondary-button"
-            disabled={loading}
-            onClick={() => setRefreshKey((k) => k + 1)}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        </div>
+        <TableToolbar
+          searchField={searchBy}
+          searchFieldOptions={SEARCH_OPTIONS}
+          onSearchFieldChange={(val) => setSearchBy(val as SearchBy)}
+          searchFieldMinWidth={140}
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={placeholderText}
+          searchAriaLabel="Search countries"
+          isFiltered={isFiltered}
+          onReset={handleResetFilters}
+          onRefresh={() => void refresh()}
+          refreshing={loading}
+        />
 
         {error && (
           <div style={{ margin: '0 25px 20px' }}>
             <ErrorAlert
               message={error}
-              onRetry={() => setRefreshKey((k) => k + 1)}
+              onRetry={() => void refresh()}
               retryLabel="Retry"
             />
           </div>
         )}
 
-        {loading ? (
-          <p className="empty-state">Loading countries...</p>
-        ) : !error ? (
-          <div className="table-container">
-            <table className="people-table">
-              <thead>
-                <tr>
-                  <th>Country ID</th>
-                  <th>Country Name</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredCountries.map((country) => (
-                  <tr key={country.countryId}>
-                    <td>
-                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-                        #{country.countryId}
-                      </span>
-                    </td>
-                    <td className="person-name">{country.countryName}</td>
-                  </tr>
-                ))}
-
-                {filteredCountries.length === 0 && (
-                  <tr>
-                    <td colSpan={2}>
-                      <EmptyState
-                        icon={<GlobeIcon size={36} />}
-                        message={
-                          countries.length === 0
-                            ? 'No countries are registered.'
-                            : 'No countries match your search.'
-                        }
-                      />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
+        {!error && (
+          <DataTable<Country>
+            data={filteredCountries}
+            columns={columns}
+            getRowKey={(country) => country.countryId}
+            loading={loading}
+            loadingMessage="Loading countries..."
+            emptyState={
+              <EmptyState
+                icon={<GlobeIcon size={36} />}
+                message={
+                  countries.length === 0
+                    ? 'No countries are registered.'
+                    : 'No countries match your search.'
+                }
+              />
+            }
+            minWidth={550}
+          />
+        )}
 
         {!loading && !error && (
           <div className="panel-footer">

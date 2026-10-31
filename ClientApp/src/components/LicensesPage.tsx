@@ -1,19 +1,29 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { getLicenses } from '../services/licenseService'
-import type { License } from '../services/licenseService'
+import type { License } from '../types/License'
+import { formatDate, formatCurrency, formatNumber } from '../utils/formatters'
+import { useAsyncData, useTableFilters } from '../hooks'
 import PageHero from './common/PageHero'
 import StatsGrid from './common/StatsGrid'
 import StatCard from './common/StatCard'
-import SearchInput from './common/SearchInput'
+import TableToolbar from './common/TableToolbar'
+import StatusBadge from './common/StatusBadge'
+import { getActiveStatusProps } from '../utils/status'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
+import DataTable, { type DataTableColumn } from './common/DataTable'
 import {
-  LicenseIcon,
-  CheckIcon,
-  ClockIcon,
-  RefreshIcon,
-  FilterIcon,
-} from './common/Icons'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import {
+  IdCard as LicenseIcon,
+  Check as CheckIcon,
+  Clock as ClockIcon,
+} from 'lucide-react'
 
 type LicensesPageProps = {
   accessToken: string
@@ -21,83 +31,126 @@ type LicensesPageProps = {
 
 type SearchBy = 'all' | 'licenseId' | 'appId' | 'driver' | 'class'
 
+interface LicenseFilters extends Record<string, unknown> {
+  statusFilter: string
+}
+
+const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'licenseId', label: 'License ID' },
+  { value: 'appId', label: 'Application ID' },
+  { value: 'driver', label: 'Driver Name' },
+  { value: 'class', label: 'License Class' },
+]
+
+const columns: DataTableColumn<License>[] = [
+  {
+    key: 'licenseId',
+    header: 'License ID',
+    render: (license) => (
+      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+        #{license.licenseId}
+      </span>
+    ),
+  },
+  {
+    key: 'applicationId',
+    header: 'App ID',
+    render: (license) => (
+      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+        #{license.applicationId}
+      </span>
+    ),
+  },
+  {
+    key: 'driverName',
+    header: 'Driver Name',
+    render: (license) => (
+      <strong style={{ color: 'var(--dvld-heading)' }}>
+        {license.driverName ?? '—'}
+      </strong>
+    ),
+  },
+  {
+    key: 'licenseClassName',
+    header: 'Class',
+    accessor: (license) => license.licenseClassName ?? '—',
+  },
+  {
+    key: 'issueDate',
+    header: 'Issue Date',
+    render: (license) => formatDate(license.issueDate),
+  },
+  {
+    key: 'expirationDate',
+    header: 'Expiration Date',
+    render: (license) => formatDate(license.expirationDate),
+  },
+  {
+    key: 'paidFees',
+    header: 'Fees',
+    render: (license) => formatCurrency(license.paidFees, 'JOD'),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    render: (license) => <StatusBadge {...getActiveStatusProps(license.isActive)} />,
+  },
+]
+
 export default function LicensesPage({
   accessToken,
 }: LicensesPageProps) {
-  const [licenses, setLicenses] = useState<License[]>([])
-  const [search, setSearch] = useState('')
-  const [searchBy, setSearchBy] = useState<SearchBy>('all')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0)
+  const fetcher = useCallback(() => getLicenses(accessToken), [accessToken])
 
-  useEffect(() => {
-    let isCancelled = false
+  const {
+    data: licenses,
+    loading,
+    error,
+    refresh,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken),
+    initialData: [],
+    defaultErrorMessage: 'Failed to load licenses.',
+  })
 
-    async function loadLicenses() {
-      setLoading(true)
-      setError('')
-
-      try {
-        const data = await getLicenses(accessToken)
-
-        if (!isCancelled) {
-          setLicenses(data)
-        }
-      } catch (err) {
-        if (!isCancelled) {
-          setError(
-            err instanceof Error ? err.message : 'Failed to load licenses.',
-          )
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadLicenses()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [accessToken, refreshKey])
-
-  const handleResetFilters = () => {
-    setSearch('')
-    setSearchBy('all')
-    setStatusFilter('all')
-  }
-
-  const isFiltered = Boolean(search.trim() || statusFilter !== 'all' || searchBy !== 'all')
-
-  const filteredLicenses = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
-    return licenses.filter((license) => {
+  const {
+    search,
+    setSearch,
+    searchField: searchBy,
+    setSearchField: setSearchBy,
+    filters,
+    setFilter,
+    filteredData: filteredLicenses,
+    isFiltered,
+    resetFilters: handleResetFilters,
+  } = useTableFilters<License, SearchBy, LicenseFilters>({
+    data: licenses,
+    initialSearchField: 'all',
+    initialFilters: { statusFilter: 'all' },
+    filterItem: (license, query, field, currentFilters) => {
       // 1. Status check
+      const currentStatus = currentFilters.statusFilter
       const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && license.isActive) ||
-        (statusFilter === 'inactive' && !license.isActive)
+        currentStatus === 'all' ||
+        (currentStatus === 'active' && license.isActive) ||
+        (currentStatus === 'inactive' && !license.isActive)
 
       if (!matchesStatus) return false
 
       // 2. Query check
       if (!query) return true
 
-      if (searchBy === 'licenseId') {
+      if (field === 'licenseId') {
         return String(license.licenseId).includes(query)
       }
-      if (searchBy === 'appId') {
+      if (field === 'appId') {
         return String(license.applicationId).includes(query)
       }
-      if (searchBy === 'driver') {
+      if (field === 'driver') {
         return (license.driverName ?? '').toLowerCase().includes(query)
       }
-      if (searchBy === 'class') {
+      if (field === 'class') {
         return (license.licenseClassName ?? '').toLowerCase().includes(query)
       }
 
@@ -108,8 +161,10 @@ export default function LicensesPage({
         (license.driverName ?? '').toLowerCase().includes(query) ||
         (license.licenseClassName ?? '').toLowerCase().includes(query)
       )
-    })
-  }, [licenses, search, searchBy, statusFilter])
+    },
+  })
+
+  const statusFilter = filters.statusFilter
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -126,24 +181,6 @@ export default function LicensesPage({
     }
   }, [searchBy])
 
-  function formatDate(value?: string) {
-    if (!value) return '—'
-
-    const date = new Date(value)
-
-    if (Number.isNaN(date.getTime())) return '—'
-
-    return date.toLocaleDateString()
-  }
-
-  function formatFees(value: number) {
-    return new Intl.NumberFormat('en-JO', {
-      style: 'currency',
-      currency: 'JOD',
-      minimumFractionDigits: 2,
-    }).format(value)
-  }
-
   return (
     <section className="page-content">
       <PageHero pageId="Licenses" />
@@ -151,24 +188,25 @@ export default function LicensesPage({
       <StatsGrid columns={3}>
         <StatCard
           label="Total Licenses"
+          variant="violet"
           icon={<LicenseIcon size={20} />}
-          value={loading ? '...' : error ? '—' : licenses.length}
+          value={loading ? '...' : error ? '—' : formatNumber(licenses.length)}
           description="All returned records"
         />
 
         <StatCard
           label="Active Licenses"
+          variant="emerald"
           icon={<CheckIcon size={20} />}
-          iconStyle={{ color: '#059669', background: '#ecfdf5' }}
-          value={<span style={{ color: '#059669' }}>{loading ? '...' : error ? '—' : licenses.filter((license) => license.isActive).length}</span>}
+          value={loading ? '...' : error ? '—' : formatNumber(licenses.filter((license) => license.isActive).length)}
           description="Marked active by the system"
         />
 
         <StatCard
           label="Inactive Licenses"
+          variant="slate"
           icon={<ClockIcon size={20} />}
-          iconStyle={{ color: '#64748b', background: '#f1f5f9' }}
-          value={loading ? '...' : error ? '—' : licenses.filter((license) => !license.isActive).length}
+          value={loading ? '...' : error ? '—' : formatNumber(licenses.filter((license) => !license.isActive).length)}
           description="Not currently active"
         />
       </StatsGrid>
@@ -189,62 +227,40 @@ export default function LicensesPage({
           </span>
         </div>
 
-        <div className="table-toolbar">
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={searchBy}
-            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
-            aria-label="Filter criterion"
-          >
-            <option value="all">All Fields</option>
-            <option value="licenseId">License ID</option>
-            <option value="appId">Application ID</option>
-            <option value="driver">Driver Name</option>
-            <option value="class">License Class</option>
-          </select>
-
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={placeholderText}
-            ariaLabel="Search licenses"
-          />
-
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            aria-label="Filter by license status"
-          >
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-
-          {isFiltered && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetFilters}
-              title="Reset all filters"
-            >
-              <FilterIcon size={14} />
-              <span>Reset</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => setRefreshKey((value) => value + 1)}
-            disabled={loading}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        </div>
+        <TableToolbar
+          searchField={searchBy}
+          searchFieldOptions={SEARCH_OPTIONS}
+          onSearchFieldChange={(val) => setSearchBy(val as SearchBy)}
+          searchFieldMinWidth={140}
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={placeholderText}
+          searchAriaLabel="Search licenses"
+          filters={
+            <div style={{ minWidth: 140 }} className="shrink-0">
+              <Select
+                value={statusFilter}
+                onValueChange={(val) => setFilter('statusFilter', val)}
+              >
+                <SelectTrigger
+                  className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                  aria-label="Filter by license status"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          isFiltered={isFiltered}
+          onReset={handleResetFilters}
+          onRefresh={() => void refresh()}
+          refreshing={loading}
+        />
 
         {loading && <p className="empty-state">Loading licenses...</p>}
 
@@ -252,78 +268,30 @@ export default function LicensesPage({
           <div style={{ margin: '0 25px 20px' }}>
             <ErrorAlert
               message={error}
-              onRetry={() => setRefreshKey((value) => value + 1)}
+              onRetry={() => void refresh()}
               retryLabel="Try again"
             />
           </div>
         )}
 
-        {!loading && !error && (
-          <div className="table-container">
-            <table className="people-table">
-              <thead>
-                <tr>
-                  <th>License ID</th>
-                  <th>App ID</th>
-                  <th>Driver Name</th>
-                  <th>Class</th>
-                  <th>Issue Date</th>
-                  <th>Expiration Date</th>
-                  <th>Fees</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredLicenses.map((license) => (
-                  <tr key={license.licenseId}>
-                    <td>
-                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-                        #{license.licenseId}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-                        #{license.applicationId}
-                      </span>
-                    </td>
-                    <td>
-                      <strong style={{ color: 'var(--dvld-heading)' }}>
-                        {license.driverName ?? '—'}
-                      </strong>
-                    </td>
-                    <td>{license.licenseClassName ?? '—'}</td>
-                    <td>{formatDate(license.issueDate)}</td>
-                    <td>{formatDate(license.expirationDate)}</td>
-                    <td>{formatFees(license.paidFees)}</td>
-                    <td>
-                      <span
-                        className={`badge ${
-                          license.isActive ? 'badge-success' : 'badge-danger'
-                        }`}
-                      >
-                        {license.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-
-                {filteredLicenses.length === 0 && (
-                  <tr>
-                    <td colSpan={8}>
-                      <EmptyState
-                        icon={<LicenseIcon size={36} />}
-                        message={
-                          licenses.length === 0
-                            ? 'No licenses found.'
-                            : 'No licenses match your filters.'}
-                      />
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        {!error && (
+          <DataTable<License>
+            data={filteredLicenses}
+            columns={columns}
+            getRowKey={(license) => license.licenseId}
+            loading={loading}
+            emptyState={
+              <EmptyState
+                icon={<LicenseIcon size={36} />}
+                message={
+                  licenses.length === 0
+                    ? 'No licenses found.'
+                    : 'No licenses match your filters.'
+                }
+              />
+            }
+            minWidth={900}
+          />
         )}
       </div>
     </section>

@@ -1,4 +1,4 @@
-import { AlertCircleIcon, DashboardIcon } from './Icons'
+import { AlertCircle as AlertCircleIcon, LayoutDashboard as DashboardIcon } from 'lucide-react'
 
 export interface AccessDeniedProps {
   pageTitle?: string

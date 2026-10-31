@@ -1,9 +1,7 @@
 import { apiRequest } from './apiClient'
+import type { Country } from '../types/Country'
 
-export type Country = {
-  countryId: number
-  countryName: string
-}
+export type { Country }
 
 export function getCountries(accessToken: string): Promise<Country[]> {
   return apiRequest<Country[]>('/Countries', accessToken)

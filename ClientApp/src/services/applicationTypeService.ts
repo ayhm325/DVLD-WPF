@@ -1,15 +1,10 @@
-export type ApplicationType = {
-  applicationTypeId: number
-  applicationTypeTitle: string
-  applicationTypeFees: number
-}
-
-export type UpdateApplicationTypeRequest = {
-  applicationTypeTitle: string
-  applicationTypeFees: number
-}
-
 import { apiRequest } from './apiClient'
+import type {
+  ApplicationType,
+  UpdateApplicationTypeRequest,
+} from '../types/ApplicationType'
+
+export type { ApplicationType, UpdateApplicationTypeRequest }
 
 export function getApplicationTypes(accessToken: string): Promise<ApplicationType[]> {
   return apiRequest<ApplicationType[]>('/ApplicationTypes', accessToken)

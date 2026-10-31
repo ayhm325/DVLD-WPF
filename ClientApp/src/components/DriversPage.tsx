@@ -1,19 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { getDrivers } from '../services/driverService'
-import type { Driver } from '../services/driverService'
+import type { Driver } from '../types/Driver'
+import { formatDate, formatNumber } from '../utils/formatters'
+import { useAsyncData, useTableFilters } from '../hooks'
 import PageHero from './common/PageHero'
 import StatsGrid from './common/StatsGrid'
 import StatCard from './common/StatCard'
-import SearchInput from './common/SearchInput'
+import TableToolbar from './common/TableToolbar'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
+import DataTable, { type DataTableColumn } from './common/DataTable'
 import {
-  DriversIcon,
-  LicenseIcon,
-  RefreshIcon,
-  FilterIcon,
-  CheckIcon,
-} from './common/Icons'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import {
+  Car as DriversIcon,
+  IdCard as LicenseIcon,
+  Check as CheckIcon,
+} from 'lucide-react'
 
 export type DriversPageProps = {
   accessToken?: string
@@ -26,6 +34,79 @@ export type DriversPageProps = {
 type SearchBy = 'all' | 'driverId' | 'personId' | 'name' | 'nationalNo'
 type LicenseFilter = 'all' | 'active' | 'none'
 
+interface DriverFilters extends Record<string, unknown> {
+  licenseFilter: LicenseFilter
+}
+
+const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'name', label: 'Full Name' },
+  { value: 'nationalNo', label: 'National No.' },
+  { value: 'driverId', label: 'Driver ID' },
+  { value: 'personId', label: 'Person ID' },
+]
+
+const columns: DataTableColumn<Driver>[] = [
+  {
+    key: 'driverId',
+    header: 'Driver ID',
+    render: (driver) => (
+      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+        #{driver.driverId}
+      </span>
+    ),
+  },
+  {
+    key: 'personId',
+    header: 'Person ID',
+    render: (driver) => (
+      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+        #{driver.personId}
+      </span>
+    ),
+  },
+  {
+    key: 'fullName',
+    header: 'Full Name',
+    render: (driver) => (
+      <div className="person-cell">
+        <span className="person-avatar" aria-hidden="true">
+          {driver.fullName ? driver.fullName.charAt(0).toUpperCase() : 'D'}
+        </span>
+        <strong>{driver.fullName}</strong>
+      </div>
+    ),
+  },
+  {
+    key: 'nationalNo',
+    header: 'National No.',
+    render: (driver) => (
+      <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.3px', fontWeight: 600 }}>
+        {driver.nationalNo}
+      </span>
+    ),
+  },
+  {
+    key: 'dateOfBirth',
+    header: 'Date of Birth',
+    render: (driver) => formatDate(driver.dateOfBirth),
+  },
+  {
+    key: 'activeLicenses',
+    header: 'Active Licenses',
+    render: (driver) => (
+      <span className="record-count" style={{ padding: '2px 8px', fontSize: 11 }}>
+        {driver.activeLicenses}
+      </span>
+    ),
+  },
+  {
+    key: 'createdDate',
+    header: 'Created Date',
+    render: (driver) => formatDate(driver.createdDate),
+  },
+]
+
 export default function DriversPage({
   accessToken,
   drivers: externalDrivers,
@@ -33,85 +114,60 @@ export default function DriversPage({
   error: externalError,
   onRetry: externalOnRetry,
 }: DriversPageProps) {
-  const [internalDrivers, setInternalDrivers] = useState<Driver[]>([])
-  const [internalLoading, setInternalLoading] = useState(
-    Boolean(accessToken && externalDrivers === undefined),
-  )
-  const [internalError, setInternalError] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0)
+  const fetcher = useCallback(() => getDrivers(accessToken!), [accessToken])
 
-  const [search, setSearch] = useState('')
-  const [searchBy, setSearchBy] = useState<SearchBy>('all')
-  const [licenseFilter, setLicenseFilter] = useState<LicenseFilter>('all')
-
-  useEffect(() => {
-    if (!accessToken || externalDrivers !== undefined) return
-
-    let cancelled = false
-
-    async function load() {
-      setInternalLoading(true)
-      setInternalError('')
-
-      try {
-        const data = await getDrivers(accessToken!)
-        if (!cancelled) setInternalDrivers(data)
-      } catch (err) {
-        if (!cancelled) {
-          setInternalError(
-            err instanceof Error ? err.message : 'Failed to load drivers.',
-          )
-        }
-      } finally {
-        if (!cancelled) setInternalLoading(false)
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken, externalDrivers, refreshKey])
+  const {
+    data: internalDrivers,
+    loading: internalLoading,
+    error: internalError,
+    refresh,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken && externalDrivers === undefined),
+    initialData: [],
+    defaultErrorMessage: 'Failed to load drivers.',
+  })
 
   const drivers = externalDrivers ?? internalDrivers
   const loading = externalLoading ?? internalLoading
   const error = externalError ?? internalError
-  const onRetry = externalOnRetry ?? (() => setRefreshKey((k) => k + 1))
+  const onRetry = externalOnRetry ?? (() => void refresh())
 
-  const handleResetFilters = () => {
-    setSearch('')
-    setSearchBy('all')
-    setLicenseFilter('all')
-  }
-
-  const isFiltered = Boolean(search.trim() || searchBy !== 'all' || licenseFilter !== 'all')
-
-  const filteredDrivers = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
-    return drivers.filter((driver) => {
+  const {
+    search,
+    setSearch,
+    searchField: searchBy,
+    setSearchField: setSearchBy,
+    filters,
+    setFilter,
+    filteredData: filteredDrivers,
+    isFiltered,
+    resetFilters: handleResetFilters,
+  } = useTableFilters<Driver, SearchBy, DriverFilters>({
+    data: drivers,
+    initialSearchField: 'all',
+    initialFilters: { licenseFilter: 'all' },
+    filterItem: (driver, query, field, currentFilters) => {
       // 1. License filter
-      if (licenseFilter === 'active' && (driver.activeLicenses || 0) <= 0) {
+      if (currentFilters.licenseFilter === 'active' && (driver.activeLicenses || 0) <= 0) {
         return false
       }
-      if (licenseFilter === 'none' && (driver.activeLicenses || 0) > 0) {
+      if (currentFilters.licenseFilter === 'none' && (driver.activeLicenses || 0) > 0) {
         return false
       }
 
       // 2. Query filter
       if (!query) return true
 
-      if (searchBy === 'driverId') {
+      if (field === 'driverId') {
         return String(driver.driverId).includes(query)
       }
-      if (searchBy === 'personId') {
+      if (field === 'personId') {
         return String(driver.personId).includes(query)
       }
-      if (searchBy === 'name') {
+      if (field === 'name') {
         return (driver.fullName ?? '').toLowerCase().includes(query)
       }
-      if (searchBy === 'nationalNo') {
+      if (field === 'nationalNo') {
         return (driver.nationalNo ?? '').toLowerCase().includes(query)
       }
 
@@ -122,8 +178,10 @@ export default function DriversPage({
         driver.fullName,
         driver.nationalNo,
       ].some((value) => (value ?? '').toLowerCase().includes(query))
-    })
-  }, [drivers, search, searchBy, licenseFilter])
+    },
+  })
+
+  const licenseFilter = filters.licenseFilter
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -156,24 +214,25 @@ export default function DriversPage({
       <StatsGrid columns={3}>
         <StatCard
           label="Total Drivers"
+          variant="blue"
           icon={<DriversIcon size={20} />}
-          value={loading ? '...' : error ? '—' : totalDrivers}
+          value={loading ? '...' : error ? '—' : formatNumber(totalDrivers)}
           description="Registered drivers"
         />
 
         <StatCard
           label="Active Licenses"
+          variant="emerald"
           icon={<LicenseIcon size={20} />}
-          iconStyle={{ color: '#059669', background: '#ecfdf5' }}
-          value={<span style={{ color: '#059669' }}>{loading ? '...' : error ? '—' : totalActiveLicenses}</span>}
+          value={loading ? '...' : error ? '—' : formatNumber(totalActiveLicenses)}
           description="Across listed drivers"
         />
 
         <StatCard
           label="Licensed Drivers"
+          variant="emerald"
           icon={<CheckIcon size={20} />}
-          iconStyle={{ color: '#2563eb', background: '#eff6ff' }}
-          value={<span style={{ color: '#2563eb' }}>{loading ? '...' : error ? '—' : driversWithLicenses}</span>}
+          value={loading ? '...' : error ? '—' : formatNumber(driversWithLicenses)}
           description="Holding active licenses"
         />
       </StatsGrid>
@@ -194,62 +253,40 @@ export default function DriversPage({
           </span>
         </div>
 
-        <div className="table-toolbar">
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={searchBy}
-            onChange={(event) => setSearchBy(event.target.value as SearchBy)}
-            aria-label="Filter criterion"
-          >
-            <option value="all">All Fields</option>
-            <option value="name">Full Name</option>
-            <option value="nationalNo">National No.</option>
-            <option value="driverId">Driver ID</option>
-            <option value="personId">Person ID</option>
-          </select>
-
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={placeholderText}
-            ariaLabel="Search drivers"
-          />
-
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 160 }}
-            value={licenseFilter}
-            onChange={(event) => setLicenseFilter(event.target.value as LicenseFilter)}
-            aria-label="Filter by license status"
-          >
-            <option value="all">All Drivers</option>
-            <option value="active">Has Active License</option>
-            <option value="none">No Active License</option>
-          </select>
-
-          {isFiltered && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetFilters}
-              title="Reset all filters"
-            >
-              <FilterIcon size={14} />
-              <span>Reset</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={onRetry}
-            disabled={loading}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        </div>
+        <TableToolbar
+          searchField={searchBy}
+          searchFieldOptions={SEARCH_OPTIONS}
+          onSearchFieldChange={(val) => setSearchBy(val as SearchBy)}
+          searchFieldMinWidth={140}
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={placeholderText}
+          searchAriaLabel="Search drivers"
+          filters={
+            <div style={{ minWidth: 160 }} className="shrink-0">
+              <Select
+                value={licenseFilter}
+                onValueChange={(val) => setFilter('licenseFilter', val as LicenseFilter)}
+              >
+                <SelectTrigger
+                  className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                  aria-label="Filter by license status"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Drivers</SelectItem>
+                  <SelectItem value="active">Has Active License</SelectItem>
+                  <SelectItem value="none">No Active License</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          isFiltered={isFiltered}
+          onReset={handleResetFilters}
+          onRefresh={onRetry}
+          refreshing={loading}
+        />
 
         {loading && <p className="empty-state">Loading drivers...</p>}
 
@@ -263,78 +300,24 @@ export default function DriversPage({
           </div>
         )}
 
-        {!loading && !error && filteredDrivers.length === 0 && (
-          <EmptyState
-            icon={<DriversIcon size={36} />}
-            message={
-              drivers.length === 0
-                ? 'No drivers found.'
-                : 'No drivers match your search filters.'
+        {!error && (
+          <DataTable<Driver>
+            data={filteredDrivers}
+            columns={columns}
+            getRowKey={(driver) => driver.driverId}
+            loading={loading}
+            emptyState={
+              <EmptyState
+                icon={<DriversIcon size={36} />}
+                message={
+                  drivers.length === 0
+                    ? 'No drivers found.'
+                    : 'No drivers match your search filters.'
+                }
+              />
             }
+            minWidth={850}
           />
-        )}
-
-        {!loading && !error && filteredDrivers.length > 0 && (
-          <div className="table-container">
-            <table className="people-table">
-              <thead>
-                <tr>
-                  <th>Driver ID</th>
-                  <th>Person ID</th>
-                  <th>Full Name</th>
-                  <th>National No.</th>
-                  <th>Date of Birth</th>
-                  <th>Active Licenses</th>
-                  <th>Created Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredDrivers.map((driver) => (
-                  <tr key={driver.driverId}>
-                    <td>
-                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-                        #{driver.driverId}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-                        #{driver.personId}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="person-cell">
-                        <span className="person-avatar" aria-hidden="true">
-                          {driver.fullName ? driver.fullName.charAt(0).toUpperCase() : 'D'}
-                        </span>
-                        <strong>{driver.fullName}</strong>
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.3px', fontWeight: 600 }}>
-                        {driver.nationalNo}
-                      </span>
-                    </td>
-                    <td>
-                      {driver.dateOfBirth
-                        ? new Date(driver.dateOfBirth).toLocaleDateString()
-                        : '—'}
-                    </td>
-                    <td>
-                      <span className="record-count" style={{ padding: '2px 8px', fontSize: 11 }}>
-                        {driver.activeLicenses}
-                      </span>
-                    </td>
-                    <td>
-                      {driver.createdDate
-                        ? new Date(driver.createdDate).toLocaleDateString()
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         )}
       </div>
     </section>

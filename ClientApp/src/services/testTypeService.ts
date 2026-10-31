@@ -1,17 +1,7 @@
-export type TestType = {
-  testTypeId: number
-  testTypeTitle: string
-  testTypeDescription: string
-  testTypeFees: number
-}
-
-export type UpdateTestTypeRequest = {
-  testTypeTitle: string
-  testTypeDescription: string
-  testTypeFees: number
-}
-
 import { apiRequest } from './apiClient'
+import type { TestType, UpdateTestTypeRequest } from '../types/TestType'
+
+export type { TestType, UpdateTestTypeRequest }
 
 export function getTestTypes(accessToken: string): Promise<TestType[]> {
   return apiRequest<TestType[]>('/TestTypes', accessToken)

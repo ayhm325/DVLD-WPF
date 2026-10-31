@@ -1,48 +1,77 @@
-type StatusVariant =
+import type { ReactNode } from 'react'
+import './StatusBadge.css'
+
+export type StatusVariant =
   | 'success'
   | 'warning'
   | 'danger'
   | 'info'
   | 'neutral'
 
-type StatusBadgeProps = {
-  status: string | boolean
-  label?: string
+export type StatusBadgeProps = {
+  /**
+   * Explicit semantic status variant:
+   * - 'success': positive/healthy states (e.g. Active, Completed, Passed)
+   * - 'warning': attention/in-progress states (e.g. New, Pending)
+   * - 'danger': negative/terminated states (e.g. Inactive, Cancelled, Failed)
+   * - 'info': informational states
+   * - 'neutral': default fallback for unknown/unclassified states
+   */
   variant?: StatusVariant
+  /** Status text or element to display. Preferred over children/status. */
+  label?: ReactNode
+  /** Child content to display inside badge */
+  children?: ReactNode
+  /** Raw status value (alternate to label/children) */
+  status?: ReactNode
+  /** Whether to render the status indicator dot. Defaults to true. */
+  showDot?: boolean
+  /** Additional custom class names */
+  className?: string
+  /** Accessible tooltip / title attribute */
+  title?: string
 }
 
+const VALID_VARIANTS: ReadonlySet<string> = new Set([
+  'success',
+  'warning',
+  'danger',
+  'info',
+  'neutral',
+])
+
+/**
+ * Standardized semantic status badge component for state and lifecycle indicators.
+ * Requires an explicit semantic variant or defaults safely to 'neutral'.
+ * No ambiguous automatic string or boolean inference is performed.
+ */
 export default function StatusBadge({
-  status,
+  variant = 'neutral',
   label,
-  variant,
+  children,
+  status,
+  showDot = true,
+  className = '',
+  title,
 }: StatusBadgeProps) {
-  let computedVariant: StatusVariant = variant ?? 'neutral'
-  let displayLabel = label
+  const resolvedVariant: StatusVariant = VALID_VARIANTS.has(variant)
+    ? variant
+    : 'neutral'
 
-  if (typeof status === 'boolean') {
-    computedVariant = status ? 'success' : 'danger'
-    displayLabel = displayLabel ?? (status ? 'Active' : 'Inactive')
-  } else {
-    const normalized = String(status).trim().toLowerCase()
-    displayLabel = displayLabel ?? String(status)
+  const displayContent = label ?? children ?? status ?? null
 
-    if (!variant) {
-      if (['active', 'completed', 'passed', 'yes', 'approved'].includes(normalized)) {
-        computedVariant = 'success'
-      } else if (['new', 'pending', 'in progress'].includes(normalized)) {
-        computedVariant = 'warning'
-      } else if (['inactive', 'cancelled', 'failed', 'no', 'locked', 'detained'].includes(normalized)) {
-        computedVariant = 'danger'
-      } else if (['info', 'theory', 'written', 'practical'].includes(normalized)) {
-        computedVariant = 'info'
-      }
-    }
-  }
+  const classes = [
+    'status-badge',
+    `status-badge-${resolvedVariant}`,
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <span className={`status-badge status-badge-${computedVariant}`}>
-      <span className="status-badge-dot" />
-      {displayLabel}
+    <span className={classes} title={title}>
+      {showDot && <span className="status-badge-dot" aria-hidden="true" />}
+      <span>{displayContent}</span>
     </span>
   )
 }

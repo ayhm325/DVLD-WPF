@@ -1,20 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { InternationalLicense } from '../../types/InternationalLicense'
 import { getInternationalLicenses } from '../../services/internationalLicenseService'
+import { formatNumber } from '../../utils/formatters'
+import { useAsyncData, useTableFilters } from '../../hooks'
 import InternationalLicenseTable from './InternationalLicenseTable'
 import PageHero from '../common/PageHero'
 import StatsGrid from '../common/StatsGrid'
 import StatCard from '../common/StatCard'
-import SearchInput from '../common/SearchInput'
+import TableToolbar from '../common/TableToolbar'
 import ErrorAlert from '../common/ErrorAlert'
 import {
-  PlusIcon,
-  GlobeIcon,
-  CheckIcon,
-  ClockIcon,
-  RefreshIcon,
-  FilterIcon,
-} from '../common/Icons'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
+import {
+  Plus as PlusIcon,
+  Globe as GlobeIcon,
+  Check as CheckIcon,
+  Clock as ClockIcon,
+} from 'lucide-react'
 import './international-licenses.css'
 
 type Props = {
@@ -30,80 +37,63 @@ type FilterKey =
   | 'driverId'
   | 'issuedUsingLocalLicenseId'
 
+const SEARCH_OPTIONS: { value: FilterKey; label: string }[] = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'internationalLicenseId', label: "Int'l License ID" },
+  { value: 'applicationId', label: 'Application ID' },
+  { value: 'driverId', label: 'Driver ID' },
+  { value: 'issuedUsingLocalLicenseId', label: 'Local License ID' },
+]
+
+interface InternationalLicenseFilters extends Record<string, unknown> {
+  status: 'All' | 'Active' | 'Inactive'
+}
+
 export default function InternationalLicensesPage({
   accessToken,
   onIssueNew,
   onOpenDetails,
 }: Props) {
-  const [items, setItems] = useState<InternationalLicense[]>([])
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<FilterKey>('all')
-  const [status, setStatus] = useState<'All' | 'Active' | 'Inactive'>('All')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [refreshKey, setRefreshKey] = useState(0)
+  const fetcher = useCallback(() => getInternationalLicenses(accessToken), [accessToken])
 
-  useEffect(() => {
-    let cancelled = false
+  const {
+    data: items,
+    loading,
+    error,
+    refresh,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken),
+    initialData: [],
+    defaultErrorMessage: 'Could not load international licenses.',
+  })
 
-    async function fetchLicenses() {
-      try {
-        const result = await getInternationalLicenses(accessToken)
-
-        if (cancelled) return
-
-        setItems(result)
-        setError('')
-      } catch (err) {
-        if (cancelled) return
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Could not load international licenses.',
-        )
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void fetchLicenses()
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken, refreshKey])
-
-  function refresh() {
-    setLoading(true)
-    setRefreshKey((value) => value + 1)
-  }
-
-  function handleResetFilters() {
-    setSearch('')
-    setFilter('all')
-    setStatus('All')
-  }
-
-  const isFiltered = Boolean(search.trim() || filter !== 'all' || status !== 'All')
-
-  const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
-    return items.filter((item) => {
+  const {
+    search,
+    setSearch,
+    searchField: filter,
+    setSearchField: setFilter,
+    filters,
+    setFilter: setCustomFilter,
+    filteredData: filteredItems,
+    isFiltered,
+    resetFilters: handleResetFilters,
+  } = useTableFilters<InternationalLicense, FilterKey, InternationalLicenseFilters>({
+    data: items,
+    initialSearchField: 'all',
+    initialFilters: { status: 'All' },
+    filterItem: (item, query, field, currentFilters) => {
       // 1. Status check
+      const currentStatus = currentFilters.status
       const matchesStatus =
-        status === 'All' ||
-        (status === 'Active' ? item.isActive : !item.isActive)
+        currentStatus === 'All' ||
+        (currentStatus === 'Active' ? item.isActive : !item.isActive)
 
       if (!matchesStatus) return false
 
       // 2. Query check
       if (!query) return true
 
-      if (filter === 'all') {
+      if (field === 'all') {
         return (
           String(item.internationalLicenseId).includes(query) ||
           String(item.applicationId).includes(query) ||
@@ -112,9 +102,11 @@ export default function InternationalLicensesPage({
         )
       }
 
-      return String(item[filter]).toLowerCase().includes(query)
-    })
-  }, [items, search, filter, status])
+      return String(item[field]).toLowerCase().includes(query)
+    },
+  })
+
+  const status = filters.status
 
   const placeholderText = useMemo(() => {
     switch (filter) {
@@ -138,24 +130,25 @@ export default function InternationalLicensesPage({
       <StatsGrid columns={3}>
         <StatCard
           label="Total Licenses"
+          variant="violet"
           icon={<GlobeIcon size={20} />}
-          value={loading || error ? '—' : items.length}
+          value={loading || error ? '—' : formatNumber(items.length)}
           description="International licenses recorded"
         />
 
         <StatCard
           label="Active Licenses"
+          variant="emerald"
           icon={<CheckIcon size={20} />}
-          iconStyle={{ color: '#059669', background: '#ecfdf5' }}
-          value={<span style={{ color: '#059669' }}>{loading || error ? '—' : items.filter((item) => item.isActive).length}</span>}
+          value={loading || error ? '—' : formatNumber(items.filter((item) => item.isActive).length)}
           description="Currently active licenses"
         />
 
         <StatCard
           label="Inactive Licenses"
+          variant="slate"
           icon={<ClockIcon size={20} />}
-          iconStyle={{ color: '#64748b', background: '#f1f5f9' }}
-          value={loading || error ? '—' : items.filter((item) => !item.isActive).length}
+          value={loading || error ? '—' : formatNumber(items.filter((item) => !item.isActive).length)}
           description="Not currently active"
         />
       </StatsGrid>
@@ -189,66 +182,40 @@ export default function InternationalLicensesPage({
           </div>
         </div>
 
-        <div className="table-toolbar">
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 150 }}
-            value={filter}
-            onChange={(event) =>
-              setFilter(event.target.value as FilterKey)
-            }
-            aria-label="Filter criterion"
-          >
-            <option value="all">All Fields</option>
-            <option value="internationalLicenseId">Int'l License ID</option>
-            <option value="applicationId">Application ID</option>
-            <option value="driverId">Driver ID</option>
-            <option value="issuedUsingLocalLicenseId">Local License ID</option>
-          </select>
-
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder={placeholderText}
-            ariaLabel="Search international licenses"
-          />
-
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={status}
-            onChange={(event) =>
-              setStatus(event.target.value as typeof status)
-            }
-            aria-label="Filter by status"
-          >
-            <option value="All">All statuses</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-
-          {isFiltered && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetFilters}
-              title="Reset all filters"
-            >
-              <FilterIcon size={14} />
-              <span>Reset</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={refresh}
-            disabled={loading}
-          >
-            <RefreshIcon size={14} />
-            <span>{loading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        </div>
+        <TableToolbar<FilterKey>
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={placeholderText}
+          searchField={filter}
+          searchFieldOptions={SEARCH_OPTIONS}
+          onSearchFieldChange={setFilter}
+          filters={
+            <div style={{ minWidth: 140 }} className="shrink-0">
+              <Select
+                value={status}
+                onValueChange={(val) =>
+                  setCustomFilter('status', val as typeof status)
+                }
+              >
+                <SelectTrigger
+                  className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                  aria-label="Filter by status"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All statuses</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          onReset={handleResetFilters}
+          isFiltered={isFiltered}
+          onRefresh={refresh}
+          refreshing={loading}
+        />
 
         {loading && <p className="empty-state">Loading international licenses...</p>}
 

@@ -1,15 +1,7 @@
 import { apiRequest } from './apiClient'
+import type { DashboardStatistics } from '../types/Dashboard'
 
-export type DashboardStatistics = {
-  totalPeople: number
-  totalDrivers: number
-  activeLicenses: number
-  pendingApplications: number
-  localDrivingLicenseApplications: number
-  internationalLicenses: number
-  detainedLicenses: number
-  upcomingTests: number
-}
+export type { DashboardStatistics }
 
 export function getDashboardStatistics(
   accessToken: string,

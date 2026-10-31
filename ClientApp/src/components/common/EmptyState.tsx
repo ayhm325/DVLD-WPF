@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface EmptyStateProps {
   message?: string
@@ -18,13 +19,17 @@ export default function EmptyState({
   style,
 }: EmptyStateProps) {
   return (
-    <div className={`empty-state ${className}`.trim()} style={style}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '20px 0' }}>
-        {icon}
-        {message && <span>{message}</span>}
-        {description && <p style={{ margin: 0, fontSize: 13, color: 'var(--dvld-faint)' }}>{description}</p>}
-        {children}
-      </div>
+    <div
+      className={cn(
+        'empty-state flex flex-col items-center justify-center p-8 sm:p-12 text-center text-slate-500',
+        className,
+      )}
+      style={style}
+    >
+      {icon && <div className="mb-3 text-slate-400 [&_svg]:size-10" aria-hidden="true">{icon}</div>}
+      {message && <strong className="text-sm font-semibold text-slate-700">{message}</strong>}
+      {description && <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">{description}</p>}
+      {children}
     </div>
   )
 }

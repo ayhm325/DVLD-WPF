@@ -1,17 +1,39 @@
-import { useEffect } from 'react'
-import { CloseIcon, AlertCircleIcon } from './Icons'
+import type { ReactNode } from 'react'
+import ModalShell from './ModalShell'
+import { Button } from '@/components/ui/button'
+import { AlertCircle, AlertTriangle, Info, Loader2 } from 'lucide-react'
 
-type ConfirmModalProps = {
+export type ConfirmVariant = 'primary' | 'danger' | 'warning' | 'neutral'
+
+export type ConfirmModalProps = {
+  /** Controls open visibility */
   isOpen: boolean
+  /** Dialog heading title */
   title: string
+  /** Confirmation body message */
   message: string
+  /** Text for confirmation action button. Defaults to 'Confirm'. */
   confirmText?: string
+  /** Text for cancel action button. Defaults to 'Cancel'. */
   cancelText?: string
-  confirmVariant?: 'primary' | 'danger'
-  onConfirm: () => void
+  /** Semantic variant determining icon and button styling. Defaults to 'primary'. */
+  confirmVariant?: ConfirmVariant
+  /** Confirmation callback */
+  onConfirm: () => void | Promise<void>
+  /** Cancel callback */
   onCancel: () => void
+
+  /** Indicates an asynchronous confirmation action is in progress */
+  loading?: boolean
+  /** Disables both buttons to prevent duplicate submission */
+  disabled?: boolean
 }
 
+/**
+ * Standardized reusable confirmation dialog component.
+ * Provides accessible semantic confirmation with customizable intent variants,
+ * loading states during asynchronous submission, and duplicate submission prevention.
+ */
 export default function ConfirmModal({
   isOpen,
   title,
@@ -21,77 +43,91 @@ export default function ConfirmModal({
   confirmVariant = 'primary',
   onConfirm,
   onCancel,
+  loading = false,
+  disabled = false,
 }: ConfirmModalProps) {
-  useEffect(() => {
-    if (!isOpen) return
+  const isBusy = loading || disabled
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onCancel()
-      }
+  function getVariantIcon(): ReactNode {
+    if (confirmVariant === 'danger') {
+      return (
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400"
+          aria-hidden="true"
+        >
+          <AlertCircle className="size-5" />
+        </span>
+      )
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onCancel])
+    if (confirmVariant === 'warning') {
+      return (
+        <span
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400"
+          aria-hidden="true"
+        >
+          <AlertTriangle className="size-5" />
+        </span>
+      )
+    }
 
-  if (!isOpen) return null
+    return (
+      <span
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400"
+        aria-hidden="true"
+      >
+        <Info className="size-5" />
+      </span>
+    )
+  }
+
+  function getButtonVariant(): 'destructive' | 'default' | 'secondary' {
+    if (confirmVariant === 'danger') return 'destructive'
+    if (confirmVariant === 'neutral') return 'secondary'
+    return 'default'
+  }
 
   return (
-    <div
-      className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-modal-title"
-      onClick={onCancel}
-    >
-      <div
-        className="modal-card confirm-modal-card"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-header">
-          <div className="confirm-modal-title-row">
-            {confirmVariant === 'danger' && (
-              <span className="confirm-modal-alert-icon" aria-hidden="true">
-                <AlertCircleIcon size={20} />
-              </span>
-            )}
-            <h3 id="confirm-modal-title">{title}</h3>
-          </div>
-          <button
-            type="button"
-            className="modal-close-btn"
-            onClick={onCancel}
-            aria-label="Close dialog"
-          >
-            <CloseIcon size={16} />
-          </button>
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onCancel}
+      size="sm"
+      preventClose={isBusy}
+      title={
+        <div className="flex items-center gap-3">
+          {getVariantIcon()}
+          <span>{title}</span>
         </div>
-
-        <div className="modal-body">
-          <p className="confirm-modal-message">{message}</p>
-        </div>
-
-        <div className="modal-footer">
-          <button
+      }
+      description={message}
+      footer={
+        <>
+          <Button
             type="button"
-            className="secondary-button"
+            variant="outline"
+            size="sm"
             onClick={onCancel}
+            disabled={isBusy}
+            className="border-[#263750] bg-transparent text-slate-300 hover:bg-[#162238] hover:text-white"
           >
             {cancelText}
-          </button>
-          <button
+          </Button>
+
+          <Button
             type="button"
-            className={
-              confirmVariant === 'danger' ? 'danger-button' : 'primary-button'
-            }
+            variant={getButtonVariant()}
+            size="sm"
             onClick={onConfirm}
+            disabled={isBusy}
             autoFocus
           >
-            {confirmText}
-          </button>
-        </div>
-      </div>
-    </div>
+            {loading && <Loader2 className="size-3.5 animate-spin mr-1.5" aria-hidden="true" />}
+            <span>{loading ? 'Processing...' : confirmText}</span>
+          </Button>
+        </>
+      }
+    >
+      {null}
+    </ModalShell>
   )
 }

@@ -1,25 +1,32 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import LocalApplicationsList from './LocalApplicationsList'
 import LocalApplicationForm from './LocalApplicationForm'
 import PageHero from '../common/PageHero'
 import StatsGrid from '../common/StatsGrid'
 import StatCard from '../common/StatCard'
-import SearchInput from '../common/SearchInput'
+import TableToolbar from '../common/TableToolbar'
 import ErrorAlert from '../common/ErrorAlert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select'
 import { getLocalDrivingLicenseApplications } from '../../services/localDrivingLicenseApplicationService'
 import type {
   LocalDrivingLicenseApplication,
-  LocalDrivingLicenseApplicationsPage as PageResult,
 } from '../../types/LocalDrivingLicenseApplication'
+import { formatNumber } from '../../utils/formatters'
+import { useAsyncData, useTableFilters, usePagination } from '../../hooks'
 import {
-  PlusIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ApplicationsIcon,
-  CheckIcon,
-  ClockIcon,
-  FilterIcon,
-} from '../common/Icons'
+  Plus as PlusIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  FileText as ApplicationsIcon,
+  Check as CheckIcon,
+  Clock as ClockIcon,
+} from 'lucide-react'
 import './local-applications.css'
 
 type Props = {
@@ -35,91 +42,85 @@ type View =
 
 type SearchBy = 'all' | 'name' | 'nationalNo' | 'appId' | 'class'
 
+const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'name', label: 'Applicant Name' },
+  { value: 'nationalNo', label: 'National No.' },
+  { value: 'appId', label: 'Application ID' },
+  { value: 'class', label: 'Driving Class' },
+]
+
+interface LocalAppFilters extends Record<string, unknown> {
+  status: string
+}
+
 export default function LocalApplicationsPage({ accessToken }: Props) {
   const [view, setView] = useState<View>({ mode: 'list' })
-  const [page, setPage] = useState<PageResult | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [pageNumber, setPageNumber] = useState(1)
-  const [search, setSearch] = useState('')
-  const [searchBy, setSearchBy] = useState<SearchBy>('all')
-  const [status, setStatus] = useState('All')
-  const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    let cancelled = false
+  const pagination = usePagination({
+    pageSize: PAGE_SIZE,
+    initialPage: 1,
+  })
 
-    async function fetchApplications() {
-      try {
-        const result = await getLocalDrivingLicenseApplications(
-          accessToken,
-          pageNumber,
-          PAGE_SIZE,
-        )
+  const fetcher = useCallback(() => {
+    return getLocalDrivingLicenseApplications(
+      accessToken,
+      pagination.page,
+      PAGE_SIZE,
+    )
+  }, [accessToken, pagination.page])
 
-        if (cancelled) return
+  const {
+    data: page,
+    loading,
+    error,
+    refresh,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken),
+    dependencies: [pagination.page],
+    defaultErrorMessage: 'Could not load local applications.',
+  })
 
-        setPage(result)
-        setError('')
-      } catch (err) {
-        if (cancelled) return
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Could not load local applications.',
-        )
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void fetchApplications()
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken, pageNumber, refreshKey])
-
-  function handleResetFilters() {
-    setSearch('')
-    setSearchBy('all')
-    setStatus('All')
-    setPageNumber(1)
-  }
-
-  const isFiltered = Boolean(search.trim() || searchBy !== 'all' || status !== 'All')
-
-  const filteredItems = useMemo(() => {
-    const items = page?.items ?? []
-    const query = search.trim().toLowerCase()
-
-    return items.filter((item) => {
+  const {
+    search,
+    setSearch,
+    searchField: searchBy,
+    setSearchField: setSearchBy,
+    filters,
+    setFilter,
+    filteredData: filteredItems,
+    isFiltered,
+    resetFilters: handleResetFilters,
+  } = useTableFilters<LocalDrivingLicenseApplication, SearchBy, LocalAppFilters>({
+    data: page?.items ?? [],
+    initialSearchField: 'all',
+    initialFilters: { status: 'All' },
+    onReset: pagination.resetPage,
+    filterItem: (item, query, field, currentFilters) => {
       // 1. Status check
       const statusText = (
         item.statusText || item.applicationStatus || ''
       ).toLowerCase()
 
       const matchesStatus =
-        status === 'All' || statusText === status.toLowerCase()
+        currentFilters.status === 'All' ||
+        statusText === currentFilters.status.toLowerCase()
 
       if (!matchesStatus) return false
 
       // 2. Query check
       if (!query) return true
 
-      if (searchBy === 'name') {
+      if (field === 'name') {
         return (item.fullName ?? '').toLowerCase().includes(query)
       }
-      if (searchBy === 'nationalNo') {
+      if (field === 'nationalNo') {
         return (item.nationalNo ?? '').toLowerCase().includes(query)
       }
-      if (searchBy === 'appId') {
+      if (field === 'appId') {
         return String(item.localDrivingLicenseApplicationId).includes(query)
       }
-      if (searchBy === 'class') {
+      if (field === 'class') {
         return (item.licenseClassName ?? '').toLowerCase().includes(query)
       }
 
@@ -130,8 +131,10 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
         String(item.localDrivingLicenseApplicationId).includes(query) ||
         (item.licenseClassName ?? '').toLowerCase().includes(query)
       )
-    })
-  }, [page, search, searchBy, status])
+    },
+  })
+
+  const status = filters.status
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -149,22 +152,15 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
   }, [searchBy])
 
   function refreshApplications() {
-    setLoading(true)
-    setRefreshKey((value) => value + 1)
-  }
-
-  function changePage(nextPage: number) {
-    setLoading(true)
-    setPageNumber(nextPage)
+    void refresh()
   }
 
   function returnToList(saved: boolean) {
     setView({ mode: 'list' })
 
     if (saved) {
-      setLoading(true)
-      setPageNumber(1)
-      setRefreshKey((value) => value + 1)
+      pagination.resetPage()
+      void refresh()
     }
   }
 
@@ -191,23 +187,24 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
       <StatsGrid columns={3}>
         <StatCard
           label="Total Applications"
+          variant="amber"
           icon={<ApplicationsIcon size={20} />}
-          value={loading ? '...' : error ? '—' : (page?.totalCount ?? 0)}
+          value={loading ? '...' : error ? '—' : formatNumber(page?.totalCount ?? 0)}
           description="Recorded applications in DVLD"
         />
 
         <StatCard
           label="Loaded on Page"
+          variant="emerald"
           icon={<CheckIcon size={20} />}
-          iconStyle={{ color: '#059669', background: '#ecfdf5' }}
-          value={<span style={{ color: '#059669' }}>{loading ? '...' : error ? '—' : (page?.items.length ?? 0)}</span>}
+          value={loading ? '...' : error ? '—' : formatNumber(page?.items.length ?? 0)}
           description={error ? '—' : `Applications on page ${page?.pageNumber ?? 1} of ${page?.totalPages ?? 1}`}
         />
 
         <StatCard
           label="Required Tests"
+          variant="slate"
           icon={<ClockIcon size={20} />}
-          iconStyle={{ color: '#64748b', background: '#f1f5f9' }}
           value="3"
           description="Vision, written, and street tests"
         />
@@ -242,62 +239,46 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
           </div>
         </header>
 
-        <div className="table-toolbar">
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 150 }}
-            value={searchBy}
-            onChange={(event) => {
-              setSearchBy(event.target.value as SearchBy)
-              setPageNumber(1)
-            }}
-            aria-label="Filter criterion"
-          >
-            <option value="all">All Fields</option>
-            <option value="name">Applicant Name</option>
-            <option value="nationalNo">National No.</option>
-            <option value="appId">Application ID</option>
-            <option value="class">Driving Class</option>
-          </select>
-
-          <SearchInput
-            value={search}
-            onChange={(val) => {
-              setSearch(val)
-              setPageNumber(1)
-            }}
-            placeholder={placeholderText}
-            ariaLabel="Search applications"
-          />
-
-          <select
-            className="search-input"
-            style={{ width: 'auto', minWidth: 140 }}
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value)
-              setPageNumber(1)
-            }}
-            aria-label="Filter by application status"
-          >
-            <option value="All">All Statuses</option>
-            <option value="New">New</option>
-            <option value="Cancelled">Cancelled</option>
-            <option value="Completed">Completed</option>
-          </select>
-
-          {isFiltered && (
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetFilters}
-              title="Reset all filters"
-            >
-              <FilterIcon size={14} />
-              <span>Reset</span>
-            </button>
-          )}
-        </div>
+        <TableToolbar<SearchBy>
+          searchValue={search}
+          onSearchChange={(val) => {
+            setSearch(val)
+            pagination.resetPage()
+          }}
+          searchPlaceholder={placeholderText}
+          searchField={searchBy}
+          searchFieldOptions={SEARCH_OPTIONS}
+          onSearchFieldChange={(val) => {
+            setSearchBy(val)
+            pagination.resetPage()
+          }}
+          filters={
+            <div style={{ minWidth: 140 }} className="shrink-0">
+              <Select
+                value={status}
+                onValueChange={(val) => {
+                  setFilter('status', val)
+                  pagination.resetPage()
+                }}
+              >
+                <SelectTrigger
+                  className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                  aria-label="Filter by application status"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          onReset={handleResetFilters}
+          isFiltered={isFiltered}
+        />
 
         {error && (
           <div style={{ margin: '0 25px 20px' }}>
@@ -330,14 +311,14 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               className="secondary-button"
               style={{ minHeight: 34, padding: '6px 12px', fontSize: 11 }}
               disabled={!page?.hasPreviousPage || loading}
-              onClick={() => changePage(Math.max(1, pageNumber - 1))}
+              onClick={pagination.previousPage}
             >
               <ChevronLeftIcon size={14} />
               <span>Previous</span>
             </button>
 
             <span style={{ fontSize: 11, color: 'var(--dvld-muted)' }}>
-              Page <strong style={{ color: 'var(--dvld-heading)' }}>{page?.pageNumber ?? pageNumber}</strong> of{' '}
+              Page <strong style={{ color: 'var(--dvld-heading)' }}>{page?.pageNumber ?? pagination.page}</strong> of{' '}
               <strong style={{ color: 'var(--dvld-heading)' }}>{error ? '—' : page?.totalPages ?? 0}</strong>
             </span>
 
@@ -346,24 +327,31 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               className="secondary-button"
               style={{ minHeight: 34, padding: '6px 12px', fontSize: 11 }}
               disabled={!page?.hasNextPage || loading}
-              onClick={() => changePage(pageNumber + 1)}
+              onClick={pagination.nextPage}
             >
               <span>Next</span>
               <ChevronRightIcon size={14} />
             </button>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 6, fontSize: 11, color: 'var(--dvld-muted)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 6, fontSize: 11, color: 'var(--dvld-muted)' }}>
               Rows
-              <select
-                className="search-input"
-                style={{ width: 'auto', minHeight: 30, padding: '4px 8px', fontSize: 11 }}
-                value={PAGE_SIZE}
-                disabled
-                aria-label="Rows per page"
+              <span
+                style={{
+                  minHeight: 28,
+                  padding: '3px 10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: 'var(--dvld-heading)',
+                  background: 'var(--dvld-surface-subtle)',
+                  border: '1px solid var(--dvld-border)',
+                  borderRadius: 'var(--dvld-radius-sm)',
+                }}
               >
-                <option value={10}>10</option>
-              </select>
-            </label>
+                {PAGE_SIZE}
+              </span>
+            </span>
           </div>
         </footer>
       </section>

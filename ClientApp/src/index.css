@@ -1,4 +1,52 @@
 
+@import "tailwindcss";
+
+@theme {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+}
+
+@theme inline {
+  --color-border: var(--border);
+  --color-input: var(--border-strong);
+  --color-ring: var(--dvld-primary-ring);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--text-inverse);
+
+  --color-secondary: var(--surface-soft);
+  --color-secondary-foreground: var(--text-h);
+
+  --color-destructive: var(--dvld-danger);
+  --color-destructive-foreground: var(--text-inverse);
+
+  --color-muted: var(--surface-soft);
+  --color-muted-foreground: var(--text-muted);
+
+  --color-accent: var(--accent-light);
+  --color-accent-foreground: var(--accent);
+
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+
+  --color-dvld-primary: var(--dvld-primary);
+  --color-dvld-sidebar: var(--dvld-sidebar);
+  --color-dvld-success: var(--dvld-success);
+  --color-dvld-warning: var(--dvld-warning);
+  --color-dvld-danger: var(--dvld-danger);
+}
+
 /* ==================================================
    DVLD - GLOBAL DESIGN SYSTEM
    Global styles for React + TypeScript
@@ -10,33 +58,92 @@
 
 :root {
   /* Brand — Royal Sapphire Blue */
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-light: #eff6ff;
-  --accent-border: #bfdbfe;
-  --accent-soft: rgba(37, 99, 235, 0.12);
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-light: rgba(59, 130, 246, 0.15);
+  --accent-border: rgba(96, 165, 250, 0.35);
+  --accent-soft: rgba(59, 130, 246, 0.20);
+
+  /* DVLD Canonical Tokens */
+  --dvld-primary: #3b82f6;
+  --dvld-primary-hover: #2563eb;
+  --dvld-primary-light: rgba(59, 130, 246, 0.15);
+  --dvld-primary-border: rgba(96, 165, 250, 0.35);
+  --dvld-primary-soft: rgba(59, 130, 246, 0.20);
+  --dvld-primary-ring: rgba(59, 130, 246, 0.35);
+
+  /* DVLD Status */
+  --dvld-success: #10b981;
+  --dvld-success-bg: rgba(16, 185, 129, 0.15);
+  --dvld-success-dot: #34d399;
+  --dvld-warning: #f59e0b;
+  --dvld-warning-bg: rgba(245, 158, 11, 0.15);
+  --dvld-danger: #ef4444;
+  --dvld-danger-bg: rgba(239, 68, 68, 0.15);
+  --dvld-info: #38bdf8;
+  --dvld-info-bg: rgba(56, 189, 248, 0.15);
+
+  /* DVLD Sidebar */
+  --dvld-sidebar: #0b1120;
+  --dvld-sidebar-hover: #162238;
+  --dvld-sidebar-text: #b8c5d8;
+  --dvld-sidebar-muted: #8293aa;
+  --dvld-sidebar-line: #263750;
 
   /* Text */
-  --text: #334155;
-  --text-h: #0f172a;
-  --text-muted: #64748b;
-  --text-inverse: #ffffff;
+  --text: #f1f5f9;
+  --text-h: #ffffff;
+  --text-muted: #8293aa;
+  --text-inverse: #0b1120;
 
-  /* Surfaces */
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface-soft: #f1f5f9;
-  --surface-hover: #f8fafc;
-  --code-bg: #eff6ff;
+  /* Surfaces — Premium Dark Multi-layered */
+  --bg: #0b1120;
+  --surface: #101a2d;
+  --surface-soft: #162238;
+  --surface-hover: #1c2b45;
+  --code-bg: #162238;
+
+  /* Centralized Premium Dark Table System Tokens */
+  --dvld-table-bg: #111c30;
+  --dvld-table-alt: #162238;
+  --dvld-table-header: #0d1729;
+  --dvld-table-hover: #1d3150;
+  --dvld-table-border: #263750;
+  --dvld-table-row-border: #1e2d44;
+  --dvld-table-text: #f1f5f9;
+  --dvld-table-text-secondary: #c0cddf;
+  --dvld-table-text-muted: #94a3b8;
+  --dvld-table-text-heading: #cbd5e1;
+
+  /* Semantic Badge Tokens */
+  --badge-emerald-bg: rgba(16, 185, 129, 0.15);
+  --badge-emerald-text: #34d399;
+  --badge-emerald-border: rgba(16, 185, 129, 0.3);
+
+  --badge-amber-bg: rgba(245, 158, 11, 0.15);
+  --badge-amber-text: #fbbf24;
+  --badge-amber-border: rgba(245, 158, 11, 0.3);
+
+  --badge-rose-bg: rgba(239, 68, 68, 0.15);
+  --badge-rose-text: #f87171;
+  --badge-rose-border: rgba(239, 68, 68, 0.3);
+
+  --badge-blue-bg: rgba(59, 130, 246, 0.15);
+  --badge-blue-text: #60a5fa;
+  --badge-blue-border: rgba(59, 130, 246, 0.3);
+
+  --badge-slate-bg: rgba(148, 163, 184, 0.15);
+  --badge-slate-text: #94a3b8;
+  --badge-slate-border: rgba(148, 163, 184, 0.3);
 
   /* Borders and effects */
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --social-bg: rgba(37, 99, 235, 0.08);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
-  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.20);
+  --border: #263750;
+  --border-strong: #354a68;
+  --social-bg: rgba(59, 130, 246, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.6), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
 
   /* Typography */
   --sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
@@ -91,7 +198,7 @@
 
   color: var(--text);
   background: var(--bg);
-  color-scheme: light;
+  color-scheme: dark;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

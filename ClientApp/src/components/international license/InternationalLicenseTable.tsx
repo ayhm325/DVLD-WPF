@@ -1,37 +1,77 @@
 import type { InternationalLicense } from '../../types/InternationalLicense'
+import { formatDate } from '../../utils/formatters'
+import DataTable, { type DataTableColumn } from '../common/DataTable'
+import StatusBadge from '../common/StatusBadge'
+import { getActiveStatusProps } from '../../utils/status'
 
 type Props = {
   items: InternationalLicense[]
   onOpenDetails?: (id: number) => void
 }
 
-function formatDate(value: string) {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString()
-}
-
 export default function InternationalLicenseTable({ items, onOpenDetails }: Props) {
+  const columns: DataTableColumn<InternationalLicense>[] = [
+    {
+      key: 'internationalLicenseId',
+      header: 'International ID',
+      render: (item) => <strong className="intl-id">#{item.internationalLicenseId}</strong>,
+    },
+    {
+      key: 'applicationId',
+      header: 'Application ID',
+      accessor: (item) => item.applicationId,
+    },
+    {
+      key: 'driverId',
+      header: 'Driver ID',
+      accessor: (item) => item.driverId,
+    },
+    {
+      key: 'issuedUsingLocalLicenseId',
+      header: 'Local License ID',
+      accessor: (item) => item.issuedUsingLocalLicenseId,
+    },
+    {
+      key: 'issueDate',
+      header: 'Issue Date',
+      render: (item) => formatDate(item.issueDate),
+    },
+    {
+      key: 'expirationDate',
+      header: 'Expiration Date',
+      render: (item) => formatDate(item.expirationDate),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (item) => <StatusBadge {...getActiveStatusProps(item.isActive)} />,
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (item) =>
+        onOpenDetails ? (
+          <button
+            className="intl-row-action"
+            type="button"
+            onClick={() => onOpenDetails(item.internationalLicenseId)}
+            aria-label={`View details for international license #${item.internationalLicenseId}`}
+          >
+            View ↗
+          </button>
+        ) : null,
+    },
+  ]
+
   return (
-    <div className="intl-table-wrap">
-      <table className="intl-table">
-        <thead><tr>
-          <th>International ID</th><th>Application ID</th><th>Driver ID</th>
-          <th>Local License ID</th><th>Issue Date</th><th>Expiration Date</th><th>Status</th><th />
-        </tr></thead>
-        <tbody>
-          {items.map((item) => <tr key={item.internationalLicenseId}>
-            <td><strong className="intl-id">#{item.internationalLicenseId}</strong></td>
-            <td>{item.applicationId}</td>
-            <td>{item.driverId}</td>
-            <td>{item.issuedUsingLocalLicenseId}</td>
-            <td>{formatDate(item.issueDate)}</td>
-            <td>{formatDate(item.expirationDate)}</td>
-            <td><span className={`intl-status ${item.isActive ? 'is-active' : 'is-inactive'}`}><i />{item.isActive ? 'Active' : 'Inactive'}</span></td>
-            <td>{onOpenDetails && <button className="intl-row-action" type="button" onClick={() => onOpenDetails(item.internationalLicenseId)} aria-label={`View license ${item.internationalLicenseId}`}>View ↗</button>}</td>
-          </tr>)}
-          {items.length === 0 && <tr><td colSpan={8} className="intl-empty">No international licenses match your filters.</td></tr>}
-        </tbody>
-      </table>
-    </div>
+    <DataTable<InternationalLicense>
+      data={items}
+      columns={columns}
+      getRowKey={(item) => item.internationalLicenseId}
+      tableClassName="intl-table"
+      containerClassName="intl-table-wrap"
+      minWidth={880}
+      emptyMessage="No international licenses match your filters."
+    />
   )
 }
