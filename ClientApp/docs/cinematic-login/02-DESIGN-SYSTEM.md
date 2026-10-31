@@ -1,11 +1,11 @@
 # DVLD Cinematic Login — Visual Design System & Design Tokens
 
 > **Document ID:** `02-DESIGN-SYSTEM`  
-> **Phase:** 02.1 — Accuracy & Completeness Correction  
+> **Phase:** 02.2 — Spatial Consistency & Governance Correction  
 > **Status:** AUDITED & EMPIRICALLY MEASURED — SPECIFICATION SPEC  
-> **Authoritative For:** Color Palette, Value Origins, Typography Hierarchy, Spacing Scale, 1080p Scaling Methodology, Glassmorphism, Lighting Language, Full Component Specifications, and WCAG Contrast Verification  
+> **Authoritative For:** Color Palette, Value Origins, Typography Hierarchy, Spacing Scale, Authoritative Phase 01 Coordinates, 1080p Scaling Methodology, Glassmorphism, Lighting Language, Full Component Specifications, and WCAG Contrast Verification  
 > **Visual Source of Truth:** `media_1793445589710_98905759.jpg` (SHA-256: `c94651c3aaf39d38f62824d1e1e784f2c1e65266c35ede15ef1be2b9579c67d0`)  
-> **Measurement Baseline:** 1024 × 512 reference pixel space and Phase 01.1 spatial composition specification
+> **Spatial Baseline Authority:** `03-COMPOSITION-SPEC.md` (1024 × 512 pixels, 2.0 : 1 aspect ratio)
 
 ---
 
@@ -15,7 +15,7 @@ The DVLD design system establishes a semantic design-token architecture connecti
 
 ### 1.1 Classification of Values (Reference-derived vs Proposed)
 To maintain engineering integrity, all values in this design system are explicitly separated into two categories:
-1. **Reference-derived Values:** Values directly measured, sampled, or calculated from the approved reference raster image (`1024 × 512`). These represent verified visual facts of the reference artifact.
+1. **Reference-derived Values:** Values directly measured, sampled, or calculated from the approved reference raster image (`1024 × 512`) as documented in the authoritative `03-COMPOSITION-SPEC.md`. These represent verified visual facts of the reference artifact.
 2. **Proposed Values:** Engineering and aesthetic starting points selected for implementation. These include:
    - Target viewport dimensions (1080p and responsive viewports).
    - Glassmorphic parameters (backdrop blur radius, saturation multipliers, border opacity, composite surface opacity).
@@ -23,7 +23,7 @@ To maintain engineering integrity, all values in this design system are explicit
    - Shadow formulas (blur radius, spread, ambient drop-shadow offsets).
    - 3D lighting parameters (color temperatures in Kelvin, luminous intensities, falloff distances).
    - Motion and transition parameters (durations, easing curves, translation offsets).
-   - Typography font families and line-heights.
+   - Typography font families, line-heights, and letter spacings.
    - Semantic token role assignments (mapping a sampled color to a component role).
 
 ```text
@@ -73,7 +73,7 @@ Every token distinguishes between its **Value Origin** (whether the raw HEX/RGB 
 | 18 | `color.automotive.refl` | `#FC0F61`<br>`rgb(252, 15, 97)` | Reference-derived | Sampled: Road reflection ($X: 252, Y: 449$) | Wet road specular red reflection streak | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 19 | `color.text.primary` | `#FFFFFF`<br>`rgb(255, 255, 255)` | Reference-derived | Sampled: Headline ($X: 80\text{--}100, Y: 155$) | Primary titles, slogans & button labels | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 20 | `color.text.secondary` | `#D5D8E9`<br>`rgb(213, 216, 233)` | Reference-derived | Sampled: Description ($X: 100\text{--}150, Y: 220$) | Explanatory copy, subtitles & metadata | `SAMPLED` | `PROPOSED` | `HIGH` |
-| 21 | `color.text.muted` | `#94A3B8`<br>`rgb(148, 163, 184)` | Proposed | Synthetic UI candidate (Neutral Slate) | Input placeholders & legal notices | `SYNTHETIC` | `PROPOSED` | `MEDIUM` |
+| 21 | `color.text.muted` | `#94A3B8`<br>`rgb(148, 163, 184)` | Proposed | Synthetic UI candidate (Neutral Slate) | Input placeholders & non-critical labels | `SYNTHETIC` | `PROPOSED` | `MEDIUM` |
 | 22 | `color.status.success` | `#218259`<br>`rgb(33, 130, 89)` | Reference-derived | Sampled: Shield badge ($X: 723, Y: 445$) | Security notice verified shield icon & badge | `SAMPLED` | `PROPOSED` | `HIGH` |
 | 23 | `color.status.error` | `#EF4444`<br>`rgb(239, 68, 68)` | Proposed | Synthetic UI candidate (Standard Red-500) | Form validation errors & failure borders | `SYNTHETIC` | `PROPOSED` | `MEDIUM` |
 
@@ -94,7 +94,7 @@ Every token distinguishes between its **Value Origin** (whether the raw HEX/RGB 
 ### 3.2 Typographic Hierarchy & Specifications
 
 > [!NOTE]
-> Reference sizes in $1024 \times 512$ are **Reference-derived** (estimated from raster letterform heights). All Target 1080p sizes, font family candidates, line heights, and letter spacings are **Proposed**.
+> Reference sizes in $1024 \times 512$ are **Reference-derived** (estimated visual cap heights). All Target 1080p sizes, font family candidates, line heights, and letter spacings are **Proposed**.
 
 | Role / Element | Reference 1024x512 Size | Target 1080p Size | Proposed Font Family | Weight | Line Height | Letter Spacing | Color Token | Value Status |
 |---|:---:|:---:|---|:---:|:---:|:---:|---|:---:|
@@ -122,7 +122,7 @@ Every token distinguishes between its **Value Origin** (whether the raw HEX/RGB 
 ## 4. Spacing, Sizing, and 1080p Scaling Methodology
 
 ### 4.1 The Aspect Ratio Discrepancy & Scaling Mathematics
-A critical mathematical discrepancy exists between the reference image and standard web viewports:
+A mathematical discrepancy exists between the reference image and standard web viewports:
 - **Reference Resolution:** $1024 \times 512\text{ px}$, Aspect Ratio = $2.0 : 1$ (panoramic ultrawide).
 - **Target Standard Desktop:** $1920 \times 1080\text{ px}$, Aspect Ratio = $16:9 \approx 1.7778 : 1$.
 
@@ -134,39 +134,40 @@ Aspect Ratio Ratio (Sy/Sx): 2.109375 / 1.875 = 1.125  (+12.5% vertical height)
 
 Because 16:9 is **12.5% taller** than 2.0:1, applying a single uniform multiplier globally is geometrically impossible:
 - A uniform $1.875\times$ scale leaves $120\text{ px}$ of empty space vertically ($512 \times 1.875 = 960\text{ px} \ne 1080\text{ px}$).
-- A uniform $2.109375\times$ scale produces $2160\text{ px}$ width ($1024 \times 2.109375 = 2160\text{ px}$), clipping $240\text{ px}$ off the sides.
+- A uniform $2.109375\times$ scale produces $2160\text{ px}$ width ($1024 \times 2.109375 = 2160\text{ px}$), clipping $240\text{ px}$ horizontally.
 
 ### 4.2 Documented Scaling Methodologies
 To preserve visual harmony without distortion, the design system utilizes 5 explicit scaling mechanisms:
+1. **Percentage-based Horizontal Positioning:** Elements tied to layout anchors (e.g. left branding margin at $7.42\% \approx 140\text{ px}$ at 1920px width) scale relative to viewport width.
+2. **Independent Width and Height Adaptation:** The 3D scene camera frustum ($FOV_y$) keeps the architectural skyline within the upper 60% of vertical space, while the foreground wet asphalt road plane expands downward to absorb the extra $12.5\%$ vertical height at 16:9.
+3. **Fixed-Size UI Ergonomics Constraints:** Interactive targets are constrained by human motor ergonomics and WCAG touch targets (input height is capped at $46\text{ px}$; button height is fixed at $48\text{ px}$; card width is capped at $420\text{ px}$ to prevent overly long inputs).
+4. **Uniform Scaling for Graphic Marks:** Vector marks (DVLD chevron logo, security crest, SSO icons) scale uniformly ($1:1$) to prevent distortion.
+5. **Responsive Layout Adaptations:** Across breakpoints, margins and card widths contract gracefully to maintain a strict minimum clearance buffer of $14\text{ px}$ to the headquarters canopy.
 
-1. **Percentage-based Horizontal Positioning:**
-   - Elements tied to the horizontal layout (such as the left branding margin at $7.42\%$ and the right login card alignment) scale relative to viewport width ($1920 \times 0.0742 \approx 140\text{ px}$).
-2. **Independent Width and Height Adaptation:**
-   - The 3D scene camera frustum ($FOV_y$) and environment plane adapt independently: the architectural skyline occupies the upper 60% of vertical space, while the foreground wet asphalt road plane expands downward to absorb the extra $12.5\%$ vertical height at 16:9.
-3. **Fixed-Size UI Ergonomics Constraints:**
-   - Form inputs, buttons, and text cannot scale strictly proportionally. Interactive targets are constrained by human motor ergonomics and WCAG touch targets (e.g., input height is capped at $46\text{ px}$ rather than $30 \times 2.109 = 63.3\text{ px}$; button height is fixed at $48\text{ px}$).
-4. **Uniform Scaling for Graphic Marks:**
-   - Self-contained vector marks (the DVLD chevron logo icon, security crest, and SSO icons) scale uniformly ($1:1$ aspect ratio) to prevent distortion.
-5. **Responsive Layout Adaptations:**
-   - Across standard breakpoints, the layout gracefully shifts proportions to prevent collision between the building canopy and the login card.
+### 4.3 Component Sizing & Authoritative Spatial Coordinates
 
-### 4.3 Component Sizing & Clearances (Reference vs Proposed 1080p)
+> [!IMPORTANT]
+> All reference coordinates in this table are audited against the authoritative `03-COMPOSITION-SPEC.md`.
 
-| Parameter / Dimension | Reference Measured (1024x512) | Value Origin | Proposed 1080p Equivalent | Scaling Method Used | Value Status |
+| Parameter / Dimension | Authoritative Reference Measured (1024x512) | Value Origin | Proposed 1080p Equivalent | Scaling Method Used | Value Status |
 |---|:---:|:---:|:---:|---|:---:|
 | **Left Viewport Margin (`spacing.viewport.left`)** | `76 px` ($7.42\%$) | Reference-derived | `140 px` | Percentage ($7.42\% \times 1920 \approx 142\text{px}$) | `PROPOSED` |
-| **Right Viewport Margin (`spacing.viewport.right`)** | `39 px` ($3.81\%$) | Reference-derived | `72 px` | Percentage ($3.81\% \times 1920 \approx 73\text{px}$) | `PROPOSED` |
+| **Right Viewport Margin (`spacing.viewport.right`)** | `39 px` ($3.81\%$, $1024 - 985$) | Reference-derived | `72 px` | Percentage ($3.81\% \times 1920 \approx 73\text{px}$) | `PROPOSED` |
 | **Top Viewport Margin (`spacing.viewport.top`)** | `52 px` ($10.16\%$) | Reference-derived | `96 px` | Independent Height ($10.16\% \times 1080 \approx 109\text{px}$) | `PROPOSED` |
-| **Bottom Viewport Margin (`spacing.viewport.bottom`)** | `47 px` ($9.18\%$) | Reference-derived | `88 px` | Independent Height ($9.18\% \times 1080 \approx 99\text{px}$) | `PROPOSED` |
-| **Login Card Width (`size.card.width`)** | `332 px` ($32.42\%$) | Reference-derived | `420 px` | Ergonomic UI constraint (capped at 420px) | `PROPOSED` |
-| **Login Card Height (`size.card.height`)** | `414 px` ($80.86\%$) | Reference-derived | `640 px` | Ergonomic UI constraint (vertical flow) | `PROPOSED` |
-| **Login Card Side Padding (`spacing.card.padding.x`)** | `22 px` | Reference-derived | `32 px` | Fixed ergonomic scale | `PROPOSED` |
+| **Bottom Viewport Margin (`spacing.viewport.bottom`)** | `47 px` ($9.18\%$, $512 - 465$) | Reference-derived | `88 px` | Independent Height ($9.18\% \times 1080 \approx 99\text{px}$) | `PROPOSED` |
+| **Login Card Frame (`E10`) Bounds** | `X: 654–986 px, Y: 52–466 px`<br>($W: 332\text{ px}, H: 414\text{ px}$) | Reference-derived | `420 × 640 px` | Ergonomic UI constraint (capped at 420px) | `PROPOSED` |
+| **Login Card Outer Halo Bounds** | `X: 630–1010 px, Y: 32–486 px`<br>($W: 380\text{ px}, H: 454\text{ px}$) | Reference-derived | `470 × 690 px` | Visual diffusion aura | `PROPOSED` |
+| **Holographic License Card (`E06a`)** | `X: 322–480 px, Y: 40–198 px`<br>($W: 158\text{ px}, H: 158\text{ px}$) | Reference-derived | `240 × 240 px` | Scaled 3D HUD bounding frame | `PROPOSED` |
+| **Holographic Emitter Cone (`E06b`)** | `X: 358–446 px, Y: 160–226 px`<br>($W: 88\text{ px}, H: 66\text{ px}$) | Reference-derived | `140 × 100 px` | 3D projection cone | `PROPOSED` |
+| **Wireframe Jordan Map HUD (`E06c`)** | `X: 490–570 px, Y: 35–140 px`<br>($W: 80\text{ px}, H: 105\text{ px}$) | Reference-derived | `130 × 170 px` | Vector geographic HUD | `PROPOSED` |
+| **Three Lower Mission Statements (`E02b`)** | `X: 76–190 px, Y: 430–475 px`<br>($W: 114\text{ px}, H: 45\text{ px}$) | Reference-derived | `180 × 70 px` | Lower-left margin alignment | `PROPOSED` |
+| **Arabic Canopy Signage (`E04b`)** | `X: 495–625 px, Y: 285–330 px`<br>($W: 130\text{ px}, H: 45\text{ px}$) | Reference-derived | `210 × 72 px` | Architectural canopy fascia | `PROPOSED` |
 | **Input Field Dimensions (`size.input`)** | `286 × 30 px` | Reference-derived | `356 × 46 px` | Fixed ergonomic touch target | `PROPOSED` |
 | **Input-to-Input Gap (`spacing.form.gap`)** | `12 px` | Reference-derived | `16 px` | 4px Grid scale (`spacing.4`) | `PROPOSED` |
 | **Sign-In Button Height (`size.button.height`)** | `32 px` | Reference-derived | `48 px` | Standard ergonomic button target | `PROPOSED` |
 | **SSO Button Dimensions & Gap** | `88 × 30 px`, Gap `11 px` | Reference-derived | `108 × 44 px`, Gap `16 px` | Ergonomic touch target & 4px grid | `PROPOSED` |
-| **Card-to-Building Canopy Clearance** | `14 px` ($1.37\%$) | Reference-derived | `26 px` | Percentage buffer ($1.37\% \times 1920 \approx 26\text{px}$) | `PROPOSED` |
-| **Text-to-Portico Clearance** | `44 px` ($4.30\%$) | Reference-derived | `82 px` | Percentage buffer ($4.30\% \times 1920 \approx 82\text{px}$) | `PROPOSED` |
+| **Card-to-Building Canopy Clearance** | `14 px` ($1.37\%$, $654 - 640$) | Reference-derived | `26 px` | Percentage buffer ($1.37\% \times 1920 \approx 26\text{px}$) | `PROPOSED` |
+| **Text-to-Portico Clearance** | `44 px` ($4.30\%$, $380 - 336$) | Reference-derived | `82 px` | Percentage buffer ($4.30\% \times 1920 \approx 82\text{px}$) | `PROPOSED` |
 
 ---
 
@@ -209,17 +210,17 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 
 ---
 
-## 7. Complete Component Coverage & Specifications
+## 7. Complete Component Coverage & Authoritative Spatial Specifications
 
-### 7.1 Floating Holographic Jordanian Driving License (`E06`)
+### 7.1 Floating Holographic Jordanian Driving License (`E06a`, `E06b`)
 - **Visual Purpose:** Represents smart digital governance, modernized citizen credentials, and official authority floating in 3D space above the department headquarters.
 - **Hierarchy:** Secondary focal anchor after the primary login card, positioned in the upper-mid architectural sky.
-- **Spatial Coordinates (Phase 01.1):**
-  - Bounding Box: $X: 319\text{--}482\text{ px}$ ($31.15\%\text{--}47.07\%$, width $163\text{ px} / 15.92\%$), $Y: 70\text{--}194\text{ px}$ ($13.67\%\text{--}37.89\%$, height $124\text{ px} / 24.22\%$).
-  - 3D Orientation: Pitched backward $\sim 15^\circ$ with subtle counter-clockwise yaw.
-  - Conical Emitter Projection: Base at roof canopy ($X \approx 390\text{--}410, Y \approx 194\text{--}230$), projecting 3 concentric volumetric rings expanding upwards into the card base.
+- **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
+  - **Holographic Card Frame (`E06a`):** $X: 322\text{--}480\text{ px}$ ($31.45\%\text{--}46.88\%$, width $158\text{ px} / 15.43\%$), $Y: 40\text{--}198\text{ px}$ ($7.81\%\text{--}38.67\%$, height $158\text{ px} / 30.86\%$). Center: ($401\text{ px}, 119\text{ px}$).
+  - **Conical Projection Emitter Cone (`E06b`):** $X: 358\text{--}446\text{ px}$ ($34.96\%\text{--}43.55\%$, width $88\text{ px} / 8.59\%$), $Y: 160\text{--}226\text{ px}$ ($31.25\%\text{--}44.14\%$, height $66\text{ px} / 12.89\%$).
+  - 3D Orientation: Pitched backward $\sim -12^\circ$ with subtle counter-clockwise yaw ($\sim +15^\circ$).
 - **Color Treatment:**
-  - Card Perimeter Rim: `color.brand.cyan.core` (`#6BDDFF`) 2px glowing border stroke with 15px cyan halo.
+  - Card Perimeter Rim: `color.brand.cyan.core` (`#6BDDFF`) glowing border stroke with cyan halo.
   - Card Fill Plane: Translucent cyan-tinted glass (`rgba(0, 19, 49, 0.40)`).
   - Verified Status Badge: `color.status.success` (`#218259`) background pill with white checkmark and "VERIFIED" label.
   - Avatar Silhouette: Semi-transparent cyan user silhouette cutout ($X \approx 330\text{--}365, Y \approx 105\text{--}155$).
@@ -229,11 +230,12 @@ The lighting system connects 2D interface controls with 3D architectural lightin
   - Class: `CLASS 4 / CLASS 3 - PRIVATE MOTOR` (Regular 400, ~6.5px in reference / proposed 10px, `#D5D8E9`).
   - Expiry: `EXP: 2034/12` (Monospace, ~6.5px in reference / proposed 10px, `#D5D8E9`).
 
-### 7.2 Jordan Map HUD (`E06b`)
+### 7.2 Jordan Map HUD (`E06c`)
 - **Visual Purpose:** National geographic sovereignty HUD; visually anchors the DVLD digital service platform to the sovereign territory of the Hashemite Kingdom of Jordan.
 - **Hierarchy:** Visual extension of the holographic license HUD, situated directly adjacent in the upper-right sky dome.
-- **Spatial Coordinates (Phase 01.1):**
-  - Bounding Box: $X: 494\text{--}578\text{ px}$ ($48.24\%\text{--}56.45\%$, width $84\text{ px} / 8.20\%$), $Y: 36\text{--}140\text{ px}$ ($7.03\%\text{--}27.34\%$, height $104\text{ px} / 20.31\%$).
+- **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
+  - **Bounding Box (`E06c`):** $X: 490\text{--}570\text{ px}$ ($47.85\%\text{--}55.66\%$, width $80\text{ px} / 7.81\%$), $Y: 35\text{--}140\text{ px}$ ($6.84\%\text{--}27.34\%$, height $105\text{ px} / 20.51\%$).
+  - Overlap with Citadel Columns: Shares a 2D bounding region with the Roman columns ($X: 520\text{--}570\text{ px}$, $Y: 85\text{--}140\text{ px}$) as an intentional semi-transparent overlay.
 - **Color Treatment & Vector Treatment:**
   - Wireframe Outline: `color.brand.cyan.core` (`#6BDDFF`) 1.5px glowing polygonal stroke following the exact geopolitical border of Jordan.
   - Polygonal Fill: Ultra-translucent cyan wash (`rgba(107, 221, 255, 0.10)`).
@@ -242,7 +244,7 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 
 ### 7.3 Institutional Footer Bar
 - **Visual Purpose:** Statutory authority accreditation, legal copyright protection, and national vision branding.
-- **Spatial Coordinates (Phase 01.1):**
+- **Spatial Coordinates (`03-COMPOSITION-SPEC.md` Baseline):**
   - Center Legal Notice: $X: 433\text{--}590\text{ px}$ ($42.29\%\text{--}57.62\%$, width $\sim 157\text{ px}$), $Y: 492\text{--}504\text{ px}$ ($96.09\%\text{--}98.44\%$, height $12\text{ px}$). Centered horizontally along bottom margin.
   - Right Vision Tagline: $X: 873\text{--}968\text{ px}$ ($85.25\%\text{--}94.53\%$, width $\sim 95\text{ px}$), $Y: 492\text{--}504\text{ px}$ ($96.09\%\text{--}98.44\%$, height $12\text{ px}$). Aligned right.
   - Viewport Clearance: $8\text{--}12\text{ px}$ from bottom edge in reference ($16\text{--}24\text{ px}$ proposed in 1080p).
@@ -250,22 +252,22 @@ The lighting system connects 2D interface controls with 3D architectural lightin
   - Legal Copy: `color.text.secondary` (`#D5D8E9`) at 65% opacity. Text: "© 2026 DVLD. Authorized Personnel Only." (Regular 400, ~7px in reference / proposed 11px in 1080p).
   - Tagline Copy: `color.text.secondary` (`#D5D8E9`) with `color.brand.cyan.accent` (`#64C0F1`) indicator em-dash. Text: "Driving Jordan Forward —" (Regular 400, ~7px in reference / proposed 11px in 1080p).
 
-### 7.4 Three Lower Mission Statements
+### 7.4 Three Lower Mission Statements (`E02b`)
 - **Visual Purpose:** Departmental mission pillars communicating safety, digital efficiency, and long-term modernization.
-- **Spatial Coordinates (Phase 01.1):**
-  - Bounding Box: $X: 76\text{--}160\text{ px}$ ($7.42\%\text{--}15.63\%$, width $\sim 84\text{ px}$), $Y: 252\text{--}298\text{ px}$ ($49.22\%\text{--}58.20\%$, height $\sim 46\text{ px}$).
-  - Clearance: Maintains a minimum $82\text{ px}$ horizontal clearance to the central illuminated portico ($X = 380\text{ px}$).
+- **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
+  - **Bounding Box (`E02b`):** $X: 76\text{--}190\text{ px}$ ($7.42\%\text{--}18.55\%$, width $114\text{ px} / 11.13\%$), $Y: 430\text{--}475\text{ px}$ ($83.98\%\text{--}92.77\%$, height $45\text{ px} / 8.79\%$).
+  - Spatial Positioning Note: In the reference image, the three pillars sit down in the lower-left corner alongside the wet roadway plane ($Y: 360\text{--}512\text{ px}$) and to the left of the luxury sedan ($X = 188\text{ px}$), separated from the upper description text ($Y: 210\text{--}248\text{ px}$) by a broad vertical clearance of $\sim 182\text{ px}$.
 - **Color Treatment & Typography (Proposed):**
   - Line 1: "Safer Roads." (`color.text.secondary` `#D5D8E9`, Medium 500, ~8px in reference / proposed 12px in 1080p).
   - Line 2: "Smarter Services." (`color.text.secondary` `#D5D8E9`, Medium 500, ~8px in reference / proposed 12px in 1080p).
   - Line 3: "A Better Tomorrow." (`color.text.secondary` `#D5D8E9`, Medium 500, ~8px in reference / proposed 12px in 1080p).
-  - Indicator Bar: `color.brand.cyan.accent` (`#64C0F1`) solid bar ($X: 76\text{--}100\text{ px}, Y: 308\text{ px}$, width $24\text{ px}$, height $2\text{ px}$).
+  - Indicator Bar: `color.brand.cyan.accent` (`#64C0F1`) solid bar ($X: 76\text{--}100\text{ px}$, width $24\text{ px}$, height $2\text{ px}$).
 
-### 7.5 Arabic Headquarters Canopy Signage
+### 7.5 Arabic Headquarters Canopy Signage (`E04b`)
 - **Visual Purpose:** Official national institutional identification mounted on the physical DVLD building architecture.
-- **Spatial Coordinates (Phase 01.1):**
-  - Position: Mounted on the dark fascia of the entrance canopy extending from the building entrance portal (`E03` / `E04`): $X: 508\text{--}628\text{ px}$ ($49.61\%\text{--}61.33\%$, width $\sim 120\text{ px}$), $Y: 294\text{--}312\text{ px}$ ($57.42\%\text{--}60.94\%$, height $\sim 18\text{ px}$).
-  - Clearance to Login Card: Terminates at $X \approx 628\text{ px}$, maintaining a strict $14\text{ px}$ clearance ($1.37\%$ canvas width) to the login card's left outer rim ($X = 642\text{ px}$).
+- **Authoritative Spatial Coordinates (`03-COMPOSITION-SPEC.md`):**
+  - **Bounding Box (`E04b`):** $X: 495\text{--}625\text{ px}$ ($48.34\%\text{--}61.04\%$, width $130\text{ px} / 12.70\%$), $Y: 285\text{--}330\text{ px}$ ($55.66\%\text{--}64.45\%$, height $45\text{ px} / 8.79\%$).
+  - Clearance to Login Card: The canopy terminates at $X \approx 640\text{ px}$, maintaining a strict $14\text{ px}$ clearance ($1.37\%$ canvas width) to the solid login card border ($X = 654\text{ px}$).
 - **Content & Linguistic Direction:**
   - Signage Text: `دائرة ترخيص السواقين والمركبات` (Driving and Vehicle Licensing Department).
   - Reading Direction: Strictly Right-to-Left (RTL) with proper Arabic cursive ligatures.
@@ -276,13 +278,17 @@ The lighting system connects 2D interface controls with 3D architectural lightin
 
 ### 7.6 Left Branding Showcase (`E01`, `E02`)
 - **Visual Purpose:** Institutional anchor, brand accreditation, and platform introduction.
-- **Spatial Coordinates (Phase 01.1):** Left margin $X = 76\text{ px}$, top $Y = 52\text{ px}$, text width extends to $X = 336\text{ px}$.
-- **Clearance:** Maintains $44\text{ px}$ horizontal clearance to HQ central portico ($X = 380\text{ px}$).
+- **Authoritative Coordinates (`03-COMPOSITION-SPEC.md`):**
+  - Header Group (`E01`): $X: 76\text{--}300\text{ px}$, $Y: 43\text{--}118\text{ px}$ ($W: 224\text{ px}, H: 75\text{ px}$).
+  - Slogan & Description (`E02`): $X: 76\text{--}336\text{ px}$, $Y: 134\text{--}248\text{ px}$ ($W: 260\text{ px}, H: 114\text{ px}$).
+- **Clearance:** Description terminates at $X = 336\text{ px}$, maintaining $44\text{ px}$ horizontal clearance to the bright entrance portal ($X = 380\text{ px}$).
 
 ### 7.7 Right Login Authentication Card (`E10` – `E13`)
 - **Visual Purpose:** Primary interactive authentication card for departmental personnel.
-- **Dimensions & Radius:** $332 \times 414\text{ px}$ ($32.42\% \times 80.86\%$), proposed $r = 24\text{ px}$.
-- **Surfaces:** Card body `rgba(0, 19, 49, 0.72)` with 20px blur and cyan rim; concentric Hashemite crown crest; dual credential inputs; primary action button; 3 SSO pills; verified token notice.
+- **Authoritative Coordinates (`03-COMPOSITION-SPEC.md`):**
+  - Solid Glass Frame (`E10`): $X: 654\text{--}986\text{ px}$, $Y: 52\text{--}466\text{ px}$ ($W: 332\text{ px}, H: 414\text{ px}$).
+  - Outer Diffuse Cyan Halo: $X: 630\text{--}1010\text{ px}$, $Y: 32\text{--}486\text{ px}$ ($W: 380\text{ px}, H: 454\text{ px}$).
+- **Proposed CSS Starting Values:** Card body `rgba(0, 19, 49, 0.72)` with 20px blur and cyan rim; concentric Hashemite crown crest (`E11`); dual credential inputs (`E12`); primary action button (`E12`); 3 SSO pills (`E13`); verified token notice (`E13`).
 
 ---
 
@@ -317,7 +323,7 @@ The five standard target viewports adapt according to the following design rules
 
 ### 10.1 Mathematical Formula (WCAG 2.1 Specification)
 Contrast ratios are computed using the exact W3C relative luminance ($L$) formula:
-$$L = 0.2126 \cdot R + 0.7152 \cdot G + 0.0722 \cdot B$$
+$$L = 0.2126 \cdot R_{\text{linear}} + 0.7152 \cdot G_{\text{linear}} + 0.0722 \cdot B_{\text{linear}}$$
 where normalized color channels $c \in [0, 1]$ are linearized:
 $$c_{\text{linear}} = \begin{cases} \frac{c}{12.92} & \text{if } c \le 0.04045 \\ \left(\frac{c + 0.055}{1.055}\right)^{2.4} & \text{if } c > 0.04045 \end{cases}$$
 The contrast ratio between two relative luminances $L_1 > L_2$ is:
@@ -339,26 +345,15 @@ $$\text{Ratio} = \frac{L_1 + 0.05}{L_2 + 0.05}$$
 | `color.brand.cyan.accent` | `#64C0F1` | `#001331` | $0.5042$ | **$9.10 : 1$** | **PASS** | **PASS** | **PASS** | **PASS** | **PASSES WCAG AAA** |
 | `color.text.muted` | `#94A3B8` | `#001331` | $0.3688$ | **$7.20 : 1$** | **PASS** | **PASS** | **PASS** | **PASS** | **PASSES WCAG AAA** |
 
-### 10.4 Composite Context Analysis (Real-World Opacity & Background Interplay)
-In actual implementation, the login card is not a 100% opaque solid, but a glassmorphic surface (`rgba(0, 19, 49, 0.72)` with a 20px backdrop blur). Depending on what passes behind the card, the effective background luminance changes:
+### 10.4 Proposed Glassmorphism Values & Mandatory Readability Testing
 
-1. **Card over Dark Nighttime Environment (`#010311`):**
-   - Alpha-composited backdrop: $\text{rgb}(0, 15, 40)$, $L = 0.004928$.
-   - `#FFFFFF`: **$19.11 : 1$** (Passes WCAG AAA)
-   - `#D5D8E9`: **$13.49 : 1$** (Passes WCAG AAA)
-   - `#64C0F1`: **$9.42 : 1$** (Passes WCAG AAA)
-   - `#94A3B8`: **$7.45 : 1$** (Passes WCAG AAA)
-2. **Card over High-Intensity Red Road Reflection (`#FC0F61` pass-through):**
-   - Alpha-composited backdrop: $\text{rgb}(71, 18, 62)$, $L = 0.021200$.
-   - `#FFFFFF`: **$14.75 : 1$** (Passes WCAG AAA)
-   - `#D5D8E9`: **$10.41 : 1$** (Passes WCAG AAA)
-   - `#64C0F1`: **$7.27 : 1$** (Passes WCAG AAA)
-   - `#94A3B8`: **$5.75 : 1$** $\rightarrow$ **FAILS WCAG AAA Normal Text** (requires $\ge 7.0:1$), but **PASSES WCAG AA Normal Text** ($\ge 4.5:1$) and **PASSES WCAG AAA Large Text** ($\ge 4.5:1$).
+> [!IMPORTANT]
+> **Classification Notice:** Proposed parameters such as `card opacity >= 0.72` and `backdrop blur >= 20px` are **PROPOSED IMPLEMENTATION STARTING VALUES**, NOT mathematically verified universal accessibility guarantees.
+> 
+> **Optical Reality:** Backdrop blur diffuses high spatial frequencies (sharp edges), but does **NOT** eliminate low-frequency background luminance. When high-intensity scene elements (e.g. wet road specular streaks `#FC0F61` or bright architectural headlights) pass behind a semi-transparent surface, the transmitted luminous energy raises the composite background luminance, directly degrading text contrast.
+> 
+> **Testing Mandate:** During implementation (Phases 06 and 07), actual text contrast must be empirically tested and measured against dynamic, representative 3D backgrounds across multiple camera angles. If specular streaks beneath the card reduce contrast below WCAG thresholds, fill opacity must be increased dynamically or a dark inner backing scrim must be applied.
 
-> [!CAUTION]
-> **Implementation Mandate:** Because high-luminance light streaks passing behind translucent glass reduce contrast, `color.text.muted` (`#94A3B8`) must NOT be used for critical body text or normal-sized required instructions. It is strictly restricted to secondary non-critical placeholders, or the card backdrop blur/fill opacity must be maintained at $\ge 0.75$ to guarantee compliance across all camera angles.
-
-### 10.5 Accessibility Controls
 - **Non-Color Error Status:** Form validation errors must combine red border highlighting (`#EF4444`) with an explicit alert icon and error text message.
 - **Focus Rings:** Unambiguous 2px cyan focus ring (`#16B3FF`) with 2px offset on all interactive controls.
 - **RTL Integrity:** Arabic canopy signage and any localized controls must preserve natural cursive glyph connectivity and right-to-left layout direction.

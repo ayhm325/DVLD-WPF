@@ -14,9 +14,10 @@
 | **00.1** | Documentation Consistency & Governance Correction | Eliminate contradictions, audit ADR approvals, clarify architecture | `APPROVED` | User Phase 01 Prompt |
 | **01** | Reference Analysis & Spatial Composition | Measure reference image, define spatial layout, zones, and bounding boxes | `CHANGES REQUESTED` | Phase 00.1 Approval |
 | **01.1** | Measurement Integrity Correction | Verify reference image SHA-256, separate 2D/3D depths, correct clearances | `APPROVED` | User Phase 02 Prompt |
-| **02** | Design System & Visual Identity | Measure and finalize colors, typography, spacing, and glassmorphic tokens | `SUPERSEDED` | Phase 01.1 Approval |
-| **02.1** | Design System Accuracy Correction | Recalculate contrast, classify values, document 1080p scaling, specify 5 components | `TECHNICALLY VERIFIED` | Phase 02 Execution |
-| **03** | Scene Composition & Spatial Blockout | Calibrate 3D camera, viewports, frustum, and low-poly architectural blockout | `PLANNED (NOT AUTHORIZED)` | Phase 02.1 Approval |
+| **02** | Design System & Visual Identity | Measure and finalize colors, typography, spacing, and glassmorphic tokens | `CHANGES REQUESTED` | Phase 01.1 Approval |
+| **02.1** | Design System Accuracy Correction | Recalculate contrast, classify values, document 1080p scaling, specify 5 components | `CHANGES REQUESTED` | Phase 02 Execution |
+| **02.2** | Spatial Consistency & Governance Correction | Align spatial coordinates with Phase 01, reclassify glassmorphism, verify status taxonomy | `TECHNICALLY VERIFIED` | Phase 02.1 Execution |
+| **03** | Scene Composition & Spatial Blockout | Calibrate 3D camera, viewports, frustum, and low-poly architectural blockout | `PLANNED (NOT AUTHORIZED)` | Phase 02.2 Approval |
 | **04** | Architectural Asset Production | Upgrade headquarters and Amman Citadel GLB models with photorealistic detail | `PLANNED` | Phase 03 Approval |
 | **05** | Environment & Vehicle Production | Develop foreground luxury sedan, wet road plane, and illuminated neon curbs | `PLANNED` | Phase 04 Approval |
 | **06** | Materials, Lighting & Cinematography | Implement PBR shaders, radiosity HDRI, spotlights, and wet reflections | `PLANNED` | Phase 05 Approval |
@@ -66,7 +67,7 @@
 - **Scope:** Hex color codes, opacity levels, font pairings (Arabic & Western), border radius, shadow formulas, component specifications, motion design, and accessibility.
 - **Prerequisites:** Explicit User Approval of Phase 01.1.
 - **Deliverables:** Fully populated `02-DESIGN-SYSTEM.md` replacing all pending tokens, updated continuity files.
-- **Approval Status:** `SUPERSEDED` (Superceded by Phase 02.1 accuracy correction).
+- **Approval Status:** `CHANGES REQUESTED` (User requested accuracy correction in Phase 02.1).
 
 ---
 
@@ -75,6 +76,15 @@
 - **Scope:** Recalculate WCAG relative luminance and contrast ratios mathematically; separate Reference-derived facts from Proposed engineering parameters; document 1080p scaling methodology; author complete specifications for the 5 mandated components (hologram license, Jordan map HUD, footer, 3 mission statements, Arabic signage); verify exact 23-token table count.
 - **Prerequisites:** Phase 02 Execution.
 - **Deliverables:** Corrected `02-DESIGN-SYSTEM.md`, updated `08-CURRENT-STATE.md`, updated `07-ROADMAP.md`.
+- **Approval Status:** `CHANGES REQUESTED` (User requested spatial consistency and governance correction in Phase 02.2).
+
+---
+
+### Phase 02.2 — Spatial Consistency & Governance Correction
+- **Objective:** Perform a focused documentation-only correction ensuring that the design system remains consistent with authoritative Phase 01 composition measurements and approved governance rules.
+- **Scope:** Audit spatial coordinates in `02-DESIGN-SYSTEM.md` against authoritative `03-COMPOSITION-SPEC.md` (holographic license, Jordan map HUD, solid login card vs outer halo, three lower mission statements, Arabic canopy signage); reclassify glassmorphic parameters as PROPOSED implementation starting points; remove non-standard statuses; enforce accurate Git working tree characterization.
+- **Prerequisites:** Phase 02.1 Execution.
+- **Deliverables:** Reconciled `02-DESIGN-SYSTEM.md`, updated `08-CURRENT-STATE.md`, updated `07-ROADMAP.md`.
 - **Approval Status:** `TECHNICALLY VERIFIED` (Awaiting explicit user review and approval).
 
 ---
@@ -82,7 +92,7 @@
 ### Phase 03 — Scene Composition & Spatial Blockout
 - **Objective:** Align the Three.js 3D perspective camera, field of view, and layout planes with the reference composition.
 - **Scope:** Update `SceneCamera.tsx`, calibrate camera FOV, target coordinates, and position proxy bounding primitives for headquarters, Citadel, and vehicle.
-- **Prerequisites:** Explicit User Approval of Phase 02.1.
+- **Prerequisites:** Explicit User Approval of Phase 02.2.
 - **Deliverables:** Calibrated camera and low-poly spatial blockout in `src/components/login/scene/`.
 - **Acceptance Criteria:** Spatial alignment between 3D objects and 2D UI overlay matches reference composition without overlapping left branding.
 - **Validation Method:** Viewport screenshot overlay at 1920x1080 and 1366x768.

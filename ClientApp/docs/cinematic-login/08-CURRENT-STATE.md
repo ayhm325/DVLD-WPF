@@ -3,7 +3,7 @@
 > **Document ID:** `08-CURRENT-STATE`  
 > **Status:** CANONICAL CONTINUITY RECORD  
 > **Authoritative For:** Current Session State, Next Authorized Action, and Verification History  
-> **Last Updated:** 2026-10-31 15:34 UTC+3
+> **Last Updated:** 2026-10-31 15:40 UTC+3
 
 ---
 
@@ -12,49 +12,42 @@
 | Property | Current Value | Notes |
 |---|---|---|
 | **Project Name** | DVLD Cinematic Login | Frontend: React 19 + Three.js / R3F |
-| **Current Phase** | **Phase 02.1 — Design System Accuracy Correction** | Corrective documentation & accuracy analysis phase |
-| **Phase Status** | `TECHNICALLY VERIFIED` | Contrast recalculated mathematically, values classified, scaling methodology documented, 5 components specified, token count verified |
-| **Last Completed Phase** | Phase 02.1 (Design System Accuracy Correction) | Verified 2026-10-31 |
-| **Last User-Approved Phase** | Phase 01.1 (Measurement Integrity Correction) | Awaiting explicit user approval for Phase 02 / 02.1 |
-| **Next Authorized Action** | **Await explicit user review and approval of Phase 02.1 before beginning Phase 03** | **PHASE 03 IS NOT AUTHORIZED** |
+| **Current Phase** | **Phase 02.2 — Spatial Consistency & Governance Correction** | Focused spatial reconciliation and governance correction |
+| **Phase Status** | `TECHNICALLY VERIFIED` | All coordinates aligned with 03-COMPOSITION-SPEC, glassmorphism reclassified as PROPOSED, lifecycle statuses aligned, Git status clarified |
+| **Last User-Approved Phase** | Phase 01.1 (Measurement Integrity Correction) | Awaiting explicit user approval for Phase 02.2 |
+| **Next Authorized Action** | **Await explicit user review and approval of Phase 02.2 before beginning Phase 03** | **PHASE 03 IS NOT AUTHORIZED** |
 
 ---
 
-## 2. Summary of Completed Work (Phase 02.1)
+## 2. Summary of Completed Work (Phase 02.2)
 
-1. **Accessibility Contrast Verification Recalculated Mathematically:**
-   - Evaluated exact relative luminance ($L$) and contrast ratios via the standard W3C formula for all pairs on `#001331` ($L=0.006875$):
-     - `#FFFFFF` ($L=1.0000$): **$18.46 : 1$** (Passes WCAG AAA Normal & Large text).
-     - `#D5D8E9` ($L=0.6657$): **$13.04 : 1$** (Passes WCAG AAA Normal & Large text).
-     - `#64C0F1` ($L=0.5042$): **$9.10 : 1$** (Passes WCAG AAA Normal & Large text).
-     - `#94A3B8` ($L=0.3688$): **$7.20 : 1$** (Passes WCAG AAA Normal text on solid `#001331`).
-   - Conducted real-world composite background analysis with card translucency (`rgba(0, 19, 49, 0.72)`):
-     - Over dark sky canvas (`#010311`): All four colors pass WCAG AAA Normal text ($19.11:1$, $13.49:1$, $9.42:1$, $7.45:1$).
-     - Over high-luminance red road specular streak (`#FC0F61` pass-through): `#94A3B8` drops to **$5.75 : 1$**, which **fails WCAG AAA Normal text** ($\ge 7.0:1$) while still passing **WCAG AA Normal text** ($\ge 4.5:1$) and **WCAG AAA Large text** ($\ge 4.5:1$). Documented mandatory mitigation that `#94A3B8` is prohibited for critical body copy.
-2. **Explicit Separation of Reference-derived vs Proposed Values:**
-   - Classified all values in the design system into `Reference-derived` (direct raster pixel samples and spatial measurements from `1024 × 512` reference) and `Proposed` (engineering starting points: 1080p target dimensions, backdrop blur radii, corner radii, glow blur/spread, CSS opacities, animation durations, translation offsets, and 3D lighting temperatures/intensities).
-   - Ensured that semantic role mappings are categorized as `PROPOSED` design abstractions.
-3. **1080p Scaling Methodology Rigorously Documented:**
-   - Formalized the mathematical discrepancy between $1024 \times 512$ ($2.0:1$) and $1920 \times 1080$ ($16:9$): $S_x = 1.875\times$, $S_y = 2.109375\times$, representing $+12.5\%$ vertical height expansion.
-   - Prohibited global uniform scaling. Documented the 5 distinct scaling mechanisms: Percentage-based horizontal layout, Independent width/height adaptation (frustum and wet asphalt expansion), Fixed-size UI ergonomics constraints (input/button heights and typography), Uniform vector asset scaling, and Responsive breakpoint adaptations. All 1080p target values marked `PROPOSED`.
-4. **Complete Component Coverage for Mandated Elements:**
-   - Authored complete visual purpose, spatial coordinates, color treatment, and typography specifications for all 5 required elements:
-     - Floating Holographic Jordanian Driving License (`E06`).
-     - Jordan Map HUD (`E06b`).
-     - Institutional Footer Bar (Legal notice, copyright, and tagline).
-     - Three Lower Mission Statements & Indicator Bar.
-     - Arabic Headquarters Canopy Signage (`دائرة ترخيص السواقين والمركبات`).
-5. **Exact Color Token Count & Consistency Validation:**
-   - Verified that the color palette table contains **exactly 23 color tokens** (rows 1 through 23), matching the stated count 1:1.
-   - Verified that each token contains a unique semantic name, exact HEX & RGB, intended usage, extraction source/method, value status, semantic status, and confidence level.
+1. **Phase 01 Spatial Coordinate Reconciliation:**
+   - Audited every coordinate in `02-DESIGN-SYSTEM.md` against the authoritative `03-COMPOSITION-SPEC.md`:
+     - **Holographic License Card (`E06a`):** Corrected from erroneous $X: 319\text{--}482, Y: 70\text{--}194$ to authoritative **$X: 322\text{--}480\text{ px}$, $Y: 40\text{--}198\text{ px}$** ($W: 158\text{ px}, H: 158\text{ px}$). Emitter cone (`E06b`) confirmed at **$X: 358\text{--}446\text{ px}$, $Y: 160\text{--}226\text{ px}$** ($W: 88\text{ px}, H: 66\text{ px}$).
+     - **Jordan Map HUD (`E06c`):** Corrected from shifted $X: 494\text{--}578$ to authoritative **$X: 490\text{--}570\text{ px}$, $Y: 35\text{--}140\text{ px}$** ($W: 80\text{ px}, H: 105\text{ px}$).
+     - **Login Card Outer Frame (`E10`):** Explicitly distinguished the Solid Glass Card Frame bounds (**$X: 654\text{--}986\text{ px}$, $Y: 52\text{--}466\text{ px}$**, $W: 332\text{ px}, H: 414\text{ px}$) from the Outer Diffuse Cyan Halo (**$X: 630\text{--}1010\text{ px}$, $Y: 32\text{--}486\text{ px}$**, $W: 380\text{ px}, H: 454\text{ px}$). Verified the $14\text{ px}$ clearance between the canopy edge ($X = 640\text{ px}$) and the solid card border ($X = 654\text{ px}$).
+     - **Three Lower Mission Statements (`E02b`):** Corrected from incorrect upper-placement ($X: 76\text{--}160, Y: 252\text{--}298$) to authoritative lower-placement **$X: 76\text{--}190\text{ px}$, $Y: 430\text{--}475\text{ px}$** ($W: 114\text{ px}, H: 45\text{ px}$) alongside the wet roadway plane.
+     - **Arabic Canopy Signage (`E04b`):** Confirmed at authoritative **$X: 495\text{--}625\text{ px}$, $Y: 285\text{--}330\text{ px}$** ($W: 130\text{ px}, H: 45\text{ px}$) with canopy terminating at $X \approx 640\text{ px}$.
+2. **Glassmorphism Constraints Reclassified as Proposed:**
+   - Reclassified `opacity >= 0.72` and `backdrop blur >= 20px` as **`PROPOSED`** implementation starting values, rather than guaranteed universal contrast solutions.
+   - Explicitly documented that blur alone does not eliminate transmitted background luminance, and established mandatory contrast testing requirements against dynamic backgrounds during implementation.
+3. **Roadmap & Lifecycle Status Alignment:**
+   - Eliminated the non-standard `SUPERSEDED` status from the lifecycle tracking.
+   - Aligned lifecycle states with the approved project taxonomy:
+     - Phase 02: `CHANGES REQUESTED`
+     - Phase 02.1: `CHANGES REQUESTED`
+     - Phase 02.2: `TECHNICALLY VERIFIED`
+     - Phase 03: `PLANNED (NOT AUTHORIZED)`
+4. **Accurate Git Working Tree Characterization:**
+   - Documented explicit distinction between tracked files (clean) and the overall repository working tree (not clean due to presence of untracked documentation files).
 
 ---
 
-## 3. Repository File Delta in Phase 02.1
+## 3. Repository File Delta in Phase 02.2
 
 ### Files Modified (Documentation Only)
-- `ClientApp/docs/cinematic-login/02-DESIGN-SYSTEM.md` — Updated with mathematical contrast ratios, composite context analysis, reference-derived vs proposed value separation, 1080p scaling methodology, full 5-component specifications, and 23-token table verification.
-- `ClientApp/docs/cinematic-login/07-ROADMAP.md` — Updated Phase 02 to `SUPERSEDED BY 02.1`, Phase 02.1 to `TECHNICALLY VERIFIED`, Phase 03 to `PLANNED (NOT AUTHORIZED)`.
+- `ClientApp/docs/cinematic-login/02-DESIGN-SYSTEM.md` — Reconciled all coordinates with `03-COMPOSITION-SPEC.md`, reclassified glassmorphism values as PROPOSED, and documented dynamic contrast testing mandate.
+- `ClientApp/docs/cinematic-login/07-ROADMAP.md` — Corrected status taxonomy (removed SUPERSEDED, updated Phase 02/02.1 to CHANGES REQUESTED, Phase 02.2 to TECHNICALLY VERIFIED).
 - `ClientApp/docs/cinematic-login/08-CURRENT-STATE.md` — Canonical continuity record updated (this file).
 
 ### Application Implementation Files Modified
@@ -65,17 +58,15 @@
 
 ---
 
-## 4. Prohibited Actions During Phase 02.1 & Phase 03 Transition
+## 4. Current Git Working Tree Status
 
-- **DO NOT** begin Phase 03 3D scene composition or spatial blockout.
-- **DO NOT** create or edit React components, TSX/JSX, or CSS stylesheets.
-- **DO NOT** create or edit Three.js / React Three Fiber scenes, shaders, or 3D geometry.
-- **DO NOT** install packages or modify package manifests.
-- **DO NOT** make Git commits or push branches.
-- **DO NOT** proceed without explicit user approval of Phase 02.1.
+- **Tracked Files Status:** Clean (0 modified tracked files, 0 staged files).
+- **Untracked Files:** 2 paths (`ClientApp/AGENTS.md`, `ClientApp/docs/cinematic-login/`).
+- **Overall Git Working Tree:** **NOT CLEAN** due to untracked documentation files.
+- **Git Policy Compliance:** No files staged, no commits created, no pushes executed.
 
 ---
 
 ## 5. Next Authorized Step
 
-Await explicit user review and approval of the Phase 02.1 report. Upon approval, await explicit prompt to begin Phase 03 (Scene Composition & Spatial Blockout).
+Await explicit user review and approval of the Phase 02.2 report. Upon explicit approval, await user prompt authorizing Phase 03 (Scene Composition & Spatial Blockout).
