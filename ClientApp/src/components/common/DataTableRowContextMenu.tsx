@@ -80,16 +80,22 @@ function ActionList<T>({ actions, row, onActionClick }: ActionListProps<T>) {
           )
         }
 
+        let lastTriggerTime = 0
+        const handleTriggerAction = () => {
+          if (isDisabled) return
+          const now = Date.now()
+          if (now - lastTriggerTime < 250) return
+          lastTriggerTime = now
+          onActionClick()
+          action.onClick(row)
+        }
+
         return (
           <Fragment key={action.key}>
             <DropdownMenuItem
               disabled={isDisabled}
-              onClick={() => {
-                if (!isDisabled) {
-                  onActionClick()
-                  action.onClick(row)
-                }
-              }}
+              onSelect={handleTriggerAction}
+              onClick={handleTriggerAction}
               className={cn(
                 'gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors',
                 action.danger

@@ -14,6 +14,7 @@ import AppRouter from './components/AppRouter'
 import { useAuth } from './context/useAuth'
 import { usePeople, useModal } from './hooks'
 import { getPeople } from './services/peopleService'
+import type { Person } from './types/Person'
 
 export default function App() {
   const { accessToken, user, isAuthenticated, isLoading, logout } = useAuth()
@@ -57,6 +58,7 @@ export default function App() {
   const [showIssueInternational, setShowIssueInternational] = useState(false)
   const [internationalRefreshKey, setInternationalRefreshKey] = useState(0)
   const [statisticsRefreshKey, setStatisticsRefreshKey] = useState(0)
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null)
 
   // People data lifecycle managed through dedicated custom hook
   const {
@@ -79,6 +81,9 @@ export default function App() {
 
   const handleNavigate = useCallback((page: string) => {
     setActivePage(page)
+    if (page !== 'Add Person' && page !== 'Edit Person' && page !== 'Person Details') {
+      setSelectedPersonId(null)
+    }
     setShowIssueInternational(false)
     mobileSidebar.close()
 
@@ -87,7 +92,18 @@ export default function App() {
     }
   }, [mobileSidebar])
 
+  const handleShowDetails = useCallback((person: Person) => {
+    setSelectedPersonId(person.personId)
+    handleNavigate('Person Details')
+  }, [handleNavigate])
+
+  const handleEditPerson = useCallback((person: Person) => {
+    setSelectedPersonId(person.personId)
+    handleNavigate('Edit Person')
+  }, [handleNavigate])
+
   const handlePersonAdded = useCallback(async () => {
+    setSelectedPersonId(null)
     try {
       if (accessToken) {
         const updatedPeople = await getPeople(accessToken)
@@ -102,7 +118,7 @@ export default function App() {
       setPeopleError(
         error instanceof Error
           ? error.message
-          : 'Person was created, but the list could not be refreshed.',
+          : 'Person was saved, but the list could not be refreshed.',
       )
       handleNavigate('People')
     }
@@ -165,8 +181,15 @@ export default function App() {
           loadingPeople={loadingPeople}
           peopleError={peopleError}
           onRetryPeople={refreshPeople}
-          onAddPerson={() => handleNavigate('Add Person')}
+          onAddPerson={() => {
+            setSelectedPersonId(null)
+            handleNavigate('Add Person')
+          }}
+          onShowDetails={handleShowDetails}
+          onEditPerson={handleEditPerson}
           onPersonAdded={handlePersonAdded}
+          selectedPersonId={selectedPersonId}
+          setSelectedPersonId={setSelectedPersonId}
         />
 
         {/* Logout Confirmation Dialog */}

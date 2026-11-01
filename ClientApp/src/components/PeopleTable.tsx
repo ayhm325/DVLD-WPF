@@ -1,13 +1,22 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   UserPlus,
   Users,
+  Eye,
+  Pencil,
+  Trash2,
+  Mail,
+  Phone,
+  MoreHorizontal,
 } from 'lucide-react'
 import type { Person } from '../types/Person'
 import { formatDate } from '../utils/formatters'
 import TableToolbar from './common/TableToolbar'
 import EmptyState from './common/EmptyState'
-import DataTable, { type DataTableColumn } from './common/DataTable'
+import DataTable, {
+  type DataTableColumn,
+  type DataTableRowAction,
+} from './common/DataTable'
 import {
   Select,
   SelectContent,
@@ -15,6 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import { Button } from './ui/button'
 
 type SearchBy = 'all' | 'name' | 'nationalNo' | 'id' | 'phone'
 
@@ -34,104 +51,10 @@ export type PeopleTableProps = {
   onAddPerson: () => void
   onRefresh?: () => void
   loading?: boolean
+  onShowDetails?: (person: Person) => void
+  onEditPerson?: (person: Person) => void
+  onDeletePerson?: (person: Person) => void
 }
-
-const columns: DataTableColumn<Person>[] = [
-  {
-    key: 'personId',
-    header: 'ID',
-    headerClassName: 'w-16 col-compact',
-    className: 'col-compact',
-    render: (person) => (
-      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
-        #{person.personId}
-      </span>
-    ),
-  },
-  {
-    key: 'fullName',
-    header: 'Full Name',
-    render: (person) => (
-      <div className="person-cell">
-        <span className="person-avatar" aria-hidden="true">
-          {person.fullName ? person.fullName.charAt(0).toUpperCase() : 'P'}
-        </span>
-        <strong>{person.fullName}</strong>
-      </div>
-    ),
-  },
-  {
-    key: 'nationalNo',
-    header: 'National No.',
-    render: (person) => (
-      <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
-        {person.nationalNo}
-      </span>
-    ),
-  },
-  {
-    key: 'dateOfBirth',
-    header: 'Date of Birth',
-    render: (person) => (
-      <span style={{ color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
-        {formatDate(person.dateOfBirth)}
-      </span>
-    ),
-  },
-  {
-    key: 'gender',
-    header: 'Gender',
-    render: (person) => (
-      <span className={`gender-badge ${person.gender === 0 ? 'is-male' : 'is-female'}`}>
-        {person.gender === 0 ? 'Male' : 'Female'}
-      </span>
-    ),
-  },
-  {
-    key: 'address',
-    header: 'Address',
-    render: (person) => (
-      <span
-        className="max-w-[180px] truncate block"
-        title={person.address || '—'}
-        style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)' }}
-      >
-        {person.address || '—'}
-      </span>
-    ),
-  },
-  {
-    key: 'phone',
-    header: 'Phone',
-    render: (person) => (
-      <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
-        {person.phone || '—'}
-      </span>
-    ),
-  },
-  {
-    key: 'email',
-    header: 'Email',
-    render: (person) => (
-      <span
-        className="max-w-[180px] truncate block"
-        title={person.email || '—'}
-        style={{ color: person.email ? 'var(--dvld-table-text-muted, #94a3b8)' : 'var(--dvld-table-text-muted, #64748b)' }}
-      >
-        {person.email || '—'}
-      </span>
-    ),
-  },
-  {
-    key: 'countryName',
-    header: 'Country',
-    render: (person) => (
-      <span style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)', fontWeight: 500 }}>
-        {person.countryName || '—'}
-      </span>
-    ),
-  },
-]
 
 export default function PeopleTable({
   people,
@@ -140,6 +63,9 @@ export default function PeopleTable({
   onAddPerson,
   onRefresh,
   loading = false,
+  onShowDetails,
+  onEditPerson,
+  onDeletePerson,
 }: PeopleTableProps) {
   const [internalSearch, setInternalSearch] = useState(searchName ?? '')
   const [searchBy, setSearchBy] = useState<SearchBy>('all')
@@ -208,6 +134,255 @@ export default function PeopleTable({
         return 'Search by name, national no, ID, phone...'
     }
   }, [searchBy])
+
+  const getRowContextMenu = useCallback(
+    (person: Person): DataTableRowAction<Person>[] => {
+      const hasEmail = Boolean(person.email && person.email.trim().length > 0)
+      const hasPhone = Boolean(person.phone && person.phone.trim().length > 0)
+
+      return [
+        {
+          key: 'show-details',
+          label: 'Show Details',
+          icon: <Eye className="size-4" />,
+          separatorAfter: true,
+          onClick: (p) => onShowDetails?.(p),
+        },
+        {
+          key: 'add-new-person',
+          label: 'Add New Person',
+          icon: <UserPlus className="size-4" />,
+          onClick: () => onAddPerson(),
+        },
+        {
+          key: 'edit',
+          label: 'Edit',
+          icon: <Pencil className="size-4" />,
+          onClick: (p) => onEditPerson?.(p),
+        },
+        {
+          key: 'delete',
+          label: 'Delete',
+          icon: <Trash2 className="size-4" />,
+          danger: true,
+          separatorAfter: true,
+          onClick: (p) => onDeletePerson?.(p),
+        },
+        {
+          key: 'send-email',
+          label: 'Send Email',
+          icon: <Mail className="size-4" />,
+          disabled: !hasEmail,
+          onClick: (p) => {
+            if (p.email && p.email.trim()) {
+              window.location.href = `mailto:${encodeURIComponent(p.email.trim())}`
+            }
+          },
+        },
+        {
+          key: 'phone-call',
+          label: 'Phone Call',
+          icon: <Phone className="size-4" />,
+          disabled: !hasPhone,
+          onClick: (p) => {
+            if (p.phone && p.phone.trim()) {
+              window.location.href = `tel:${encodeURIComponent(p.phone.trim())}`
+            }
+          },
+        },
+      ]
+    },
+    [onShowDetails, onAddPerson, onEditPerson, onDeletePerson],
+  )
+
+  const columns = useMemo<DataTableColumn<Person>[]>(
+    () => [
+      {
+        key: 'personId',
+        header: 'ID',
+        headerClassName: 'w-16 col-compact',
+        className: 'col-compact',
+        render: (person) => (
+          <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
+            #{person.personId}
+          </span>
+        ),
+      },
+      {
+        key: 'fullName',
+        header: 'Full Name',
+        render: (person) => (
+          <div className="person-cell">
+            <span className="person-avatar" aria-hidden="true">
+              {person.fullName ? person.fullName.charAt(0).toUpperCase() : 'P'}
+            </span>
+            <strong>{person.fullName}</strong>
+          </div>
+        ),
+      },
+      {
+        key: 'nationalNo',
+        header: 'National No.',
+        render: (person) => (
+          <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
+            {person.nationalNo}
+          </span>
+        ),
+      },
+      {
+        key: 'dateOfBirth',
+        header: 'Date of Birth',
+        render: (person) => (
+          <span style={{ color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
+            {formatDate(person.dateOfBirth)}
+          </span>
+        ),
+      },
+      {
+        key: 'gender',
+        header: 'Gender',
+        render: (person) => (
+          <span className={`gender-badge ${person.gender === 0 ? 'is-male' : 'is-female'}`}>
+            {person.gender === 0 ? 'Male' : 'Female'}
+          </span>
+        ),
+      },
+      {
+        key: 'address',
+        header: 'Address',
+        render: (person) => (
+          <span
+            className="max-w-[180px] truncate block"
+            title={person.address || '—'}
+            style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)' }}
+          >
+            {person.address || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'phone',
+        header: 'Phone',
+        render: (person) => (
+          <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
+            {person.phone || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'email',
+        header: 'Email',
+        render: (person) => (
+          <span
+            className="max-w-[180px] truncate block"
+            title={person.email || '—'}
+            style={{ color: person.email ? 'var(--dvld-table-text-muted, #94a3b8)' : 'var(--dvld-table-text-muted, #64748b)' }}
+          >
+            {person.email || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'countryName',
+        header: 'Country',
+        render: (person) => (
+          <span style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)', fontWeight: 500 }}>
+            {person.countryName || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: 'Actions',
+        headerClassName: 'w-20 text-center',
+        className: 'text-center',
+        render: (person) => {
+          const hasEmail = Boolean(person.email && person.email.trim().length > 0)
+          const hasPhone = Boolean(person.phone && person.phone.trim().length > 0)
+
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="size-8 p-0 text-slate-400 hover:text-white hover:bg-[#1a2c47] rounded-lg"
+                  title="Person actions"
+                  aria-label={`Actions for person ${person.fullName}`}
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={4}
+                className="min-w-48 p-1 bg-[#101a2d] border border-[#263750] shadow-2xl rounded-xl z-50 ring-1 ring-white/10 text-slate-200"
+              >
+                <DropdownMenuItem
+                  onSelect={() => onShowDetails?.(person)}
+                  onClick={() => onShowDetails?.(person)}
+                  className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-slate-200 focus:text-white focus:bg-surface-soft hover:bg-surface-soft"
+                >
+                  <Eye className="size-4 text-slate-400" />
+                  <span>Show Details</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1 border-t border-[#263750]" />
+                <DropdownMenuItem
+                  onClick={onAddPerson}
+                  className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-slate-200 focus:text-white focus:bg-surface-soft hover:bg-surface-soft"
+                >
+                  <UserPlus className="size-4 text-slate-400" />
+                  <span>Add New Person</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => onEditPerson?.(person)}
+                  onClick={() => onEditPerson?.(person)}
+                  className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-slate-200 focus:text-white focus:bg-surface-soft hover:bg-surface-soft"
+                >
+                  <Pencil className="size-4 text-slate-400" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => onDeletePerson?.(person)}
+                  onClick={() => onDeletePerson?.(person)}
+                  className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-red-400 focus:text-red-300 focus:bg-red-950/40 hover:bg-red-950/40"
+                >
+                  <Trash2 className="size-4 text-red-400" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1 border-t border-[#263750]" />
+                <DropdownMenuItem
+                  disabled={!hasEmail}
+                  onClick={() => {
+                    if (person.email && person.email.trim()) {
+                      window.location.href = `mailto:${encodeURIComponent(person.email.trim())}`
+                    }
+                  }}
+                  className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-slate-200 focus:text-white focus:bg-surface-soft hover:bg-surface-soft"
+                >
+                  <Mail className="size-4 text-slate-400" />
+                  <span>Send Email</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={!hasPhone}
+                  onClick={() => {
+                    if (person.phone && person.phone.trim()) {
+                      window.location.href = `tel:${encodeURIComponent(person.phone.trim())}`
+                    }
+                  }}
+                  className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-slate-200 focus:text-white focus:bg-surface-soft hover:bg-surface-soft"
+                >
+                  <Phone className="size-4 text-slate-400" />
+                  <span>Phone Call</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        },
+      },
+    ],
+    [onShowDetails, onAddPerson, onEditPerson, onDeletePerson],
+  )
 
   return (
     <section className="panel">
@@ -283,6 +458,7 @@ export default function PeopleTable({
           />
         }
         minWidth={1100}
+        rowContextMenu={getRowContextMenu}
       />
     </section>
   )

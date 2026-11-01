@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Users,
   Car,
@@ -11,6 +12,8 @@ import DashboardHero from './dashboard/DashboardHero'
 import PeopleTable from './PeopleTable'
 import StatsGrid from './common/StatsGrid'
 import StatCard from './common/StatCard'
+import ConfirmModal from './common/ConfirmModal'
+import ErrorAlert from './common/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
@@ -18,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { useDashboardStatistics } from '../hooks/useDashboardStatistics'
 import type { Person } from '../types/Person'
 import { formatNumber } from '../utils/formatters'
+import { deletePerson } from '../services/peopleService'
 
 export type DashboardPageProps = {
   accessToken: string
@@ -30,6 +34,8 @@ export type DashboardPageProps = {
   peopleError: string
   onRetryPeople: () => void
   onAddPerson: () => void
+  onShowDetails?: (person: Person) => void
+  onEditPerson?: (person: Person) => void
 }
 
 export default function DashboardPage({
@@ -42,11 +48,44 @@ export default function DashboardPage({
   peopleError,
   onRetryPeople,
   onAddPerson,
+  onShowDetails,
+  onEditPerson,
 }: DashboardPageProps) {
   const { statistics, loading, error, retry } = useDashboardStatistics(
     accessToken,
     statisticsRefreshKey,
   )
+
+  const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteSuccess, setDeleteSuccess] = useState('')
+
+  async function handleConfirmDelete() {
+    if (!deletePersonTarget || isDeleting || !accessToken) return
+
+    setIsDeleting(true)
+    setDeleteError('')
+    setDeleteSuccess('')
+
+    try {
+      await deletePerson(accessToken, deletePersonTarget.personId)
+      setDeleteSuccess(
+        `Person #${deletePersonTarget.personId} (${deletePersonTarget.fullName}) was deleted successfully.`,
+      )
+      setDeletePersonTarget(null)
+      onRetryPeople()
+      retry()
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error
+          ? err.message
+          : `Failed to delete person #${deletePersonTarget.personId}.`,
+      )
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <section className="page-content space-y-7">
@@ -250,6 +289,34 @@ export default function DashboardPage({
         </div>
       )}
 
+      {deleteError && (
+        <div style={{ marginBottom: 20 }}>
+          <ErrorAlert
+            message={deleteError}
+            onDismiss={() => setDeleteError('')}
+          />
+        </div>
+      )}
+
+      {deleteSuccess && (
+        <div style={{ marginBottom: 20 }}>
+          <p
+            role="status"
+            className="text-emerald-400 font-semibold text-xs bg-emerald-950/40 border border-emerald-500/30 rounded-xl px-4 py-2.5 flex items-center justify-between"
+          >
+            <span>{deleteSuccess}</span>
+            <button
+              type="button"
+              className="text-slate-400 hover:text-white cursor-pointer ml-3"
+              onClick={() => setDeleteSuccess('')}
+              aria-label="Dismiss message"
+            >
+              ✕
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* People Directory Table */}
       <PeopleTable
         people={people}
@@ -258,6 +325,34 @@ export default function DashboardPage({
         onAddPerson={onAddPerson}
         onRefresh={onRetryPeople}
         loading={loadingPeople}
+        onShowDetails={onShowDetails}
+        onEditPerson={onEditPerson}
+        onDeletePerson={(p) => {
+          setDeleteError('')
+          setDeleteSuccess('')
+          setDeletePersonTarget(p)
+        }}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletePersonTarget)}
+        title="Delete Person Record"
+        message={
+          deletePersonTarget
+            ? `Are you sure you want to delete person #${deletePersonTarget.personId} — "${deletePersonTarget.fullName}" (National No: ${deletePersonTarget.nationalNo})? This action cannot be undone.`
+            : ''
+        }
+        confirmText="Delete Person"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        loading={isDeleting}
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => {
+          if (!isDeleting) {
+            setDeletePersonTarget(null)
+          }
+        }}
       />
     </section>
   )

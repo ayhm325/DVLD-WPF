@@ -33,6 +33,10 @@ function getBreadcrumbs(page: string): { parent?: string; current: string } {
       return { parent: 'Directory', current: 'People' }
     case 'Add Person':
       return { parent: 'Directory', current: 'Add New Person' }
+    case 'Edit Person':
+      return { parent: 'Directory', current: 'Edit Person' }
+    case 'Person Details':
+      return { parent: 'Directory', current: 'Person Details' }
     case 'Drivers':
       return { parent: 'Directory', current: 'Drivers' }
     case 'Licenses':

@@ -20,6 +20,8 @@ export type PageId =
   | 'Dashboard'
   | 'People'
   | 'Add Person'
+  | 'Edit Person'
+  | 'Person Details'
   | 'Drivers'
   | 'Licenses'
   | 'International Licenses'
@@ -42,6 +44,12 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
 
   // Add Person: PeopleController [Authorize(Policy = "StaffOrAdmin")]
   'Add Person': ['Admin', 'Staff'],
+
+  // Edit Person: PeopleController [Authorize(Policy = "StaffOrAdmin")]
+  'Edit Person': ['Admin', 'Staff'],
+
+  // Person Details: PeopleController [Authorize(Policy = "StaffOrAdmin")]
+  'Person Details': ['Admin', 'Staff'],
 
   // Drivers Directory: DriversController [Authorize(Policy = "StaffOnly")]
   'Drivers': ['Staff'],

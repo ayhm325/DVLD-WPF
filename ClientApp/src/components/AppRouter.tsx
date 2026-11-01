@@ -8,6 +8,8 @@ import type { Person } from '../types/Person'
 const DashboardPage = lazy(() => import('./DashboardPage'))
 const PeoplePage = lazy(() => import('./PeoplePage'))
 const AddPersonPage = lazy(() => import('./AddPersonPage'))
+const EditPersonPage = lazy(() => import('./people/EditPersonPage'))
+const PersonDetailsPage = lazy(() => import('./people/PersonDetailsPage'))
 const DriversPage = lazy(() => import('./DriversPage'))
 const LicensesPage = lazy(() => import('./LicensesPage'))
 const InternationalLicensesPage = lazy(
@@ -43,6 +45,10 @@ export type AppRouterProps = {
   onRetryPeople: () => void
   onAddPerson: () => void
   onPersonAdded?: () => void
+  onShowDetails?: (person: Person) => void
+  onEditPerson?: (person: Person) => void
+  selectedPersonId?: number | null
+  setSelectedPersonId?: (id: number | null) => void
 }
 
 const settingsPages = [
@@ -71,6 +77,10 @@ export default function AppRouter({
   onRetryPeople,
   onAddPerson,
   onPersonAdded,
+  onShowDetails,
+  onEditPerson,
+  selectedPersonId,
+  setSelectedPersonId,
 }: AppRouterProps) {
   const isCurrentPagePermitted = isPagePermitted(activePage, userRole)
 
@@ -107,12 +117,15 @@ export default function AppRouter({
           peopleError={peopleError}
           onRetryPeople={onRetryPeople}
           onAddPerson={onAddPerson}
+          onShowDetails={onShowDetails}
+          onEditPerson={onEditPerson}
         />
       )}
 
       {/* People */}
       {activePage === 'People' && (
         <PeoplePage
+          accessToken={accessToken}
           people={people}
           filteredPeople={filteredPeople}
           searchName={searchName}
@@ -121,6 +134,8 @@ export default function AppRouter({
           peopleError={peopleError}
           onRetryPeople={onRetryPeople}
           onAddPerson={onAddPerson}
+          onShowDetails={onShowDetails}
+          onEditPerson={onEditPerson}
         />
       )}
 
@@ -130,6 +145,29 @@ export default function AppRouter({
           accessToken={accessToken}
           onBack={() => onNavigate('People')}
           onPersonAdded={onPersonAdded ?? (() => onNavigate('People'))}
+        />
+      )}
+
+      {/* Edit Person */}
+      {activePage === 'Edit Person' && (
+        <EditPersonPage
+          accessToken={accessToken}
+          personId={selectedPersonId ?? null}
+          onBack={() => onNavigate('People')}
+          onPersonUpdated={onPersonAdded ?? (() => onNavigate('People'))}
+        />
+      )}
+
+      {/* Person Details */}
+      {activePage === 'Person Details' && (
+        <PersonDetailsPage
+          accessToken={accessToken}
+          personId={selectedPersonId ?? null}
+          onBack={() => onNavigate('People')}
+          onEdit={(id) => {
+            setSelectedPersonId?.(id)
+            onNavigate('Edit Person')
+          }}
         />
       )}
 
@@ -210,6 +248,8 @@ export default function AppRouter({
         'Dashboard',
         'People',
         'Add Person',
+        'Edit Person',
+        'Person Details',
         'Drivers',
         'Licenses',
         'International Licenses',
