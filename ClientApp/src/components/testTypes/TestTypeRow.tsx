@@ -1,5 +1,7 @@
 import type { TestType } from '../../types/TestType'
 import { formatCurrency } from '../../utils/formatters'
+import { Input, Textarea, Button } from '../ui'
+import { Loader2 } from 'lucide-react'
 
 interface TestTypeRowProps {
   item: TestType
@@ -40,11 +42,12 @@ export default function TestTypeRow({
 
       <td className="whitespace-nowrap font-semibold text-[#f1f5f9] pt-3.5">
         {isEditing ? (
-          <input
-            className="search-input"
+          <Input
+            className="h-9 text-xs rounded-lg min-w-[140px]"
             value={editForm.testTypeTitle}
             maxLength={100}
             aria-label="Test type title"
+            disabled={saving}
             onChange={(event) =>
               onFormChange({
                 ...editForm,
@@ -59,12 +62,13 @@ export default function TestTypeRow({
 
       <td className="table-cell-description pt-3.5">
         {isEditing ? (
-          <textarea
-            className="search-input w-full min-h-[72px] resize-y leading-relaxed p-2 text-xs"
+          <Textarea
+            className="min-h-[72px] text-xs leading-relaxed p-2.5 rounded-lg resize-y"
             rows={3}
             value={editForm.testTypeDescription}
             maxLength={500}
             aria-label="Test type description"
+            disabled={saving}
             onChange={(event) =>
               onFormChange({
                 ...editForm,
@@ -81,13 +85,14 @@ export default function TestTypeRow({
 
       <td className="whitespace-nowrap font-mono font-semibold text-[#cbd5e1] pt-3.5">
         {isEditing ? (
-          <input
-            className="search-input"
+          <Input
+            className="h-9 text-xs font-mono rounded-lg w-28"
             type="number"
             min="0"
             step="0.01"
             value={editForm.testTypeFees}
             aria-label="Test type fees"
+            disabled={saving}
             onChange={(event) =>
               onFormChange({
                 ...editForm,
@@ -102,33 +107,36 @@ export default function TestTypeRow({
 
       <td className="whitespace-nowrap pt-3">
         {isEditing ? (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
+          <div className="flex items-center gap-2">
+            <Button
               type="button"
-              className="primary-button"
+              size="sm"
               disabled={saving}
               onClick={onSave}
             >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
+              {saving && <Loader2 className="size-3.5 animate-spin" />}
+              <span>{saving ? 'Saving...' : 'Save'}</span>
+            </Button>
 
-            <button
+            <Button
               type="button"
-              className="secondary-button"
+              variant="secondary"
+              size="sm"
               disabled={saving}
               onClick={onCancel}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
+          <Button
             type="button"
-            className="secondary-button"
+            variant="secondary"
+            size="sm"
             onClick={() => onStartEdit(item)}
           >
             Edit
-          </button>
+          </Button>
         )}
       </td>
     </tr>

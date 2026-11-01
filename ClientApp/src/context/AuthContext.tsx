@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react'
 import type { ReactNode } from 'react'
@@ -117,16 +118,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthMessage(null)
   }, [])
 
-  const value: AuthContextValue = {
-    accessToken: session?.accessToken ?? null,
-    user: session?.user ?? null,
-    isAuthenticated: session !== null && session.accessToken.length > 0,
-    isLoading,
-    authMessage,
-    login,
-    logout,
-    clearAuthMessage,
-  }
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      accessToken: session?.accessToken ?? null,
+      user: session?.user ?? null,
+      isAuthenticated: session !== null && session.accessToken.length > 0,
+      isLoading,
+      authMessage,
+      login,
+      logout,
+      clearAuthMessage,
+    }),
+    [session, isLoading, authMessage, login, logout, clearAuthMessage],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

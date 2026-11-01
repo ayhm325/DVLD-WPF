@@ -1,18 +1,28 @@
+import { lazy, Suspense } from 'react'
 import AccessDenied from './common/AccessDenied'
+import LoadingSpinner from './common/LoadingSpinner'
 import { isPagePermitted } from '../utils/permissions'
-import DashboardPage from './DashboardPage'
-import PeoplePage from './PeoplePage'
-import DriversPage from './DriversPage'
-import LicensesPage from './LicensesPage'
-import InternationalLicensesPage from './international license/InternationalLicensesPage'
-import IssueInternationalLicensePage from './international license/IssueInternationalLicensePage'
-import LocalApplicationsPage from './local applications/LocalApplicationsPage'
-import CountriesPage from './CountriesPage'
-import ApplicationTypesPage from './ApplicationTypesPage'
-import LicenseClassesPage from './LicenseClassesPage'
-import TestTypesPage from './TestTypesPage'
 import { IdCard as LicenseIcon, Settings as SettingsIcon } from 'lucide-react'
 import type { Person } from '../types/Person'
+
+const DashboardPage = lazy(() => import('./DashboardPage'))
+const PeoplePage = lazy(() => import('./PeoplePage'))
+const AddPersonPage = lazy(() => import('./AddPersonPage'))
+const DriversPage = lazy(() => import('./DriversPage'))
+const LicensesPage = lazy(() => import('./LicensesPage'))
+const InternationalLicensesPage = lazy(
+  () => import('./international license/InternationalLicensesPage'),
+)
+const IssueInternationalLicensePage = lazy(
+  () => import('./international license/IssueInternationalLicensePage'),
+)
+const LocalApplicationsPage = lazy(
+  () => import('./local applications/LocalApplicationsPage'),
+)
+const CountriesPage = lazy(() => import('./CountriesPage'))
+const ApplicationTypesPage = lazy(() => import('./ApplicationTypesPage'))
+const LicenseClassesPage = lazy(() => import('./LicenseClassesPage'))
+const TestTypesPage = lazy(() => import('./TestTypesPage'))
 
 export type AppRouterProps = {
   activePage: string
@@ -32,6 +42,7 @@ export type AppRouterProps = {
   peopleError: string
   onRetryPeople: () => void
   onAddPerson: () => void
+  onPersonAdded?: () => void
 }
 
 const settingsPages = [
@@ -59,6 +70,7 @@ export default function AppRouter({
   peopleError,
   onRetryPeople,
   onAddPerson,
+  onPersonAdded,
 }: AppRouterProps) {
   const isCurrentPagePermitted = isPagePermitted(activePage, userRole)
 
@@ -75,7 +87,13 @@ export default function AppRouter({
   }
 
   return (
-    <>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px] w-full py-16">
+          <LoadingSpinner size="lg" />
+        </div>
+      }
+    >
       {/* Dashboard */}
       {activePage === 'Dashboard' && (
         <DashboardPage
@@ -103,6 +121,15 @@ export default function AppRouter({
           peopleError={peopleError}
           onRetryPeople={onRetryPeople}
           onAddPerson={onAddPerson}
+        />
+      )}
+
+      {/* Add Person */}
+      {activePage === 'Add Person' && (
+        <AddPersonPage
+          accessToken={accessToken}
+          onBack={() => onNavigate('People')}
+          onPersonAdded={onPersonAdded ?? (() => onNavigate('People'))}
         />
       )}
 
@@ -208,6 +235,6 @@ export default function AppRouter({
           </div>
         </section>
       )}
-    </>
+    </Suspense>
   )
 }

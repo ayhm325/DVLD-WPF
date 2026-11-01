@@ -90,7 +90,7 @@ export default function Sidebar({
     label: string = page,
     isSubItem = false,
   ) => {
-    const isActive = activePage === page
+    const isActive = activePage === page || (page === 'People' && activePage === 'Add Person')
     return (
       <button
         key={page}

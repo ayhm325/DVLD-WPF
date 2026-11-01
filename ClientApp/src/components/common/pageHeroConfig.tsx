@@ -26,6 +26,7 @@ import {
   Eye,
   FileSignature,
   User as UserIcon,
+  UserPlus,
 } from 'lucide-react'
 
 export type FloatingIconColor = 'blue' | 'emerald' | 'purple' | 'amber' | 'cyan' | 'rose'
@@ -92,6 +93,31 @@ export const PAGE_HERO_CONFIG: Record<string, PageHeroConfigItem> = {
       },
       {
         icon: <UserCheck className="size-6" />,
+        color: 'cyan',
+        position: 'top-right',
+      },
+      {
+        icon: <Fingerprint className="size-6" />,
+        color: 'purple',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Add Person': {
+    eyebrow: 'DIRECTORY REGISTRATION',
+    title: 'Register New',
+    highlight: 'Person',
+    description: 'Create a new citizen or resident identity record with demographic and contact details.',
+    illustrationTag: 'NEW-CITIZEN',
+    illustrationIcon: <UserPlus className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Users className="size-7" />,
+        color: 'blue',
+        position: 'left',
+      },
+      {
+        icon: <UserPlus className="size-6" />,
         color: 'cyan',
         position: 'top-right',
       },

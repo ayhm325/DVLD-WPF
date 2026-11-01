@@ -87,6 +87,50 @@ const columns: DataTableColumn<Person>[] = [
       </span>
     ),
   },
+  {
+    key: 'address',
+    header: 'Address',
+    render: (person) => (
+      <span
+        className="max-w-[180px] truncate block"
+        title={person.address || '—'}
+        style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)' }}
+      >
+        {person.address || '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'phone',
+    header: 'Phone',
+    render: (person) => (
+      <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
+        {person.phone || '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'email',
+    header: 'Email',
+    render: (person) => (
+      <span
+        className="max-w-[180px] truncate block"
+        title={person.email || '—'}
+        style={{ color: person.email ? 'var(--dvld-table-text-muted, #94a3b8)' : 'var(--dvld-table-text-muted, #64748b)' }}
+      >
+        {person.email || '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'countryName',
+    header: 'Country',
+    render: (person) => (
+      <span style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)', fontWeight: 500 }}>
+        {person.countryName || '—'}
+      </span>
+    ),
+  },
 ]
 
 export default function PeopleTable({
@@ -126,6 +170,8 @@ export default function PeopleTable({
 
       if (!query) return true
 
+      const cleanIdQuery = query.replace(/^#/, '')
+
       if (searchBy === 'name') {
         return (person.fullName || '').toLowerCase().includes(query)
       }
@@ -133,7 +179,7 @@ export default function PeopleTable({
         return (person.nationalNo || '').toLowerCase().includes(query)
       }
       if (searchBy === 'id') {
-        return String(person.personId).includes(query)
+        return cleanIdQuery.length > 0 && String(person.personId).includes(cleanIdQuery)
       }
       if (searchBy === 'phone') {
         return (person.phone || '').toLowerCase().includes(query)
@@ -142,7 +188,7 @@ export default function PeopleTable({
       return (
         (person.fullName || '').toLowerCase().includes(query) ||
         (person.nationalNo || '').toLowerCase().includes(query) ||
-        String(person.personId).includes(query) ||
+        (cleanIdQuery.length > 0 && String(person.personId).includes(cleanIdQuery)) ||
         (person.phone || '').toLowerCase().includes(query)
       )
     })
@@ -236,7 +282,7 @@ export default function PeopleTable({
             message="No people found matching your criteria."
           />
         }
-        minWidth={750}
+        minWidth={1100}
       />
     </section>
   )

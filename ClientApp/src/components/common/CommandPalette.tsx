@@ -13,6 +13,7 @@ import {
   Flag,
   CornerDownLeft,
   X,
+  UserPlus,
 } from 'lucide-react'
 import { isPagePermitted } from '../../utils/permissions'
 
@@ -44,6 +45,15 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Pages',
     icon: Users,
     keywords: ['people', 'person', 'citizens', 'national', 'id', 'registry'],
+  },
+  {
+    id: 'add-person',
+    page: 'Add Person',
+    title: 'Register New Person',
+    description: 'Add a new citizen or resident record to the DVLD database',
+    category: 'Pages',
+    icon: UserPlus,
+    keywords: ['add', 'new', 'person', 'register', 'citizen', 'create'],
   },
   {
     id: 'drivers',

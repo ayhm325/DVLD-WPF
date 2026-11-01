@@ -50,15 +50,19 @@ export function usePeople(
     defaultErrorMessage: 'Failed to load people.',
   })
 
-  // Case-insensitive, null-safe search filter
+  // Case-insensitive, null-safe search filter covering all search modes
   const filteredPeople = useMemo(() => {
     const query = searchName.trim().toLowerCase()
     if (!query) return people
 
+    const cleanIdQuery = query.replace(/^#/, '')
+
     return people.filter(
       (person) =>
         (person.fullName?.toLowerCase() || '').includes(query) ||
-        (person.nationalNo?.toLowerCase() || '').includes(query),
+        (person.nationalNo?.toLowerCase() || '').includes(query) ||
+        (cleanIdQuery.length > 0 && String(person.personId).includes(cleanIdQuery)) ||
+        (person.phone?.toLowerCase() || '').includes(query),
     )
   }, [people, searchName])
 

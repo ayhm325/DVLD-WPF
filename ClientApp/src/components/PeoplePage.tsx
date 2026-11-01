@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import PeopleTable from './PeopleTable'
 import PageHero from './common/PageHero'
 import StatsGrid from './common/StatsGrid'
@@ -28,11 +29,14 @@ export default function PeoplePage({
   onRetryPeople,
   onAddPerson,
 }: PeoplePageProps) {
-  const people = rawPeople ?? filteredPeople
+  const people = useMemo(
+    () => rawPeople ?? filteredPeople ?? [],
+    [rawPeople, filteredPeople],
+  )
 
   const totalPeople = people.length
-  const maleCount = people.filter((p) => p.gender === 0).length
-  const femaleCount = people.filter((p) => p.gender === 1).length
+  const maleCount = useMemo(() => people.filter((p) => p.gender === 0).length, [people])
+  const femaleCount = useMemo(() => people.filter((p) => p.gender === 1).length, [people])
 
   return (
     <section className="page-content">

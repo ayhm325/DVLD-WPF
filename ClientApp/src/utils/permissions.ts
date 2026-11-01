@@ -19,6 +19,7 @@ export function isValidRole(role: unknown): role is UserRole {
 export type PageId =
   | 'Dashboard'
   | 'People'
+  | 'Add Person'
   | 'Drivers'
   | 'Licenses'
   | 'International Licenses'
@@ -38,6 +39,9 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
 
   // People Management: PeopleController [Authorize(Policy = "StaffOrAdmin")]
   'People': ['Admin', 'Staff'],
+
+  // Add Person: PeopleController [Authorize(Policy = "StaffOrAdmin")]
+  'Add Person': ['Admin', 'Staff'],
 
   // Drivers Directory: DriversController [Authorize(Policy = "StaffOnly")]
   'Drivers': ['Staff'],

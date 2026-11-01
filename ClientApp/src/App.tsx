@@ -6,7 +6,6 @@ import './App.css'
 import Sidebar from './components/Sidebar'
 import Topbar from './components/Topbar'
 import Login from './components/Login'
-import AddPersonModal from './components/AddPersonModal'
 import ConfirmModal from './components/common/ConfirmModal'
 import LoadingSpinner from './components/common/LoadingSpinner'
 import CommandPalette from './components/common/CommandPalette'
@@ -24,7 +23,6 @@ export default function App() {
   const logoutModal = useModal()
   const commandPalette = useModal()
   const { open: openCommandPalette } = commandPalette
-  const addPersonModal = useModal()
 
   // Listen for Ctrl+K / Cmd+K global shortcut
   useEffect(() => {
@@ -89,6 +87,27 @@ export default function App() {
     }
   }, [mobileSidebar])
 
+  const handlePersonAdded = useCallback(async () => {
+    try {
+      if (accessToken) {
+        const updatedPeople = await getPeople(accessToken)
+        setPeople(updatedPeople)
+      }
+      setSearchName('')
+      setPeopleError('')
+      setStatisticsRefreshKey((current) => current + 1)
+      refreshPeople()
+      handleNavigate('People')
+    } catch (error) {
+      setPeopleError(
+        error instanceof Error
+          ? error.message
+          : 'Person was created, but the list could not be refreshed.',
+      )
+      handleNavigate('People')
+    }
+  }, [accessToken, handleNavigate, refreshPeople, setPeople, setPeopleError, setSearchName])
+
   const handleConfirmLogout = useCallback(() => {
     logoutModal.close()
     mobileSidebar.close()
@@ -146,36 +165,9 @@ export default function App() {
           loadingPeople={loadingPeople}
           peopleError={peopleError}
           onRetryPeople={refreshPeople}
-          onAddPerson={addPersonModal.open}
+          onAddPerson={() => handleNavigate('Add Person')}
+          onPersonAdded={handlePersonAdded}
         />
-
-        {/* Add Person Modal */}
-        {addPersonModal.isOpen && (
-          <AddPersonModal
-            accessToken={accessToken}
-            onClose={addPersonModal.close}
-            onPersonAdded={async () => {
-              try {
-                const updatedPeople = await getPeople(accessToken)
-
-                setPeople(updatedPeople)
-                addPersonModal.close()
-                setSearchName('')
-                setPeopleError('')
-                setStatisticsRefreshKey((current) => current + 1)
-                refreshPeople()
-              } catch (error) {
-                setPeopleError(
-                  error instanceof Error
-                    ? error.message
-                    : 'Person was created, but the list could not be refreshed.',
-                )
-
-                addPersonModal.close()
-              }
-            }}
-          />
-        )}
 
         {/* Logout Confirmation Dialog */}
         <ConfirmModal

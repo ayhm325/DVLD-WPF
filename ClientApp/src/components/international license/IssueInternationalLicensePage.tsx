@@ -1,6 +1,13 @@
-
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import {
+  ArrowLeft,
+  Search,
+  Globe,
+  CheckCircle2,
+  Info,
+  Loader2,
+} from 'lucide-react'
 import type {
   InternationalLicenseDetails,
   LocalLicenseInfo,
@@ -10,8 +17,18 @@ import {
   issueInternationalLicense,
 } from '../../services/internationalLicenseService'
 import { formatDate, formatCurrency } from '../../utils/formatters'
+import { cn } from '@/lib/utils'
 import PageHero from '../common/PageHero'
-import './international-licenses.css'
+import ErrorAlert from '../common/ErrorAlert'
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Input,
+  Label,
+} from '../ui'
 
 type Props = {
   accessToken: string
@@ -105,164 +122,244 @@ export default function IssueInternationalLicensePage({
   }
 
   return (
-    <section className="page-content intl-page">
-      <div className="intl-breadcrumb">
-        <button type="button" onClick={onBack}>
-          ← International Licenses
-        </button>
-        <span>/</span>
-        <span>Issue new</span>
-      </div>
-
+    <section className="page-content space-y-6">
+      {/* Modern Page Hero */}
       <PageHero
         pageId="Issue International License"
+        title="Issue International"
+        highlight="Permit"
+        description="Verify an active, non-detained local driving license to issue an official 1949 convention international driving permit."
         actions={
-          <span className="intl-step-pill">
-            <span>01</span> Find local license{' '}
-            <span className="intl-step-arrow">→</span> <span>02</span> Issue
-          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onBack}
+            className="h-9 gap-2 text-xs font-semibold text-white bg-[#0e1b33] hover:bg-[#142647] border border-[#263750] hover:border-blue-500/40 rounded-xl shadow-xs transition-all cursor-pointer"
+          >
+            <ArrowLeft className="size-4 text-cyan-400" />
+            <span>Back to International Licenses</span>
+          </Button>
         }
       />
 
+      {/* Shared Alerts */}
       {error && (
-        <div className="intl-error" role="alert">
-          <strong>Something needs attention</strong>
-          <p>{error}</p>
-        </div>
+        <ErrorAlert
+          title="Issuance Notice"
+          message={error}
+          onDismiss={() => setError('')}
+        />
       )}
 
       {notice && (
-        <div
-          className={`intl-notice ${issued ? 'success' : ''}`}
-          role="status"
-        >
-          {notice}
-        </div>
+        <ErrorAlert
+          variant="success"
+          title="Status Update"
+          message={notice}
+          onDismiss={() => setNotice('')}
+        />
       )}
 
-      <section className="intl-panel intl-form-panel">
-        <div className="intl-panel-heading">
-          <div>
-            <h3>Eligible Local License</h3>
-            <p>
-              Search using the local license ID, as in the original WPF
-              workflow.
-            </p>
+      {/* Step 1 Card: Search Local License */}
+      <Card className="p-6 sm:p-8 space-y-6">
+        <CardHeader className="flex-row items-center gap-3 pb-5 border-b border-[#1e3458] mb-2 space-y-0">
+          <div className="size-10 rounded-xl bg-blue-500/15 border border-blue-400/30 text-cyan-400 flex items-center justify-center shrink-0">
+            <Search className="size-5" />
           </div>
-          <span className="intl-section-number">01</span>
-        </div>
+          <div>
+            <CardTitle>Eligible Local License Lookup</CardTitle>
+            <CardDescription className="mt-0.5">
+              Enter the local driving license ID to verify license status, class eligibility, and driver profile.
+            </CardDescription>
+          </div>
+        </CardHeader>
 
-        <form className="intl-license-search" onSubmit={searchLicense}>
-          <label htmlFor="local-license-id">Local License ID</label>
+        <form onSubmit={searchLicense} className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+            <div className="flex-1">
+              <Label
+                htmlFor="local-license-id"
+                className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2"
+              >
+                Local License ID <span className="text-rose-400">*</span>
+              </Label>
+              <Input
+                id="local-license-id"
+                type="number"
+                min="1"
+                value={licenseId}
+                onChange={(event) =>
+                  handleLicenseIdChange(event.target.value)
+                }
+                placeholder="Enter license ID (e.g. 1042)"
+                required
+                disabled={loading || saving}
+              />
+            </div>
 
-          <div className="intl-search-row">
-            <input
-              id="local-license-id"
-              type="number"
-              min="1"
-              value={licenseId}
-              onChange={(event) =>
-                handleLicenseIdChange(event.target.value)
-              }
-              placeholder="e.g. 1042"
-              required
-            />
-
-            <button
-              className="intl-primary-button"
+            <Button
               type="submit"
               disabled={loading || saving}
+              className="h-11 px-6 gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(0,140,255,0.35)] shrink-0 cursor-pointer"
             >
-              {loading ? 'Searching…' : 'Search license'}
-            </button>
+              {loading ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  <span>Searching...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="size-4" />
+                  <span>Search License</span>
+                </>
+              )}
+            </Button>
           </div>
-
-          <small>
-            Enter the ID of the local license to retrieve its current details.
-          </small>
+          <span className="text-[11px] text-slate-500 block">
+            Enter the ID of the local license to retrieve its current eligibility and profile.
+          </span>
         </form>
 
+        {/* Retrieved License Details */}
         {license && (
-          <div className="intl-license-details">
-            <div className="intl-person-banner">
-              <div className="intl-person-avatar">
-                {license.fullName?.trim().charAt(0) || 'P'}
-              </div>
-
-              <div>
-                <span>License holder</span>
-                <h3>{license.fullName}</h3>
-                <p>
-                  National No. {license.nationalNo} · Driver ID{' '}
-                  {license.driverId}
-                </p>
+          <div className="space-y-6 pt-4 border-t border-[#1e3458]">
+            {/* License Holder Profile Banner */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-[#09152b] border border-[#1b2f52]">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="size-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm">
+                  {license.fullName?.trim().charAt(0) || 'P'}
+                </div>
+                <div className="min-w-0 space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    LICENSE HOLDER
+                  </span>
+                  <h4 className="text-base font-bold text-white truncate">
+                    {license.fullName}
+                  </h4>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300">
+                    <span>
+                      National No.{' '}
+                      <strong className="text-white">
+                        {license.nationalNo}
+                      </strong>
+                    </span>
+                    <span>·</span>
+                    <span>
+                      Driver ID{' '}
+                      <strong className="text-white font-mono">
+                        #{license.driverId}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <span
-                className={`intl-status ${
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shrink-0',
                   license.isActive && !license.isDetained
-                    ? 'is-active'
-                    : 'is-inactive'
-                }`}
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                    : 'bg-rose-500/15 border-rose-500/30 text-rose-300',
+                )}
               >
-                <i />
-                {license.isDetained
-                  ? 'Detained'
-                  : license.isActive
-                    ? 'Active'
-                    : 'Inactive'}
+                <span
+                  className={cn(
+                    'size-1.5 rounded-full',
+                    license.isActive && !license.isDetained
+                      ? 'bg-emerald-400'
+                      : 'bg-rose-400',
+                  )}
+                />
+                <span>
+                  {license.isDetained
+                    ? 'Detained'
+                    : license.isActive
+                      ? 'Active License'
+                      : 'Inactive License'}
+                </span>
               </span>
             </div>
 
-            <div className="intl-detail-grid">
-              <div>
-                <span>Local License ID</span>
-                <strong>#{license.licenseId}</strong>
+            {/* License Attributes Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+              <div className="p-3.5 rounded-xl bg-[#081326] border border-[#1b2f52] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Local License
+                </span>
+                <strong className="text-sm font-bold text-white font-mono block">
+                  #{license.licenseId}
+                </strong>
               </div>
-              <div>
-                <span>License Class</span>
-                <strong>{license.licenseClass}</strong>
+
+              <div className="p-3.5 rounded-xl bg-[#081326] border border-[#1b2f52] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  License Class
+                </span>
+                <strong className="text-sm font-bold text-cyan-300 truncate block">
+                  {license.licenseClass}
+                </strong>
               </div>
-              <div>
-                <span>Issue Date</span>
-                <strong>{formatDate(license.issueDate)}</strong>
+
+              <div className="p-3.5 rounded-xl bg-[#081326] border border-[#1b2f52] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Issue Date
+                </span>
+                <strong className="text-sm font-bold text-slate-200 block">
+                  {formatDate(license.issueDate)}
+                </strong>
               </div>
-              <div>
-                <span>Expiration Date</span>
-                <strong>{formatDate(license.expirationDate)}</strong>
+
+              <div className="p-3.5 rounded-xl bg-[#081326] border border-[#1b2f52] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Expiration Date
+                </span>
+                <strong className="text-sm font-bold text-slate-200 block">
+                  {formatDate(license.expirationDate)}
+                </strong>
               </div>
-              <div>
-                <span>Date of Birth</span>
-                <strong>{formatDate(license.dateOfBirth)}</strong>
+
+              <div className="p-3.5 rounded-xl bg-[#081326] border border-[#1b2f52] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Date of Birth
+                </span>
+                <strong className="text-sm font-bold text-slate-200 block">
+                  {formatDate(license.dateOfBirth)}
+                </strong>
               </div>
-              <div>
-                <span>Gender</span>
-                <strong>{license.gender || '—'}</strong>
+
+              <div className="p-3.5 rounded-xl bg-[#081326] border border-[#1b2f52] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Gender
+                </span>
+                <strong className="text-sm font-bold text-slate-200 block">
+                  {license.gender || '—'}
+                </strong>
               </div>
             </div>
 
-            <div className="intl-eligibility-note">
-              <span>ⓘ</span>
-              <p>
-                The API is responsible for final eligibility validation. If
-                the local license is not eligible, the backend will return the
-                reason.
+            {/* Eligibility Note */}
+            <div className="rounded-xl border border-blue-500/25 bg-[#0a1835]/60 p-4 flex items-start gap-3 text-xs text-slate-400">
+              <Info className="size-4.5 text-cyan-400 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                The central licensing API validates eligibility against active status, suspension, and vehicle class rules before issuance.
               </p>
             </div>
 
-            <div className="intl-form-actions">
+            {/* Issuance Action Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-[#1e3458]">
               {issued && (
-                <button
-                  className="intl-secondary-button"
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onIssued}
+                  className="w-full sm:w-auto h-11 px-5 rounded-xl border-[#263e68] text-slate-300 hover:bg-[#16274a] cursor-pointer"
                 >
-                  Back to licenses
-                </button>
+                  Back to Licenses
+                </Button>
               )}
 
-              <button
-                className="intl-primary-button"
+              <Button
                 type="button"
                 onClick={() => void issue()}
                 disabled={
@@ -271,81 +368,132 @@ export default function IssueInternationalLicensePage({
                   !license.isActive ||
                   license.isDetained
                 }
+                className="w-full sm:w-auto h-11 px-6 gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(0,140,255,0.4)] disabled:opacity-50 cursor-pointer"
               >
-                {saving
-                  ? 'Issuing…'
-                  : issued
-                    ? 'License issued'
-                    : 'Issue international license'}
-              </button>
+                {saving ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    <span>Issuing Permit...</span>
+                  </>
+                ) : issued ? (
+                  <>
+                    <CheckCircle2 className="size-4 text-emerald-300" />
+                    <span>Permit Issued</span>
+                  </>
+                ) : (
+                  <>
+                    <Globe className="size-4" />
+                    <span>Issue International License</span>
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         )}
-      </section>
+      </Card>
 
+      {/* Step 2 Result Card: Issued International License */}
       {issued && (
-        <section className="intl-panel intl-issued-panel">
-          <div className="intl-panel-heading">
-            <div>
-              <h3>International License Issued</h3>
-              <p>The API confirmed the issue operation.</p>
+        <Card className="p-6 sm:p-8 space-y-6 border-emerald-500/40 bg-[#091a2e]/95 shadow-[0_0_25px_rgba(16,185,129,0.15)]">
+          <CardHeader className="flex-row items-center justify-between pb-5 border-b border-emerald-500/20 mb-2 space-y-0">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="size-5" />
+              </div>
+              <div>
+                <CardTitle className="text-emerald-100">
+                  International License Issued
+                </CardTitle>
+                <CardDescription className="text-emerald-300/80 mt-0.5">
+                  The international driving permit has been registered and verified by the DVLD authority.
+                </CardDescription>
+              </div>
             </div>
 
-            <span className="intl-status is-active">
-              <i />
-              Issued
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 shrink-0">
+              <span className="size-1.5 rounded-full bg-emerald-400" />
+              <span>Issued</span>
             </span>
-          </div>
+          </CardHeader>
 
-          <div className="intl-detail-grid">
-            <div>
-              <span>International License ID</span>
-              <strong>#{issued.internationalLicenseId}</strong>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            <div className="p-3.5 rounded-xl bg-[#071324] border border-emerald-500/20 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                Int&apos;l License ID
+              </span>
+              <strong className="text-sm font-bold text-white font-mono block">
+                #{issued.internationalLicenseId}
+              </strong>
             </div>
-            <div>
-              <span>Application ID</span>
-              <strong>{issued.applicationId}</strong>
+
+            <div className="p-3.5 rounded-xl bg-[#071324] border border-emerald-500/20 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                Application ID
+              </span>
+              <strong className="text-sm font-bold text-white font-mono block">
+                #{issued.applicationId}
+              </strong>
             </div>
-            <div>
-              <span>Issue Date</span>
-              <strong>{formatDate(issued.issueDate)}</strong>
+
+            <div className="p-3.5 rounded-xl bg-[#071324] border border-emerald-500/20 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                Issue Date
+              </span>
+              <strong className="text-sm font-bold text-slate-200 block">
+                {formatDate(issued.issueDate)}
+              </strong>
             </div>
-            <div>
-              <span>Expiration Date</span>
-              <strong>{formatDate(issued.expirationDate)}</strong>
+
+            <div className="p-3.5 rounded-xl bg-[#071324] border border-emerald-500/20 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                Expiration Date
+              </span>
+              <strong className="text-sm font-bold text-slate-200 block">
+                {formatDate(issued.expirationDate)}
+              </strong>
             </div>
-            <div>
-              <span>Fees</span>
-              <strong>{formatCurrency(issued.fees, '')}</strong>
+
+            <div className="p-3.5 rounded-xl bg-[#071324] border border-emerald-500/20 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                Permit Fees
+              </span>
+              <strong className="text-sm font-bold text-emerald-400 block">
+                {formatCurrency(issued.fees, 'JOD')}
+              </strong>
             </div>
-            <div>
-              <span>Created By</span>
-              <strong>
+
+            <div className="p-3.5 rounded-xl bg-[#071324] border border-emerald-500/20 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                Created By
+              </span>
+              <strong className="text-sm font-bold text-slate-200 block truncate">
                 {issued.createdByUserName || issued.createdByUserId}
               </strong>
             </div>
           </div>
 
-          <div className="intl-form-actions">
-            <button
-              className="intl-primary-button"
+          <div className="flex justify-end pt-4 border-t border-emerald-500/20">
+            <Button
               type="button"
               onClick={onIssued}
+              className="w-full sm:w-auto h-11 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer"
             >
-              Return to licenses
-            </button>
+              Return to Licenses
+            </Button>
           </div>
-        </section>
+        </Card>
       )}
 
-      <div className="intl-bottom-actions">
-        <button
-          className="intl-secondary-button"
+      {/* Return Action */}
+      <div className="flex justify-end pt-2">
+        <Button
           type="button"
+          variant="outline"
           onClick={onBack}
+          className="h-11 px-5 rounded-xl border-[#263e68] text-slate-300 hover:bg-[#16274a] cursor-pointer"
         >
-          Cancel and return
-        </button>
+          Cancel and Return
+        </Button>
       </div>
     </section>
   )
