@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.Interfaces;
 using Application.Validators;
@@ -6,13 +6,31 @@ using Domain.Entities;
 
 namespace Application.Services;
 
-public sealed class LicenseClassService(
-    ILicenseClassRepository licenseClassRepository)
-    : ILicenseClassService
+public sealed class LicenseClassService : ILicenseClassService
 {
-    private readonly ILicenseClassRepository _licenseClassRepository =
-        licenseClassRepository
-        ?? throw new ArgumentNullException(nameof(licenseClassRepository));
+    private readonly ILicenseClassRepository _licenseClassRepository;
+    private readonly IUnitOfWork? _unitOfWork;
+
+    public LicenseClassService(
+        ILicenseClassRepository licenseClassRepository,
+        IUnitOfWork unitOfWork)
+    {
+        _licenseClassRepository =
+            licenseClassRepository
+            ?? throw new ArgumentNullException(nameof(licenseClassRepository));
+        _unitOfWork =
+            unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
+    }
+
+    public LicenseClassService(
+        ILicenseClassRepository licenseClassRepository)
+    {
+        _licenseClassRepository =
+            licenseClassRepository
+            ?? throw new ArgumentNullException(nameof(licenseClassRepository));
+        _unitOfWork = null;
+    }
 
     public async Task<Result<List<LicenseClassDto>>>
         GetAllLicenseClassesAsync()
@@ -48,6 +66,59 @@ public sealed class LicenseClassService(
                 "License class not found.")
             : Result<LicenseClassDto>.Success(
                 MapToDto(licenseClass));
+    }
+
+    public async Task<Result> UpdateLicenseClassAsync(
+        int id,
+        LicenseClassDto dto)
+    {
+        var validation =
+            LicenseClassValidator.ValidateUpdate(id, dto);
+
+        if (validation.IsFailure)
+        {
+            return Result.ValidationFailure(
+                validation.Error);
+        }
+
+        var licenseClass =
+            await _licenseClassRepository
+                .GetForUpdateAsync(id);
+
+        if (licenseClass is null)
+        {
+            return Result.NotFound(
+                "License class not found.");
+        }
+
+        bool hasChanges =
+            licenseClass.ClassName != dto.LicenseClassName.Trim() ||
+            licenseClass.ClassDescription != dto.LicenseClassDescription.Trim() ||
+            licenseClass.MinimumAllowedAge != dto.MinAllowedAge ||
+            licenseClass.DefaultValidityLength != dto.DefaultValidityLength ||
+            licenseClass.ClassFees != dto.LicenseClassFees;
+
+        if (!hasChanges)
+        {
+            return Result.Success();
+        }
+
+        licenseClass.ClassName = dto.LicenseClassName.Trim();
+        licenseClass.ClassDescription = dto.LicenseClassDescription.Trim();
+        licenseClass.MinimumAllowedAge = dto.MinAllowedAge;
+        licenseClass.DefaultValidityLength = dto.DefaultValidityLength;
+        licenseClass.ClassFees = dto.LicenseClassFees;
+
+        if (_unitOfWork is null)
+        {
+            return Result.Failure("Unit of work is not configured.");
+        }
+
+        var saved = await _unitOfWork.SaveChangesAsync();
+
+        return saved > 0
+            ? Result.Success()
+            : Result.Failure("Failed to update license class.");
     }
 
     private static LicenseClassDto MapToDto(

@@ -1,13 +1,18 @@
-import { useCallback, useMemo } from 'react'
-import { getLicenseClasses } from '../services/licenseClassService'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  getLicenseClasses,
+  updateLicenseClass,
+} from '../services/licenseClassService'
 import type { LicenseClass } from '../types/LicenseClass'
-import { formatCurrency } from '../utils/formatters'
 import { useAsyncData, useTableFilters } from '../hooks'
 import PageHero from './common/PageHero'
 import TableToolbar from './common/TableToolbar'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
-import DataTable, { type DataTableColumn } from './common/DataTable'
+import DataTableContainer from './common/DataTableContainer'
+import LicenseClassRow, {
+  type LicenseClassEditForm,
+} from './licenseClasses/LicenseClassRow'
 import {
   Select,
   SelectContent,
@@ -15,9 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select'
-import {
-  IdCard as LicenseIcon,
-} from 'lucide-react'
+import { IdCard as LicenseIcon } from 'lucide-react'
+import { canManageReferenceData } from '../utils/permissions'
+import { useAuth } from '../context/useAuth'
 
 type Props = {
   accessToken: string
@@ -38,53 +43,22 @@ const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
   { value: 'desc', label: 'Description' },
 ]
 
-const columns: DataTableColumn<LicenseClass>[] = [
-  {
-    key: 'id',
-    header: 'ID',
-    headerClassName: 'w-16 col-compact',
-    className: 'col-compact',
-    render: (item) => (
-      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
-        #{item.licenseClassId}
-      </span>
-    ),
-  },
-  {
-    key: 'name',
-    header: 'Class Name',
-    headerClassName: 'w-48 whitespace-nowrap',
-    className: 'person-name font-semibold whitespace-nowrap',
-    accessor: (item) => item.licenseClassName,
-  },
-  {
-    key: 'description',
-    header: 'Description',
-    headerClassName: 'table-cell-description',
-    className: 'table-cell-description',
-    accessor: (item) => item.licenseClassDescription,
-  },
-  {
-    key: 'minAge',
-    header: 'Minimum Age',
-    headerClassName: 'w-28 whitespace-nowrap',
-    accessor: (item) => item.minAllowedAge,
-  },
-  {
-    key: 'validity',
-    header: 'Validity (Years)',
-    headerClassName: 'w-32 whitespace-nowrap',
-    accessor: (item) => item.defaultValidityLength,
-  },
-  {
-    key: 'fees',
-    header: 'Fees',
-    headerClassName: 'w-24 whitespace-nowrap',
-    render: (item) => formatCurrency(item.licenseClassFees, ''),
-  },
-]
+export default function LicenseClassesPage({ accessToken, userRole }: Props) {
+  const { user } = useAuth()
+  const effectiveRole = userRole ?? user?.role
+  const canEdit = canManageReferenceData('License Classes', effectiveRole)
 
-export default function LicenseClassesPage({ accessToken }: Props) {
+  const [success, setSuccess] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [form, setForm] = useState<LicenseClassEditForm>({
+    licenseClassName: '',
+    licenseClassDescription: '',
+    minAllowedAge: '',
+    defaultValidityLength: '',
+    licenseClassFees: '',
+  })
+  const [saving, setSaving] = useState(false)
+
   const fetcher = useCallback(() => getLicenseClasses(accessToken), [accessToken])
 
   const {
@@ -92,6 +66,7 @@ export default function LicenseClassesPage({ accessToken }: Props) {
     loading,
     error,
     refresh,
+    setError,
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
     initialData: [],
@@ -154,6 +129,88 @@ export default function LicenseClassesPage({ accessToken }: Props) {
     }
   }, [searchBy])
 
+  function startEditing(item: LicenseClass) {
+    if (!canEdit) return
+    setEditingId(item.licenseClassId)
+    setForm({
+      licenseClassName: item.licenseClassName,
+      licenseClassDescription: item.licenseClassDescription,
+      minAllowedAge: String(item.minAllowedAge),
+      defaultValidityLength: String(item.defaultValidityLength),
+      licenseClassFees: String(item.licenseClassFees),
+    })
+    setError('')
+    setSuccess('')
+  }
+
+  async function saveChanges() {
+    if (!canEdit || editingId === null || saving) return
+
+    const name = form.licenseClassName.trim()
+    const description = form.licenseClassDescription.trim()
+    const minAge = Number(form.minAllowedAge)
+    const validity = Number(form.defaultValidityLength)
+    const fees = Number(form.licenseClassFees)
+
+    if (!name) {
+      setError('License class name is required.')
+      return
+    }
+    if (name.length > 100) {
+      setError('License class name cannot exceed 100 characters.')
+      return
+    }
+
+    if (!description) {
+      setError('License class description is required.')
+      return
+    }
+    if (description.length > 500) {
+      setError('License class description cannot exceed 500 characters.')
+      return
+    }
+
+    if (form.minAllowedAge.trim() === '' || !Number.isInteger(minAge) || minAge <= 0 || minAge > 100) {
+      setError('Minimum allowed age must be a valid integer greater than zero.')
+      return
+    }
+
+    if (form.defaultValidityLength.trim() === '' || !Number.isInteger(validity) || validity <= 0 || validity > 100) {
+      setError('Default validity length must be a valid integer greater than zero.')
+      return
+    }
+
+    if (form.licenseClassFees.trim() === '' || !Number.isFinite(fees) || fees < 0) {
+      setError('Enter a valid fee greater than or equal to zero.')
+      return
+    }
+
+    setSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      await updateLicenseClass(accessToken, editingId, {
+        licenseClassId: editingId,
+        licenseClassName: name,
+        licenseClassDescription: description,
+        minAllowedAge: minAge,
+        defaultValidityLength: validity,
+        licenseClassFees: fees,
+      })
+
+      await refresh()
+      setEditingId(null)
+      setSuccess('License class updated successfully.')
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to update license class.',
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <section className="page-content">
       <PageHero pageId="License Classes" />
@@ -162,17 +219,15 @@ export default function LicenseClassesPage({ accessToken }: Props) {
         <div className="panel-header">
           <div>
             <h2>License Classes Directory</h2>
-            <p>Browse license categories, requirements, validity, and fees.</p>
+            <p>License classes registered in DVLD</p>
           </div>
 
           <span className="record-count">
             {loading
               ? 'Loading...'
-              : error
-                ? '—'
-                : filteredItems.length === items.length
-                  ? `${items.length} Classes`
-                  : `${filteredItems.length} of ${items.length} Classes`}
+              : filteredItems.length === items.length
+                ? `${items.length} Classes`
+                : `${filteredItems.length} of ${items.length} Classes`}
           </span>
         </div>
 
@@ -207,7 +262,10 @@ export default function LicenseClassesPage({ accessToken }: Props) {
           }
           isFiltered={isFiltered}
           onReset={handleResetFilters}
-          onRefresh={() => void refresh()}
+          onRefresh={() => {
+            setSuccess('')
+            void refresh()
+          }}
           refreshing={loading}
         />
 
@@ -215,32 +273,82 @@ export default function LicenseClassesPage({ accessToken }: Props) {
           <div style={{ margin: '0 25px 20px' }}>
             <ErrorAlert
               message={error}
-              onRetry={() => void refresh()}
-              retryLabel="Retry"
+              onRetry={() => {
+                setSuccess('')
+                void refresh()
+              }}
             />
           </div>
         )}
 
-        {!error && (
-          <DataTable<LicenseClass>
-            data={filteredItems}
-            columns={columns}
-            getRowKey={(item) => item.licenseClassId}
-            rowClassName="align-top"
-            loading={loading}
-            loadingMessage="Loading license classes..."
-            emptyState={
-              <EmptyState
-                icon={<LicenseIcon size={36} />}
-                message={
-                  items.length === 0
-                    ? 'No license classes found.'
-                    : 'No license classes match your search.'
-                }
-              />
-            }
-            minWidth={780}
-          />
+        {success && (
+          <p
+            role="status"
+            style={{
+              padding: '0 25px 20px',
+              margin: 0,
+              color: '#059669',
+              fontWeight: 600,
+              fontSize: 13,
+            }}
+          >
+            {success}
+          </p>
+        )}
+
+        {loading ? (
+          <p className="empty-state">Loading license classes...</p>
+        ) : (
+          <DataTableContainer minWidth={840}>
+            <table className="people-table">
+              <thead>
+                <tr>
+                  <th className="w-16 col-compact">ID</th>
+                  <th className="w-48 whitespace-nowrap">Class Name</th>
+                  <th className="table-cell-description">Description</th>
+                  <th className="w-28 whitespace-nowrap">Minimum Age</th>
+                  <th className="w-32 whitespace-nowrap">Validity (Years)</th>
+                  <th className="w-28 whitespace-nowrap">Fees</th>
+                  {canEdit && <th className="w-32 whitespace-nowrap">Actions</th>}
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredItems.map((item) => (
+                  <LicenseClassRow
+                    key={item.licenseClassId}
+                    item={item}
+                    isEditing={canEdit && editingId === item.licenseClassId}
+                    canEdit={canEdit}
+                    editForm={form}
+                    saving={saving}
+                    onStartEdit={startEditing}
+                    onFormChange={setForm}
+                    onSave={() => void saveChanges()}
+                    onCancel={() => {
+                      setEditingId(null)
+                      setError('')
+                    }}
+                  />
+                ))}
+
+                {filteredItems.length === 0 && (
+                  <tr>
+                    <td colSpan={canEdit ? 7 : 6}>
+                      <EmptyState
+                        icon={<LicenseIcon size={36} />}
+                        message={
+                          items.length === 0
+                            ? 'No license classes found.'
+                            : 'No license classes match your search.'
+                        }
+                      />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </DataTableContainer>
         )}
 
         {!loading && !error && (

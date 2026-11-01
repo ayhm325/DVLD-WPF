@@ -46,4 +46,18 @@ public class LicenseClassRepository : ILicenseClassRepository
                 x =>
                     x.LicenseClassID == id);
     }
+
+    // =========================================================
+    // GET FOR UPDATE
+    // =========================================================
+
+    public Task<LicenseClass?>
+        GetForUpdateAsync(
+            int id) =>
+        id <= 0
+            ? Task.FromResult<LicenseClass?>(null)
+            : _context.LicenseClasses
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.LicenseClassID == id);
 }

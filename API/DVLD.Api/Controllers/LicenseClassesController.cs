@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.Interfaces;
 using DVLD.Api.Results;
@@ -33,6 +33,29 @@ public sealed class LicenseClassesController(ILicenseClassService service) : Con
         return result.Value is null
             ? UnexpectedResult()
             : Ok(MapToResponse(result.Value));
+    }
+
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> Update(
+        int id,
+        [FromBody] UpdateLicenseClassRequest request)
+    {
+        var dto = new LicenseClassDto
+        {
+            LicenseClassID = id,
+            LicenseClassName = request.LicenseClassName,
+            LicenseClassDescription = request.LicenseClassDescription,
+            MinAllowedAge = request.MinAllowedAge,
+            DefaultValidityLength = request.DefaultValidityLength,
+            LicenseClassFees = request.LicenseClassFees
+        };
+
+        var result = await service.UpdateLicenseClassAsync(id, dto);
+
+        return result.IsSuccess
+            ? NoContent()
+            : result.ToActionResult(this);
     }
 
     private IActionResult UnexpectedResult() =>

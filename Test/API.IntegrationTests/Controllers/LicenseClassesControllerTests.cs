@@ -265,11 +265,158 @@ public sealed class LicenseClassesControllerTests
             "Access denied.");
     }
 
+    [Fact]
+    public async Task Update_WhenAnonymous_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.PutAsJsonAsync(
+            "/api/LicenseClasses/1",
+            ValidUpdateRequest());
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.LicenseClassServiceMock.Verify(
+            x => x.UpdateLicenseClassAsync(It.IsAny<int>(), It.IsAny<LicenseClassDto>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_WhenStaff_Returns403()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateAuthenticatedClient(factory, role: "Staff");
+
+        var response = await client.PutAsJsonAsync(
+            "/api/LicenseClasses/1",
+            ValidUpdateRequest());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        factory.LicenseClassServiceMock.Verify(
+            x => x.UpdateLicenseClassAsync(It.IsAny<int>(), It.IsAny<LicenseClassDto>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_WhenSuccessful_Returns204()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.LicenseClassServiceMock
+            .Setup(x => x.UpdateLicenseClassAsync(
+                1,
+                It.Is<LicenseClassDto>(d =>
+                    d.LicenseClassID == 1 &&
+                    d.LicenseClassName == "Class 1 - Small Motorcycle" &&
+                    d.LicenseClassDescription == "Motorcycle up to 125cc" &&
+                    d.MinAllowedAge == 18 &&
+                    d.DefaultValidityLength == 10 &&
+                    d.LicenseClassFees == 20m)))
+            .ReturnsAsync(Result.Success());
+
+        using var client = CreateAuthenticatedClient(factory, role: "Admin");
+
+        var response = await client.PutAsJsonAsync(
+            "/api/LicenseClasses/1",
+            ValidUpdateRequest());
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        factory.LicenseClassServiceMock.Verify(
+            x => x.UpdateLicenseClassAsync(
+                1,
+                It.Is<LicenseClassDto>(d =>
+                    d.LicenseClassID == 1 &&
+                    d.LicenseClassName == "Class 1 - Small Motorcycle" &&
+                    d.LicenseClassDescription == "Motorcycle up to 125cc" &&
+                    d.MinAllowedAge == 18 &&
+                    d.DefaultValidityLength == 10 &&
+                    d.LicenseClassFees == 20m)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Update_WhenNotFound_Returns404ProblemDetails()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.LicenseClassServiceMock
+            .Setup(x => x.UpdateLicenseClassAsync(99, It.IsAny<LicenseClassDto>()))
+            .ReturnsAsync(Result.NotFound("License class not found."));
+
+        using var client = CreateAuthenticatedClient(factory, role: "Admin");
+
+        var response = await client.PutAsJsonAsync(
+            "/api/LicenseClasses/99",
+            ValidUpdateRequest());
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "License class not found.");
+    }
+
+    [Fact]
+    public async Task Update_WhenValidationFails_Returns400ProblemDetails()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.LicenseClassServiceMock
+            .Setup(x => x.UpdateLicenseClassAsync(1, It.IsAny<LicenseClassDto>()))
+            .ReturnsAsync(Result.ValidationFailure("License class name is required."));
+
+        using var client = CreateAuthenticatedClient(factory, role: "Admin");
+
+        var response = await client.PutAsJsonAsync(
+            "/api/LicenseClasses/1",
+            ValidUpdateRequest());
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.BadRequest,
+            "Validation error",
+            "License class name is required.");
+    }
+
+    [Fact]
+    public async Task Update_WhenServiceFails_Returns500ProblemDetails()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.LicenseClassServiceMock
+            .Setup(x => x.UpdateLicenseClassAsync(1, It.IsAny<LicenseClassDto>()))
+            .ReturnsAsync(Result.Failure("Database write failed."));
+
+        using var client = CreateAuthenticatedClient(factory, role: "Admin");
+
+        var response = await client.PutAsJsonAsync(
+            "/api/LicenseClasses/1",
+            ValidUpdateRequest());
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
+    }
+
+    private static UpdateLicenseClassRequest ValidUpdateRequest() => new()
+    {
+        LicenseClassId = 1,
+        LicenseClassName = "Class 1 - Small Motorcycle",
+        LicenseClassDescription = "Motorcycle up to 125cc",
+        MinAllowedAge = 18,
+        DefaultValidityLength = 10,
+        LicenseClassFees = 20m
+    };
+
     private static HttpClient CreateAuthenticatedClient(
-        ApiWebApplicationFactory factory)
+        ApiWebApplicationFactory factory,
+        string role = "Staff")
     {
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Test-User-Id", "1");
+        client.DefaultRequestHeaders.Add("X-Test-Role", role);
         return client;
     }
 

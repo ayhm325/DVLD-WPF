@@ -10,9 +10,10 @@ namespace Application.UnitTests.Services;
 public sealed class LicenseClassServiceTests
 {
     private readonly Mock<ILicenseClassRepository> _repository = new();
+    private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private LicenseClassService CreateService() =>
-        new(_repository.Object);
+        new(_repository.Object, _unitOfWork.Object);
 
     private static LicenseClass CreateEntity(
         int id = 1,
@@ -366,4 +367,140 @@ public sealed class LicenseClassServiceTests
             string.Empty,
             result.Value!.LicenseClassDescription);
     }
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task UpdateLicenseClassAsync_WhenIdIsInvalid_ReturnsValidationFailure(int id)
+    {
+        var service = CreateService();
+
+        var result = await service.UpdateLicenseClassAsync(
+            id,
+            CreateDto());
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Equal("Invalid license class ID.", result.Error);
+        _repository.Verify(x => x.GetForUpdateAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateLicenseClassAsync_WhenDtoIsNull_ReturnsValidationFailure()
+    {
+        var service = CreateService();
+
+        var result = await service.UpdateLicenseClassAsync(1, null!);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Equal("License class data is required.", result.Error);
+        _repository.Verify(x => x.GetForUpdateAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateLicenseClassAsync_WhenNotFound_ReturnsNotFound()
+    {
+        var service = CreateService();
+
+        _repository
+            .Setup(x => x.GetForUpdateAsync(99))
+            .ReturnsAsync((LicenseClass?)null);
+
+        var result = await service.UpdateLicenseClassAsync(99, CreateDto(99));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+        Assert.Equal("License class not found.", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateLicenseClassAsync_WhenNoChanges_ReturnsSuccessWithoutSaving()
+    {
+        var service = CreateService();
+        var entity = CreateEntity();
+
+        _repository
+            .Setup(x => x.GetForUpdateAsync(1))
+            .ReturnsAsync(entity);
+
+        var result = await service.UpdateLicenseClassAsync(1, CreateDto(1));
+
+        Assert.True(result.IsSuccess);
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateLicenseClassAsync_WhenSaveFails_ReturnsFailure()
+    {
+        var service = CreateService();
+        var entity = CreateEntity();
+
+        _repository
+            .Setup(x => x.GetForUpdateAsync(1))
+            .ReturnsAsync(entity);
+
+        _unitOfWork
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        var result = await service.UpdateLicenseClassAsync(1, CreateDto(1, name: "New Name"));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Failed to update license class.", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateLicenseClassAsync_WhenSuccessful_UpdatesEntityAndReturnsSuccess()
+    {
+        var service = CreateService();
+        var entity = CreateEntity();
+
+        _repository
+            .Setup(x => x.GetForUpdateAsync(1))
+            .ReturnsAsync(entity);
+
+        _unitOfWork
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var dto = CreateDto(
+            1,
+            "Updated Class",
+            "Updated Description",
+            21,
+            5,
+            100m);
+
+        var result = await service.UpdateLicenseClassAsync(1, dto);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Updated Class", entity.ClassName);
+        Assert.Equal("Updated Description", entity.ClassDescription);
+        Assert.Equal((byte)21, entity.MinimumAllowedAge);
+        Assert.Equal((byte)5, entity.DefaultValidityLength);
+        Assert.Equal(100m, entity.ClassFees);
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private static LicenseClassDto CreateDto(
+        int id = 1,
+        string name = "Small Motorcycle",
+        string description = "Motorcycle license",
+        byte minAge = 18,
+        byte validity = 10,
+        decimal fees = 20m)
+        => new()
+        {
+            LicenseClassID = id,
+            LicenseClassName = name,
+            LicenseClassDescription = description,
+            MinAllowedAge = minAge,
+            DefaultValidityLength = validity,
+            LicenseClassFees = fees
+        };
 }

@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,5 +10,7 @@ namespace Application.Interfaces
         Task<Result<List<LicenseClassDto>>> GetAllLicenseClassesAsync();
 
         Task<Result<LicenseClassDto>> GetLicenseClassByIdAsync(int id);
+
+        Task<Result> UpdateLicenseClassAsync(int id, LicenseClassDto dto);
     }
 }

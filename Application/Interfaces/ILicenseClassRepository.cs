@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 
 namespace Application.Interfaces
 {
@@ -7,5 +7,7 @@ namespace Application.Interfaces
         Task<List<LicenseClass>> GetAllLicenseClassAsync();
 
         Task<LicenseClass?> GetLicenseClassByIdAsync(int id);
+
+        Task<LicenseClass?> GetForUpdateAsync(int id);
     }
 }
