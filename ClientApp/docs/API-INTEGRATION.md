@@ -1,62 +1,76 @@
 # ClientApp API Integration & Authentication
 
-This document details how `ClientApp` communicates with `DVLD.Api`, manages authentication tokens, and interacts with backend CORS and authorization policies.
+This document details how `ClientApp` communicates with `DVLD.Api`, manages authentication tokens, handles errors, and interacts with backend CORS and authorization policies.
 
 ---
 
-## 1. Base URL and CORS Boundary
+## 1. Unified HTTP Client (`src/services/apiClient.ts`)
 
-- **API Base URL:** All 5 service files in `ClientApp/src/services/*.ts` define:
-  ```ts
-  const API_BASE_URL = 'http://localhost:5260/api'
-  ```
-- **CORS Configuration (`API/DVLD.Api/Program.cs:283-292, 374`):**
-  `DVLD.Api` registers and enables the `"ReactApp"` CORS policy:
-  - Allowed Origin: `http://localhost:5173`
-  - Allowed Headers: `*` (`AllowAnyHeader()`)
-  - Allowed Methods: `*` (`AllowAnyMethod()`)
-- **Implication:** `ClientApp` must run on `http://localhost:5173` (Vite's default port) and `DVLD.Api` must run on `http://localhost:5260` (the `http` launch profile in `API/DVLD.Api/Properties/launchSettings.json`).
+All API communication in `ClientApp` routes through the centralized `apiRequest<T>()` transport client:
+
+- **Base URL Resolution:**
+  Reads `import.meta.env.VITE_API_BASE_URL` with a fallback to `'http://localhost:5260/api'`.
+- **CORS Configuration (`API/DVLD.Api/Program.cs`):**
+  `DVLD.Api` enables the `"ReactApp"` CORS policy allowing requests from `http://localhost:5173` (Vite dev server) with any header and method.
+- **Request Headers:**
+  Automatically attaches `Accept: application/json` and `Content-Type: application/json` (for request bodies), and injects `Authorization: Bearer <token>` when a token is supplied.
+- **Error Normalization (`ApiError`):**
+  Parses RFC 7807 `ProblemDetails` (`detail`, `title`, `errors`), structured API responses, and network failure states into strongly-typed `ApiError` instances.
+- **Automated 401 Unauthorized Interception:**
+  `apiClient.ts` exposes `setUnauthorizedHandler()`. When any authenticated request receives HTTP 401, the registered callback automatically terminates the session and redirects the user to the login screen with a session-expired notice.
 
 ---
 
-## 2. Frontend Service Modules and Endpoints Consumed
+## 2. Frontend Service Modules & Endpoints Consumed
 
-Currently, `ClientApp` consumes **4 out of the 101** HTTP endpoints exposed by `DVLD.Api`:
+`ClientApp` provides dedicated service modules organized by domain in `src/services/`:
 
-| Service File | Exported Function | HTTP Method & Route | API Authorization Policy | Request / Response Notes |
+| Service Module | Function | HTTP Method & Route | Backend Policy | Description |
 |---|---|---|---|---|
-| `src/services/authService.ts` | `login(request)` | `POST /api/Auth/login` | `[AllowAnonymous]` + `LoginRateLimit` (5 req/min/IP) | Sends `{ userName, password }`. Returns `LoginResponse` (`accessToken`, `expiresAtUtc`, `userId`, `userName`, `personId`, `fullName`, `role`). |
-| `src/services/peopleService.ts` | `getPeople(accessToken)` | `GET /api/People` | `StaffOrAdmin` (`Staff`, `Admin`) | Sends `Authorization: Bearer <accessToken>`. Returns array of people mapped to `Person` (`src/types/Person.ts`). |
-| `src/services/personService.ts` | `createPerson(accessToken, person)` | `POST /api/People` | `StaffOrAdmin` (`Staff`, `Admin`) | Sends `CreatePersonRequest` JSON body. Parses `ProblemDetails` (`detail` or `title`) on non-2xx responses. Returns `{ personId }`. |
-| `src/services/driverService.ts` | `getDrivers(accessToken)` | `GET /api/Drivers` | `StaffOnly` (`Staff` only) | Sends `Authorization: Bearer <accessToken>`. Returns `Driver[]`. |
-| `src/services/countryService.ts` | `getCountries(accessToken)` | `GET /api/Countries` | `[Authorize]` (any active user) | Sends `Authorization: Bearer <accessToken>`. Returns `Country[]` (`countryId`, `countryName`). |
-
-> **Observation — Split People Services:** Read and write operations for `/api/People` are currently split across two separate files: `src/services/peopleService.ts` (`getPeople`) and `src/services/personService.ts` (`createPerson`).
-
----
-
-## 3. Authentication Flow & Token Handling
-
-1. **Login Submission (`src/components/Login.tsx:15-28`):**
-   - `Login.tsx` calls `login({ userName, password })`.
-   - On success, `Login.tsx` passes only `result.accessToken` to `onLoginSuccess(result.accessToken)`. Other fields returned by `POST /api/Auth/login` (`fullName`, `userName`, `role`, `userId`, `personId`, `expiresAtUtc`) are defined in `authService.ts:9-17` but are not currently stored by `App.tsx`.
-2. **In-Memory Token Storage (`src/App.tsx:19`):**
-   - `App.tsx` stores the JWT in `const [accessToken, setAccessToken] = useState<string | null>(null)`.
-   - No tokens are written to `localStorage`, `sessionStorage`, or cookies.
-3. **Bearer Header Injection:**
-   - Each authenticated service function accepts `accessToken: string` explicitly and sets `Authorization: Bearer ${accessToken}` in the `fetch` request headers.
+| `authService.ts` | `login()` | `POST /api/Auth/login` | `[AllowAnonymous]` | Authenticates credentials; returns JWT token, user profile, and expiration. |
+| `peopleService.ts` | `getPeople()` | `GET /api/People` | `StaffOrAdmin` | Retrieves full people directory for tables and search. |
+| `personService.ts` | `createPerson()` | `POST /api/People` | `StaffOrAdmin` | Submits new person records with input validation. |
+| `driverService.ts` | `getDrivers()` | `GET /api/Drivers` | `StaffOnly` | Retrieves registered drivers directory. |
+| `countryService.ts` | `getCountries()` | `GET /api/Countries` | `[Authorize]` | Fetches country list for nationality selection. |
+| `dashboardService.ts` | `getDashboardStatistics()` | `GET /api/Dashboard/statistics` | `[Authorize]` | Loads unified counts (people, drivers, active licenses, pending apps). |
+| `licenseService.ts` | `getLicenses()` | `GET /api/Licenses` | `StaffOnly` | Retrieves local driver licenses register. |
+| `licenseClassService.ts` | `getLicenseClasses()` | `GET /api/LicenseClasses` | `[Authorize]` | Retrieves license classes, age rules, and fees. |
+| `internationalLicenseService.ts` | `getInternationalLicenses()` | `GET /api/InternationalLicenses` | `StaffOnly` | Lists issued international driving permits. |
+| `internationalLicenseService.ts` | `issueInternationalLicense()` | `POST /api/InternationalLicenses` | `StaffOnly` | Validates local license and issues international permit. |
+| `localDrivingLicenseApplicationService.ts` | `getLocalApplications()` | `GET /api/LocalDrivingLicenseApplications` | `StaffOnly` | Retrieves local driving license application records. |
+| `localDrivingLicenseApplicationService.ts` | `createLocalApplication()` | `POST /api/LocalDrivingLicenseApplications` | `StaffOnly` | Submits new local driving license application. |
+| `applicationTypeService.ts` | `getApplicationTypes()` | `GET /api/ApplicationTypes` | `[Authorize]` | Lists application fee categories. |
+| `applicationTypeService.ts` | `updateApplicationType()` | `PUT /api/ApplicationTypes/{id}` | `AdminOnly` | Updates application type title and fee. |
+| `testTypeService.ts` | `getTestTypes()` | `GET /api/TestTypes` | `[Authorize]` | Lists test types (Vision, Written, Street). |
+| `testTypeService.ts` | `updateTestType()` | `PUT /api/TestTypes/{id}` | `AdminOnly` | Updates test type fee and description. |
 
 ---
 
-## 4. Interaction with Backend Authorization Policies (`StaffOnly` vs `Admin`)
+## 3. Authentication & Session Architecture
 
-In `API/DVLD.Api/Program.cs:125-138`, backend authorization policies are defined as:
-- `AdminOnly` → requires role `Admin`
-- `StaffOnly` → requires role `Staff` (does **not** include `Admin`)
-- `StaffOrAdmin` → requires role `Staff` or `Admin`
+1. **Authentication Flow (`src/components/Login.tsx`):**
+   - Submits credentials via `login({ userName, password })`.
+   - On success, invokes `setAuthSession(result)` from `useAuth()`.
+   - If Remember Me is enabled, stores the username in `localStorage` under `dvld_remembered_username`.
+2. **Session Storage (`src/context/AuthContext.tsx`):**
+   - Stores the active session in `sessionStorage` under `dvld_auth_session` (`accessToken`, `expiresAtUtc`, and user profile: `userId`, `userName`, `personId`, `fullName`, `role`).
+   - `sessionStorage` guarantees per-tab isolation on shared workstations and automatic clearance when the browser tab closes.
+3. **Session Restoration & Validation:**
+   - On page reload, `loadStoredSession()` verifies token existence, structure, and expiration (`new Date(expiresAtUtc) > Date.now()`).
+   - Expired or malformed tokens are purged immediately.
+4. **Logout Workflow:**
+   - Clears `sessionStorage`, resets in-memory React state, and shifts the view to `<Login />`.
 
-### Observed Runtime Behavior in `ClientApp`
-- When a `Staff` user logs into `ClientApp`, both `GET /api/People` (`StaffOrAdmin`) and `GET /api/Drivers` (`StaffOnly`) succeed (`200 OK`).
-- When an `Admin` user logs into `ClientApp`, `App.tsx:67-98` unconditionally executes both `loadPeople()` and `loadDrivers()`:
-  - `GET /api/People` (`StaffOrAdmin`) succeeds (`200 OK`).
-  - `GET /api/Drivers` (`DriversController.cs:16`, `StaffOnly`) returns **`403 Forbidden`**, causing `App.tsx` to set `driversError` (`"Failed to load drivers (403)"`) on the Dashboard and Drivers views.
+---
+
+## 4. Role-Based Access Control (RBAC) Integration
+
+Backend policies (`AdminOnly`, `StaffOnly`, `StaffOrAdmin`) are respected through:
+
+1. **Route Guarding (`src/components/AppRouter.tsx`):**
+   - Checks `isPagePermitted(activePage, userRole)`.
+   - Unauthorized attempts render `<AccessDenied />` with a back-to-dashboard shortcut.
+2. **Navigation Filtering (`src/components/Sidebar.tsx`):**
+   - Sidebar links and settings submenus are conditionally rendered based on the user's role.
+3. **Conditional Data Fetching:**
+   - Data hooks (such as `usePeople` and `useDashboardStatistics`) only query endpoints when the user possesses the required authorization.

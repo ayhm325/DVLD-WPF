@@ -1,6 +1,6 @@
 # ClientApp Architecture Guide
 
-This document describes the internal structure, component hierarchy, state model, navigation design, and authentication lifecycle of the React frontend (`ClientApp/`).
+This document describes the internal structure, component hierarchy, state management model, navigation routing, and authentication lifecycle of `ClientApp`.
 
 ---
 
@@ -8,44 +8,78 @@ This document describes the internal structure, component hierarchy, state model
 
 ```text
 ClientApp/
-├── public/                  # Static public assets (favicon.svg, icons.svg)
+├── public/                  # Static assets served as-is (favicon.svg, icons.svg)
 ├── src/
-│   ├── assets/              # Bundled static assets
+│   ├── assets/              # Static media assets (hero.png)
 │   ├── context/             # Authentication & session state management
 │   │   ├── authContextInstance.ts # React AuthContext definition
-│   │   ├── AuthContext.tsx        # AuthProvider implementation
-│   │   └── useAuth.ts            # Typed useAuth consumer hook
-│   ├── hooks/               # Shared React hooks (useAuth)
-│   ├── components/          # UI components, pages, and modals
-│   │   ├── common/          # Shared enterprise UI components
-│   │   │   ├── ConfirmModal.tsx   # Accessible confirmation dialog
-│   │   │   ├── LoadingSpinner.tsx # Animated status spinner
-│   │   │   └── StatusBadge.tsx    # Semantic status badge pill
-│   │   ├── international license/ # International license management
+│   │   ├── AuthContext.tsx        # AuthProvider implementation & storage sync
+│   │   └── useAuth.ts             # Typed useAuth consumer hook
+│   ├── hooks/               # Custom reusable React hooks
+│   │   ├── index.ts               # Barrel export for hooks
+│   │   ├── useAsyncData.ts        # Generic async fetcher with loading/error state
+│   │   ├── useDashboardStatistics.ts # Real-time dashboard stats hook
+│   │   ├── useDebounce.ts         # Input debounce hook for search queries
+│   │   ├── useModal.ts            # Controlled modal open/close hook
+│   │   ├── usePagination.ts       # Table pagination state and slicing
+│   │   ├── usePeople.ts           # People list lifecycle and filtering
+│   │   └── useTableFilters.ts     # Generic table search and column filters
+│   ├── components/          # UI components, pages, modals, and layouts
+│   │   ├── common/          # Shared enterprise UI design system
+│   │   │   ├── AccessDenied.tsx       # RBAC 403 access restriction screen
+│   │   │   ├── CommandPalette.tsx     # Global Ctrl+K command search palette
+│   │   │   ├── ConfirmModal.tsx       # Accessible action confirmation modal
+│   │   │   ├── DataTable.tsx          # Reusable sorting/paginated data table
+│   │   │   ├── DataTableContainer.tsx  # Responsive table wrapper shell
+│   │   │   ├── DataTableRowContextMenu.tsx # Contextual row action popup
+│   │   │   ├── EmptyState.tsx         # Zero-data presentation display
+│   │   │   ├── ErrorAlert.tsx         # User-facing error message banner
+│   │   │   ├── LoadingSpinner.tsx     # Animated loading indicator
+│   │   │   ├── ModalShell.tsx         # Accessible dialog container shell
+│   │   │   ├── PageHero.tsx           # Page header banner with breadcrumbs
+│   │   │   ├── pageHeroConfig.tsx     # Page hero icon and description mapping
+│   │   │   ├── SearchInput.tsx        # Styled search input with clear button
+│   │   │   ├── StatCard.tsx           # Metric stat card with trend indicator
+│   │   │   ├── StatsGrid.tsx          # Responsive grid for metric cards
+│   │   │   ├── StatusBadge.tsx        # Semantic pill badge for active/inactive states
+│   │   │   └── TableToolbar.tsx       # Table search, filter, and action toolbar
+│   │   ├── ui/              # Radix UI and Tailwind component primitives
+│   │   │   ├── badge.tsx              # Variant badge component
+│   │   │   ├── button.tsx             # Variant button component with slot support
+│   │   │   ├── dialog.tsx             # Accessible dialog primitive
+│   │   │   ├── dropdown-menu.tsx      # Accessible dropdown menu primitive
+│   │   │   ├── label.tsx              # Accessible form label primitive
+│   │   │   ├── select.tsx             # Accessible select dropdown primitive
+│   │   │   └── spinner.tsx            # Animated spinner primitive
+│   │   ├── international license/     # International license workflows
 │   │   │   ├── InternationalLicensesPage.tsx
 │   │   │   ├── InternationalLicenseTable.tsx
 │   │   │   ├── IssueInternationalLicensePage.tsx
 │   │   │   └── international-licenses.css
-│   │   ├── local applications/    # Local driving license applications
+│   │   ├── local applications/        # Local driving license application workflows
 │   │   │   ├── LocalApplicationsPage.tsx
 │   │   │   ├── LocalApplicationsList.tsx
 │   │   │   ├── LocalApplicationForm.tsx
 │   │   │   └── local-applications.css
-│   │   ├── AddPersonModal.tsx
-│   │   ├── ApplicationTypesPage.tsx
-│   │   ├── CountriesPage.tsx
-│   │   ├── DriversPage.tsx
-│   │   ├── LicenseClassesPage.tsx
-│   │   ├── LicensesPage.tsx
-│   │   ├── Login.css
-│   │   ├── Login.tsx
-│   │   ├── PeopleTable.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── TestTypesPage.tsx
-│   │   └── Topbar.tsx
+│   │   ├── AddPersonModal.tsx         # Add new person modal dialog
+│   │   ├── ApplicationTypesPage.tsx   # Application types & fee editing modal
+│   │   ├── AppRouter.tsx              # Page-level route switcher with RBAC guards
+│   │   ├── CountriesPage.tsx          # Country registry directory
+│   │   ├── DashboardPage.tsx          # Metrics dashboard & people overview
+│   │   ├── DriversPage.tsx            # Drivers directory page
+│   │   ├── LicenseClassesPage.tsx     # License classes directory page
+│   │   ├── LicensesPage.tsx           # Licenses directory page
+│   │   ├── Login.css                  # Light-theme login page stylesheet
+│   │   ├── Login.tsx                  # Light-theme institutional login component
+│   │   ├── PeoplePage.tsx             # Full people directory page
+│   │   ├── PeopleTable.tsx            # Core people data table
+│   │   ├── Sidebar.tsx                # Main navigation sidebar with user profile
+│   │   ├── TestTypesPage.tsx          # Test types & fee editing modal
+│   │   └── Topbar.tsx                 # Top navigation bar with command palette
 │   ├── services/            # HTTP service modules calling DVLD.Api
-│   │   ├── apiClient.ts     # Unified HTTP client with 401 interceptor
-│   │   ├── authService.ts   # Authentication & profile endpoints
+│   │   ├── apiClient.ts               # Unified transport client with 401 interception
+│   │   ├── applicationTypeService.ts
+│   │   ├── authService.ts
 │   │   ├── countryService.ts
 │   │   ├── dashboardService.ts
 │   │   ├── driverService.ts
@@ -54,29 +88,28 @@ ClientApp/
 │   │   ├── licenseService.ts
 │   │   ├── localDrivingLicenseApplicationService.ts
 │   │   ├── peopleService.ts
-│   │   └── personService.ts
-│   ├── types/               # TypeScript domain models and DTO contracts
-│   │   ├── Auth.ts
-│   │   ├── InternationalLicense.ts
-│   │   ├── LocalDrivingLicenseApplication.ts
-│   │   └── Person.ts
-│   ├── App.css              # Design tokens, layout, typography, and controls
-│   ├── App.tsx              # Root view coordinator and page router
-│   ├── index.css            # Base reset and typography styles
-│   └── main.tsx             # Entry point (StrictMode + AuthProvider + createRoot)
-├── docs/                    # React frontend architecture & feature documentation
+│   │   ├── personService.ts
+│   │   └── testTypeService.ts
+│   ├── types/               # TypeScript domain models and DTO interfaces
+│   ├── utils/               # Formatting, permissions, and storage helpers
+│   ├── App.css              # Global application layout and utility styles
+│   ├── App.tsx              # Authenticated application shell coordinator
+│   ├── index.css            # Base Tailwind v4 configuration and design tokens
+│   └── main.tsx             # Application bootstrap (StrictMode + AuthProvider)
+├── docs/                    # Authoritative technical documentation
+├── components.json          # Shadcn component configuration
 ├── eslint.config.js         # Flat ESLint configuration
-├── index.html               # HTML shell
-├── package.json             # Dependencies and npm scripts
-├── tsconfig.json            # Solution-style TypeScript config references
-├── tsconfig.app.json        # Application TypeScript compiler options
-├── tsconfig.node.json       # Vite config TypeScript compiler options
-└── vite.config.ts           # Vite configuration (@vitejs/plugin-react)
+├── index.html               # Main HTML entry shell
+├── package.json             # Dependencies and build scripts
+├── tsconfig.json            # Solution-style TypeScript configuration
+├── tsconfig.app.json        # Application TypeScript compiler settings
+├── tsconfig.node.json       # Tooling TypeScript compiler settings
+└── vite.config.ts           # Vite bundler configuration
 ```
 
 ---
 
-## 2. Component Hierarchy
+## 2. Component Hierarchy & Navigation Routing
 
 ```text
 main.tsx
@@ -84,65 +117,37 @@ main.tsx
         └── App.tsx
               ├── Login.tsx (rendered when !isAuthenticated)
               └── Authenticated Shell (rendered when isAuthenticated)
-                    ├── Sidebar.tsx
-                    │     ├── Nav items (Dashboard, People, Drivers, Licenses, International, Local Applications)
-                    │     ├── Settings submenu (Application Types, License Classes, Test Types, Countries)
-                    │     └── User Profile card + Quick Sign Out button
-                    └── main.main-content
-                          ├── Topbar.tsx
-                          │     ├── Breadcrumb & Page title
-                          │     ├── System status badge (Online)
-                          │     └── User menu dropdown with user details & Sign Out action
-                          ├── main.page-content
-                          │     ├── Dashboard view (welcome banner, stat cards from /Dashboard/statistics, PeopleTable)
-                          │     ├── PeopleTable.tsx (when activePage === 'People')
-                          │     ├── DriversPage.tsx (when activePage === 'Drivers')
-                          │     ├── LicensesPage.tsx (when activePage === 'Licenses')
-                          │     ├── InternationalLicensesPage.tsx (when activePage === 'International Licenses')
-                          │     ├── IssueInternationalLicensePage.tsx (when activePage === 'International Licenses' & issuing)
-                          │     ├── LocalApplicationsPage.tsx (when activePage === 'Local Applications')
-                          │     ├── CountriesPage.tsx (when activePage === 'Countries')
-                          │     ├── ApplicationTypesPage.tsx (when activePage === 'Application Types')
-                          │     ├── LicenseClassesPage.tsx (when activePage === 'License Classes')
-                          │     └── TestTypesPage.tsx (when activePage === 'Test Types')
-                          ├── AddPersonModal.tsx (rendered when isAddPersonOpen === true)
-                          ├── ConfirmModal.tsx (rendered when isLogoutModalOpen === true)
-                          └── footer.app-footer
+                    ├── Sidebar.tsx (navigation links, settings submenus, quick sign out)
+                    ├── CommandPalette.tsx (Ctrl+K global action and navigation overlay)
+                    ├── Topbar.tsx (active page breadcrumb, search trigger, user dropdown)
+                    ├── AppRouter.tsx (guarded by isPagePermitted())
+                    │     ├── AccessDenied.tsx (rendered if user role lacks permission)
+                    │     ├── DashboardPage.tsx
+                    │     ├── PeoplePage.tsx
+                    │     ├── DriversPage.tsx
+                    │     ├── LicensesPage.tsx
+                    │     ├── InternationalLicensesPage.tsx
+                    │     ├── IssueInternationalLicensePage.tsx
+                    │     ├── LocalApplicationsPage.tsx
+                    │     ├── CountriesPage.tsx
+                    │     ├── ApplicationTypesPage.tsx
+                    │     ├── LicenseClassesPage.tsx
+                    │     └── TestTypesPage.tsx
+                    ├── AddPersonModal.tsx (controlled modal dialog)
+                    └── ConfirmModal.tsx (logout confirmation dialog)
 ```
 
 ---
 
-## 3. Authentication & Logout Architecture
+## 3. State Management & Data Lifecycle
 
-1. **Authentication State & Session Storage (`src/context/`)**:
-   - `AuthProvider` maintains `accessToken`, `user` (`userId`, `userName`, `personId`, `fullName`, `role`), and session expiration (`expiresAtUtc`).
-   - Session data is persisted in `sessionStorage` under `'dvld_auth_session'`.
-   - On page load, `loadStoredSession()` restores the authenticated session if the token has not expired (`new Date(expiresAtUtc) > Date.now()`).
-   - If the token is expired or corrupt, the storage is cleaned automatically.
-
-2. **Logout Workflow**:
-   - Logout is triggered from:
-     - The **Topbar user profile dropdown menu** ("Sign Out" button).
-     - The **Sidebar footer** (quick sign-out icon).
-     - The **Logout Confirmation Dialog** (`ConfirmModal.tsx`).
-     - Automatic 401 Unauthorized interceptor in `apiClient.ts`.
-   - When logout executes:
-     1. `sessionStorage.removeItem('dvld_auth_session')` is invoked.
-     2. In-memory `session` state is cleared (`null`).
-     3. User state is reset to `null`.
-     4. Navigation returns to `'Dashboard'`, and view immediately shifts to `<Login />`.
-     5. A friendly message (`authMessage`) is presented to the user on the login screen.
-     6. Subsequent requests contain no Authorization header.
-     7. Browser back navigation cannot restore authenticated views because `isAuthenticated` is `false`.
-
-3. **401 Unauthorized Interception**:
-   - `apiClient.ts` provides `setUnauthorizedHandler()`.
-   - When any API request receives an HTTP `401 Unauthorized`, it automatically invokes `logout('Session expired. Please log in again.')`, preventing stale-token loops.
-
----
-
-## 4. State Management & Navigation
-
-- Client-side navigation is state-driven via `activePage: string` in `App.tsx`.
-- Modals (`AddPersonModal`, `ConfirmModal`) are conditionally mounted with focus management and Esc-key support.
-- API service calls are centralized in `src/services/` using the unified `apiRequest<T>()` transport client.
+1. **Authentication State (`AuthContext.tsx`):**
+   - Centralized authentication state: `accessToken`, `user` profile (`userId`, `userName`, `personId`, `fullName`, `role`), and session expiration.
+   - Synchronized with `sessionStorage` (`dvld_auth_session`).
+   - Automated cleanup and redirection on session expiry or 401 interception.
+2. **Page Navigation State (`App.tsx`):**
+   - Active view managed via `activePage: string` (`'Dashboard'`, `'People'`, `'Drivers'`, etc.).
+   - Role-based permissions enforced before view rendering in `AppRouter.tsx`.
+3. **Data Fetching & Hooks (`src/hooks/`):**
+   - Components leverage custom hooks (`usePeople`, `useDashboardStatistics`, `useAsyncData`) to manage request lifecycles, caching, and error states.
+   - Pagination, search filtering, and debouncing are abstracted via `usePagination`, `useTableFilters`, and `useDebounce`.

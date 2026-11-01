@@ -1,676 +1,728 @@
 /* =====================================================
-   DVLD — CINEMATIC FUTURISTIC LOGIN PAGE
-   01. Root & Full-Screen Background
-   02. Topbar & Language Selector
-   03. Main Cinematic Layout
-   04. Left Branding & Holographic Scene
-   05. Right Glassmorphism Authentication Card
-   06. Form Controls & Neon Inputs
-   07. Submit Button & Interactive States
-   08. Bottom Page Footer
-   09. Responsive Layouts
-   10. Reduced Motion
+   DVLD — MODERN LIGHT THEME LOGIN EXPERIENCE
+   Clean, accessible, institutional design system.
+   Zero 3D, zero canvas, zero neon, zero dark-futuristic styling.
 ===================================================== */
 
-/* =====================================================
-   01. Root & Full-Screen Background
-===================================================== */
-
-html:has(.login-page),
-body:has(.login-page) {
-  overflow: hidden;
-  height: 100%;
-}
-
+/* Root Full-Viewport Container */
+.dvld-login-root,
 .login-page {
-  position: relative;
-  height: 100vh;
-  height: 100svh;
-  max-height: 100vh;
+  min-height: 100vh;
+  min-height: 100svh;
   width: 100%;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
-  color: #f8fafc;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
-  /* Deep cinematic nighttime atmosphere rendered via code-based environment components */
-  background-color: #020612;
-  background-image:
-    radial-gradient(1100px 650px at 80% 45%, rgba(6, 182, 212, 0.08), transparent 60%),
-    radial-gradient(1300px 850px at 15% 35%, rgba(37, 99, 235, 0.1), transparent 70%);
-}
-
-@keyframes star-twinkle {
-  0% {
-    opacity: 0.25;
-    transform: scale(0.85);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1.25);
-  }
-}
-
-/* Subtle atmospheric neon vignette */
-.login-page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(2, 6, 23, 0.45) 100%);
-  z-index: 1;
-}
-
-/* 3D Scene Canvas Layering & Hardware Acceleration */
-.login-3d-scene-wrapper,
-.scene-canvas-container {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  user-select: none;
-  z-index: 0;
-  overflow: hidden;
-}
-
-.scene-canvas-container canvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-  outline: none;
-}
-
-@keyframes hologram-float {
-  0% {
-    transform: perspective(900px) rotateY(-14deg) rotateX(8deg) translateY(0px);
-  }
-  50% {
-    transform: perspective(900px) rotateY(-12deg) rotateX(6deg) translateY(-8px);
-  }
-  100% {
-    transform: perspective(900px) rotateY(-14deg) rotateX(8deg) translateY(0px);
-  }
-}
-
-/* =====================================================
-   02. Main Cinematic Layout
-===================================================== */
-
-.login-content-wrapper {
-  position: relative;
-  z-index: 10;
-  width: 100%;
-  max-width: 1800px;
-  margin: 0 auto;
-  padding: 36px 64px 24px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(400px, 460px);
-  gap: 48px;
   align-items: center;
-  flex: 1;
+  justify-content: center;
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.45) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(241, 245, 249, 0.7) 0px, transparent 50%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
+}
+
+/* Constrained Max-Width Wrapper */
+.dvld-login-container {
+  width: 100%;
+  max-width: 1020px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+/* Two-Column Card Container */
+.dvld-login-card {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid #e2e8f0;
+  box-shadow:
+    0 4px 6px -1px rgba(15, 23, 42, 0.05),
+    0 10px 20px -3px rgba(15, 23, 42, 0.06),
+    0 0 0 1px rgba(226, 232, 240, 0.6);
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  .dvld-login-card {
+    grid-template-columns: 1.05fr 1.15fr;
+  }
 }
 
 /* =====================================================
-   04. Left Branding & Holographic Scene
+   Left Column: Institutional Branding
 ===================================================== */
-
-.login-left-column {
+.dvld-brand-column {
+  background: linear-gradient(165deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 2.5rem 2.25rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 100%;
-  min-height: 540px;
-  max-width: 460px;
 }
 
-.login-scene-midsection {
-  position: absolute;
-  top: 55px;
-  left: 510px;
-  z-index: 5;
-  pointer-events: none;
-}
-
-@media (max-height: 850px) {
-  .login-content-wrapper {
-    padding: 20px 48px 16px;
-    gap: 32px;
-  }
-
-  .login-left-column {
-    min-height: 480px;
-    max-width: 420px;
-  }
-
-  .login-glass-card {
-    padding: 24px 28px 20px;
-  }
-
-  .login-scene-midsection {
-    top: 25px;
-    left: 460px;
+@media (min-width: 900px) {
+  .dvld-brand-column {
+    border-bottom: none;
+    border-right: 1px solid #e2e8f0;
+    padding: 2.75rem 2.25rem;
   }
 }
 
-/* =====================================================
-   05. Right Glassmorphism Authentication Card
-===================================================== */
-
-.login-card-container {
+.dvld-brand-inner {
   display: flex;
-  justify-content: flex-end;
-  width: 100%;
+  flex-direction: column;
+  gap: 1.75rem;
+  height: 100%;
+  justify-content: space-between;
 }
 
-.login-glass-card {
-  position: relative;
-  width: 100%;
-  max-width: 460px;
-  padding: 38px 36px 32px;
-  border-radius: 28px;
-  background: rgba(6, 16, 34, 0.78);
-  border: 1.5px solid rgba(56, 189, 248, 0.4);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  box-shadow:
-    0 25px 65px -10px rgba(0, 0, 0, 0.95),
-    0 0 45px -5px rgba(37, 99, 235, 0.35),
-    0 0 25px -2px rgba(6, 182, 212, 0.28),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
-  animation: login-card-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+/* Official Emblem Header */
+.dvld-emblem-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
-/* Radiant Neon Corner Blooms */
-.login-glass-card::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  width: 50px;
-  height: 50px;
-  border-top: 3px solid #38bdf8;
-  border-left: 3px solid #38bdf8;
-  border-top-left-radius: 28px;
-  filter: drop-shadow(0 0 10px #38bdf8);
-  pointer-events: none;
-}
-
-.login-glass-card::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 50px;
-  height: 50px;
-  border-bottom: 3px solid #22d3ee;
-  border-right: 3px solid #22d3ee;
-  border-bottom-right-radius: 28px;
-  filter: drop-shadow(0 0 10px #22d3ee);
-  pointer-events: none;
-}
-
-@keyframes login-card-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(16px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Card Header */
-.login-card-header {
-  text-align: center;
-  margin-top: 14px;
-  margin-bottom: 24px;
-}
-
-.login-card-title {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+.dvld-emblem-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.875rem;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
   color: #ffffff;
+  box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.35);
+  flex-shrink: 0;
+}
+
+.dvld-kingdom-title {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.15rem;
+}
+
+.dvld-brand-heading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  line-height: 1.2;
   margin: 0;
 }
 
-.login-card-title span {
-  color: #22d3ee;
-  text-shadow: 0 0 18px rgba(34, 211, 238, 0.65);
+.dvld-arabic-title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-top: 0.25rem;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
-.login-card-subtitle {
-  font-size: 13px;
-  color: #94a3b8;
-  margin-top: 8px;
+/* Mission Section */
+.dvld-mission-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.15rem 1.1rem;
+  background-color: #ffffff;
+  border-radius: 0.875rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.dvld-mission-tag {
+  display: inline-block;
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  letter-spacing: -0.01em;
+}
+
+.dvld-mission-desc {
+  font-size: 0.825rem;
   line-height: 1.5;
+  color: #475569;
+  margin: 0;
+}
+
+/* Pillars List */
+.dvld-pillars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dvld-pillar-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.dvld-pillar-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.625rem;
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.dvld-pillar-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.125rem 0;
+}
+
+.dvld-pillar-desc {
+  font-size: 0.775rem;
+  line-height: 1.4;
+  color: #64748b;
+  margin: 0;
+}
+
+.dvld-brand-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: #059669;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 /* =====================================================
-   06. Form Controls & Neon Inputs
+   Right Column: Authentication Card
 ===================================================== */
-
-.login-form {
+.dvld-auth-column {
+  background-color: #ffffff;
+  padding: 2.5rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  justify-content: center;
 }
 
-.login-field {
+@media (min-width: 900px) {
+  .dvld-auth-column {
+    padding: 3rem 2.5rem;
+  }
+}
+
+.dvld-auth-inner {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 1.35rem;
 }
 
-.login-field label {
-  font-size: 12px;
+/* Card Header */
+.dvld-auth-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dvld-auth-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dvld-auth-subtitle {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Notification Banners */
+.dvld-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.825rem;
+  line-height: 1.45;
+}
+
+.dvld-alert-info {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.dvld-alert-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.dvld-alert-icon {
+  margin-top: 0.1rem;
+}
+
+/* Form Structure */
+.dvld-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.dvld-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.dvld-form-label {
+  font-size: 0.825rem;
   font-weight: 600;
-  color: #cbd5e1;
-  letter-spacing: 0.2px;
+  color: #334155;
 }
 
-.login-input-shell {
+.dvld-password-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Input Shell & Overrides for Global Inputs */
+.dvld-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
-  border-radius: 14px;
-  background: rgba(8, 20, 42, 0.72);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.login-input-shell:focus-within {
-  border-color: #38bdf8;
-  background: rgba(11, 26, 54, 0.9);
-  box-shadow:
-    0 0 0 3px rgba(56, 189, 248, 0.25),
-    0 0 16px rgba(56, 189, 248, 0.35);
-}
-
-.login-input-icon {
+.dvld-input-leading-icon {
   position: absolute;
-  left: 14px;
+  left: 0.875rem;
+  color: #64748b !important;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #38bdf8;
-  opacity: 0.85;
   pointer-events: none;
+  z-index: 2;
 }
 
-.login-input {
-  width: 100%;
-  padding: 13px 14px 13px 44px;
-  font-size: 13.5px;
-  color: #ffffff;
-  background: transparent;
-  border: none;
-  outline: none;
-  border-radius: 14px;
+.dvld-login-card input[type='text'].dvld-input,
+.dvld-login-card input[type='password'].dvld-input,
+.dvld-login-root .dvld-input {
+  width: 100% !important;
+  height: 2.75rem !important;
+  padding: 0 0.875rem 0 2.5rem !important;
+  font-size: 0.875rem !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.625rem !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  outline: none !important;
+  box-sizing: border-box !important;
 }
 
-.login-input::placeholder {
-  color: #64748b;
-  font-size: 13px;
+.dvld-login-card input[type='text'].dvld-input:focus,
+.dvld-login-card input[type='password'].dvld-input:focus,
+.dvld-login-root .dvld-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
-.login-password-toggle {
+.dvld-login-card input[type='text'].dvld-input::placeholder,
+.dvld-login-card input[type='password'].dvld-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.dvld-login-card input[type='text'].dvld-input:disabled,
+.dvld-login-card input[type='password'].dvld-input:disabled,
+.dvld-login-root .dvld-input:disabled {
+  background-color: #f8fafc !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+}
+
+.dvld-login-card input.dvld-input.dvld-input-with-trailing {
+  padding-right: 2.75rem !important;
+}
+
+/* Password Toggle */
+.dvld-password-toggle {
   position: absolute;
-  right: 12px;
+  right: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 2rem;
+  height: 2rem;
   background: transparent;
   border: none;
+  border-radius: 0.375rem;
   color: #64748b;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: color 0.15s ease;
+  z-index: 2;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
-.login-password-toggle:hover {
-  color: #38bdf8;
+.dvld-password-toggle:hover:not(:disabled) {
+  color: #1e293b;
+  background-color: #f1f5f9;
 }
 
-/* Remember me row */
-.login-options-row {
+.dvld-password-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+/* Options Row (Remember Me & Forgot Password) */
+.dvld-options-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: -2px;
-  margin-bottom: 4px;
-  font-size: 12.5px;
+  margin-top: -0.1rem;
 }
 
-.login-remember-label {
-  display: flex;
+.dvld-checkbox-label {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: #94a3b8;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  color: #475569;
   cursor: pointer;
   user-select: none;
 }
 
-.login-forgot-link {
-  background: transparent;
-  border: none;
-  color: #38bdf8;
-  font-size: 12.5px;
-  font-weight: 500;
+.dvld-login-root input[type='checkbox'].dvld-checkbox,
+.dvld-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.125rem !important;
+  height: 1.125rem !important;
+  border-radius: 0.25rem !important;
+  border: 1.5px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  display: inline-grid;
+  place-content: center;
   cursor: pointer;
+  margin: 0;
+  vertical-align: middle;
+  transition: all 0.15s ease;
+  box-sizing: border-box !important;
+}
+
+.dvld-login-root input[type='checkbox'].dvld-checkbox:hover,
+.dvld-checkbox:hover {
+  border-color: #94a3b8 !important;
+}
+
+.dvld-login-root input[type='checkbox'].dvld-checkbox:focus-visible,
+.dvld-checkbox:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.dvld-login-root input[type='checkbox'].dvld-checkbox:checked,
+.dvld-checkbox:checked {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e") !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 85% !important;
+}
+
+.dvld-forgot-btn {
+  background: none;
+  border: none;
   padding: 0;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
   transition: color 0.15s ease;
 }
 
-.login-forgot-link:hover {
-  color: #67e8f9;
+.dvld-forgot-btn:hover {
+  color: #1d4ed8;
   text-decoration: underline;
 }
 
-.login-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid rgba(56, 189, 248, 0.5);
-  background: rgba(8, 20, 42, 0.8);
-  cursor: pointer;
-  position: relative;
-  display: grid;
-  place-content: center;
-  transition: all 0.15s ease;
+.dvld-forgot-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
-.login-checkbox:checked {
-  background: #0284c7;
-  border-color: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-}
-
-.login-checkbox:checked::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  clip-path: polygon(14% 44%, 0 60%, 40% 100%, 100% 20%, 82% 6%, 36% 68%);
-  background-color: #ffffff;
-}
-
-/* Feedback banners */
-.login-error-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(69, 10, 10, 0.7);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #fca5a5;
-  font-size: 12.5px;
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
-}
-
-.login-info-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(8, 28, 58, 0.8);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  color: #7dd3fc;
-  font-size: 12.5px;
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
-}
-
-/* =====================================================
-   07. Submit Button & Interactive States
-===================================================== */
-
-.login-submit-btn {
-  position: relative;
+/* Primary Submit Button */
+.dvld-submit-btn {
   width: 100%;
-  display: flex;
+  height: 2.875rem;
+  margin-top: 0.25rem;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 12px 24px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #06b6d4 100%);
-  border: 1px solid rgba(103, 232, 249, 0.5);
-  color: #ffffff;
-  font-size: 14px;
+  gap: 0.5rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  border: none;
+  border-radius: 0.625rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow:
-    0 4px 20px rgba(37, 99, 235, 0.5),
-    0 0 25px rgba(6, 182, 212, 0.35);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2), 0 1px 2px rgba(37, 99, 235, 0.15);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
-.login-submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #22d3ee 100%);
-  box-shadow:
-    0 6px 25px rgba(37, 99, 235, 0.65),
-    0 0 35px rgba(6, 182, 212, 0.5);
-  border-color: rgba(165, 243, 252, 0.8);
+.dvld-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
 }
 
-.login-submit-btn:active:not(:disabled) {
+.dvld-submit-btn:active:not(:disabled) {
   transform: translateY(1px);
 }
 
-.login-submit-btn:disabled {
-  opacity: 0.6;
+.dvld-submit-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.4);
+  outline-offset: 2px;
+}
+
+.dvld-submit-btn:disabled {
+  background: #cbd5e1;
+  color: #64748b;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.login-spinner {
-  width: 18px;
-  height: 18px;
+.dvld-submit-arrow {
+  transition: transform 0.15s ease;
+}
+
+.dvld-submit-btn:hover:not(:disabled) .dvld-submit-arrow {
+  transform: translateX(3px);
+}
+
+.dvld-spinner {
+  width: 1.125rem;
+  height: 1.125rem;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #ffffff;
   border-radius: 50%;
-  animation: login-spin 0.75s linear infinite;
+  animation: dvld-spin 0.7s linear infinite;
 }
 
-@keyframes login-spin {
+@keyframes dvld-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* =====================================================
-   Alternative Authentication Section
-===================================================== */
-
-.login-divider {
+/* Auxiliary Divider */
+.dvld-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 4px 0;
+  gap: 0.75rem;
+  margin: 0.4rem 0;
 }
 
-.login-divider-line {
+.dvld-divider-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.3), transparent);
+  background-color: #e2e8f0;
 }
 
-.login-divider-text {
-  font-size: 10px;
+.dvld-divider-text {
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 1.2px;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.login-social-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.login-social-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 38px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: rgba(8, 20, 42, 0.65);
-  border: 1px solid rgba(56, 189, 248, 0.22);
-  color: #cbd5e1;
-  font-size: 11.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
-}
-
-.login-social-btn:hover {
-  background: rgba(14, 34, 68, 0.85);
-  border-color: rgba(56, 189, 248, 0.55);
-  color: #ffffff;
-  box-shadow: 0 0 14px rgba(6, 182, 212, 0.25);
-  transform: translateY(-1px);
-}
-
-/* Security Note */
-.login-security-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  margin-top: 18px;
-  font-size: 11.5px;
+  letter-spacing: 0.05em;
   color: #94a3b8;
 }
 
-.login-security-indicator svg {
-  color: #34d399;
+/* Auxiliary Buttons Grid */
+.dvld-auxiliary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+}
+
+.dvld-aux-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 2.375rem;
+  padding: 0 0.5rem;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dvld-aux-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.dvld-aux-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+/* Security Bottom Note */
+.dvld-security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+  padding-top: 0.1rem;
 }
 
 /* =====================================================
-   08. Bottom Page Footer
+   Global Page Footer
 ===================================================== */
-
-.login-footer {
-  position: relative;
-  z-index: 10;
+.dvld-page-footer {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 48px 24px;
-  border-top: 1px solid rgba(56, 189, 248, 0.15);
-  font-size: 12px;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.dvld-footer-copyright {
+  font-size: 0.775rem;
   color: #64748b;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  background: rgba(3, 7, 18, 0.45);
-}
-
-.login-footer-copy {
-  margin: 0 auto;
-  color: #94a3b8;
-  letter-spacing: 0.3px;
-}
-
-.login-footer-tagline {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #94a3b8;
+  margin: 0;
   font-weight: 500;
 }
 
-.login-footer-tagline::after {
-  content: '';
-  display: inline-block;
-  width: 16px;
-  height: 2px;
-  background-color: #06b6d4;
-  box-shadow: 0 0 6px #06b6d4;
-  border-radius: 2px;
+.dvld-footer-notice {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 0;
 }
 
 /* =====================================================
-   09. Responsive Layouts
+   Compact Laptop Viewports (1280x720 & 1366x768)
 ===================================================== */
-
-@media (max-width: 1120px) {
-  .login-content-wrapper {
-    grid-template-columns: 1fr;
-    gap: 36px;
-    padding: 16px 28px 24px;
+@media (max-height: 800px) and (min-width: 900px) {
+  .dvld-login-root {
+    padding: 0.75rem 1rem;
   }
 
-  .login-card-container {
-    justify-content: center;
+  .dvld-login-container {
+    gap: 0.75rem;
   }
 
-  .login-glass-card {
-    max-width: 480px;
+  .dvld-brand-column {
+    padding: 2rem 2rem;
   }
 
-  .login-left-column {
-    min-height: auto;
+  .dvld-brand-inner {
+    gap: 1.25rem;
   }
 
-  .login-scene-midsection {
+  .dvld-auth-column {
+    padding: 2rem 2.25rem;
+  }
+
+  .dvld-auth-inner {
+    gap: 1.1rem;
+  }
+
+  .dvld-pillars-list {
+    gap: 0.75rem;
+  }
+
+  .dvld-mission-section {
+    padding: 0.85rem 1rem;
+  }
+}
+
+/* =====================================================
+   Mobile Responsive Breakpoints (390x844 & below 900px)
+===================================================== */
+@media (max-width: 899px) {
+  .dvld-login-root {
+    padding: 1rem 0.75rem;
+    align-items: center;
+  }
+
+  .dvld-brand-column {
+    padding: 1.5rem 1.25rem 1.25rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .dvld-brand-inner {
+    gap: 0.75rem;
+  }
+
+  /* Streamline detailed bullet points on mobile for fast, clean auth */
+  .dvld-mission-section,
+  .dvld-pillars-list,
+  .dvld-brand-footer {
     display: none;
   }
 
-  .login-branding {
-    text-align: center;
+  .dvld-emblem-header {
     align-items: center;
   }
 
-  .login-branding .space-y-6 {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .dvld-auth-column {
+    padding: 1.5rem 1.25rem 1.75rem 1.25rem;
+  }
+
+  .dvld-brand-heading {
+    font-size: 1.35rem;
+  }
+
+  .dvld-auth-title {
+    font-size: 1.45rem;
+  }
+
+  .dvld-auxiliary-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (max-width: 640px) {
-  .login-content-wrapper {
-    padding: 20px 16px 20px;
+@media (max-width: 480px) {
+  .dvld-auxiliary-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 
-  .login-glass-card {
-    padding: 28px 20px 24px;
-    border-radius: 22px;
-  }
-
-  .login-footer {
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
-    padding: 16px 20px;
-  }
-}
-
-/* =====================================================
-   10. Reduced Motion
-===================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-  .login-glass-card,
-  .login-submit-btn,
-  .login-spinner {
-    animation: none !important;
-    transition: none !important;
+  .dvld-aux-btn {
+    height: 2.5rem;
   }
 }
