@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import type { FormEvent, ChangeEvent } from 'react'
 import {
-  ArrowLeft,
   User,
   UserCheck,
   Save,
@@ -15,6 +14,7 @@ import {
 import { getCountries } from '../services/countryService'
 import type { Country } from '../types/Country'
 import { createPerson } from '../services/peopleService'
+import { sanitizePersonName, validatePersonName } from '../utils/nameValidation'
 import PageHero from './common/PageHero'
 import ErrorAlert from './common/ErrorAlert'
 import LoadingSpinner from './common/LoadingSpinner'
@@ -81,6 +81,8 @@ export default function AddPersonPage({
   const [loadingCountries, setLoadingCountries] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [errorField, setErrorField] = useState<string | null>(null)
+
   const [gender, setGender] = useState('0')
   const [nationalityCountryID, setNationalityCountryID] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -96,6 +98,18 @@ export default function AddPersonPage({
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
+
+  function setFieldError(field: string, message: string) {
+    setErrorField(field)
+    setError(message)
+  }
+
+  function clearFieldError(field?: string) {
+    if (!field || errorField === field) {
+      setErrorField(null)
+      setError('')
+    }
+  }
 
   // Load countries from the API
   useEffect(() => {
@@ -139,7 +153,7 @@ export default function AddPersonPage({
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file (JPEG, PNG, WebP).')
+      setFieldError('image', 'Please select a valid image file (JPEG, PNG, WebP).')
       event.target.value = ''
       setImageFile(null)
       setImagePreview('')
@@ -147,14 +161,14 @@ export default function AddPersonPage({
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('Image size must not exceed 5 MB.')
+      setFieldError('image', 'Image size must not exceed 5 MB.')
       event.target.value = ''
       setImageFile(null)
       setImagePreview('')
       return
     }
 
-    setError('')
+    clearFieldError('image')
     setImageFile(file)
 
     const reader = new FileReader()
@@ -164,7 +178,7 @@ export default function AddPersonPage({
       }
     }
     reader.onerror = () => {
-      setError('Failed to preview the selected image.')
+      setFieldError('image', 'Failed to preview the selected image.')
       setImagePreview('')
     }
     reader.readAsDataURL(file)
@@ -181,6 +195,7 @@ export default function AddPersonPage({
     if (imageInput) {
       imageInput.value = ''
     }
+    clearFieldError('image')
   }
 
   // Validate inputs and submit person creation
@@ -188,29 +203,67 @@ export default function AddPersonPage({
     event.preventDefault()
     if (saving) return
     setError('')
+    setErrorField(null)
 
-    const trimmedNationalNo = nationalNo.trim()
     const trimmedFirstName = firstName.trim()
     const trimmedSecondName = secondName.trim()
     const trimmedThirdName = thirdName.trim()
     const trimmedLastName = lastName.trim()
+    const trimmedNationalNo = nationalNo.trim()
     const trimmedPhone = phone.trim()
     const trimmedAddress = address.trim()
     const trimmedEmail = email.trim()
 
-    // 1. Age validation: must be at least 18 years old
-    if (!dateOfBirth) {
-      setError('Please select a valid Date of Birth.')
+    // 1. National Number validation: exactly 10 digits (top field in civil identity form)
+    if (!trimmedNationalNo) {
+      setFieldError('nationalNo', 'National Number is required.')
       return
     }
 
-    if (dateOfBirth > maxDateOfBirth) {
-      setError('The citizen must be at least 18 years old to be registered.')
+    if (trimmedNationalNo.length !== 10 || !/^\d{10}$/.test(trimmedNationalNo)) {
+      setFieldError('nationalNo', 'National Number must contain exactly 10 numeric digits.')
+      return
+    }
+
+    // 2. Names validation (First, Second, Last Name required; Third Name optional)
+    const firstNameValidation = validatePersonName(firstName, 'First Name', true)
+    if (!firstNameValidation.valid) {
+      setFieldError('firstName', firstNameValidation.error!)
+      return
+    }
+
+    const secondNameValidation = validatePersonName(secondName, 'Second Name', true)
+    if (!secondNameValidation.valid) {
+      setFieldError('secondName', secondNameValidation.error!)
+      return
+    }
+
+    const thirdNameValidation = validatePersonName(thirdName, 'Third Name', false)
+    if (!thirdNameValidation.valid) {
+      setFieldError('thirdName', thirdNameValidation.error!)
+      return
+    }
+
+    const lastNameValidation = validatePersonName(lastName, 'Last Name', true)
+    if (!lastNameValidation.valid) {
+      setFieldError('lastName', lastNameValidation.error!)
+      return
+    }
+
+    // 3. Date of Birth validation
+    if (!dateOfBirth) {
+      setFieldError('dateOfBirth', 'Please select a valid Date of Birth.')
       return
     }
 
     const birthDate = new Date(`${dateOfBirth}T00:00:00`)
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (birthDate > today) {
+      setFieldError('dateOfBirth', 'Date of Birth cannot be in the future.')
+      return
+    }
 
     let age = today.getFullYear() - birthDate.getFullYear()
     const monthDifference = today.getMonth() - birthDate.getMonth()
@@ -222,29 +275,50 @@ export default function AddPersonPage({
       age--
     }
 
-    if (!Number.isFinite(birthDate.getTime()) || age < 18) {
-      setError('The citizen must be at least 18 years old to be registered.')
+    if (!Number.isFinite(birthDate.getTime()) || dateOfBirth > maxDateOfBirth || age < 18) {
+      setFieldError('dateOfBirth', 'The citizen must be at least 18 years old to be registered.')
       return
     }
 
-    // 2. National number validation: exactly 10 digits
-    if (!/^\d{10}$/.test(trimmedNationalNo)) {
-      setError('National Number must contain exactly 10 numeric digits.')
+    // 4. Gender validation
+    if (gender !== '0' && gender !== '1') {
+      setFieldError('gender', 'Please select a valid gender.')
       return
     }
 
-    // 3. Phone validation: Jordanian format (077/078/079 + 7 digits)
+    // 5. Nationality validation
+    const countryIdNum = Number(nationalityCountryID)
+    if (!nationalityCountryID || !Number.isInteger(countryIdNum) || countryIdNum <= 0) {
+      setFieldError('nationality', 'Please select a valid nationality country.')
+      return
+    }
+
+    // 6. Phone validation: Jordanian mobile (077/078/079 + 7 digits)
+    if (!trimmedPhone) {
+      setFieldError('phone', 'Phone number is required.')
+      return
+    }
+
     if (!/^(077|078|079)\d{7}$/.test(trimmedPhone)) {
-      setError(
+      setFieldError(
+        'phone',
         'Phone number must be a 10-digit Jordanian mobile number starting with 077, 078, or 079.',
       )
       return
     }
 
-    // 4. Nationality validation
-    const countryIdNum = Number(nationalityCountryID)
-    if (!Number.isInteger(countryIdNum) || countryIdNum <= 0) {
-      setError('Please select a valid nationality country.')
+    // 7. Email validation (Optional, but if provided must be valid)
+    if (trimmedEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(trimmedEmail)) {
+        setFieldError('email', 'Please enter a valid email address (e.g. citizen@example.com).')
+        return
+      }
+    }
+
+    // 8. Residential Address validation
+    if (!trimmedAddress) {
+      setFieldError('address', 'Residential Address is required.')
       return
     }
 
@@ -280,24 +354,12 @@ export default function AddPersonPage({
 
   return (
     <section className="page-content space-y-6">
-      {/* Page Hero Header with Back Navigation */}
+      {/* Page Hero Header without action buttons */}
       <PageHero
         pageId="Add Person"
         title="Add New"
         highlight="Person"
         description="Register a new citizen or resident record in the DVLD central database. Complete all required identity, contact, and residency fields."
-        actions={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onBack}
-            className="h-9 gap-2 text-xs font-semibold text-white bg-[#0e1b33] hover:bg-[#142647] border border-[#263750] hover:border-blue-500/40 rounded-xl shadow-xs transition-all cursor-pointer"
-          >
-            <ArrowLeft className="size-4 text-cyan-400" />
-            <span>Back to People Directory</span>
-          </Button>
-        }
       />
 
       {/* Shared Error notification banner */}
@@ -305,7 +367,10 @@ export default function AddPersonPage({
         <ErrorAlert
           title="Validation Notice"
           message={error}
-          onDismiss={() => setError('')}
+          onDismiss={() => {
+            setError('')
+            setErrorField(null)
+          }}
         />
       )}
 
@@ -399,9 +464,9 @@ export default function AddPersonPage({
               </div>
             </div>
 
-            {/* Form Fields: Identity & Names Grid */}
+            {/* Identity Grid: 4 Names + National No + DOB + Gender */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {/* National Number */}
+              {/* National Number (Digits only, max 10) */}
               <div className="sm:col-span-2 lg:col-span-4">
                 <Label htmlFor="person-national-no" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                   National Number <span className="text-rose-400">*</span>
@@ -412,12 +477,18 @@ export default function AddPersonPage({
                   required
                   maxLength={10}
                   inputMode="numeric"
-                  pattern="\d{10}"
+                  pattern="[0-9]*"
                   placeholder="Enter 10-digit civil national number (e.g. 9901023456)"
                   value={nationalNo}
-                  onChange={(e) => setNationalNo(e.target.value)}
+                  error={errorField === 'nationalNo'}
+                  onChange={(e) => {
+                    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10)
+                    setNationalNo(digitsOnly)
+                    clearFieldError('nationalNo')
+                  }}
                   disabled={saving}
                 />
+                <span className="text-[11px] text-slate-500 mt-1 block">Exactly 10 numeric digits required.</span>
               </div>
 
               {/* First Name */}
@@ -432,7 +503,12 @@ export default function AddPersonPage({
                   maxLength={50}
                   placeholder="Given name"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  error={errorField === 'firstName'}
+                  onChange={(e) => {
+                    const sanitized = sanitizePersonName(e.target.value)
+                    setFirstName(sanitized)
+                    clearFieldError('firstName')
+                  }}
                   disabled={saving}
                 />
               </div>
@@ -449,7 +525,12 @@ export default function AddPersonPage({
                   maxLength={50}
                   placeholder="Father's name"
                   value={secondName}
-                  onChange={(e) => setSecondName(e.target.value)}
+                  error={errorField === 'secondName'}
+                  onChange={(e) => {
+                    const sanitized = sanitizePersonName(e.target.value)
+                    setSecondName(sanitized)
+                    clearFieldError('secondName')
+                  }}
                   disabled={saving}
                 />
               </div>
@@ -465,7 +546,12 @@ export default function AddPersonPage({
                   maxLength={50}
                   placeholder="Grandfather's name"
                   value={thirdName}
-                  onChange={(e) => setThirdName(e.target.value)}
+                  error={errorField === 'thirdName'}
+                  onChange={(e) => {
+                    const sanitized = sanitizePersonName(e.target.value)
+                    setThirdName(sanitized)
+                    clearFieldError('thirdName')
+                  }}
                   disabled={saving}
                 />
               </div>
@@ -482,7 +568,12 @@ export default function AddPersonPage({
                   maxLength={50}
                   placeholder="Family name"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  error={errorField === 'lastName'}
+                  onChange={(e) => {
+                    const sanitized = sanitizePersonName(e.target.value)
+                    setLastName(sanitized)
+                    clearFieldError('lastName')
+                  }}
                   disabled={saving}
                 />
               </div>
@@ -499,7 +590,11 @@ export default function AddPersonPage({
                   max={maxDateOfBirth}
                   min={minDateOfBirth}
                   value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  error={errorField === 'dateOfBirth'}
+                  onChange={(e) => {
+                    setDateOfBirth(e.target.value)
+                    clearFieldError('dateOfBirth')
+                  }}
                   disabled={saving}
                 />
                 <span className="text-[11px] text-slate-500 mt-1 block">Citizen must be at least 18 years old.</span>
@@ -510,7 +605,13 @@ export default function AddPersonPage({
                 <Label htmlFor="person-gender" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                   Gender <span className="text-rose-400">*</span>
                 </Label>
-                <Select value={gender} onValueChange={setGender}>
+                <Select
+                  value={gender}
+                  onValueChange={(val) => {
+                    setGender(val)
+                    clearFieldError('gender')
+                  }}
+                >
                   <SelectTrigger
                     id="person-gender"
                     aria-label="Select gender"
@@ -549,7 +650,10 @@ export default function AddPersonPage({
                 </Label>
                 <Select
                   value={nationalityCountryID || undefined}
-                  onValueChange={setNationalityCountryID}
+                  onValueChange={(val) => {
+                    setNationalityCountryID(val)
+                    clearFieldError('nationality')
+                  }}
                 >
                   <SelectTrigger
                     id="person-nationality"
@@ -571,7 +675,7 @@ export default function AddPersonPage({
                 </Select>
               </div>
 
-              {/* Phone */}
+              {/* Phone (Digits only, Jordanian format) */}
               <div>
                 <Label htmlFor="person-phone" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                   Phone Number <span className="text-rose-400">*</span>
@@ -586,10 +690,15 @@ export default function AddPersonPage({
                     required
                     maxLength={10}
                     inputMode="numeric"
-                    pattern="(077|078|079)\d{7}"
+                    pattern="[0-9]*"
                     placeholder="07XXXXXXXX"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    error={errorField === 'phone'}
+                    onChange={(e) => {
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10)
+                      setPhone(digitsOnly)
+                      clearFieldError('phone')
+                    }}
                     disabled={saving}
                     className="pl-10 pr-3.5"
                   />
@@ -612,7 +721,11 @@ export default function AddPersonPage({
                     maxLength={100}
                     placeholder="citizen@example.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    error={errorField === 'email'}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      clearFieldError('email')
+                    }}
                     disabled={saving}
                     className="pl-10 pr-3.5"
                   />
@@ -631,7 +744,11 @@ export default function AddPersonPage({
                   maxLength={200}
                   placeholder="Enter detailed residence address: City, District, Street / Building No."
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  error={errorField === 'address'}
+                  onChange={(e) => {
+                    setAddress(e.target.value)
+                    clearFieldError('address')
+                  }}
                   disabled={saving}
                 />
               </div>

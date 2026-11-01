@@ -209,6 +209,7 @@ export default function AppRouter({
       {![
         'Dashboard',
         'People',
+        'Add Person',
         'Drivers',
         'Licenses',
         'International Licenses',
