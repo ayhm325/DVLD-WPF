@@ -21,6 +21,7 @@ import {
 
 type Props = {
   accessToken: string
+  userRole?: string | null
 }
 
 type SearchBy = 'all' | 'name' | 'id' | 'desc'

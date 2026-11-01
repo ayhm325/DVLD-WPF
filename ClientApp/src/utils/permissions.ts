@@ -55,8 +55,8 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
   // Local Driving License Applications: LocalDrivingLicenseApplicationsController [Authorize(Policy = "StaffOnly")]
   'Local Applications': ['Staff'],
 
-  // Application Types Settings: ApplicationTypesController [Authorize(Policy = "AdminOnly")]
-  'Application Types': ['Admin'],
+  // Application Types Settings: Viewable by Staff and Admin; modification restricted to Admin
+  'Application Types': ['Admin', 'Staff'],
 
   // License Classes: LicenseClassesController [Authorize]
   'License Classes': ['Admin', 'Staff'],
@@ -64,7 +64,7 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
   // Test Types: TestTypesController [Authorize] (Update is AdminOnly)
   'Test Types': ['Admin', 'Staff'],
 
-  // Countries: CountriesController [Authorize]
+  // Countries: CountriesController [Authorize] (Permanently read-only)
   'Countries': ['Admin', 'Staff'],
 }
 
@@ -86,3 +86,41 @@ export function isPagePermitted(page: string, role?: string | null): boolean {
 
   return allowedRoles.includes(role)
 }
+
+/** Alias for isPagePermitted to clearly distinguish page visibility from data modification. */
+export const canViewPage = isPagePermitted
+
+/** Reference data pages that support administrative data modifications. */
+export type ManageableReferencePage =
+  | 'Application Types'
+  | 'License Classes'
+  | 'Test Types'
+
+export const MANAGEABLE_REFERENCE_PAGES: readonly ManageableReferencePage[] = [
+  'Application Types',
+  'License Classes',
+  'Test Types',
+] as const
+
+/**
+ * Verifies whether the specified role is permitted to modify (add/edit/delete/save)
+ * reference data on the specified page.
+ * - Only Admin can modify Application Types, License Classes, and Test Types.
+ * - Countries is permanently read-only for all roles (returns false).
+ * - Staff users receive read-only access (returns false).
+ */
+export function canManageReferenceData(page: string, role?: string | null): boolean {
+  if (!role || role !== 'Admin') {
+    return false
+  }
+
+  // Countries is permanently read-only for all users including Admin
+  if (page === 'Countries') {
+    return false
+  }
+
+  return (MANAGEABLE_REFERENCE_PAGES as readonly string[]).includes(page)
+}
+
+/** Convenience alias for canManageReferenceData */
+export const canEditPage = canManageReferenceData

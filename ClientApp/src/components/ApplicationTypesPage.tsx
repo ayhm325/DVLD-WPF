@@ -12,9 +12,12 @@ import EmptyState from './common/EmptyState'
 import DataTableContainer from './common/DataTableContainer'
 import ApplicationTypeRow from './applicationTypes/ApplicationTypeRow'
 import { FileText as ApplicationsIcon } from 'lucide-react'
+import { canManageReferenceData } from '../utils/permissions'
+import { useAuth } from '../context/useAuth'
 
 type ApplicationTypesPageProps = {
   accessToken: string
+  userRole?: string | null
 }
 
 type EditForm = {
@@ -32,7 +35,12 @@ const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
 
 export default function ApplicationTypesPage({
   accessToken,
+  userRole,
 }: ApplicationTypesPageProps) {
+  const { user } = useAuth()
+  const effectiveRole = userRole ?? user?.role
+  const canEdit = canManageReferenceData('Application Types', effectiveRole)
+
   const [success, setSuccess] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState<EditForm>({
@@ -96,6 +104,7 @@ export default function ApplicationTypesPage({
   }, [searchBy])
 
   function startEditing(item: ApplicationType) {
+    if (!canEdit) return
     setEditingId(item.applicationTypeId)
     setEditForm({
       applicationTypeTitle: item.applicationTypeTitle,
@@ -106,7 +115,7 @@ export default function ApplicationTypesPage({
   }
 
   async function handleSave() {
-    if (editingId === null || saving) return
+    if (!canEdit || editingId === null || saving) return
 
     const title = editForm.applicationTypeTitle.trim()
     const fees = Number(editForm.applicationTypeFees)
@@ -213,7 +222,7 @@ export default function ApplicationTypesPage({
                   <th className="w-16 col-compact">ID</th>
                   <th>Application Type</th>
                   <th className="w-28 whitespace-nowrap">Fees</th>
-                  <th className="w-32 whitespace-nowrap">Actions</th>
+                  {canEdit && <th className="w-32 whitespace-nowrap">Actions</th>}
                 </tr>
               </thead>
 
@@ -222,7 +231,8 @@ export default function ApplicationTypesPage({
                   <ApplicationTypeRow
                     key={item.applicationTypeId}
                     item={item}
-                    isEditing={editingId === item.applicationTypeId}
+                    isEditing={canEdit && editingId === item.applicationTypeId}
+                    canEdit={canEdit}
                     editForm={editForm}
                     saving={saving}
                     onStartEdit={startEditing}
@@ -237,7 +247,7 @@ export default function ApplicationTypesPage({
 
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={4}>
+                    <td colSpan={canEdit ? 4 : 3}>
                       <EmptyState
                         icon={<ApplicationsIcon size={36} />}
                         message={

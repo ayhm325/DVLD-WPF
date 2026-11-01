@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DVLD.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = "AdminOnly")]
+[Authorize]
 [Route("api/[controller]")]
 public sealed class ApplicationTypesController(
     IApplicationTypeService service) : ControllerBase
@@ -42,6 +42,7 @@ public sealed class ApplicationTypesController(
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(
         int id,
         [FromBody]

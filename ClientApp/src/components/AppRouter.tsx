@@ -162,19 +162,19 @@ export default function AppRouter({
 
       {/* Settings pages */}
       {activePage === 'Countries' && (
-        <CountriesPage accessToken={accessToken} />
+        <CountriesPage accessToken={accessToken} userRole={userRole} />
       )}
 
       {activePage === 'Application Types' && (
-        <ApplicationTypesPage accessToken={accessToken} />
+        <ApplicationTypesPage accessToken={accessToken} userRole={userRole} />
       )}
 
       {activePage === 'License Classes' && (
-        <LicenseClassesPage accessToken={accessToken} />
+        <LicenseClassesPage accessToken={accessToken} userRole={userRole} />
       )}
 
       {activePage === 'Test Types' && (
-        <TestTypesPage accessToken={accessToken} />
+        <TestTypesPage accessToken={accessToken} userRole={userRole} />
       )}
 
       {/* Remaining settings placeholders, if any */}

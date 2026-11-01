@@ -11,6 +11,7 @@ import { Globe as GlobeIcon } from 'lucide-react'
 
 type CountriesPageProps = {
   accessToken: string
+  userRole?: string | null
 }
 
 type SearchBy = 'all' | 'name' | 'id'

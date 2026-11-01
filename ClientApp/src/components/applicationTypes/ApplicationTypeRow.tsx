@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 interface ApplicationTypeRowProps {
   item: ApplicationType
   isEditing: boolean
+  canEdit?: boolean
   editForm: {
     applicationTypeTitle: string
     applicationTypeFees: string
@@ -20,6 +21,7 @@ interface ApplicationTypeRowProps {
 export default function ApplicationTypeRow({
   item,
   isEditing,
+  canEdit = true,
   editForm,
   saving,
   onStartEdit,
@@ -77,40 +79,42 @@ export default function ApplicationTypeRow({
         )}
       </td>
 
-      <td className="py-3">
-        {isEditing ? (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={saving}
-              onClick={onSave}
-            >
-              {saving && <Loader2 className="size-3.5 animate-spin" />}
-              <span>{saving ? 'Saving...' : 'Save'}</span>
-            </Button>
+      {canEdit && (
+        <td className="py-3">
+          {isEditing ? (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={saving}
+                onClick={onSave}
+              >
+                {saving && <Loader2 className="size-3.5 animate-spin" />}
+                <span>{saving ? 'Saving...' : 'Save'}</span>
+              </Button>
 
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={saving}
+                onClick={onCancel}
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              disabled={saving}
-              onClick={onCancel}
+              onClick={() => onStartEdit(item)}
             >
-              Cancel
+              Edit
             </Button>
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => onStartEdit(item)}
-          >
-            Edit
-          </Button>
-        )}
-      </td>
+          )}
+        </td>
+      )}
     </tr>
   )
 }

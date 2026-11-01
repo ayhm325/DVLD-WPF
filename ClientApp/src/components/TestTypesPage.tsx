@@ -12,9 +12,12 @@ import EmptyState from './common/EmptyState'
 import DataTableContainer from './common/DataTableContainer'
 import TestTypeRow from './testTypes/TestTypeRow'
 import { ClipboardList as TestTypeIcon } from 'lucide-react'
+import { canManageReferenceData } from '../utils/permissions'
+import { useAuth } from '../context/useAuth'
 
 type Props = {
   accessToken: string
+  userRole?: string | null
 }
 
 type EditForm = {
@@ -32,7 +35,11 @@ const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
   { value: 'desc', label: 'Description' },
 ]
 
-export default function TestTypesPage({ accessToken }: Props) {
+export default function TestTypesPage({ accessToken, userRole }: Props) {
+  const { user } = useAuth()
+  const effectiveRole = userRole ?? user?.role
+  const canEdit = canManageReferenceData('Test Types', effectiveRole)
+
   const [success, setSuccess] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
@@ -103,6 +110,7 @@ export default function TestTypesPage({ accessToken }: Props) {
   }, [searchBy])
 
   function startEditing(item: TestType) {
+    if (!canEdit) return
     setEditingId(item.testTypeId)
     setForm({
       testTypeTitle: item.testTypeTitle,
@@ -114,7 +122,7 @@ export default function TestTypesPage({ accessToken }: Props) {
   }
 
   async function saveChanges() {
-    if (editingId === null || saving) return
+    if (!canEdit || editingId === null || saving) return
 
     const title = form.testTypeTitle.trim()
     const description = form.testTypeDescription.trim()
@@ -224,7 +232,7 @@ export default function TestTypesPage({ accessToken }: Props) {
                   <th className="w-48 whitespace-nowrap">Test Type</th>
                   <th className="table-cell-description">Description</th>
                   <th className="w-28 whitespace-nowrap">Fees</th>
-                  <th className="w-32 whitespace-nowrap">Actions</th>
+                  {canEdit && <th className="w-32 whitespace-nowrap">Actions</th>}
                 </tr>
               </thead>
 
@@ -233,7 +241,8 @@ export default function TestTypesPage({ accessToken }: Props) {
                   <TestTypeRow
                     key={item.testTypeId}
                     item={item}
-                    isEditing={editingId === item.testTypeId}
+                    isEditing={canEdit && editingId === item.testTypeId}
+                    canEdit={canEdit}
                     editForm={form}
                     saving={saving}
                     onStartEdit={startEditing}
@@ -248,7 +257,7 @@ export default function TestTypesPage({ accessToken }: Props) {
 
                 {filteredItems.length === 0 && (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={canEdit ? 5 : 4}>
                       <EmptyState
                         icon={<TestTypeIcon size={36} />}
                         message={

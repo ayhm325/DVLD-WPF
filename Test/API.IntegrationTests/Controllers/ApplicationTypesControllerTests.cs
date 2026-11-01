@@ -23,14 +23,71 @@ public sealed class ApplicationTypesControllerTests
     }
 
     [Fact]
-    public async Task GetAll_WhenStaff_Returns403()
+    public async Task GetAll_WhenStaff_Returns200()
     {
         await using var factory = new ApiWebApplicationFactory();
 
+        factory.ApplicationTypeServiceMock
+            .Setup(x => x.GetAllApplicationTypesAsync())
+            .ReturnsAsync(Result<List<ApplicationTypeDto>>.Success(
+            [
+                new()
+                {
+                    ApplicationTypeId = 1,
+                    ApplicationTypeTitle = "New Local Driving License Service",
+                    ApplicationTypeFees = 20.50m
+                }
+            ]));
+
         var response = await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes", role: "Staff");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        VerifyGetNever(factory);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<List<ApplicationTypeResponse>>();
+        Assert.NotNull(result);
+        var item = Assert.Single(result);
+        Assert.Equal(1, item.ApplicationTypeId);
+
+        factory.ApplicationTypeServiceMock.Verify(
+            x => x.GetAllApplicationTypesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetById_WhenAnonymous_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        var response = await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes/1", role: null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.ApplicationTypeServiceMock.Verify(
+            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetById_WhenStaff_Returns200()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.ApplicationTypeServiceMock
+            .Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(Result<ApplicationTypeDto>.Success(new()
+            {
+                ApplicationTypeId = 1,
+                ApplicationTypeTitle = "New Local Driving License Service",
+                ApplicationTypeFees = 20.50m
+            }));
+
+        var response = await SendAsync(factory, HttpMethod.Get, "/api/ApplicationTypes/1", role: "Staff");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<ApplicationTypeResponse>();
+        Assert.NotNull(result);
+        Assert.Equal(1, result.ApplicationTypeId);
+
+        factory.ApplicationTypeServiceMock.Verify(
+            x => x.GetApplicationTypeByIdAsync(1), Times.Once);
     }
 
     [Fact]
