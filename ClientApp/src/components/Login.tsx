@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { login as performLogin } from '../services/authService'
 import { useAuth } from '../context/useAuth'
 import {
+  Layers,
   User as UserIcon,
   Lock as LockIcon,
   Eye as EyeIcon,
@@ -11,11 +12,9 @@ import {
   ShieldCheck,
   AlertCircle,
   Info,
-  QrCode,
-  Building2,
   Car,
   FileCheck2,
-  CheckCircle2,
+  Building2,
 } from 'lucide-react'
 import './Login.css'
 
@@ -72,94 +71,148 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
   return (
     <div className="dvld-login-root">
+      {/* Decorative ambient background glows aligned with Dashboard PageHero */}
+      <div className="dvld-ambient-glow dvld-ambient-glow-1" aria-hidden="true" />
+      <div className="dvld-ambient-glow dvld-ambient-glow-2" aria-hidden="true" />
+      <div className="dvld-ambient-glow dvld-ambient-glow-3" aria-hidden="true" />
+
+      {/* Decorative flowing electric light stream SVG matching Dashboard Hero */}
+      <svg
+        className="dvld-login-stream-svg"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+        preserveAspectRatio="none"
+        viewBox="0 0 1000 300"
+      >
+        <defs>
+          <linearGradient id="login-stream-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0" />
+            <stop offset="35%" stopColor="#38bdf8" stopOpacity="0.45" />
+            <stop offset="70%" stopColor="#60a5fa" stopOpacity="0.65" />
+            <stop offset="100%" stopColor="#00f0ff" stopOpacity="0.1" />
+          </linearGradient>
+          <filter id="login-stream-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <path
+          d="M 0 180 Q 250 110 500 160 T 1000 110"
+          fill="none"
+          stroke="url(#login-stream-grad)"
+          strokeWidth="2.5"
+          filter="url(#login-stream-glow)"
+        />
+        <path
+          d="M 100 220 Q 380 150 650 195 T 1000 155"
+          fill="none"
+          stroke="url(#login-stream-grad)"
+          strokeWidth="1.5"
+          opacity="0.35"
+        />
+      </svg>
+
       <div className="dvld-login-container">
-        {/* Main 2-Column Split Card */}
+        {/* Main 2-Column Split Card with Dashboard Dark Surface Aesthetic */}
         <div className="dvld-login-card">
           {/* =========================================================
-              Left Column: DVLD Institutional Branding & Information
+              Left Column: DVLD Institutional Identity & Services
              ========================================================= */}
           <aside className="dvld-brand-column" aria-label="DVLD Information">
             <div className="dvld-brand-inner">
-              {/* Official Emblem & Authority Header */}
-              <div className="dvld-emblem-header">
-                <div className="dvld-emblem-badge" aria-hidden="true">
-                  <ShieldCheck className="dvld-emblem-icon" size={28} />
+              {/* Brand Header replicating Sidebar.tsx brand squircle card */}
+              <div className="dvld-brand-card">
+                <div className="dvld-brand-icon" aria-hidden="true">
+                  <Layers className="size-6 text-white stroke-[2.3]" />
                 </div>
-                <div>
-                  <span className="dvld-kingdom-title">The Hashemite Kingdom of Jordan</span>
-                  <h1 className="dvld-brand-heading">DVLD Portal</h1>
-                  <span className="dvld-arabic-title" dir="rtl">
-                    إدارة ترخيص السواقين والمركبات
-                  </span>
+                <div className="dvld-brand-title-wrap">
+                  <span className="dvld-brand-name">DVLD</span>
+                  <span className="dvld-brand-tagline">Enterprise Portal</span>
                 </div>
               </div>
 
-              {/* Mission Statement */}
+              {/* Eyebrow with glowing cyan dot matching PageHero */}
+              <div className="dvld-eyebrow-row">
+                <span className="dvld-eyebrow-dot" aria-hidden="true" />
+                <span className="dvld-eyebrow-text">THE HASHEMITE KINGDOM OF JORDAN</span>
+              </div>
+
+              {/* Institutional Headline & Mission */}
               <div className="dvld-mission-section">
-                <div className="dvld-mission-tag">Driving Forward. Managing Smarter.</div>
+                <h1 className="dvld-mission-heading">
+                  Driving forward.{' '}
+                  <span className="dvld-mission-highlight">Managing smarter.</span>
+                </h1>
                 <p className="dvld-mission-desc">
-                  The centralized administrative portal for driver licensing, vehicle registration,
+                  Centralized administrative portal for driver licensing, vehicle registration,
                   and regulatory compliance services across the Kingdom.
                 </p>
               </div>
 
-              {/* Three Institutional Pillars */}
-              <div className="dvld-pillars-list">
-                <div className="dvld-pillar-item">
-                  <div className="dvld-pillar-icon-box">
+              {/* Institutional Service Highlights in Dark Frosted Surfaces */}
+              <div className="dvld-services-list">
+                <div className="dvld-service-card">
+                  <div className="dvld-service-icon-box" aria-hidden="true">
                     <FileCheck2 size={18} />
                   </div>
-                  <div>
-                    <h3 className="dvld-pillar-title">Driver Licensing Management</h3>
-                    <p className="dvld-pillar-desc">
+                  <div className="dvld-service-content">
+                    <h2 className="dvld-service-title">Driver Licensing Management</h2>
+                    <p className="dvld-service-desc">
                       Automated testing, renewals, and international permit issuance.
                     </p>
                   </div>
                 </div>
 
-                <div className="dvld-pillar-item">
-                  <div className="dvld-pillar-icon-box">
+                <div className="dvld-service-card">
+                  <div className="dvld-service-icon-box" aria-hidden="true">
                     <Car size={18} />
                   </div>
-                  <div>
-                    <h3 className="dvld-pillar-title">Vehicle Records & Ownership</h3>
-                    <p className="dvld-pillar-desc">
+                  <div className="dvld-service-content">
+                    <h2 className="dvld-service-title">Vehicle Records & Ownership</h2>
+                    <p className="dvld-service-desc">
                       Secure registration, technical inspections, and ownership transfers.
                     </p>
                   </div>
                 </div>
 
-                <div className="dvld-pillar-item">
-                  <div className="dvld-pillar-icon-box">
+                <div className="dvld-service-card">
+                  <div className="dvld-service-icon-box" aria-hidden="true">
                     <Building2 size={18} />
                   </div>
-                  <div>
-                    <h3 className="dvld-pillar-title">Administrative Authority</h3>
-                    <p className="dvld-pillar-desc">
+                  <div className="dvld-service-content">
+                    <h2 className="dvld-service-title">Administrative Authority</h2>
+                    <p className="dvld-service-desc">
                       Role-based governance under the Public Security Directorate.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Institutional Badge Footer */}
-              <div className="dvld-brand-footer">
-                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
-                <span>Government Certified Security Infrastructure</span>
+              {/* Institutional Live Status Footer */}
+              <div className="dvld-brand-status">
+                <span className="dvld-status-dot" aria-hidden="true" />
+                <span>Central Directory Connected &bull; Public Security Directorate</span>
               </div>
             </div>
           </aside>
 
           {/* =========================================================
-              Right Column: Authentication Form Card
+              Right Column: Authentication Form Panel
              ========================================================= */}
           <main className="dvld-auth-column" aria-label="Sign In">
             <div className="dvld-auth-inner">
-              {/* Card Header */}
+              {/* Form Header */}
               <header className="dvld-auth-header">
+                <div className="dvld-auth-badge">
+                  <span className="dvld-auth-badge-dot" aria-hidden="true" />
+                  <span>ADMINISTRATIVE WORKSPACE</span>
+                </div>
                 <h2 className="dvld-auth-title">Welcome back</h2>
                 <p className="dvld-auth-subtitle">
-                  Please enter your credentials to access your administrative workspace.
+                  Please sign in with your credentials to access your administrative workspace.
                 </p>
               </header>
 
@@ -292,69 +345,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     </>
                   )}
                 </button>
-
-                {/* Auxiliary Login Divider */}
-                <div className="dvld-divider" aria-hidden="true">
-                  <span className="dvld-divider-line" />
-                  <span className="dvld-divider-text">OR SIGN IN WITH</span>
-                  <span className="dvld-divider-line" />
-                </div>
-
-                {/* Auxiliary Sign-in Buttons */}
-                <div className="dvld-auxiliary-grid">
-                  <button
-                    type="button"
-                    className="dvld-aux-btn"
-                    title="Enterprise Microsoft Entra ID Authentication"
-                    onClick={() =>
-                      setError(
-                        'Microsoft Entra ID is reserved for authorized ministry intranet networks.',
-                      )
-                    }
-                  >
-                    <svg className="size-4 shrink-0" viewBox="0 0 21 21" fill="none" aria-hidden="true">
-                      <rect x="1" y="1" width="9" height="9" fill="#f25022" />
-                      <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
-                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
-                      <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
-                    </svg>
-                    <span>Microsoft</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="dvld-aux-btn"
-                    title="Single Sign-On (SAML 2.0 / OIDC)"
-                    onClick={() =>
-                      setError(
-                        'Single Sign-On is configured for government intranet directory services.',
-                      )
-                    }
-                  >
-                    <ShieldCheck size={16} className="text-blue-600 shrink-0" />
-                    <span>Gov SSO</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="dvld-aux-btn"
-                    title="Scan Digital ID via Sanad Mobile App"
-                    onClick={() =>
-                      setError(
-                        'Sanad QR authentication requires the Sanad Jordan Mobile Authenticator app.',
-                      )
-                    }
-                  >
-                    <QrCode size={16} className="text-blue-600 shrink-0" />
-                    <span>Sanad QR</span>
-                  </button>
-                </div>
               </form>
 
               {/* Security Footer Notice */}
               <div className="dvld-security-note">
-                <ShieldCheck size={15} className="text-emerald-600 shrink-0" />
-                <span>Protected by 256-bit SSL encryption & session token security.</span>
+                <ShieldCheck size={16} className="dvld-security-icon shrink-0" />
+                <span>Protected by 256-bit encryption & token-based session security.</span>
               </div>
             </div>
           </main>
