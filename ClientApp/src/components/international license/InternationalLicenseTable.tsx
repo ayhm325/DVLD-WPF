@@ -3,13 +3,27 @@ import { formatDate } from '../../utils/formatters'
 import DataTable, { type DataTableColumn } from '../common/DataTable'
 import StatusBadge from '../common/StatusBadge'
 import { getActiveStatusProps } from '../../utils/status'
+import { Globe as GlobeIcon } from 'lucide-react'
 
 type Props = {
   items: InternationalLicense[]
   onOpenDetails?: (id: number) => void
+  onSelectLicense?: (item: InternationalLicense) => void
 }
 
-export default function InternationalLicenseTable({ items, onOpenDetails }: Props) {
+export default function InternationalLicenseTable({
+  items,
+  onOpenDetails,
+  onSelectLicense,
+}: Props) {
+  const handleOpen = (item: InternationalLicense) => {
+    if (onSelectLicense) {
+      onSelectLicense(item)
+    } else if (onOpenDetails) {
+      onOpenDetails(item.internationalLicenseId)
+    }
+  }
+
   const columns: DataTableColumn<InternationalLicense>[] = [
     {
       key: 'internationalLicenseId',
@@ -50,11 +64,11 @@ export default function InternationalLicenseTable({ items, onOpenDetails }: Prop
       key: 'actions',
       header: '',
       render: (item) =>
-        onOpenDetails ? (
+        onSelectLicense || onOpenDetails ? (
           <button
             className="intl-row-action"
             type="button"
-            onClick={() => onOpenDetails(item.internationalLicenseId)}
+            onClick={() => handleOpen(item)}
             aria-label={`View details for international license #${item.internationalLicenseId}`}
           >
             View ↗
@@ -72,6 +86,14 @@ export default function InternationalLicenseTable({ items, onOpenDetails }: Prop
       containerClassName="intl-table-wrap"
       minWidth={880}
       emptyMessage="No international licenses match your filters."
+      rowContextMenu={(item) => [
+        {
+          key: 'view-license-details',
+          label: 'View License Details',
+          icon: <GlobeIcon className="size-4" />,
+          onClick: () => handleOpen(item),
+        },
+      ]}
     />
   )
 }

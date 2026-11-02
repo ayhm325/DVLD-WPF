@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { InternationalLicense } from '../../types/InternationalLicense'
 import { getInternationalLicenses } from '../../services/internationalLicenseService'
 import { formatNumber } from '../../utils/formatters'
@@ -9,6 +9,7 @@ import StatsGrid from '../common/StatsGrid'
 import StatCard from '../common/StatCard'
 import TableToolbar from '../common/TableToolbar'
 import ErrorAlert from '../common/ErrorAlert'
+import LicenseDetailsModal from '../licenses/LicenseDetailsModal'
 import {
   Select,
   SelectContent,
@@ -54,6 +55,7 @@ export default function InternationalLicensesPage({
   onIssueNew,
   onOpenDetails,
 }: Props) {
+  const [selectedIntlLicense, setSelectedIntlLicense] = useState<InternationalLicense | null>(null)
   const fetcher = useCallback(() => getInternationalLicenses(accessToken), [accessToken])
 
   const {
@@ -233,6 +235,7 @@ export default function InternationalLicensesPage({
           <InternationalLicenseTable
             items={filteredItems}
             onOpenDetails={onOpenDetails}
+            onSelectLicense={setSelectedIntlLicense}
           />
         )}
 
@@ -242,10 +245,22 @@ export default function InternationalLicensesPage({
               Showing <strong>{filteredItems.length}</strong> of{' '}
               <strong>{items.length}</strong> licenses
             </span>
-            <span>Use the row action to inspect a license.</span>
+            <span>Right-click any license row or click View to inspect details.</span>
           </footer>
         )}
       </section>
+
+      {/* International License Details Modal */}
+      <LicenseDetailsModal
+        isOpen={Boolean(selectedIntlLicense)}
+        onClose={() => setSelectedIntlLicense(null)}
+        accessToken={accessToken}
+        target={
+          selectedIntlLicense
+            ? { type: 'international', item: selectedIntlLicense }
+            : null
+        }
+      />
     </section>
   )
 }

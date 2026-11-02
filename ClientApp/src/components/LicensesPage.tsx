@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { getLicenses } from '../services/licenseService'
 import type { License } from '../types/License'
 import { formatDate, formatCurrency, formatNumber } from '../utils/formatters'
@@ -12,6 +12,7 @@ import { getActiveStatusProps } from '../utils/status'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
 import DataTable, { type DataTableColumn } from './common/DataTable'
+import LicenseDetailsModal from './licenses/LicenseDetailsModal'
 import {
   Select,
   SelectContent,
@@ -101,6 +102,7 @@ const columns: DataTableColumn<License>[] = [
 export default function LicensesPage({
   accessToken,
 }: LicensesPageProps) {
+  const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<License | null>(null)
   const fetcher = useCallback(() => getLicenses(accessToken), [accessToken])
 
   const {
@@ -291,9 +293,29 @@ export default function LicensesPage({
               />
             }
             minWidth={900}
+            rowContextMenu={(license) => [
+              {
+                key: 'view-license-details',
+                label: 'View License Details',
+                icon: <LicenseIcon className="size-4" />,
+                onClick: () => setSelectedLicenseForDetails(license),
+              },
+            ]}
           />
         )}
       </div>
+
+      {/* License Details Modal */}
+      <LicenseDetailsModal
+        isOpen={Boolean(selectedLicenseForDetails)}
+        onClose={() => setSelectedLicenseForDetails(null)}
+        accessToken={accessToken}
+        target={
+          selectedLicenseForDetails
+            ? { type: 'local', item: selectedLicenseForDetails }
+            : null
+        }
+      />
     </section>
   )
 }
