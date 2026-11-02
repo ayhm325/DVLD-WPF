@@ -1,4 +1,4 @@
-﻿using Application.DTOs.PersonDTO;
+using Application.DTOs.PersonDTO;
 using Domain.Entities;
 
 namespace Application.Mappings;
@@ -141,8 +141,11 @@ public static class PersonMapper
         person.NationalityCountryID =
             dto.NationalityCountryID;
 
-        person.ImagePath =
-            NormalizeOptional(dto.ImagePath);
+        // Only update ImagePath if explicitly supplied; never erase an existing photo during ordinary updates
+        if (!string.IsNullOrWhiteSpace(dto.ImagePath))
+        {
+            person.ImagePath = NormalizeOptional(dto.ImagePath);
+        }
     }
 
     // =========================================================

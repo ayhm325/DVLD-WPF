@@ -178,6 +178,31 @@ export const PAGE_HERO_CONFIG: Record<string, PageHeroConfigItem> = {
       },
     ],
   },
+  'Person License History': {
+    eyebrow: 'DRIVER PORTFOLIO',
+    title: 'Person License',
+    highlight: 'History',
+    description: 'Comprehensive driving license portfolio, card credentials, and historical records for this person.',
+    illustrationTag: 'LICENSE-HISTORY',
+    illustrationIcon: <IdCard className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <IdCard className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <Award className="size-6" />,
+        color: 'blue',
+        position: 'top-right',
+      },
+      {
+        icon: <Globe className="size-6" />,
+        color: 'purple',
+        position: 'bottom-right',
+      },
+    ],
+  },
   'Local Applications': {
     eyebrow: 'LICENSING OPERATIONS',
     title: 'Local Driving License',

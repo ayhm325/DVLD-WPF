@@ -9,6 +9,12 @@ import { apiRequest } from './apiClient'
 export const getInternationalLicenses = (token: string): Promise<InternationalLicense[]> =>
   apiRequest<InternationalLicense[]>('/InternationalLicenses', token)
 
+export const getInternationalLicensesByDriverId = (
+  token: string,
+  driverId: number,
+): Promise<InternationalLicense[]> =>
+  apiRequest<InternationalLicense[]>(`/InternationalLicenses/driver/${driverId}`, token)
+
 export const getInternationalLicenseById = (
   token: string,
   id: number,

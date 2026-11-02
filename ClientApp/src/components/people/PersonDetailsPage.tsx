@@ -16,6 +16,7 @@ import { formatDate } from '../../utils/formatters'
 import PageHero from '../common/PageHero'
 import ErrorAlert from '../common/ErrorAlert'
 import LoadingSpinner from '../common/LoadingSpinner'
+import PersonPhoto from '../common/PersonPhoto'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 
@@ -136,9 +137,15 @@ export default function PersonDetailsPage({
           {/* Identity Header Card */}
           <Card className="border-[#1e3458] bg-[#0c1930] p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-              <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl border-2 border-cyan-400/50 bg-[#071326] text-cyan-300 text-3xl font-bold shadow-[0_0_20px_rgba(34,211,238,0.25)]">
-                {person.firstName ? person.firstName.charAt(0).toUpperCase() : 'P'}
-              </div>
+              <PersonPhoto
+                personId={person.personId}
+                hasPhoto={Boolean(person.imagePath)}
+                photoKey={person.imagePath}
+                fullName={person.fullName || person.firstName}
+                size="lg"
+                accessToken={accessToken}
+                className="border-2 border-cyan-400/50 shadow-[0_0_20px_rgba(34,211,238,0.25)]"
+              />
 
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2.5">

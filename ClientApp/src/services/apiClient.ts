@@ -54,8 +54,23 @@ export async function apiRequest<T>(
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
 
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`)
+  const effectiveToken =
+    accessToken ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('access_token') ||
+        localStorage.getItem('dvld_token') ||
+        (() => {
+          try {
+            const raw = sessionStorage.getItem('dvld_auth_session')
+            return raw ? (JSON.parse(raw) as { accessToken?: string }).accessToken : undefined
+          } catch {
+            return undefined
+          }
+        })()
+      : undefined)
+
+  if (effectiveToken) {
+    headers.set('Authorization', `Bearer ${effectiveToken}`)
   }
 
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
@@ -107,4 +122,67 @@ export async function apiRequest<T>(
   }
 
   return (await response.json()) as T
+}
+
+export async function apiBlobRequest(
+  path: string,
+  accessToken?: string,
+  init: RequestInit = {},
+): Promise<Blob> {
+  const headers = new Headers(init.headers)
+  const effectiveToken =
+    accessToken ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('access_token') ||
+        localStorage.getItem('dvld_token') ||
+        (() => {
+          try {
+            const raw = sessionStorage.getItem('dvld_auth_session')
+            return raw ? (JSON.parse(raw) as { accessToken?: string }).accessToken : undefined
+          } catch {
+            return undefined
+          }
+        })()
+      : undefined)
+
+  if (effectiveToken) {
+    headers.set('Authorization', `Bearer ${effectiveToken}`)
+  }
+
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  let response: Response
+
+  try {
+    response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
+      ...init,
+      headers,
+    })
+  } catch {
+    throw new Error(
+      'Unable to connect to the DVLD API. Check that the API is running and the base URL is correct.',
+    )
+  }
+
+  if (response.status === 401) {
+    const errorMessage = await readError(response)
+    if (unauthorizedHandler) {
+      unauthorizedHandler(errorMessage || 'Session expired. Please log in again.')
+    }
+    throw new Error(errorMessage || 'Unauthorized. Please log in again.')
+  }
+
+  if (response.status === 403) {
+    const errorDetail = await readError(response)
+    const message =
+      errorDetail && errorDetail !== `Request failed (403)`
+        ? errorDetail
+        : 'You do not have permission to access this resource.'
+    throw new ForbiddenError(message)
+  }
+
+  if (!response.ok) {
+    throw new Error(await readError(response))
+  }
+
+  return await response.blob()
 }

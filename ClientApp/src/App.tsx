@@ -15,6 +15,7 @@ import { useAuth } from './context/useAuth'
 import { usePeople, useModal } from './hooks'
 import { getPeople } from './services/peopleService'
 import type { Person } from './types/Person'
+import type { Driver } from './types/Driver'
 
 export default function App() {
   const { accessToken, user, isAuthenticated, isLoading, logout } = useAuth()
@@ -59,6 +60,8 @@ export default function App() {
   const [internationalRefreshKey, setInternationalRefreshKey] = useState(0)
   const [statisticsRefreshKey, setStatisticsRefreshKey] = useState(0)
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null)
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
+  const [personDetailsSource, setPersonDetailsSource] = useState<'People' | 'Drivers'>('People')
 
   // People data lifecycle managed through dedicated custom hook
   const {
@@ -81,8 +84,14 @@ export default function App() {
 
   const handleNavigate = useCallback((page: string) => {
     setActivePage(page)
-    if (page !== 'Add Person' && page !== 'Edit Person' && page !== 'Person Details') {
+    if (
+      page !== 'Add Person' &&
+      page !== 'Edit Person' &&
+      page !== 'Person Details' &&
+      page !== 'Person License History'
+    ) {
       setSelectedPersonId(null)
+      setSelectedDriver(null)
     }
     setShowIssueInternational(false)
     mobileSidebar.close()
@@ -93,9 +102,29 @@ export default function App() {
   }, [mobileSidebar])
 
   const handleShowDetails = useCallback((person: Person) => {
+    setPersonDetailsSource('People')
     setSelectedPersonId(person.personId)
     handleNavigate('Person Details')
   }, [handleNavigate])
+
+  const handleShowPersonInfoFromDrivers = useCallback((personId: number) => {
+    setPersonDetailsSource('Drivers')
+    setSelectedPersonId(personId)
+    handleNavigate('Person Details')
+  }, [handleNavigate])
+
+  const handleShowLicenseHistoryFromDrivers = useCallback(
+    (personId: number, driver?: Driver) => {
+      setSelectedPersonId(personId)
+      if (driver) {
+        setSelectedDriver(driver)
+      }
+      setActivePage('Person License History')
+      setShowIssueInternational(false)
+      mobileSidebar.close()
+    },
+    [mobileSidebar],
+  )
 
   const handleEditPerson = useCallback((person: Person) => {
     setSelectedPersonId(person.personId)
@@ -190,6 +219,11 @@ export default function App() {
           onPersonAdded={handlePersonAdded}
           selectedPersonId={selectedPersonId}
           setSelectedPersonId={setSelectedPersonId}
+          selectedDriver={selectedDriver}
+          setSelectedDriver={setSelectedDriver}
+          onShowPersonInfo={handleShowPersonInfoFromDrivers}
+          onShowLicenseHistory={handleShowLicenseHistoryFromDrivers}
+          personDetailsSource={personDetailsSource}
         />
 
         {/* Logout Confirmation Dialog */}

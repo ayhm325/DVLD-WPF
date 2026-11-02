@@ -1,4 +1,4 @@
-﻿namespace DVLD.Contracts.Person;
+namespace DVLD.Contracts.Person;
 
 public sealed class PersonListResponse
 {
@@ -11,4 +11,6 @@ public sealed class PersonListResponse
     public string Phone { get; init; } = string.Empty;
     public string? Email { get; init; }
     public string? CountryName { get; init; }
+    public bool HasPhoto { get; init; }
+    public string? ImagePath { get; init; }
 }

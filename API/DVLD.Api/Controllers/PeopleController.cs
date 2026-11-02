@@ -136,6 +136,72 @@ public sealed class PeopleController(
             : result.ToActionResult(this);
     }
 
+    [HttpPost("{id:int}/photo")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadPhoto(
+        int id,
+        IFormFile? file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { error = "An image file is required." });
+        }
+
+        await using var stream = file.OpenReadStream();
+        var result = await personService.UploadPersonPhotoAsync(
+            id,
+            stream,
+            file.Length,
+            file.ContentType,
+            HttpContext.RequestAborted);
+
+        if (result.IsFailure)
+        {
+            return result.ToActionResult(this);
+        }
+
+        return Ok(new
+        {
+            personId = id,
+            imagePath = result.Value
+        });
+    }
+
+    [HttpGet("{id:int}/photo")]
+    public async Task<IActionResult> GetPhoto(int id)
+    {
+        var result = await personService.GetPersonPhotoAsync(
+            id,
+            HttpContext.RequestAborted);
+
+        if (result.IsFailure)
+        {
+            return result.ToActionResult(this);
+        }
+
+        var etag = $"\"{result.Value.StorageKey}\"";
+        if (Request.Headers.IfNoneMatch.ToString() == etag)
+        {
+            return StatusCode(StatusCodes.Status304NotModified);
+        }
+
+        Response.Headers.ETag = etag;
+        Response.Headers.CacheControl = "private, max-age=86400, must-revalidate";
+        return File(result.Value.Stream, result.Value.ContentType);
+    }
+
+    [HttpDelete("{id:int}/photo")]
+    public async Task<IActionResult> DeletePhoto(int id)
+    {
+        var result = await personService.DeletePersonPhotoAsync(
+            id,
+            HttpContext.RequestAborted);
+
+        return result.IsSuccess
+            ? NoContent()
+            : result.ToActionResult(this);
+    }
+
     private static ContractPerson.PersonResponse ToResponse(
         PersonDto dto)
         => new()
@@ -170,6 +236,8 @@ public sealed class PeopleController(
             Address = dto.Address,
             Phone = dto.Phone,
             Email = dto.Email,
-            CountryName = dto.CountryName
+            CountryName = dto.CountryName,
+            HasPhoto = !string.IsNullOrWhiteSpace(dto.ImagePath),
+            ImagePath = dto.ImagePath
         };
 }

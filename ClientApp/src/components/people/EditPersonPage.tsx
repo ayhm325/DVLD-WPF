@@ -10,14 +10,22 @@ import {
   Calendar,
   Globe,
   Sparkles,
+  Upload,
+  Trash2,
 } from 'lucide-react'
 import { getCountries } from '../../services/countryService'
 import type { Country } from '../../types/Country'
-import { getPersonById, updatePerson } from '../../services/peopleService'
+import {
+  getPersonById,
+  updatePerson,
+  uploadPersonPhoto,
+  deletePersonPhoto,
+} from '../../services/peopleService'
 import { sanitizePersonName, validatePersonName } from '../../utils/nameValidation'
 import PageHero from '../common/PageHero'
 import ErrorAlert from '../common/ErrorAlert'
 import LoadingSpinner from '../common/LoadingSpinner'
+import PersonPhoto from '../common/PersonPhoto'
 import { Card, CardHeader, CardTitle, CardDescription } from '../ui/card'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -67,7 +75,11 @@ export default function EditPersonPage({
 
   const [gender, setGender] = useState('0')
   const [nationalityCountryID, setNationalityCountryID] = useState('')
-  const [imagePreview, setImagePreview] = useState('')
+  const [hasStoredPhoto, setHasStoredPhoto] = useState(false)
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null)
+  const [localPhotoPreview, setLocalPhotoPreview] = useState<string | null>(null)
+  const [storedPhotoKey, setStoredPhotoKey] = useState<string | null>(null)
+  const [isPhotoRemoved, setIsPhotoRemoved] = useState(false)
 
   // Form field state
   const [nationalNo, setNationalNo] = useState('')
@@ -156,7 +168,11 @@ export default function EditPersonPage({
           setNationalityCountryID(String(p.nationalityCountryID))
         }
         if (p.imagePath) {
-          setImagePreview(p.imagePath)
+          setHasStoredPhoto(true)
+          setStoredPhotoKey(p.imagePath)
+        } else {
+          setHasStoredPhoto(false)
+          setStoredPhotoKey(null)
         }
       } catch (err) {
         if (!cancelled) {
@@ -179,6 +195,40 @@ export default function EditPersonPage({
       cancelled = true
     }
   }, [accessToken, personId])
+
+  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPEG, PNG, or WebP).')
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image file size must not exceed 5 MB.')
+      event.target.value = ''
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setLocalPhotoPreview(e.target?.result as string)
+      setSelectedPhotoFile(file)
+      setIsPhotoRemoved(false)
+      setError('')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleRemovePhoto() {
+    setSelectedPhotoFile(null)
+    setLocalPhotoPreview(null)
+    setIsPhotoRemoved(true)
+    const input = document.getElementById('edit-person-photo-input') as HTMLInputElement | null
+    if (input) input.value = ''
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -294,8 +344,35 @@ export default function EditPersonPage({
         phone: trimmedPhone,
         email: trimmedEmail || null,
         nationalityCountryID: countryIdNum,
-        imagePath: null,
+        imagePath: null, // Preserved in backend mapper
       })
+
+      // Photo upload or removal workflow
+      if (selectedPhotoFile) {
+        try {
+          await uploadPersonPhoto(accessToken, personId, selectedPhotoFile)
+        } catch (photoErr) {
+          setError(
+            photoErr instanceof Error
+              ? `Person details saved, but photograph upload failed: ${photoErr.message}.`
+              : 'Person details saved, but photograph upload failed.',
+          )
+          setSaving(false)
+          return
+        }
+      } else if (isPhotoRemoved && hasStoredPhoto) {
+        try {
+          await deletePersonPhoto(accessToken, personId)
+        } catch (delErr) {
+          setError(
+            delErr instanceof Error
+              ? `Person details saved, but photograph removal failed: ${delErr.message}.`
+              : 'Person details saved, but photograph removal failed.',
+          )
+          setSaving(false)
+          return
+        }
+      }
 
       onPersonUpdated()
     } catch (err) {
@@ -533,18 +610,57 @@ export default function EditPersonPage({
                 </div>
               </div>
 
-              {/* Photo placeholder */}
-              <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-[#223553] bg-[#071324] space-y-3">
-                <div className="relative size-24 rounded-full overflow-hidden border-2 border-[#1e3458] bg-[#0d1d36] flex items-center justify-center text-slate-400">
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="Person" className="size-full object-cover" />
-                  ) : (
-                    <User className="size-12 text-slate-500" />
-                  )}
-                </div>
-                <div className="text-center">
+              {/* Photo Section */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-dashed border-[#223553] bg-[#071324] space-y-3 shrink-0">
+                <input
+                  id="edit-person-photo-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                <PersonPhoto
+                  personId={personId}
+                  hasPhoto={hasStoredPhoto && !isPhotoRemoved}
+                  photoKey={storedPhotoKey}
+                  localPreviewUrl={localPhotoPreview}
+                  fullName={firstName || 'Person'}
+                  size="xl"
+                  accessToken={accessToken}
+                />
+                <div className="text-center space-y-0.5">
                   <p className="text-xs font-semibold text-slate-300">Biometric Photo</p>
-                  <p className="text-[10px] text-slate-500">Stored on file</p>
+                  <p className="text-[10px] text-slate-500">
+                    {localPhotoPreview
+                      ? 'New photo selected'
+                      : hasStoredPhoto && !isPhotoRemoved
+                        ? 'Stored photograph'
+                        : 'No photograph on file'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('edit-person-photo-input')?.click()}
+                    className="gap-1.5 text-xs text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10 cursor-pointer"
+                  >
+                    <Upload className="size-3.5" />
+                    <span>{hasStoredPhoto || localPhotoPreview ? 'Change' : 'Upload'}</span>
+                  </Button>
+                  {(hasStoredPhoto || localPhotoPreview) && !isPhotoRemoved && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemovePhoto}
+                      className="gap-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 cursor-pointer"
+                    >
+                      <Trash2 className="size-3.5" />
+                      <span>Remove</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

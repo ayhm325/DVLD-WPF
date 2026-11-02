@@ -9,7 +9,7 @@ import StatCard from './common/StatCard'
 import TableToolbar from './common/TableToolbar'
 import ErrorAlert from './common/ErrorAlert'
 import EmptyState from './common/EmptyState'
-import DataTable, { type DataTableColumn } from './common/DataTable'
+import DataTable, { type DataTableColumn, type DataTableRowAction } from './common/DataTable'
 import {
   Select,
   SelectContent,
@@ -21,6 +21,8 @@ import {
   Car as DriversIcon,
   IdCard as LicenseIcon,
   Check as CheckIcon,
+  UserRound,
+  History,
 } from 'lucide-react'
 
 export type DriversPageProps = {
@@ -29,6 +31,8 @@ export type DriversPageProps = {
   loading?: boolean
   error?: string
   onRetry?: () => void
+  onShowPersonInfo?: (personId: number) => void
+  onShowLicenseHistory?: (personId: number, driver?: Driver) => void
 }
 
 type SearchBy = 'all' | 'driverId' | 'personId' | 'name' | 'nationalNo'
@@ -113,6 +117,8 @@ export default function DriversPage({
   loading: externalLoading,
   error: externalError,
   onRetry: externalOnRetry,
+  onShowPersonInfo,
+  onShowLicenseHistory,
 }: DriversPageProps) {
   const fetcher = useCallback(() => getDrivers(accessToken!), [accessToken])
 
@@ -206,6 +212,24 @@ export default function DriversPage({
   const driversWithLicenses = drivers.filter(
     (d) => (d.activeLicenses || 0) > 0,
   ).length
+
+  const getRowContextMenu = useCallback(
+    (driver: Driver): DataTableRowAction<Driver>[] => [
+      {
+        key: 'show-person-info',
+        label: 'Show Person Info',
+        icon: <UserRound className="size-4" />,
+        onClick: () => onShowPersonInfo?.(driver.personId),
+      },
+      {
+        key: 'show-license-history',
+        label: 'Show Person License History',
+        icon: <History className="size-4" />,
+        onClick: () => onShowLicenseHistory?.(driver.personId, driver),
+      },
+    ],
+    [onShowPersonInfo, onShowLicenseHistory],
+  )
 
   return (
     <section className="page-content">
@@ -317,6 +341,7 @@ export default function DriversPage({
               />
             }
             minWidth={850}
+            rowContextMenu={getRowContextMenu}
           />
         )}
       </div>

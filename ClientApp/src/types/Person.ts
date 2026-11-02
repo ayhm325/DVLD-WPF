@@ -8,6 +8,8 @@ export type Person = {
   phone: string
   email: string | null
   countryName: string
+  hasPhoto?: boolean
+  imagePath?: string | null
 }
 
 export type PersonDetails = {
@@ -47,4 +49,9 @@ export type UpdatePersonRequest = CreatePersonRequest
 
 export type CreatePersonResponse = {
   personId: number
+}
+
+export type UploadPersonPhotoResponse = {
+  personId: number
+  imagePath: string
 }

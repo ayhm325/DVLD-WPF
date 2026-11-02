@@ -1,10 +1,11 @@
-import { apiRequest } from './apiClient'
+import { apiRequest, apiBlobRequest } from './apiClient'
 import type {
   Person,
   PersonDetails,
   CreatePersonRequest,
   UpdatePersonRequest,
   CreatePersonResponse,
+  UploadPersonPhotoResponse,
 } from '../types/Person'
 
 export type {
@@ -13,6 +14,7 @@ export type {
   CreatePersonRequest,
   UpdatePersonRequest,
   CreatePersonResponse,
+  UploadPersonPhotoResponse,
 }
 
 export function getPeople(accessToken: string): Promise<Person[]> {
@@ -62,6 +64,42 @@ export function deletePerson(
   personId: number,
 ): Promise<void> {
   return apiRequest<void>(`/People/${personId}`, accessToken, {
+    method: 'DELETE',
+  })
+}
+
+export function uploadPersonPhoto(
+  accessToken: string,
+  personId: number,
+  file: File,
+): Promise<UploadPersonPhotoResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return apiRequest<UploadPersonPhotoResponse>(
+    `/People/${personId}/photo`,
+    accessToken,
+    {
+      method: 'POST',
+      body: formData,
+    },
+  )
+}
+
+export function getPersonPhotoBlob(
+  accessToken: string,
+  personId: number,
+  photoKey?: string | null,
+): Promise<Blob> {
+  const query = photoKey ? `?v=${encodeURIComponent(photoKey)}` : ''
+  return apiBlobRequest(`/People/${personId}/photo${query}`, accessToken)
+}
+
+export function deletePersonPhoto(
+  accessToken: string,
+  personId: number,
+): Promise<void> {
+  return apiRequest<void>(`/People/${personId}/photo`, accessToken, {
     method: 'DELETE',
   })
 }

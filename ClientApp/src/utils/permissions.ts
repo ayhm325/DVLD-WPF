@@ -24,6 +24,7 @@ export type PageId =
   | 'Person Details'
   | 'Drivers'
   | 'Licenses'
+  | 'Person License History'
   | 'International Licenses'
   | 'Local Applications'
   | 'Application Types'
@@ -56,6 +57,9 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
 
   // Issued Licenses: LicensesController [Authorize(Policy = "StaffOnly")]
   'Licenses': ['Staff'],
+
+  // Person License History: LicensesController [Authorize(Policy = "StaffOnly")] / PeopleController
+  'Person License History': ['Staff', 'Admin'],
 
   // International Licenses: InternationalLicensesController [Authorize(Policy = "StaffOnly")]
   'International Licenses': ['Staff'],

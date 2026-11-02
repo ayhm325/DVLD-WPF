@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { getCountries } from '../services/countryService'
 import type { Country } from '../types/Country'
-import { createPerson } from '../services/peopleService'
+import { createPerson, uploadPersonPhoto } from '../services/peopleService'
 import { sanitizePersonName, validatePersonName } from '../utils/nameValidation'
 import PageHero from './common/PageHero'
 import ErrorAlert from './common/ErrorAlert'
@@ -84,7 +84,7 @@ export default function AddPersonPage({
   const [errorField, setErrorField] = useState<string | null>(null)
 
   const [gender, setGender] = useState('0')
-  const [nationalityCountryID, setNationalityCountryID] = useState('')
+  const [nationalityCountryID, setNationalityCountryID] = useState('1')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
 
@@ -124,6 +124,10 @@ export default function AddPersonPage({
 
         if (!cancelled) {
           setCountries(result)
+          if (result.length > 0) {
+            const jordan = result.find((c) => c.countryName.toLowerCase() === 'jordan')
+            setNationalityCountryID(String(jordan ? jordan.countryId : result[0].countryId))
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -325,7 +329,7 @@ export default function AddPersonPage({
     setSaving(true)
 
     try {
-      await createPerson(accessToken, {
+      const created = await createPerson(accessToken, {
         nationalNo: trimmedNationalNo,
         firstName: trimmedFirstName,
         secondName: trimmedSecondName,
@@ -339,6 +343,20 @@ export default function AddPersonPage({
         nationalityCountryID: countryIdNum,
         imagePath: null,
       })
+
+      if (imageFile && created?.personId) {
+        try {
+          await uploadPersonPhoto(accessToken, created.personId, imageFile)
+        } catch (uploadErr) {
+          setError(
+            uploadErr instanceof Error
+              ? `Person record created successfully, but photograph upload failed: ${uploadErr.message}. You can upload the photo from the Edit page.`
+              : 'Person record created successfully, but photograph upload failed. You can upload the photo from the Edit page.',
+          )
+          setSaving(false)
+          return
+        }
+      }
 
       onPersonAdded()
     } catch (err) {

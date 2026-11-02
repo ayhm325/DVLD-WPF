@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using API.IntegrationTests.Infrastructure;
@@ -428,6 +428,179 @@ public sealed class PeopleControllerTests
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Test-User-Id", userId.ToString());
         return client;
+    }
+
+    [Fact]
+    public async Task UploadPhoto_WithoutAuthentication_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent([1, 2, 3]), "file", "photo.jpg");
+
+        var response = await client.PostAsync("/api/People/1/photo", content);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadPhoto_WhenNoFileProvided_Returns400()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateAuthenticatedClient(factory, 10);
+
+        using var content = new MultipartFormDataContent();
+        var response = await client.PostAsync("/api/People/1/photo", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadPhoto_WhenPersonNotFound_Returns404()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        factory.PersonServiceMock
+            .Setup(x => x.UploadPersonPhotoAsync(99, It.IsAny<Stream>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string>.FromNotFound("Person not found."));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent([1, 2, 3]), "file", "photo.jpg");
+
+        var response = await client.PostAsync("/api/People/99/photo", content);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadPhoto_WhenInvalidContent_Returns400()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        factory.PersonServiceMock
+            .Setup(x => x.UploadPersonPhotoAsync(1, It.IsAny<Stream>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string>.FromValidationFailure("Invalid image file signature."));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent([1, 2, 3]), "file", "fake.jpg");
+
+        var response = await client.PostAsync("/api/People/1/photo", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadPhoto_WhenSuccessful_Returns200WithImagePath()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        factory.PersonServiceMock
+            .Setup(x => x.UploadPersonPhotoAsync(1, It.IsAny<Stream>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string>.Success("people/abc12345.webp"));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent([1, 2, 3]), "file", "photo.jpg");
+
+        var response = await client.PostAsync("/api/People/1/photo", content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(1, doc.RootElement.GetProperty("personId").GetInt32());
+        Assert.Equal("people/abc12345.webp", doc.RootElement.GetProperty("imagePath").GetString());
+    }
+
+    [Fact]
+    public async Task GetPhoto_WithoutAuthentication_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/People/1/photo");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetPhoto_WhenPersonNotFound_Returns404()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        factory.PersonServiceMock
+            .Setup(x => x.GetPersonPhotoAsync(99, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<(Stream, string, string)>.FromNotFound("Person not found."));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+
+        var response = await client.GetAsync("/api/People/99/photo");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetPhoto_WhenSuccessful_Returns200WithContentTypeAndCacheHeader()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        var fakeStream = new MemoryStream([10, 20, 30, 40]);
+        factory.PersonServiceMock
+            .Setup(x => x.GetPersonPhotoAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<(Stream, string, string)>.Success((fakeStream, "image/webp", "people/key.webp")));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+
+        var response = await client.GetAsync("/api/People/1/photo");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/webp", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("private", response.Headers.CacheControl?.ToString() ?? "");
+        Assert.Equal("\"people/key.webp\"", response.Headers.ETag?.ToString());
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        Assert.Equal(new byte[] { 10, 20, 30, 40 }, bytes);
+    }
+
+    [Fact]
+    public async Task GetPhoto_WithMatchingIfNoneMatchHeader_Returns304NotModified()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        var fakeStream = new MemoryStream([10, 20, 30, 40]);
+        factory.PersonServiceMock
+            .Setup(x => x.GetPersonPhotoAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<(Stream, string, string)>.Success((fakeStream, "image/webp", "people/key.webp")));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        client.DefaultRequestHeaders.IfNoneMatch.Add(new System.Net.Http.Headers.EntityTagHeaderValue("\"people/key.webp\""));
+
+        var response = await client.GetAsync("/api/People/1/photo");
+
+        Assert.Equal(HttpStatusCode.NotModified, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeletePhoto_WithoutAuthentication_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync("/api/People/1/photo");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeletePhoto_WhenSuccessful_Returns204NoContent()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        factory.PersonServiceMock
+            .Setup(x => x.DeletePersonPhotoAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+
+        var response = await client.DeleteAsync("/api/People/1/photo");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     private static object CreateUpdateRequest() => new

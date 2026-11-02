@@ -4,6 +4,7 @@ import LoadingSpinner from './common/LoadingSpinner'
 import { isPagePermitted } from '../utils/permissions'
 import { IdCard as LicenseIcon, Settings as SettingsIcon } from 'lucide-react'
 import type { Person } from '../types/Person'
+import type { Driver } from '../types/Driver'
 
 const DashboardPage = lazy(() => import('./DashboardPage'))
 const PeoplePage = lazy(() => import('./PeoplePage'))
@@ -12,6 +13,7 @@ const EditPersonPage = lazy(() => import('./people/EditPersonPage'))
 const PersonDetailsPage = lazy(() => import('./people/PersonDetailsPage'))
 const DriversPage = lazy(() => import('./DriversPage'))
 const LicensesPage = lazy(() => import('./LicensesPage'))
+const LicenseHistoryPage = lazy(() => import('./licenses/LicenseHistoryPage'))
 const InternationalLicensesPage = lazy(
   () => import('./international license/InternationalLicensesPage'),
 )
@@ -49,6 +51,11 @@ export type AppRouterProps = {
   onEditPerson?: (person: Person) => void
   selectedPersonId?: number | null
   setSelectedPersonId?: (id: number | null) => void
+  selectedDriver?: Driver | null
+  setSelectedDriver?: (driver: Driver | null) => void
+  onShowPersonInfo?: (personId: number) => void
+  onShowLicenseHistory?: (personId: number, driver?: Driver) => void
+  personDetailsSource?: string
 }
 
 const settingsPages = [
@@ -81,6 +88,10 @@ export default function AppRouter({
   onEditPerson,
   selectedPersonId,
   setSelectedPersonId,
+  selectedDriver,
+  onShowPersonInfo,
+  onShowLicenseHistory,
+  personDetailsSource,
 }: AppRouterProps) {
   const isCurrentPagePermitted = isPagePermitted(activePage, userRole)
 
@@ -163,7 +174,7 @@ export default function AppRouter({
         <PersonDetailsPage
           accessToken={accessToken}
           personId={selectedPersonId ?? null}
-          onBack={() => onNavigate('People')}
+          onBack={() => onNavigate(personDetailsSource || 'People')}
           onEdit={(id) => {
             setSelectedPersonId?.(id)
             onNavigate('Edit Person')
@@ -172,7 +183,23 @@ export default function AppRouter({
       )}
 
       {/* Drivers */}
-      {activePage === 'Drivers' && <DriversPage accessToken={accessToken} />}
+      {activePage === 'Drivers' && (
+        <DriversPage
+          accessToken={accessToken}
+          onShowPersonInfo={onShowPersonInfo}
+          onShowLicenseHistory={onShowLicenseHistory}
+        />
+      )}
+
+      {/* Person License History */}
+      {activePage === 'Person License History' && (
+        <LicenseHistoryPage
+          accessToken={accessToken}
+          personId={selectedPersonId}
+          driver={selectedDriver}
+          onBack={() => onNavigate('Drivers')}
+        />
+      )}
 
       {/* Licenses */}
       {activePage === 'Licenses' && <LicensesPage accessToken={accessToken} />}
@@ -251,6 +278,7 @@ export default function AppRouter({
         'Edit Person',
         'Person Details',
         'Drivers',
+        'Person License History',
         'Licenses',
         'International Licenses',
         'Local Applications',

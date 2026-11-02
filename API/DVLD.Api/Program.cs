@@ -9,6 +9,7 @@ using DVLD.Api.Security;
 
 using Infrastructure;
 using Infrastructure.Repositories;
+using Infrastructure.Services;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -28,6 +29,13 @@ builder.Services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>
 builder.Services.AddOptions<JwtOptions>()
     .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
     .ValidateOnStart();
+
+// ============================================================
+// STORAGE OPTIONS
+// ============================================================
+
+builder.Services.AddOptions<StorageOptions>()
+    .Bind(builder.Configuration.GetSection(StorageOptions.SectionName));
 
 var jwtOptions =
     builder.Configuration
@@ -237,6 +245,8 @@ builder.Services.AddScoped<
     LocalDrivingLicenseApplicationService>();
 
 builder.Services.AddScoped<IPersonService, PersonService>();
+builder.Services.AddSingleton<IFileStorageService, PhysicalFileStorageService>();
+builder.Services.AddSingleton<IImageProcessingService, ImageProcessingService>();
 builder.Services.AddScoped<
     ITestAppointmentService,
     TestAppointmentService>();

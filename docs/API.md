@@ -4,7 +4,7 @@
 
 The API is an ASP.NET Core Web API exposed under `/api/[controller]`.
 
-The current source contains **20 controllers and 101 HTTP actions**.
+The current source contains **20 controllers and 104 HTTP actions**.
 
 The source-based count is authoritative for this documentation. An earlier count of 100 was caused by counting the Users controller as seven actions instead of its current eight.
 
@@ -210,7 +210,7 @@ Unexpected exceptions are handled centrally by `GlobalExceptionHandler` (`API/DV
 
 The main list endpoint uses the application's pagination request model.
 
-### People — 6 — StaffOrAdmin
+### People — 9 — StaffOrAdmin
 
 | Method | Route |
 |---|---|
@@ -220,6 +220,9 @@ The main list endpoint uses the application's pagination request model.
 | POST | `/api/People` |
 | PUT | `/api/People/{id}` |
 | DELETE | `/api/People/{id}` |
+| POST | `/api/People/{id}/photo` |
+| GET | `/api/People/{id}/photo` |
+| DELETE | `/api/People/{id}/photo` |
 
 ### TestAppointments — 14 — StaffOnly
 
@@ -297,7 +300,7 @@ The main list endpoint uses the application's pagination request model.
 | LicenseReplacement | 1 |
 | Licenses | 8 |
 | LocalDrivingLicenseApplications | 12 |
-| People | 6 |
+| People | 9 |
 | TestAppointments | 14 |
 | TestTypes | 3 |
 | TestWorkflow | 3 |

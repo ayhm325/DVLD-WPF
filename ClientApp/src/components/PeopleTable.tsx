@@ -13,6 +13,7 @@ import type { Person } from '../types/Person'
 import { formatDate } from '../utils/formatters'
 import TableToolbar from './common/TableToolbar'
 import EmptyState from './common/EmptyState'
+import PersonPhoto from './common/PersonPhoto'
 import DataTable, {
   type DataTableColumn,
   type DataTableRowAction,
@@ -212,10 +213,14 @@ export default function PeopleTable({
         key: 'fullName',
         header: 'Full Name',
         render: (person) => (
-          <div className="person-cell">
-            <span className="person-avatar" aria-hidden="true">
-              {person.fullName ? person.fullName.charAt(0).toUpperCase() : 'P'}
-            </span>
+          <div className="person-cell flex items-center gap-2.5">
+            <PersonPhoto
+              personId={person.personId}
+              hasPhoto={person.hasPhoto}
+              photoKey={person.imagePath}
+              fullName={person.fullName}
+              size="sm"
+            />
             <strong>{person.fullName}</strong>
           </div>
         ),
