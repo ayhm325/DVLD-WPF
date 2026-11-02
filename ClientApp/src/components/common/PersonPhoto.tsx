@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { User } from 'lucide-react'
 import { getPersonPhotoBlob } from '../../services/peopleService'
 
-export type PersonPhotoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export type PersonPhotoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
 export interface PersonPhotoProps {
   personId?: number | null
@@ -14,6 +14,7 @@ export interface PersonPhotoProps {
   className?: string
   alt?: string
   accessToken?: string | null
+  onClick?: () => void
 }
 
 const sizeClasses: Record<PersonPhotoSize, { container: string; icon: string; text: string }> = {
@@ -22,6 +23,11 @@ const sizeClasses: Record<PersonPhotoSize, { container: string; icon: string; te
   md: { container: 'size-12 rounded-full', icon: 'size-6', text: 'text-base' },
   lg: { container: 'size-20 rounded-xl', icon: 'size-9', text: 'text-2xl' },
   xl: { container: 'size-28 rounded-2xl', icon: 'size-12', text: 'text-3xl' },
+  '2xl': {
+    container: 'w-[180px] h-[210px] sm:w-[208px] sm:h-[240px] rounded-2xl',
+    icon: 'size-20',
+    text: 'text-5xl',
+  },
 }
 
 export default function PersonPhoto({
@@ -34,6 +40,7 @@ export default function PersonPhoto({
   className = '',
   alt = 'Person photo',
   accessToken,
+  onClick,
 }: PersonPhotoProps) {
   const [photoState, setPhotoState] = useState<{
     personId: number | null
@@ -114,12 +121,15 @@ export default function PersonPhoto({
   if (effectiveUrl && !error) {
     return (
       <div
-        className={`relative shrink-0 overflow-hidden border border-cyan-500/20 bg-slate-900/60 shadow-md ${container} ${className}`}
+        onClick={onClick}
+        className={`relative shrink-0 overflow-hidden border border-cyan-500/20 bg-slate-900/60 shadow-md ${container} ${
+          onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''
+        } ${className}`}
       >
         <img
           src={effectiveUrl}
           alt={alt}
-          className="size-full object-cover"
+          className="size-full object-cover object-top"
           onError={() => setPhotoState((prev) => ({ ...prev, error: true }))}
         />
         {loading && (
@@ -134,7 +144,10 @@ export default function PersonPhoto({
   // Fallback presentation
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center border border-cyan-500/20 bg-slate-900/60 font-semibold text-cyan-400 shadow-md ${container} ${className}`}
+      onClick={onClick}
+      className={`relative flex shrink-0 items-center justify-center border border-cyan-500/20 bg-slate-900/60 font-semibold text-cyan-400 shadow-md ${container} ${
+        onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''
+      } ${className}`}
     >
       {loading ? (
         <div className="size-4 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
