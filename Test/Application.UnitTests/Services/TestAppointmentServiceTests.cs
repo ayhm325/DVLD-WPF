@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
@@ -145,6 +145,16 @@ public sealed class TestAppointmentServiceTests
     // HELPERS
     // =========================================================
 
+    private static DateTime ValidFutureSlot(int daysAhead = 2, int hour = 8, int minute = 0)
+    {
+        var date = DateTime.UtcNow.Date.AddDays(daysAhead);
+        while (date.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
+        {
+            date = date.AddDays(1);
+        }
+        return new DateTime(date.Year, date.Month, date.Day, hour, minute, 0, DateTimeKind.Unspecified);
+    }
+
     private static CreateTestAppointmentDto ValidCreateDto(
         TestTypeEnum type = TestTypeEnum.Theory)
     {
@@ -152,7 +162,7 @@ public sealed class TestAppointmentServiceTests
         {
             TestTypeID = (int)type,
             LocalDrivingLicenseApplicationID = 100,
-            AppointmentDate = DateTime.UtcNow.AddDays(1)
+            AppointmentDate = ValidFutureSlot(2)
         };
     }
 
@@ -162,7 +172,7 @@ public sealed class TestAppointmentServiceTests
         return new UpdateTestAppointmentDto
         {
             TestAppointmentID = id,
-            AppointmentDate = DateTime.UtcNow.AddDays(2)
+            AppointmentDate = ValidFutureSlot(5, 10, 0)
         };
     }
 
@@ -191,10 +201,11 @@ public sealed class TestAppointmentServiceTests
             TestTypeID = (int)TestTypeEnum.Theory,
             LocalDrivingLicenseApplicationID = 100,
             AppointmentDate =
-                date ?? DateTime.UtcNow.AddDays(1),
+                date ?? ValidFutureSlot(4),
             PaidFees = 25m,
             CreatedByUserID = userId,
             IsLocked = locked,
+            Status = AppointmentStatus.Scheduled,
 
             TestType = ValidTestType(),
 
@@ -221,6 +232,26 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
+                x.LockLocalApplicationForSchedulingAsync(100))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<DateTime>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
                     1))
@@ -228,18 +259,18 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.IsSlotOccupiedAsync(
+                    It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    null))
+                    It.IsAny<int?>()))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.HasUserConflictAsync(
-                    10,
+                x.HasApplicantSameDayConflictAsync(
+                    It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    null))
+                    It.IsAny<int?>()))
             .ReturnsAsync(false);
     }
 
@@ -258,6 +289,21 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<DateTime>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
                     1))
@@ -265,18 +311,18 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.IsSlotOccupiedAsync(
+                    It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    null))
+                    It.IsAny<int?>()))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.HasUserConflictAsync(
-                    10,
+                x.HasApplicantSameDayConflictAsync(
+                    It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    null))
+                    It.IsAny<int?>()))
             .ReturnsAsync(false);
 
         _repository
@@ -709,6 +755,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         var entity = ValidAppointment(5);
+        entity.Status = AppointmentStatus.Completed;
 
         _repository
             .Setup(x => x.GetScheduleInfoAsync(5))
@@ -1101,11 +1148,11 @@ public sealed class TestAppointmentServiceTests
     }
 
     // =========================================================
-    // ADD - LOCAL CONFLICT
+    // ADD - SLOT OCCUPIED CONFLICT
     // =========================================================
 
     [Fact]
-    public async Task AddAsync_WhenLocalConflict_ReturnsConflict()
+    public async Task AddAsync_WhenSlotOccupied_ReturnsConflict()
     {
         var service = CreateService();
 
@@ -1122,6 +1169,26 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
+                x.LockLocalApplicationForSchedulingAsync(100))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    It.IsAny<DateTime>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
                     1))
@@ -1129,8 +1196,8 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.IsSlotOccupiedAsync(
+                    1,
                     It.IsAny<DateTime>(),
                     null))
             .ReturnsAsync(true);
@@ -1142,16 +1209,16 @@ public sealed class TestAppointmentServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
-            "This application already has an appointment at this date and time.",
+            "This slot is already booked for this test type.",
             result.Error);
     }
 
     // =========================================================
-    // ADD - USER CONFLICT
+    // ADD - APPLICANT SAME-DAY CONFLICT
     // =========================================================
 
     [Fact]
-    public async Task AddAsync_WhenUserConflict_ReturnsConflict()
+    public async Task AddAsync_WhenApplicantHasSameDayConflict_ReturnsConflict()
     {
         var service = CreateService();
 
@@ -1168,6 +1235,26 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
+                x.LockLocalApplicationForSchedulingAsync(100))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    It.IsAny<DateTime>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
                     1))
@@ -1175,16 +1262,16 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.IsSlotOccupiedAsync(
+                    1,
                     It.IsAny<DateTime>(),
                     null))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.HasUserConflictAsync(
-                    10,
+                x.HasApplicantSameDayConflictAsync(
+                    5,
                     It.IsAny<DateTime>(),
                     null))
             .ReturnsAsync(true);
@@ -1196,7 +1283,7 @@ public sealed class TestAppointmentServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
-            "The current user already has an appointment at this date and time.",
+            "The applicant already has an appointment or test scheduled on this calendar day.",
             result.Error);
     }
 
@@ -1378,7 +1465,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 0,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -1393,7 +1480,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 999,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -1431,7 +1518,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
@@ -1457,7 +1544,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
@@ -1492,7 +1579,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
@@ -1534,7 +1621,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
@@ -1546,11 +1633,11 @@ public sealed class TestAppointmentServiceTests
     }
 
     // =========================================================
-    // SCHEDULE - LOCAL CONFLICT
+    // SCHEDULE - SLOT OCCUPIED CONFLICT
     // =========================================================
 
     [Fact]
-    public async Task ScheduleAsync_WhenLocalConflict_RollsBack()
+    public async Task ScheduleAsync_WhenSlotOccupied_RollsBack()
     {
         var service = CreateService();
 
@@ -1567,6 +1654,26 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
+                x.LockLocalApplicationForSchedulingAsync(100))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    It.IsAny<DateTime>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
                     1))
@@ -1574,8 +1681,8 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.IsSlotOccupiedAsync(
+                    1,
                     It.IsAny<DateTime>(),
                     null))
             .ReturnsAsync(true);
@@ -1584,10 +1691,13 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal(
+            "This slot is already booked for this test type.",
+            result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -1596,11 +1706,11 @@ public sealed class TestAppointmentServiceTests
     }
 
     // =========================================================
-    // SCHEDULE - USER CONFLICT
+    // SCHEDULE - APPLICANT SAME-DAY CONFLICT
     // =========================================================
 
     [Fact]
-    public async Task ScheduleAsync_WhenUserConflict_RollsBack()
+    public async Task ScheduleAsync_WhenApplicantHasSameDayConflict_RollsBack()
     {
         var service = CreateService();
 
@@ -1617,6 +1727,26 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
+                x.LockLocalApplicationForSchedulingAsync(100))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    It.IsAny<DateTime>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
                     1))
@@ -1624,16 +1754,16 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.IsSlotOccupiedAsync(
+                    1,
                     It.IsAny<DateTime>(),
                     null))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.HasUserConflictAsync(
-                    10,
+                x.HasApplicantSameDayConflictAsync(
+                    5,
                     It.IsAny<DateTime>(),
                     null))
             .ReturnsAsync(true);
@@ -1642,10 +1772,13 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal(
+            "The applicant already has an appointment or test scheduled on this calendar day.",
+            result.Error);
 
         _transaction.Verify(
             x => x.RollbackAsync(
@@ -1679,7 +1812,7 @@ public sealed class TestAppointmentServiceTests
             .Returns(Task.CompletedTask);
 
         var appointmentDate =
-            DateTime.UtcNow.AddDays(1);
+            ValidFutureSlot(2);
 
         var scheduleInfo =
             ValidAppointment(
@@ -1787,7 +1920,7 @@ public sealed class TestAppointmentServiceTests
             .Returns(Task.CompletedTask);
 
         var date =
-            DateTime.UtcNow.AddDays(1);
+            ValidFutureSlot(2);
 
         _repository
             .Setup(x =>
@@ -1856,7 +1989,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -1903,7 +2036,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -1979,7 +2112,7 @@ public sealed class TestAppointmentServiceTests
             .Returns(Task.CompletedTask);
 
         var date =
-            DateTime.UtcNow.AddDays(1);
+            ValidFutureSlot(2);
 
         _repository
             .Setup(x =>
@@ -2059,7 +2192,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -2108,7 +2241,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
@@ -2147,7 +2280,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddDays(1));
+                ValidFutureSlot(2));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
@@ -2193,7 +2326,7 @@ public sealed class TestAppointmentServiceTests
                 () => service.ScheduleAsync(
                     100,
                     1,
-                    DateTime.UtcNow.AddDays(1)));
+                    ValidFutureSlot(2)));
 
         Assert.Equal(
             "Database error",
@@ -2307,31 +2440,74 @@ public sealed class TestAppointmentServiceTests
     }
 
     // =========================================================
-    // UPDATE - OWNERSHIP
+    // UPDATE - STAFF EQUALITY
     // =========================================================
 
     [Fact]
-    public async Task UpdateAsync_WhenAnotherUserOwnsAppointment_ReturnsForbidden()
+    public async Task UpdateAsync_WhenAnotherUserCreatedAppointment_CanUpdateSuccessfully()
     {
         var service = CreateService();
+
+        var appointment =
+            ValidAppointment(1, 99); // Created by user 99, current user is 10
+
+        var newDate =
+            ValidFutureSlot(5, 10, 0);
 
         _repository
             .Setup(x =>
                 x.GetForUpdateAsync(1))
-            .ReturnsAsync(
-                ValidAppointment(
+            .ReturnsAsync(appointment);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
                     1,
-                    99));
+                    newDate,
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _workflowService
+            .Setup(x =>
+                x.CanScheduleTestAsync(
+                    100,
+                    TestTypeEnum.Theory))
+            .ReturnsAsync(Result.Success());
+
+        _repository
+            .Setup(x =>
+                x.IsSlotOccupiedAsync(
+                    1,
+                    newDate,
+                    1))
+            .ReturnsAsync(false);
+
+        _repository
+            .Setup(x =>
+                x.HasApplicantSameDayConflictAsync(
+                    5,
+                    newDate,
+                    1))
+            .ReturnsAsync(false);
 
         var result =
             await service.UpdateAsync(
-                ValidUpdateDto(1));
+                new UpdateTestAppointmentDto
+                {
+                    TestAppointmentID = 1,
+                    AppointmentDate = newDate
+                });
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(ErrorType.Forbidden, result.ErrorType);
-        Assert.Equal(
-            "You are not allowed to modify this appointment.",
-            result.Error);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(newDate, appointment.AppointmentDate);
+        Assert.Equal(99, appointment.CreatedByUserID);
     }
 
     // =========================================================
@@ -2373,7 +2549,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         var date =
-            DateTime.UtcNow.AddDays(1);
+            ValidFutureSlot(4);
 
         var appointment =
             ValidAppointment(
@@ -2444,21 +2620,39 @@ public sealed class TestAppointmentServiceTests
     }
 
     // =========================================================
-    // UPDATE - LOCAL CONFLICT
+    // UPDATE - SLOT OCCUPIED CONFLICT
     // =========================================================
 
     [Fact]
-    public async Task UpdateAsync_WhenLocalConflict_ReturnsConflict()
+    public async Task UpdateAsync_WhenSlotOccupied_ReturnsConflict()
     {
         var service = CreateService();
 
         var appointment =
             ValidAppointment(1);
 
+        var newDate =
+            ValidFutureSlot(5, 10, 0);
+
         _repository
             .Setup(x =>
                 x.GetForUpdateAsync(1))
             .ReturnsAsync(appointment);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    newDate,
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         _workflowService
             .Setup(x =>
@@ -2469,39 +2663,61 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
-                    It.IsAny<DateTime>(),
+                x.IsSlotOccupiedAsync(
+                    1,
+                    newDate,
                     1))
             .ReturnsAsync(true);
 
         var result =
             await service.UpdateAsync(
-                ValidUpdateDto(1));
+                new UpdateTestAppointmentDto
+                {
+                    TestAppointmentID = 1,
+                    AppointmentDate = newDate
+                });
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
-            "This application already has another appointment at this date and time.",
+            "This slot is already booked for this test type.",
             result.Error);
     }
 
     // =========================================================
-    // UPDATE - USER CONFLICT
+    // UPDATE - APPLICANT SAME-DAY CONFLICT
     // =========================================================
 
     [Fact]
-    public async Task UpdateAsync_WhenUserConflict_ReturnsConflict()
+    public async Task UpdateAsync_WhenApplicantHasSameDayConflict_ReturnsConflict()
     {
         var service = CreateService();
 
         var appointment =
             ValidAppointment(1);
 
+        var newDate =
+            ValidFutureSlot(5, 10, 0);
+
         _repository
             .Setup(x =>
                 x.GetForUpdateAsync(1))
             .ReturnsAsync(appointment);
+
+        _repository
+            .Setup(x =>
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    newDate,
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         _workflowService
             .Setup(x =>
@@ -2512,28 +2728,32 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
-                    It.IsAny<DateTime>(),
+                x.IsSlotOccupiedAsync(
+                    1,
+                    newDate,
                     1))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.HasUserConflictAsync(
-                    10,
-                    It.IsAny<DateTime>(),
+                x.HasApplicantSameDayConflictAsync(
+                    5,
+                    newDate,
                     1))
             .ReturnsAsync(true);
 
         var result =
             await service.UpdateAsync(
-                ValidUpdateDto(1));
+                new UpdateTestAppointmentDto
+                {
+                    TestAppointmentID = 1,
+                    AppointmentDate = newDate
+                });
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
-            "The current user already has another appointment at this date and time.",
+            "The applicant already has an appointment or test scheduled on this calendar day.",
             result.Error);
     }
 
@@ -2550,7 +2770,7 @@ public sealed class TestAppointmentServiceTests
             ValidAppointment(1);
 
         var newDate =
-            DateTime.UtcNow.AddDays(5);
+            ValidFutureSlot(5, 10, 0);
 
         _repository
             .Setup(x =>
@@ -2566,16 +2786,31 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    newDate,
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.IsSlotOccupiedAsync(
+                    1,
                     newDate,
                     1))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.HasUserConflictAsync(
-                    10,
+                x.HasApplicantSameDayConflictAsync(
+                    5,
                     newDate,
                     1))
             .ReturnsAsync(false);
@@ -2619,7 +2854,7 @@ public sealed class TestAppointmentServiceTests
             ValidAppointment(1);
 
         var newDate =
-            DateTime.UtcNow.AddDays(5);
+            ValidFutureSlot(5, 10, 0);
 
         _repository
             .Setup(x =>
@@ -2635,16 +2870,31 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.HasLocalApplicationConflictAsync(
-                    100,
+                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+            .ReturnsAsync(5);
+
+        _repository
+            .Setup(x =>
+                x.AcquireSchedulingLocksAsync(
+                    5,
+                    1,
+                    newDate,
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.IsSlotOccupiedAsync(
+                    1,
                     newDate,
                     1))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.HasUserConflictAsync(
-                    10,
+                x.HasApplicantSameDayConflictAsync(
+                    5,
                     newDate,
                     1))
             .ReturnsAsync(false);
@@ -2771,34 +3021,43 @@ public sealed class TestAppointmentServiceTests
     }
 
     // =========================================================
-    // DELETE - OWNERSHIP
+    // DELETE - STAFF EQUALITY
     // =========================================================
 
     [Fact]
-    public async Task DeleteAsync_WhenAnotherUserOwnsAppointment_ReturnsForbidden()
+    public async Task DeleteAsync_WhenAnotherUserCreatedAppointment_CanCancelSuccessfully()
     {
         var service = CreateService();
+
+        var appointment =
+            ValidAppointment(1, 99); // Created by user 99, current user is 10
 
         _repository
             .Setup(x =>
                 x.GetForUpdateAsync(1))
-            .ReturnsAsync(
-                ValidAppointment(
-                    1,
-                    99));
+            .ReturnsAsync(appointment);
+
+        _unitOfWork
+            .Setup(x =>
+                x.SaveChangesAsync(
+                    It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
 
         var result =
             await service.DeleteAsync(1);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(ErrorType.Forbidden, result.ErrorType);
-        Assert.Equal(
-            "You are not allowed to delete this appointment.",
-            result.Error);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(AppointmentStatus.Cancelled, appointment.Status);
+        Assert.True(appointment.IsLocked);
+        Assert.NotNull(appointment.CancelledAt);
+        Assert.Equal(10, appointment.CancelledByUserID);
+        _repository.Verify(
+            x => x.Delete(It.IsAny<TestAppointment>()),
+            Times.Never);
     }
 
     // =========================================================
-    // DELETE - LOCKED
+    // DELETE / CANCEL - LOCKED
     // =========================================================
 
     [Fact]
@@ -2821,16 +3080,16 @@ public sealed class TestAppointmentServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
-            "Cannot delete a locked appointment.",
+            "Cannot cancel a locked appointment.",
             result.Error);
     }
 
     // =========================================================
-    // DELETE - SUCCESS
+    // DELETE / CANCEL - SUCCESS (SOFT CANCELLATION)
     // =========================================================
 
     [Fact]
-    public async Task DeleteAsync_WhenValid_DeletesAndSaves()
+    public async Task DeleteAsync_WhenValid_SoftCancelsAndSaves()
     {
         var service = CreateService();
 
@@ -2846,10 +3105,14 @@ public sealed class TestAppointmentServiceTests
             await service.DeleteAsync(1);
 
         Assert.True(result.IsSuccess);
+        Assert.Equal(AppointmentStatus.Cancelled, appointment.Status);
+        Assert.True(appointment.IsLocked);
+        Assert.NotNull(appointment.CancelledAt);
+        Assert.Equal(10, appointment.CancelledByUserID);
 
         _repository.Verify(
-            x => x.Delete(appointment),
-            Times.Once);
+            x => x.Delete(It.IsAny<TestAppointment>()),
+            Times.Never);
 
         _unitOfWork.Verify(
             x =>
@@ -2859,7 +3122,7 @@ public sealed class TestAppointmentServiceTests
     }
 
     // =========================================================
-    // DELETE - SAVE FAILURE
+    // DELETE / CANCEL - SAVE FAILURE
     // =========================================================
 
     [Fact]
@@ -2887,11 +3150,141 @@ public sealed class TestAppointmentServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
-            "Failed to delete appointment.",
+            "Failed to cancel appointment.",
             result.Error);
 
         _repository.Verify(
-            x => x.Delete(appointment),
-            Times.Once);
+            x => x.Delete(It.IsAny<TestAppointment>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CancelAsync_WhenAlreadyCancelled_ReturnsConflict()
+    {
+        var service = CreateService();
+        var appointment = ValidAppointment(1);
+        appointment.Status = AppointmentStatus.Cancelled;
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.CancelAsync(1);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Appointment is already cancelled.", result.Error);
+    }
+
+    [Fact]
+    public async Task CancelAsync_WhenCompleted_ReturnsConflict()
+    {
+        var service = CreateService();
+        var appointment = ValidAppointment(1);
+        appointment.Status = AppointmentStatus.Completed;
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.CancelAsync(1);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Cannot cancel a completed appointment.", result.Error);
+    }
+
+    [Fact]
+    public async Task CancelAsync_WhenNoShow_ReturnsConflict()
+    {
+        var service = CreateService();
+        var appointment = ValidAppointment(1);
+        appointment.Status = AppointmentStatus.NoShow;
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.CancelAsync(1);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Cannot cancel a no-show appointment.", result.Error);
+    }
+
+    [Fact]
+    public async Task CancelAsync_WhenStatusNull_ReturnsConflict()
+    {
+        var service = CreateService();
+        var appointment = ValidAppointment(1);
+        appointment.Status = null;
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.CancelAsync(1);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Appointment has an unresolved lifecycle status and cannot be cancelled.", result.Error);
+    }
+
+    [Fact]
+    public async Task CancelAsync_WhenCutoffViolated_ReturnsValidationFailure()
+    {
+        var service = CreateService();
+        // Appointment is tomorrow (< 2 calendar days away)
+        var jordanNow = Application.Validators.TestAppointmentValidator.GetCurrentJordanTime();
+        var appointment = ValidAppointment(1, date: jordanNow.Date.AddDays(1).AddHours(9));
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.CancelAsync(1);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Equal("Appointments cannot be modified or cancelled less than two calendar days before the scheduled date.", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenCutoffViolated_ReturnsValidationFailure()
+    {
+        var service = CreateService();
+        // Existing appointment is tomorrow (< 2 calendar days away)
+        var jordanNow = Application.Validators.TestAppointmentValidator.GetCurrentJordanTime();
+        var appointment = ValidAppointment(1, date: jordanNow.Date.AddDays(1).AddHours(9));
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.UpdateAsync(ValidUpdateDto(1));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Equal("Appointments cannot be modified or cancelled less than two calendar days before the scheduled date.", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenCancelled_ReturnsConflict()
+    {
+        var service = CreateService();
+        var appointment = ValidAppointment(1);
+        appointment.Status = AppointmentStatus.Cancelled;
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.UpdateAsync(ValidUpdateDto(1));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Cannot modify a cancelled appointment.", result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenStatusNull_ReturnsConflict()
+    {
+        var service = CreateService();
+        var appointment = ValidAppointment(1);
+        appointment.Status = null;
+
+        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+
+        var result = await service.UpdateAsync(ValidUpdateDto(1));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Appointment has an unresolved lifecycle status and cannot be modified.", result.Error);
     }
 }

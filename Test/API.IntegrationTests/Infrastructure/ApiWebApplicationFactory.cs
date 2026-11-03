@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -59,6 +59,8 @@ public sealed class ApiWebApplicationFactory
     {
         builder.ConfigureTestServices(services =>
         {
+            services.Configure<Application.Options.NoShowProcessorOptions>(opts => opts.IsEnabled = false);
+
             services.RemoveAll<IAuthService>();
             services.AddScoped(_ => AuthServiceMock.Object);
 

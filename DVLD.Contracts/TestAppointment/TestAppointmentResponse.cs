@@ -16,4 +16,7 @@ public sealed class TestAppointmentResponse
     public string TestResultText { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public string AppointmentDateFormatted { get; init; } = string.Empty;
+    public DateTime? CancelledAt { get; init; }
+    public int? CancelledByUserId { get; init; }
+    public DateTime? NoShowDate { get; init; }
 }

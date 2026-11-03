@@ -1,8 +1,21 @@
 import { apiRequest } from './apiClient'
-import type { License } from '../types/License'
+import type {
+  License,
+  RenewLicenseRequest,
+  RenewLicenseResponse,
+  ReplaceLicenseRequest,
+  ReplaceLicenseResponse,
+} from '../types/License'
 import type { LocalLicenseInfo } from '../types/InternationalLicense'
 
-export type { License, LocalLicenseInfo }
+export type {
+  License,
+  LocalLicenseInfo,
+  RenewLicenseRequest,
+  RenewLicenseResponse,
+  ReplaceLicenseRequest,
+  ReplaceLicenseResponse,
+}
 
 export function getLicenses(accessToken: string): Promise<License[]> {
   return apiRequest<License[]>('/Licenses', accessToken)
@@ -21,4 +34,48 @@ export function getLicenseDetailsById(
   licenseId: number,
 ): Promise<LocalLicenseInfo> {
   return apiRequest<LocalLicenseInfo>(`/Licenses/${licenseId}/details`, accessToken)
+}
+
+export function getLicenseDetailsByLocalAppId(
+  accessToken: string,
+  localAppId: number,
+): Promise<LocalLicenseInfo> {
+  return apiRequest<LocalLicenseInfo>(
+    `/Licenses/local-application/${localAppId}/details`,
+    accessToken,
+  )
+}
+
+export function issueFirstLicense(
+  accessToken: string,
+  payload: { localApplicationId: number; notes?: string | null },
+): Promise<{ licenseId: number }> {
+  return apiRequest<{ licenseId: number }>(
+    '/LicenseIssuance/first-license',
+    accessToken,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+export function renewLicense(
+  accessToken: string,
+  payload: RenewLicenseRequest,
+): Promise<RenewLicenseResponse> {
+  return apiRequest<RenewLicenseResponse>('/LicenseRenewal', accessToken, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function replaceLicense(
+  accessToken: string,
+  payload: ReplaceLicenseRequest,
+): Promise<ReplaceLicenseResponse> {
+  return apiRequest<ReplaceLicenseResponse>('/LicenseReplacement', accessToken, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }

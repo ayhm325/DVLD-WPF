@@ -22,7 +22,7 @@ public sealed class DashboardRepository(DVLDDbContext context)
                 (SELECT COUNT(*) FROM LocalDrivingLicenseApplications) AS LocalDrivingLicenseApplications,
                 (SELECT COUNT(*) FROM InternationalLicenses) AS InternationalLicenses,
                 (SELECT COUNT(*) FROM DetainedLicenses WHERE IsReleased = 0) AS DetainedLicenses,
-                (SELECT COUNT(*) FROM TestAppointments WHERE AppointmentDate >= CAST(GETDATE() AS date)) AS UpcomingTests
+                (SELECT COUNT(*) FROM TestAppointments WHERE AppointmentDate >= CAST(GETDATE() AS date) AND (Status = 1 OR Status IS NULL) AND IsLocked = 0) AS UpcomingTests
             """;
 
         var result = await _context.Database

@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+using System.Globalization;
+using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Domain.Enums;
 
@@ -6,13 +7,141 @@ namespace Application.Validators;
 
 public static class TestAppointmentValidator
 {
-    public static Result ValidateCreate(
-        CreateTestAppointmentDto? dto)
+    // =========================================================
+    // TIME SLOTS & FACILITY WORKING HOURS
+    // =========================================================
+
+    public static readonly TimeSpan[] ValidSlotTimes =
+    [
+        new(8, 0, 0),
+        new(8, 40, 0),
+        new(9, 20, 0),
+        new(10, 0, 0),
+        new(10, 40, 0),
+        new(11, 20, 0),
+        new(12, 0, 0),
+        new(12, 40, 0),
+        new(13, 20, 0),
+        new(14, 0, 0),
+        new(14, 40, 0),
+        new(15, 20, 0)
+    ];
+
+    private static readonly HashSet<TimeSpan> ValidSlotTimesSet = new(ValidSlotTimes);
+
+    public static TimeZoneInfo JordanTimeZone { get; } = ResolveJordanTimeZone();
+
+    public static DateTime GetCurrentJordanTime() =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, JordanTimeZone);
+
+    public static bool IsValidSlotTime(TimeSpan timeOfDay) =>
+        ValidSlotTimesSet.Contains(timeOfDay);
+
+    // =========================================================
+    // TIMEZONE NORMALIZATION
+    // =========================================================
+
+    public static DateTime ToFacilityTime(DateTime dateTime)
+    {
+        if (dateTime == default)
+        {
+            return default;
+        }
+
+        DateTime inJordan;
+
+        switch (dateTime.Kind)
+        {
+            case DateTimeKind.Utc:
+                inJordan = TimeZoneInfo.ConvertTimeFromUtc(dateTime, JordanTimeZone);
+                break;
+
+            case DateTimeKind.Local:
+                inJordan = TimeZoneInfo.ConvertTime(dateTime, TimeZoneInfo.Local, JordanTimeZone);
+                break;
+
+            case DateTimeKind.Unspecified:
+            default:
+                inJordan = dateTime;
+                break;
+        }
+
+        return DateTime.SpecifyKind(inJordan, DateTimeKind.Unspecified);
+    }
+
+    public static DateTime ToFacilityTime(DateTimeOffset dateTimeOffset)
+    {
+        var inJordan = TimeZoneInfo.ConvertTime(dateTimeOffset, JordanTimeZone).DateTime;
+        return DateTime.SpecifyKind(inJordan, DateTimeKind.Unspecified);
+    }
+
+    public static DateTime ParseToFacilityTime(string dateString)
+    {
+        var offset = Serialization.JordanFacilityDateTimeOffsetConverter.Parse(dateString);
+        return ToFacilityTime(offset);
+    }
+
+    // =========================================================
+    // APPOINTMENT DATE & TIME VALIDATION
+    // =========================================================
+
+    public static Result ValidateAppointmentDate(DateTime appointmentDate, DateTime? currentJordanTime = null)
+    {
+        if (appointmentDate == default)
+        {
+            return Result.ValidationFailure("Appointment date is required.");
+        }
+
+        var errors = new List<string>();
+
+        var facilityDate = ToFacilityTime(appointmentDate);
+        var jordanNow = currentJordanTime.HasValue
+            ? ToFacilityTime(currentJordanTime.Value)
+            : GetCurrentJordanTime();
+        var currentJordanDate = jordanNow.Date;
+
+        if (facilityDate <= jordanNow)
+        {
+            errors.Add("Appointment date must be in the future.");
+        }
+
+        if ((facilityDate.Date - currentJordanDate).Days < 2)
+        {
+            errors.Add("Appointments must be scheduled at least two calendar days after the current facility date.");
+        }
+
+        if (facilityDate.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
+        {
+            errors.Add("Appointments cannot be scheduled on Friday or Saturday.");
+        }
+
+        var hasSecondsOrFraction = facilityDate.Second != 0 ||
+                                   facilityDate.Millisecond != 0 ||
+                                   (facilityDate.Ticks % TimeSpan.TicksPerSecond) != 0;
+
+        if (hasSecondsOrFraction)
+        {
+            errors.Add("Appointment time must not contain seconds or fractional seconds.");
+        }
+
+        var timeOfDay = new TimeSpan(facilityDate.Hour, facilityDate.Minute, 0);
+        if (!ValidSlotTimesSet.Contains(timeOfDay))
+        {
+            errors.Add("Appointment time must be one of the approved 40-minute slots between 08:00 and 15:20.");
+        }
+
+        return CreateResult(errors);
+    }
+
+    // =========================================================
+    // DTO & ACTION VALIDATORS
+    // =========================================================
+
+    public static Result ValidateCreate(CreateTestAppointmentDto? dto, DateTime? currentJordanTime = null)
     {
         if (dto is null)
         {
-            return Result.ValidationFailure(
-                "Test appointment data is required.");
+            return Result.ValidationFailure("Test appointment data is required.");
         }
 
         var errors = new List<string>();
@@ -21,101 +150,121 @@ public static class TestAppointmentValidator
         {
             errors.Add("Test type is required.");
         }
-        else if (!Enum.IsDefined(
-                     typeof(TestTypeEnum),
-                     dto.TestTypeID))
+        else if (!Enum.IsDefined(typeof(TestTypeEnum), dto.TestTypeID))
         {
             errors.Add("Invalid test type.");
         }
 
         if (dto.LocalDrivingLicenseApplicationID <= 0)
         {
-            errors.Add(
-                "Local driving license application is required.");
+            errors.Add("Local driving license application is required.");
         }
 
-        if (dto.AppointmentDate == default)
+        var dateValidation = ValidateAppointmentDate(dto.AppointmentDate, currentJordanTime);
+        if (dateValidation.IsFailure)
         {
-            errors.Add("Appointment date is required.");
-        }
-        else if (dto.AppointmentDate <= DateTime.UtcNow)
-        {
-            errors.Add(
-                "Appointment date must be in the future.");
+            errors.Add(dateValidation.Error);
         }
 
-        if (dto.RetakeTestApplicationID.HasValue &&
-            dto.RetakeTestApplicationID.Value <= 0)
+        if (dto.RetakeTestApplicationID.HasValue && dto.RetakeTestApplicationID.Value <= 0)
         {
-            errors.Add(
-                "Invalid retake test application ID.");
+            errors.Add("Invalid retake test application ID.");
         }
 
         return CreateResult(errors);
     }
 
-    public static Result ValidateSchedule(
-        int localAppId,
-        int testTypeId,
-        DateTime appointmentDate)
+    public static Result ValidateSchedule(int localAppId, int testTypeId, DateTime appointmentDate, DateTime? currentJordanTime = null)
     {
         var errors = new List<string>();
 
         if (localAppId <= 0)
         {
-            errors.Add(
-                "Invalid local driving license application ID.");
+            errors.Add("Invalid local driving license application ID.");
         }
 
         if (testTypeId <= 0)
         {
             errors.Add("Test type is required.");
         }
-        else if (!Enum.IsDefined(
-                     typeof(TestTypeEnum),
-                     testTypeId))
+        else if (!Enum.IsDefined(typeof(TestTypeEnum), testTypeId))
         {
             errors.Add("Invalid test type.");
         }
 
-        if (appointmentDate == default)
+        var dateValidation = ValidateAppointmentDate(appointmentDate, currentJordanTime);
+        if (dateValidation.IsFailure)
         {
-            errors.Add("Appointment date is required.");
-        }
-        else if (appointmentDate <= DateTime.UtcNow)
-        {
-            errors.Add(
-                "Appointment date must be in the future.");
+            errors.Add(dateValidation.Error);
         }
 
         return CreateResult(errors);
     }
 
-    public static Result ValidateUpdate(
-        UpdateTestAppointmentDto? dto)
+    public static Result ValidateAvailabilityRequest(
+        int localAppId,
+        int testTypeId,
+        DateTime startDate,
+        DateTime endDate)
+    {
+        var errors = new List<string>();
+
+        if (localAppId <= 0)
+        {
+            errors.Add("Invalid local driving license application ID.");
+        }
+
+        if (testTypeId <= 0)
+        {
+            errors.Add("Test type is required.");
+        }
+        else if (!Enum.IsDefined(typeof(TestTypeEnum), testTypeId))
+        {
+            errors.Add("Invalid test type.");
+        }
+
+        if (startDate == default)
+        {
+            errors.Add("Start date is required.");
+        }
+
+        if (endDate == default)
+        {
+            errors.Add("End date is required.");
+        }
+
+        if (startDate != default && endDate != default)
+        {
+            var facilityStartDate = ToFacilityTime(startDate).Date;
+            var facilityEndDate = ToFacilityTime(endDate).Date;
+
+            if (facilityStartDate > facilityEndDate)
+            {
+                errors.Add("Start date cannot be later than end date.");
+            }
+        }
+
+        return CreateResult(errors);
+    }
+
+    public static Result ValidateUpdate(UpdateTestAppointmentDto? dto, DateTime? currentJordanTime = null)
     {
         if (dto is null)
         {
-            return Result.ValidationFailure(
-                "Test appointment data is required.");
+            return Result.ValidationFailure("Test appointment data is required.");
         }
 
         var errors = new List<string>();
 
         if (dto.TestAppointmentID <= 0)
         {
-            errors.Add(
-                "Invalid test appointment ID.");
+            errors.Add("Invalid test appointment ID.");
         }
 
-        if (dto.AppointmentDate == default)
+        var dateValidation = ValidateAppointmentDate(dto.AppointmentDate, currentJordanTime);
+        if (dateValidation.IsFailure)
         {
-            errors.Add("Appointment date is required.");
-        }
-        else if (dto.AppointmentDate <= DateTime.UtcNow)
-        {
-            errors.Add(
-                "Appointment date must be in the future.");
+            errors.Add(dateValidation.Error);
         }
 
         return CreateResult(errors);
@@ -124,36 +273,70 @@ public static class TestAppointmentValidator
     public static Result ValidateId(int id) =>
         id > 0
             ? Result.Success()
-            : Result.ValidationFailure(
-                "Invalid test appointment ID.");
+            : Result.ValidationFailure("Invalid test appointment ID.");
+
+    // =========================================================
+    // CANCELLATION & MODIFICATION CUTOFF
+    // =========================================================
+
+    public static Result ValidateModificationOrCancellationCutoff(
+        DateTime appointmentDate,
+        DateTime? currentJordanTime = null)
+    {
+        var facilityDate = ToFacilityTime(appointmentDate).Date;
+        var currentJordanDate = (currentJordanTime.HasValue
+            ? ToFacilityTime(currentJordanTime.Value)
+            : GetCurrentJordanTime()).Date;
+
+        if ((facilityDate - currentJordanDate).Days < 2)
+        {
+            return Result.ValidationFailure(
+                "Appointments cannot be modified or cancelled less than two calendar days before the scheduled date.");
+        }
+
+        return Result.Success();
+    }
 
     public static Result ValidateTestTypeId(int testTypeId) =>
-        Enum.IsDefined(
-            typeof(TestTypeEnum),
-            testTypeId)
+        Enum.IsDefined(typeof(TestTypeEnum), testTypeId)
             ? Result.Success()
-            : Result.ValidationFailure(
-                "Invalid test type.");
+            : Result.ValidationFailure("Invalid test type.");
 
-    public static Result ValidateApplicationId(
-        int applicationId) =>
+    public static Result ValidateApplicationId(int applicationId) =>
         applicationId > 0
             ? Result.Success()
-            : Result.ValidationFailure(
-                "Invalid local driving license application ID.");
+            : Result.ValidationFailure("Invalid local driving license application ID.");
 
     public static Result ValidateUserId(int userId) =>
         userId > 0
             ? Result.Success()
-            : Result.ValidationFailure(
-                "Invalid user ID.");
+            : Result.ValidationFailure("Invalid user ID.");
 
-    private static Result CreateResult(
-        List<string> errors) =>
+    private static Result CreateResult(List<string> errors) =>
         errors.Count == 0
             ? Result.Success()
-            : Result.ValidationFailure(
-                string.Join(
-                    Environment.NewLine,
-                    errors));
+            : Result.ValidationFailure(string.Join(Environment.NewLine, errors));
+
+    private static TimeZoneInfo ResolveJordanTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                return TimeZoneInfo.CreateCustomTimeZone(
+                    "Jordan Standard Time",
+                    TimeSpan.FromHours(3),
+                    "Jordan Standard Time",
+                    "Jordan Standard Time");
+            }
+        }
+    }
 }

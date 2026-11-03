@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
@@ -18,6 +18,13 @@ public class LicenseRenewalServiceTests
     private readonly Mock<ICurrentUserService> _currentUserService = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ILogger<LicenseRenewalService>> _logger = new();
+    private readonly Mock<IJordanClock> _clock = new();
+
+    public LicenseRenewalServiceTests()
+    {
+        _clock.SetupGet(x => x.Now).Returns(() => DateTime.UtcNow);
+    }
+
     private LicenseRenewalService CreateSut() =>
         new(
             _licenseRepository.Object,
@@ -25,7 +32,8 @@ public class LicenseRenewalServiceTests
             _applicationTypeService.Object,
             _currentUserService.Object,
             _unitOfWork.Object,
-            _logger.Object);
+            _logger.Object,
+            _clock.Object);
     [Fact]
     public async Task RenewLicenseAsync_WhenLicenseIdIsInvalid_ReturnsValidationFailure()
     {

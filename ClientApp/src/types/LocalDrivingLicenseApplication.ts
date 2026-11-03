@@ -44,3 +44,16 @@ export type LocalLicenseClass = {
   minAllowedAge?: number
   defaultValidityLength?: number
 }
+
+export type ApplicationBasicInfo = {
+  applicantPersonId: number
+  applicationId: number
+  applicationStatus: string
+  statusText: string
+  paidFees: number
+  applicationTypeName: string
+  applicantFullName: string
+  applicationDate: string
+  lastStatusDate: string
+  createdByUserName: string
+}

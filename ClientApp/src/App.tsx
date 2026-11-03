@@ -62,6 +62,9 @@ export default function App() {
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null)
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
   const [personDetailsSource, setPersonDetailsSource] = useState<'People' | 'Drivers'>('People')
+  const [licenseHistorySource, setLicenseHistorySource] = useState<'Drivers' | 'Local Applications'>('Drivers')
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null)
+  const [appointmentDetailsSource, setAppointmentDetailsSource] = useState<string>('Test Appointments')
 
   // People data lifecycle managed through dedicated custom hook
   const {
@@ -88,10 +91,12 @@ export default function App() {
       page !== 'Add Person' &&
       page !== 'Edit Person' &&
       page !== 'Person Details' &&
-      page !== 'Person License History'
+      page !== 'Person License History' &&
+      page !== 'Appointment Details'
     ) {
       setSelectedPersonId(null)
       setSelectedDriver(null)
+      setSelectedAppointmentId(null)
     }
     setShowIssueInternational(false)
     mobileSidebar.close()
@@ -99,6 +104,14 @@ export default function App() {
     if (page === 'Dashboard') {
       setStatisticsRefreshKey((current) => current + 1)
     }
+  }, [mobileSidebar])
+
+  const handleShowAppointmentDetails = useCallback((appointmentId: number, source = 'Test Appointments') => {
+    setSelectedAppointmentId(appointmentId)
+    setAppointmentDetailsSource(source)
+    setActivePage('Appointment Details')
+    setShowIssueInternational(false)
+    mobileSidebar.close()
   }, [mobileSidebar])
 
   const handleShowDetails = useCallback((person: Person) => {
@@ -118,12 +131,16 @@ export default function App() {
       setSelectedPersonId(personId)
       if (driver) {
         setSelectedDriver(driver)
+        setLicenseHistorySource('Drivers')
+      } else {
+        setSelectedDriver(null)
+        setLicenseHistorySource(activePage === 'Local Applications' ? 'Local Applications' : 'Drivers')
       }
       setActivePage('Person License History')
       setShowIssueInternational(false)
       mobileSidebar.close()
     },
-    [mobileSidebar],
+    [activePage, mobileSidebar],
   )
 
   const handleEditPerson = useCallback((person: Person) => {
@@ -224,6 +241,10 @@ export default function App() {
           onShowPersonInfo={handleShowPersonInfoFromDrivers}
           onShowLicenseHistory={handleShowLicenseHistoryFromDrivers}
           personDetailsSource={personDetailsSource}
+          licenseHistorySource={licenseHistorySource}
+          selectedAppointmentId={selectedAppointmentId}
+          appointmentDetailsSource={appointmentDetailsSource}
+          onShowAppointmentDetails={handleShowAppointmentDetails}
         />
 
         {/* Logout Confirmation Dialog */}

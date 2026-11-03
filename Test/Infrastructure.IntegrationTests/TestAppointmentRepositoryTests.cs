@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
@@ -1292,22 +1292,26 @@ public sealed class TestAppointmentRepositoryTests : IAsyncLifetime
         await AddAppointmentAsync(
             scenario,
             TestTypeEnum.Theory,
-            DateTime.UtcNow.AddDays(29));
+            DateTime.UtcNow.AddDays(29),
+            status: AppointmentStatus.Completed);
 
         await AddAppointmentAsync(
             scenario,
             TestTypeEnum.Theory,
-            DateTime.UtcNow.AddDays(30));
+            DateTime.UtcNow.AddDays(30),
+            status: AppointmentStatus.NoShow);
 
         await AddAppointmentAsync(
             scenario,
             TestTypeEnum.Theory,
-            DateTime.UtcNow.AddDays(31));
+            DateTime.UtcNow.AddDays(31),
+            status: AppointmentStatus.Completed);
 
         await AddAppointmentAsync(
             scenario,
             TestTypeEnum.Written,
-            DateTime.UtcNow.AddDays(32));
+            DateTime.UtcNow.AddDays(32),
+            status: AppointmentStatus.Completed);
 
         await using var context =
             _database.CreateContext();
@@ -1722,7 +1726,8 @@ public sealed class TestAppointmentRepositoryTests : IAsyncLifetime
         TestTypeEnum testType,
         DateTime appointmentDate,
         bool isLocked = false,
-        decimal paidFees = 20m)
+        decimal paidFees = 20m,
+        AppointmentStatus? status = null)
     {
         await using var context =
             _database.CreateContext();
@@ -1749,7 +1754,8 @@ public sealed class TestAppointmentRepositoryTests : IAsyncLifetime
                     isLocked,
 
                 RetakeTestApplicationID =
-                    null
+                    null,
+                Status = status,
             };
 
         context.TestAppointments.Add(

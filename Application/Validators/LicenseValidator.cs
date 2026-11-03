@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Domain.Enums;
 
@@ -37,7 +37,7 @@ public static class LicenseValidator
 
         if (dto.IssueDate != default &&
             dto.ExpirationDate != default &&
-            dto.ExpirationDate <= dto.IssueDate)
+            dto.ExpirationDate.Date < dto.IssueDate.Date)
         {
             errors.Add(
                 "Expiration date must be after issue date.");

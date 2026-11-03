@@ -1,4 +1,4 @@
-using Application.Common.Pagination;
+﻿using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
@@ -19,7 +19,10 @@ public sealed class LocalDrivingLicenseApplicationService(
     IApplicationTypeRepository applicationTypeRepository,
     ILicenseClassService licenseClassService,
     ICurrentUserService currentUserService,
-    IApplicationService applicationService) : ILocalDrivingLicenseApplicationService
+    IApplicationService applicationService,
+    ITestAppointmentRepository? testAppointmentRepository = null,
+    IPersonRepository? personRepository = null,
+    IJordanClock? clock = null) : ILocalDrivingLicenseApplicationService
 {
     private const int NewLocalDrivingLicenseApplicationTypeId = 1;
 
@@ -39,6 +42,12 @@ public sealed class LocalDrivingLicenseApplicationService(
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     private readonly IApplicationService _applicationService =
         applicationService ?? throw new ArgumentNullException(nameof(applicationService));
+    private readonly ITestAppointmentRepository? _testAppointmentRepository =
+        testAppointmentRepository;
+    private readonly IPersonRepository? _personRepository =
+        personRepository;
+    private readonly Func<DateTime> _nowProvider =
+        clock != null ? () => clock.Now : Application.Validators.TestAppointmentValidator.GetCurrentJordanTime;
 
     public async Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
     GetAllLocalDrivingLicenseApplicationsAsync(
@@ -92,8 +101,8 @@ public sealed class LocalDrivingLicenseApplicationService(
     }
 
     public async Task<Result<int>> CreateLocalDrivingLicenseApplicationAsync(
-    int applicantPersonId,
-    int licenseClassId)
+        int applicantPersonId,
+        int licenseClassId)
     {
         var applicationDto = new CreateApplicationDto
         {
@@ -124,13 +133,36 @@ public sealed class LocalDrivingLicenseApplicationService(
             return Result<int>.FromFailure(
                 "Authenticated user is required.");
 
+        if (_personRepository is null)
+            throw new InvalidOperationException("Person repository is required for applicant validation.");
+
+        var person = await _personRepository.GetPersonByIdAsync(applicantPersonId);
+        if (person is null)
+            return Result<int>.FromNotFound(
+                "Applicant person was not found.");
+
         var licenseClassResult =
             await _licenseClassService.GetLicenseClassByIdAsync(
                 licenseClassId);
 
         if (licenseClassResult.IsFailure)
-            return Result<int>.FromFailure(
-                licenseClassResult.Error);
+            return Result<int>.FromResult(licenseClassResult);
+
+
+        if (licenseClassResult.Value is null)
+            return Result<int>.FromNotFound(
+                "License class was not found.");
+
+        var nowJordan = _nowProvider();
+
+        var ageValidation = LocalDrivingLicenseApplicationValidator.ValidateAge(
+            person.DateOfBirth,
+            licenseClassResult.Value!.MinAllowedAge,
+            nowJordan);
+
+        if (ageValidation.IsFailure)
+            return Result<int>.FromValidationFailure(
+                ageValidation.Error);
 
         var applicationType =
             await _applicationTypeRepository
@@ -160,7 +192,8 @@ public sealed class LocalDrivingLicenseApplicationService(
                     ApplicationMapper.ToEntity(
                         applicationDto,
                         applicationType.ApplicationFees,
-                        _currentUserService.UserId);
+                        _currentUserService.UserId,
+                        nowJordan);
 
                 await _applicationRepository.AddNewApplicationAsync(
                     applicationEntity);
@@ -221,6 +254,21 @@ public sealed class LocalDrivingLicenseApplicationService(
         if (licenseClassResult.IsFailure)
             return Result<int>.FromFailure(licenseClassResult.Error);
 
+        if (_personRepository != null)
+        {
+            var person = await _personRepository.GetPersonByIdAsync(application.ApplicantPersonID);
+            if (person != null)
+            {
+                var ageValidation = LocalDrivingLicenseApplicationValidator.ValidateAge(
+                    person.DateOfBirth,
+                    licenseClassResult.Value!.MinAllowedAge,
+                    _nowProvider());
+
+                if (ageValidation.IsFailure)
+                    return Result<int>.FromValidationFailure(ageValidation.Error);
+            }
+        }
+
         var existing = await _repository.GetByApplicationIdAsync(dto.ApplicationID);
         if (existing.Count > 0)
             return Result<int>.FromConflict("A local driving license application already exists for this main application.");
@@ -271,6 +319,21 @@ public sealed class LocalDrivingLicenseApplicationService(
 
                 if (existing.LicenseClassID == dto.LicenseClassID)
                     return Result.Success();
+
+                if (_personRepository != null)
+                {
+                    var person = await _personRepository.GetPersonByIdAsync(existing.Application.ApplicantPersonID);
+                    if (person != null)
+                    {
+                        var ageValidation = LocalDrivingLicenseApplicationValidator.ValidateAge(
+                            person.DateOfBirth,
+                            licenseClassResult.Value!.MinAllowedAge,
+                            _nowProvider());
+
+                        if (ageValidation.IsFailure)
+                            return Result.ValidationFailure(ageValidation.Error);
+                    }
+                }
 
                 var duplicateApplicationId =
                     await _repository.HasDuplicateApplicationAsync(
@@ -396,7 +459,41 @@ public sealed class LocalDrivingLicenseApplicationService(
         if (existing.Application is null)
             return Result.Failure("Main application information is missing.");
 
-        return await _applicationService.CancelApplicationAsync(existing.ApplicationID);
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async transaction =>
+            {
+                var cancelResult = await _applicationService.CancelApplicationAsync(existing.ApplicationID);
+                if (cancelResult.IsFailure)
+                    return cancelResult;
+
+                if (_testAppointmentRepository != null)
+                {
+                    var activeAppointments =
+                        await _testAppointmentRepository.GetActiveScheduledByLocalAppIdForUpdateAsync(localApplicationId);
+
+                    var nowJordan = Application.Validators.TestAppointmentValidator.GetCurrentJordanTime();
+                    var currentUserId = _currentUserService.IsLoggedIn && _currentUserService.UserId > 0
+                        ? _currentUserService.UserId
+                        : (int?)null;
+
+                    foreach (var apt in activeAppointments)
+                    {
+                        apt.Status = AppointmentStatus.Cancelled;
+                        apt.CancelledAt = nowJordan;
+                        apt.CancelledByUserID = currentUserId;
+                        apt.IsLocked = true;
+                    }
+
+                    if (activeAppointments.Count > 0)
+                    {
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+                }
+
+                await transaction.CommitAsync();
+                return Result.Success();
+            },
+            IsolationLevel.ReadCommitted);
     }
 
     private bool IsAuthenticated() =>

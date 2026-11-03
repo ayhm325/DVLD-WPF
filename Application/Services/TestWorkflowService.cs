@@ -4,12 +4,20 @@ using Domain.Enums;
 
 namespace Application.Services;
 
-public sealed class TestWorkflowService(
-    ITestAppointmentRepository repository)
-    : ITestWorkflowService
+public sealed class TestWorkflowService : ITestWorkflowService
 {
-    private readonly ITestAppointmentRepository _repository =
-        repository ?? throw new ArgumentNullException(nameof(repository));
+    private readonly ITestAppointmentRepository _repository;
+    private readonly Func<DateTime> _nowProvider;
+
+    public TestWorkflowService(
+        ITestAppointmentRepository repository,
+        IJordanClock? clock = null)
+    {
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _nowProvider = clock != null
+            ? () => clock.Now
+            : Application.Validators.TestAppointmentValidator.GetCurrentJordanTime;
+    }
 
     private static readonly TestTypeEnum[] RequiredTests =
     [
@@ -99,13 +107,46 @@ public sealed class TestWorkflowService(
                 "Test appointment not found.");
         }
 
+        return await CanTakeTestAsync(appointment);
+    }
+
+    public async Task<Result> CanTakeTestAsync(
+        Domain.Entities.TestAppointment appointment)
+    {
+        ArgumentNullException.ThrowIfNull(appointment);
+
+        if (appointment.Status == AppointmentStatus.Cancelled)
+        {
+            return Result.Conflict(
+                "Cannot take a test for a cancelled appointment.");
+        }
+
+        if (appointment.Status == AppointmentStatus.Completed || appointment.Test is not null)
+        {
+            return Result.Conflict(
+                "This appointment has already been completed.");
+        }
+
+        if (appointment.Status == AppointmentStatus.NoShow)
+        {
+            return Result.Conflict(
+                "Cannot take a test for a no-show appointment.");
+        }
+
+        if (appointment.Status == null)
+        {
+            return Result.Conflict(
+                "Cannot take a test for an appointment with unresolved lifecycle status.");
+        }
+
         if (appointment.IsLocked)
         {
             return Result.Conflict(
                 "This appointment is already locked.");
         }
 
-        if (appointment.AppointmentDate > DateTime.UtcNow)
+        var currentFacilityTime = _nowProvider();
+        if (appointment.AppointmentDate > currentFacilityTime)
         {
             return Result.Conflict(
                 "The appointment date has not arrived yet.");
@@ -140,7 +181,6 @@ public sealed class TestWorkflowService(
             (TestTypeEnum)appointment.TestTypeID,
             "taken");
     }
-
     public async Task<bool> HasPassedAllTestsAsync(
         int localAppId)
     {

@@ -15,3 +15,21 @@ export type License = {
   createdByUserId: number
   createdByUserName: string | null
 }
+
+export type RenewLicenseRequest = {
+  oldLicenseId: number
+  notes?: string | null
+}
+
+export type RenewLicenseResponse = {
+  licenseId: number
+}
+
+export type ReplaceLicenseRequest = {
+  oldLicenseId: number
+  replacementReason: string
+}
+
+export type ReplaceLicenseResponse = {
+  licenseId: number
+}

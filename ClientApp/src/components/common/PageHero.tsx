@@ -28,10 +28,6 @@ export interface PageHeroProps {
   badgeText?: string
   /** Additional container classes */
   className?: string
-  /** Action buttons, pills, or controls placed beside/below description */
-  actions?: ReactNode
-  /** Children elements */
-  children?: ReactNode
   /** Custom central illustration node (overrides the default futuristic holographic card) */
   illustration?: ReactNode
   /** Custom illustration code tag (e.g. 'CITIZEN-ID') */
@@ -100,8 +96,6 @@ export default function PageHero({
   icon,
   badgeText,
   className = '',
-  actions,
-  children,
   illustration,
   illustrationTag,
   illustrationIcon,
@@ -206,10 +200,6 @@ export default function PageHero({
               {finalDescription}
             </p>
           )}
-
-          {actions && <div className="mt-4 flex items-center gap-3">{actions}</div>}
-
-          {children}
         </div>
 
         {/* Right Side: Futuristic Holographic Card Illustration & Floating Neon Icons */}

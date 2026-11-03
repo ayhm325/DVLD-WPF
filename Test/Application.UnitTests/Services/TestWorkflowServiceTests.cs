@@ -533,7 +533,7 @@ public class TestWorkflowServiceTests
 
         var appointment = CreateAppointment(
             appointmentId,
-            appointmentDate: DateTime.UtcNow.AddMinutes(30));
+            appointmentDate: Application.Validators.TestAppointmentValidator.GetCurrentJordanTime().AddMinutes(30));
 
         _repositoryMock
             .Setup(repository =>
@@ -556,6 +556,108 @@ public class TestWorkflowServiceTests
                 repository.GetApplicationStatusAsync(
                     It.IsAny<int>()),
             Times.Never);
+    }
+    [Fact]
+    public async Task CanTakeTestAsync_OneMinuteBeforeAppointment_ReturnsConflict()
+    {
+        const int appointmentId = 10;
+        var apptDate = new DateTime(2026, 11, 5, 10, 0, 0);
+        var clockMock = new Mock<IJordanClock>();
+        clockMock.Setup(c => c.Now).Returns(apptDate.AddMinutes(-1));
+
+        var sut = new TestWorkflowService(_repositoryMock.Object, clockMock.Object);
+        var appointment = CreateAppointment(appointmentId, appointmentDate: apptDate);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+
+        var result = await sut.CanTakeTestAsync(appointmentId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("The appointment date has not arrived yet.", result.Error);
+    }
+
+    [Fact]
+    public async Task CanTakeTestAsync_ExactlyAtAppointmentStart_ProceedsToStatusCheck()
+    {
+        const int appointmentId = 10;
+        var apptDate = new DateTime(2026, 11, 5, 10, 0, 0);
+        var clockMock = new Mock<IJordanClock>();
+        clockMock.Setup(c => c.Now).Returns(apptDate);
+
+        var sut = new TestWorkflowService(_repositoryMock.Object, clockMock.Object);
+        var appointment = CreateAppointment(appointmentId, appointmentDate: apptDate);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetApplicationStatusAsync(appointment.LocalDrivingLicenseApplicationID))
+            .ReturnsAsync(AppStatus.New);
+        _repositoryMock.Setup(r => r.GetPassedTestTypeIdsAsync(appointment.LocalDrivingLicenseApplicationID))
+            .ReturnsAsync(new HashSet<int>());
+
+        var result = await sut.CanTakeTestAsync(appointmentId);
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task CanTakeTestAsync_AfterAppointmentStart_ProceedsToStatusCheck()
+    {
+        const int appointmentId = 10;
+        var apptDate = new DateTime(2026, 11, 5, 10, 0, 0);
+        var clockMock = new Mock<IJordanClock>();
+        clockMock.Setup(c => c.Now).Returns(apptDate.AddMinutes(15));
+
+        var sut = new TestWorkflowService(_repositoryMock.Object, clockMock.Object);
+        var appointment = CreateAppointment(appointmentId, appointmentDate: apptDate);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetApplicationStatusAsync(appointment.LocalDrivingLicenseApplicationID))
+            .ReturnsAsync(AppStatus.New);
+        _repositoryMock.Setup(r => r.GetPassedTestTypeIdsAsync(appointment.LocalDrivingLicenseApplicationID))
+            .ReturnsAsync(new HashSet<int>());
+
+        var result = await sut.CanTakeTestAsync(appointmentId);
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task CanTakeTestAsync_WhenCancelled_ReturnsConflict()
+    {
+        const int appointmentId = 10;
+        var appointment = CreateAppointment(appointmentId, status: AppointmentStatus.Cancelled);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+
+        var result = await _sut.CanTakeTestAsync(appointmentId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Cannot take a test for a cancelled appointment.", result.Error);
+    }
+
+    [Fact]
+    public async Task CanTakeTestAsync_WhenNoShow_ReturnsConflict()
+    {
+        const int appointmentId = 10;
+        var appointment = CreateAppointment(appointmentId, status: AppointmentStatus.NoShow);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+
+        var result = await _sut.CanTakeTestAsync(appointmentId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Cannot take a test for a no-show appointment.", result.Error);
+    }
+
+    [Fact]
+    public async Task CanTakeTestAsync_WhenCompleted_ReturnsConflict()
+    {
+        const int appointmentId = 10;
+        var appointment = CreateAppointment(appointmentId, status: AppointmentStatus.Completed);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+
+        var result = await _sut.CanTakeTestAsync(appointmentId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("This appointment has already been completed.", result.Error);
     }
 
     [Fact]
@@ -868,7 +970,8 @@ public class TestWorkflowServiceTests
         int localAppId = 20,
         int testTypeId = (int)TestTypeEnum.Theory,
         DateTime? appointmentDate = null,
-        bool isLocked = false)
+        bool isLocked = false,
+        AppointmentStatus status = AppointmentStatus.Scheduled)
     {
         return new TestAppointment
         {
@@ -879,7 +982,8 @@ public class TestWorkflowServiceTests
                 appointmentDate ?? DateTime.UtcNow.AddMinutes(-30),
             PaidFees = 10,
             CreatedByUserID = 1,
-            IsLocked = isLocked
+            IsLocked = isLocked,
+            Status = status
         };
     }
 }

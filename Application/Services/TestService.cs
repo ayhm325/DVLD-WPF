@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Application.DTOs.TestDTO;
 using Application.Interfaces;
@@ -118,6 +118,7 @@ public sealed class TestService(
                 var entity = TestMapper.ToEntity(dto, _currentUserService.UserId);
                 await _repository.AddAsync(entity);
 
+                appointment.Status = Domain.Enums.AppointmentStatus.Completed;
                 appointment.IsLocked = true;
 
                 if (await _unitOfWork.SaveChangesAsync() <= 0 || entity.TestID <= 0)

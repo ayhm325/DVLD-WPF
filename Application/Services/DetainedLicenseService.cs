@@ -16,7 +16,8 @@ public sealed class DetainedLicenseService(
     IApplicationTypeService applicationTypeService,
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUserService,
-    ILogger<DetainedLicenseService> logger) : IDetainedLicenseService
+    ILogger<DetainedLicenseService> logger,
+    IJordanClock clock) : IDetainedLicenseService
 {
     private const int ReleaseDetainedApplicationTypeId = 5;
 
@@ -34,6 +35,8 @@ public sealed class DetainedLicenseService(
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     private readonly ILogger<DetainedLicenseService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<List<DetainedLicenseDto>>> GetAllAsync()
     {
@@ -108,7 +111,11 @@ public sealed class DetainedLicenseService(
                         Result<DetainedLicenseDto>.FromConflict(
                             "Only an active license can be detained."));
 
-                if (license.ExpirationDate <= DateTime.UtcNow)
+                var now = _clock.Now;
+                var today = now.Date;
+                var expirationDate = license.ExpirationDate.Date;
+
+                if (today > expirationDate)
                     return await RollbackAsync(
                         transaction,
                         Result<DetainedLicenseDto>.FromConflict(
@@ -123,7 +130,7 @@ public sealed class DetainedLicenseService(
                 var entity = DetainedLicenseMapper.ToEntity(
                     dto,
                     _currentUserService.UserId,
-                    DateTime.UtcNow);
+                    now);
 
                 await _repository.AddAsync(entity);
 
@@ -231,8 +238,13 @@ public sealed class DetainedLicenseService(
                         Result.Failure(
                             "Failed to create release application."));
 
+                var now = _clock.Now;
+                var today = now.Date;
+                var expirationDate = license.ExpirationDate.Date;
+                var isExpired = today > expirationDate;
+
                 detention.IsReleased = true;
-                detention.ReleaseDate = DateTime.UtcNow;
+                detention.ReleaseDate = now;
                 detention.ReleasedByUserID = _currentUserService.UserId;
                 detention.ReleaseApplicationID = applicationId;
 
@@ -243,7 +255,7 @@ public sealed class DetainedLicenseService(
                         license.LicenseID);
 
                 if (!hasAnotherActiveLicense &&
-                    license.ExpirationDate > DateTime.UtcNow &&
+                    !isExpired &&
                     !await _licenseRepository.ActivateLicenseAsync(
                         license.LicenseID))
                     return await RollbackAsync(

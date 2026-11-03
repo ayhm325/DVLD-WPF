@@ -23,6 +23,16 @@ const IssueInternationalLicensePage = lazy(
 const LocalApplicationsPage = lazy(
   () => import('./local applications/LocalApplicationsPage'),
 )
+const TestAppointmentsPage = lazy(
+  () => import('./test appointments/TestAppointmentsPage'),
+)
+const AppointmentDetailsPage = lazy(
+  () => import('./test appointments/AppointmentDetailsPage'),
+)
+const RenewLicensePage = lazy(() => import('./licenses/RenewLicensePage'))
+const ReplaceLicensePage = lazy(() => import('./licenses/ReplaceLicensePage'))
+const DetainLicensePage = lazy(() => import('./detained/DetainLicensePage'))
+const DetainedLicensesPage = lazy(() => import('./detained/DetainedLicensesPage'))
 const CountriesPage = lazy(() => import('./CountriesPage'))
 const ApplicationTypesPage = lazy(() => import('./ApplicationTypesPage'))
 const LicenseClassesPage = lazy(() => import('./LicenseClassesPage'))
@@ -56,6 +66,10 @@ export type AppRouterProps = {
   onShowPersonInfo?: (personId: number) => void
   onShowLicenseHistory?: (personId: number, driver?: Driver) => void
   personDetailsSource?: string
+  licenseHistorySource?: string
+  selectedAppointmentId?: number | null
+  appointmentDetailsSource?: string
+  onShowAppointmentDetails?: (appointmentId: number, source?: string) => void
 }
 
 const settingsPages = [
@@ -92,6 +106,10 @@ export default function AppRouter({
   onShowPersonInfo,
   onShowLicenseHistory,
   personDetailsSource,
+  licenseHistorySource,
+  selectedAppointmentId,
+  appointmentDetailsSource,
+  onShowAppointmentDetails,
 }: AppRouterProps) {
   const isCurrentPagePermitted = isPagePermitted(activePage, userRole)
 
@@ -197,12 +215,14 @@ export default function AppRouter({
           accessToken={accessToken}
           personId={selectedPersonId}
           driver={selectedDriver}
-          onBack={() => onNavigate('Drivers')}
+          onBack={() => onNavigate(licenseHistorySource || 'Drivers')}
         />
       )}
 
       {/* Licenses */}
-      {activePage === 'Licenses' && <LicensesPage accessToken={accessToken} />}
+      {activePage === 'Licenses' && (
+        <LicensesPage accessToken={accessToken} onNavigate={onNavigate} />
+      )}
 
       {/* International Licenses */}
       {activePage === 'International Licenses' &&
@@ -222,7 +242,74 @@ export default function AppRouter({
 
       {/* Applications */}
       {activePage === 'Local Applications' && (
-        <LocalApplicationsPage accessToken={accessToken} />
+        <LocalApplicationsPage
+          accessToken={accessToken}
+          onShowLicenseHistory={onShowLicenseHistory}
+          onShowAppointmentDetails={
+            onShowAppointmentDetails
+              ? (id) => onShowAppointmentDetails(id, 'Local Applications')
+              : undefined
+          }
+        />
+      )}
+
+      {/* Test Appointments (Staff only) */}
+      {activePage === 'Test Appointments' && (
+        <TestAppointmentsPage
+          accessToken={accessToken}
+          onNavigate={onNavigate}
+          onShowAppointmentDetails={
+            onShowAppointmentDetails
+              ? (id) => onShowAppointmentDetails(id, 'Test Appointments')
+              : undefined
+          }
+        />
+      )}
+
+      {/* Appointment Details (Staff only) */}
+      {activePage === 'Appointment Details' && (
+        <AppointmentDetailsPage
+          accessToken={accessToken}
+          appointmentId={selectedAppointmentId ?? null}
+          onBack={() => onNavigate(appointmentDetailsSource || 'Test Appointments')}
+          onNavigate={onNavigate}
+          userRole={userRole}
+        />
+      )}
+
+      {/* License Renewal (Staff only) */}
+      {activePage === 'Renew License' && (
+        <RenewLicensePage
+          accessToken={accessToken}
+          onBack={() => onNavigate('Licenses')}
+          onRenewed={() => onNavigate('Licenses')}
+        />
+      )}
+
+      {/* License Replacement (Staff only) */}
+      {activePage === 'Replace License' && (
+        <ReplaceLicensePage
+          accessToken={accessToken}
+          onBack={() => onNavigate('Licenses')}
+          onReplaced={() => onNavigate('Licenses')}
+        />
+      )}
+
+      {/* License Detention (Staff only) */}
+      {activePage === 'Detain License' && (
+        <DetainLicensePage
+          accessToken={accessToken}
+          onBack={() => onNavigate('Detained Licenses')}
+          onDetained={() => onNavigate('Detained Licenses')}
+        />
+      )}
+
+      {/* Detained Licenses Registry (Staff only) */}
+      {activePage === 'Detained Licenses' && (
+        <DetainedLicensesPage
+          accessToken={accessToken}
+          onNavigateToDetain={() => onNavigate('Detain License')}
+        />
       )}
 
       {/* Settings pages */}
@@ -282,6 +369,11 @@ export default function AppRouter({
         'Licenses',
         'International Licenses',
         'Local Applications',
+        'Test Appointments',
+        'Renew License',
+        'Replace License',
+        'Detain License',
+        'Detained Licenses',
         'Applications',
         ...settingsPages,
       ].includes(activePage) && (

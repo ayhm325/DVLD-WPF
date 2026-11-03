@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DetainedLicenseDTO;
@@ -19,6 +19,13 @@ public sealed class DetainedLicenseServiceTests
     private readonly Mock<ICurrentUserService> _currentUserService = new();
     private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
     private readonly Mock<ILogger<DetainedLicenseService>> _logger = new();
+    private readonly Mock<IJordanClock> _clock = new();
+
+    public DetainedLicenseServiceTests()
+    {
+        _clock.SetupGet(x => x.Now).Returns(() => DateTime.UtcNow);
+    }
+
     private DetainedLicenseService CreateService()
     {
         return new DetainedLicenseService(
@@ -28,7 +35,8 @@ public sealed class DetainedLicenseServiceTests
             _applicationTypeService.Object,
             _unitOfWork.Object,
             _currentUserService.Object,
-            _logger.Object);
+            _logger.Object,
+            _clock.Object);
     }
     private void SetupAuthenticatedUser(int userId = 10)
     {
@@ -432,7 +440,7 @@ public sealed class DetainedLicenseServiceTests
                     LicenseID = 100,
                     IsActive = true,
                     ExpirationDate =
-                        DateTime.UtcNow.AddMinutes(-1)
+                        DateTime.UtcNow.AddDays(-1)
                 });
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
         var result = await CreateService().AddAsync(dto);
@@ -983,7 +991,7 @@ public sealed class DetainedLicenseServiceTests
                     LicenseClass = 3,
                     IsActive = false,
                     ExpirationDate =
-                        DateTime.UtcNow.AddMinutes(-1),
+                        DateTime.UtcNow.AddDays(-1),
                     Driver = new Driver
                     {
                         DriverID = 20,

@@ -9,6 +9,7 @@ import {
   Car,
   CreditCard,
   FileText,
+  CalendarDays,
   Globe,
   Settings,
   ChevronRight,
@@ -19,6 +20,10 @@ import {
   Award,
   ClipboardCheck,
   Flag,
+  Lock,
+  RotateCw,
+  Copy,
+  ShieldAlert,
 } from 'lucide-react'
 
 type SidebarProps = {
@@ -50,7 +55,12 @@ export default function Sidebar({
     { page: 'Drivers', icon: <Car className="size-4.5" /> },
     { page: 'Licenses', icon: <CreditCard className="size-4.5" /> },
     { page: 'Local Applications', icon: <FileText className="size-4.5" /> },
+    { page: 'Test Appointments', icon: <CalendarDays className="size-4.5" /> },
     { page: 'International Licenses', icon: <Globe className="size-4.5" /> },
+    { page: 'Renew License', icon: <RotateCw className="size-4.5" /> },
+    { page: 'Replace License', icon: <Copy className="size-4.5" /> },
+    { page: 'Detain License', icon: <ShieldAlert className="size-4.5" /> },
+    { page: 'Detained Licenses', icon: <Lock className="size-4.5" /> },
   ]
 
   const allSettingsPages: NavItemDef[] = [

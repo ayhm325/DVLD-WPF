@@ -103,6 +103,39 @@ public static class LocalDrivingLicenseApplicationValidator
     }
 
     // =========================================================
+    // AGE
+    // =========================================================
+
+    public static Result ValidateAge(
+        DateTime dateOfBirth,
+        int minimumAllowedAge,
+        DateTime referenceDate)
+    {
+        var today = referenceDate.Date;
+        var birthDate = dateOfBirth.Date;
+
+        if (birthDate > today)
+        {
+            return Result.ValidationFailure(
+                "Date of birth cannot be in the future.");
+        }
+
+        var age = today.Year - birthDate.Year;
+        if (birthDate.AddYears(age) > today)
+        {
+            age--;
+        }
+
+        if (age < minimumAllowedAge)
+        {
+            return Result.ValidationFailure(
+                $"Applicant does not meet the minimum age requirement for this license class. Minimum allowed age is {minimumAllowedAge}, but applicant is {age} years old.");
+        }
+
+        return Result.Success();
+    }
+
+    // =========================================================
     // RESULT
     // =========================================================
 

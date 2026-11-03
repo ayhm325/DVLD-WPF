@@ -1,4 +1,4 @@
-﻿using Application.DTOs.ApplicationDTO;
+using Application.DTOs.ApplicationDTO;
 using Domain.Entities;
 using Domain.Enums;
 
@@ -45,11 +45,12 @@ public static class ApplicationMapper
     public static ApplicationD ToEntity(
         CreateApplicationDto dto,
         decimal paidFees,
-        int createdByUserId)
+        int createdByUserId,
+        DateTime? applicationDate = null)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
-        var now = DateTime.UtcNow;
+        var now = applicationDate ?? DateTime.UtcNow;
 
         return new ApplicationD
         {

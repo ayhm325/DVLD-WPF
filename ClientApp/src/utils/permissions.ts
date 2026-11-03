@@ -27,6 +27,12 @@ export type PageId =
   | 'Person License History'
   | 'International Licenses'
   | 'Local Applications'
+  | 'Test Appointments'
+  | 'Appointment Details'
+  | 'Renew License'
+  | 'Replace License'
+  | 'Detain License'
+  | 'Detained Licenses'
   | 'Application Types'
   | 'License Classes'
   | 'Test Types'
@@ -66,6 +72,16 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
 
   // Local Driving License Applications: LocalDrivingLicenseApplicationsController [Authorize(Policy = "StaffOnly")]
   'Local Applications': ['Staff'],
+
+  // Test Appointments Standalone Management: TestAppointmentsController [Authorize(Policy = "StaffOnly")]
+  'Test Appointments': ['Staff'],
+  'Appointment Details': ['Staff'],
+
+  // License Operations: LicenseRenewalController, LicenseReplacementController, DetainedLicensesController [Authorize(Policy = "StaffOnly")]
+  'Renew License': ['Staff'],
+  'Replace License': ['Staff'],
+  'Detain License': ['Staff'],
+  'Detained Licenses': ['Staff'],
 
   // Application Types Settings: Viewable by Staff and Admin; modification restricted to Admin
   'Application Types': ['Admin', 'Staff'],

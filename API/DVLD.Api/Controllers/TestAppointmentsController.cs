@@ -1,4 +1,4 @@
-﻿using Application.DTOs.TestAppointmentDTO;
+using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
 using DVLD.Contracts.TestAppointment;
@@ -101,7 +101,7 @@ public sealed class TestAppointmentsController(
             await service.ScheduleAsync(
                 request.LocalDrivingLicenseApplicationId,
                 request.TestTypeId,
-                request.AppointmentDate);
+                Application.Validators.TestAppointmentValidator.ToFacilityTime(request.AppointmentDate));
 
         return result.IsSuccess
             ? NoContent()
@@ -205,7 +205,7 @@ public sealed class TestAppointmentsController(
                         request.LocalDrivingLicenseApplicationId,
 
                     AppointmentDate =
-                        request.AppointmentDate,
+                        Application.Validators.TestAppointmentValidator.ToFacilityTime(request.AppointmentDate),
 
                     RetakeTestApplicationID =
                         request.RetakeTestApplicationId
@@ -228,7 +228,7 @@ public sealed class TestAppointmentsController(
                 {
                     TestAppointmentID = id,
                     AppointmentDate =
-                        request.AppointmentDate
+                        Application.Validators.TestAppointmentValidator.ToFacilityTime(request.AppointmentDate)
                 });
 
         return result.IsSuccess
@@ -245,6 +245,39 @@ public sealed class TestAppointmentsController(
         return result.IsSuccess
             ? NoContent()
             : result.ToActionResult(this);
+    }
+
+    [HttpPost("{id:int}/cancel")]
+    [HttpPut("{id:int}/cancel")]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var result =
+            await service.CancelAsync(id);
+
+        return result.IsSuccess
+            ? NoContent()
+            : result.ToActionResult(this);
+    }
+
+    [HttpGet("attempts/{localAppId:int}/{testTypeId:int}")]
+    public async Task<IActionResult> GetAttemptStats(
+        int localAppId,
+        int testTypeId,
+        CancellationToken cancellationToken)
+    {
+        var stats = await service.GetAttemptStatsAsync(
+            localAppId,
+            testTypeId,
+            cancellationToken);
+
+        return Ok(new ExaminationAttemptStatsResponse(
+            stats.LocalDrivingLicenseApplicationId,
+            stats.TestTypeId,
+            stats.TotalAttempts,
+            stats.PassedAttempts,
+            stats.FailedAttempts,
+            stats.NoShowAttempts,
+            stats.NextTrialNumber));
     }
 
     private static TestAppointmentResponse MapToResponse(
@@ -292,7 +325,16 @@ public sealed class TestAppointmentsController(
                 dto.Status,
 
             AppointmentDateFormatted =
-                dto.AppointmentDateFormatted
+                dto.AppointmentDateFormatted,
+
+            CancelledAt =
+                dto.CancelledAt,
+
+            CancelledByUserId =
+                dto.CancelledByUserID,
+
+            NoShowDate =
+                dto.NoShowDate
         };
 
     private static ScheduleTestResponse
@@ -338,5 +380,41 @@ public sealed class TestAppointmentsController(
 
             Notes =
                 dto.Notes
+        };
+
+    [HttpGet("availability")]
+    public async Task<IActionResult> GetAvailability(
+        [FromQuery] int localAppId,
+        [FromQuery] int testTypeId,
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate)
+    {
+        var result = await service.GetAvailabilityAsync(
+            localAppId,
+            testTypeId,
+            startDate,
+            endDate);
+
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        return Ok(MapToAvailabilityResponse(result.Value!));
+    }
+
+    private static AppointmentAvailabilityResponse MapToAvailabilityResponse(
+        AppointmentAvailabilityDto dto) =>
+        new()
+        {
+            LocalAppId = dto.LocalAppId,
+            TestTypeId = dto.TestTypeId,
+            AvailableDays = dto.AvailableDays.Select(d => new AppointmentDayAvailabilityResponse
+            {
+                Date = d.Date,
+                Slots = d.Slots.Select(s => new AppointmentSlotResponse
+                {
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime
+                }).ToList()
+            }).ToList()
         };
 }

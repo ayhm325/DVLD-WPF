@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Domain.Enums;
@@ -224,6 +224,42 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
 
         _factory.TestAppointmentServiceMock.Verify(
             x => x.GetSchedulePreparationAsync(60, 1), Times.Once);
+    }
+    [Fact]
+    public async Task GetAttemptStats_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var response = await _client.GetAsync("/api/TestAppointments/attempts/5/1");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAttemptStats_WhenSuccessful_ReturnsMappedStats()
+    {
+        var stats = new Application.DTOs.TestAppointmentDTO.ExaminationAttemptStats(
+            LocalDrivingLicenseApplicationId: 5,
+            TestTypeId: 1,
+            TotalAttempts: 3,
+            PassedAttempts: 1,
+            FailedAttempts: 1,
+            NoShowAttempts: 1,
+            NextTrialNumber: 4);
+
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAttemptStatsAsync(5, 1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stats);
+
+        var response = await GetAsync("/api/TestAppointments/attempts/5/1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<ExaminationAttemptStatsResponse>();
+        Assert.NotNull(result);
+        Assert.Equal(5, result.LocalDrivingLicenseApplicationId);
+        Assert.Equal(1, result.TestTypeId);
+        Assert.Equal(3, result.TotalAttempts);
+        Assert.Equal(1, result.PassedAttempts);
+        Assert.Equal(1, result.FailedAttempts);
+        Assert.Equal(1, result.NoShowAttempts);
+        Assert.Equal(4, result.NextTrialNumber);
     }
 
     [Fact]
@@ -541,12 +577,16 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     [Theory]
     [InlineData("NotFound", "Appointment not found.", 404, "Resource not found")]
     [InlineData("Conflict", "Locked appointment cannot be deleted.", 409, "Conflict")]
+    [InlineData("Validation", "Appointments can only be cancelled or rescheduled at least 2 days before the scheduled date.", 400, "Validation error")]
     public async Task Delete_WhenServiceReturnsError_ReturnsProblemDetails(
         string type, string detail, int status, string title)
     {
-        var result = type == "NotFound"
-            ? Result.NotFound(detail)
-            : Result.Conflict(detail);
+        var result = type switch
+        {
+            "NotFound" => Result.NotFound(detail),
+            "Conflict" => Result.Conflict(detail),
+            _ => Result.ValidationFailure(detail)
+        };
 
         _factory.TestAppointmentServiceMock.Setup(x => x.DeleteAsync(140))
             .ReturnsAsync(result);
@@ -560,6 +600,372 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             x => x.DeleteAsync(140), Times.Once);
     }
 
+    [Fact]
+    public async Task Cancel_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var response = await _client.PutAsync("/api/TestAppointments/140/cancel", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        _factory.TestAppointmentServiceMock.Verify(
+            x => x.CancelAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Cancel_WhenSuccessful_ReturnsNoContent()
+    {
+        _factory.TestAppointmentServiceMock.Setup(x => x.CancelAsync(140))
+            .ReturnsAsync(Result.Success());
+
+        var response = await PutAsync("/api/TestAppointments/140/cancel");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        _factory.TestAppointmentServiceMock.Verify(
+            x => x.CancelAsync(140), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("NotFound", "Appointment not found.", 404, "Resource not found")]
+    [InlineData("Conflict", "Appointment has already been cancelled.", 409, "Conflict")]
+    [InlineData("ConflictLocked", "Appointment is already locked.", 409, "Conflict")]
+    [InlineData("Validation", "Appointments can only be cancelled or rescheduled at least 2 days before the scheduled date.", 400, "Validation error")]
+    public async Task Cancel_WhenServiceReturnsError_ReturnsProblemDetails(
+        string type, string detail, int status, string title)
+    {
+        var result = type switch
+        {
+            "NotFound" => Result.NotFound(detail),
+            "Validation" => Result.ValidationFailure(detail),
+            _ => Result.Conflict(detail)
+        };
+
+        _factory.TestAppointmentServiceMock.Setup(x => x.CancelAsync(140))
+            .ReturnsAsync(result);
+
+        var response = await PutAsync("/api/TestAppointments/140/cancel");
+
+        await AssertProblemDetailsAsync(
+            response, (HttpStatusCode)status, title, detail);
+
+        _factory.TestAppointmentServiceMock.Verify(
+            x => x.CancelAsync(140), Times.Once);
+    }
+
+
+    // =========================================================
+    // AVAILABILITY TESTS
+    // =========================================================
+
+    [Fact]
+    public async Task GetAvailability_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var response = await _client.GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        _factory.TestAppointmentServiceMock.Verify(
+            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAvailability_WithInvalidAuthentication_ReturnsUnauthorized()
+    {
+        var response = await GetWithInvalidAuthAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        _factory.TestAppointmentServiceMock.Verify(
+            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            Times.Never);
+    }
+
+    [Theory]
+    [InlineData("Admin")]
+    [InlineData("User")]
+    [InlineData("Driver")]
+    public async Task GetAvailability_WithNonStaffRole_ReturnsForbidden(string role)
+    {
+        var response = await GetWithRoleAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12",
+            role);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        _factory.TestAppointmentServiceMock.Verify(
+            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAvailability_WithStaffRole_WhenSuccessful_Returns200WithMappedAvailability()
+    {
+        var expectedDto = new AppointmentAvailabilityDto
+        {
+            LocalAppId = 10,
+            TestTypeId = 1,
+            AvailableDays =
+            [
+                new AppointmentDayAvailabilityDto
+                {
+                    Date = "2026-11-08",
+                    Slots =
+                    [
+                        new AppointmentSlotDto { StartTime = "08:00", EndTime = "08:40" },
+                        new AppointmentSlotDto { StartTime = "08:40", EndTime = "09:20" }
+                    ]
+                }
+            ]
+        };
+
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.Success(expectedDto));
+
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var responseDto = await response.Content.ReadFromJsonAsync<AppointmentAvailabilityResponse>();
+        Assert.NotNull(responseDto);
+        Assert.Equal(10, responseDto.LocalAppId);
+        Assert.Equal(1, responseDto.TestTypeId);
+        Assert.Single(responseDto.AvailableDays);
+        Assert.Equal("2026-11-08", responseDto.AvailableDays[0].Date);
+        Assert.Equal(2, responseDto.AvailableDays[0].Slots.Count);
+        Assert.Equal("08:00", responseDto.AvailableDays[0].Slots[0].StartTime);
+        Assert.Equal("08:40", responseDto.AvailableDays[0].Slots[0].EndTime);
+
+        _factory.TestAppointmentServiceMock.Verify(
+            x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            Times.Once);
+    }
+
+    [Theory]
+    [InlineData("testTypeId=1&startDate=2026-11-08&endDate=2026-11-12", "Invalid local driving license application ID.")]
+    [InlineData("localAppId=0&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12", "Invalid local driving license application ID.")]
+    [InlineData("localAppId=-3&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12", "Invalid local driving license application ID.")]
+    [InlineData("localAppId=10&startDate=2026-11-08&endDate=2026-11-12", "Test type is required.")]
+    [InlineData("localAppId=10&testTypeId=0&startDate=2026-11-08&endDate=2026-11-12", "Test type is required.")]
+    [InlineData("localAppId=10&testTypeId=99&startDate=2026-11-08&endDate=2026-11-12", "Invalid test type.")]
+    [InlineData("localAppId=10&testTypeId=1&endDate=2026-11-12", "Start date is required.")]
+    [InlineData("localAppId=10&testTypeId=1&startDate=2026-11-08", "End date is required.")]
+    [InlineData("localAppId=10&testTypeId=1&startDate=2026-11-15&endDate=2026-11-10", "Start date cannot be later than end date.")]
+    public async Task GetAvailability_ValidationFailures_ReturnsBadRequestProblemDetails(
+        string queryString, string expectedDetail)
+    {
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromValidationFailure(expectedDetail));
+
+        var response = await GetAsync($"/api/TestAppointments/availability?{queryString}");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.BadRequest,
+            "Validation error",
+            expectedDetail);
+    }
+
+    [Fact]
+    public async Task GetAvailability_InvalidDateStringFormat_ReturnsBadRequest()
+    {
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=invalid-date&endDate=2026-11-12");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAvailability_WhenApplicationNotFound_ReturnsNotFoundProblemDetails()
+    {
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(999, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromNotFound("Local driving license application not found."));
+
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=999&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.NotFound,
+            "Resource not found",
+            "Local driving license application not found.");
+    }
+
+    [Fact]
+    public async Task GetAvailability_WhenWorkflowIneligible_ReturnsConflictProblemDetails()
+    {
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(10, 2, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromConflict(
+                "The Written test cannot be scheduled yet. The next required test is Theory."));
+
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=2&startDate=2026-11-08&endDate=2026-11-12");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.Conflict,
+            "Conflict",
+            "The Written test cannot be scheduled yet. The next required test is Theory.");
+    }
+
+    [Fact]
+    public async Task GetAvailability_WhenAppointmentAlreadyScheduled_ReturnsConflictProblemDetails()
+    {
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromConflict(
+                "An appointment already exists for this test."));
+
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.Conflict,
+            "Conflict",
+            "An appointment already exists for this test.");
+    }
+
+    [Fact]
+    public async Task GetAvailability_WhenServiceFails_Returns500ProblemDetails()
+    {
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromFailure("Query execution timeout."));
+
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
+    }
+
+    [Fact]
+    public async Task GetAvailability_WhenEmptyAvailability_Returns200WithEmptyAvailableDaysCollection()
+    {
+        var emptyDto = new AppointmentAvailabilityDto
+        {
+            LocalAppId = 10,
+            TestTypeId = 1,
+            AvailableDays = []
+        };
+
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.Success(emptyDto));
+
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var rawJson = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(rawJson);
+        var root = doc.RootElement;
+
+        Assert.True(root.TryGetProperty("availableDays", out var daysElement));
+        Assert.Equal(JsonValueKind.Array, daysElement.ValueKind);
+        Assert.Equal(0, daysElement.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task GetAvailability_ResponseMatchesCamelCaseContractAndHidesSensitiveData()
+    {
+        var sampleDto = new AppointmentAvailabilityDto
+        {
+            LocalAppId = 10,
+            TestTypeId = 1,
+            AvailableDays =
+            [
+                new AppointmentDayAvailabilityDto
+                {
+                    Date = "2026-11-08",
+                    Slots =
+                    [
+                        new AppointmentSlotDto { StartTime = "08:00", EndTime = "08:40" }
+                    ]
+                }
+            ]
+        };
+
+        _factory.TestAppointmentServiceMock
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(Result<AppointmentAvailabilityDto>.Success(sampleDto));
+
+        var response = await GetAsync(
+            "/api/TestAppointments/availability?localAppId=10&testTypeId=1&startDate=2026-11-08&endDate=2026-11-12");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var rawJson = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(rawJson);
+        var root = doc.RootElement;
+
+        // Verify exact camelCase contract
+        Assert.True(root.TryGetProperty("localAppId", out var localAppIdProp));
+        Assert.Equal(10, localAppIdProp.GetInt32());
+        Assert.False(root.TryGetProperty("LocalAppId", out _));
+
+        Assert.True(root.TryGetProperty("testTypeId", out var testTypeIdProp));
+        Assert.Equal(1, testTypeIdProp.GetInt32());
+        Assert.False(root.TryGetProperty("TestTypeId", out _));
+
+        Assert.True(root.TryGetProperty("availableDays", out var daysProp));
+        Assert.False(root.TryGetProperty("AvailableDays", out _));
+        Assert.Equal(1, daysProp.GetArrayLength());
+
+        var firstDay = daysProp[0];
+        Assert.True(firstDay.TryGetProperty("date", out var dateProp));
+        Assert.Equal("2026-11-08", dateProp.GetString());
+        Assert.False(firstDay.TryGetProperty("Date", out _));
+
+        Assert.True(firstDay.TryGetProperty("slots", out var slotsProp));
+        Assert.False(firstDay.TryGetProperty("Slots", out _));
+        Assert.Equal(1, slotsProp.GetArrayLength());
+
+        var firstSlot = slotsProp[0];
+        Assert.True(firstSlot.TryGetProperty("startTime", out var startProp));
+        Assert.Equal("08:00", startProp.GetString());
+        Assert.False(firstSlot.TryGetProperty("StartTime", out _));
+
+        Assert.True(firstSlot.TryGetProperty("endTime", out var endProp));
+        Assert.Equal("08:40", endProp.GetString());
+        Assert.False(firstSlot.TryGetProperty("EndTime", out _));
+
+        // Security check: Verify NO personal or applicant information is leaked
+        Assert.False(root.TryGetProperty("fullName", out _));
+        Assert.False(root.TryGetProperty("personId", out _));
+        Assert.False(root.TryGetProperty("applicantPersonId", out _));
+        Assert.False(root.TryGetProperty("nationalNo", out _));
+        Assert.False(root.TryGetProperty("phone", out _));
+        Assert.False(root.TryGetProperty("email", out _));
+        Assert.False(root.TryGetProperty("address", out _));
+    }
+
+
+    private Task<HttpResponseMessage> GetWithRoleAsync(string url, string role)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("X-Test-User-Id", "1");
+        request.Headers.Add("X-Test-Username", "testuser");
+        request.Headers.Add("X-Test-FullName", "Test User");
+        request.Headers.Add("X-Test-Role", role);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> GetWithInvalidAuthAsync(string url)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("X-Test-User-Id", "invalid-id");
+        return _client.SendAsync(request);
+    }
+
     private Task<HttpResponseMessage> GetAsync(string url) =>
         SendAsync(HttpMethod.Get, url);
 
@@ -571,6 +977,9 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
 
     private Task<HttpResponseMessage> PutAsync(string url, object body) =>
         SendAsync(HttpMethod.Put, url, body);
+
+    private Task<HttpResponseMessage> PutAsync(string url) =>
+        SendAsync(HttpMethod.Put, url);
 
     private async Task<HttpResponseMessage> SendAsync(
         HttpMethod method, string url, object? body = null)

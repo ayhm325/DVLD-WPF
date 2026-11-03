@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
@@ -100,9 +100,12 @@ public sealed class TestAppointmentService(
         if (entity is null)
             return Result<ScheduleTestDto>.FromNotFound("Appointment data not found.");
 
-        var trial = await GetTrialCountAsync(
+        var priorAttempts = await _repository.GetTrialCountAsync(
             entity.LocalDrivingLicenseApplicationID,
             entity.TestTypeID);
+
+        var isRecordedAttempt = entity.Status is AppointmentStatus.Completed or AppointmentStatus.NoShow || entity.Test is not null;
+        var trial = isRecordedAttempt ? Math.Max(1, priorAttempts) : priorAttempts + 1;
 
         return Result<ScheduleTestDto>.Success(
             TestAppointmentMapper.ToScheduleDto(entity, trial));
@@ -112,13 +115,13 @@ public sealed class TestAppointmentService(
         int localAppId,
         int testTypeId)
     {
-        var validation = TestAppointmentValidator.ValidateSchedule(
-            localAppId,
-            testTypeId,
-            DateTime.Now.AddMinutes(1));
+        var appValidation = TestAppointmentValidator.ValidateApplicationId(localAppId);
+        if (appValidation.IsFailure)
+            return Result<ScheduleTestDto>.FromValidationFailure(appValidation.Error);
 
-        if (validation.IsFailure)
-            return Result<ScheduleTestDto>.FromValidationFailure(validation.Error);
+        var typeValidation = TestAppointmentValidator.ValidateTestTypeId(testTypeId);
+        if (typeValidation.IsFailure)
+            return Result<ScheduleTestDto>.FromValidationFailure(typeValidation.Error);
 
         var localResult =
             await _localApplicationService
@@ -204,17 +207,39 @@ public sealed class TestAppointmentService(
                 return Result.Conflict(
                     "An appointment already exists for this test.");
 
-            if (await _repository.HasLocalApplicationConflictAsync(
-                    dto.LocalDrivingLicenseApplicationID,
-                    dto.AppointmentDate))
-                return Result.Conflict(
-                    "This application already has an appointment at this date and time.");
+            var applicantPersonId = await _repository.GetApplicantPersonIdByLocalAppIdAsync(
+                dto.LocalDrivingLicenseApplicationID);
 
-            if (await _repository.HasUserConflictAsync(
-                    _currentUserService.UserId,
+            if (!applicantPersonId.HasValue)
+            {
+                var localApp = await _localApplicationService.GetLocalDrivingLicenseApplicationByIdAsync(
+                    dto.LocalDrivingLicenseApplicationID);
+                if (localApp.IsSuccess && localApp.Value is not null)
+                {
+                    applicantPersonId = localApp.Value.ApplicantPersonID;
+                }
+            }
+
+            if (!applicantPersonId.HasValue)
+                return Result.NotFound("Applicant person not found.");
+
+            if (!await _repository.AcquireSchedulingLocksAsync(
+                    applicantPersonId.Value,
+                    dto.TestTypeID,
+                    dto.AppointmentDate))
+                return Result.Conflict("Unable to acquire scheduling lock for the selected slot. Please try again.");
+
+            if (await _repository.IsSlotOccupiedAsync(
+                    dto.TestTypeID,
                     dto.AppointmentDate))
                 return Result.Conflict(
-                    "The current user already has an appointment at this date and time.");
+                    "This slot is already booked for this test type.");
+
+            if (await _repository.HasApplicantSameDayConflictAsync(
+                    applicantPersonId.Value,
+                    dto.AppointmentDate))
+                return Result.Conflict(
+                    "The applicant already has an appointment or test scheduled on this calendar day.");
 
             var entity = TestAppointmentMapper.ToEntity(
                 dto,
@@ -274,17 +299,36 @@ public sealed class TestAppointmentService(
                 return Result<int>.FromConflict(
                     "An appointment already exists for this test.");
 
-            if (await _repository.HasLocalApplicationConflictAsync(
-                    localAppId,
-                    appointmentDate))
-                return Result<int>.FromConflict(
-                    "This application already has an appointment at this date and time.");
+            var applicantPersonId = await _repository.GetApplicantPersonIdByLocalAppIdAsync(localAppId);
+            if (!applicantPersonId.HasValue)
+            {
+                var localApp = await _localApplicationService.GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
+                if (localApp.IsSuccess && localApp.Value is not null)
+                {
+                    applicantPersonId = localApp.Value.ApplicantPersonID;
+                }
+            }
 
-            if (await _repository.HasUserConflictAsync(
-                    _currentUserService.UserId,
+            if (!applicantPersonId.HasValue)
+                return Result<int>.FromNotFound("Applicant person not found.");
+
+            if (!await _repository.AcquireSchedulingLocksAsync(
+                    applicantPersonId.Value,
+                    testTypeId,
+                    appointmentDate))
+                return Result<int>.FromConflict("Unable to acquire scheduling lock for the selected slot. Please try again.");
+
+            if (await _repository.IsSlotOccupiedAsync(
+                    testTypeId,
                     appointmentDate))
                 return Result<int>.FromConflict(
-                    "The current user already has an appointment at this date and time.");
+                    "This slot is already booked for this test type.");
+
+            if (await _repository.HasApplicantSameDayConflictAsync(
+                    applicantPersonId.Value,
+                    appointmentDate))
+                return Result<int>.FromConflict(
+                    "The applicant already has an appointment or test scheduled on this calendar day.");
 
             var trial = await _repository.GetTrialCountAsync(
                 localAppId,
@@ -365,13 +409,25 @@ public sealed class TestAppointmentService(
             if (entity is null)
                 return Result.NotFound("Appointment not found.");
 
-            if (entity.CreatedByUserID != _currentUserService.UserId)
-                return Result.Forbidden(
-                    "You are not allowed to modify this appointment.");
+            if (entity.Status == AppointmentStatus.Cancelled)
+                return Result.Conflict("Cannot modify a cancelled appointment.");
+
+            if (entity.Status == AppointmentStatus.Completed || entity.Test is not null)
+                return Result.Conflict("Cannot modify a completed appointment.");
+
+            if (entity.Status == AppointmentStatus.NoShow)
+                return Result.Conflict("Cannot modify a no-show appointment.");
+
+            if (entity.Status == null)
+                return Result.Conflict("Appointment has an unresolved lifecycle status and cannot be modified.");
 
             if (entity.IsLocked)
                 return Result.Conflict(
                     "Cannot modify a locked appointment.");
+
+            var cutoff = TestAppointmentValidator.ValidateModificationOrCancellationCutoff(entity.AppointmentDate);
+            if (cutoff.IsFailure)
+                return cutoff;
 
             if (entity.AppointmentDate == dto.AppointmentDate)
             {
@@ -386,19 +442,40 @@ public sealed class TestAppointmentService(
             if (workflow.IsFailure)
                 return workflow;
 
-            if (await _repository.HasLocalApplicationConflictAsync(
-                    entity.LocalDrivingLicenseApplicationID,
-                    dto.AppointmentDate,
-                    entity.TestAppointmentID))
-                return Result.Conflict(
-                    "This application already has another appointment at this date and time.");
+            var applicantPersonId = await _repository.GetApplicantPersonIdByLocalAppIdAsync(
+                entity.LocalDrivingLicenseApplicationID);
+            if (!applicantPersonId.HasValue)
+            {
+                var localApp = await _localApplicationService.GetLocalDrivingLicenseApplicationByIdAsync(
+                    entity.LocalDrivingLicenseApplicationID);
+                if (localApp.IsSuccess && localApp.Value is not null)
+                {
+                    applicantPersonId = localApp.Value.ApplicantPersonID;
+                }
+            }
 
-            if (await _repository.HasUserConflictAsync(
-                    entity.CreatedByUserID,
+            if (!applicantPersonId.HasValue)
+                return Result.NotFound("Applicant person not found.");
+
+            if (!await _repository.AcquireSchedulingLocksAsync(
+                    applicantPersonId.Value,
+                    entity.TestTypeID,
+                    dto.AppointmentDate))
+                return Result.Conflict("Unable to acquire scheduling lock for the selected slot. Please try again.");
+
+            if (await _repository.IsSlotOccupiedAsync(
+                    entity.TestTypeID,
                     dto.AppointmentDate,
                     entity.TestAppointmentID))
                 return Result.Conflict(
-                    "The current user already has another appointment at this date and time.");
+                    "This slot is already booked for this test type.");
+
+            if (await _repository.HasApplicantSameDayConflictAsync(
+                    applicantPersonId.Value,
+                    dto.AppointmentDate,
+                    entity.TestAppointmentID))
+                return Result.Conflict(
+                    "The applicant already has an appointment or test scheduled on this calendar day.");
 
             entity.AppointmentDate = dto.AppointmentDate;
 
@@ -410,7 +487,7 @@ public sealed class TestAppointmentService(
         });
     }
 
-    public async Task<Result> DeleteAsync(int id)
+    public async Task<Result> CancelAsync(int id)
     {
         var validation = TestAppointmentValidator.ValidateId(id);
         if (validation.IsFailure)
@@ -419,25 +496,47 @@ public sealed class TestAppointmentService(
         if (!IsAuthenticated())
             return Result.Forbidden("You must be logged in first.");
 
-        var entity = await _repository.GetForUpdateAsync(id);
+        return await ExecuteTransactionAsync(async transaction =>
+        {
+            var entity = await _repository.GetForUpdateAsync(id);
 
-        if (entity is null)
-            return Result.NotFound("Appointment not found.");
+            if (entity is null)
+                return Result.NotFound("Appointment not found.");
 
-        if (entity.CreatedByUserID != _currentUserService.UserId)
-            return Result.Forbidden(
-                "You are not allowed to delete this appointment.");
+            if (entity.Status == AppointmentStatus.Cancelled)
+                return Result.Conflict("Appointment is already cancelled.");
 
-        if (entity.IsLocked)
-            return Result.Conflict(
-                "Cannot delete a locked appointment.");
+            if (entity.Status == AppointmentStatus.Completed || entity.Test is not null)
+                return Result.Conflict("Cannot cancel a completed appointment.");
 
-        _repository.Delete(entity);
+            if (entity.Status == AppointmentStatus.NoShow)
+                return Result.Conflict("Cannot cancel a no-show appointment.");
 
-        return await _unitOfWork.SaveChangesAsync() > 0
-            ? Result.Success()
-            : Result.Failure("Failed to delete appointment.");
+            if (entity.Status == null)
+                return Result.Conflict("Appointment has an unresolved lifecycle status and cannot be cancelled.");
+
+            if (entity.IsLocked)
+                return Result.Conflict("Cannot cancel a locked appointment.");
+
+            var cutoff = TestAppointmentValidator.ValidateModificationOrCancellationCutoff(entity.AppointmentDate);
+            if (cutoff.IsFailure)
+                return cutoff;
+
+            entity.Status = AppointmentStatus.Cancelled;
+            entity.CancelledAt = TestAppointmentValidator.GetCurrentJordanTime();
+            entity.CancelledByUserID = _currentUserService.UserId;
+            entity.IsLocked = true;
+
+            if (await _unitOfWork.SaveChangesAsync() <= 0)
+                return Result.Failure("Failed to cancel appointment.");
+
+            await transaction.CommitAsync();
+            return Result.Success();
+        });
     }
+
+    public Task<Result> DeleteAsync(int id) => CancelAsync(id);
+
 
     public async Task<int> GetTrialCountAsync(int localAppId, int testTypeId) =>
         TestAppointmentValidator.ValidateApplicationId(localAppId).IsFailure ||
@@ -468,5 +567,152 @@ public sealed class TestAppointmentService(
         Func<IUnitOfWorkTransaction, Task<T>> operation) =>
         await _unitOfWork.ExecuteInTransactionAsync(
             operation,
-            IsolationLevel.Serializable);
+            IsolationLevel.ReadCommitted);
+
+    public async Task<Result<AppointmentAvailabilityDto>> GetAvailabilityAsync(
+        int localAppId,
+        int testTypeId,
+        DateTime startDate,
+        DateTime endDate)
+    {
+        var validation = TestAppointmentValidator.ValidateAvailabilityRequest(
+            localAppId,
+            testTypeId,
+            startDate,
+            endDate);
+
+        if (validation.IsFailure)
+            return Result<AppointmentAvailabilityDto>.FromValidationFailure(validation.Error);
+
+        var workflow = await _workflowService.CanScheduleTestAsync(
+            localAppId,
+            (TestTypeEnum)testTypeId);
+
+        if (workflow.IsFailure)
+            return Result<AppointmentAvailabilityDto>.FromResult(workflow);
+
+        if (await _repository.IsAppointmentAlreadyScheduledAsync(
+                localAppId,
+                testTypeId))
+            return Result<AppointmentAvailabilityDto>.FromConflict(
+                "An appointment already exists for this test.");
+
+        var applicantPersonId = await _repository.GetApplicantPersonIdByLocalAppIdAsync(
+            localAppId);
+
+        if (!applicantPersonId.HasValue)
+        {
+            var localApp = await _localApplicationService.GetLocalDrivingLicenseApplicationByIdAsync(
+                localAppId);
+            if (localApp.IsSuccess && localApp.Value is not null)
+            {
+                applicantPersonId = localApp.Value.ApplicantPersonID;
+            }
+        }
+
+        if (!applicantPersonId.HasValue)
+            return Result<AppointmentAvailabilityDto>.FromNotFound("Applicant person not found.");
+
+        var currentJordanTime = TestAppointmentValidator.GetCurrentJordanTime();
+        var currentJordanDate = currentJordanTime.Date;
+
+        var startFacilityDate = TestAppointmentValidator.ToFacilityTime(startDate).Date;
+        var endFacilityDate = TestAppointmentValidator.ToFacilityTime(endDate).Date;
+
+        var minimumBookingDate = currentJordanDate.AddDays(2);
+        if (endFacilityDate < minimumBookingDate)
+        {
+            return Result<AppointmentAvailabilityDto>.Success(new AppointmentAvailabilityDto
+            {
+                LocalAppId = localAppId,
+                TestTypeId = testTypeId,
+                AvailableDays = []
+            });
+        }
+
+        var effectiveStartDate = startFacilityDate < minimumBookingDate ? minimumBookingDate : startFacilityDate;
+        var rangeStart = effectiveStartDate;
+        var rangeEnd = endFacilityDate.AddDays(1);
+
+        var (occupiedSlots, applicantDates, lastTestDate) = await _repository.GetAvailabilityDataAsync(
+            testTypeId,
+            applicantPersonId.Value,
+            localAppId,
+            rangeStart,
+            rangeEnd);
+
+        DateTime? earliestEligibleDate = null;
+        if (lastTestDate.HasValue)
+        {
+            earliestEligibleDate = GetFirstWorkingDayAfter(lastTestDate.Value);
+        }
+
+        var availableDays = new List<AppointmentDayAvailabilityDto>();
+
+        for (var date = effectiveStartDate; date <= endFacilityDate; date = date.AddDays(1))
+        {
+            if (date < minimumBookingDate)
+                continue;
+
+            if (date.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
+                continue;
+
+            if (earliestEligibleDate.HasValue && date < earliestEligibleDate.Value)
+                continue;
+
+            if (applicantDates.Contains(date))
+                continue;
+
+            var daySlots = new List<AppointmentSlotDto>();
+
+            foreach (var slotTime in TestAppointmentValidator.ValidSlotTimes)
+            {
+                var slotDateTime = date.Add(slotTime);
+
+                if (slotDateTime <= currentJordanTime)
+                    continue;
+
+                if (occupiedSlots.Contains(slotDateTime))
+                    continue;
+
+                daySlots.Add(new AppointmentSlotDto
+                {
+                    StartTime = slotTime.ToString(@"hh\:mm"),
+                    EndTime = (slotTime + TimeSpan.FromMinutes(40)).ToString(@"hh\:mm")
+                });
+            }
+
+            if (daySlots.Count > 0)
+            {
+                availableDays.Add(new AppointmentDayAvailabilityDto
+                {
+                    Date = date.ToString("yyyy-MM-dd"),
+                    Slots = daySlots
+                });
+            }
+        }
+
+        return Result<AppointmentAvailabilityDto>.Success(new AppointmentAvailabilityDto
+        {
+            LocalAppId = localAppId,
+            TestTypeId = testTypeId,
+            AvailableDays = availableDays
+        });
+    }
+
+    private static DateTime GetFirstWorkingDayAfter(DateTime date)
+    {
+        var next = date.Date.AddDays(1);
+        while (next.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
+        {
+            next = next.AddDays(1);
+        }
+        return next;
+    }
+
+    public Task<Application.DTOs.TestAppointmentDTO.ExaminationAttemptStats> GetAttemptStatsAsync(
+        int localAppId,
+        int testTypeId,
+        CancellationToken cancellationToken = default) =>
+        _repository.GetAttemptStatsAsync(localAppId, testTypeId, cancellationToken);
 }

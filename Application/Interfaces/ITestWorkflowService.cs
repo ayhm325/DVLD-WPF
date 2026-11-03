@@ -1,5 +1,6 @@
 ﻿using Application.Common.Results;
 using Domain.Enums;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
@@ -14,6 +15,8 @@ public interface ITestWorkflowService
 
     Task<Result> CanTakeTestAsync(
         int testAppointmentId);
+
+    Task<Result> CanTakeTestAsync(TestAppointment appointment);
 
     Task<bool> HasPassedAllTestsAsync(
         int localAppId);

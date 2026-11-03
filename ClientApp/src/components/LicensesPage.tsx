@@ -24,10 +24,15 @@ import {
   IdCard as LicenseIcon,
   Check as CheckIcon,
   Clock as ClockIcon,
+  RotateCw,
+  Copy,
+  Lock,
 } from 'lucide-react'
+import { Button } from './ui'
 
 type LicensesPageProps = {
   accessToken: string
+  onNavigate?: (page: string) => void
 }
 
 type SearchBy = 'all' | 'licenseId' | 'appId' | 'driver' | 'class'
@@ -101,6 +106,7 @@ const columns: DataTableColumn<License>[] = [
 
 export default function LicensesPage({
   accessToken,
+  onNavigate,
 }: LicensesPageProps) {
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] = useState<License | null>(null)
   const fetcher = useCallback(() => getLicenses(accessToken), [accessToken])
@@ -220,13 +226,50 @@ export default function LicensesPage({
             <p>View and search issued driving licenses.</p>
           </div>
 
-          <span className="record-count">
-            {loading
-              ? 'Loading...'
-              : filteredLicenses.length === licenses.length
-                ? `${licenses.length} Licenses`
-                : `${filteredLicenses.length} of ${licenses.length} Licenses`}
-          </span>
+          <div className="flex items-center gap-3">
+            {onNavigate && (
+              <div className="hidden sm:flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('Renew License')}
+                  className="h-8 text-xs font-semibold gap-1.5 bg-[#081326] border-[#1b2f52] text-cyan-300 hover:text-white cursor-pointer"
+                >
+                  <RotateCw className="size-3.5" />
+                  <span>Renew</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('Replace License')}
+                  className="h-8 text-xs font-semibold gap-1.5 bg-[#081326] border-[#1b2f52] text-purple-300 hover:text-white cursor-pointer"
+                >
+                  <Copy className="size-3.5" />
+                  <span>Replace</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('Detained Licenses')}
+                  className="h-8 text-xs font-semibold gap-1.5 bg-[#081326] border-[#1b2f52] text-rose-300 hover:text-white cursor-pointer"
+                >
+                  <Lock className="size-3.5" />
+                  <span>Detained</span>
+                </Button>
+              </div>
+            )}
+
+            <span className="record-count">
+              {loading
+                ? 'Loading...'
+                : filteredLicenses.length === licenses.length
+                  ? `${licenses.length} Licenses`
+                  : `${filteredLicenses.length} of ${licenses.length} Licenses`}
+            </span>
+          </div>
         </div>
 
         <TableToolbar

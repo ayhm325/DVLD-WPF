@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 
 namespace Application.Interfaces;
@@ -30,6 +30,8 @@ public interface ITestAppointmentService
 
     Task<Result> UpdateAsync(UpdateTestAppointmentDto dto);
 
+    Task<Result> CancelAsync(int id);
+
     Task<Result> DeleteAsync(int id);
 
     Task<bool> IsAppointmentAlreadyScheduledAsync(
@@ -40,4 +42,15 @@ public interface ITestAppointmentService
         int localAppId,
         int testTypeId,
         DateTime appointmentDate);
+
+    Task<Result<AppointmentAvailabilityDto>> GetAvailabilityAsync(
+        int localAppId,
+        int testTypeId,
+        DateTime startDate,
+        DateTime endDate);
+
+    Task<ExaminationAttemptStats> GetAttemptStatsAsync(
+        int localAppId,
+        int testTypeId,
+        CancellationToken cancellationToken = default);
 }

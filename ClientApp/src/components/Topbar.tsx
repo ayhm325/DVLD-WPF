@@ -43,6 +43,8 @@ function getBreadcrumbs(page: string): { parent?: string; current: string } {
       return { parent: 'Management', current: 'Licenses' }
     case 'Local Applications':
       return { parent: 'Applications', current: 'Local Applications' }
+    case 'Test Appointments':
+      return { parent: 'Examinations', current: 'Test Appointments' }
     case 'International Licenses':
       return { parent: 'Applications', current: 'International Licenses' }
     case 'Issue International License':

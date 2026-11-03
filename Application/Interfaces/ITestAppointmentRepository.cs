@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Domain.Enums;
 
 namespace Application.Interfaces;
@@ -37,6 +37,26 @@ public interface ITestAppointmentRepository
         DateTime dateTime,
         int? excludeAppointmentId = null);
 
+    Task<bool> IsSlotOccupiedAsync(
+        int testTypeId,
+        DateTime appointmentDate,
+        int? excludeAppointmentId = null);
+
+    Task<bool> HasApplicantSameDayConflictAsync(
+        int applicantPersonId,
+        DateTime appointmentDate,
+        int? excludeAppointmentId = null);
+
+    Task<int?> GetApplicantPersonIdByLocalAppIdAsync(
+        int localAppId);
+
+    Task<bool> AcquireSchedulingLocksAsync(
+        int applicantPersonId,
+        int testTypeId,
+        DateTime appointmentDate,
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default);
+
     Task<bool> IsAppointmentAlreadyScheduledAsync(
         int localAppId,
         int testTypeId);
@@ -53,5 +73,32 @@ public interface ITestAppointmentRepository
     void Delete(TestAppointment appointment);
 
     Task<bool> LockLocalApplicationForSchedulingAsync(
-    int localAppId);
+        int localAppId);
+
+    Task<(HashSet<DateTime> OccupiedSlots, HashSet<DateTime> ApplicantAppointmentDates, DateTime? LastTestDate)>
+        GetAvailabilityDataAsync(
+            int testTypeId,
+            int applicantPersonId,
+            int localAppId,
+            DateTime rangeStart,
+            DateTime rangeEnd);
+
+    Task<List<int>> GetPendingNoShowAppointmentIdsAsync(
+        DateTime cutoffJordanTime,
+        int batchSize,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> AcquireAppointmentLockAsync(
+        int appointmentId,
+        int timeoutMs = 5000,
+        CancellationToken cancellationToken = default);
+
+    Task<Application.DTOs.TestAppointmentDTO.ExaminationAttemptStats> GetAttemptStatsAsync(
+        int localAppId,
+        int testTypeId,
+        CancellationToken cancellationToken = default);
+
+    Task<List<TestAppointment>> GetActiveScheduledByLocalAppIdForUpdateAsync(
+        int localAppId,
+        CancellationToken cancellationToken = default);
 }

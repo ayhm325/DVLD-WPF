@@ -13,6 +13,8 @@ import {
   Gauge,
   ShieldCheck,
   CalendarCheck,
+  CalendarDays,
+  Clock,
   Compass,
   FileCheck,
   FileText,
@@ -27,6 +29,10 @@ import {
   FileSignature,
   User as UserIcon,
   UserPlus,
+  RotateCcw,
+  Copy,
+  Lock,
+  ShieldAlert,
 } from 'lucide-react'
 
 export type FloatingIconColor = 'blue' | 'emerald' | 'purple' | 'amber' | 'cyan' | 'rose'
@@ -228,6 +234,56 @@ export const PAGE_HERO_CONFIG: Record<string, PageHeroConfigItem> = {
       },
     ],
   },
+  'Test Appointments': {
+    eyebrow: 'EXAMINATION OPERATIONS',
+    title: 'Test',
+    highlight: 'Appointments',
+    description: 'Track, schedule, and review driving examination appointments across all lifecycle states in Jordan facility time.',
+    illustrationTag: 'TEST-APPT',
+    illustrationIcon: <CalendarDays className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Clock className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <ClipboardCheck className="size-6" />,
+        color: 'emerald',
+        position: 'top-right',
+      },
+      {
+        icon: <CalendarDays className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Appointment Details': {
+    eyebrow: 'EXAMINATION OPERATIONS / AUDIT',
+    title: 'Appointment',
+    highlight: 'Details',
+    description: 'Comprehensive driving examination record and lifecycle audit in Jordan facility time.',
+    illustrationTag: 'APPT-AUDIT',
+    illustrationIcon: <CalendarDays className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Clock className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <Award className="size-6" />,
+        color: 'emerald',
+        position: 'top-right',
+      },
+      {
+        icon: <CalendarDays className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
   'International Licenses': {
     eyebrow: 'INTERNATIONAL LICENSING',
     title: 'International License',
@@ -374,6 +430,106 @@ export const PAGE_HERO_CONFIG: Record<string, PageHeroConfigItem> = {
       {
         icon: <FileSignature className="size-6" />,
         color: 'purple',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Renew License': {
+    eyebrow: 'LICENSE LIFECYCLE',
+    title: 'Renew Driving',
+    highlight: 'License',
+    description: 'Renew an expired driving license according to Jordan facility time rules and official class validity lengths.',
+    illustrationTag: 'DL-RENEWAL',
+    illustrationIcon: <RotateCcw className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <RotateCcw className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <IdCard className="size-6" />,
+        color: 'blue',
+        position: 'top-right',
+      },
+      {
+        icon: <CalendarCheck className="size-6" />,
+        color: 'emerald',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Replace License': {
+    eyebrow: 'LICENSE LIFECYCLE',
+    title: 'Replace Driving',
+    highlight: 'License',
+    description: 'Issue a replacement driving license for lost or damaged credentials with original expiration date retention.',
+    illustrationTag: 'DL-REPLACE',
+    illustrationIcon: <Copy className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Copy className="size-7" />,
+        color: 'purple',
+        position: 'left',
+      },
+      {
+        icon: <IdCard className="size-6" />,
+        color: 'cyan',
+        position: 'top-right',
+      },
+      {
+        icon: <ShieldCheck className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Detain License': {
+    eyebrow: 'ENFORCEMENT & COMPLIANCE',
+    title: 'Detain Driving',
+    highlight: 'License',
+    description: 'Record an official license detention, set fine fees, and immediately transition the license to inactive state.',
+    illustrationTag: 'DL-DETAIN',
+    illustrationIcon: <ShieldAlert className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <ShieldAlert className="size-7" />,
+        color: 'rose',
+        position: 'left',
+      },
+      {
+        icon: <Lock className="size-6" />,
+        color: 'amber',
+        position: 'top-right',
+      },
+      {
+        icon: <IdCard className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Detained Licenses': {
+    eyebrow: 'COMPLIANCE & RECOVERY',
+    title: 'Detained Licenses',
+    highlight: 'Registry',
+    description: 'Manage active and released detained driving licenses, monitor outstanding fine fees, and process license releases.',
+    illustrationTag: 'DL-DETAINED-LIST',
+    illustrationIcon: <Lock className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Lock className="size-7" />,
+        color: 'amber',
+        position: 'left',
+      },
+      {
+        icon: <ShieldAlert className="size-6" />,
+        color: 'rose',
+        position: 'top-right',
+      },
+      {
+        icon: <CheckCircle2 className="size-6" />,
+        color: 'emerald',
         position: 'bottom-right',
       },
     ],

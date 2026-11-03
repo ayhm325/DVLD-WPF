@@ -97,7 +97,7 @@ public sealed class SqlServerApiWebApplicationFactory
                 baseConnectionString);
 
         _databaseName =
-            $"DVLD_ApiIntegrationTests_{Guid.NewGuid():N}";
+            $"DVLD_IntegrationTests_Api_{Guid.NewGuid():N}";
 
         builder.InitialCatalog =
             _databaseName;

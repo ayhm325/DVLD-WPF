@@ -16,7 +16,8 @@ public sealed class LicenseRenewalService(
     IApplicationTypeService applicationTypeService,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork,
-    ILogger<LicenseRenewalService> logger) : ILicenseRenewalService
+    ILogger<LicenseRenewalService> logger,
+    IJordanClock clock) : ILicenseRenewalService
 {
     private const int RenewalApplicationTypeId = 2;
 
@@ -32,6 +33,8 @@ public sealed class LicenseRenewalService(
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     private readonly ILogger<LicenseRenewalService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<int>> RenewLicenseAsync(int oldLicenseId, string? notes)
     {
@@ -71,9 +74,11 @@ public sealed class LicenseRenewalService(
                         Result<int>.FromConflict(
                             "Cannot renew an inactive license."));
 
-                var now = DateTime.UtcNow;
+                var now = _clock.Now;
+                var today = now.Date;
+                var expirationDate = oldLicense.ExpirationDate.Date;
 
-                if (oldLicense.ExpirationDate > now)
+                if (today <= expirationDate)
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromConflict(

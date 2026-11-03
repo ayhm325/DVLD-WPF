@@ -1,4 +1,4 @@
-﻿using Domain.Enums;
+using Domain.Enums;
 
 namespace Application.DTOs.TestAppointmentDTO;
 
@@ -26,6 +26,14 @@ public class TestAppointmentDto
 
     public int? RetakeTestApplicationID { get; set; }
 
+    public AppointmentStatus? LifecycleStatus { get; set; }
+
+    public DateTime? CancelledAt { get; set; }
+
+    public int? CancelledByUserID { get; set; }
+
+    public DateTime? NoShowDate { get; set; }
+
     // =========================================================
     // UI / Display Helpers
     // =========================================================
@@ -34,11 +42,14 @@ public class TestAppointmentDto
         TestResult.ToString();
 
     public string Status =>
-        IsLocked
-            ? "Locked"
-            : "Open";
+        LifecycleStatus switch
+        {
+            AppointmentStatus.Cancelled => "Cancelled",
+            AppointmentStatus.Completed => "Completed",
+            AppointmentStatus.NoShow => "NoShow",
+            _ => IsLocked ? "Locked" : "Open"
+        };
 
     public string AppointmentDateFormatted =>
-        AppointmentDate.ToString(
-            "yyyy-MM-dd HH:mm");
+        AppointmentDate.ToString("yyyy-MM-dd HH:mm");
 }

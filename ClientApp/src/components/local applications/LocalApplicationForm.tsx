@@ -219,19 +219,20 @@ export default function LocalApplicationForm({
             ? 'Update the requested driving license class for this local application record.'
             : 'Complete applicant verification and configure driving license category details to submit a request.'
         }
-        actions={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onCancel}
-            className="h-9 gap-2 text-xs font-semibold text-white bg-[#0e1b33] hover:bg-[#142647] border border-[#263750] hover:border-blue-500/40 rounded-xl shadow-xs transition-all cursor-pointer"
-          >
-            <ArrowLeft className="size-4 text-cyan-400" />
-            <span>Back to Applications</span>
-          </Button>
-        }
       />
+
+      <div className="flex items-center">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onCancel}
+          className="h-9 gap-2 text-xs font-semibold text-white bg-[#0e1b33] hover:bg-[#142647] border border-[#263750] hover:border-blue-500/40 rounded-xl shadow-xs transition-all cursor-pointer"
+        >
+          <ArrowLeft className="size-4 text-cyan-400" />
+          <span>Back to Applications</span>
+        </Button>
+      </div>
 
       {/* Two-Step Wizard Stepper (in Create Mode) */}
       {!isEdit && (

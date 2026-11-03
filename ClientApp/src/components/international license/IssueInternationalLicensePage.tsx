@@ -129,19 +129,20 @@ export default function IssueInternationalLicensePage({
         title="Issue International"
         highlight="Permit"
         description="Verify an active, non-detained local driving license to issue an official 1949 convention international driving permit."
-        actions={
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onBack}
-            className="h-9 gap-2 text-xs font-semibold text-white bg-[#0e1b33] hover:bg-[#142647] border border-[#263750] hover:border-blue-500/40 rounded-xl shadow-xs transition-all cursor-pointer"
-          >
-            <ArrowLeft className="size-4 text-cyan-400" />
-            <span>Back to International Licenses</span>
-          </Button>
-        }
       />
+
+      <div className="flex items-center">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onBack}
+          className="h-9 gap-2 text-xs font-semibold text-white bg-[#0e1b33] hover:bg-[#142647] border border-[#263750] hover:border-blue-500/40 rounded-xl shadow-xs transition-all cursor-pointer"
+        >
+          <ArrowLeft className="size-4 text-cyan-400" />
+          <span>Back to International Licenses</span>
+        </Button>
+      </div>
 
       {/* Shared Alerts */}
       {error && (

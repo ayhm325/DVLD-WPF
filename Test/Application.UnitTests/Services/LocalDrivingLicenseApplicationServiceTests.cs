@@ -1,4 +1,4 @@
-using Application.Common.Pagination;
+﻿using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs;
@@ -23,19 +23,50 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     private readonly Mock<ILicenseClassService> _licenseClassService = new();
     private readonly Mock<ICurrentUserService> _currentUserService = new();
     private readonly Mock<IApplicationService> _applicationService = new();
+    private readonly Mock<ITestAppointmentRepository> _testAppointmentRepository = new();
+    private readonly Mock<IPersonRepository> _personRepository = new();
+    private readonly Mock<IJordanClock> _clock = new();
 
-    private LocalDrivingLicenseApplicationService CreateService() => new(
+    private LocalDrivingLicenseApplicationService CreateService(
+        bool withAppointmentRepo = false,
+        bool withPersonRepo = true,
+        bool withClock = true) => new(
         _repository.Object, _licenseRepository.Object, _unitOfWork.Object,
         _applicationRepository.Object, _applicationTypeRepository.Object,
         _licenseClassService.Object, _currentUserService.Object,
-        _applicationService.Object);
+        _applicationService.Object,
+        withAppointmentRepo ? _testAppointmentRepository.Object : null,
+        withPersonRepo ? _personRepository.Object : null,
+        withClock ? _clock.Object : null);
+
+    private void SetupTransactionWithResult<T>()
+    {
+        _unitOfWork
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<T>>>>(),
+                It.IsAny<IsolationLevel>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async (
+                Func<IUnitOfWorkTransaction, Task<Result<T>>> operation,
+                IsolationLevel _,
+                CancellationToken __) =>
+            {
+                var result = await operation(_transaction.Object);
+                if (result.IsFailure)
+                {
+                    await _transaction.Object.RollbackAsync();
+                }
+
+                return result;
+            });
+    }
 
     private void SetupTransaction()
     {
         _unitOfWork
             .Setup(x => x.ExecuteInTransactionAsync(
                 It.IsAny<Func<IUnitOfWorkTransaction, Task<Result>>>(),
-                IsolationLevel.Serializable,
+                It.IsAny<IsolationLevel>(),
                 It.IsAny<CancellationToken>()))
             .Returns(async (
                 Func<IUnitOfWorkTransaction, Task<Result>> operation,
@@ -316,16 +347,50 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     [Fact]
     public async Task Cancel_WhenValid_DelegatesToApplicationService()
     {
+        SetupTransaction();
         _repository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(CreateEntity(5));
         var expected = Result.Success();
         _applicationService.Setup(x => x.CancelApplicationAsync(10)).ReturnsAsync(expected);
 
         var result = await CreateService().CancelLocalDrivingLicenseApplicationAsync(5);
 
-        Assert.Same(expected, result);
+        Assert.True(result.IsSuccess);
         _applicationService.Verify(x => x.CancelApplicationAsync(10), Times.Once);
     }
 
+    [Fact]
+    public async Task Cancel_WhenValid_WithActiveAppointments_CascadesCancellation()
+    {
+        SetupTransaction();
+        _repository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(CreateEntity(5));
+        _applicationService.Setup(x => x.CancelApplicationAsync(10)).ReturnsAsync(Result.Success());
+
+        var activeAppointment = new TestAppointment
+        {
+            TestAppointmentID = 101,
+            LocalDrivingLicenseApplicationID = 5,
+            TestTypeID = 1,
+            AppointmentDate = DateTime.UtcNow.AddDays(3),
+            PaidFees = 20,
+            CreatedByUserID = 2,
+            IsLocked = false,
+            Status = AppointmentStatus.Scheduled
+        };
+
+        _testAppointmentRepository
+            .Setup(x => x.GetActiveScheduledByLocalAppIdForUpdateAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<TestAppointment> { activeAppointment });
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await CreateService(withAppointmentRepo: true).CancelLocalDrivingLicenseApplicationAsync(5);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(AppointmentStatus.Cancelled, activeAppointment.Status);
+        Assert.True(activeAppointment.IsLocked);
+        Assert.NotNull(activeAppointment.CancelledAt);
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
     [Fact]
     public async Task Update_WhenValid_ReadsForUpdateInsideTransactionAndCommits()
     {
@@ -472,5 +537,440 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         Assert.Equal(
             "Failed to save local driving license application deletion.",
             result.Error);
+    }
+    [Fact]
+    public async Task Create_WhenApplicantDoesNotExist_ReturnsNotFound()
+    {
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+        _personRepository.Setup(x => x.GetPersonByIdAsync(999))
+            .ReturnsAsync((Person?)null);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(999, 3);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+        Assert.Contains("Applicant person was not found", result.Error);
+        _unitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+            It.IsAny<IsolationLevel>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task Create_WhenApplicantIdIsInvalid_ReturnsValidationFailure(int invalidApplicantId)
+    {
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(invalidApplicantId, 3);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        _personRepository.Verify(x => x.GetPersonByIdAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_WhenApplicantYoungerThanMinimumAge_ReturnsValidationFailure()
+    {
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var referenceDate = new DateTime(2026, 11, 3, 10, 0, 0);
+        _clock.Setup(x => x.Now).Returns(referenceDate);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2009, 11, 4),
+            FirstName = "Ali",
+            LastName = "Hassan"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("minimum age requirement", result.Error);
+        _unitOfWork.Verify(x => x.ExecuteInTransactionAsync(
+            It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+            It.IsAny<IsolationLevel>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_WhenApplicantExactlyAtMinimumAge_Succeeds()
+    {
+        SetupTransactionWithResult<int>();
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var referenceDate = new DateTime(2026, 11, 3, 10, 0, 0);
+        _clock.Setup(x => x.Now).Returns(referenceDate);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2008, 11, 3),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
+
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
+            .Callback<ApplicationD>(app => app.ApplicationID = 100)
+            .Returns(Task.CompletedTask);
+
+        _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
+            .Callback<LocalDrivingLicenseApplication>(app => app.LocalDrivingLicenseApplicationID = 50)
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(50, result.Value);
+        _transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_WhenApplicantOlderThanMinimumAge_Succeeds()
+    {
+        SetupTransactionWithResult<int>();
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var referenceDate = new DateTime(2026, 11, 3, 10, 0, 0);
+        _clock.Setup(x => x.Now).Returns(referenceDate);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(1995, 5, 20),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
+
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
+            .Callback<ApplicationD>(app => app.ApplicationID = 101)
+            .Returns(Task.CompletedTask);
+
+        _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
+            .Callback<LocalDrivingLicenseApplication>(app => app.LocalDrivingLicenseApplicationID = 51)
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(51, result.Value);
+    }
+
+    [Fact]
+    public async Task Create_WhenBirthdayIsTodayInJordanTime_Succeeds()
+    {
+        SetupTransactionWithResult<int>();
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var jordanFacilityTime = new DateTime(2026, 11, 3, 23, 45, 0);
+        _clock.Setup(x => x.Now).Returns(jordanFacilityTime);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2008, 11, 3),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
+
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
+            .Callback<ApplicationD>(app => app.ApplicationID = 102)
+            .Returns(Task.CompletedTask);
+
+        _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
+            .Callback<LocalDrivingLicenseApplication>(app => app.LocalDrivingLicenseApplicationID = 52)
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(52, result.Value);
+    }
+
+    [Fact]
+    public async Task Create_WhenBirthdayIsTomorrowInJordanTime_ReturnsValidationFailure()
+    {
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var jordanFacilityTime = new DateTime(2026, 11, 3, 23, 45, 0);
+        _clock.Setup(x => x.Now).Returns(jordanFacilityTime);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2008, 11, 4),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
+        Assert.Contains("minimum age requirement", result.Error);
+    }
+
+    [Theory]
+    [InlineData(2026, 2, 27, 18, false)]
+    [InlineData(2026, 2, 28, 18, true)]
+    [InlineData(2028, 2, 28, 20, false)]
+    [InlineData(2028, 2, 29, 20, true)]
+    public async Task Create_WhenLeapYearBirthday_CalculatesAgeCorrectly(
+        int testYear, int testMonth, int testDay, int minAllowedAge, bool expectedSuccess)
+    {
+        SetupTransactionWithResult<int>();
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var referenceDate = new DateTime(testYear, testMonth, testDay, 12, 0, 0);
+        _clock.Setup(x => x.Now).Returns(referenceDate);
+
+        var leapDayPerson = new Person
+        {
+            PersonId = 25,
+            DateOfBirth = new DateTime(2008, 2, 29),
+            FirstName = "Sami",
+            LastName = "Nader"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(25)).ReturnsAsync(leapDayPerson);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = (byte)minAllowedAge }));
+
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(25, 3)).ReturnsAsync((int?)null);
+
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
+            .Callback<ApplicationD>(app => app.ApplicationID = 103)
+            .Returns(Task.CompletedTask);
+
+        _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
+            .Callback<LocalDrivingLicenseApplication>(app => app.LocalDrivingLicenseApplicationID = 53)
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(25, 3);
+
+        if (expectedSuccess)
+        {
+            Assert.True(result.IsSuccess);
+            Assert.Equal(53, result.Value);
+        }
+        else
+        {
+            Assert.True(result.IsFailure);
+            Assert.Equal(ErrorType.Validation, result.ErrorType);
+            Assert.Contains("minimum age requirement", result.Error);
+        }
+    }
+
+    [Fact]
+    public async Task Create_WhenLicenseClassNotFound_ReturnsNotFound()
+    {
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2000, 1, 1),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(99))
+            .ReturnsAsync(Result<LicenseClassDto>.FromNotFound("License class not found."));
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 99);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.NotFound, result.ErrorType);
+    }
+
+    [Fact]
+    public async Task Create_WhenValid_SetsApplicationDateToJordanFacilityTime()
+    {
+        SetupTransactionWithResult<int>();
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var jordanFacilityTime = new DateTime(2026, 11, 3, 14, 25, 30);
+        _clock.Setup(x => x.Now).Returns(jordanFacilityTime);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2000, 1, 1),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
+
+        ApplicationD? capturedApplication = null;
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
+            .Callback<ApplicationD>(app =>
+            {
+                capturedApplication = app;
+                app.ApplicationID = 200;
+            })
+            .Returns(Task.CompletedTask);
+
+        _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
+            .Callback<LocalDrivingLicenseApplication>(app => app.LocalDrivingLicenseApplicationID = 75)
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(capturedApplication);
+        Assert.Equal(jordanFacilityTime, capturedApplication.ApplicationDate);
+        Assert.Equal(jordanFacilityTime, capturedApplication.LastStatusDate);
+        Assert.Equal(AppStatus.New, capturedApplication.ApplicationStatus);
+        Assert.Equal(15m, capturedApplication.PaidFees);
+        Assert.Equal(2, capturedApplication.CreatedByUserID);
+    }
+
+    [Fact]
+    public async Task Create_WhenDuplicateApplicationExists_ReturnsConflict()
+    {
+        SetupTransactionWithResult<int>();
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var referenceDate = new DateTime(2026, 11, 3, 10, 0, 0);
+        _clock.Setup(x => x.Now).Returns(referenceDate);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2000, 1, 1),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync(88);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Contains("already exists", result.Error);
+        _applicationRepository.Verify(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()), Times.Never);
+        _transaction.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_WhenSaveChangesFails_RollsBackTransaction()
+    {
+        SetupTransactionWithResult<int>();
+        _currentUserService.Setup(x => x.IsLoggedIn).Returns(true);
+        _currentUserService.Setup(x => x.UserId).Returns(2);
+
+        var referenceDate = new DateTime(2026, 11, 3, 10, 0, 0);
+        _clock.Setup(x => x.Now).Returns(referenceDate);
+
+        var person = new Person
+        {
+            PersonId = 20,
+            DateOfBirth = new DateTime(2000, 1, 1),
+            FirstName = "Ahmad",
+            LastName = "Khalil"
+        };
+        _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
+
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+            .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
+
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
+
+        _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
+
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Contains("Failed to create", result.Error);
+        _transaction.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

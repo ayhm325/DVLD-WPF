@@ -273,6 +273,118 @@ public sealed class LocalDrivingLicenseApplicationWorkflowTests
         Assert.Single(localApplications);
     }
 
+
+    [Fact]
+    public async Task Create_WhenApplicantDoesNotExist_ReturnsNotFoundAndDoesNotCreateAnything()
+    {
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedCreateScenarioAsync(factory);
+
+        using var client = factory.CreateClient();
+        ConfigureAuthenticatedClient(client, seed.UserId);
+
+        var request = new CreateLocalDrivingLicenseApplicationRequest
+        {
+            ApplicantPersonId = 999999,
+            LicenseClassId = seed.LicenseClassId
+        };
+
+        var response = await client.PostAsJsonAsync(
+            "/api/LocalDrivingLicenseApplications", request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        await using var context = factory.CreateDbContext();
+
+        Assert.Equal(
+            0,
+            await context.LocalDrivingLicenseApplications.CountAsync());
+
+        Assert.Equal(
+            0,
+            await context.Applications.CountAsync());
+    }
+
+    [Fact]
+    public async Task Create_WhenApplicantUnderMinimumAge_ReturnsBadRequestAndDoesNotCreateAnything()
+    {
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedCreateScenarioAsync(factory);
+
+        await using (var context = factory.CreateDbContext())
+        {
+            var person = await context.People.SingleAsync(p => p.PersonId == seed.ApplicantPersonId);
+            person.DateOfBirth = DateTime.UtcNow.AddYears(-16);
+            await context.SaveChangesAsync();
+        }
+
+        using var client = factory.CreateClient();
+        ConfigureAuthenticatedClient(client, seed.UserId);
+
+        var request = new CreateLocalDrivingLicenseApplicationRequest
+        {
+            ApplicantPersonId = seed.ApplicantPersonId,
+            LicenseClassId = seed.LicenseClassId
+        };
+
+        var response = await client.PostAsJsonAsync(
+            "/api/LocalDrivingLicenseApplications", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        await using var verifyContext = factory.CreateDbContext();
+
+        Assert.Equal(
+            0,
+            await verifyContext.LocalDrivingLicenseApplications.CountAsync());
+
+        Assert.Equal(
+            0,
+            await verifyContext.Applications.CountAsync());
+    }
+
+    [Fact]
+    public async Task Create_WhenSuccessful_PersistsApplicationDateInJordanFacilityTime()
+    {
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedCreateScenarioAsync(factory);
+
+        using var client = factory.CreateClient();
+        ConfigureAuthenticatedClient(client, seed.UserId);
+
+        var request = new CreateLocalDrivingLicenseApplicationRequest
+        {
+            ApplicantPersonId = seed.ApplicantPersonId,
+            LicenseClassId = seed.LicenseClassId
+        };
+
+        var beforeCallJordan = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time"));
+
+        var response = await client.PostAsJsonAsync(
+            "/api/LocalDrivingLicenseApplications", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var result = await response.Content
+            .ReadFromJsonAsync<CreateLocalDrivingLicenseApplicationResponse>();
+
+        Assert.NotNull(result);
+
+        await using var context = factory.CreateDbContext();
+
+        var localApp = await context.LocalDrivingLicenseApplications
+            .Include(x => x.Application)
+            .SingleAsync(x => x.LocalDrivingLicenseApplicationID == result.LocalDrivingLicenseApplicationId);
+
+        var app = localApp.Application;
+        Assert.NotNull(app);
+
+        var diff = (app.ApplicationDate - beforeCallJordan).Duration();
+        Assert.True(diff.TotalMinutes < 5, $"Expected ApplicationDate to match Jordan time, but diff was {diff}");
+        Assert.Equal(app.ApplicationDate, app.LastStatusDate);
+    }
     [Fact]
     public async Task Update_WhenWorkflowIsValid_ChangesLicenseClass()
     {

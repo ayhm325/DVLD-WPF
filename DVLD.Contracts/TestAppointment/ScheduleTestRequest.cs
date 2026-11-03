@@ -1,4 +1,4 @@
-﻿namespace DVLD.Contracts.TestAppointment;
+namespace DVLD.Contracts.TestAppointment;
 
 public sealed class ScheduleTestRequest
 {
@@ -6,5 +6,5 @@ public sealed class ScheduleTestRequest
 
     public int LocalDrivingLicenseApplicationId { get; init; }
 
-    public DateTime AppointmentDate { get; init; }
+    public DateTimeOffset AppointmentDate { get; init; }
 }

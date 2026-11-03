@@ -1,6 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import LocalApplicationsList from './LocalApplicationsList'
 import LocalApplicationForm from './LocalApplicationForm'
+import ApplicationDetailsModal from './ApplicationDetailsModal'
+import TestAppointmentsModal from './TestAppointmentsModal'
+import IssueDrivingLicenseModal from './IssueDrivingLicenseModal'
+import LicenseDetailsModal from '../licenses/LicenseDetailsModal'
+import ConfirmModal from '../common/ConfirmModal'
 import PageHero from '../common/PageHero'
 import StatsGrid from '../common/StatsGrid'
 import StatCard from '../common/StatCard'
@@ -13,10 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select'
-import { getLocalDrivingLicenseApplications } from '../../services/localDrivingLicenseApplicationService'
-import type {
-  LocalDrivingLicenseApplication,
-} from '../../types/LocalDrivingLicenseApplication'
+import {
+  getLocalDrivingLicenseApplications,
+  deleteLocalDrivingLicenseApplication,
+  cancelLocalDrivingLicenseApplication,
+} from '../../services/localDrivingLicenseApplicationService'
+import {
+  getLicensesByPersonId,
+  getLicenseDetailsByLocalAppId,
+} from '../../services/licenseService'
+import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
+import type { License } from '../../types/License'
 import { formatNumber } from '../../utils/formatters'
 import { useAsyncData, useTableFilters, usePagination } from '../../hooks'
 import {
@@ -29,8 +41,10 @@ import {
 } from 'lucide-react'
 import './local-applications.css'
 
-type Props = {
+export type LocalApplicationsPageProps = {
   accessToken: string
+  onShowLicenseHistory?: (personId: number) => void
+  onShowAppointmentDetails?: (appointmentId: number) => void
 }
 
 const PAGE_SIZE = 10
@@ -54,8 +68,34 @@ interface LocalAppFilters extends Record<string, unknown> {
   status: string
 }
 
-export default function LocalApplicationsPage({ accessToken }: Props) {
+export default function LocalApplicationsPage({
+  accessToken,
+  onShowLicenseHistory,
+  onShowAppointmentDetails,
+}: LocalApplicationsPageProps) {
   const [view, setView] = useState<View>({ mode: 'list' })
+
+  // Modals state
+  const [selectedAppForDetails, setSelectedAppForDetails] =
+    useState<LocalDrivingLicenseApplication | null>(null)
+  const [deleteTarget, setDeleteTarget] =
+    useState<LocalDrivingLicenseApplication | null>(null)
+  const [cancelTarget, setCancelTarget] =
+    useState<LocalDrivingLicenseApplication | null>(null)
+  const [testAppointmentTarget, setTestAppointmentTarget] = useState<{
+    application: LocalDrivingLicenseApplication
+    testTypeId: 1 | 2 | 3
+  } | null>(null)
+  const [issueLicenseTarget, setIssueLicenseTarget] =
+    useState<LocalDrivingLicenseApplication | null>(null)
+  const [selectedLicenseForDetails, setSelectedLicenseForDetails] =
+    useState<License | null>(null)
+
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [personLicenseHistoryMap, setPersonLicenseHistoryMap] = useState<
+    Record<number, boolean>
+  >({})
 
   const pagination = usePagination({
     pageSize: PAGE_SIZE,
@@ -81,6 +121,42 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
     defaultErrorMessage: 'Could not load local applications.',
   })
 
+  // Pre-fetch person license counts for rows on the current page to accurately enable/disable "Show Person License History"
+  useEffect(() => {
+    if (!accessToken || !page?.items || page.items.length === 0) return
+
+    let cancelled = false
+    const uniquePersonIds = Array.from(
+      new Set(
+        page.items
+          .map((x) => x.applicantPersonId)
+          .filter((id) => Boolean(id) && id > 0),
+      ),
+    )
+
+    Promise.all(
+      uniquePersonIds.map(async (personId) => {
+        try {
+          const licenses = await getLicensesByPersonId(accessToken, personId)
+          return { personId, hasHistory: licenses.length > 0 }
+        } catch {
+          return { personId, hasHistory: false }
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) return
+      const map: Record<number, boolean> = {}
+      for (const r of results) {
+        map[r.personId] = r.hasHistory
+      }
+      setPersonLicenseHistoryMap(map)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [accessToken, page?.items])
+
   const {
     search,
     setSearch,
@@ -97,7 +173,6 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
     initialFilters: { status: 'All' },
     onReset: pagination.resetPage,
     filterItem: (item, query, field, currentFilters) => {
-      // 1. Status check
       const statusText = (
         item.statusText || item.applicationStatus || ''
       ).toLowerCase()
@@ -107,8 +182,6 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
         statusText === currentFilters.status.toLowerCase()
 
       if (!matchesStatus) return false
-
-      // 2. Query check
       if (!query) return true
 
       if (field === 'name') {
@@ -124,7 +197,6 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
         return (item.licenseClassName ?? '').toLowerCase().includes(query)
       }
 
-      // 'all'
       return (
         (item.fullName ?? '').toLowerCase().includes(query) ||
         (item.nationalNo ?? '').toLowerCase().includes(query) ||
@@ -157,10 +229,84 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
 
   function returnToList(saved: boolean) {
     setView({ mode: 'list' })
-
     if (saved) {
       pagination.resetPage()
       void refresh()
+    }
+  }
+
+  // Deletion Workflow
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return
+    setActionLoading(true)
+    setActionError(null)
+
+    try {
+      await deleteLocalDrivingLicenseApplication(
+        accessToken,
+        deleteTarget.localDrivingLicenseApplicationId,
+      )
+      setDeleteTarget(null)
+      refreshApplications()
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'Failed to delete application.',
+      )
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Cancellation Workflow
+  const handleCancelConfirm = async () => {
+    if (!cancelTarget) return
+    setActionLoading(true)
+    setActionError(null)
+
+    try {
+      await cancelLocalDrivingLicenseApplication(
+        accessToken,
+        cancelTarget.localDrivingLicenseApplicationId,
+      )
+      setCancelTarget(null)
+      refreshApplications()
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'Failed to cancel application.',
+      )
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Show License Workflow
+  const handleShowLicense = async (app: LocalDrivingLicenseApplication) => {
+    try {
+      const details = await getLicenseDetailsByLocalAppId(
+        accessToken,
+        app.localDrivingLicenseApplicationId,
+      )
+      setSelectedLicenseForDetails({
+        licenseId: details.licenseId,
+        applicationId: 0,
+        driverId: details.driverId,
+        driverName: details.fullName,
+        licenseClassName: details.licenseClass,
+        licenseClassId: 0,
+        issueDate: details.issueDate,
+        expirationDate: details.expirationDate,
+        paidFees: details.licenseClassFees,
+        isActive: details.isActive,
+        notes: details.notes,
+        issueReason: 1,
+        issueReasonText: details.issueReason,
+        createdByUserId: 0,
+        createdByUserName: null,
+      })
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : 'Could not retrieve license details.',
+      )
     }
   }
 
@@ -170,9 +316,7 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
         <LocalApplicationForm
           accessToken={accessToken}
           mode={view.mode}
-          application={
-            view.mode === 'edit' ? view.application : undefined
-          }
+          application={view.mode === 'edit' ? view.application : undefined}
           onCancel={() => returnToList(false)}
           onSaved={() => returnToList(true)}
         />
@@ -198,7 +342,11 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
           variant="emerald"
           icon={<CheckIcon size={20} />}
           value={loading ? '...' : error ? '—' : formatNumber(page?.items.length ?? 0)}
-          description={error ? '—' : `Applications on page ${page?.pageNumber ?? 1} of ${page?.totalPages ?? 1}`}
+          description={
+            error
+              ? '—'
+              : `Applications on page ${page?.pageNumber ?? 1} of ${page?.totalPages ?? 1}`
+          }
         />
 
         <StatCard
@@ -280,6 +428,16 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
           isFiltered={isFiltered}
         />
 
+        {actionError && (
+          <div style={{ margin: '0 25px 20px' }}>
+            <ErrorAlert
+              message={actionError}
+              onRetry={() => setActionError(null)}
+              retryLabel="Dismiss"
+            />
+          </div>
+        )}
+
         {error && (
           <div style={{ margin: '0 25px 20px' }}>
             <ErrorAlert
@@ -293,12 +451,34 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
         <LocalApplicationsList
           items={filteredItems}
           loading={loading}
-          onEdit={(application) =>
-            setView({ mode: 'edit', application })
+          onEdit={(application) => setView({ mode: 'edit', application })}
+          onShowDetails={(application) => setSelectedAppForDetails(application)}
+          onDelete={(application) => {
+            setActionError(null)
+            setDeleteTarget(application)
+          }}
+          onCancel={(application) => {
+            setActionError(null)
+            setCancelTarget(application)
+          }}
+          onScheduleTest={(application, testTypeId) =>
+            setTestAppointmentTarget({ application, testTypeId })
           }
+          onIssueLicense={(application) => setIssueLicenseTarget(application)}
+          onShowLicense={handleShowLicense}
+          onShowPersonLicenseHistory={(personId) => onShowLicenseHistory?.(personId)}
+          personLicenseHistoryMap={personLicenseHistoryMap}
         />
 
-        <footer className="panel-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <footer
+          className="panel-footer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+          }}
+        >
           <span>
             {error
               ? 'Failed to load applications'
@@ -318,8 +498,14 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
             </button>
 
             <span style={{ fontSize: 11, color: 'var(--dvld-muted)' }}>
-              Page <strong style={{ color: 'var(--dvld-heading)' }}>{page?.pageNumber ?? pagination.page}</strong> of{' '}
-              <strong style={{ color: 'var(--dvld-heading)' }}>{error ? '—' : page?.totalPages ?? 0}</strong>
+              Page{' '}
+              <strong style={{ color: 'var(--dvld-heading)' }}>
+                {page?.pageNumber ?? pagination.page}
+              </strong>{' '}
+              of{' '}
+              <strong style={{ color: 'var(--dvld-heading)' }}>
+                {error ? '—' : page?.totalPages ?? 0}
+              </strong>
             </span>
 
             <button
@@ -333,7 +519,16 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
               <ChevronRightIcon size={14} />
             </button>
 
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 6, fontSize: 11, color: 'var(--dvld-muted)' }}>
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                marginLeft: 6,
+                fontSize: 11,
+                color: 'var(--dvld-muted)',
+              }}
+            >
               Rows
               <span
                 style={{
@@ -355,6 +550,79 @@ export default function LocalApplicationsPage({ accessToken }: Props) {
           </div>
         </footer>
       </section>
+
+      {/* Application Details Modal */}
+      <ApplicationDetailsModal
+        isOpen={Boolean(selectedAppForDetails)}
+        onClose={() => setSelectedAppForDetails(null)}
+        application={selectedAppForDetails}
+        accessToken={accessToken}
+      />
+
+      {/* Test Appointments Modal */}
+      <TestAppointmentsModal
+        isOpen={Boolean(testAppointmentTarget)}
+        onClose={() => setTestAppointmentTarget(null)}
+        application={testAppointmentTarget?.application ?? null}
+        testTypeId={testAppointmentTarget?.testTypeId ?? 1}
+        accessToken={accessToken}
+        onAppointmentScheduled={refreshApplications}
+        onShowAppointmentDetails={onShowAppointmentDetails}
+      />
+
+      {/* Issue Driving License Modal */}
+      <IssueDrivingLicenseModal
+        isOpen={Boolean(issueLicenseTarget)}
+        onClose={() => setIssueLicenseTarget(null)}
+        application={issueLicenseTarget}
+        accessToken={accessToken}
+        onLicenseIssued={() => {
+          setIssueLicenseTarget(null)
+          refreshApplications()
+        }}
+      />
+
+      {/* Show License Modal */}
+      <LicenseDetailsModal
+        isOpen={Boolean(selectedLicenseForDetails)}
+        onClose={() => setSelectedLicenseForDetails(null)}
+        accessToken={accessToken}
+        target={
+          selectedLicenseForDetails
+            ? { type: 'local', item: selectedLicenseForDetails }
+            : null
+        }
+      />
+
+      {/* Delete Application Confirmation */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title="Delete Application"
+        message={`Are you sure you want to delete application #${deleteTarget?.localDrivingLicenseApplicationId} for "${deleteTarget?.fullName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmVariant="danger"
+        loading={actionLoading}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => {
+          setDeleteTarget(null)
+          setActionError(null)
+        }}
+      />
+
+      {/* Cancel Application Confirmation */}
+      <ConfirmModal
+        isOpen={Boolean(cancelTarget)}
+        title="Cancel Application"
+        message={`Are you sure you want to cancel application #${cancelTarget?.localDrivingLicenseApplicationId}? Cancelled applications cannot be resumed or modified.`}
+        confirmText="Cancel Application"
+        confirmVariant="danger"
+        loading={actionLoading}
+        onConfirm={handleCancelConfirm}
+        onCancel={() => {
+          setCancelTarget(null)
+          setActionError(null)
+        }}
+      />
     </section>
   )
 }

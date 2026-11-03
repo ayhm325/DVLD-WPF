@@ -1,6 +1,18 @@
 import { useCallback } from 'react'
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
-import { Pencil as PencilIcon } from 'lucide-react'
+import {
+  FileText,
+  Pencil,
+  Trash2,
+  XCircle,
+  CalendarClock,
+  Eye,
+  FileSignature,
+  Car,
+  Award,
+  IdCard,
+  History,
+} from 'lucide-react'
 import { formatDate } from '../../utils/formatters'
 import DataTable, {
   type DataTableColumn,
@@ -12,6 +24,14 @@ type Props = {
   items: LocalDrivingLicenseApplication[]
   loading: boolean
   onEdit: (application: LocalDrivingLicenseApplication) => void
+  onShowDetails: (application: LocalDrivingLicenseApplication) => void
+  onDelete: (application: LocalDrivingLicenseApplication) => void
+  onCancel: (application: LocalDrivingLicenseApplication) => void
+  onScheduleTest: (application: LocalDrivingLicenseApplication, testTypeId: 1 | 2 | 3) => void
+  onIssueLicense: (application: LocalDrivingLicenseApplication) => void
+  onShowLicense: (application: LocalDrivingLicenseApplication) => void
+  onShowPersonLicenseHistory: (personId: number) => void
+  personLicenseHistoryMap?: Record<number, boolean>
 }
 
 function getApplicationStatusVariant(status: string): StatusVariant {
@@ -28,19 +48,35 @@ function getApplicationStatusVariant(status: string): StatusVariant {
   }
 }
 
-export default function LocalApplicationsList({ items, loading, onEdit }: Props) {
+export default function LocalApplicationsList({
+  items,
+  loading,
+  onEdit,
+  onShowDetails,
+  onDelete,
+  onCancel,
+  onScheduleTest,
+  onIssueLicense,
+  onShowLicense,
+  onShowPersonLicenseHistory,
+  personLicenseHistoryMap,
+}: Props) {
   const columns: DataTableColumn<LocalDrivingLicenseApplication>[] = [
     {
       key: 'id',
       header: 'Application ID',
-      render: (item) => <span className="local-app-id">#{item.localDrivingLicenseApplicationId}</span>,
+      render: (item) => (
+        <span className="local-app-id">#{item.localDrivingLicenseApplicationId}</span>
+      ),
     },
     {
       key: 'class',
       header: 'Driving class',
       render: (item) => (
         <>
-          <span className="local-app-class">{item.licenseClassName || `Class ${item.licenseClassId}`}</span>
+          <span className="local-app-class">
+            {item.licenseClassName || `Class ${item.licenseClassId}`}
+          </span>
           <small className="local-app-cell-sub">Class ID {item.licenseClassId}</small>
         </>
       ),
@@ -54,7 +90,11 @@ export default function LocalApplicationsList({ items, loading, onEdit }: Props)
     {
       key: 'applicant',
       header: 'Applicant',
-      render: (item) => <strong className="local-app-person-name">{item.fullName || 'Unknown applicant'}</strong>,
+      render: (item) => (
+        <strong className="local-app-person-name">
+          {item.fullName || 'Unknown applicant'}
+        </strong>
+      ),
     },
     {
       key: 'date',
@@ -98,7 +138,7 @@ export default function LocalApplicationsList({ items, loading, onEdit }: Props)
             title="Edit application"
             aria-label={`Edit application #${item.localDrivingLicenseApplicationId}`}
           >
-            <PencilIcon size={14} />
+            <Pencil size={14} />
           </button>
         )
       },
@@ -112,18 +152,107 @@ export default function LocalApplicationsList({ items, loading, onEdit }: Props)
       const status = (item.statusText || item.applicationStatus || 'New')
         .trim()
         .toLowerCase()
+      const isNew = status === 'new'
+      const hasHistory = Boolean(
+        personLicenseHistoryMap?.[item.applicantPersonId] || item.hasLicense,
+      )
 
       return [
         {
+          key: 'show-details',
+          label: 'Show Application Details',
+          icon: <FileText className="size-4 text-cyan-400" />,
+          onClick: () => onShowDetails(item),
+        },
+        {
           key: 'edit',
           label: 'Edit Application',
-          icon: <PencilIcon className="size-4" />,
-          disabled: status !== 'new',
-          onClick: (application) => onEdit(application),
+          icon: <Pencil className="size-4 text-amber-400" />,
+          disabled: !isNew,
+          onClick: () => onEdit(item),
+        },
+        {
+          key: 'delete',
+          label: 'Delete Application',
+          icon: <Trash2 className="size-4 text-rose-400" />,
+          danger: true,
+          disabled: !isNew,
+          onClick: () => onDelete(item),
+        },
+        {
+          key: 'cancel',
+          label: 'Cancel Application',
+          icon: <XCircle className="size-4 text-rose-400" />,
+          danger: true,
+          separatorAfter: true,
+          disabled: !isNew,
+          onClick: () => onCancel(item),
+        },
+        {
+          key: 'schedule-tests',
+          label: 'Schedule Tests',
+          icon: <CalendarClock className="size-4 text-sky-400" />,
+          separatorAfter: true,
+          disabled: !isNew || item.passedTest >= 3,
+          onClick: () => {},
+          children: [
+            {
+              key: 'schedule-vision',
+              label: 'Schedule Vision Test',
+              icon: <Eye className="size-4 text-cyan-400" />,
+              disabled: !isNew || item.passedTest !== 0,
+              onClick: () => onScheduleTest(item, 1),
+            },
+            {
+              key: 'schedule-written',
+              label: 'Schedule Written Test',
+              icon: <FileSignature className="size-4 text-indigo-400" />,
+              disabled: !isNew || item.passedTest !== 1,
+              onClick: () => onScheduleTest(item, 2),
+            },
+            {
+              key: 'schedule-street',
+              label: 'Schedule Street Test',
+              icon: <Car className="size-4 text-emerald-400" />,
+              disabled: !isNew || item.passedTest !== 2,
+              onClick: () => onScheduleTest(item, 3),
+            },
+          ],
+        },
+        {
+          key: 'issue-license',
+          label: 'Issue Driving License',
+          icon: <Award className="size-4 text-emerald-400" />,
+          disabled: !isNew || item.passedTest !== 3 || item.hasLicense,
+          onClick: () => onIssueLicense(item),
+        },
+        {
+          key: 'show-license',
+          label: 'Show License',
+          icon: <IdCard className="size-4 text-cyan-400" />,
+          disabled: !item.hasLicense,
+          onClick: () => onShowLicense(item),
+        },
+        {
+          key: 'show-history',
+          label: 'Show Person License History',
+          icon: <History className="size-4 text-indigo-400" />,
+          disabled: !hasHistory,
+          onClick: () => onShowPersonLicenseHistory(item.applicantPersonId),
         },
       ]
     },
-    [onEdit],
+    [
+      onShowDetails,
+      onEdit,
+      onDelete,
+      onCancel,
+      onScheduleTest,
+      onIssueLicense,
+      onShowLicense,
+      onShowPersonLicenseHistory,
+      personLicenseHistoryMap,
+    ],
   )
 
   return (

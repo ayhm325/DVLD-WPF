@@ -16,7 +16,8 @@ public sealed class LicenseReplacementService(
     IApplicationTypeService applicationTypeService,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork,
-    ILogger<LicenseReplacementService> logger) : ILicenseReplacementService
+    ILogger<LicenseReplacementService> logger,
+    IJordanClock clock) : ILicenseReplacementService
 {
     private const int LostReplacementApplicationTypeId = 3;
     private const int DamagedReplacementApplicationTypeId = 4;
@@ -33,6 +34,8 @@ public sealed class LicenseReplacementService(
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     private readonly ILogger<LicenseReplacementService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<int>> ReplaceLicenseAsync(
         int oldLicenseId,
@@ -95,9 +98,11 @@ public sealed class LicenseReplacementService(
                         Result<int>.FromNotFound(
                             "License class information is not available."));
 
-                var now = DateTime.UtcNow;
+                var now = _clock.Now;
+                var today = now.Date;
+                var expirationDate = oldLicense.ExpirationDate.Date;
 
-                if (oldLicense.ExpirationDate <= now)
+                if (today > expirationDate)
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromConflict(

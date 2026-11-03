@@ -1,5 +1,7 @@
 import type {
+  ApplicationBasicInfo,
   LocalApplicationPerson,
+  LocalDrivingLicenseApplication,
   LocalDrivingLicenseApplicationsPage,
   LocalLicenseClass,
 } from '../types/LocalDrivingLicenseApplication'
@@ -75,5 +77,51 @@ export function updateLocalDrivingLicenseApplication(
       method: 'PUT',
       body: JSON.stringify(payload),
     },
+  )
+}
+
+export function deleteLocalDrivingLicenseApplication(
+  accessToken: string,
+  id: number,
+): Promise<void> {
+  return apiRequest<void>(
+    `/LocalDrivingLicenseApplications/${id}`,
+    accessToken,
+    {
+      method: 'DELETE',
+    },
+  )
+}
+
+export function cancelLocalDrivingLicenseApplication(
+  accessToken: string,
+  id: number,
+): Promise<void> {
+  return apiRequest<void>(
+    `/LocalDrivingLicenseApplications/${id}/cancel`,
+    accessToken,
+    {
+      method: 'POST',
+    },
+  )
+}
+
+export function getApplicationBasicInfo(
+  accessToken: string,
+  localId: number,
+): Promise<ApplicationBasicInfo> {
+  return apiRequest<ApplicationBasicInfo>(
+    `/LocalDrivingLicenseApplications/${localId}/application-basic-info`,
+    accessToken,
+  )
+}
+
+export function getLocalDrivingLicenseApplicationById(
+  accessToken: string,
+  id: number,
+): Promise<LocalDrivingLicenseApplication> {
+  return apiRequest<LocalDrivingLicenseApplication>(
+    `/LocalDrivingLicenseApplications/${id}`,
+    accessToken,
   )
 }

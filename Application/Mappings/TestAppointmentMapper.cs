@@ -1,4 +1,4 @@
-﻿using Application.DTOs.TestAppointmentDTO;
+using Application.DTOs.TestAppointmentDTO;
 using Domain.Entities;
 using Domain.Enums;
 
@@ -57,6 +57,18 @@ public static class TestAppointmentMapper
 
             RetakeTestApplicationID =
                 entity.RetakeTestApplicationID,
+
+            LifecycleStatus =
+                entity.Status,
+
+            CancelledAt =
+                entity.CancelledAt,
+
+            CancelledByUserID =
+                entity.CancelledByUserID,
+
+            NoShowDate =
+                entity.NoShowDate,
 
             TestResult =
                 result
@@ -158,7 +170,10 @@ public static class TestAppointmentMapper
                 false,
 
             RetakeTestApplicationID =
-                dto.RetakeTestApplicationID
+                dto.RetakeTestApplicationID,
+
+            Status =
+                AppointmentStatus.Scheduled
         };
     }
 }

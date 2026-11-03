@@ -247,6 +247,12 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<IPersonService, PersonService>();
 builder.Services.AddSingleton<IFileStorageService, PhysicalFileStorageService>();
 builder.Services.AddSingleton<IImageProcessingService, ImageProcessingService>();
+builder.Services.AddSingleton<IJordanClock, JordanClock>();
+builder.Services.AddOptions<NoShowProcessorOptions>()
+    .Bind(builder.Configuration.GetSection(NoShowProcessorOptions.SectionName));
+builder.Services.AddScoped<INoShowProcessorService, NoShowProcessorService>();
+builder.Services.AddHostedService<DVLD.Api.BackgroundServices.NoShowBackgroundService>();
+
 builder.Services.AddScoped<
     ITestAppointmentService,
     TestAppointmentService>();
@@ -288,7 +294,11 @@ builder.Services.AddScoped<
 // API
 // ============================================================
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new Application.Serialization.JordanFacilityDateTimeOffsetConverter());
+    });
 
 builder.Services.AddCors(options =>
 {
