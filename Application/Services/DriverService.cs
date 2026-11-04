@@ -188,12 +188,21 @@ public sealed class DriverService(
                 "This person is already registered as another driver.");
         }
 
+        bool hasChanges = existing.PersonID != dto.PersonID;
+        if (!hasChanges)
+        {
+            return Result.Success();
+        }
+
         DriverMapper.UpdateEntity(existing, dto);
 
         var saved =
             await _unitOfWork.SaveChangesAsync();
 
-        return Result.Success();
+        return saved > 0
+            ? Result.Success()
+            : Result.Failure(
+                "No driver changes were saved.");
     }
 
     public async Task<Result> DeleteAsync(int id)

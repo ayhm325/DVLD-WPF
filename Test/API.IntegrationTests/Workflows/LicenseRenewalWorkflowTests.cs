@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.LicenseRenewal;
@@ -106,8 +106,21 @@ public sealed class LicenseRenewalWorkflowTests
 
         try
         {
-            using var client = factory.CreateClient();
+            await using var hostFactory = factory.WithWebHostBuilder(
+                builder => builder.UseSetting("NoShowProcessor:IsEnabled", "false"));
+
+            using var client = hostFactory.CreateClient();
             ConfigureAuthenticatedClient(client, seed.UserId);
+
+            // Startup expiration sync deactivates pre-seeded expired licenses on host boot.
+            // Re-arm IsActive = true before the renewal call so the renewal transaction
+            // must execute DeactivateLicenseAsync AND roll it back on insert failure.
+            await using (var rearmContext = factory.CreateDbContext())
+            {
+                await rearmContext.Licenses
+                    .Where(x => x.LicenseID == seed.OldLicenseId)
+                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, true));
+            }
 
             var request = new RenewLicenseRequest(
                 seed.OldLicenseId,
@@ -168,6 +181,69 @@ public sealed class LicenseRenewalWorkflowTests
             finally
             {
                 await cleanupContext.Database.CloseConnectionAsync();
+            }
+        }
+    }
+
+    [Fact]
+    public async Task RenewLicense_WhenNewLicenseInsertFailsAfterStartupExpirationSync_RollsBackApplicationAndKeepsLicenseInactive()
+    {
+        await using var factory = new SqlServerApiWebApplicationFactory();
+        var seed = await SeedExpiredLicenseScenarioAsync(factory);
+
+        const string constraintName =
+            "CK_Licenses_IntegrationTest_ForceFailure_Synced";
+
+        await using (var setupContext = factory.CreateDbContext())
+        {
+            await setupContext.Database.ExecuteSqlRawAsync(
+                $"""
+                ALTER TABLE Licenses
+                ADD CONSTRAINT {constraintName}
+                CHECK (Notes <> 'FORCE_FAILURE')
+                """);
+        }
+
+        try
+        {
+            using var client = factory.CreateClient();
+            ConfigureAuthenticatedClient(client, seed.UserId);
+
+            var response = await client.PostAsJsonAsync(
+                "/api/LicenseRenewal",
+                new RenewLicenseRequest(seed.OldLicenseId, "FORCE_FAILURE"));
+
+            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+            await using var context = factory.CreateDbContext();
+
+            var oldLicense = await context.Licenses
+                .AsNoTracking()
+                .SingleAsync(x => x.LicenseID == seed.OldLicenseId);
+
+            Assert.False(oldLicense.IsActive);
+
+            Assert.Single(await context.Licenses
+                .AsNoTracking()
+                .Where(x => x.DriverID == seed.DriverId && x.LicenseClass == seed.LicenseClassId)
+                .ToListAsync());
+
+            Assert.Empty(await context.Applications
+                .AsNoTracking()
+                .Where(x => x.ApplicantPersonID == seed.PersonId && x.ApplicationTypeID == 2)
+                .ToListAsync());
+        }
+        finally
+        {
+            await using var cleanupContext = factory.CreateDbContext();
+            try
+            {
+                await cleanupContext.Database.ExecuteSqlRawAsync(
+                    $"ALTER TABLE Licenses DROP CONSTRAINT {constraintName}");
+            }
+            catch
+            {
+                // Constraint may already be removed during database cleanup.
             }
         }
     }

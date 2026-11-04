@@ -325,6 +325,10 @@ public sealed class AuthControllerTests
         400,
         "Validation error")]
     [InlineData(
+        "Current password is incorrect.",
+        400,
+        "Validation error")]
+    [InlineData(
         "User was not found.",
         404,
         "Resource not found")]

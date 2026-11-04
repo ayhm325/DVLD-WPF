@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
@@ -235,6 +235,16 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         return candidate.AddHours(hour).AddMinutes(minute);
     }
 
+    private static T GetRequiredValue<T>(Result<T> result)
+        where T : class
+    {
+        Assert.True(result.IsSuccess, result.Error);
+
+        return result.Value
+            ?? throw new InvalidOperationException(
+                "The operation succeeded but returned a null value.");
+    }
+
     // =========================================================================
     // 1. SOFT CANCELLATION WORKFLOW TESTS
     // =========================================================================
@@ -250,7 +260,7 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
 
         var scheduleResult = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot);
         Assert.True(scheduleResult.IsSuccess);
-        var appointmentId = scheduleResult.Value.AppointmentID;
+        var appointmentId = GetRequiredValue(scheduleResult).AppointmentID;
 
         // Act: Soft Cancel
         var cancelResult = await service.CancelAsync(appointmentId);
@@ -288,7 +298,7 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         var service = CreateService(context, applicant.UserId);
 
         var scheduleResult = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot);
-        var appointmentId = scheduleResult.Value.AppointmentID;
+        var appointmentId = GetRequiredValue(scheduleResult).AppointmentID;
 
         // First cancellation
         var firstCancel = await service.CancelAsync(appointmentId);
@@ -324,7 +334,7 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         var service = CreateService(context, applicant.UserId);
 
         var scheduleResult = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot);
-        var appointmentId = scheduleResult.Value.AppointmentID;
+        var appointmentId = GetRequiredValue(scheduleResult).AppointmentID;
 
         // Mark as completed with test
         var appt = await context.TestAppointments.FindAsync(appointmentId);
@@ -359,7 +369,7 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         var service = CreateService(context, applicant.UserId);
 
         var scheduleResult = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot);
-        var appointmentId = scheduleResult.Value.AppointmentID;
+        var appointmentId = GetRequiredValue(scheduleResult).AppointmentID;
 
         var appt = await context.TestAppointments.FindAsync(appointmentId);
         Assert.NotNull(appt);
@@ -387,7 +397,7 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         var service = CreateService(context, applicant.UserId);
 
         var scheduleResult = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot);
-        var appointmentId = scheduleResult.Value.AppointmentID;
+        var appointmentId = GetRequiredValue(scheduleResult).AppointmentID;
 
         // Set status to NULL to simulate unresolved historical record
         await context.Database.ExecuteSqlRawAsync(
@@ -450,7 +460,7 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         var initService = CreateService(initContext, applicant.UserId);
 
         var scheduleResult = await initService.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot);
-        var appointmentId = scheduleResult.Value.AppointmentID;
+        var appointmentId = GetRequiredValue(scheduleResult).AppointmentID;
 
         // Launch 4 concurrent cancel requests
         var tasks = Enumerable.Range(0, 4).Select(async _ =>
@@ -494,12 +504,13 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         // Applicant A books slot
         var bookA = await serviceA.ScheduleAsync(applicantA.LocalAppId, (int)TestTypeEnum.Theory, slot);
         Assert.True(bookA.IsSuccess);
+        var scheduledA = GetRequiredValue(bookA);
 
         var repo = new TestAppointmentRepository(context);
         Assert.True(await repo.IsSlotOccupiedAsync((int)TestTypeEnum.Theory, slot));
 
         // Applicant A cancels appointment
-        var cancelA = await serviceA.CancelAsync(bookA.Value.AppointmentID);
+        var cancelA = await serviceA.CancelAsync(scheduledA.AppointmentID);
         Assert.True(cancelA.IsSuccess);
 
         // Slot must now be FREE: IsSlotOccupiedAsync returns false
@@ -523,13 +534,14 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         // Book slot 1
         var book1 = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot1);
         Assert.True(book1.IsSuccess);
+        var scheduled1 = GetRequiredValue(book1);
 
         var repo = new TestAppointmentRepository(context);
         // Before cancellation: Has same-day conflict for slot 2
         Assert.True(await repo.HasApplicantSameDayConflictAsync(applicant.PersonId, slot2));
 
         // Cancel slot 1
-        var cancel1 = await service.CancelAsync(book1.Value.AppointmentID);
+        var cancel1 = await service.CancelAsync(scheduled1.AppointmentID);
         Assert.True(cancel1.IsSuccess);
 
         // After cancellation: HasApplicantSameDayConflictAsync must return FALSE!
@@ -553,12 +565,13 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         // First booking: Trial should be 1, no retake fee
         var book1 = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot1);
         Assert.True(book1.IsSuccess);
-        Assert.Equal(1, book1.Value.Trial);
-        Assert.Equal(0m, book1.Value.RetakerFees);
-        Assert.Null(book1.Value.RetakeTestApplicationID);
+        var scheduled1 = GetRequiredValue(book1);
+        Assert.Equal(1, scheduled1.Trial);
+        Assert.Equal(0m, scheduled1.RetakerFees);
+        Assert.Null(scheduled1.RetakeTestApplicationID);
 
         // Cancel first booking
-        var cancel1 = await service.CancelAsync(book1.Value.AppointmentID);
+        var cancel1 = await service.CancelAsync(scheduled1.AppointmentID);
         Assert.True(cancel1.IsSuccess);
 
         var repo = new TestAppointmentRepository(context);
@@ -569,9 +582,10 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         // Replacement booking: Must STILL be Trial = 1 and charge ZERO retake fee!
         var book2 = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot2);
         Assert.True(book2.IsSuccess);
-        Assert.Equal(1, book2.Value.Trial);
-        Assert.Equal(0m, book2.Value.RetakerFees);
-        Assert.Null(book2.Value.RetakeTestApplicationID);
+        var scheduled2 = GetRequiredValue(book2);
+        Assert.Equal(1, scheduled2.Trial);
+        Assert.Equal(0m, scheduled2.RetakerFees);
+        Assert.Null(scheduled2.RetakeTestApplicationID);
     }
 
     [Fact]
@@ -585,12 +599,13 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
 
         var book = await service.ScheduleAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory, slot);
         Assert.True(book.IsSuccess);
+        var scheduled = GetRequiredValue(book);
 
         var repo = new TestAppointmentRepository(context);
         Assert.True(await repo.IsAppointmentAlreadyScheduledAsync(applicant.LocalAppId, (int)TestTypeEnum.Theory));
 
         // Cancel
-        var cancel = await service.CancelAsync(book.Value.AppointmentID);
+        var cancel = await service.CancelAsync(scheduled.AppointmentID);
         Assert.True(cancel.IsSuccess);
 
         // IsAppointmentAlreadyScheduledAsync must return false

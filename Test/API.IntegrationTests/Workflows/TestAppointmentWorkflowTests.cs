@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
+using Application.Common.Time;
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.TestAppointment;
@@ -11,6 +12,42 @@ namespace API.IntegrationTests.Workflows;
 
 public sealed class TestAppointmentWorkflowTests
 {
+    private static DateTime GetValidFutureSlot(int workingDaysOffset = 0, int hour = 9, int minute = 20)
+    {
+        var currentJordanDate = new global::Infrastructure.Services.JordanClock().Now.Date;
+        var candidate = currentJordanDate.AddDays(3);
+
+        while (candidate.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
+        {
+            candidate = candidate.AddDays(1);
+        }
+
+        for (var i = 0; i < workingDaysOffset; i++)
+        {
+            candidate = candidate.AddDays(1);
+            while (candidate.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
+            {
+                candidate = candidate.AddDays(1);
+            }
+        }
+
+        return new DateTime(
+            candidate.Year,
+            candidate.Month,
+            candidate.Day,
+            hour,
+            minute,
+            0,
+            DateTimeKind.Unspecified);
+    }
+
+    private static DateTimeOffset ToJordanDateTimeOffset(DateTime jordanFacilityTime)
+    {
+        var unspecified = DateTime.SpecifyKind(jordanFacilityTime, DateTimeKind.Unspecified);
+        return new DateTimeOffset(
+            unspecified,
+            JordanTimeZoneProvider.TimeZone.GetUtcOffset(unspecified));
+    }
 
     [Fact]
     public async Task ScheduleTheory_WhenWorkflowIsValid_CreatesAppointment()
@@ -29,7 +66,7 @@ public sealed class TestAppointmentWorkflowTests
             seed.UserId);
 
         var appointmentDate =
-            DateTime.UtcNow.AddDays(1);
+            GetValidFutureSlot(0);
 
         using var response =
             await ScheduleAsync(
@@ -108,10 +145,10 @@ public sealed class TestAppointmentWorkflowTests
             seed.UserId);
 
         var firstDate =
-            DateTime.UtcNow.AddDays(1);
+            GetValidFutureSlot(0);
 
         var secondDate =
-            DateTime.UtcNow.AddDays(2);
+            GetValidFutureSlot(1);
 
         using var firstResponse =
             await ScheduleAsync(
@@ -180,7 +217,7 @@ public sealed class TestAppointmentWorkflowTests
                 client,
                 seed.LocalApplicationId,
                 TestTypeEnum.Written,
-                DateTime.UtcNow.AddDays(1));
+                GetValidFutureSlot(0));
 
         Assert.Equal(
             HttpStatusCode.Conflict,
@@ -220,7 +257,7 @@ public sealed class TestAppointmentWorkflowTests
             seed.UserId);
 
         var theoryDate =
-            DateTime.UtcNow.AddDays(1);
+            GetValidFutureSlot(0);
 
         using var theoryResponse =
             await ScheduleAsync(
@@ -240,7 +277,7 @@ public sealed class TestAppointmentWorkflowTests
             seed.UserId);
 
         var writtenDate =
-            DateTime.UtcNow.AddDays(2);
+            GetValidFutureSlot(1);
 
         using var writtenResponse =
             await ScheduleAsync(
@@ -299,7 +336,7 @@ public sealed class TestAppointmentWorkflowTests
                 client,
                 seed.LocalApplicationId,
                 TestTypeEnum.Practical,
-                DateTime.UtcNow.AddDays(1));
+                GetValidFutureSlot(0));
 
         Assert.Equal(
             HttpStatusCode.Conflict,
@@ -343,7 +380,7 @@ public sealed class TestAppointmentWorkflowTests
             client,
             seed.LocalApplicationId,
             TestTypeEnum.Theory,
-            DateTime.UtcNow.AddDays(1),
+            GetValidFutureSlot(0),
             seed.UserId);
 
         await ScheduleAndPassAsync(
@@ -351,11 +388,11 @@ public sealed class TestAppointmentWorkflowTests
             client,
             seed.LocalApplicationId,
             TestTypeEnum.Written,
-            DateTime.UtcNow.AddDays(2),
+            GetValidFutureSlot(1),
             seed.UserId);
 
         var practicalDate =
-            DateTime.UtcNow.AddDays(3);
+            GetValidFutureSlot(2);
 
         using var response =
             await ScheduleAsync(
@@ -414,7 +451,7 @@ public sealed class TestAppointmentWorkflowTests
             client,
             seed.LocalApplicationId,
             TestTypeEnum.Theory,
-            DateTime.UtcNow.AddDays(1),
+            GetValidFutureSlot(0),
             seed.UserId);
 
         await ScheduleAndPassAsync(
@@ -422,7 +459,7 @@ public sealed class TestAppointmentWorkflowTests
             client,
             seed.LocalApplicationId,
             TestTypeEnum.Written,
-            DateTime.UtcNow.AddDays(2),
+            GetValidFutureSlot(1),
             seed.UserId);
 
         await ScheduleAndPassAsync(
@@ -430,7 +467,7 @@ public sealed class TestAppointmentWorkflowTests
             client,
             seed.LocalApplicationId,
             TestTypeEnum.Practical,
-            DateTime.UtcNow.AddDays(3),
+            GetValidFutureSlot(2),
             seed.UserId);
 
         using var response =
@@ -438,7 +475,7 @@ public sealed class TestAppointmentWorkflowTests
                 client,
                 seed.LocalApplicationId,
                 TestTypeEnum.Practical,
-                DateTime.UtcNow.AddDays(4));
+                GetValidFutureSlot(3));
 
         Assert.Equal(
             HttpStatusCode.Conflict,
@@ -485,11 +522,11 @@ public sealed class TestAppointmentWorkflowTests
             client,
             seed.LocalApplicationId,
             TestTypeEnum.Theory,
-            DateTime.UtcNow.AddDays(1),
+            GetValidFutureSlot(0),
             seed.UserId);
 
         var retakeDate =
-            DateTime.UtcNow.AddDays(2);
+            GetValidFutureSlot(1);
 
         using var response =
             await ScheduleAsync(
@@ -590,7 +627,7 @@ public sealed class TestAppointmentWorkflowTests
             client,
             seed.LocalApplicationId,
             TestTypeEnum.Theory,
-            DateTime.UtcNow.AddDays(1),
+            GetValidFutureSlot(0),
             seed.UserId);
 
         await AddAppointmentFailureTriggerAsync(
@@ -603,7 +640,7 @@ public sealed class TestAppointmentWorkflowTests
                     client,
                     seed.LocalApplicationId,
                     TestTypeEnum.Theory,
-                    DateTime.UtcNow.AddDays(2));
+                    GetValidFutureSlot(1));
 
             Assert.Equal(
                 HttpStatusCode.InternalServerError,
@@ -679,10 +716,10 @@ public sealed class TestAppointmentWorkflowTests
                 TaskCreationOptions.RunContinuationsAsynchronously);
 
         var date1 =
-            DateTime.UtcNow.AddDays(1);
+            GetValidFutureSlot(0);
 
         var date2 =
-            DateTime.UtcNow.AddDays(2);
+            GetValidFutureSlot(1);
 
         var task1 =
             ScheduleAfterGateAsync(
@@ -761,7 +798,7 @@ public sealed class TestAppointmentWorkflowTests
                 client,
                 seed.LocalApplicationId,
                 TestTypeEnum.Theory,
-                DateTime.UtcNow.AddDays(1));
+                GetValidFutureSlot(0));
 
         Assert.Equal(
             HttpStatusCode.Unauthorized,
@@ -813,10 +850,10 @@ public sealed class TestAppointmentWorkflowTests
                 TaskCreationOptions.RunContinuationsAsynchronously);
 
         var date1 =
-            DateTime.UtcNow.AddDays(1);
+            GetValidFutureSlot(0);
 
         var date2 =
-            DateTime.UtcNow.AddDays(2);
+            GetValidFutureSlot(1);
 
         var task1 =
             AddAppointmentAfterGateAsync(
@@ -892,7 +929,7 @@ public sealed class TestAppointmentWorkflowTests
                     (int)testType,
 
                 AppointmentDate =
-                    appointmentDate
+                    ToJordanDateTimeOffset(appointmentDate)
             };
 
         return await client.PostAsJsonAsync(
@@ -938,7 +975,7 @@ public sealed class TestAppointmentWorkflowTests
                     localApplicationId,
 
                 AppointmentDate =
-                    appointmentDate,
+                    ToJordanDateTimeOffset(appointmentDate),
 
                 RetakeTestApplicationId =
                     null
@@ -1059,6 +1096,7 @@ public sealed class TestAppointmentWorkflowTests
             });
 
         appointment.IsLocked = true;
+        appointment.Status = AppointmentStatus.Completed;
 
         await context.SaveChangesAsync();
     }
@@ -1395,7 +1433,7 @@ public sealed class TestAppointmentWorkflowTests
                     person.PersonId,
 
                 ApplicationDate =
-                    DateTime.UtcNow,
+                    new global::Infrastructure.Services.JordanClock().Now,
 
                 ApplicationTypeID =
                     1,
@@ -1404,7 +1442,7 @@ public sealed class TestAppointmentWorkflowTests
                     AppStatus.New,
 
                 LastStatusDate =
-                    DateTime.UtcNow,
+                    new global::Infrastructure.Services.JordanClock().Now,
 
                 PaidFees =
                     20m,

@@ -328,6 +328,16 @@ public sealed class UserService : IUserService
                 "This person is already associated with another user account.");
         }
 
+        bool hasChanges =
+            !string.Equals(user.UserName, username, StringComparison.Ordinal) ||
+            user.PersonId != dto.PersonId ||
+            user.IsActive != dto.IsActive;
+
+        if (!hasChanges)
+        {
+            return Result.Success();
+        }
+
         user.UserName =
             username;
 
@@ -340,6 +350,12 @@ public sealed class UserService : IUserService
         var saved =
             await _unitOfWork
                 .SaveChangesAsync();
+
+        if (saved <= 0)
+        {
+            return Result.Failure(
+                "No user changes were saved.");
+        }
 
         return Result.Success();
     }

@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
+using Application.Common.Time;
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.DetainedLicense;
@@ -132,11 +133,13 @@ public sealed class DetainedLicenseWorkflowTests
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedActiveLicenseScenarioAsync(factory);
 
+        var jordanNow = JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow);
+
         await using (var context = factory.CreateDbContext())
             Assert.Equal(1, await context.Licenses
                 .Where(x => x.LicenseID == seed.LicenseId)
                 .ExecuteUpdateAsync(s => s.SetProperty(
-                    x => x.ExpirationDate, DateTime.UtcNow.AddDays(-1))));
+                    x => x.ExpirationDate, jordanNow.Date.AddDays(-1))));
 
         using var client = AuthClient(factory, seed.UserId);
 
@@ -151,8 +154,12 @@ public sealed class DetainedLicenseWorkflowTests
         var license = await context2.Licenses.AsNoTracking()
             .SingleAsync(x => x.LicenseID == seed.LicenseId);
 
-        Assert.True(license.IsActive);
-        Assert.True(license.ExpirationDate <= DateTime.UtcNow);
+        // Startup expiration synchronization deactivates expired licenses on host startup,
+        // while detention still rejects the license specifically because it is expired.
+        Assert.False(license.IsActive);
+        Assert.True(LicenseExpirationPolicy.IsExpired(
+            license.ExpirationDate,
+            DateOnly.FromDateTime(JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow))));
 
         Assert.Empty(await context2.DetainedLicenses.AsNoTracking()
             .Where(x => x.LicenseID == seed.LicenseId)

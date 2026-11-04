@@ -1,4 +1,4 @@
-﻿using Infrastructure;
+using Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -16,6 +16,11 @@ public sealed class SqlServerApiWebApplicationFactory
 {
     private const string ConnectionEnvironmentVariable =
         "DVLD_TEST_CONNECTION";
+
+    private const int DatabaseLifecycleCommandTimeoutSeconds = 120;
+
+    private static readonly SemaphoreSlim DatabaseLifecycleLock =
+        new(2, 2);
 
     private string? _databaseName;
 
@@ -67,15 +72,21 @@ public sealed class SqlServerApiWebApplicationFactory
         return new DVLDDbContext(options);
     }
 
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+        await DropDatabaseAsync();
+    }
+
     protected override void Dispose(
         bool disposing)
     {
+        base.Dispose(disposing);
+
         if (disposing)
         {
             DropDatabase();
         }
-
-        base.Dispose(disposing);
     }
 
     private void InitializeDatabase()
@@ -107,51 +118,126 @@ public sealed class SqlServerApiWebApplicationFactory
 
         var options =
             new DbContextOptionsBuilder<DVLDDbContext>()
-                .UseSqlServer(ConnectionString)
+                .UseSqlServer(
+                    ConnectionString,
+                    sqlOptions => sqlOptions.CommandTimeout(
+                        DatabaseLifecycleCommandTimeoutSeconds))
                 .Options;
 
-        using var context =
-            new DVLDDbContext(options);
+        DatabaseLifecycleLock.Wait();
+        try
+        {
+            using var context =
+                new DVLDDbContext(options);
 
-        context.Database
-            .Migrate();
+            context.Database
+                .Migrate();
+        }
+        finally
+        {
+            DatabaseLifecycleLock.Release();
+        }
     }
 
-    private void DropDatabase()
+    private async Task DropDatabaseAsync()
     {
-        if (string.IsNullOrWhiteSpace(
-                _databaseName))
+        var databaseName = Interlocked.Exchange(ref _databaseName, null);
+        if (string.IsNullOrWhiteSpace(databaseName))
         {
             return;
         }
 
+        ClearDatabaseConnectionPool();
+
         var builder =
             new SqlConnectionStringBuilder(
-                ConnectionString);
+                ConnectionString)
+            {
+                InitialCatalog = "master"
+            };
 
-        builder.InitialCatalog =
-            "master";
+        await DatabaseLifecycleLock.WaitAsync();
+        try
+        {
+            await using var connection =
+                new SqlConnection(
+                    builder.ConnectionString);
 
-        using var connection =
-            new SqlConnection(
-                builder.ConnectionString);
+            await connection.OpenAsync();
 
-        connection.Open();
+            await using var command =
+                connection.CreateCommand();
 
-        using var command =
-            connection.CreateCommand();
+            command.CommandTimeout = DatabaseLifecycleCommandTimeoutSeconds;
+            command.CommandText = BuildDropDatabaseSql(databaseName);
 
-        command.CommandText =
-            $"""
-            IF DB_ID(N'{_databaseName}') IS NOT NULL
-            BEGIN
-                ALTER DATABASE [{_databaseName}]
-                SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-
-                DROP DATABASE [{_databaseName}];
-            END
-            """;
-
-        command.ExecuteNonQuery();
+            await command.ExecuteNonQueryAsync();
+        }
+        finally
+        {
+            DatabaseLifecycleLock.Release();
+        }
     }
+
+    private void DropDatabase()
+    {
+        var databaseName = Interlocked.Exchange(ref _databaseName, null);
+        if (string.IsNullOrWhiteSpace(databaseName))
+        {
+            return;
+        }
+
+        ClearDatabaseConnectionPool();
+
+        var builder =
+            new SqlConnectionStringBuilder(
+                ConnectionString)
+            {
+                InitialCatalog = "master"
+            };
+
+        DatabaseLifecycleLock.Wait();
+        try
+        {
+            using var connection =
+                new SqlConnection(
+                    builder.ConnectionString);
+
+            connection.Open();
+
+            using var command =
+                connection.CreateCommand();
+
+            command.CommandTimeout = DatabaseLifecycleCommandTimeoutSeconds;
+            command.CommandText = BuildDropDatabaseSql(databaseName);
+
+            command.ExecuteNonQuery();
+        }
+        finally
+        {
+            DatabaseLifecycleLock.Release();
+        }
+    }
+
+    private void ClearDatabaseConnectionPool()
+    {
+        if (string.IsNullOrWhiteSpace(ConnectionString))
+        {
+            return;
+        }
+
+        using var pooledConnection = new SqlConnection(ConnectionString);
+        SqlConnection.ClearPool(pooledConnection);
+    }
+
+    private static string BuildDropDatabaseSql(string databaseName) =>
+        $"""
+        IF DB_ID(N'{databaseName}') IS NOT NULL
+        BEGIN
+            ALTER DATABASE [{databaseName}]
+            SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+
+            DROP DATABASE [{databaseName}];
+        END
+        """;
 }

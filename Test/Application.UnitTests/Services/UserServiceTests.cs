@@ -1180,6 +1180,92 @@ public class UserServiceTests
             Times.Once);
     }
 
+    [Fact]
+    public async Task UpdateUserAsync_WhenNoPropertiesChanged_ReturnsSuccessWithoutSaving()
+    {
+        // Arrange
+        const int userId = 10;
+
+        var user = CreateUser(
+            userId,
+            personId: 20,
+            userName: "ayhm");
+
+        var dto = new UpdateUserDto
+        {
+            UserName = "  ayhm  ",
+            PersonId = 20,
+            IsActive = user.IsActive
+        };
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.GetUserForUpdateAsync(userId))
+            .ReturnsAsync(user);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUsernameTakenForAnotherUserAsync(
+                    "ayhm",
+                    userId))
+            .ReturnsAsync(false);
+
+        // Act
+        Result result =
+            await _sut.UpdateUserAsync(
+                userId,
+                dto);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ErrorType.None, result.ErrorType);
+
+        _unitOfWorkMock.Verify(
+            unitOfWork =>
+                unitOfWork.SaveChangesAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_SaveThrowsDbUpdateException_PropagatesException()
+    {
+        // Arrange
+        const int userId = 10;
+
+        var dto = CreateValidUpdateUserDto();
+
+        var user = CreateUser(
+            userId,
+            personId: dto.PersonId);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.GetUserForUpdateAsync(userId))
+            .ReturnsAsync(user);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUsernameTakenForAnotherUserAsync(
+                    dto.UserName,
+                    userId))
+            .ReturnsAsync(false);
+
+        _unitOfWorkMock
+            .Setup(unitOfWork =>
+                unitOfWork.SaveChangesAsync(
+                    It.IsAny<CancellationToken>()))
+            .ThrowsAsync(
+                new Microsoft.EntityFrameworkCore.DbUpdateException(
+                    "Simulated user persistence exception."));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Microsoft.EntityFrameworkCore.DbUpdateException>(
+            () => _sut.UpdateUserAsync(
+                userId,
+                dto));
+    }
+
     // =========================================================
     // DeleteUserAsync
     // =========================================================
@@ -1465,7 +1551,7 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task ChangePasswordAsync_WrongCurrentPassword_ReturnsFailure()
+    public async Task ChangePasswordAsync_WrongCurrentPassword_ReturnsValidationFailure()
     {
         // Arrange
         const int userId = 10;
@@ -1482,6 +1568,7 @@ public class UserServiceTests
         var user = CreateUser(
             userId,
             password: currentPassword);
+        var originalPasswordHash = user.Password;
 
         _userRepositoryMock
             .Setup(repository =>
@@ -1496,10 +1583,11 @@ public class UserServiceTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
             "Current password is incorrect.",
             result.Error);
+        Assert.Equal(originalPasswordHash, user.Password);
 
         _unitOfWorkMock.Verify(
             unitOfWork =>

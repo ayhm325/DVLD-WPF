@@ -1139,6 +1139,80 @@ public sealed class DriverServiceTests
             result.Error);
     }
 
+    [Fact]
+    public async Task UpdateAsync_WhenNoPropertiesChanged_ReturnsSuccessWithoutSaving()
+    {
+        var service = CreateService();
+
+        SetupAuthenticatedUser();
+
+        var existing =
+            CreateDriver(1, 100);
+
+        _repository
+            .Setup(x => x.GetForUpdateAsync(1))
+            .ReturnsAsync(existing);
+
+        _personRepository
+            .Setup(x =>
+                x.IsPersonExistsByIdAsync(100))
+            .ReturnsAsync(true);
+
+        var result =
+            await service.UpdateAsync(
+                CreateUpdateDto(
+                    1,
+                    100));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ErrorType.None, result.ErrorType);
+        Assert.Equal(100, existing.PersonID);
+
+        _unitOfWork.Verify(
+            x => x.SaveChangesAsync(
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenSaveThrowsPersistenceException_PropagatesException()
+    {
+        var service = CreateService();
+
+        SetupAuthenticatedUser();
+
+        var existing =
+            CreateDriver(1, 100);
+
+        _repository
+            .Setup(x => x.GetForUpdateAsync(1))
+            .ReturnsAsync(existing);
+
+        _personRepository
+            .Setup(x =>
+                x.IsPersonExistsByIdAsync(200))
+            .ReturnsAsync(true);
+
+        _repository
+            .Setup(x =>
+                x.ExistsByPersonIdAsync(200))
+            .ReturnsAsync(false);
+
+        _unitOfWork
+            .Setup(x =>
+                x.SaveChangesAsync(
+                    It.IsAny<CancellationToken>()))
+            .ThrowsAsync(
+                new Microsoft.EntityFrameworkCore.DbUpdateException(
+                    "Simulated database persistence failure."));
+
+        await Assert.ThrowsAsync<Microsoft.EntityFrameworkCore.DbUpdateException>(
+            () => service.UpdateAsync(
+                CreateUpdateDto(
+                    1,
+                    200)));
+    }
+
     // =========================================================
     // DELETE
     // =========================================================

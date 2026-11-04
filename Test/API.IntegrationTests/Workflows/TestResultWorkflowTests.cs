@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
+using Application.Common.Time;
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.Test;
@@ -132,10 +133,12 @@ public sealed class TestResultWorkflowTests
     {
         await using var factory = new SqlServerApiWebApplicationFactory();
 
+        var jordanNow = JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow);
+
         var seed = await SeedValidTestScenarioAsync(
             factory,
             TestTypeEnum.Theory,
-            appointmentDate: DateTime.UtcNow.AddDays(1));
+            appointmentDate: jordanNow.AddDays(1));
 
         using var client = factory.CreateClient();
         ConfigureAuthenticatedClient(client, seed.UserId);
@@ -297,6 +300,7 @@ public sealed class TestResultWorkflowTests
                     x => x.TestAppointmentID == seed.AppointmentId);
 
             Assert.False(appointment.IsLocked);
+            Assert.Equal(AppointmentStatus.Scheduled, appointment.Status);
         }
         finally
         {
@@ -550,13 +554,15 @@ public sealed class TestResultWorkflowTests
             "Practical Test",
             20m);
 
+        var jordanNow = JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow);
+
         var application = new ApplicationD
         {
             ApplicantPersonID = applicantPerson.PersonId,
-            ApplicationDate = DateTime.UtcNow,
+            ApplicationDate = jordanNow,
             ApplicationTypeID = 1,
             ApplicationStatus = applicationStatus,
-            LastStatusDate = DateTime.UtcNow,
+            LastStatusDate = jordanNow,
             PaidFees = 20m,
             CreatedByUserID = user.UserId
         };
@@ -582,7 +588,7 @@ public sealed class TestResultWorkflowTests
                 localApplication.LocalDrivingLicenseApplicationID,
             AppointmentDate =
                 appointmentDate ??
-                DateTime.UtcNow.AddMinutes(-5),
+                jordanNow.AddMinutes(-5),
             PaidFees =
                 testType == TestTypeEnum.Theory ? 10m :
                 testType == TestTypeEnum.Written ? 15m :
