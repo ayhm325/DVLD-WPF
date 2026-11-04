@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
@@ -203,7 +203,7 @@ public class LicenseRenewalServiceTests
         Assert.Equal(500, result.Value);
         _licenseRepository.Verify(
             x => x.DeactivateLicenseAsync(10),
-            Times.Once);
+            Times.Never);
         transaction.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Once);

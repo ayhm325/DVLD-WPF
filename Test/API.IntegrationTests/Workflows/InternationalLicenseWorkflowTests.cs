@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
+using Application.Common.Time;
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.InternationalLicense;
@@ -41,7 +42,10 @@ public sealed class InternationalLicenseWorkflowTests
         Assert.Equal(seed.NationalNo, result.NationalNo);
         Assert.Equal("Male", result.Gender);
         Assert.True(result.IsActive);
-        Assert.InRange(result.IssueDate, seed.BeforeRequest, DateTime.UtcNow);
+        Assert.InRange(
+            result.IssueDate,
+            seed.BeforeRequest,
+            JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow));
         Assert.Equal(result.IssueDate.AddYears(1), result.ExpirationDate);
         Assert.Equal(50m, result.Fees);
         Assert.Equal(seed.Username, result.CreatedByUserName);
@@ -469,7 +473,7 @@ public sealed class InternationalLicenseWorkflowTests
             localLicense.LicenseID,
             applicantPerson.NationalNo,
             applicantPerson.FullName,
-            DateTime.UtcNow);
+            JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow));
     }
 
     private static async Task SeedLookupDataAsync(DVLDDbContext context)

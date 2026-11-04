@@ -181,12 +181,15 @@ public sealed class LicenseRenewalService(
                         Result<int>.FromValidationFailure(
                             licenseValidation.Error));
 
-                var deactivated = await _licenseRepository.DeactivateLicenseAsync(oldLicenseId);
-                if (!deactivated)
-                    return await RollbackAsync(
-                        transaction,
-                        Result<int>.FromFailure(
-                            "Failed to deactivate old license."));
+                if (oldLicense.IsActive)
+                {
+                    var deactivated = await _licenseRepository.DeactivateLicenseAsync(oldLicenseId);
+                    if (!deactivated)
+                        return await RollbackAsync(
+                            transaction,
+                            Result<int>.FromFailure(
+                                "Failed to deactivate old license."));
+                }
 
                 var newLicense = LicenseMapper.ToEntity(createLicenseDto);
                 newLicense.CreatedByUserID = _currentUserService.UserId;
