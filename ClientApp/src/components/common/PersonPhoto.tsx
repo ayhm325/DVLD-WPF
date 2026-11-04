@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { User } from 'lucide-react'
 import { getPersonPhotoBlob } from '../../services/peopleService'
+import { cn } from '@/lib/utils'
 
 export type PersonPhotoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
@@ -122,9 +123,12 @@ export default function PersonPhoto({
     return (
       <div
         onClick={onClick}
-        className={`relative shrink-0 overflow-hidden border border-cyan-500/20 bg-slate-900/60 shadow-md ${container} ${
-          onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''
-        } ${className}`}
+        className={cn(
+          'relative shrink-0 overflow-hidden border border-cyan-500/20 bg-slate-900/60 shadow-md',
+          container,
+          onClick && 'cursor-pointer hover:opacity-95 transition-opacity',
+          className,
+        )}
       >
         <img
           src={effectiveUrl}
@@ -145,9 +149,12 @@ export default function PersonPhoto({
   return (
     <div
       onClick={onClick}
-      className={`relative flex shrink-0 items-center justify-center border border-cyan-500/20 bg-slate-900/60 font-semibold text-cyan-400 shadow-md ${container} ${
-        onClick ? 'cursor-pointer hover:opacity-95 transition-opacity' : ''
-      } ${className}`}
+      className={cn(
+        'relative flex shrink-0 items-center justify-center border border-cyan-500/20 bg-slate-900/60 font-semibold text-cyan-400 shadow-md',
+        container,
+        onClick && 'cursor-pointer hover:opacity-95 transition-opacity',
+        className,
+      )}
     >
       {loading ? (
         <div className="size-4 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />

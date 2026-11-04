@@ -578,13 +578,13 @@ export default function ScheduleAppointmentPage({
         /* 5. Main 2-Column Responsive Layout */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Application Context, Examination Stage & Fee Breakdown */}
-          <div className="lg:col-span-5 space-y-5">
+          <div className="lg:col-span-5 space-y-6">
             {/* Card 1: Applicant & Application Selection */}
-            <Card className="border-[#1e3458] bg-[#0c1830] p-4.5 rounded-2xl shadow-md">
-              <CardHeader className="p-0 pb-3 border-b border-[#1e3458]">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
-                    <CalendarDays className="size-4 text-cyan-400" />
+            <Card className="border-[#1e3458] bg-[#0c1830] rounded-2xl shadow-md overflow-hidden">
+              <CardHeader className="border-b border-[#1e3458] px-6 py-5">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base font-bold text-white flex items-center gap-2.5">
+                    <CalendarDays className="size-4.5 text-cyan-400" />
                     <span>Candidate & Application</span>
                   </CardTitle>
                   {application ? (
@@ -601,20 +601,20 @@ export default function ScheduleAppointmentPage({
                       }
                     />
                   ) : (
-                    <span className="text-[11px] text-amber-300 font-medium">
+                    <span className="text-[11px] text-amber-300 font-medium px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
                       Selection Required
                     </span>
                   )}
                 </div>
-                <CardDescription className="text-xs text-slate-400">
+                <CardDescription className="text-xs text-slate-400 mt-1">
                   Select or verify the local driving license application for this appointment.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="p-0 pt-3 space-y-3">
+              <CardContent className="p-6 space-y-4">
                 {/* Scenario B Candidate Selection Tools (when initially unselected or user chooses to change) */}
                 {initialLocalAppId === undefined && (
-                  <div className="space-y-3 rounded-xl bg-slate-950/60 p-3 border border-slate-800">
+                  <div className="space-y-3.5 rounded-2xl bg-slate-950/60 p-4.5 border border-slate-800">
                     <div className="space-y-1.5">
                       <label
                         htmlFor="candidate-search"
@@ -623,20 +623,20 @@ export default function ScheduleAppointmentPage({
                         Search Candidate (Name, National No, or App ID)
                       </label>
                       <div className="relative">
-                        <Search className="size-3.5 absolute left-3 top-2.5 text-slate-500" />
+                        <Search className="size-4 absolute left-3.5 top-3 text-slate-500" />
                         <input
                           id="candidate-search"
                           type="text"
                           value={candidateSearchQuery}
                           onChange={(e) => setCandidateSearchQuery(e.target.value)}
                           placeholder="Type applicant name, national ID..."
-                          className="w-full bg-[#111e33] border border-[#223656] text-xs text-white pl-8 pr-3 py-1.5 rounded-lg focus:outline-none focus:border-cyan-500"
+                          className="w-full bg-[#111e33] border border-[#223656] text-xs text-white pl-9.5 pr-3 py-2 rounded-xl focus:outline-none focus:border-cyan-500"
                         />
                       </div>
                     </div>
 
                     {/* Candidate Select Dropdown with Status Indicators */}
-                    <div>
+                    <div className="space-y-1.5">
                       <label
                         htmlFor="select-application"
                         className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1"
@@ -658,7 +658,7 @@ export default function ScheduleAppointmentPage({
                           setSubmitSuccess(false)
                           setSubmitError(null)
                         }}
-                        className="w-full bg-[#111e33] border border-[#223656] text-xs text-white p-2 rounded-lg focus:outline-none focus:border-cyan-500 cursor-pointer"
+                        className="w-full bg-[#111e33] border border-[#223656] text-xs text-white p-2.5 rounded-xl focus:outline-none focus:border-cyan-500 cursor-pointer"
                       >
                         <option value="">— Select an application —</option>
                         {filteredCandidates.map((app) => {
@@ -696,13 +696,13 @@ export default function ScheduleAppointmentPage({
                           size="sm"
                           onClick={handleLoadMoreCandidates}
                           disabled={loadingMoreCandidates}
-                          className="w-full text-xs h-7 text-cyan-300 border-[#223656] hover:bg-[#14233c]"
+                          className="w-full text-xs h-8 text-cyan-300 border-[#223656] hover:bg-[#14233c] rounded-xl"
                         >
                           {loadingMoreCandidates ? (
                             <span>Loading more candidates…</span>
                           ) : (
-                            <span className="flex items-center gap-1 justify-center">
-                              <ChevronDown className="size-3" />
+                            <span className="flex items-center gap-1.5 justify-center">
+                              <ChevronDown className="size-3.5" />
                               <span>Load More Applications</span>
                             </span>
                           )}
@@ -711,8 +711,8 @@ export default function ScheduleAppointmentPage({
                     )}
 
                     {/* Direct App ID Lookup Form */}
-                    <form onSubmit={handleDirectLookup} className="pt-2 border-t border-slate-800">
-                      <span className="text-[10px] text-slate-400 block mb-1">
+                    <form onSubmit={handleDirectLookup} className="pt-3 border-t border-slate-800">
+                      <span className="text-[10px] text-slate-400 block mb-1.5">
                         Or enter exact Application ID:
                       </span>
                       <div className="flex gap-2">
@@ -721,19 +721,19 @@ export default function ScheduleAppointmentPage({
                           value={directLookupId}
                           onChange={(e) => setDirectLookupId(e.target.value)}
                           placeholder="App ID #"
-                          className="w-28 bg-[#111e33] border border-[#223656] text-xs text-white px-2.5 py-1 rounded-lg focus:outline-none focus:border-cyan-500 font-mono"
+                          className="w-32 bg-[#111e33] border border-[#223656] text-xs text-white px-3 py-1.5 rounded-xl focus:outline-none focus:border-cyan-500 font-mono"
                         />
                         <Button
                           type="submit"
                           size="sm"
                           disabled={directLookupLoading || !directLookupId.trim()}
-                          className="h-7 text-xs bg-cyan-700 hover:bg-cyan-600 text-white rounded-lg px-2.5"
+                          className="h-8 text-xs bg-cyan-700 hover:bg-cyan-600 text-white rounded-xl px-3.5 cursor-pointer"
                         >
                           {directLookupLoading ? 'Finding…' : 'Lookup'}
                         </Button>
                       </div>
                       {directLookupError && (
-                        <span className="text-[11px] text-rose-400 block pt-1">
+                        <span className="text-[11px] text-rose-400 block pt-1.5">
                           {directLookupError}
                         </span>
                       )}
@@ -743,27 +743,27 @@ export default function ScheduleAppointmentPage({
 
                 {/* Selected Application Details */}
                 {application ? (
-                  <div className="space-y-2.5 pt-1 text-xs">
-                    <div className="flex items-center justify-between py-1 border-b border-slate-800/80">
+                  <div className="p-4.5 rounded-xl bg-slate-950/40 border border-slate-800/80 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
                       <span className="text-slate-400">Applicant Full Name:</span>
                       <strong className="text-white font-medium">
                         {application.fullName}
                       </strong>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-slate-800/80">
+                    <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
                       <span className="text-slate-400">National Number:</span>
                       <span className="font-mono text-slate-200">
                         {application.nationalNo}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-slate-800/80">
+                    <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
                       <span className="text-slate-400">License Class:</span>
                       <span className="text-cyan-300 font-medium">
                         {application.licenseClassName ||
                           `Class ${application.licenseClassId}`}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between py-1 border-b border-slate-800/80">
+                    <div className="flex items-center justify-between py-1.5">
                       <span className="text-slate-400">Examinations Passed:</span>
                       <span className="font-bold text-emerald-400 font-mono">
                         {application.passedTest} / 3 Stages
@@ -771,7 +771,7 @@ export default function ScheduleAppointmentPage({
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl border border-dashed border-slate-700 text-center text-xs text-slate-400">
+                  <div className="p-5 rounded-xl border border-dashed border-slate-700 text-center text-xs text-slate-400">
                     Please select an application from the dropdown above to load candidate details.
                   </div>
                 )}
@@ -779,26 +779,26 @@ export default function ScheduleAppointmentPage({
             </Card>
 
             {/* Card 2: Examination Stage & Eligibility */}
-            <Card className="border-[#1e3458] bg-[#0c1830] p-4.5 rounded-2xl shadow-md">
-              <CardHeader className="p-0 pb-3 border-b border-[#1e3458]">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
-                    <Award className="size-4 text-cyan-400" />
+            <Card className="border-[#1e3458] bg-[#0c1830] rounded-2xl shadow-md overflow-hidden">
+              <CardHeader className="border-b border-[#1e3458] px-6 py-5">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base font-bold text-white flex items-center gap-2.5">
+                    <Award className="size-4.5 text-cyan-400" />
                     <span>Examination Stage</span>
                   </CardTitle>
                   {schedulePrep && (
-                    <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
                       Trial #{schedulePrep.trial}
                     </span>
                   )}
                 </div>
-                <CardDescription className="text-xs text-slate-400">
+                <CardDescription className="text-xs text-slate-400 mt-1">
                   Select the required examination stage in sequential order.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="p-0 pt-3 space-y-3">
-                <div className="grid grid-cols-3 gap-2">
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-3 gap-3">
                   {([1, 2, 3] as const).map((stageId) => {
                     const cfg = STAGE_CONFIG[stageId]
                     const StageIcon = cfg.icon
@@ -817,9 +817,9 @@ export default function ScheduleAppointmentPage({
                           setSubmitSuccess(false)
                           setSubmitError(null)
                         }}
-                        className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                        className={`flex flex-col items-center justify-center p-3.5 rounded-xl border text-center transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-cyan-600 text-white border-cyan-400 shadow-md ring-1 ring-cyan-400/40'
+                            ? 'bg-cyan-600 text-white border-cyan-400 shadow-md ring-2 ring-cyan-400/40'
                             : isPassed
                               ? 'bg-emerald-950/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-950/40'
                               : isPrereqMet
@@ -827,11 +827,11 @@ export default function ScheduleAppointmentPage({
                                 : 'bg-slate-950/60 text-slate-500 border-slate-800 opacity-60 cursor-not-allowed'
                         }`}
                       >
-                        <StageIcon className="size-4 mb-1" />
+                        <StageIcon className="size-5 mb-1.5" />
                         <span className="text-xs font-bold leading-tight">
                           {cfg.shortName}
                         </span>
-                        <span className="text-[10px] mt-0.5">
+                        <span className="text-[10px] mt-1">
                           {isPassed ? (
                             <span className="text-emerald-400 font-semibold flex items-center gap-0.5">
                               <Check className="size-3" /> Passed
@@ -849,8 +849,8 @@ export default function ScheduleAppointmentPage({
 
                 {/* Eligibility Feedback Alerts */}
                 {application && !isNewStatus && (
-                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
-                    <AlertCircle className="size-4 shrink-0" />
+                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-300 flex items-center gap-2.5">
+                    <AlertCircle className="size-4.5 shrink-0" />
                     <span>
                       Application status is "{application.statusText || application.applicationStatus}". Only applications with status "New" can schedule examinations.
                     </span>
@@ -858,8 +858,8 @@ export default function ScheduleAppointmentPage({
                 )}
 
                 {application && isStageAlreadyPassed && (
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-                    <CheckCircle2 className="size-4 shrink-0" />
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-300 flex items-center gap-2.5">
+                    <CheckCircle2 className="size-4.5 shrink-0" />
                     <span>
                       {currentStageConfig.name} has already been passed for this application.
                     </span>
@@ -867,8 +867,8 @@ export default function ScheduleAppointmentPage({
                 )}
 
                 {application && !isPrerequisiteMet && (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300 flex items-center gap-2">
-                    <AlertCircle className="size-4 shrink-0" />
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-300 flex items-center gap-2.5">
+                    <AlertCircle className="size-4.5 shrink-0" />
                     <span>
                       Sequential examination rule: Candidate must pass previous stage(s) before scheduling {currentStageConfig.name}.
                     </span>
@@ -876,12 +876,12 @@ export default function ScheduleAppointmentPage({
                 )}
 
                 {hasActiveAppointment && activeAppointment && (
-                  <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-3 text-xs text-cyan-300 space-y-1">
+                  <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-4 text-xs text-cyan-300 space-y-1.5">
                     <div className="flex items-center gap-2 font-bold">
-                      <Clock className="size-4 shrink-0" />
+                      <Clock className="size-4.5 shrink-0 text-cyan-400" />
                       <span>Active Appointment Already Scheduled</span>
                     </div>
-                    <p className="text-[11px] text-slate-300">
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
                       Appointment #{activeAppointment.testAppointmentId} is scheduled on{' '}
                       {formatJordanAppointmentDateTime(
                         activeAppointment.appointmentDate,
@@ -905,30 +905,30 @@ export default function ScheduleAppointmentPage({
             </Card>
 
             {/* Card 3: Fee Breakdown Card */}
-            <Card className="border-[#1e3458] bg-[#0c1830] p-4.5 rounded-2xl shadow-md">
-              <CardHeader className="p-0 pb-3 border-b border-[#1e3458]">
-                <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
-                  <DollarSign className="size-4 text-emerald-400" />
+            <Card className="border-[#1e3458] bg-[#0c1830] rounded-2xl shadow-md overflow-hidden">
+              <CardHeader className="border-b border-[#1e3458] px-6 py-5">
+                <CardTitle className="text-base font-bold text-white flex items-center gap-2.5">
+                  <DollarSign className="size-4.5 text-emerald-400" />
                   <span>Applicable Fee Breakdown</span>
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-400">
+                <CardDescription className="text-xs text-slate-400 mt-1">
                   Official fee schedule retrieved directly from DVLD backend.
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="p-0 pt-3 space-y-2 text-xs">
+              <CardContent className="p-6 space-y-3 text-xs">
                 {loadingPrep ? (
-                  <div className="flex items-center gap-2 py-3 text-slate-400">
+                  <div className="flex items-center gap-2.5 py-4 text-slate-400">
                     <LoadingSpinner size="sm" />
                     <span>Retrieving official fee quote…</span>
                   </div>
                 ) : !application ? (
-                  <div className="text-xs text-slate-400 py-2 italic">
+                  <div className="text-xs text-slate-400 py-3 italic">
                     Fee quote will appear once an application is selected.
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center justify-between text-slate-300 py-1">
+                    <div className="flex items-center justify-between text-slate-300 py-1.5">
                       <span>Standard Examination Fee:</span>
                       <span className="font-mono font-semibold text-slate-100">
                         {(schedulePrep?.fees ?? 0).toFixed(2)} JOD
@@ -936,7 +936,7 @@ export default function ScheduleAppointmentPage({
                     </div>
 
                     {Boolean(schedulePrep?.retakerFees) && (
-                      <div className="flex items-center justify-between text-amber-300 py-1 border-t border-slate-800">
+                      <div className="flex items-center justify-between text-amber-300 py-1.5 border-t border-slate-800">
                         <span>Retake Application Fee (Trial #{schedulePrep?.trial}):</span>
                         <span className="font-mono font-semibold">
                           {(schedulePrep?.retakerFees ?? 0).toFixed(2)} JOD
@@ -944,7 +944,7 @@ export default function ScheduleAppointmentPage({
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between py-2 border-t border-slate-700 font-bold text-sm">
+                    <div className="flex items-center justify-between py-3 border-t border-slate-700 font-bold text-sm">
                       <span className="text-white">Total Applicable Fee:</span>
                       <span className="text-cyan-400 font-mono text-base">
                         {totalFees.toFixed(2)} JOD
@@ -957,28 +957,28 @@ export default function ScheduleAppointmentPage({
           </div>
 
           {/* Right Column: Date & Slot Availability Picker and Booking Confirmation */}
-          <div className="lg:col-span-7 space-y-5">
-            <form onSubmit={handleConfirmSchedule} className="space-y-5">
+          <div className="lg:col-span-7 space-y-6">
+            <form onSubmit={handleConfirmSchedule} className="space-y-6">
               {/* Card 4: Date & Slot Selection Card */}
-              <Card className="border-[#1e3458] bg-[#0c1830] p-5 rounded-2xl shadow-md space-y-4">
-                <CardHeader className="p-0 pb-3 border-b border-[#1e3458]">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-white flex items-center gap-2">
-                      <Calendar className="size-4 text-cyan-400" />
+              <Card className="border-[#1e3458] bg-[#0c1830] rounded-2xl shadow-md overflow-hidden">
+                <CardHeader className="border-b border-[#1e3458] px-6 py-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-base font-bold text-white flex items-center gap-2.5">
+                      <Calendar className="size-4.5 text-cyan-400" />
                       <span>Facility Available Dates & Slots</span>
                     </CardTitle>
                     {availability && (
-                      <span className="text-[11px] text-cyan-300 font-mono font-semibold px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-500/30">
+                      <span className="text-[11px] text-cyan-300 font-mono font-semibold px-2.5 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30">
                         {availability.availableDays.length} working days open
                       </span>
                     )}
                   </div>
-                  <CardDescription className="text-xs text-slate-400">
+                  <CardDescription className="text-xs text-slate-400 mt-1">
                     Official Jordan facility calendar (Sunday–Thursday, 08:00–16:00). Minimum booking lead time is 2 calendar days.
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="p-0 space-y-4">
+                <CardContent className="p-6 space-y-5">
                   {!application ? (
                     <EmptyState
                       message="No Application Selected"
@@ -986,12 +986,12 @@ export default function ScheduleAppointmentPage({
                       icon={<Calendar className="size-8 text-slate-500" />}
                     />
                   ) : !isEligibleToSchedule ? (
-                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-5 text-center space-y-2">
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-6 text-center space-y-2.5">
                       <div className="flex items-center justify-center gap-2 text-sm font-bold text-amber-300">
                         <ShieldAlert className="size-5 shrink-0" />
                         <span>Examination Scheduling Locked</span>
                       </div>
-                      <p className="text-xs text-slate-300 max-w-md mx-auto">
+                      <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
                         {!isNewStatus
                           ? `Application status is "${application.statusText || application.applicationStatus}". Only New applications may be scheduled.`
                           : isStageAlreadyPassed
@@ -1004,10 +1004,10 @@ export default function ScheduleAppointmentPage({
                       </p>
                     </div>
                   ) : availabilityError ? (
-                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 space-y-2 text-xs text-rose-300">
+                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4.5 space-y-2 text-xs text-rose-300">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 font-semibold">
-                          <AlertCircle className="size-4 shrink-0" />
+                          <AlertCircle className="size-4.5 shrink-0" />
                           <span>Availability Query: {availabilityError}</span>
                         </div>
                         <Button
@@ -1015,7 +1015,7 @@ export default function ScheduleAppointmentPage({
                           variant="outline"
                           size="sm"
                           onClick={() => void refreshBookingContext()}
-                          className="h-7 text-xs border-rose-500/40 hover:bg-rose-500/20"
+                          className="h-8 text-xs border-rose-500/40 hover:bg-rose-500/20 rounded-lg cursor-pointer"
                         >
                           Retry
                         </Button>
@@ -1035,20 +1035,20 @@ export default function ScheduleAppointmentPage({
                   ) : (
                     <>
                       {/* Available Dates: Interactive Calendar Cards Grid (DEF-04) */}
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
                           <label className="block text-xs font-semibold text-slate-300">
                             Available Facility Dates ({availability?.availableDays.length ?? 0} Working Days)
                           </label>
                           {selectedDate && (
-                            <span className="text-[11px] font-mono text-cyan-300">
+                            <span className="text-[11px] font-mono text-cyan-300 font-semibold">
                               Selected: {formatAvailableDateLabel(selectedDate)}
                             </span>
                           )}
                         </div>
 
                         {/* Interactive Grid of Date Cards */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-52 overflow-y-auto pr-1">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1">
                           {availability?.availableDays.map((d) => {
                             const isSelected = selectedDate === d.date
                             const [yyyy, mm, dd] = d.date.split('-')
@@ -1074,7 +1074,7 @@ export default function ScheduleAppointmentPage({
                                   )
                                   setSelectedSlot(day?.slots[0]?.startTime ?? '')
                                 }}
-                                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                                   isSelected
                                     ? 'bg-cyan-600 text-white border-cyan-400 shadow-md ring-2 ring-cyan-400/50'
                                     : 'bg-slate-900/90 text-slate-200 border-slate-700 hover:border-cyan-500/60 hover:bg-slate-850'
@@ -1090,11 +1090,11 @@ export default function ScheduleAppointmentPage({
                                   </span>
                                   {isSelected && <Check className="size-3.5" />}
                                 </div>
-                                <div className="text-xs font-semibold mt-0.5">
+                                <div className="text-xs font-semibold mt-1">
                                   {monthDayStr}
                                 </div>
                                 <div
-                                  className={`text-[10px] mt-1 font-mono ${
+                                  className={`text-[10px] mt-1.5 font-mono ${
                                     isSelected ? 'text-cyan-100' : 'text-slate-400'
                                   }`}
                                 >
@@ -1107,7 +1107,7 @@ export default function ScheduleAppointmentPage({
                       </div>
 
                       {/* 12 Predefined 40-minute Time Slots Grid */}
-                      <div className="space-y-2 pt-2 border-t border-slate-800">
+                      <div className="space-y-3 pt-3 border-t border-slate-800">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-semibold text-slate-300">
                             Available 40-Minute Time Slots for{' '}
@@ -1120,7 +1120,7 @@ export default function ScheduleAppointmentPage({
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                           {APPROVED_APPOINTMENT_SLOTS.map((slotTime) => {
                             const isAvailable = currentDaySlots.some(
                               (s) => s.startTime === slotTime,
@@ -1136,7 +1136,7 @@ export default function ScheduleAppointmentPage({
                                 type="button"
                                 disabled={!isAvailable || !isEligibleToSchedule}
                                 onClick={() => setSelectedSlot(slotTime)}
-                                className={`px-3 py-2 rounded-xl text-xs font-mono font-semibold border transition-all text-center ${
+                                className={`px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold border transition-all text-center ${
                                   isSelected
                                     ? 'bg-cyan-600 text-white border-cyan-400 shadow-md ring-2 ring-cyan-400/50'
                                     : isAvailable && isEligibleToSchedule
@@ -1150,7 +1150,7 @@ export default function ScheduleAppointmentPage({
                                 }
                               >
                                 <div>{slotTime}</div>
-                                <div className="text-[10px] font-sans font-normal opacity-80">
+                                <div className="text-[10px] font-sans font-normal opacity-80 mt-0.5">
                                   {isAvailable ? 'Open' : 'Unavailable'}
                                 </div>
                               </button>
@@ -1159,9 +1159,9 @@ export default function ScheduleAppointmentPage({
                         </div>
 
                         {selectedSlot && (
-                          <div className="mt-2.5 p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between text-xs text-cyan-300">
-                            <div className="flex items-center gap-2">
-                              <Clock className="size-4 text-cyan-400 shrink-0" />
+                          <div className="mt-3 p-4 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between text-xs text-cyan-300">
+                            <div className="flex items-center gap-2.5">
+                              <Clock className="size-4.5 text-cyan-400 shrink-0" />
                               <span>
                                 Selected: <strong>{selectedSlot}</strong> –{' '}
                                 {currentDaySlots.find(
@@ -1170,7 +1170,7 @@ export default function ScheduleAppointmentPage({
                                 on {formatAvailableDateLabel(selectedDate)}
                               </span>
                             </div>
-                            <span className="font-mono text-[11px] text-cyan-400 uppercase">
+                            <span className="font-mono text-[11px] text-cyan-400 uppercase font-semibold">
                               Asia/Amman
                             </span>
                           </div>
@@ -1182,64 +1182,66 @@ export default function ScheduleAppointmentPage({
               </Card>
 
               {/* Card 5: Booking Confirmation & Action Bar */}
-              <Card className="border-[#1e3458] bg-[#0c1830] p-5 rounded-2xl shadow-md">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                      Booking Summary
-                    </span>
-                    <div className="text-xs text-slate-200">
-                      {application ? (
-                        <>
-                          <strong className="text-white">{application.fullName}</strong> •{' '}
-                          {currentStageConfig.name} •{' '}
-                          <span className="text-cyan-300 font-mono font-semibold">
-                            {totalFees.toFixed(2)} JOD
-                          </span>
-                        </>
-                      ) : (
-                        'Select application to proceed'
-                      )}
+              <Card className="border-[#1e3458] bg-[#0c1830] rounded-2xl shadow-md overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Booking Summary
+                      </span>
+                      <div className="text-xs text-slate-200">
+                        {application ? (
+                          <>
+                            <strong className="text-white">{application.fullName}</strong> •{' '}
+                            {currentStageConfig.name} •{' '}
+                            <span className="text-cyan-300 font-mono font-semibold">
+                              {totalFees.toFixed(2)} JOD
+                            </span>
+                          </>
+                        ) : (
+                          'Select application to proceed'
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={onBack}
+                        disabled={submitting}
+                        className="h-10 px-5 rounded-xl border-slate-700 hover:bg-slate-800 text-slate-300 cursor-pointer"
+                      >
+                        Cancel
+                      </Button>
+
+                      <Button
+                        type="submit"
+                        disabled={
+                          submitting ||
+                          !isEligibleToSchedule ||
+                          !selectedDate ||
+                          !selectedSlot ||
+                          loadingAvailability ||
+                          Boolean(
+                            availability && availability.availableDays.length === 0,
+                          )
+                        }
+                        className="h-10 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs px-6 rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.35)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {submitting ? (
+                          <div className="flex items-center gap-2">
+                            <LoadingSpinner size="sm" />
+                            <span>Reserving Slot…</span>
+                          </div>
+                        ) : (
+                          <span>Confirm & Schedule Appointment</span>
+                        )}
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-3 justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={onBack}
-                      disabled={submitting}
-                      className="rounded-xl border-slate-700 hover:bg-slate-800 text-slate-300"
-                    >
-                      Cancel
-                    </Button>
-
-                    <Button
-                      type="submit"
-                      disabled={
-                        submitting ||
-                        !isEligibleToSchedule ||
-                        !selectedDate ||
-                        !selectedSlot ||
-                        loadingAvailability ||
-                        Boolean(
-                          availability && availability.availableDays.length === 0,
-                        )
-                      }
-                      className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.35)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {submitting ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingSpinner size="sm" />
-                          <span>Reserving Slot…</span>
-                        </div>
-                      ) : (
-                        <span>Confirm & Schedule Appointment</span>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                </CardContent>
               </Card>
             </form>
           </div>
