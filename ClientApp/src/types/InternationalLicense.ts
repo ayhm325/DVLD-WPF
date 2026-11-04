@@ -34,6 +34,9 @@ export type LocalLicenseInfo = {
   issueDate: string
   expirationDate: string
   isActive: boolean
+  isExpired?: boolean
+  isEligibleForRenewal?: boolean
+  ineligibilityReason?: string | null
   isDetained: boolean
   issueReason: string
   notes: string | null

@@ -43,6 +43,16 @@ public sealed class NoShowBackgroundService : BackgroundService
                             "NoShow background processor marked {ProcessedCount} appointment(s) as NoShow.",
                             result.ProcessedCount);
                     }
+
+                    var licenseRepo = scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
+                    var clock = scope.ServiceProvider.GetRequiredService<IJordanClock>();
+                    var expiredCount = await licenseRepo.DeactivateExpiredLicensesAsync(clock.Now.Date);
+                    if (expiredCount > 0)
+                    {
+                        _logger.LogInformation(
+                            "Background processor deactivated {ExpiredCount} expired license(s).",
+                            expiredCount);
+                    }
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

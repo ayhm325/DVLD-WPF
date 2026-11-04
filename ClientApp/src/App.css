@@ -17,7 +17,6 @@
    10. Buttons & Form Controls
    11. People Table
    12. Add Person Modal
-   13. Placeholder Pages
    14. App Footer
    15. Focus & Accessibility
    16. Responsive — Tablet (max-width: 1100px)
@@ -168,8 +167,7 @@ body {
 
   padding: 14px 12px 14px;
 
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 
   color: #b8c5d8;
   background:
@@ -178,9 +176,30 @@ body {
     linear-gradient(180deg, #040914 0%, #061126 40%, #081734 75%, #040a16 100%) !important;
   border-right: 2px solid #0090ff !important;
   box-shadow: 6px 0 32px rgba(0, 140, 255, 0.55), inset -2px 0 16px rgba(0, 140, 255, 0.25) !important;
+}
 
+.sidebar-nav-container {
+  overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #263750 transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb {
+  background: #263750;
+  border-radius: 9999px;
+}
+
+.sidebar-nav-container::-webkit-scrollbar-thumb:hover {
+  background: #0090ff;
 }
 
 .brand-card {
@@ -1572,51 +1591,6 @@ body {
   .form-full-width {
     grid-column: auto;
   }
-}
-
-/* =====================================================
-   13. Placeholder Pages
-===================================================== */
-
-.placeholder-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 330px;
-  padding: 40px 24px;
-
-  text-align: center;
-}
-
-.placeholder-icon {
-  display: grid;
-  place-items: center;
-
-  width: 64px;
-  height: 64px;
-  margin-bottom: 18px;
-
-  color: var(--dvld-primary);
-  background: var(--dvld-primary-light);
-
-  border: 1px solid var(--dvld-primary-border);
-  border-radius: 18px;
-}
-
-.placeholder-panel h2 {
-  margin: 0 0 8px;
-
-  color: var(--dvld-heading);
-  font-size: 21px;
-}
-
-.placeholder-panel p {
-  margin: 0 0 22px;
-
-  color: var(--dvld-muted);
-  font-size: 13px;
 }
 
 /* =====================================================

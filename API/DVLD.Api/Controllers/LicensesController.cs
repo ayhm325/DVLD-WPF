@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
@@ -119,6 +119,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
         Notes = dto.Notes,
         PaidFees = dto.PaidFees,
         IsActive = dto.IsActive,
+        IsExpired = dto.IsExpired,
+        IsEligibleForRenewal = dto.IsEligibleForRenewal,
+        IneligibilityReason = dto.IneligibilityReason,
         IssueReason = dto.IssueReason,
         IssueReasonText = dto.IssueReasonText,
         CreatedByUserId = dto.CreatedByUserID,
@@ -134,6 +137,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
             ExpirationDate = dto.ExpirationDate,
             IsActive = dto.IsActive,
             IsDetained = dto.IsDetained,
+            IsExpired = dto.IsExpired,
+            IsEligibleForRenewal = dto.IsEligibleForRenewal,
+            IneligibilityReason = dto.IneligibilityReason,
             IssueReason = dto.IssueReason,
             Notes = dto.Notes,
             LicenseClassFees = dto.LicenseClassFees,

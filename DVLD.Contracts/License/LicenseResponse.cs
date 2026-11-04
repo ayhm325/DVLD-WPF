@@ -1,4 +1,4 @@
-﻿namespace DVLD.Contracts.License;
+namespace DVLD.Contracts.License;
 
 public sealed class LicenseResponse
 {
@@ -23,6 +23,12 @@ public sealed class LicenseResponse
     public decimal PaidFees { get; init; }
 
     public bool IsActive { get; init; }
+
+    public bool IsExpired { get; init; }
+
+    public bool IsEligibleForRenewal { get; init; }
+
+    public string? IneligibilityReason { get; init; }
 
     public byte IssueReason { get; init; }
 

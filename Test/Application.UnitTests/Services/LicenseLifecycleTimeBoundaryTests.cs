@@ -83,7 +83,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
     }
 
     private LicenseRenewalService CreateRenewalService() =>
-        new(_licenseRepository.Object, _applicationService.Object, _applicationTypeService.Object,
+        new(_licenseRepository.Object, _detainedRepository.Object, _applicationService.Object, _applicationTypeService.Object,
             _currentUserService.Object, _unitOfWork.Object, _renewalLogger.Object, _clock.Object);
 
     private LicenseReplacementService CreateReplacementService() =>

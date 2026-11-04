@@ -164,7 +164,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
         if (licenseId <= 0)
             return false;
 
-        var affectedRows = await _context.Licenses
+        await _context.Licenses
             .Where(l =>
                 l.LicenseID == licenseId &&
                 l.IsActive)
@@ -172,9 +172,6 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 setters.SetProperty(
                     l => l.IsActive,
                     false));
-
-        if (affectedRows <= 0)
-            return false;
 
         SyncTrackedLicenseActiveState(licenseId, false);
         return true;
@@ -217,6 +214,44 @@ public sealed class LicenseRepository(DVLDDbContext context)
         SyncTrackedLicenseActiveState(licenseId, true);
         return true;
     }
+
+    public async Task<int> DeactivateExpiredLicensesAsync(DateTime jordanToday)
+    {
+        var cutoff = jordanToday.Date;
+        var affected = await _context.Licenses
+            .Where(l => l.IsActive && l.ExpirationDate.Date < cutoff)
+            .ExecuteUpdateAsync(setters =>
+                setters.SetProperty(l => l.IsActive, false));
+
+        if (affected > 0)
+        {
+            foreach (var entry in _context.ChangeTracker.Entries<License>())
+            {
+                if (entry.Entity.ExpirationDate.Date < cutoff)
+                {
+                    entry.Entity.IsActive = false;
+                    entry.Property(l => l.IsActive).OriginalValue = false;
+                    entry.Property(l => l.IsActive).IsModified = false;
+                }
+            }
+        }
+
+        return affected;
+    }
+
+    public Task<License?> GetNewerLicenseForDriverAndClassAsync(
+        int driverId,
+        int licenseClassId,
+        int licenseId) =>
+        driverId <= 0 || licenseClassId <= 0 || licenseId <= 0
+            ? Task.FromResult<License?>(null)
+            : _context.Licenses
+                .AsNoTracking()
+                .Where(l => l.DriverID == driverId &&
+                            l.LicenseClass == licenseClassId &&
+                            l.LicenseID > licenseId)
+                .OrderByDescending(l => l.LicenseID)
+                .FirstOrDefaultAsync();
 
     private void SyncTrackedLicenseActiveState(
         int licenseId,

@@ -28,7 +28,11 @@ export type PageId =
   | 'International Licenses'
   | 'Local Applications'
   | 'Test Appointments'
+  | 'Manage Test Appointments'
+  | 'Written Test Appointments'
   | 'Appointment Details'
+  | 'Schedule Appointment'
+  | 'Take Examination'
   | 'Renew License'
   | 'Replace License'
   | 'Detain License'
@@ -75,7 +79,11 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
 
   // Test Appointments Standalone Management: TestAppointmentsController [Authorize(Policy = "StaffOnly")]
   'Test Appointments': ['Staff'],
+  'Manage Test Appointments': ['Staff'],
+  'Written Test Appointments': ['Staff'],
   'Appointment Details': ['Staff'],
+  'Schedule Appointment': ['Staff'],
+  'Take Examination': ['Staff'],
 
   // License Operations: LicenseRenewalController, LicenseReplacementController, DetainedLicensesController [Authorize(Policy = "StaffOnly")]
   'Renew License': ['Staff'],

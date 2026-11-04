@@ -20,7 +20,6 @@ import ConfirmModal from '../common/ConfirmModal'
 import EmptyState from '../common/EmptyState'
 import { Card, CardHeader, CardTitle, CardDescription } from '../ui/card'
 import { Button } from '../ui/button'
-import TakeTestModal from './TakeTestModal'
 import type { TestAppointment, TestResponse } from '../../types/TestAppointment'
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
 import {
@@ -38,6 +37,7 @@ export interface AppointmentDetailsPageProps {
   appointmentId: number | null
   onBack: () => void
   onNavigate?: (page: string) => void
+  onTakeExamination?: (appointmentId: number, returnPage?: string) => void
   userRole?: string | null
 }
 
@@ -52,9 +52,9 @@ export default function AppointmentDetailsPage({
   appointmentId,
   onBack,
   onNavigate,
+  onTakeExamination,
 }: AppointmentDetailsPageProps) {
   // In-page actions state
-  const [showTakeTestModal, setShowTakeTestModal] = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [actionFeedback, setActionFeedback] = useState<{
@@ -125,16 +125,6 @@ export default function AppointmentDetailsPage({
     }
   }
 
-  // Handle successful examination completion
-  const handleTakeTestSuccess = async (testId: number) => {
-    setShowTakeTestModal(false)
-    setActionFeedback({
-      type: 'success',
-      message: `Official examination record #${testId} successfully saved! The appointment is now completed.`,
-    })
-    await loadAppointmentData()
-  }
-
   const lifecycle = appointment ? resolveAppointmentLifecycle(appointment) : null
   const isRetake = Boolean(appointment?.retakeTestApplicationId)
   const canTakeTest =
@@ -180,7 +170,11 @@ export default function AppointmentDetailsPage({
               size="sm"
               onClick={() => {
                 setActionFeedback(null)
-                setShowTakeTestModal(true)
+                if (onTakeExamination && appointment) {
+                  onTakeExamination(appointment.testAppointmentId, 'Appointment Details')
+                } else {
+                  onNavigate?.('Take Examination')
+                }
               }}
               className="gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md cursor-pointer transition-all"
             >
@@ -575,18 +569,6 @@ export default function AppointmentDetailsPage({
             </div>
           </Card>
         </div>
-      )}
-
-      {/* Take Test Modal */}
-      {showTakeTestModal && appointment && (
-        <TakeTestModal
-          isOpen={showTakeTestModal}
-          onClose={() => setShowTakeTestModal(false)}
-          appointment={appointment}
-          application={application}
-          accessToken={accessToken}
-          onSuccess={handleTakeTestSuccess}
-        />
       )}
 
       {/* Cancel Appointment Confirmation Modal */}

@@ -1,4 +1,4 @@
-﻿using Application.DTOs.DriverDTO;
+using Application.DTOs.DriverDTO;
 
 namespace Application.DTOs.LicenseDTO;
 
@@ -33,6 +33,12 @@ public sealed class LicenseDto
     public int CreatedByUserID { get; set; }
 
     public string? CreatedByUserName { get; set; }
+
+    public bool IsExpired { get; set; }
+
+    public bool IsEligibleForRenewal { get; set; }
+
+    public string? IneligibilityReason { get; set; }
 
     public DriverDto? Driver { get; set; }
 }

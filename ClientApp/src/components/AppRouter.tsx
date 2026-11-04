@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react'
 import AccessDenied from './common/AccessDenied'
 import LoadingSpinner from './common/LoadingSpinner'
 import { isPagePermitted } from '../utils/permissions'
-import { IdCard as LicenseIcon, Settings as SettingsIcon } from 'lucide-react'
 import type { Person } from '../types/Person'
 import type { Driver } from '../types/Driver'
 
@@ -28,6 +27,15 @@ const TestAppointmentsPage = lazy(
 )
 const AppointmentDetailsPage = lazy(
   () => import('./test appointments/AppointmentDetailsPage'),
+)
+const ScheduleAppointmentPage = lazy(
+  () => import('./test appointments/ScheduleAppointmentPage'),
+)
+const ManageTestAppointmentsPage = lazy(
+  () => import('./test appointments/ManageTestAppointmentsPage'),
+)
+const TakeExaminationPage = lazy(
+  () => import('./test appointments/TakeExaminationPage'),
 )
 const RenewLicensePage = lazy(() => import('./licenses/RenewLicensePage'))
 const ReplaceLicensePage = lazy(() => import('./licenses/ReplaceLicensePage'))
@@ -70,14 +78,42 @@ export type AppRouterProps = {
   selectedAppointmentId?: number | null
   appointmentDetailsSource?: string
   onShowAppointmentDetails?: (appointmentId: number, source?: string) => void
+  scheduleAppointmentContext?: {
+    localAppId?: number | null
+    testTypeId?: 1 | 2 | 3
+    returnPage?: string
+  } | null
+  onScheduleAppointment?: (
+    localAppId?: number | null,
+    testTypeId?: 1 | 2 | 3,
+    source?: string,
+    reopenModalOnReturn?: boolean,
+  ) => void
+  reopenModalTarget?: {
+    localAppId: number
+    testTypeId: 1 | 2 | 3
+  } | null
+  onClearReopenModalTarget?: () => void
+  manageTestAppointmentsContext?: {
+    localAppId: number
+    testTypeId?: 1 | 2 | 3
+    returnPage?: string
+  } | null
+  onManageTestAppointments?: (
+    localAppId: number,
+    sourceOrTestType?: 1 | 2 | 3 | string,
+    source?: string,
+  ) => void
+  takeExaminationContext?: {
+    appointmentId: number
+    returnPage?: string
+  } | null
+  onTakeExamination?: (
+    appointmentId: number,
+    source?: string,
+  ) => void
 }
 
-const settingsPages = [
-  'Application Types',
-  'License Classes',
-  'Test Types',
-  'Countries',
-]
 
 export default function AppRouter({
   activePage,
@@ -110,6 +146,14 @@ export default function AppRouter({
   selectedAppointmentId,
   appointmentDetailsSource,
   onShowAppointmentDetails,
+  scheduleAppointmentContext,
+  onScheduleAppointment,
+  reopenModalTarget,
+  onClearReopenModalTarget,
+  manageTestAppointmentsContext,
+  onManageTestAppointments,
+  takeExaminationContext,
+  onTakeExamination,
 }: AppRouterProps) {
   const isCurrentPagePermitted = isPagePermitted(activePage, userRole)
 
@@ -250,6 +294,10 @@ export default function AppRouter({
               ? (id) => onShowAppointmentDetails(id, 'Local Applications')
               : undefined
           }
+          onScheduleAppointment={onScheduleAppointment}
+          onManageTestAppointments={onManageTestAppointments}
+          reopenModalTarget={reopenModalTarget}
+          onClearReopenModalTarget={onClearReopenModalTarget}
         />
       )}
 
@@ -263,6 +311,8 @@ export default function AppRouter({
               ? (id) => onShowAppointmentDetails(id, 'Test Appointments')
               : undefined
           }
+          onScheduleAppointment={onScheduleAppointment}
+          onTakeExamination={onTakeExamination}
         />
       )}
 
@@ -273,7 +323,49 @@ export default function AppRouter({
           appointmentId={selectedAppointmentId ?? null}
           onBack={() => onNavigate(appointmentDetailsSource || 'Test Appointments')}
           onNavigate={onNavigate}
+          onTakeExamination={onTakeExamination}
           userRole={userRole}
+        />
+      )}
+
+      {/* Manage Test Appointments (Staff only) */}
+      {(activePage === 'Manage Test Appointments' ||
+        activePage === 'Written Test Appointments') && (
+        <ManageTestAppointmentsPage
+          accessToken={accessToken}
+          localAppId={manageTestAppointmentsContext?.localAppId ?? null}
+          onBack={() =>
+            onNavigate(manageTestAppointmentsContext?.returnPage || 'Local Applications')
+          }
+          onNavigate={onNavigate}
+          onScheduleAppointment={onScheduleAppointment}
+          onShowAppointmentDetails={onShowAppointmentDetails}
+          onTakeExamination={onTakeExamination}
+        />
+      )}
+
+      {/* Take Examination (Staff only) */}
+      {activePage === 'Take Examination' && (
+        <TakeExaminationPage
+          accessToken={accessToken}
+          appointmentId={takeExaminationContext?.appointmentId ?? null}
+          onBack={() =>
+            onNavigate(takeExaminationContext?.returnPage || 'Manage Test Appointments')
+          }
+          returnPage={takeExaminationContext?.returnPage || 'Manage Test Appointments'}
+        />
+      )}
+
+      {/* Schedule Appointment (Staff only) */}
+      {activePage === 'Schedule Appointment' && (
+        <ScheduleAppointmentPage
+          accessToken={accessToken}
+          initialLocalAppId={scheduleAppointmentContext?.localAppId ?? null}
+          initialTestTypeId={scheduleAppointmentContext?.testTypeId ?? 1}
+          returnPage={scheduleAppointmentContext?.returnPage ?? 'Local Applications'}
+          onBack={() => onNavigate(scheduleAppointmentContext?.returnPage || 'Local Applications')}
+          onNavigate={onNavigate}
+          onShowAppointmentDetails={onShowAppointmentDetails}
         />
       )}
 
@@ -327,74 +419,6 @@ export default function AppRouter({
 
       {activePage === 'Test Types' && (
         <TestTypesPage accessToken={accessToken} userRole={userRole} />
-      )}
-
-      {/* Remaining settings placeholders, if any */}
-      {settingsPages
-        .filter(
-          (page) =>
-            page !== 'Countries' &&
-            page !== 'Application Types' &&
-            page !== 'License Classes' &&
-            page !== 'Test Types',
-        )
-        .includes(activePage) && (
-        <section className="page-content">
-          <div className="panel placeholder-panel">
-            <div className="placeholder-icon">
-              <SettingsIcon size={32} />
-            </div>
-            <h2>{activePage}</h2>
-
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => onNavigate('Dashboard')}
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* Other temporary pages */}
-      {![
-        'Dashboard',
-        'People',
-        'Add Person',
-        'Edit Person',
-        'Person Details',
-        'Drivers',
-        'Person License History',
-        'Licenses',
-        'International Licenses',
-        'Local Applications',
-        'Test Appointments',
-        'Renew License',
-        'Replace License',
-        'Detain License',
-        'Detained Licenses',
-        'Applications',
-        ...settingsPages,
-      ].includes(activePage) && (
-        <section className="page-content">
-          <div className="panel placeholder-panel">
-            <div className="placeholder-icon">
-              <LicenseIcon size={32} />
-            </div>
-            <h2>{activePage} Management</h2>
-
-            <p>This section will be implemented in a later step.</p>
-
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => onNavigate('Dashboard')}
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        </section>
       )}
     </Suspense>
   )

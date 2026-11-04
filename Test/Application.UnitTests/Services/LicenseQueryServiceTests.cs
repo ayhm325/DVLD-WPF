@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
@@ -13,12 +13,19 @@ public sealed class LicenseQueryServiceTests
     private readonly Mock<ILicenseRepository> _licenseRepository = new();
     private readonly Mock<ILocalDrivingLicenseApplicationService> _localApplicationService = new();
     private readonly Mock<IDetainedLicenseRepository> _detainedRepository = new();
+    private readonly Mock<IJordanClock> _clock = new();
+
+    public LicenseQueryServiceTests()
+    {
+        _clock.SetupGet(x => x.Now).Returns(new DateTime(2026, 11, 4, 0, 0, 0, DateTimeKind.Utc));
+    }
 
     private LicenseQueryService CreateService() =>
         new(
             _licenseRepository.Object,
             _localApplicationService.Object,
-            _detainedRepository.Object);
+            _detainedRepository.Object,
+            _clock.Object);
 
     private static License CreateLicense(
         int id = 1,
@@ -41,7 +48,8 @@ public sealed class LicenseQueryServiceTests
             new LicenseQueryService(
                 null!,
                 _localApplicationService.Object,
-                _detainedRepository.Object));
+                _detainedRepository.Object,
+                _clock.Object));
         Assert.Equal("licenseRepository", ex.ParamName);
     }
 
@@ -52,7 +60,8 @@ public sealed class LicenseQueryServiceTests
             new LicenseQueryService(
                 _licenseRepository.Object,
                 null!,
-                _detainedRepository.Object));
+                _detainedRepository.Object,
+                _clock.Object));
         Assert.Equal("localApplicationService", ex.ParamName);
     }
 
@@ -63,8 +72,21 @@ public sealed class LicenseQueryServiceTests
             new LicenseQueryService(
                 _licenseRepository.Object,
                 _localApplicationService.Object,
-                null!));
+                null!,
+                _clock.Object));
         Assert.Equal("detainedLicenseRepository", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenClockIsNull_ThrowsArgumentNullException()
+    {
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new LicenseQueryService(
+                _licenseRepository.Object,
+                _localApplicationService.Object,
+                _detainedRepository.Object,
+                null!));
+        Assert.Equal("clock", ex.ParamName);
     }
 
     [Fact]

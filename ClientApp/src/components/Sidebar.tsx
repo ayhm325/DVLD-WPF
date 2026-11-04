@@ -251,9 +251,10 @@ export default function Sidebar({
           </svg>
         </div>
 
-        <div className="relative z-10 flex flex-col flex-1 min-h-0">
+        {/* Region A: Fixed Header (Brand Card & Navigation Section Heading) */}
+        <div className="sidebar-header shrink-0 relative z-10 mb-2">
           {/* Brand header enclosed in a prominent rounded illuminated card container */}
-          <div className="brand-card flex items-center gap-3.5 p-3.5 rounded-2xl border-2 border-[#0090ff] bg-[#07122a]/90 shadow-[0_0_24px_rgba(0,140,255,0.65),inset_0_0_16px_rgba(0,140,255,0.25)] backdrop-blur-md mb-4">
+          <div className="brand-card flex items-center gap-3.5 p-3.5 rounded-2xl border-2 border-[#0090ff] bg-[#07122a]/90 shadow-[0_0_24px_rgba(0,140,255,0.65),inset_0_0_16px_rgba(0,140,255,0.25)] backdrop-blur-md mb-3">
             <div className="brand-icon flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white border-[1.5px] border-blue-300/70 shadow-[0_0_20px_rgba(0,140,255,0.8),inset_0_1px_2px_rgba(255,255,255,0.6)]">
               <Layers className="size-6 text-white stroke-[2.3]" />
             </div>
@@ -275,16 +276,19 @@ export default function Sidebar({
             )}
           </div>
 
-          {/* Navigation Section */}
-          <div className="nav-group-title flex items-center gap-2 px-2 mt-1 mb-2.5">
+          {/* Navigation Section Heading */}
+          <div className="nav-group-title flex items-center gap-2 px-2 mb-1">
             <span className="size-2 rounded-full bg-cyan-400 shadow-[0_0_10px_#00e5ff]" aria-hidden="true" />
             <span className="text-[10.5px] font-extrabold uppercase tracking-[2px] text-blue-200/70">
               MAIN NAVIGATION
             </span>
             <div className="h-[1px] flex-1 bg-gradient-to-r from-blue-500/50 via-blue-400/25 to-transparent ml-2" />
           </div>
+        </div>
 
-          <nav className="sidebar-nav flex flex-col gap-1.5 px-1 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-[#1e2d48] scrollbar-track-transparent">
+        {/* Region B: Independently Scrollable Navigation Container */}
+        <div className="sidebar-nav-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative z-10 pr-0.5">
+          <nav className="sidebar-nav flex flex-col gap-1.5 px-1 pb-3">
             {visibleMainNavItems.map((item) =>
               renderNavItem(item.page, item.icon, item.label || item.page),
             )}
@@ -355,8 +359,8 @@ export default function Sidebar({
           </nav>
         </div>
 
-        {/* User Card & Logout Footer */}
-        <div className="sidebar-footer relative z-10 mt-auto pt-2 px-1">
+        {/* Region C: Fixed User Profile & Logout Footer */}
+        <div className="sidebar-footer shrink-0 relative z-10 mt-auto pt-2 px-1 border-t border-blue-500/15">
           <div className="user-profile-card flex items-center gap-3 p-3 rounded-2xl border-2 border-[#0090ff] bg-[#07122a]/95 shadow-[0_0_24px_rgba(0,140,255,0.55),inset_0_0_16px_rgba(0,140,255,0.2)] backdrop-blur-md">
             <div className="user-avatar flex size-9.5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-[1.5px] border-blue-300/70 shadow-[0_0_14px_rgba(0,140,255,0.7)] text-white font-bold text-sm">
               {initial}

@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
@@ -36,4 +36,11 @@ public interface ILicenseRepository
         int excludedLicenseId);
 
     Task<bool> ActivateLicenseAsync(int licenseId);
+
+    Task<int> DeactivateExpiredLicensesAsync(DateTime jordanToday);
+
+    Task<License?> GetNewerLicenseForDriverAndClassAsync(
+        int driverId,
+        int licenseClassId,
+        int licenseId);
 }

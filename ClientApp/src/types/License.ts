@@ -10,6 +10,9 @@ export type License = {
   notes: string | null
   paidFees: number
   isActive: boolean
+  isExpired?: boolean
+  isEligibleForRenewal?: boolean
+  ineligibilityReason?: string | null
   issueReason: number
   issueReasonText: string | null
   createdByUserId: number

@@ -12,6 +12,7 @@ namespace Application.Services;
 
 public sealed class LicenseRenewalService(
     ILicenseRepository licenseRepository,
+    IDetainedLicenseRepository detainedLicenseRepository,
     IApplicationService applicationService,
     IApplicationTypeService applicationTypeService,
     ICurrentUserService currentUserService,
@@ -23,6 +24,8 @@ public sealed class LicenseRenewalService(
 
     private readonly ILicenseRepository _licenseRepository =
         licenseRepository ?? throw new ArgumentNullException(nameof(licenseRepository));
+    private readonly IDetainedLicenseRepository _detainedLicenseRepository =
+        detainedLicenseRepository ?? throw new ArgumentNullException(nameof(detainedLicenseRepository));
     private readonly IApplicationService _applicationService =
         applicationService ?? throw new ArgumentNullException(nameof(applicationService));
     private readonly IApplicationTypeService _applicationTypeService =
@@ -68,12 +71,6 @@ public sealed class LicenseRenewalService(
                         Result<int>.FromNotFound(
                             "Old license not found."));
 
-                if (!oldLicense.IsActive)
-                    return await RollbackAsync(
-                        transaction,
-                        Result<int>.FromConflict(
-                            "Cannot renew an inactive license."));
-
                 var now = _clock.Now;
                 var today = now.Date;
                 var expirationDate = oldLicense.ExpirationDate.Date;
@@ -83,6 +80,35 @@ public sealed class LicenseRenewalService(
                         transaction,
                         Result<int>.FromConflict(
                             "Cannot renew before expiration date."));
+
+                if (await _detainedLicenseRepository.IsLicenseDetainedAsync(oldLicenseId))
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "Cannot renew a currently detained license. The license must be released first."));
+
+                var newerLicense = await _licenseRepository.GetNewerLicenseForDriverAndClassAsync(
+                    oldLicense.DriverID,
+                    oldLicense.LicenseClass,
+                    oldLicense.LicenseID);
+
+                if (newerLicense != null)
+                {
+                    var action = newerLicense.IssueReason == IssueReason.Renew ? "renewed" : "superseded";
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            $"License #{oldLicenseId} has already been {action}."));
+                }
+
+                if (await _licenseRepository.HasAnotherActiveLicenseAsync(
+                        oldLicense.DriverID,
+                        oldLicense.LicenseClass,
+                        oldLicense.LicenseID))
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "Driver already has an active license for this license class."));
 
                 if (oldLicense.Driver is null)
                     return await RollbackAsync(
@@ -155,7 +181,8 @@ public sealed class LicenseRenewalService(
                         Result<int>.FromValidationFailure(
                             licenseValidation.Error));
 
-                if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId))
+                var deactivated = await _licenseRepository.DeactivateLicenseAsync(oldLicenseId);
+                if (!deactivated)
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromFailure(

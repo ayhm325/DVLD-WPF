@@ -13,6 +13,7 @@ import {
   Gauge,
   ShieldCheck,
   CalendarCheck,
+  CalendarClock,
   CalendarDays,
   Clock,
   Compass,
@@ -279,6 +280,106 @@ export const PAGE_HERO_CONFIG: Record<string, PageHeroConfigItem> = {
       },
       {
         icon: <CalendarDays className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Manage Test Appointments': {
+    eyebrow: 'EXAMINATION OPERATIONS',
+    title: 'Test Appointments',
+    highlight: 'History',
+    description: 'Complete chronological examination history and appointment management across Vision, Written, and Practical tests.',
+    illustrationTag: 'APPT-TIMELINE',
+    illustrationIcon: <CalendarClock className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Clock className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <CalendarClock className="size-6" />,
+        color: 'purple',
+        position: 'top-right',
+      },
+      {
+        icon: <CalendarDays className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Written Test Appointments': {
+    eyebrow: 'EXAMINATION OPERATIONS',
+    title: 'Written Test',
+    highlight: 'Appointments',
+    description: 'Inspect and manage official examination appointments, historical attempts, and outcome logs.',
+    illustrationTag: 'WRITTEN-APPT',
+    illustrationIcon: <FileSignature className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Clock className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <FileSignature className="size-6" />,
+        color: 'purple',
+        position: 'top-right',
+      },
+      {
+        icon: <CalendarDays className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Take Examination': {
+    eyebrow: 'EXAMINATION OPERATIONS',
+    title: 'Take',
+    highlight: 'Examination',
+    description: 'Record the official examination outcome, evaluation decisions, and examiner notes in Jordan facility time.',
+    illustrationTag: 'TAKE-EXAM',
+    illustrationIcon: <Award className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Award className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <CheckCircle2 className="size-6" />,
+        color: 'emerald',
+        position: 'top-right',
+      },
+      {
+        icon: <Clock className="size-6" />,
+        color: 'blue',
+        position: 'bottom-right',
+      },
+    ],
+  },
+  'Schedule Appointment': {
+    eyebrow: 'EXAMINATION OPERATIONS',
+    title: 'Schedule Test',
+    highlight: 'Appointment',
+    description: 'Reserve an official driving test slot in accordance with Jordan Licensing Department regulations.',
+    illustrationTag: 'APPT-SCHEDULE',
+    illustrationIcon: <CalendarCheck className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <CalendarCheck className="size-7" />,
+        color: 'cyan',
+        position: 'left',
+      },
+      {
+        icon: <Clock className="size-6" />,
+        color: 'emerald',
+        position: 'top-right',
+      },
+      {
+        icon: <ClipboardCheck className="size-6" />,
         color: 'blue',
         position: 'bottom-right',
       },

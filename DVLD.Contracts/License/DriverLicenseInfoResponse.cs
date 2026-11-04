@@ -1,4 +1,4 @@
-﻿namespace DVLD.Contracts.License;
+namespace DVLD.Contracts.License;
 
 public sealed class DriverLicenseInfoResponse
 {
@@ -13,6 +13,12 @@ public sealed class DriverLicenseInfoResponse
     public bool IsActive { get; init; }
 
     public bool IsDetained { get; init; }
+
+    public bool IsExpired { get; init; }
+
+    public bool IsEligibleForRenewal { get; init; }
+
+    public string? IneligibilityReason { get; init; }
 
     public string IssueReason { get; init; } = string.Empty;
 

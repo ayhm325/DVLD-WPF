@@ -15,8 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select'
-import TakeTestModal from './TakeTestModal'
-import TestAppointmentsModal from '../local applications/TestAppointmentsModal'
 import type { TestAppointment } from '../../types/TestAppointment'
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
 import { getAllAppointments, cancelTestAppointment } from '../../services/testAppointmentService'
@@ -42,6 +40,12 @@ export interface TestAppointmentsPageProps {
   accessToken: string
   onNavigate?: (page: string) => void
   onShowAppointmentDetails?: (appointmentId: number) => void
+  onScheduleAppointment?: (
+    localAppId?: number | null,
+    testTypeId?: 1 | 2 | 3,
+    source?: string,
+  ) => void
+  onTakeExamination?: (appointmentId: number, returnPage?: string) => void
 }
 
 type TabType = 'all' | 'today' | 'history'
@@ -99,6 +103,8 @@ export default function TestAppointmentsPage({
   accessToken,
   onNavigate,
   onShowAppointmentDetails,
+  onScheduleAppointment,
+  onTakeExamination,
 }: TestAppointmentsPageProps) {
   // View tabs: All, Today, History
   const [activeTab, setActiveTab] = useState<TabType>('all')
@@ -108,10 +114,7 @@ export default function TestAppointmentsPage({
   const [testTypeFilter, setTestTypeFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  // Modals
-  const [selectedAppointmentForTakeTest, setSelectedAppointmentForTakeTest] =
-    useState<TestAppointment | null>(null)
-  const [showBookModal, setShowBookModal] = useState(false)
+  // Modals / Actions
   const [appointmentToCancel, setAppointmentToCancel] = useState<TestAppointment | null>(null)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
@@ -475,7 +478,11 @@ export default function TestAppointmentsPage({
           label: 'Take Examination',
           icon: <Award className="size-4 text-emerald-400" />,
           onClick: () => {
-            setSelectedAppointmentForTakeTest(apt)
+            if (onTakeExamination) {
+              onTakeExamination(apt.testAppointmentId, 'Test Appointments')
+            } else {
+              onNavigate?.('Take Examination')
+            }
           },
         })
         actions.push({
@@ -500,7 +507,7 @@ export default function TestAppointmentsPage({
 
       return actions
     },
-    [onNavigate, onShowAppointmentDetails],
+    [onNavigate, onShowAppointmentDetails, onTakeExamination],
   )
 
   return (
@@ -749,10 +756,16 @@ export default function TestAppointmentsPage({
                   : `${filteredAppointments.length} of ${appointments.length} Appointments`}
             </span>
 
-            {/* Book Test Appointment Action moved to panel header */}
+            {/* Book Test Appointment Action navigated to dedicated page */}
             <Button
               type="button"
-              onClick={() => setShowBookModal(true)}
+              onClick={() => {
+                if (onScheduleAppointment) {
+                  onScheduleAppointment(null, 1, 'Test Appointments')
+                } else {
+                  onNavigate?.('Schedule Appointment')
+                }
+              }}
               className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs gap-1.5 shadow-[0_0_15px_rgba(34,211,238,0.35)] cursor-pointer h-9 px-4 rounded-xl"
             >
               <Plus className="size-3.5" />
@@ -953,23 +966,6 @@ export default function TestAppointmentsPage({
         />
       </div>
 
-      {/* Take Test Modal */}
-      {selectedAppointmentForTakeTest && (
-        <TakeTestModal
-          isOpen={selectedAppointmentForTakeTest !== null}
-          onClose={() => setSelectedAppointmentForTakeTest(null)}
-          appointment={selectedAppointmentForTakeTest}
-          application={applicationMap.get(selectedAppointmentForTakeTest.localDrivingLicenseApplicationId)}
-          accessToken={accessToken}
-          onSuccess={(testId) => {
-            setActionFeedback({
-              type: 'success',
-              message: `Examination record #${testId} successfully saved! The appointment is now completed.`,
-            })
-            void fetchData()
-          }}
-        />
-      )}
 
       {/* Cancellation Confirmation Dialog */}
       <ConfirmModal
@@ -994,20 +990,6 @@ export default function TestAppointmentsPage({
           }
         }}
       />
-
-      {/* Test Appointments Modal (Shared Booking & Inspection Workflow) */}
-      {showBookModal && (
-        <TestAppointmentsModal
-          isOpen={showBookModal}
-          onClose={() => setShowBookModal(false)}
-          accessToken={accessToken}
-          applications={applications}
-          onAppointmentScheduled={() => {
-            void fetchData()
-          }}
-          initialShowScheduleForm={true}
-        />
-      )}
     </section>
   )
 }

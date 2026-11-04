@@ -8,7 +8,7 @@ import {
   AlertCircle,
   TrendingUp,
 } from 'lucide-react'
-import DashboardHero from './dashboard/DashboardHero'
+import PageHero from './common/PageHero'
 import PeopleTable from './PeopleTable'
 import StatsGrid from './common/StatsGrid'
 import StatCard from './common/StatCard'
@@ -89,8 +89,8 @@ export default function DashboardPage({
 
   return (
     <section className="page-content space-y-7">
-      {/* Premium Neon Dashboard Hero Banner */}
-      <DashboardHero />
+      {/* Premium Neon Page Hero */}
+      <PageHero pageId="Dashboard" />
 
       {/* Operational Statistics Section */}
       <div className="space-y-4">

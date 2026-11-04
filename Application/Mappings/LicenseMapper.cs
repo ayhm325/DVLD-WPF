@@ -1,4 +1,4 @@
-﻿using Application.DTOs.LicenseDTO;
+using Application.DTOs.LicenseDTO;
 using Domain.Entities;
 using Domain.Enums;
 
@@ -6,7 +6,11 @@ namespace Application.Mappers;
 
 public static class LicenseMapper
 {
-    public static LicenseDto ToDto(License license)
+    public static LicenseDto ToDto(
+        License license,
+        bool isExpired = false,
+        bool isEligibleForRenewal = false,
+        string? ineligibilityReason = null)
     {
         ArgumentNullException.ThrowIfNull(license);
 
@@ -32,6 +36,9 @@ public static class LicenseMapper
             Notes = license.Notes,
             PaidFees = license.PaidFees,
             IsActive = license.IsActive,
+            IsExpired = isExpired,
+            IsEligibleForRenewal = isEligibleForRenewal,
+            IneligibilityReason = ineligibilityReason,
 
             IssueReason = (byte)license.IssueReason,
 

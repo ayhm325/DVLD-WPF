@@ -1,4 +1,4 @@
-﻿namespace Application.DTOs.LicenseDTO
+namespace Application.DTOs.LicenseDTO
 {
     public class DriverLicenseInfoDto
     {
@@ -9,6 +9,9 @@
         public DateTime ExpirationDate { get; set; }
         public bool IsActive { get; set; }
         public bool IsDetained { get; set; }
+        public bool IsExpired { get; set; }
+        public bool IsEligibleForRenewal { get; set; }
+        public string? IneligibilityReason { get; set; }
         public string IssueReason { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public decimal LicenseClassFees { get; set; }

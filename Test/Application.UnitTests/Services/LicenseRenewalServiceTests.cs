@@ -9,10 +9,13 @@ using Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Data;
+
 namespace Application.UnitTests.Services;
+
 public class LicenseRenewalServiceTests
 {
     private readonly Mock<ILicenseRepository> _licenseRepository = new();
+    private readonly Mock<IDetainedLicenseRepository> _detainedLicenseRepository = new();
     private readonly Mock<IApplicationService> _applicationService = new();
     private readonly Mock<IApplicationTypeService> _applicationTypeService = new();
     private readonly Mock<ICurrentUserService> _currentUserService = new();
@@ -28,23 +31,27 @@ public class LicenseRenewalServiceTests
     private LicenseRenewalService CreateSut() =>
         new(
             _licenseRepository.Object,
+            _detainedLicenseRepository.Object,
             _applicationService.Object,
             _applicationTypeService.Object,
             _currentUserService.Object,
             _unitOfWork.Object,
             _logger.Object,
             _clock.Object);
+
     [Fact]
     public async Task RenewLicenseAsync_WhenLicenseIdIsInvalid_ReturnsValidationFailure()
     {
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(0, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
             Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenUserIsNotAuthenticated_ReturnsForbidden()
     {
@@ -54,8 +61,10 @@ public class LicenseRenewalServiceTests
         _currentUserService
             .SetupGet(x => x.UserId)
             .Returns(1);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
         Assert.Equal("Authenticated user is required.", result.Error);
@@ -67,6 +76,7 @@ public class LicenseRenewalServiceTests
             It.IsAny<IsolationLevel>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenUserIdIsInvalid_ReturnsForbidden()
     {
@@ -76,8 +86,10 @@ public class LicenseRenewalServiceTests
         _currentUserService
             .SetupGet(x => x.UserId)
             .Returns(0);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
         Assert.Equal("Authenticated user is required.", result.Error);
@@ -85,6 +97,7 @@ public class LicenseRenewalServiceTests
             x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
             Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenApplicationTypeFails_PropagatesFailure()
     {
@@ -94,8 +107,10 @@ public class LicenseRenewalServiceTests
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.FromNotFound(
                     "Application type not found."));
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal("Application type not found.", result.Error);
@@ -104,6 +119,7 @@ public class LicenseRenewalServiceTests
             It.IsAny<IsolationLevel>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenApplicationTypeValueIsNull_ReturnsNotFound()
     {
@@ -112,8 +128,10 @@ public class LicenseRenewalServiceTests
             .Setup(x => x.GetApplicationTypeByIdAsync(2))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(null!));
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -124,6 +142,7 @@ public class LicenseRenewalServiceTests
             It.IsAny<IsolationLevel>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenOldLicenseDoesNotExist_ReturnsNotFoundAndRollsBack()
     {
@@ -131,41 +150,64 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ReturnsAsync((License?)null);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal("Old license not found.", result.Error);
         VerifyRollback(transaction);
         VerifyCommitNeverCalled(transaction);
     }
+
     [Fact]
-    public async Task RenewLicenseAsync_WhenOldLicenseIsInactive_ReturnsConflictAndRollsBack()
+    public async Task RenewLicenseAsync_WhenOldLicenseIsInactiveAndExpired_Succeeds()
     {
         SetupAuthenticatedUser();
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
-        oldLicense.IsActive = false;
+        oldLicense.IsActive = false; // Operationally inactive due to expiration
+        SetupOldLicense(oldLicense);
+        SetupSuccessfulRenewalApplication();
+
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
-            .ReturnsAsync(oldLicense);
+            .Setup(x => x.DeactivateLicenseAsync(10))
+            .ReturnsAsync(true);
+        _licenseRepository
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
+            .Callback<License>(license =>
+            {
+                license.LicenseID = 500;
+            })
+            .Returns(Task.CompletedTask);
+        _unitOfWork
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        _applicationService
+            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .ReturnsAsync(Result.Success());
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
-        Assert.True(result.IsFailure);
-        Assert.Equal(ErrorType.Conflict, result.ErrorType);
-        Assert.Equal(
-            "Cannot renew an inactive license.",
-            result.Error);
-        VerifyRollback(transaction);
-        _applicationService.Verify(
-            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
-            Times.Never);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(500, result.Value);
+        _licenseRepository.Verify(
+            x => x.DeactivateLicenseAsync(10),
+            Times.Once);
+        transaction.Verify(
+            x => x.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenOldLicenseHasNotExpired_ReturnsConflictAndRollsBack()
     {
@@ -173,13 +215,16 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         oldLicense.ExpirationDate = DateTime.UtcNow.AddDays(10);
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ReturnsAsync(oldLicense);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -190,6 +235,97 @@ public class LicenseRenewalServiceTests
             x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
             Times.Never);
     }
+
+    [Fact]
+    public async Task RenewLicenseAsync_WhenOldLicenseIsCurrentlyDetained_ReturnsConflictAndRollsBack()
+    {
+        SetupAuthenticatedUser();
+        SetupValidApplicationType();
+        var transaction = CreateTransactionMock();
+        SetupTransaction(transaction);
+
+        var oldLicense = CreateExpiredLicense();
+        _licenseRepository
+            .Setup(x => x.GetLicenseByIdAsync(10))
+            .ReturnsAsync(oldLicense);
+        _detainedLicenseRepository
+            .Setup(x => x.IsLicenseDetainedAsync(10))
+            .ReturnsAsync(true);
+
+        var sut = CreateSut();
+        var result = await sut.RenewLicenseAsync(10, null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Cannot renew a currently detained license. The license must be released first.", result.Error);
+        VerifyRollback(transaction);
+        _applicationService.Verify(
+            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RenewLicenseAsync_WhenOldLicenseIsAlreadyRenewed_ReturnsConflictAndRollsBack()
+    {
+        SetupAuthenticatedUser();
+        SetupValidApplicationType();
+        var transaction = CreateTransactionMock();
+        SetupTransaction(transaction);
+
+        var oldLicense = CreateExpiredLicense();
+        _licenseRepository
+            .Setup(x => x.GetLicenseByIdAsync(10))
+            .ReturnsAsync(oldLicense);
+        _detainedLicenseRepository
+            .Setup(x => x.IsLicenseDetainedAsync(10))
+            .ReturnsAsync(false);
+        _licenseRepository
+            .Setup(x => x.GetNewerLicenseForDriverAndClassAsync(oldLicense.DriverID, oldLicense.LicenseClass, 10))
+            .ReturnsAsync(new License { LicenseID = 15, IssueReason = IssueReason.Renew });
+
+        var sut = CreateSut();
+        var result = await sut.RenewLicenseAsync(10, null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("License #10 has already been renewed.", result.Error);
+        VerifyRollback(transaction);
+        _applicationService.Verify(
+            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RenewLicenseAsync_WhenOldLicenseIsSuperseded_ReturnsConflictAndRollsBack()
+    {
+        SetupAuthenticatedUser();
+        SetupValidApplicationType();
+        var transaction = CreateTransactionMock();
+        SetupTransaction(transaction);
+
+        var oldLicense = CreateExpiredLicense();
+        _licenseRepository
+            .Setup(x => x.GetLicenseByIdAsync(10))
+            .ReturnsAsync(oldLicense);
+        _detainedLicenseRepository
+            .Setup(x => x.IsLicenseDetainedAsync(10))
+            .ReturnsAsync(false);
+        _licenseRepository
+            .Setup(x => x.GetNewerLicenseForDriverAndClassAsync(oldLicense.DriverID, oldLicense.LicenseClass, 10))
+            .ReturnsAsync(new License { LicenseID = 18, IssueReason = IssueReason.ReplacementForDamaged });
+
+        var sut = CreateSut();
+        var result = await sut.RenewLicenseAsync(10, null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("License #10 has already been superseded.", result.Error);
+        VerifyRollback(transaction);
+        _applicationService.Verify(
+            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
+            Times.Never);
+    }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenDriverInformationIsMissing_ReturnsNotFoundAndRollsBack()
     {
@@ -197,13 +333,16 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         oldLicense.Driver = null!;
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ReturnsAsync(oldLicense);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -211,6 +350,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenLicenseClassInformationIsMissing_ReturnsNotFoundAndRollsBack()
     {
@@ -218,13 +358,16 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo = null!;
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ReturnsAsync(oldLicense);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal(
@@ -232,6 +375,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenValidityPeriodIsInvalid_ReturnsValidationFailureAndRollsBack()
     {
@@ -239,13 +383,16 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo.DefaultValidityLength = 0;
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ReturnsAsync(oldLicense);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
@@ -253,6 +400,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenLicenseFeesAreInvalid_ReturnsValidationFailureAndRollsBack()
     {
@@ -260,13 +408,16 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo.ClassFees = -1;
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ReturnsAsync(oldLicense);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal(
@@ -274,6 +425,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenCreatingApplicationFails_PropagatesFailureAndRollsBack()
     {
@@ -281,6 +433,7 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         _applicationService
@@ -289,8 +442,10 @@ public class LicenseRenewalServiceTests
             .ReturnsAsync(
                 Result<int>.FromConflict(
                     "Application already exists."));
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -301,6 +456,7 @@ public class LicenseRenewalServiceTests
             x => x.DeactivateLicenseAsync(It.IsAny<int>()),
             Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenCreatedApplicationIdIsInvalid_ReturnsFailureAndRollsBack()
     {
@@ -308,14 +464,17 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
                 It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(Result<int>.Success(0));
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
@@ -323,6 +482,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenDeactivationFails_ReturnsFailureAndRollsBack()
     {
@@ -330,14 +490,17 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
         _licenseRepository
             .Setup(x => x.DeactivateLicenseAsync(10))
             .ReturnsAsync(false);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
@@ -348,6 +511,7 @@ public class LicenseRenewalServiceTests
             x => x.AddLicenseAsync(It.IsAny<License>()),
             Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenSaveChangesFails_ReturnsFailureAndRollsBack()
     {
@@ -355,6 +519,7 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
@@ -363,12 +528,18 @@ public class LicenseRenewalServiceTests
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
+            .Callback<License>(license =>
+            {
+                license.LicenseID = 500;
+            })
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal(
@@ -379,6 +550,7 @@ public class LicenseRenewalServiceTests
             x => x.CompleteApplicationStateAsync(It.IsAny<int>()),
             Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenCompletingApplicationFails_PropagatesFailureAndRollsBack()
     {
@@ -386,6 +558,7 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
@@ -394,6 +567,10 @@ public class LicenseRenewalServiceTests
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
+            .Callback<License>(license =>
+            {
+                license.LicenseID = 500;
+            })
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -403,16 +580,10 @@ public class LicenseRenewalServiceTests
             .ReturnsAsync(
                 Result.Conflict(
                     "Application could not be completed."));
-        var newLicenseId = 500;
-        _licenseRepository
-            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(license =>
-            {
-                license.LicenseID = newLicenseId;
-            })
-            .Returns(Task.CompletedTask);
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Equal(
@@ -423,6 +594,7 @@ public class LicenseRenewalServiceTests
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenValid_ReturnsNewLicenseIdAndCommits()
     {
@@ -430,6 +602,7 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
@@ -449,8 +622,10 @@ public class LicenseRenewalServiceTests
         _applicationService
             .Setup(x => x.CompleteApplicationStateAsync(100))
             .ReturnsAsync(Result.Success());
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(10, null);
+
         Assert.True(result.IsSuccess);
         Assert.Equal(500, result.Value);
         _licenseRepository.Verify(
@@ -476,6 +651,7 @@ public class LicenseRenewalServiceTests
             x => x.RollbackAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenNotesContainWhitespace_TrimsNotes()
     {
@@ -483,6 +659,7 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
@@ -502,10 +679,12 @@ public class LicenseRenewalServiceTests
         _applicationService
             .Setup(x => x.CompleteApplicationStateAsync(100))
             .ReturnsAsync(Result.Success());
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(
             10,
             "   Renewal notes   ");
+
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
@@ -513,6 +692,7 @@ public class LicenseRenewalServiceTests
                     license.Notes == "Renewal notes")),
             Times.Once);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenNotesAreWhitespace_SavesNullNotes()
     {
@@ -520,6 +700,7 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
@@ -539,10 +720,12 @@ public class LicenseRenewalServiceTests
         _applicationService
             .Setup(x => x.CompleteApplicationStateAsync(100))
             .ReturnsAsync(Result.Success());
+
         var sut = CreateSut();
         var result = await sut.RenewLicenseAsync(
             10,
             "     ");
+
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
@@ -550,6 +733,7 @@ public class LicenseRenewalServiceTests
                     license.Notes == null)),
             Times.Once);
     }
+
     [Fact]
     public async Task RenewLicenseAsync_WhenExceptionOccurs_RollsBackAndRethrows()
     {
@@ -557,15 +741,18 @@ public class LicenseRenewalServiceTests
         SetupValidApplicationType();
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
+
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ThrowsAsync(
                 new InvalidOperationException("Database failure."));
+
         var sut = CreateSut();
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => sut.RenewLicenseAsync(10, null));
+
         Assert.Equal("Database failure.", exception.Message);
         transaction.Verify(
             x => x.RollbackAsync(It.IsAny<CancellationToken>()),
@@ -574,11 +761,13 @@ public class LicenseRenewalServiceTests
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
     private void SetupAuthenticatedUser()
     {
         _currentUserService.SetupGet(x => x.IsLoggedIn).Returns(true);
         _currentUserService.SetupGet(x => x.UserId).Returns(1);
     }
+
     private void SetupValidApplicationType()
     {
         _applicationTypeService
@@ -590,6 +779,7 @@ public class LicenseRenewalServiceTests
                         ApplicationTypeId = 2
                     }));
     }
+
     private void SetupTransaction(Mock<IUnitOfWorkTransaction> transaction)
     {
         _unitOfWork
@@ -610,6 +800,7 @@ public class LicenseRenewalServiceTests
                 }
             });
     }
+
     private Mock<IUnitOfWorkTransaction> CreateTransactionMock()
     {
         var transaction = new Mock<IUnitOfWorkTransaction>();
@@ -621,6 +812,7 @@ public class LicenseRenewalServiceTests
             .Returns(Task.CompletedTask);
         return transaction;
     }
+
     private void VerifyRollback(
         Mock<IUnitOfWorkTransaction> transaction)
     {
@@ -631,6 +823,7 @@ public class LicenseRenewalServiceTests
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
     private void VerifyCommitNeverCalled(
         Mock<IUnitOfWorkTransaction> transaction)
     {
@@ -638,12 +831,15 @@ public class LicenseRenewalServiceTests
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
     private void SetupOldLicense(License license) =>
         _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
+
     private void SetupSuccessfulRenewalApplication() =>
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()))
             .ReturnsAsync(Result<int>.Success(100));
+
     private License CreateExpiredLicense()
     {
         return new License

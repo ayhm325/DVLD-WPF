@@ -65,6 +65,24 @@ export default function App() {
   const [licenseHistorySource, setLicenseHistorySource] = useState<'Drivers' | 'Local Applications'>('Drivers')
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null)
   const [appointmentDetailsSource, setAppointmentDetailsSource] = useState<string>('Test Appointments')
+  const [scheduleAppointmentContext, setScheduleAppointmentContext] = useState<{
+    localAppId?: number | null
+    testTypeId?: 1 | 2 | 3
+    returnPage?: string
+  } | null>(null)
+  const [reopenModalTarget, setReopenModalTarget] = useState<{
+    localAppId: number
+    testTypeId: 1 | 2 | 3
+  } | null>(null)
+  const [manageTestAppointmentsContext, setManageTestAppointmentsContext] = useState<{
+    localAppId: number
+    testTypeId?: 1 | 2 | 3
+    returnPage?: string
+  } | null>(null)
+  const [takeExaminationContext, setTakeExaminationContext] = useState<{
+    appointmentId: number
+    returnPage?: string
+  } | null>(null)
 
   // People data lifecycle managed through dedicated custom hook
   const {
@@ -92,11 +110,20 @@ export default function App() {
       page !== 'Edit Person' &&
       page !== 'Person Details' &&
       page !== 'Person License History' &&
-      page !== 'Appointment Details'
+      page !== 'Appointment Details' &&
+      page !== 'Schedule Appointment' &&
+      page !== 'Local Applications' &&
+      page !== 'Manage Test Appointments' &&
+      page !== 'Written Test Appointments' &&
+      page !== 'Take Examination'
     ) {
       setSelectedPersonId(null)
       setSelectedDriver(null)
       setSelectedAppointmentId(null)
+      setScheduleAppointmentContext(null)
+      setReopenModalTarget(null)
+      setManageTestAppointmentsContext(null)
+      setTakeExaminationContext(null)
     }
     setShowIssueInternational(false)
     mobileSidebar.close()
@@ -106,6 +133,42 @@ export default function App() {
     }
   }, [mobileSidebar])
 
+  const handleManageTestAppointments = useCallback(
+    (localAppId: number, sourceOrTestType?: 1 | 2 | 3 | string, source?: string) => {
+      const resolvedSource =
+        typeof sourceOrTestType === 'string'
+          ? sourceOrTestType
+          : source || 'Local Applications'
+      const resolvedTestType =
+        typeof sourceOrTestType === 'number'
+          ? (sourceOrTestType as 1 | 2 | 3)
+          : undefined
+
+      setManageTestAppointmentsContext({
+        localAppId,
+        testTypeId: resolvedTestType,
+        returnPage: resolvedSource,
+      })
+      setActivePage('Manage Test Appointments')
+      setShowIssueInternational(false)
+      mobileSidebar.close()
+    },
+    [mobileSidebar],
+  )
+
+  const handleTakeExamination = useCallback(
+    (appointmentId: number, source = 'Manage Test Appointments') => {
+      setTakeExaminationContext({
+        appointmentId,
+        returnPage: source,
+      })
+      setActivePage('Take Examination')
+      setShowIssueInternational(false)
+      mobileSidebar.close()
+    },
+    [mobileSidebar],
+  )
+
   const handleShowAppointmentDetails = useCallback((appointmentId: number, source = 'Test Appointments') => {
     setSelectedAppointmentId(appointmentId)
     setAppointmentDetailsSource(source)
@@ -113,6 +176,30 @@ export default function App() {
     setShowIssueInternational(false)
     mobileSidebar.close()
   }, [mobileSidebar])
+
+  const handleScheduleAppointment = useCallback(
+    (
+      localAppId?: number | null,
+      testTypeId: 1 | 2 | 3 = 1,
+      source = 'Local Applications',
+      reopenModalOnReturn = false,
+    ) => {
+      setScheduleAppointmentContext({
+        localAppId: localAppId ?? null,
+        testTypeId,
+        returnPage: source,
+      })
+      if (reopenModalOnReturn && localAppId) {
+        setReopenModalTarget({ localAppId, testTypeId })
+      } else {
+        setReopenModalTarget(null)
+      }
+      setActivePage('Schedule Appointment')
+      setShowIssueInternational(false)
+      mobileSidebar.close()
+    },
+    [mobileSidebar],
+  )
 
   const handleShowDetails = useCallback((person: Person) => {
     setPersonDetailsSource('People')
@@ -245,6 +332,14 @@ export default function App() {
           selectedAppointmentId={selectedAppointmentId}
           appointmentDetailsSource={appointmentDetailsSource}
           onShowAppointmentDetails={handleShowAppointmentDetails}
+          scheduleAppointmentContext={scheduleAppointmentContext}
+          onScheduleAppointment={handleScheduleAppointment}
+          reopenModalTarget={reopenModalTarget}
+          onClearReopenModalTarget={() => setReopenModalTarget(null)}
+          manageTestAppointmentsContext={manageTestAppointmentsContext}
+          onManageTestAppointments={handleManageTestAppointments}
+          takeExaminationContext={takeExaminationContext}
+          onTakeExamination={handleTakeExamination}
         />
 
         {/* Logout Confirmation Dialog */}

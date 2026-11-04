@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import LocalApplicationsList from './LocalApplicationsList'
 import LocalApplicationForm from './LocalApplicationForm'
 import ApplicationDetailsModal from './ApplicationDetailsModal'
-import TestAppointmentsModal from './TestAppointmentsModal'
 import IssueDrivingLicenseModal from './IssueDrivingLicenseModal'
 import LicenseDetailsModal from '../licenses/LicenseDetailsModal'
 import ConfirmModal from '../common/ConfirmModal'
@@ -45,6 +44,22 @@ export type LocalApplicationsPageProps = {
   accessToken: string
   onShowLicenseHistory?: (personId: number) => void
   onShowAppointmentDetails?: (appointmentId: number) => void
+  onManageTestAppointments?: (
+    localAppId: number,
+    sourceOrTestType?: 1 | 2 | 3 | string,
+    source?: string,
+  ) => void
+  onScheduleAppointment?: (
+    localAppId: number,
+    testTypeId: 1 | 2 | 3,
+    source?: string,
+    reopenModalOnReturn?: boolean,
+  ) => void
+  reopenModalTarget?: {
+    localAppId: number
+    testTypeId: 1 | 2 | 3
+  } | null
+  onClearReopenModalTarget?: () => void
 }
 
 const PAGE_SIZE = 10
@@ -71,7 +86,10 @@ interface LocalAppFilters extends Record<string, unknown> {
 export default function LocalApplicationsPage({
   accessToken,
   onShowLicenseHistory,
-  onShowAppointmentDetails,
+  onManageTestAppointments,
+  onScheduleAppointment,
+  reopenModalTarget,
+  onClearReopenModalTarget,
 }: LocalApplicationsPageProps) {
   const [view, setView] = useState<View>({ mode: 'list' })
 
@@ -82,10 +100,6 @@ export default function LocalApplicationsPage({
     useState<LocalDrivingLicenseApplication | null>(null)
   const [cancelTarget, setCancelTarget] =
     useState<LocalDrivingLicenseApplication | null>(null)
-  const [testAppointmentTarget, setTestAppointmentTarget] = useState<{
-    application: LocalDrivingLicenseApplication
-    testTypeId: 1 | 2 | 3
-  } | null>(null)
   const [issueLicenseTarget, setIssueLicenseTarget] =
     useState<LocalDrivingLicenseApplication | null>(null)
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] =
@@ -156,6 +170,17 @@ export default function LocalApplicationsPage({
       cancelled = true
     }
   }, [accessToken, page?.items])
+
+  // Auto-redirect to dedicated appointments page if returning from ScheduleAppointmentPage
+  useEffect(() => {
+    if (!reopenModalTarget) return
+
+    const { localAppId, testTypeId } = reopenModalTarget
+    onClearReopenModalTarget?.()
+    if (onManageTestAppointments) {
+      onManageTestAppointments(localAppId, testTypeId, 'Local Applications')
+    }
+  }, [reopenModalTarget, onClearReopenModalTarget, onManageTestAppointments])
 
   const {
     search,
@@ -461,9 +486,29 @@ export default function LocalApplicationsPage({
             setActionError(null)
             setCancelTarget(application)
           }}
-          onScheduleTest={(application, testTypeId) =>
-            setTestAppointmentTarget({ application, testTypeId })
-          }
+          onScheduleTest={(application, testTypeId) => {
+            if (onScheduleAppointment) {
+              onScheduleAppointment(
+                application.localDrivingLicenseApplicationId,
+                testTypeId,
+                'Local Applications',
+              )
+            } else if (onManageTestAppointments) {
+              onManageTestAppointments(
+                application.localDrivingLicenseApplicationId,
+                testTypeId,
+                'Local Applications',
+              )
+            }
+          }}
+          onManageTests={(application) => {
+            if (onManageTestAppointments) {
+              onManageTestAppointments(
+                application.localDrivingLicenseApplicationId,
+                'Local Applications',
+              )
+            }
+          }}
           onIssueLicense={(application) => setIssueLicenseTarget(application)}
           onShowLicense={handleShowLicense}
           onShowPersonLicenseHistory={(personId) => onShowLicenseHistory?.(personId)}
@@ -559,16 +604,6 @@ export default function LocalApplicationsPage({
         accessToken={accessToken}
       />
 
-      {/* Test Appointments Modal */}
-      <TestAppointmentsModal
-        isOpen={Boolean(testAppointmentTarget)}
-        onClose={() => setTestAppointmentTarget(null)}
-        application={testAppointmentTarget?.application ?? null}
-        testTypeId={testAppointmentTarget?.testTypeId ?? 1}
-        accessToken={accessToken}
-        onAppointmentScheduled={refreshApplications}
-        onShowAppointmentDetails={onShowAppointmentDetails}
-      />
 
       {/* Issue Driving License Modal */}
       <IssueDrivingLicenseModal

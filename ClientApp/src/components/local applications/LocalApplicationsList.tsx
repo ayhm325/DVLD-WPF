@@ -28,6 +28,7 @@ type Props = {
   onDelete: (application: LocalDrivingLicenseApplication) => void
   onCancel: (application: LocalDrivingLicenseApplication) => void
   onScheduleTest: (application: LocalDrivingLicenseApplication, testTypeId: 1 | 2 | 3) => void
+  onManageTests?: (application: LocalDrivingLicenseApplication, testTypeId?: 1 | 2 | 3) => void
   onIssueLicense: (application: LocalDrivingLicenseApplication) => void
   onShowLicense: (application: LocalDrivingLicenseApplication) => void
   onShowPersonLicenseHistory: (personId: number) => void
@@ -56,6 +57,7 @@ export default function LocalApplicationsList({
   onDelete,
   onCancel,
   onScheduleTest,
+  onManageTests,
   onIssueLicense,
   onShowLicense,
   onShowPersonLicenseHistory,
@@ -123,26 +125,6 @@ export default function LocalApplicationsList({
         )
       },
     },
-    {
-      key: 'actions',
-      header: '',
-      headerClassName: 'w-12',
-      render: (item) => {
-        const status = item.statusText || item.applicationStatus || 'New'
-        return (
-          <button
-            type="button"
-            className="local-app-row-action"
-            disabled={status.toLowerCase() !== 'new'}
-            onClick={() => onEdit(item)}
-            title="Edit application"
-            aria-label={`Edit application #${item.localDrivingLicenseApplicationId}`}
-          >
-            <Pencil size={14} />
-          </button>
-        )
-      },
-    },
   ]
 
   const getRowContextMenu = useCallback(
@@ -187,6 +169,16 @@ export default function LocalApplicationsList({
           separatorAfter: true,
           disabled: !isNew,
           onClick: () => onCancel(item),
+        },
+        {
+          key: 'manage-tests',
+          label: 'Manage Test Appointments',
+          icon: <CalendarClock className="size-4 text-cyan-400" />,
+          onClick: () => {
+            if (onManageTests) {
+              onManageTests(item)
+            }
+          },
         },
         {
           key: 'schedule-tests',
@@ -248,6 +240,7 @@ export default function LocalApplicationsList({
       onDelete,
       onCancel,
       onScheduleTest,
+      onManageTests,
       onIssueLicense,
       onShowLicense,
       onShowPersonLicenseHistory,

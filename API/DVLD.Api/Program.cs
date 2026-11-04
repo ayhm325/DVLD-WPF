@@ -402,6 +402,23 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ============================================================
+// STARTUP LIFECYCLE SYNC
+// ============================================================
+
+try
+{
+    using var scope = app.Services.CreateScope();
+    var licenseRepo = scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
+    var clock = scope.ServiceProvider.GetRequiredService<IJordanClock>();
+    await licenseRepo.DeactivateExpiredLicensesAsync(clock.Now.Date);
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "Failed to run startup license expiration sync.");
+}
+
+// ============================================================
 // PROGRAM ENTRY POINT
 // ============================================================
 
