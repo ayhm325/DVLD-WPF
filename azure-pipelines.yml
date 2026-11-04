@@ -5,10 +5,12 @@
 #                          Vite production build, and frontend artifact upload.
 #   Stage 2 (Backend_CI):  .NET 8 SDK (from global.json), NuGet cache, Release
 #                          solution restore & build (including WPF on Windows),
-#                          Application Unit Tests, SQL Server LocalDB readiness
-#                          & isolation checks, API Integration Tests,
-#                          Infrastructure Integration Tests, Cobertura coverage,
-#                          residual test-DB cleanup, and API release artifact.
+#                          Application Unit Tests, dedicated run-specific SQL
+#                          Server LocalDB readiness & ownership verification,
+#                          API Integration Tests, Infrastructure Integration
+#                          Tests, deduplicated Cobertura coverage staging &
+#                          publishing, ownership-verified test-DB cleanup, and
+#                          API release artifact packaging.
 # Quality Gate:
 #   Both stages are mandatory on every triggered CI / PR run. No mandatory step
 #   uses continueOnError or conditional path-bypassing.
@@ -31,8 +33,33 @@ trigger:
       - Infrastructure/**
       - Presentation (WPF)/**
       - Test/**
-      - global.json
+      - eng/**
       - azure-pipelines.yml
+      - global.json
+      - Directory.Build.props
+      - Directory.Build.targets
+      - Directory.Packages.props
+      - '**/Directory.Build.props'
+      - '**/Directory.Build.targets'
+      - '**/Directory.Packages.props'
+      - NuGet.config
+      - nuget.config
+      - '**/NuGet.config'
+      - '**/nuget.config'
+      - .editorconfig
+      - '**/.editorconfig'
+      - .globalconfig
+      - '**/.globalconfig'
+      - '*.props'
+      - '*.targets'
+      - '*.config'
+      - '*.json'
+      - '*.sln'
+      - '*.slnx'
+      - '**/*.sln'
+      - '**/*.slnx'
+      - '*.runsettings'
+      - '**/*.runsettings'
     exclude:
       - docs/**
       - README.md
@@ -56,8 +83,33 @@ pr:
       - Infrastructure/**
       - Presentation (WPF)/**
       - Test/**
-      - global.json
+      - eng/**
       - azure-pipelines.yml
+      - global.json
+      - Directory.Build.props
+      - Directory.Build.targets
+      - Directory.Packages.props
+      - '**/Directory.Build.props'
+      - '**/Directory.Build.targets'
+      - '**/Directory.Packages.props'
+      - NuGet.config
+      - nuget.config
+      - '**/NuGet.config'
+      - '**/nuget.config'
+      - .editorconfig
+      - '**/.editorconfig'
+      - .globalconfig
+      - '**/.globalconfig'
+      - '*.props'
+      - '*.targets'
+      - '*.config'
+      - '*.json'
+      - '*.sln'
+      - '*.slnx'
+      - '**/*.sln'
+      - '**/*.slnx'
+      - '*.runsettings'
+      - '**/*.runsettings'
     exclude:
       - docs/**
       - README.md
@@ -235,17 +287,22 @@ stages:
           - name: NUGET_PACKAGES
             value: '$(Pipeline.Workspace)/.nuget/packages'
           - name: testResultsDirectory
-            value: '$(Agent.TempDirectory)/TestResults'
+            value: '$(Agent.TempDirectory)/TestResultsRaw'
+          - name: publishedReportsDirectory
+            value: '$(Agent.TempDirectory)/PublishedTestReports'
           - name: DOTNET_CLI_TELEMETRY_OPTOUT
             value: '1'
           - name: DOTNET_NOLOGO
             value: '1'
           - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
             value: '1'
-          # Base server-level connection used by fixtures to create/drop isolated
-          # DVLD_IntegrationTests_<GUID> databases. Never point to a named app DB.
+          # Dedicated run-specific LocalDB instance owned exclusively by this
+          # (BuildId, JobAttempt) execution so residual cleanup never touches
+          # unrelated or concurrent pipeline databases.
+          - name: localDbInstanceName
+            value: 'DVLD_CI_$(Build.BuildId)_$(System.JobAttempt)'
           - name: DVLD_TEST_CONNECTION
-            value: 'Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
+            value: 'Server=(localdb)\DVLD_CI_$(Build.BuildId)_$(System.JobAttempt);Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
         steps:
           - checkout: self
             clean: true
@@ -315,7 +372,7 @@ stages:
               testRunTitle: 'DVLD — Application Unit Tests'
               failTaskOnFailedTests: true
               failTaskOnMissingResultsFile: true
-              publishRunAttachments: true
+              publishRunAttachments: false
 
           # -------------------------------------------------------------------
           # 2. SQL Server LocalDB & Secret Prerequisite Verification
@@ -325,92 +382,13 @@ stages:
             condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
             env:
               DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+              EXPECTED_LOCALDB_INSTANCE: '$(localDbInstanceName)'
+              BUILD_BUILDID: '$(Build.BuildId)'
+              SYSTEM_JOBATTEMPT: '$(System.JobAttempt)'
             inputs:
-              targetType: 'inline'
+              targetType: 'filePath'
+              filePath: 'eng/scripts/Initialize-TestSqlEngine.ps1'
               failOnStderr: false
-              script: |
-                $ErrorActionPreference = 'Stop'
-
-                if ([string]::IsNullOrWhiteSpace($env:DVLD_TEST_CONNECTION)) {
-                  Write-Host "##vso[task.logissue type=error]Database prerequisite failure: DVLD_TEST_CONNECTION is empty."
-                  exit 1
-                }
-
-                try {
-                  $builder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder($env:DVLD_TEST_CONNECTION)
-                }
-                catch {
-                  Write-Host "##vso[task.logissue type=error]Database prerequisite failure: DVLD_TEST_CONNECTION is not a valid SQL Server connection string."
-                  exit 1
-                }
-
-                if (-not [string]::IsNullOrWhiteSpace($builder.InitialCatalog) -and
-                    -not $builder.InitialCatalog.Equals('master', [System.StringComparison]::OrdinalIgnoreCase)) {
-                  Write-Host "##vso[task.logissue type=error]Database safety violation: DVLD_TEST_CONNECTION specifies InitialCatalog '$($builder.InitialCatalog)'. Integration fixtures require a server-level connection (empty InitialCatalog or 'master') so isolated DVLD_IntegrationTests_* databases are used."
-                  exit 1
-                }
-
-                $probeDataSource = $builder.DataSource
-                if ($probeDataSource -match '^\(localdb\)\\(.+)$') {
-                  $instanceName = $Matches[1]
-                  $localDbCmd = Get-Command SqlLocalDB.exe -ErrorAction SilentlyContinue
-                  if ($null -eq $localDbCmd) {
-                    Write-Host "##vso[task.logissue type=error]Database infrastructure failure: SqlLocalDB.exe is not installed on this Windows agent, cannot start LocalDB instance '$instanceName'."
-                    exit 1
-                  }
-
-                  $infoOutput = & SqlLocalDB.exe info $instanceName 2>&1
-                  if ($LASTEXITCODE -ne 0) {
-                    Write-Host "Creating SQL Server LocalDB instance '$instanceName'..."
-                    & SqlLocalDB.exe create $instanceName | Out-Host
-                    if ($LASTEXITCODE -ne 0) {
-                      Write-Host "##vso[task.logissue type=error]Database infrastructure failure: Failed to create SQL Server LocalDB instance '$instanceName'."
-                      exit 1
-                    }
-                  }
-
-                  Write-Host "Starting SQL Server LocalDB instance '$instanceName'..."
-                  & SqlLocalDB.exe start $instanceName | Out-Host
-                  if ($LASTEXITCODE -ne 0) {
-                    Write-Host "##vso[task.logissue type=error]Database infrastructure failure: Failed to start SQL Server LocalDB instance '$instanceName'."
-                    exit 1
-                  }
-
-                  $startedInfo = & SqlLocalDB.exe info $instanceName 2>&1
-                  $pipeLine = $startedInfo | Where-Object { $_ -match 'Instance pipe name:\s*(.+)$' } | Select-Object -First 1
-                  if ($pipeLine -match 'Instance pipe name:\s*(.+)$') {
-                    $probeDataSource = $Matches[1].Trim()
-                  }
-                }
-
-                $probeBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder($env:DVLD_TEST_CONNECTION)
-                $probeBuilder.DataSource = $probeDataSource
-                $probeBuilder.InitialCatalog = 'master'
-
-                try {
-                  $connection = New-Object System.Data.SqlClient.SqlConnection($probeBuilder.ConnectionString)
-                  try {
-                    $connection.Open()
-                    $command = $connection.CreateCommand()
-                    $command.CommandTimeout = 30
-                    $command.CommandText = "SELECT CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR(128)), CAST(SERVERPROPERTY('Edition') AS NVARCHAR(128));"
-                    $reader = $command.ExecuteReader()
-                    if ($reader.Read()) {
-                      Write-Host "SQL Server test engine verified: Version=$($reader.GetString(0)), Edition=$($reader.GetString(1))"
-                    }
-                    $reader.Close()
-                  }
-                  finally {
-                    $connection.Dispose()
-                  }
-                }
-                catch {
-                  Write-Host "##vso[task.logissue type=error]Database infrastructure failure: Unable to open a connection to 'master' on the SQL Server test engine ($($_.Exception.Message))."
-                  exit 1
-                }
-
-                Write-Host "##vso[task.setvariable variable=SqlProbeDataSource]$probeDataSource"
-                Write-Host "##vso[task.setvariable variable=SqlServerReady]true"
 
           - task: PowerShell@2
             displayName: 'Validate API Integration Test Secrets'
@@ -418,25 +396,9 @@ stages:
             env:
               JWT_SECRET_CANDIDATE: '$(Jwt__SecretKey)'
             inputs:
-              targetType: 'inline'
-              script: |
-                $ErrorActionPreference = 'Stop'
-                $unexpandedToken = '$' + '(Jwt__SecretKey)'
-
-                if ([string]::IsNullOrWhiteSpace($env:JWT_SECRET_CANDIDATE) -or
-                    $env:JWT_SECRET_CANDIDATE -eq $unexpandedToken) {
-                  Write-Host "##vso[task.logissue type=error]Missing prerequisite: Secret variable 'Jwt__SecretKey' from variable group 'DVLD-Test-Secrets' is not set."
-                  exit 1
-                }
-
-                $byteCount = [System.Text.Encoding]::UTF8.GetByteCount($env:JWT_SECRET_CANDIDATE)
-                if ($byteCount -lt 32) {
-                  Write-Host "##vso[task.logissue type=error]Invalid prerequisite: 'Jwt__SecretKey' in variable group 'DVLD-Test-Secrets' must be at least 32 UTF-8 bytes (required by DVLD.Api Program.cs)."
-                  exit 1
-                }
-
-                Write-Host "JWT signing key prerequisite verified (>= 32 UTF-8 bytes)."
-                Write-Host "##vso[task.setvariable variable=ApiPrerequisitesReady]true"
+              targetType: 'filePath'
+              filePath: 'eng/scripts/Test-ApiSecretsPrerequisite.ps1'
+              failOnStderr: false
 
           # -------------------------------------------------------------------
           # 3. API Integration Tests (requires SQL Server + Jwt__SecretKey)
@@ -480,7 +442,7 @@ stages:
               testRunTitle: 'DVLD — API Integration Tests'
               failTaskOnFailedTests: true
               failTaskOnMissingResultsFile: true
-              publishRunAttachments: true
+              publishRunAttachments: false
 
           # -------------------------------------------------------------------
           # 4. Infrastructure Integration Tests (requires SQL Server only)
@@ -521,96 +483,54 @@ stages:
               testRunTitle: 'DVLD — Infrastructure Integration Tests'
               failTaskOnFailedTests: true
               failTaskOnMissingResultsFile: true
-              publishRunAttachments: true
+              publishRunAttachments: false
 
           # -------------------------------------------------------------------
-          # 5. Safe Residual Ephemeral Database Cleanup (DVLD_IntegrationTests_*)
+          # 5. Ownership-Verified Cleanup of Ephemeral SQL Test Instance
           # -------------------------------------------------------------------
           - task: PowerShell@2
-            displayName: 'Clean Up Residual DVLD_IntegrationTests_* Databases'
+            displayName: 'Clean Up Run-Owned SQL Test Databases & LocalDB Instance'
             condition: and(always(), eq(variables['SqlServerReady'], 'true'))
             env:
               DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
               SQL_PROBE_DATA_SOURCE: '$(SqlProbeDataSource)'
+              SQL_EXCLUSIVE_INSTANCE_OWNED: '$(SqlExclusiveInstanceOwned)'
+              SQL_OWNED_LOCALDB_INSTANCE: '$(SqlOwnedLocalDbInstance)'
+              SQL_RUN_OWNERSHIP_TOKEN: '$(SqlRunOwnershipToken)'
             inputs:
-              targetType: 'inline'
+              targetType: 'filePath'
+              filePath: 'eng/scripts/Cleanup-TestSqlEngine.ps1'
               failOnStderr: false
-              script: |
-                $ErrorActionPreference = 'Stop'
-                try {
-                  $cleanupBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder($env:DVLD_TEST_CONNECTION)
-                  $unexpandedProbe = '$' + '(SqlProbeDataSource)'
-                  if (-not [string]::IsNullOrWhiteSpace($env:SQL_PROBE_DATA_SOURCE) -and
-                      $env:SQL_PROBE_DATA_SOURCE -ne $unexpandedProbe) {
-                    $cleanupBuilder.DataSource = $env:SQL_PROBE_DATA_SOURCE
-                  }
-                  $cleanupBuilder.InitialCatalog = 'master'
-
-                  $connection = New-Object System.Data.SqlClient.SqlConnection($cleanupBuilder.ConnectionString)
-                  try {
-                    $connection.Open()
-                    $listCmd = $connection.CreateCommand()
-                    $listCmd.CommandTimeout = 60
-                    $listCmd.CommandText = @"
-                SELECT name
-                FROM sys.databases
-                WHERE name LIKE N'DVLD[_]IntegrationTests[_]%'
-                  AND database_id > 4;
-                "@
-                    $orphanDbs = New-Object System.Collections.Generic.List[string]
-                    $reader = $listCmd.ExecuteReader()
-                    while ($reader.Read()) {
-                      $orphanDbs.Add($reader.GetString(0))
-                    }
-                    $reader.Close()
-
-                    foreach ($dbName in $orphanDbs) {
-                      if ($dbName.StartsWith('DVLD_IntegrationTests_', [System.StringComparison]::OrdinalIgnoreCase)) {
-                        $escapedIdentifier = $dbName.Replace(']', ']]')
-                        $escapedLiteral = $dbName.Replace("'", "''")
-                        $dropCmd = $connection.CreateCommand()
-                        $dropCmd.CommandTimeout = 120
-                        $dropCmd.CommandText = @"
-                IF DB_ID(N'$escapedLiteral') IS NOT NULL
-                BEGIN
-                  ALTER DATABASE [$escapedIdentifier] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-                  DROP DATABASE [$escapedIdentifier];
-                END
-                "@
-                        [void]$dropCmd.ExecuteNonQuery()
-                        Write-Host "Dropped residual ephemeral test database: $dbName"
-                      }
-                    }
-
-                    if ($orphanDbs.Count -eq 0) {
-                      Write-Host "No residual DVLD_IntegrationTests_* databases found; fixture cleanup was clean."
-                    }
-                  }
-                  finally {
-                    $connection.Dispose()
-                  }
-                }
-                catch {
-                  Write-Host "##vso[task.logissue type=warning]Post-test residual database sweep encountered a non-fatal warning: $($_.Exception.Message)"
-                }
 
           # -------------------------------------------------------------------
-          # 6. Code Coverage & CI Artifacts
+          # 6. Deduplicated Test/Coverage Staging, Publishing & CI Artifacts
           # -------------------------------------------------------------------
+          - task: PowerShell@2
+            displayName: 'Stage Deduplicated TRX & Cobertura Reports'
+            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            env:
+              TEST_RESULTS_DIRECTORY: '$(testResultsDirectory)'
+              PUBLISHED_REPORTS_DIRECTORY: '$(publishedReportsDirectory)'
+              SOLUTION_BUILT: '$(SolutionBuilt)'
+              SQL_SERVER_READY: '$(SqlServerReady)'
+              API_PREREQUISITES_READY: '$(ApiPrerequisitesReady)'
+            inputs:
+              targetType: 'filePath'
+              filePath: 'eng/scripts/Stage-BackendTestReports.ps1'
+              failOnStderr: false
+
           - task: PublishCodeCoverageResults@2
             displayName: 'Publish Backend Code Coverage (Cobertura)'
-            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            condition: and(succeededOrFailed(), eq(variables['CoverageReportsStaged'], 'true'))
             inputs:
-              summaryFileLocation: |
-                $(testResultsDirectory)/**/coverage.cobertura.xml
-                !$(testResultsDirectory)/**/In/**
-              failIfCoverageEmpty: false
+              summaryFileLocation: '$(publishedReportsDirectory)/coverage/*.cobertura.xml'
+              failIfCoverageEmpty: true
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Backend Test & Coverage Reports'
-            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            condition: and(succeededOrFailed(), eq(variables['ReportsDirectoryReady'], 'true'))
             inputs:
-              targetPath: '$(testResultsDirectory)'
+              targetPath: '$(publishedReportsDirectory)'
               artifact: 'backend-test-and-coverage-reports'
               publishLocation: 'pipeline'
 
