@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.DriverDTO;
 using Application.Interfaces;
@@ -15,13 +15,15 @@ public sealed class DriverServiceTests
     private readonly Mock<IPersonRepository> _personRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserService> _currentUserService = new();
+    private readonly Common.FakeJordanClock _clock = new();
 
     private DriverService CreateService() =>
         new(
             _repository.Object,
             _personRepository.Object,
             _unitOfWork.Object,
-            _currentUserService.Object);
+            _currentUserService.Object,
+            _clock);
 
     private void SetupAuthenticatedUser(int userId = 10)
     {

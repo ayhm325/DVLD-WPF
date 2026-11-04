@@ -1,4 +1,4 @@
-﻿using Application.Common.Pagination;
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs;
@@ -27,6 +27,12 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     private readonly Mock<IPersonRepository> _personRepository = new();
     private readonly Mock<IJordanClock> _clock = new();
 
+    public LocalDrivingLicenseApplicationServiceTests()
+    {
+        _clock.Setup(x => x.Now).Returns(Common.FakeJordanClock.DefaultJordanNow);
+        _clock.SetupGet(x => x.Today).Returns(() => DateOnly.FromDateTime(_clock.Object.Now));
+    }
+
     private LocalDrivingLicenseApplicationService CreateService(
         bool withAppointmentRepo = false,
         bool withPersonRepo = true,
@@ -34,10 +40,10 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _repository.Object, _licenseRepository.Object, _unitOfWork.Object,
         _applicationRepository.Object, _applicationTypeRepository.Object,
         _licenseClassService.Object, _currentUserService.Object,
-        _applicationService.Object,
+        _applicationService.Object, _clock.Object,
         withAppointmentRepo ? _testAppointmentRepository.Object : null,
-        withPersonRepo ? _personRepository.Object : null,
-        withClock ? _clock.Object : null);
+        withPersonRepo ? _personRepository.Object : null);
+
 
     private void SetupTransactionWithResult<T>()
     {
@@ -108,21 +114,21 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
                 null!, _licenseRepository.Object, _unitOfWork.Object,
                 _applicationRepository.Object, _applicationTypeRepository.Object,
                 _licenseClassService.Object, _currentUserService.Object,
-                _applicationService.Object)).ParamName);
+                _applicationService.Object, _clock.Object)).ParamName);
 
         Assert.Equal("licenseRepository", Assert.Throws<ArgumentNullException>(() =>
             new LocalDrivingLicenseApplicationService(
                 _repository.Object, null!, _unitOfWork.Object,
                 _applicationRepository.Object, _applicationTypeRepository.Object,
                 _licenseClassService.Object, _currentUserService.Object,
-                _applicationService.Object)).ParamName);
+                _applicationService.Object, _clock.Object)).ParamName);
 
         Assert.Equal("unitOfWork", Assert.Throws<ArgumentNullException>(() =>
             new LocalDrivingLicenseApplicationService(
                 _repository.Object, _licenseRepository.Object, null!,
                 _applicationRepository.Object, _applicationTypeRepository.Object,
                 _licenseClassService.Object, _currentUserService.Object,
-                _applicationService.Object)).ParamName);
+                _applicationService.Object, _clock.Object)).ParamName);
     }
 
     [Fact]
@@ -370,7 +376,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
             TestAppointmentID = 101,
             LocalDrivingLicenseApplicationID = 5,
             TestTypeID = 1,
-            AppointmentDate = DateTime.UtcNow.AddDays(3),
+            AppointmentDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(3),
             PaidFees = 20,
             CreatedByUserID = 2,
             IsLocked = false,

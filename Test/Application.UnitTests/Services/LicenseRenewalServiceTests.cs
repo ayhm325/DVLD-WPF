@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
@@ -25,7 +25,8 @@ public class LicenseRenewalServiceTests
 
     public LicenseRenewalServiceTests()
     {
-        _clock.SetupGet(x => x.Now).Returns(() => DateTime.UtcNow);
+        _clock.SetupGet(x => x.Now).Returns(Common.FakeJordanClock.DefaultJordanNow);
+        _clock.SetupGet(x => x.Today).Returns(() => DateOnly.FromDateTime(_clock.Object.Now));
     }
 
     private LicenseRenewalService CreateSut() =>
@@ -217,7 +218,7 @@ public class LicenseRenewalServiceTests
         SetupTransaction(transaction);
 
         var oldLicense = CreateExpiredLicense();
-        oldLicense.ExpirationDate = DateTime.UtcNow.AddDays(10);
+        oldLicense.ExpirationDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(10);
         _licenseRepository
             .Setup(x => x.GetLicenseByIdAsync(10))
             .ReturnsAsync(oldLicense);
@@ -847,8 +848,8 @@ public class LicenseRenewalServiceTests
             LicenseID = 10,
             DriverID = 20,
             LicenseClass = 1,
-            IssueDate = DateTime.UtcNow.AddYears(-6),
-            ExpirationDate = DateTime.UtcNow.AddDays(-1),
+            IssueDate = Common.FakeJordanClock.DefaultJordanNow.AddYears(-6),
+            ExpirationDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(-1),
             IsActive = true,
             Driver = new Driver
             {

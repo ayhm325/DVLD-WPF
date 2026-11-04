@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
 using Application.DTOs.TestDTO;
@@ -196,7 +196,9 @@ public sealed class ExaminationWorkflowIntegrationTests : IAsyncLifetime
 
     private sealed class TestControlledClock(DateTime now) : IJordanClock
     {
-        public DateTime Now { get; set; } = now;
+        public DateTime Now { get; set; } = DateTime.SpecifyKind(now, DateTimeKind.Unspecified);
+        public DateOnly Today => DateOnly.FromDateTime(Now);
+        public DateTime UtcNow => Application.Common.Time.JordanTimeZoneProvider.ConvertJordanToUtc(Now);
     }
 
     private (TestService testService, TestAppointmentService appointmentService, LocalDrivingLicenseApplicationService localAppService)
@@ -212,13 +214,14 @@ public sealed class ExaminationWorkflowIntegrationTests : IAsyncLifetime
         var licenseRepo = new LicenseRepository(context);
         var licenseClassRepo = new LicenseClassRepository(context);
 
+        var effectiveClock = clock ?? new Infrastructure.Services.JordanClock();
         var currentUserService = new TestCurrentUserService(staffUserId);
-        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService);
+        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService, effectiveClock);
         var applicationTypeService = new ApplicationTypeService(appTypeRepo, unitOfWork);
         var licenseClassService = new LicenseClassService(licenseClassRepo, unitOfWork);
         var localAppService = new LocalDrivingLicenseApplicationService(
-            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService, appointmentRepo);
-        var workflowService = new TestWorkflowService(appointmentRepo, clock);
+            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService, effectiveClock, appointmentRepo);
+        var workflowService = new TestWorkflowService(appointmentRepo, effectiveClock);
 
         var appointmentService = new TestAppointmentService(
             unitOfWork,
@@ -229,7 +232,8 @@ public sealed class ExaminationWorkflowIntegrationTests : IAsyncLifetime
             currentUserService,
             workflowService,
             applicationService,
-            NullLogger<TestAppointmentService>.Instance);
+            NullLogger<TestAppointmentService>.Instance,
+            effectiveClock);
 
         var testService = new TestService(
             testRepo,

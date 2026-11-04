@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.Interfaces;
 using Application.Services;
@@ -14,13 +14,15 @@ public sealed class ApplicationServiceTests
     private readonly Mock<IApplicationTypeRepository> _applicationTypeRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ICurrentUserService> _currentUserService = new();
+    private readonly Common.FakeJordanClock _clock = new();
 
     private ApplicationService CreateService() =>
         new(
             _repository.Object,
             _applicationTypeRepository.Object,
             _unitOfWork.Object,
-            _currentUserService.Object);
+            _currentUserService.Object,
+            _clock);
 
     private static ApplicationD CreateApplication(
         int id = 1,
@@ -29,7 +31,7 @@ public sealed class ApplicationServiceTests
         AppStatus status = AppStatus.New,
         decimal paidFees = 50m)
     {
-        var now = DateTime.UtcNow;
+        var now = Common.FakeJordanClock.DefaultJordanNow;
 
         return new ApplicationD
         {
@@ -202,7 +204,7 @@ public sealed class ApplicationServiceTests
             SecondName = "Mohammed",
             LastName = "Obeidat",
             NationalNo = "9901234567",
-            DateOfBirth = DateTime.Today.AddYears(-30),
+            DateOfBirth = new DateTime(1996, 1, 1),
             Gender = Gender.Male,
             Address = "Amman",
             Phone = "0791234567",

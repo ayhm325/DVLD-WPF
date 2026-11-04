@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
@@ -243,13 +243,14 @@ public sealed class AppointmentAvailabilityIntegrationTests : IAsyncLifetime
         var licenseRepo = new LicenseRepository(context);
         var licenseClassRepo = new LicenseClassRepository(context);
 
+        var clock = new Infrastructure.Services.JordanClock();
         var currentUserService = new TestCurrentUserService(staffUserId);
-        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService);
+        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService, clock);
         var applicationTypeService = new ApplicationTypeService(appTypeRepo, unitOfWork);
         var licenseClassService = new LicenseClassService(licenseClassRepo, unitOfWork);
         var localAppService = new LocalDrivingLicenseApplicationService(
-            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService);
-        var workflowService = new TestWorkflowService(appointmentRepo);
+            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService, clock);
+        var workflowService = new TestWorkflowService(appointmentRepo, clock);
 
         return new TestAppointmentService(
             unitOfWork,
@@ -260,12 +261,13 @@ public sealed class AppointmentAvailabilityIntegrationTests : IAsyncLifetime
             currentUserService,
             workflowService,
             applicationService,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<TestAppointmentService>.Instance);
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<TestAppointmentService>.Instance,
+            clock);
     }
 
     private static DateTime GetNextWeekday(DayOfWeek dayOfWeek)
     {
-        var currentJordan = TestAppointmentValidator.GetCurrentJordanTime().Date.AddDays(7);
+        var currentJordan = new Infrastructure.Services.JordanClock().Now.Date.AddDays(7);
         while (currentJordan.DayOfWeek != dayOfWeek)
         {
             currentJordan = currentJordan.AddDays(1);

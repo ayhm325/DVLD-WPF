@@ -10,6 +10,7 @@ namespace Application.UnitTests.Services;
 public class TestWorkflowServiceTests
 {
     private readonly Mock<ITestAppointmentRepository> _repositoryMock;
+    private readonly Common.FakeJordanClock _clock = new();
     private readonly TestWorkflowService _sut;
 
     public TestWorkflowServiceTests()
@@ -17,7 +18,8 @@ public class TestWorkflowServiceTests
         _repositoryMock = new Mock<ITestAppointmentRepository>();
 
         _sut = new TestWorkflowService(
-            _repositoryMock.Object);
+            _repositoryMock.Object,
+            _clock);
     }
 
     // =========================================================
@@ -533,7 +535,7 @@ public class TestWorkflowServiceTests
 
         var appointment = CreateAppointment(
             appointmentId,
-            appointmentDate: Application.Validators.TestAppointmentValidator.GetCurrentJordanTime().AddMinutes(30));
+            appointmentDate: _clock.Now.AddMinutes(30));
 
         _repositoryMock
             .Setup(repository =>
@@ -670,7 +672,7 @@ public class TestWorkflowServiceTests
         var appointment = CreateAppointment(
             appointmentId,
             localAppId: localAppId,
-            appointmentDate: DateTime.UtcNow.AddMinutes(-30));
+            appointmentDate: Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-30));
 
         _repositoryMock
             .Setup(repository =>
@@ -707,7 +709,7 @@ public class TestWorkflowServiceTests
         var appointment = CreateAppointment(
             appointmentId,
             localAppId: localAppId,
-            appointmentDate: DateTime.UtcNow.AddMinutes(-30));
+            appointmentDate: Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-30));
 
         _repositoryMock
             .Setup(repository =>
@@ -742,7 +744,7 @@ public class TestWorkflowServiceTests
             appointmentId,
             localAppId: localAppId,
             testTypeId: 99,
-            appointmentDate: DateTime.UtcNow.AddMinutes(-30));
+            appointmentDate: Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-30));
 
         _repositoryMock
             .Setup(repository =>
@@ -783,7 +785,7 @@ public class TestWorkflowServiceTests
             appointmentId,
             localAppId: localAppId,
             testTypeId: (int)TestTypeEnum.Theory,
-            appointmentDate: DateTime.UtcNow.AddMinutes(-30));
+            appointmentDate: Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-30));
 
         _repositoryMock
             .Setup(repository =>
@@ -827,7 +829,7 @@ public class TestWorkflowServiceTests
             appointmentId,
             localAppId: localAppId,
             testTypeId: (int)TestTypeEnum.Theory,
-            appointmentDate: DateTime.UtcNow.AddMinutes(-30));
+            appointmentDate: Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-30));
 
         _repositoryMock
             .Setup(repository =>
@@ -979,7 +981,7 @@ public class TestWorkflowServiceTests
             TestTypeID = testTypeId,
             LocalDrivingLicenseApplicationID = localAppId,
             AppointmentDate =
-                appointmentDate ?? DateTime.UtcNow.AddMinutes(-30),
+                appointmentDate ?? Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-30),
             PaidFees = 10,
             CreatedByUserID = 1,
             IsLocked = isLocked,

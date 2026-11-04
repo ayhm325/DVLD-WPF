@@ -10,6 +10,9 @@ namespace Application.UnitTests.Serialization;
 
 public class JordanFacilityDateTimeOffsetConverterTests
 {
+    private static readonly DateTime ReferenceJordanNow =
+        new(2026, 11, 3, 10, 0, 0, DateTimeKind.Unspecified);
+
     private readonly JsonSerializerOptions _jsonOptions;
 
     public JordanFacilityDateTimeOffsetConverterTests()
@@ -141,7 +144,7 @@ public class JordanFacilityDateTimeOffsetConverterTests
         Assert.Equal(8, facilityDate.Hour);
         Assert.Equal(15, facilityDate.Minute);
 
-        var validationResult = TestAppointmentValidator.ValidateAppointmentDate(facilityDate);
+        var validationResult = TestAppointmentValidator.ValidateAppointmentDate(facilityDate, ReferenceJordanNow);
         Assert.True(validationResult.IsFailure);
         Assert.Contains("approved 40-minute slots", validationResult.Error);
     }
@@ -161,7 +164,7 @@ public class JordanFacilityDateTimeOffsetConverterTests
         Assert.NotNull(request);
         var facilityDate = TestAppointmentValidator.ToFacilityTime(request.AppointmentDate);
 
-        var validationResult = TestAppointmentValidator.ValidateAppointmentDate(facilityDate);
+        var validationResult = TestAppointmentValidator.ValidateAppointmentDate(facilityDate, ReferenceJordanNow);
         Assert.True(validationResult.IsFailure);
         Assert.Contains("must be in the future", validationResult.Error);
     }
@@ -173,7 +176,7 @@ public class JordanFacilityDateTimeOffsetConverterTests
     [Fact]
     public void Deserialize_FutureTimestampInJordan_PassesValidation()
     {
-        var futureDate = DateTime.UtcNow.Date.AddDays(5);
+        var futureDate = ReferenceJordanNow.Date.AddDays(5);
         // 08:00 Jordan time slot 1
         var isoString = $"{futureDate:yyyy-MM-dd}T08:00:00";
         var json = $"{{\"testTypeId\":1,\"localDrivingLicenseApplicationId\":10,\"appointmentDate\":\"{isoString}\"}}";
@@ -183,7 +186,7 @@ public class JordanFacilityDateTimeOffsetConverterTests
         Assert.NotNull(request);
         var facilityDate = TestAppointmentValidator.ToFacilityTime(request.AppointmentDate);
 
-        var validationResult = TestAppointmentValidator.ValidateAppointmentDate(facilityDate);
+        var validationResult = TestAppointmentValidator.ValidateAppointmentDate(facilityDate, ReferenceJordanNow);
         Assert.True(validationResult.IsSuccess);
     }
 

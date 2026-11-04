@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
@@ -17,7 +17,8 @@ public sealed class LicenseQueryServiceTests
 
     public LicenseQueryServiceTests()
     {
-        _clock.SetupGet(x => x.Now).Returns(new DateTime(2026, 11, 4, 0, 0, 0, DateTimeKind.Utc));
+        _clock.SetupGet(x => x.Now).Returns(new DateTime(2026, 11, 4, 0, 0, 0, DateTimeKind.Unspecified));
+        _clock.SetupGet(x => x.Today).Returns(() => DateOnly.FromDateTime(_clock.Object.Now));
     }
 
     private LicenseQueryService CreateService() =>

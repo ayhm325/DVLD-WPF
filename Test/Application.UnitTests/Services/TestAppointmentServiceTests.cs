@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
@@ -37,6 +37,8 @@ public sealed class TestAppointmentServiceTests
 
     private readonly Mock<ILogger<TestAppointmentService>>
         _logger = new();
+
+    private readonly Common.FakeJordanClock _clock = new();
 
     // =========================================================
     // FACTORY
@@ -138,7 +140,8 @@ public sealed class TestAppointmentServiceTests
             _currentUserService.Object,
             _workflowService.Object,
             _applicationService.Object,
-            _logger.Object);
+            _logger.Object,
+            _clock);
     }
 
     // =========================================================
@@ -147,7 +150,7 @@ public sealed class TestAppointmentServiceTests
 
     private static DateTime ValidFutureSlot(int daysAhead = 2, int hour = 8, int minute = 0)
     {
-        var date = DateTime.UtcNow.Date.AddDays(daysAhead);
+        var date = Common.FakeJordanClock.DefaultJordanNow.Date.AddDays(daysAhead);
         while (date.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
         {
             date = date.AddDays(1);
@@ -353,7 +356,8 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 _workflowService.Object,
                 _applicationService.Object,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -369,7 +373,8 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 _workflowService.Object,
                 _applicationService.Object,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -385,7 +390,8 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 _workflowService.Object,
                 _applicationService.Object,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -401,7 +407,8 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 _workflowService.Object,
                 _applicationService.Object,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -417,7 +424,8 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 _workflowService.Object,
                 _applicationService.Object,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -433,7 +441,8 @@ public sealed class TestAppointmentServiceTests
                 null!,
                 _workflowService.Object,
                 _applicationService.Object,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -449,7 +458,8 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 null!,
                 _applicationService.Object,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -465,7 +475,8 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 _workflowService.Object,
                 null!,
-                _logger.Object));
+                _logger.Object,
+                _clock));
     }
 
     [Fact]
@@ -481,6 +492,24 @@ public sealed class TestAppointmentServiceTests
                 _currentUserService.Object,
                 _workflowService.Object,
                 _applicationService.Object,
+                null!,
+                _clock));
+    }
+
+    [Fact]
+    public void Constructor_WhenClockIsNull_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new TestAppointmentService(
+                _unitOfWork.Object,
+                _repository.Object,
+                _testTypeRepository.Object,
+                _localApplicationService.Object,
+                _applicationTypeService.Object,
+                _currentUserService.Object,
+                _workflowService.Object,
+                _applicationService.Object,
+                _logger.Object,
                 null!));
     }
 
@@ -972,7 +1001,7 @@ public sealed class TestAppointmentServiceTests
 
         var dto = ValidCreateDto();
         dto.AppointmentDate =
-            DateTime.UtcNow.AddMinutes(-1);
+            Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-1);
 
         var result =
             await service.AddAsync(dto);
@@ -1495,7 +1524,7 @@ public sealed class TestAppointmentServiceTests
             await service.ScheduleAsync(
                 100,
                 1,
-                DateTime.UtcNow.AddMinutes(-1));
+                Common.FakeJordanClock.DefaultJordanNow.AddMinutes(-1));
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -1890,7 +1919,7 @@ public sealed class TestAppointmentServiceTests
                             LicenseClassID = 1,
                             LicenseClassName = "A",
                             FullName = "Test Person",
-                            ApplicationDate = DateTime.UtcNow,
+                            ApplicationDate = Common.FakeJordanClock.DefaultJordanNow,
                             PassedTest = 0,
                             ApplicationStatus = AppStatus.New,
                             ApplicationFees = 50m,
@@ -2082,7 +2111,7 @@ public sealed class TestAppointmentServiceTests
                             LicenseClassID = 1,
                             LicenseClassName = "A",
                             FullName = "Test Person",
-                            ApplicationDate = DateTime.UtcNow,
+                            ApplicationDate = Common.FakeJordanClock.DefaultJordanNow,
                             PassedTest = 0,
                             ApplicationStatus = AppStatus.New,
                             ApplicationFees = 50m,
@@ -2172,7 +2201,7 @@ public sealed class TestAppointmentServiceTests
                             LicenseClassID = 1,
                             LicenseClassName = "A",
                             FullName = "Test Person",
-                            ApplicationDate = DateTime.UtcNow,
+                            ApplicationDate = Common.FakeJordanClock.DefaultJordanNow,
                             PassedTest = 0,
                             ApplicationStatus = AppStatus.New,
                             ApplicationFees = 50m,
@@ -3227,7 +3256,7 @@ public sealed class TestAppointmentServiceTests
     {
         var service = CreateService();
         // Appointment is tomorrow (< 2 calendar days away)
-        var jordanNow = Application.Validators.TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = _clock.Now;
         var appointment = ValidAppointment(1, date: jordanNow.Date.AddDays(1).AddHours(9));
 
         _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
@@ -3244,7 +3273,7 @@ public sealed class TestAppointmentServiceTests
     {
         var service = CreateService();
         // Existing appointment is tomorrow (< 2 calendar days away)
-        var jordanNow = Application.Validators.TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = _clock.Now;
         var appointment = ValidAppointment(1, date: jordanNow.Date.AddDays(1).AddHours(9));
 
         _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);

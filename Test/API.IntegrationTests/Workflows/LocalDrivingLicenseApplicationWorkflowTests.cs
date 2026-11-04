@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
+using Application.Common.Time;
 using Domain.Entities;
 using Domain.Enums;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
@@ -358,9 +359,7 @@ public sealed class LocalDrivingLicenseApplicationWorkflowTests
             LicenseClassId = seed.LicenseClassId
         };
 
-        var beforeCallJordan = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time"));
+        var beforeCallJordan = JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow);
 
         var response = await client.PostAsJsonAsync(
             "/api/LocalDrivingLicenseApplications", request);

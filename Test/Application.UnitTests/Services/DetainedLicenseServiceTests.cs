@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DetainedLicenseDTO;
@@ -23,7 +23,8 @@ public sealed class DetainedLicenseServiceTests
 
     public DetainedLicenseServiceTests()
     {
-        _clock.SetupGet(x => x.Now).Returns(() => DateTime.UtcNow);
+        _clock.SetupGet(x => x.Now).Returns(Common.FakeJordanClock.DefaultJordanNow);
+        _clock.SetupGet(x => x.Today).Returns(() => DateOnly.FromDateTime(_clock.Object.Now));
     }
 
     private DetainedLicenseService CreateService()
@@ -95,8 +96,8 @@ public sealed class DetainedLicenseServiceTests
                     LicenseID = licenseId,
                     DriverID = driverId,
                     LicenseClass = 3,
-                    IssueDate = DateTime.UtcNow.AddYears(-1),
-                    ExpirationDate = DateTime.UtcNow.AddMonths(6),
+                    IssueDate = Common.FakeJordanClock.DefaultJordanNow.AddYears(-1),
+                    ExpirationDate = Common.FakeJordanClock.DefaultJordanNow.AddMonths(6),
                     IsActive = true,
                     Driver = new Driver
                     {
@@ -114,7 +115,7 @@ public sealed class DetainedLicenseServiceTests
                 {
                     DetainID = detainId,
                     LicenseID = 100,
-                    DetainDate = DateTime.UtcNow.AddDays(-5),
+                    DetainDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(-5),
                     FineFees = 50,
                     CreatedByUserID = 10,
                     IsReleased = false
@@ -129,7 +130,7 @@ public sealed class DetainedLicenseServiceTests
                 {
                     DetainID = detainId,
                     LicenseID = 100,
-                    DetainDate = DateTime.UtcNow.AddDays(-5),
+                    DetainDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(-5),
                     FineFees = 50,
                     CreatedByUserID = 10,
                     IsReleased = false
@@ -418,7 +419,7 @@ public sealed class DetainedLicenseServiceTests
                 {
                     LicenseID = 100,
                     IsActive = false,
-                    ExpirationDate = DateTime.UtcNow.AddMonths(6)
+                    ExpirationDate = Common.FakeJordanClock.DefaultJordanNow.AddMonths(6)
                 });
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
         var result = await CreateService().AddAsync(dto);
@@ -440,7 +441,7 @@ public sealed class DetainedLicenseServiceTests
                     LicenseID = 100,
                     IsActive = true,
                     ExpirationDate =
-                        DateTime.UtcNow.AddDays(-1)
+                        Common.FakeJordanClock.DefaultJordanNow.AddDays(-1)
                 });
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
         var result = await CreateService().AddAsync(dto);
@@ -531,7 +532,7 @@ public sealed class DetainedLicenseServiceTests
         {
             DetainID = 500,
             LicenseID = 100,
-            DetainDate = DateTime.UtcNow,
+            DetainDate = Common.FakeJordanClock.DefaultJordanNow,
             FineFees = 75,
             CreatedByUserID = 55,
             IsReleased = false
@@ -829,7 +830,7 @@ public sealed class DetainedLicenseServiceTests
                     LicenseClass = 3,
                     IsActive = true,
                     ExpirationDate =
-                        DateTime.UtcNow.AddMonths(6),
+                        Common.FakeJordanClock.DefaultJordanNow.AddMonths(6),
                     Driver = null!
                 });
         _applicationTypeService
@@ -971,7 +972,7 @@ public sealed class DetainedLicenseServiceTests
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
             x => x.ActivateLicenseAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<DateOnly>()),
             Times.Never);
     }
     [Fact]
@@ -991,7 +992,7 @@ public sealed class DetainedLicenseServiceTests
                     LicenseClass = 3,
                     IsActive = false,
                     ExpirationDate =
-                        DateTime.UtcNow.AddDays(-1),
+                        Common.FakeJordanClock.DefaultJordanNow.AddDays(-1),
                     Driver = new Driver
                     {
                         DriverID = 20,
@@ -1028,7 +1029,7 @@ public sealed class DetainedLicenseServiceTests
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
             x => x.ActivateLicenseAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<DateOnly>()),
             Times.Never);
     }
     [Fact]
@@ -1055,7 +1056,7 @@ public sealed class DetainedLicenseServiceTests
                 100))
             .ReturnsAsync(false);
         _licenseRepository
-            .Setup(x => x.ActivateLicenseAsync(100))
+            .Setup(x => x.ActivateLicenseAsync(100, _clock.Object.Today))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -1071,7 +1072,7 @@ public sealed class DetainedLicenseServiceTests
                     new ReleaseDetainedLicenseDto { DetainID = 50 });
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
-            x => x.ActivateLicenseAsync(100),
+            x => x.ActivateLicenseAsync(100, _clock.Object.Today),
             Times.Once);
     }
     [Fact]
@@ -1098,7 +1099,7 @@ public sealed class DetainedLicenseServiceTests
                 100))
             .ReturnsAsync(false);
         _licenseRepository
-            .Setup(x => x.ActivateLicenseAsync(100))
+            .Setup(x => x.ActivateLicenseAsync(100, _clock.Object.Today))
             .ReturnsAsync(false);
         var result =
             await CreateService()
@@ -1218,7 +1219,7 @@ public sealed class DetainedLicenseServiceTests
         {
             DetainID = 50,
             LicenseID = 100,
-            DetainDate = DateTime.UtcNow.AddDays(-5),
+            DetainDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(-5),
             FineFees = 50,
             CreatedByUserID = 10,
             IsReleased = false
@@ -1249,12 +1250,12 @@ public sealed class DetainedLicenseServiceTests
         _applicationService
             .Setup(x => x.CompleteApplicationStateAsync(700))
             .ReturnsAsync(Result.Success());
-        var before = DateTime.UtcNow;
+        var before = Common.FakeJordanClock.DefaultJordanNow;
         var result =
             await CreateService()
                 .ReleaseAsync(
                     new ReleaseDetainedLicenseDto { DetainID = 50 });
-        var after = DateTime.UtcNow;
+        var after = Common.FakeJordanClock.DefaultJordanNow;
         Assert.True(result.IsSuccess);
         Assert.True(detention.IsReleased);
         Assert.NotNull(detention.ReleaseDate);

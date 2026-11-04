@@ -22,6 +22,7 @@ public sealed class InternationalServiceTests
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
     private readonly Mock<ILogger<InternationalService>> _logger = new();
+    private readonly Common.FakeJordanClock _clock = new();
     private InternationalService CreateService()
     {
         return new InternationalService(
@@ -31,7 +32,8 @@ public sealed class InternationalServiceTests
             _applicationTypeService.Object,
             _currentUserService.Object,
             _unitOfWork.Object,
-            _logger.Object);
+            _logger.Object,
+            _clock);
     }
     private void SetupAuthenticatedUser(int userId = 10)
     {
@@ -117,8 +119,8 @@ public sealed class InternationalServiceTests
             DriverID = driverId,
             LicenseClassID = 3,
             LicenseClassName = "Ordinary",
-            IssueDate = DateTime.UtcNow.AddYears(-1),
-            ExpirationDate = DateTime.UtcNow.AddMonths(6),
+            IssueDate = Common.FakeJordanClock.DefaultJordanNow.AddYears(-1),
+            ExpirationDate = Common.FakeJordanClock.DefaultJordanNow.AddMonths(6),
             PaidFees = 20,
             IsActive = true,
             IssueReason = (byte)IssueReason.FirstTime,
@@ -144,7 +146,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -435,12 +437,12 @@ public sealed class InternationalServiceTests
     public async Task HasActiveInternationalLicenseAsync_DelegatesToRepository()
     {
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(true);
         var result = await CreateService().HasActiveInternationalLicenseAsync(20);
         Assert.True(result);
         _repository.Verify(
-            x => x.HasActiveInternationalLicenseAsync(20),
+            x => x.HasActiveInternationalLicenseAsync(20, _clock.Today),
             Times.Once);
     }
     // =========================================================
@@ -646,7 +648,7 @@ public sealed class InternationalServiceTests
         SetupRollback();
         var license = CreateValidLocalLicense();
         license.ExpirationDate =
-            DateTime.UtcNow.AddMinutes(-1);
+            _clock.Today.AddDays(-1).ToDateTime(new TimeOnly(23, 59, 59));
         SetupLicenseQuerySuccess(license);
         var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
@@ -715,8 +717,7 @@ public sealed class InternationalServiceTests
             "An international license already exists for this local license.",
             result.Error);
         _repository.Verify(
-            x => x.HasActiveInternationalLicenseAsync(
-                It.IsAny<int>()),
+            x => x.HasActiveInternationalLicenseAsync(It.IsAny<int>(), It.IsAny<DateOnly>()),
             Times.Never);
     }
     [Fact]
@@ -731,7 +732,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(true);
         var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
@@ -754,7 +755,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -791,7 +792,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -823,7 +824,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -865,7 +866,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -911,7 +912,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -947,7 +948,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -972,9 +973,9 @@ public sealed class InternationalServiceTests
             .Setup(x => x.CompleteApplicationStateAsync(700))
             .ReturnsAsync(Result.Success());
         SetupCommit();
-        var before = DateTime.UtcNow;
+        var before = _clock.Now;
         var result = await CreateService().IssueInternationalLicenseAsync(100);
-        var after = DateTime.UtcNow;
+        var after = _clock.Now;
         Assert.True(result.IsSuccess);
         Assert.Equal(900, result.Value);
         Assert.NotNull(createdEntity);
@@ -1005,7 +1006,7 @@ public sealed class InternationalServiceTests
             .Setup(x => x.ExistsByLocalLicenseAsync(100))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1186,7 +1187,7 @@ public sealed class InternationalServiceTests
     {
         var license = CreateValidLocalLicense();
         license.ExpirationDate =
-            DateTime.UtcNow.AddMinutes(-1);
+            _clock.Today.AddDays(-1).ToDateTime(new TimeOnly(23, 59, 59));
         SetupLicenseQueryForLocalInfo(license);
         var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);

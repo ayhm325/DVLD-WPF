@@ -1,6 +1,7 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 using Application.Interfaces;
 using Application.Services;
+using Application.UnitTests.Common;
 using Moq;
 
 namespace Application.UnitTests.Services;
@@ -8,35 +9,36 @@ namespace Application.UnitTests.Services;
 public sealed class DashboardServiceTests
 {
     private readonly Mock<IDashboardRepository> _repository = new();
+    private readonly FakeJordanClock _clock = new();
 
     private DashboardService CreateService() =>
-        new(_repository.Object);
+        new(_repository.Object, _clock);
 
     [Fact]
-    public void Constructor_AcceptsRepository()
+    public void Constructor_AcceptsRepositoryAndClock()
     {
         var service = CreateService();
         Assert.NotNull(service);
     }
 
     [Fact]
-    public async Task GetStatisticsAsync_DelegatesToRepositoryAndReturnsSameDto()
+    public async Task GetStatisticsAsync_DelegatesToRepositoryWithJordanTodayAndReturnsSameDto()
     {
         var expected = new DashboardDto();
 
-        _repository.Setup(x => x.GetStatisticsAsync())
+        _repository.Setup(x => x.GetStatisticsAsync(_clock.Today))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetStatisticsAsync();
 
         Assert.Same(expected, result);
-        _repository.Verify(x => x.GetStatisticsAsync(), Times.Once);
+        _repository.Verify(x => x.GetStatisticsAsync(_clock.Today), Times.Once);
     }
 
     [Fact]
     public async Task GetStatisticsAsync_WhenRepositoryThrows_PropagatesException()
     {
-        _repository.Setup(x => x.GetStatisticsAsync())
+        _repository.Setup(x => x.GetStatisticsAsync(_clock.Today))
             .ThrowsAsync(new InvalidOperationException("dashboard failed"));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(

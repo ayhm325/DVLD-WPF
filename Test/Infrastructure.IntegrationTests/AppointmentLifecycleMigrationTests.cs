@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Microsoft.Data.SqlClient;
@@ -446,7 +446,7 @@ public sealed class AppointmentLifecycleMigrationTests : IAsyncLifetime
         await context.SaveChangesAsync();
 
         // Establish facility time in Jordan
-        var jordanNow = Application.Validators.TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = new Infrastructure.Services.JordanClock().Now;
 
         // 1. Locked appointment without Test, with appointment time more than 40 minutes in the past (e.g. 2 hours ago)
         var pastExpiredDate = jordanNow.AddHours(-2);

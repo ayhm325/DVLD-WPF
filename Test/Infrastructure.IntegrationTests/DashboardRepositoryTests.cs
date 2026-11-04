@@ -42,7 +42,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.NotNull(result);
 
@@ -89,7 +89,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.Equal(
             1,
@@ -106,7 +106,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.Equal(
             2,
@@ -123,7 +123,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.Equal(
             2,
@@ -140,7 +140,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.Equal(
             1,
@@ -157,7 +157,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.Equal(
             1,
@@ -174,7 +174,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.Equal(
             1,
@@ -193,7 +193,7 @@ public sealed class DashboardRepositoryTests
             new DashboardRepository(context);
 
         var result =
-            await repository.GetStatisticsAsync();
+            await repository.GetStatisticsAsync(DashboardRepositoryDatabaseFixture.ReferenceJordanToday);
 
         Assert.NotNull(result);
 
@@ -264,6 +264,8 @@ public sealed class DashboardRepositoryTests
 public sealed class DashboardRepositoryDatabaseFixture
     : IAsyncLifetime
 {
+    public static readonly DateOnly ReferenceJordanToday = new(2026, 11, 3);
+    private static readonly DateTime ReferenceJordanDateTime = ReferenceJordanToday.ToDateTime(TimeOnly.MinValue);
     private SqlServerTestDatabase? _database;
 
     public SqlServerTestDatabase Database { get; private set; } = null!;
@@ -525,7 +527,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     firstPerson.PersonId,
 
                 ApplicationDate =
-                    DateTime.Today.AddDays(-2),
+                    ReferenceJordanDateTime.AddDays(-2),
 
                 ApplicationTypeID =
                     applicationType.ApplicationTypeId,
@@ -534,7 +536,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     AppStatus.New,
 
                 LastStatusDate =
-                    DateTime.Today.AddDays(-2),
+                    ReferenceJordanDateTime.AddDays(-2),
 
                 PaidFees =
                     20m,
@@ -550,7 +552,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     secondPerson.PersonId,
 
                 ApplicationDate =
-                    DateTime.Today.AddDays(-1),
+                    ReferenceJordanDateTime.AddDays(-1),
 
                 ApplicationTypeID =
                     applicationType.ApplicationTypeId,
@@ -559,7 +561,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     AppStatus.New,
 
                 LastStatusDate =
-                    DateTime.Today.AddDays(-1),
+                    ReferenceJordanDateTime.AddDays(-1),
 
                 PaidFees =
                     20m,
@@ -575,7 +577,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     thirdPerson.PersonId,
 
                 ApplicationDate =
-                    DateTime.Today.AddDays(-3),
+                    ReferenceJordanDateTime.AddDays(-3),
 
                 ApplicationTypeID =
                     applicationType.ApplicationTypeId,
@@ -584,7 +586,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     AppStatus.Completed,
 
                 LastStatusDate =
-                    DateTime.Today.AddDays(-3),
+                    ReferenceJordanDateTime.AddDays(-3),
 
                 PaidFees =
                     20m,
@@ -683,10 +685,10 @@ public sealed class DashboardRepositoryDatabaseFixture
                     licenseClass.LicenseClassID,
 
                 IssueDate =
-                    DateTime.Today.AddDays(-10),
+                    ReferenceJordanDateTime.AddDays(-10),
 
                 ExpirationDate =
-                    DateTime.Today.AddYears(1),
+                    ReferenceJordanDateTime.AddYears(1),
 
                 Notes =
                     "Active dashboard integration license",
@@ -717,10 +719,10 @@ public sealed class DashboardRepositoryDatabaseFixture
                     licenseClass.LicenseClassID,
 
                 IssueDate =
-                    DateTime.Today.AddYears(-2),
+                    ReferenceJordanDateTime.AddYears(-2),
 
                 ExpirationDate =
-                    DateTime.Today.AddYears(-1),
+                    ReferenceJordanDateTime.AddYears(-1),
 
                 Notes =
                     "Inactive dashboard integration license",
@@ -761,10 +763,10 @@ public sealed class DashboardRepositoryDatabaseFixture
                     activeLicense.LicenseID,
 
                 IssueDate =
-                    DateTime.Today.AddDays(-5),
+                    ReferenceJordanDateTime.AddDays(-5),
 
                 ExpirationDate =
-                    DateTime.Today.AddYears(1),
+                    ReferenceJordanDateTime.AddYears(1),
 
                 IsActive =
                     true,
@@ -789,7 +791,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     activeLicense.LicenseID,
 
                 DetainDate =
-                    DateTime.Today.AddDays(-2),
+                    ReferenceJordanDateTime.AddDays(-2),
 
                 FineFees =
                     50m,
@@ -808,7 +810,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     inactiveLicense.LicenseID,
 
                 DetainDate =
-                    DateTime.Today.AddDays(-10),
+                    ReferenceJordanDateTime.AddDays(-10),
 
                 FineFees =
                     50m,
@@ -820,7 +822,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     true,
 
                 ReleaseDate =
-                    DateTime.Today.AddDays(-5),
+                    ReferenceJordanDateTime.AddDays(-5),
 
                 ReleasedByUserID =
                     user.UserId,
@@ -849,7 +851,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     localApplicationOne.LocalDrivingLicenseApplicationID,
 
                 AppointmentDate =
-                    DateTime.Today.AddDays(1)
+                    ReferenceJordanDateTime.AddDays(1)
                     .AddHours(10),
 
                 PaidFees =
@@ -872,7 +874,7 @@ public sealed class DashboardRepositoryDatabaseFixture
                     localApplicationTwo.LocalDrivingLicenseApplicationID,
 
                 AppointmentDate =
-                    DateTime.Today.AddDays(-1)
+                    ReferenceJordanDateTime.AddDays(-1)
                     .AddHours(10),
 
                 PaidFees =
@@ -939,6 +941,6 @@ public sealed class DashboardRepositoryDatabaseFixture
                 .CountAsync(
                     x =>
                         x.AppointmentDate >=
-                        DateTime.Today));
+                        ReferenceJordanDateTime));
     }
 }

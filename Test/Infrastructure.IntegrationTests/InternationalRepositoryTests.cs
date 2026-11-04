@@ -823,7 +823,7 @@ public sealed class InternationalRepositoryTests
             await SeedInternationalLicenseAsync(
                 isActive: true,
                 expirationDate:
-                    DateTime.UtcNow.AddYears(1));
+                    new DateTime(2027, 11, 4));
 
         await using var context =
             _database.CreateContext();
@@ -834,7 +834,8 @@ public sealed class InternationalRepositoryTests
         // Act
         var result =
             await repository.HasActiveInternationalLicenseAsync(
-                seed.DriverId);
+                seed.DriverId,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.True(result);
@@ -848,7 +849,7 @@ public sealed class InternationalRepositoryTests
             await SeedInternationalLicenseAsync(
                 isActive: false,
                 expirationDate:
-                    DateTime.UtcNow.AddYears(1));
+                    new DateTime(2027, 11, 4));
 
         await using var context =
             _database.CreateContext();
@@ -859,7 +860,8 @@ public sealed class InternationalRepositoryTests
         // Act
         var result =
             await repository.HasActiveInternationalLicenseAsync(
-                seed.DriverId);
+                seed.DriverId,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
@@ -873,7 +875,7 @@ public sealed class InternationalRepositoryTests
             await SeedInternationalLicenseAsync(
                 isActive: true,
                 expirationDate:
-                    DateTime.UtcNow.AddDays(-1));
+                    new DateTime(2026, 11, 3, 23, 59, 59));
 
         await using var context =
             _database.CreateContext();
@@ -884,7 +886,8 @@ public sealed class InternationalRepositoryTests
         // Act
         var result =
             await repository.HasActiveInternationalLicenseAsync(
-                seed.DriverId);
+                seed.DriverId,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
@@ -903,7 +906,8 @@ public sealed class InternationalRepositoryTests
         // Act
         var result =
             await repository.HasActiveInternationalLicenseAsync(
-                int.MaxValue);
+                int.MaxValue,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
@@ -925,10 +929,39 @@ public sealed class InternationalRepositoryTests
         // Act
         var result =
             await repository.HasActiveInternationalLicenseAsync(
-                driverId);
+                driverId,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
+    }
+
+    [Fact]
+    public async Task HasActiveInternationalLicenseAsync_ShouldReturnTrueThroughoutExpirationCalendarDayAndFalseNextDay()
+    {
+        var seed =
+            await SeedInternationalLicenseAsync(
+                isActive: true,
+                expirationDate: new DateTime(2026, 11, 4, 9, 0, 0));
+
+        await using var context =
+            _database.CreateContext();
+
+        var repository =
+            new InternationalRepository(context);
+
+        var validSameDay =
+            await repository.HasActiveInternationalLicenseAsync(
+                seed.DriverId,
+                new DateOnly(2026, 11, 4));
+
+        var expiredNextDay =
+            await repository.HasActiveInternationalLicenseAsync(
+                seed.DriverId,
+                new DateOnly(2026, 11, 5));
+
+        Assert.True(validSameDay);
+        Assert.False(expiredNextDay);
     }
 
     // =========================================================

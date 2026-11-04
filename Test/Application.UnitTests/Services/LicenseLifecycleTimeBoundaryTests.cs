@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DetainedLicenseDTO;
@@ -31,6 +31,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
 
     public LicenseLifecycleTimeBoundaryTests()
     {
+        _clock.SetupGet(x => x.Today).Returns(() => DateOnly.FromDateTime(_clock.Object.Now));
         _currentUserService.SetupGet(x => x.IsLoggedIn).Returns(true);
         _currentUserService.SetupGet(x => x.UserId).Returns(1);
 
@@ -72,7 +73,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
             .ReturnsAsync(Result.Success());
 
         _licenseRepository.Setup(x => x.DeactivateLicenseAsync(It.IsAny<int>())).ReturnsAsync(true);
-        _licenseRepository.Setup(x => x.ActivateLicenseAsync(It.IsAny<int>())).ReturnsAsync(true);
+        _licenseRepository.Setup(x => x.ActivateLicenseAsync(It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
         _licenseRepository.Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
             .Callback<License>(l => l.LicenseID = 101)
             .Returns(Task.CompletedTask);
@@ -241,7 +242,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         Assert.Equal(jordanNow, detention.ReleaseDate);
 
         // Must reactivate since license has not expired
-        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10), Times.Once);
+        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10, DateOnly.FromDateTime(jordanNow)), Times.Once);
     }
 
     [Fact]
@@ -273,6 +274,6 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         Assert.Equal(jordanNow, detention.ReleaseDate);
 
         // Must NOT reactivate since license expired while detained
-        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10), Times.Never);
+        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10, DateOnly.FromDateTime(jordanNow)), Times.Never);
     }
 }

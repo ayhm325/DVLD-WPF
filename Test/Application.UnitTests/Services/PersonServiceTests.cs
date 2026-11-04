@@ -15,6 +15,7 @@ public class PersonServiceTests
     private readonly Mock<IFileStorageService> _fileStorageServiceMock;
     private readonly Mock<IImageProcessingService> _imageProcessingServiceMock;
     private readonly Mock<Microsoft.Extensions.Logging.ILogger<PersonService>> _loggerMock;
+    private readonly Common.FakeJordanClock _clock = new();
     private readonly PersonService _sut;
 
     public PersonServiceTests()
@@ -30,7 +31,8 @@ public class PersonServiceTests
             _unitOfWorkMock.Object,
             _fileStorageServiceMock.Object,
             _imageProcessingServiceMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object,
+            _clock);
     }
 
     // =========================================================
@@ -398,7 +400,7 @@ public class PersonServiceTests
             FirstName = "",
             SecondName = "",
             LastName = "",
-            DateOfBirth = DateTime.Now.AddYears(1),
+            DateOfBirth = _clock.Now.AddYears(1),
             Gender = (int)Gender.Male,
             Address = "",
             Phone = "",
@@ -629,7 +631,7 @@ public class PersonServiceTests
             FirstName = "",
             SecondName = "",
             LastName = "",
-            DateOfBirth = DateTime.Now.AddYears(1),
+            DateOfBirth = _clock.Now.AddYears(1),
             Gender = (int)Gender.Male,
             Address = "",
             Phone = "",

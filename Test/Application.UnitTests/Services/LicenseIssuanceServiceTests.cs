@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
@@ -25,6 +25,7 @@ public class LicenseIssuanceServiceTests
     private readonly Mock<ITestWorkflowService> _testWorkflowServiceMock;
     private readonly Mock<ILogger<LicenseIssuanceService>> _loggerMock;
     private readonly Mock<IUnitOfWorkTransaction> _transactionMock;
+    private readonly Common.FakeJordanClock _clock = new();
     private readonly LicenseIssuanceService _sut;
     public LicenseIssuanceServiceTests()
     {
@@ -58,7 +59,8 @@ public class LicenseIssuanceServiceTests
             _currentUserServiceMock.Object,
             _licenseClassServiceMock.Object,
             _testWorkflowServiceMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object,
+            _clock);
     }
     [Fact]
     public async Task IssueFirstLicenseAsync_InvalidLocalApplicationId_ReturnsValidationFailure()
@@ -927,6 +929,8 @@ public class LicenseIssuanceServiceTests
         Assert.Equal(
             1,
             createdLicense.CreatedByUserID);
+        Assert.Equal(_clock.Now, createdLicense.IssueDate);
+        Assert.Equal(_clock.Now.AddYears(10), createdLicense.ExpirationDate);
         _unitOfWorkMock.Verify(
             unitOfWork =>
                 unitOfWork.ExecuteInTransactionAsync(
@@ -1126,10 +1130,10 @@ public class LicenseIssuanceServiceTests
         {
             ApplicationID = applicationId,
             ApplicantPersonID = applicantPersonId,
-            ApplicationDate = DateTime.UtcNow.AddDays(-10),
+            ApplicationDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(-10),
             ApplicationTypeID = applicationTypeId,
             ApplicationStatus = status,
-            LastStatusDate = DateTime.UtcNow.AddDays(-10),
+            LastStatusDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(-10),
             PaidFees = 20,
             CreatedByUserID = 1,
             CreatedByUserName = "testuser"

@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
@@ -22,7 +22,8 @@ public class LicenseReplacementServiceTests
 
     public LicenseReplacementServiceTests()
     {
-        _clock.SetupGet(x => x.Now).Returns(() => DateTime.UtcNow);
+        _clock.SetupGet(x => x.Now).Returns(Common.FakeJordanClock.DefaultJordanNow);
+        _clock.SetupGet(x => x.Today).Returns(() => DateOnly.FromDateTime(_clock.Object.Now));
     }
 
     private LicenseReplacementService CreateSut()
@@ -401,7 +402,7 @@ public class LicenseReplacementServiceTests
         SetupTransaction(transaction);
         var oldLicense = CreateActiveUnexpiredLicense();
         oldLicense.ExpirationDate =
-            DateTime.UtcNow.AddDays(-1);
+            Common.FakeJordanClock.DefaultJordanNow.AddDays(-1);
         SetupOldLicense(oldLicense);
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -1020,9 +1021,9 @@ public class LicenseReplacementServiceTests
             DriverID = 20,
             LicenseClass = 1,
             IssueDate =
-                DateTime.UtcNow.AddYears(-2),
+                Common.FakeJordanClock.DefaultJordanNow.AddYears(-2),
             ExpirationDate =
-                DateTime.UtcNow.AddDays(30),
+                Common.FakeJordanClock.DefaultJordanNow.AddDays(30),
             PaidFees = 50,
             IsActive = true,
             IssueReason = IssueReason.FirstTime,

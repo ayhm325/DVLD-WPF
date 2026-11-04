@@ -1,4 +1,4 @@
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using Application.Options;
 using Application.Services;
 using Domain.Entities;
@@ -207,8 +207,10 @@ public sealed class AppointmentNoShowIntegrationTests : IAsyncLifetime
 
     private sealed class TestJordanClock(DateTime initialTime) : IJordanClock
     {
-        public DateTime CurrentTime { get; set; } = initialTime;
-        public DateTime Now => CurrentTime;
+        public DateTime CurrentTime { get; set; } = DateTime.SpecifyKind(initialTime, DateTimeKind.Unspecified);
+        public DateTime Now => DateTime.SpecifyKind(CurrentTime, DateTimeKind.Unspecified);
+        public DateOnly Today => DateOnly.FromDateTime(Now);
+        public DateTime UtcNow => Application.Common.Time.JordanTimeZoneProvider.ConvertJordanToUtc(Now);
     }
 
     private (NoShowProcessorService Service, TestJordanClock Clock) CreateProcessor(

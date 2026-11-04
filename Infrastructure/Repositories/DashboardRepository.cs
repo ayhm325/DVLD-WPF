@@ -15,7 +15,7 @@ public sealed class DashboardRepository(DVLDDbContext context)
         var jordanTodayStart = jordanToday.ToDateTime(TimeOnly.MinValue);
 
         var result = await _context.Database
-            .SqlQueryInterpolated<DashboardStatisticsRow>($"""
+            .SqlQuery<DashboardStatisticsRow>($"""
                 SELECT
                     (SELECT COUNT(*) FROM People) AS TotalPeople,
                     (SELECT COUNT(*) FROM Drivers) AS TotalDrivers,

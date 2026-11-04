@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
@@ -251,13 +251,14 @@ public sealed class AppointmentConcurrencyIntegrationTests : IAsyncLifetime
         var licenseRepo = new LicenseRepository(context);
         var licenseClassRepo = new LicenseClassRepository(context);
 
+        var clock = new Infrastructure.Services.JordanClock();
         var currentUserService = new TestCurrentUserService(staffUserId);
-        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService);
+        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService, clock);
         var applicationTypeService = new ApplicationTypeService(appTypeRepo, unitOfWork);
         var licenseClassService = new LicenseClassService(licenseClassRepo, unitOfWork);
         var localAppService = new LocalDrivingLicenseApplicationService(
-            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService);
-        var workflowService = new TestWorkflowService(appointmentRepo);
+            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService, clock);
+        var workflowService = new TestWorkflowService(appointmentRepo, clock);
 
         return new TestAppointmentService(
             unitOfWork,
@@ -268,7 +269,8 @@ public sealed class AppointmentConcurrencyIntegrationTests : IAsyncLifetime
             currentUserService,
             workflowService,
             applicationService,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<TestAppointmentService>.Instance);
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<TestAppointmentService>.Instance,
+            clock);
     }
 
     // =========================================================================

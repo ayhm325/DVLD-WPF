@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Validators;
@@ -8,9 +8,12 @@ namespace Application.UnitTests.Validators;
 
 public class TestAppointmentValidatorTests
 {
+    private static readonly DateTime ReferenceJordanTime =
+        new(2026, 11, 3, 10, 0, 0, DateTimeKind.Unspecified);
+
     private static DateTime GetFutureDateAtTime(int hour, int minute, int second = 0, int millisecond = 0)
     {
-        var futureDate = DateTime.UtcNow.Date.AddDays(2);
+        var futureDate = ReferenceJordanTime.Date.AddDays(2);
         while (futureDate.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
         {
             futureDate = futureDate.AddDays(1);
@@ -47,7 +50,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(hour, minute);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
     }
@@ -61,7 +64,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(7, 59);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -75,7 +78,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(8, 0);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
     }
@@ -85,7 +88,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(8, 40);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
     }
@@ -95,7 +98,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(15, 20);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
     }
@@ -105,7 +108,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(16, 0);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -119,7 +122,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(16, 1);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -133,7 +136,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(9, 15);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -151,7 +154,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(8, 0, second: 15);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -165,7 +168,7 @@ public class TestAppointmentValidatorTests
     {
         var appointmentDate = GetFutureDateAtTime(8, 0, second: 0, millisecond: 250);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(appointmentDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -181,10 +184,10 @@ public class TestAppointmentValidatorTests
     [Fact]
     public void ValidateAppointmentDate_PastDateInJordanTime_ReturnsValidationFailure()
     {
-        var currentJordanTime = TestAppointmentValidator.GetCurrentJordanTime();
+        var currentJordanTime = ReferenceJordanTime;
         var pastDate = currentJordanTime.Date.AddDays(-1).Add(new TimeSpan(8, 0, 0));
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(pastDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(pastDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -196,10 +199,10 @@ public class TestAppointmentValidatorTests
     [Fact]
     public void ValidateAppointmentDate_TomorrowInJordanTime_ReturnsValidationFailure()
     {
-        var currentJordanTime = TestAppointmentValidator.GetCurrentJordanTime();
+        var currentJordanTime = ReferenceJordanTime;
         var tomorrow = currentJordanTime.Date.AddDays(1).Add(new TimeSpan(8, 0, 0));
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(tomorrow);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(tomorrow, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -211,7 +214,7 @@ public class TestAppointmentValidatorTests
     [Fact]
     public void ValidateAppointmentDate_TwoDaysAheadWorkingDay_ReturnsSuccess()
     {
-        var currentJordanTime = TestAppointmentValidator.GetCurrentJordanTime();
+        var currentJordanTime = ReferenceJordanTime;
         var eligibleDate = currentJordanTime.Date.AddDays(2);
         while (eligibleDate.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
         {
@@ -219,7 +222,7 @@ public class TestAppointmentValidatorTests
         }
         eligibleDate = eligibleDate.Add(new TimeSpan(8, 0, 0));
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(eligibleDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(eligibleDate, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
     }
@@ -227,7 +230,7 @@ public class TestAppointmentValidatorTests
     [Fact]
     public void ValidateAppointmentDate_DefaultDateTime_ReturnsValidationFailure()
     {
-        var result = TestAppointmentValidator.ValidateAppointmentDate(default);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(default, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -276,7 +279,7 @@ public class TestAppointmentValidatorTests
     [Fact]
     public void ToFacilityTime_LocalKind_ConvertsFromMachineLocalToJordanWithoutAssumingLocalIsJordan()
     {
-        var localTime = DateTime.SpecifyKind(DateTime.Now.Date.AddDays(2).Add(new TimeSpan(8, 0, 0)), DateTimeKind.Local);
+        var localTime = DateTime.SpecifyKind(ReferenceJordanTime.Date.AddDays(2).Add(new TimeSpan(8, 0, 0)), DateTimeKind.Local);
 
         var normalized = TestAppointmentValidator.ToFacilityTime(localTime);
 
@@ -296,7 +299,7 @@ public class TestAppointmentValidatorTests
     [InlineData(9, 14, 0)]   // 14:00 JST (+09:00) -> 08:00 Jordan
     public void ToFacilityTime_DateTimeOffset_ExplicitOffsets_ConvertToJordanSlot0800(int offsetHours, int hour, int minute)
     {
-        var futureDate = DateTime.UtcNow.Date.AddDays(2);
+        var futureDate = ReferenceJordanTime.Date.AddDays(2);
         var offset = new DateTimeOffset(futureDate.Year, futureDate.Month, futureDate.Day, hour, minute, 0, TimeSpan.FromHours(offsetHours));
 
         var normalized = TestAppointmentValidator.ToFacilityTime(offset);
@@ -324,7 +327,7 @@ public class TestAppointmentValidatorTests
         Assert.Equal(0, normalized.Second);
         Assert.Equal(DateTimeKind.Unspecified, normalized.Kind);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(normalized);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(normalized, ReferenceJordanTime);
         Assert.True(result.IsSuccess);
     }
 
@@ -337,7 +340,7 @@ public class TestAppointmentValidatorTests
     {
         var facilityDate = TestAppointmentValidator.ParseToFacilityTime(dateString);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(facilityDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(facilityDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -363,10 +366,10 @@ public class TestAppointmentValidatorTests
     [Fact]
     public void ValidateAppointmentDate_AroundMidnightBoundary_EvaluatesCorrectlyInJordanTime()
     {
-        var currentJordan = TestAppointmentValidator.GetCurrentJordanTime();
+        var currentJordan = ReferenceJordanTime;
         var pastToday = new DateTime(currentJordan.Year, currentJordan.Month, currentJordan.Day, 7, 59, 0, DateTimeKind.Unspecified);
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(pastToday);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(pastToday, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
     }
@@ -435,9 +438,9 @@ public class TestAppointmentValidatorTests
     [Fact]
     public void ValidateAppointmentDate_HistoricalMidnightTimestamp_RejectedForNewBooking()
     {
-        var midnightDate = DateTime.UtcNow.Date.AddDays(2); // 00:00:00
+        var midnightDate = ReferenceJordanTime.Date.AddDays(2); // 00:00:00
 
-        var result = TestAppointmentValidator.ValidateAppointmentDate(midnightDate);
+        var result = TestAppointmentValidator.ValidateAppointmentDate(midnightDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -455,7 +458,7 @@ public class TestAppointmentValidatorTests
     {
         var futureDate = GetFutureDateAtTime(8, 40);
 
-        var result = TestAppointmentValidator.ValidateSchedule(100, (int)TestTypeEnum.Theory, futureDate);
+        var result = TestAppointmentValidator.ValidateSchedule(100, (int)TestTypeEnum.Theory, futureDate, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
     }
@@ -465,7 +468,7 @@ public class TestAppointmentValidatorTests
     {
         var futureDate = GetFutureDateAtTime(9, 15);
 
-        var result = TestAppointmentValidator.ValidateSchedule(100, (int)TestTypeEnum.Theory, futureDate);
+        var result = TestAppointmentValidator.ValidateSchedule(100, (int)TestTypeEnum.Theory, futureDate, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -488,7 +491,7 @@ public class TestAppointmentValidatorTests
             AppointmentDate = GetFutureDateAtTime(10, 40)
         };
 
-        var result = TestAppointmentValidator.ValidateCreate(dto);
+        var result = TestAppointmentValidator.ValidateCreate(dto, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(10, dto.AppointmentDate.Hour);
@@ -507,7 +510,7 @@ public class TestAppointmentValidatorTests
             AppointmentDate = new DateTime(2026, 11, 10, 7, 40, 0, DateTimeKind.Utc)
         };
 
-        var result = TestAppointmentValidator.ValidateCreate(dto);
+        var result = TestAppointmentValidator.ValidateCreate(dto, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(10, dto.AppointmentDate.Hour);
@@ -525,7 +528,7 @@ public class TestAppointmentValidatorTests
             AppointmentDate = GetFutureDateAtTime(16, 0)
         };
 
-        var result = TestAppointmentValidator.ValidateCreate(dto);
+        var result = TestAppointmentValidator.ValidateCreate(dto, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -544,7 +547,7 @@ public class TestAppointmentValidatorTests
             AppointmentDate = GetFutureDateAtTime(14, 0)
         };
 
-        var result = TestAppointmentValidator.ValidateUpdate(dto);
+        var result = TestAppointmentValidator.ValidateUpdate(dto, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(14, dto.AppointmentDate.Hour);
@@ -562,7 +565,7 @@ public class TestAppointmentValidatorTests
             AppointmentDate = new DateTime(2026, 11, 10, 11, 0, 0, DateTimeKind.Utc)
         };
 
-        var result = TestAppointmentValidator.ValidateUpdate(dto);
+        var result = TestAppointmentValidator.ValidateUpdate(dto, ReferenceJordanTime);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(14, dto.AppointmentDate.Hour);
@@ -579,7 +582,7 @@ public class TestAppointmentValidatorTests
             AppointmentDate = GetFutureDateAtTime(7, 59)
         };
 
-        var result = TestAppointmentValidator.ValidateUpdate(dto);
+        var result = TestAppointmentValidator.ValidateUpdate(dto, ReferenceJordanTime);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);

@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
@@ -25,6 +25,7 @@ public sealed class AppointmentAvailabilityUnitTests
     private readonly Mock<ICurrentUserService> _currentUserService = new();
     private readonly Mock<ITestWorkflowService> _workflowService = new();
     private readonly Mock<ILogger<TestAppointmentService>> _logger = new();
+    private readonly Common.FakeJordanClock _clock = new();
 
     private TestAppointmentService CreateService() =>
         new(
@@ -36,11 +37,12 @@ public sealed class AppointmentAvailabilityUnitTests
             _currentUserService.Object,
             _workflowService.Object,
             _applicationService.Object,
-            _logger.Object);
+            _logger.Object,
+            _clock);
 
     private static DateTime GetNextWeekday(DayOfWeek dayOfWeek)
     {
-        var currentJordan = TestAppointmentValidator.GetCurrentJordanTime().Date.AddDays(1);
+        var currentJordan = Common.FakeJordanClock.DefaultJordanNow.Date.AddDays(2);
         while (currentJordan.DayOfWeek != dayOfWeek)
         {
             currentJordan = currentJordan.AddDays(1);
@@ -458,7 +460,7 @@ public sealed class AppointmentAvailabilityUnitTests
     {
         // Arrange
         var service = CreateService();
-        var jordanNow = TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = _clock.Now;
         var today = jordanNow.Date;
         var tomorrow = today.AddDays(1);
 
@@ -488,7 +490,7 @@ public sealed class AppointmentAvailabilityUnitTests
     {
         // Arrange
         var service = CreateService();
-        var jordanNow = TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = _clock.Now;
         var today = jordanNow.Date;
         var tomorrow = today.AddDays(1);
         var twoDaysAhead = today.AddDays(2);

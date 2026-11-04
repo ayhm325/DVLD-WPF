@@ -1,4 +1,4 @@
-using Application.Validators;
+﻿using Application.Validators;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
@@ -26,6 +26,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
     private readonly Mock<ICurrentUserService> _currentUserService = new();
     private readonly Mock<ITestWorkflowService> _workflowService = new();
     private readonly Mock<ILogger<TestAppointmentService>> _logger = new();
+    private readonly Common.FakeJordanClock _clock = new();
 
     public AppointmentBookingConcurrencyEngineTests()
     {
@@ -73,11 +74,12 @@ public sealed class AppointmentBookingConcurrencyEngineTests
             _currentUserService.Object,
             _workflowService.Object,
             _applicationService.Object,
-            _logger.Object);
+            _logger.Object,
+            _clock);
 
     private static DateTime GetFutureJordanSlot(int daysAhead = 2, int slotHour = 8, int slotMinute = 0)
     {
-        var jordanNow = TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = Common.FakeJordanClock.DefaultJordanNow;
         var date = jordanNow.Date.AddDays(daysAhead);
         while (date.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday)
         {
@@ -366,10 +368,10 @@ public sealed class AppointmentBookingConcurrencyEngineTests
     {
         // Arrange
         var mockRepo = new Mock<ITestAppointmentRepository>();
-        var workflowService = new TestWorkflowService(mockRepo.Object);
+        var workflowService = new TestWorkflowService(mockRepo.Object, _clock);
 
         // Current facility time
-        var currentJordanTime = TestAppointmentValidator.GetCurrentJordanTime();
+        var currentJordanTime = _clock.Now;
 
         // Appointment date was 10 minutes ago in Jordan facility time (has arrived!)
         var arrivedAppointment = new TestAppointment
@@ -397,9 +399,9 @@ public sealed class AppointmentBookingConcurrencyEngineTests
     {
         // Arrange
         var mockRepo = new Mock<ITestAppointmentRepository>();
-        var workflowService = new TestWorkflowService(mockRepo.Object);
+        var workflowService = new TestWorkflowService(mockRepo.Object, _clock);
 
-        var currentJordanTime = TestAppointmentValidator.GetCurrentJordanTime();
+        var currentJordanTime = _clock.Now;
 
         // Appointment date is 15 minutes in the future in Jordan facility time
         var futureAppointment = new TestAppointment

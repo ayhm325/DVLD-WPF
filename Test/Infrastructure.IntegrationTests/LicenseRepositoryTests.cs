@@ -1,4 +1,4 @@
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
@@ -928,7 +928,7 @@ public sealed class LicenseRepositoryTests
             await SeedLicenseAsync(
                 isActive: false,
                 expirationDate:
-                    DateTime.UtcNow.AddYears(1));
+                    new DateTime(2027, 11, 4));
 
         await using (var context = _database.CreateContext())
         {
@@ -938,7 +938,8 @@ public sealed class LicenseRepositoryTests
             // Act
             var result =
                 await repository.ActivateLicenseAsync(
-                    seed.LicenseId);
+                    seed.LicenseId,
+                    new DateOnly(2026, 11, 4));
 
             // Assert
             Assert.True(result);
@@ -965,7 +966,7 @@ public sealed class LicenseRepositoryTests
             await SeedLicenseAsync(
                 isActive: false,
                 expirationDate:
-                    DateTime.UtcNow.AddDays(-1));
+                    new DateTime(2026, 11, 3, 23, 59, 59));
 
         await using var context = _database.CreateContext();
 
@@ -975,7 +976,8 @@ public sealed class LicenseRepositoryTests
         // Act
         var result =
             await repository.ActivateLicenseAsync(
-                seed.LicenseId);
+                seed.LicenseId,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
@@ -989,7 +991,7 @@ public sealed class LicenseRepositoryTests
             await SeedLicenseAsync(
                 isActive: true,
                 expirationDate:
-                    DateTime.UtcNow.AddYears(1));
+                    new DateTime(2027, 11, 4));
 
         await using var context = _database.CreateContext();
 
@@ -999,7 +1001,8 @@ public sealed class LicenseRepositoryTests
         // Act
         var result =
             await repository.ActivateLicenseAsync(
-                seed.LicenseId);
+                seed.LicenseId,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
@@ -1017,7 +1020,8 @@ public sealed class LicenseRepositoryTests
         // Act
         var result =
             await repository.ActivateLicenseAsync(
-                int.MaxValue);
+                int.MaxValue,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
@@ -1038,7 +1042,8 @@ public sealed class LicenseRepositoryTests
         // Act
         var result =
             await repository.ActivateLicenseAsync(
-                licenseId);
+                licenseId,
+                new DateOnly(2026, 11, 4));
 
         // Assert
         Assert.False(result);
@@ -1094,7 +1099,7 @@ public sealed class LicenseRepositoryTests
         var seed =
             await SeedLicenseAsync(
                 isActive: false,
-                expirationDate: DateTime.UtcNow.AddYears(1));
+                expirationDate: new DateTime(2027, 11, 4));
 
         await using (var context = _database.CreateContext())
         {
@@ -1110,7 +1115,8 @@ public sealed class LicenseRepositoryTests
             // Act
             var result =
                 await repository.ActivateLicenseAsync(
-                    seed.LicenseId);
+                    seed.LicenseId,
+                    new DateOnly(2026, 11, 4));
 
             // Assert
             Assert.True(result);
@@ -1129,6 +1135,45 @@ public sealed class LicenseRepositoryTests
                 .SingleAsync(x => x.LicenseID == seed.LicenseId);
 
         Assert.True(persisted.IsActive);
+    }
+
+    [Fact]
+    public async Task ActivateAndDeactivateExpiredLicensesAsync_ShouldHonorOfficialJordanCalendarDateBoundary()
+    {
+        var sameDaySeed =
+            await SeedLicenseAsync(
+                isActive: false,
+                expirationDate: new DateTime(2026, 11, 4, 0, 0, 0));
+
+        var priorDaySeed =
+            await SeedLicenseAsync(
+                isActive: true,
+                expirationDate: new DateTime(2026, 11, 3, 23, 59, 59));
+
+        await using (var context = _database.CreateContext())
+        {
+            var repository = new LicenseRepository(context);
+
+            // On 2026-11-04 Jordan, sameDaySeed (expiring 2026-11-04) can still be reactivated
+            var activated = await repository.ActivateLicenseAsync(
+                sameDaySeed.LicenseId,
+                new DateOnly(2026, 11, 4));
+            Assert.True(activated);
+
+            // DeactivateExpiredLicensesAsync on 2026-11-04 must keep sameDaySeed active and deactivate priorDaySeed
+            var deactivatedCount = await repository.DeactivateExpiredLicensesAsync(
+                new DateOnly(2026, 11, 4));
+            Assert.True(deactivatedCount >= 1);
+        }
+
+        await using var verifyContext = _database.CreateContext();
+        var reloadedSameDay = await verifyContext.Licenses.AsNoTracking()
+            .SingleAsync(x => x.LicenseID == sameDaySeed.LicenseId);
+        var reloadedPriorDay = await verifyContext.Licenses.AsNoTracking()
+            .SingleAsync(x => x.LicenseID == priorDaySeed.LicenseId);
+
+        Assert.True(reloadedSameDay.IsActive);
+        Assert.False(reloadedPriorDay.IsActive);
     }
 
     private async Task<LicenseSeed> SeedLicenseAsync(

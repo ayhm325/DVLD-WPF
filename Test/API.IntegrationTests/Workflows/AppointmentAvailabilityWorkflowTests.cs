@@ -23,7 +23,7 @@ public sealed class AppointmentAvailabilityWorkflowTests
 
     private static DateTime GetNextWeekday(DayOfWeek dayOfWeek)
     {
-        var currentJordan = TestAppointmentValidator.GetCurrentJordanTime().Date.AddDays(7);
+        var currentJordan = new global::Infrastructure.Services.JordanClock().Now.Date.AddDays(7);
         while (currentJordan.DayOfWeek != dayOfWeek)
         {
             currentJordan = currentJordan.AddDays(1);
@@ -200,7 +200,7 @@ public sealed class AppointmentAvailabilityWorkflowTests
         {
             LocalDrivingLicenseApplicationId = seedA.LocalApplicationId,
             TestTypeId = 1,
-            AppointmentDate = slotToBook
+            AppointmentDate = new DateTimeOffset(DateTime.SpecifyKind(slotToBook, DateTimeKind.Unspecified), Application.Common.Time.JordanTimeZoneProvider.TimeZone.GetUtcOffset(DateTime.SpecifyKind(slotToBook, DateTimeKind.Unspecified)))
         };
 
         using var scheduleResponse = await client.PostAsJsonAsync(

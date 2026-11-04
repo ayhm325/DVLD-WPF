@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using Application.Services;
@@ -18,7 +18,8 @@ public class LicenseQueryServiceRealLifecycleTests
     public LicenseQueryServiceRealLifecycleTests()
     {
         // Fixed Jordan date: 2026-11-04
-        _clock.SetupGet(x => x.Now).Returns(new DateTime(2026, 11, 4, 1, 0, 0, DateTimeKind.Utc));
+        _clock.SetupGet(x => x.Now).Returns(new DateTime(2026, 11, 4, 4, 0, 0, DateTimeKind.Unspecified));
+        _clock.SetupGet(x => x.Today).Returns(() => DateOnly.FromDateTime(_clock.Object.Now));
     }
 
     private LicenseQueryService CreateSut() =>

@@ -1,4 +1,4 @@
-using API.IntegrationTests.Infrastructure;
+﻿using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Domain.Enums;
@@ -278,6 +278,14 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             response, HttpStatusCode.BadRequest, "Validation error", detail);
     }
 
+    private static DateTimeOffset ToJordanOffset(DateTime jordanWallClock)
+    {
+        var unspecified = DateTime.SpecifyKind(jordanWallClock, DateTimeKind.Unspecified);
+        return new DateTimeOffset(
+            unspecified,
+            Application.Common.Time.JordanTimeZoneProvider.TimeZone.GetUtcOffset(unspecified));
+    }
+
     [Fact]
     public async Task Schedule_WhenSuccessful_ReturnsNoContent()
     {
@@ -293,7 +301,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             {
                 TestTypeId = 1,
                 LocalDrivingLicenseApplicationId = 70,
-                AppointmentDate = date
+                AppointmentDate = ToJordanOffset(date)
             });
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -328,7 +336,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             {
                 TestTypeId = 1,
                 LocalDrivingLicenseApplicationId = 70,
-                AppointmentDate = date
+                AppointmentDate = ToJordanOffset(date)
             });
 
         await AssertProblemDetailsAsync(
@@ -465,7 +473,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             {
                 TestTypeId = 1,
                 LocalDrivingLicenseApplicationId = 120,
-                AppointmentDate = date,
+                AppointmentDate = ToJordanOffset(date),
                 RetakeTestApplicationId = 500
             });
 
@@ -502,7 +510,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             {
                 TestTypeId = 1,
                 LocalDrivingLicenseApplicationId = 120,
-                AppointmentDate = new DateTime(2026, 10, 2, 11, 0, 0)
+                AppointmentDate = ToJordanOffset(new DateTime(2026, 10, 2, 11, 0, 0))
             });
 
         await AssertProblemDetailsAsync(
@@ -524,7 +532,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             new UpdateTestAppointmentRequest
             {
                 TestAppointmentId = 130,
-                AppointmentDate = date
+                AppointmentDate = ToJordanOffset(date)
             });
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -553,7 +561,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             new UpdateTestAppointmentRequest
             {
                 TestAppointmentId = 130,
-                AppointmentDate = new DateTime(2026, 11, 1, 12, 30, 0)
+                AppointmentDate = ToJordanOffset(new DateTime(2026, 11, 1, 12, 30, 0))
             });
 
         await AssertProblemDetailsAsync(

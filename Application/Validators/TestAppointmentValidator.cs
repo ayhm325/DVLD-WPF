@@ -53,11 +53,8 @@ public static class TestAppointmentValidator
         };
     }
 
-    public static DateTime ToFacilityTime(DateTimeOffset dateTimeOffset)
-    {
-        var inJordan = TimeZoneInfo.ConvertTime(dateTimeOffset, JordanTimeZone).DateTime;
-        return DateTime.SpecifyKind(inJordan, DateTimeKind.Unspecified);
-    }
+    public static DateTime ToFacilityTime(DateTimeOffset dateTimeOffset) =>
+        JordanTimeZoneProvider.ConvertUtcToJordan(dateTimeOffset.UtcDateTime);
 
     public static DateTime ParseToFacilityTime(string dateString)
     {

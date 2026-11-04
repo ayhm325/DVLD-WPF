@@ -1,4 +1,4 @@
-using Application.Common.Results;
+﻿using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
@@ -202,13 +202,14 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
         var licenseRepo = new LicenseRepository(context);
         var licenseClassRepo = new LicenseClassRepository(context);
 
+        var clock = new Infrastructure.Services.JordanClock();
         var currentUserService = new TestCurrentUserService(staffUserId);
-        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService);
+        var applicationService = new ApplicationService(appRepo, appTypeRepo, unitOfWork, currentUserService, clock);
         var applicationTypeService = new ApplicationTypeService(appTypeRepo, unitOfWork);
         var licenseClassService = new LicenseClassService(licenseClassRepo, unitOfWork);
         var localAppService = new LocalDrivingLicenseApplicationService(
-            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService);
-        var workflowService = new TestWorkflowService(appointmentRepo);
+            localAppRepo, licenseRepo, unitOfWork, appRepo, appTypeRepo, licenseClassService, currentUserService, applicationService, clock);
+        var workflowService = new TestWorkflowService(appointmentRepo, clock);
 
         return new TestAppointmentService(
             unitOfWork,
@@ -219,12 +220,13 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
             currentUserService,
             workflowService,
             applicationService,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<TestAppointmentService>.Instance);
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<TestAppointmentService>.Instance,
+            clock);
     }
 
     private static DateTime GetValidWorkingDaySlot(int daysAhead = 4, int hour = 8, int minute = 0)
     {
-        var jordanNow = TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = new Infrastructure.Services.JordanClock().Now;
         var candidate = jordanNow.Date.AddDays(daysAhead);
         while (candidate.DayOfWeek == DayOfWeek.Friday || candidate.DayOfWeek == DayOfWeek.Saturday)
         {
@@ -410,7 +412,7 @@ public sealed class AppointmentCancellationIntegrationTests : IAsyncLifetime
     public async Task CancelAsync_CutoffViolated_ReturnsValidationFailure()
     {
         var applicant = await SeedApplicantAsync("SC_CUT");
-        var jordanNow = TestAppointmentValidator.GetCurrentJordanTime();
+        var jordanNow = new Infrastructure.Services.JordanClock().Now;
         // 1 calendar day in future (violates 2 calendar days rule)
         var nearSlot = jordanNow.Date.AddDays(1).AddHours(8);
 
