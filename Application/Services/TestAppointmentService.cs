@@ -20,7 +20,8 @@ public sealed class TestAppointmentService(
     ICurrentUserService currentUserService,
     ITestWorkflowService workflowService,
     IApplicationService applicationService,
-    ILogger<TestAppointmentService> logger) : ITestAppointmentService
+    ILogger<TestAppointmentService> logger,
+    IJordanClock clock) : ITestAppointmentService
 {
     private const int RetakeApplicationTypeId = 7;
 
@@ -33,6 +34,7 @@ public sealed class TestAppointmentService(
     private readonly ITestWorkflowService _workflowService = workflowService ?? throw new ArgumentNullException(nameof(workflowService));
     private readonly IApplicationService _applicationService = applicationService ?? throw new ArgumentNullException(nameof(applicationService));
     private readonly ILogger<TestAppointmentService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IJordanClock _clock = clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<TestAppointmentDto>> GetByIdAsync(int id)
     {
@@ -164,7 +166,7 @@ public sealed class TestAppointmentService(
             LicenseClassName = localApplication.LicenseClassName,
             FullName = localApplication.FullName,
             Trial = trial,
-            Date = DateTime.Now.Date.AddDays(1),
+            Date = _clock.Today.AddDays(1).ToDateTime(TimeOnly.MinValue),
             Fees = testType.TestTypeFees,
             TestTypeID = testTypeId,
             RetakerFees = retakerFees,
@@ -176,7 +178,7 @@ public sealed class TestAppointmentService(
 
     public async Task<Result> AddAsync(CreateTestAppointmentDto dto)
     {
-        var validation = TestAppointmentValidator.ValidateCreate(dto);
+        var validation = TestAppointmentValidator.ValidateCreate(dto, _clock.Now);
         if (validation.IsFailure)
             return validation;
 
@@ -265,7 +267,8 @@ public sealed class TestAppointmentService(
         var validation = TestAppointmentValidator.ValidateSchedule(
             localAppId,
             testTypeId,
-            appointmentDate);
+            appointmentDate,
+            _clock.Now);
 
         if (validation.IsFailure)
             return Result<ScheduleTestDto>.FromValidationFailure(validation.Error);
@@ -394,7 +397,8 @@ public sealed class TestAppointmentService(
 
     public async Task<Result> UpdateAsync(UpdateTestAppointmentDto dto)
     {
-        var validation = TestAppointmentValidator.ValidateUpdate(dto);
+        var now = _clock.Now;
+        var validation = TestAppointmentValidator.ValidateUpdate(dto, now);
         if (validation.IsFailure)
             return validation;
 
@@ -425,7 +429,9 @@ public sealed class TestAppointmentService(
                 return Result.Conflict(
                     "Cannot modify a locked appointment.");
 
-            var cutoff = TestAppointmentValidator.ValidateModificationOrCancellationCutoff(entity.AppointmentDate);
+            var cutoff = TestAppointmentValidator.ValidateModificationOrCancellationCutoff(
+                entity.AppointmentDate,
+                _clock.Now);
             if (cutoff.IsFailure)
                 return cutoff;
 
@@ -518,12 +524,15 @@ public sealed class TestAppointmentService(
             if (entity.IsLocked)
                 return Result.Conflict("Cannot cancel a locked appointment.");
 
-            var cutoff = TestAppointmentValidator.ValidateModificationOrCancellationCutoff(entity.AppointmentDate);
+            var nowJordan = _clock.Now;
+            var cutoff = TestAppointmentValidator.ValidateModificationOrCancellationCutoff(
+                entity.AppointmentDate,
+                nowJordan);
             if (cutoff.IsFailure)
                 return cutoff;
 
             entity.Status = AppointmentStatus.Cancelled;
-            entity.CancelledAt = TestAppointmentValidator.GetCurrentJordanTime();
+            entity.CancelledAt = nowJordan;
             entity.CancelledByUserID = _currentUserService.UserId;
             entity.IsLocked = true;
 
@@ -536,7 +545,6 @@ public sealed class TestAppointmentService(
     }
 
     public Task<Result> DeleteAsync(int id) => CancelAsync(id);
-
 
     public async Task<int> GetTrialCountAsync(int localAppId, int testTypeId) =>
         TestAppointmentValidator.ValidateApplicationId(localAppId).IsFailure ||
@@ -613,8 +621,8 @@ public sealed class TestAppointmentService(
         if (!applicantPersonId.HasValue)
             return Result<AppointmentAvailabilityDto>.FromNotFound("Applicant person not found.");
 
-        var currentJordanTime = TestAppointmentValidator.GetCurrentJordanTime();
-        var currentJordanDate = currentJordanTime.Date;
+        var currentJordanTime = _clock.Now;
+        var currentJordanDate = _clock.Today.ToDateTime(TimeOnly.MinValue);
 
         var startFacilityDate = TestAppointmentValidator.ToFacilityTime(startDate).Date;
         var endFacilityDate = TestAppointmentValidator.ToFacilityTime(endDate).Date;
@@ -710,7 +718,7 @@ public sealed class TestAppointmentService(
         return next;
     }
 
-    public Task<Application.DTOs.TestAppointmentDTO.ExaminationAttemptStats> GetAttemptStatsAsync(
+    public Task<ExaminationAttemptStats> GetAttemptStatsAsync(
         int localAppId,
         int testTypeId,
         CancellationToken cancellationToken = default) =>

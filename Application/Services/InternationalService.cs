@@ -1,4 +1,5 @@
 using Application.Common.Results;
+using Application.Common.Time;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.InternationalLicenseDTO;
 using Application.DTOs.LicenseDTO;
@@ -6,7 +7,6 @@ using Application.Interfaces;
 using Application.Mappers;
 using Application.Validators;
 using Domain.Entities;
-using Domain.Enums;
 using Microsoft.Extensions.Logging;
 using System.Data;
 
@@ -19,7 +19,8 @@ public sealed class InternationalService(
     IApplicationTypeService applicationTypeService,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork,
-    ILogger<InternationalService> logger) : IInternationalService
+    ILogger<InternationalService> logger,
+    IJordanClock clock) : IInternationalService
 {
     private const int InternationalApplicationTypeId = 6;
     private const int OrdinaryLicenseClassId = 3;
@@ -39,6 +40,8 @@ public sealed class InternationalService(
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     private readonly ILogger<InternationalService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<List<InternationalDto>>> GetAllAsync()
     {
@@ -99,7 +102,7 @@ public sealed class InternationalService(
     }
 
     public Task<bool> HasActiveInternationalLicenseAsync(int driverId) =>
-        _repository.HasActiveInternationalLicenseAsync(driverId);
+        _repository.HasActiveInternationalLicenseAsync(driverId, _clock.Today);
 
     public async Task<Result<int>> IssueInternationalLicenseAsync(int localLicenseId)
     {
@@ -140,7 +143,10 @@ public sealed class InternationalService(
                         Result<int>.FromConflict(
                             "Only class 3 licenses can be issued internationally."));
 
-                if (license.ExpirationDate.Date < Application.Validators.TestAppointmentValidator.GetCurrentJordanTime().Date)
+                var now = _clock.Now;
+                var today = _clock.Today;
+
+                if (LicenseExpirationPolicy.IsExpired(license.ExpirationDate, today))
                     return await RollbackAsync(transaction, Result<int>.FromConflict("The local license is expired."));
 
                 if (!license.IsActive)
@@ -163,13 +169,11 @@ public sealed class InternationalService(
                         Result<int>.FromConflict(
                             "An international license already exists for this local license."));
 
-                if (await _repository.HasActiveInternationalLicenseAsync(license.DriverID))
+                if (await _repository.HasActiveInternationalLicenseAsync(license.DriverID, today))
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromConflict(
                             "The driver already has an active international license."));
-
-                var now = DateTime.UtcNow;
 
                 var applicationResult =
                     await _applicationService.AddNewApplicationAsync(
@@ -247,13 +251,13 @@ public sealed class InternationalService(
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "Only class 3 licenses can be converted to an international license.");
 
+        if (LicenseExpirationPolicy.IsExpired(license.ExpirationDate, _clock.Today))
+            return Result<DriverLicenseInfoDto>.FromConflict(
+                "The local license is expired.");
+
         if (!license.IsActive)
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "The local license is not active.");
-
-        if (license.ExpirationDate.Date < Application.Validators.TestAppointmentValidator.GetCurrentJordanTime().Date)
-            return Result<DriverLicenseInfoDto>.FromConflict(
-                "The local license is expired.");
 
         if (license.Driver is null)
             return Result<DriverLicenseInfoDto>.FromNotFound(

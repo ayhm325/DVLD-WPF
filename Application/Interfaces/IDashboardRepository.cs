@@ -1,9 +1,8 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 
-namespace Application.Interfaces
+namespace Application.Interfaces;
+
+public interface IDashboardRepository
 {
-    public interface IDashboardRepository
-    {
-        Task<DashboardDto> GetStatisticsAsync();
-    }
+    Task<DashboardDto> GetStatisticsAsync(DateOnly jordanToday);
 }

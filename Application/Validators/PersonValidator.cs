@@ -21,7 +21,9 @@ public static class PersonValidator
             @"^(077|078|079)\d{7}$",
             RegexOptions.Compiled);
 
-    public static Result Validate(PersonCreateDto? person)
+    public static Result Validate(
+        PersonCreateDto? person,
+        DateOnly jordanToday)
     {
         if (person is null)
         {
@@ -41,10 +43,13 @@ public static class PersonValidator
                 person.Address,
                 person.Phone,
                 person.Email,
-                person.NationalityCountryID));
+                person.NationalityCountryID,
+                jordanToday));
     }
 
-    public static Result Validate(PersonUpdateDto? person)
+    public static Result Validate(
+        PersonUpdateDto? person,
+        DateOnly jordanToday)
     {
         if (person is null)
         {
@@ -64,7 +69,8 @@ public static class PersonValidator
                 person.Address,
                 person.Phone,
                 person.Email,
-                person.NationalityCountryID));
+                person.NationalityCountryID,
+                jordanToday));
     }
 
     private static List<string> ValidateCommon(
@@ -78,7 +84,8 @@ public static class PersonValidator
         string? address,
         string? phone,
         string? email,
-        int nationalityCountryId)
+        int nationalityCountryId,
+        DateOnly jordanToday)
     {
         var errors = new List<string>();
 
@@ -179,20 +186,20 @@ public static class PersonValidator
         }
         else
         {
-            var today = DateTime.Today;
+            var birthDate = DateOnly.FromDateTime(dateOfBirth);
 
-            if (dateOfBirth > today)
+            if (birthDate > jordanToday)
             {
                 errors.Add(
                     "Date of birth cannot be in the future.");
             }
-            else if (dateOfBirth > today.AddYears(-18))
+            else if (birthDate > jordanToday.AddYears(-18))
             {
                 errors.Add(
                     "The person must be at least 18 years old.");
             }
 
-            if (dateOfBirth < today.AddYears(-120))
+            if (birthDate < jordanToday.AddYears(-120))
             {
                 errors.Add(
                     "Date of birth is not realistic.");

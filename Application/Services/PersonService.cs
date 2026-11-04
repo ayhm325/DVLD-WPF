@@ -14,13 +14,15 @@ public sealed class PersonService : IPersonService
     private readonly IFileStorageService _fileStorageService;
     private readonly IImageProcessingService _imageProcessingService;
     private readonly ILogger<PersonService> _logger;
+    private readonly IJordanClock _clock;
 
     public PersonService(
         IPersonRepository personRepository,
         IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService,
         IImageProcessingService imageProcessingService,
-        ILogger<PersonService> logger)
+        ILogger<PersonService> logger,
+        IJordanClock clock)
     {
         _personRepository =
             personRepository
@@ -46,6 +48,11 @@ public sealed class PersonService : IPersonService
             logger
             ?? throw new ArgumentNullException(
                 nameof(logger));
+
+        _clock =
+            clock
+            ?? throw new ArgumentNullException(
+                nameof(clock));
     }
 
     public async Task<Result<List<PersonDto>>>
@@ -146,7 +153,8 @@ public sealed class PersonService : IPersonService
     {
         var validation =
             PersonValidator.Validate(
-                personDto);
+                personDto,
+                _clock.Today);
 
         if (validation.IsFailure)
         {
@@ -205,7 +213,8 @@ public sealed class PersonService : IPersonService
 
         var validation =
             PersonValidator.Validate(
-                personDto);
+                personDto,
+                _clock.Today);
 
         if (validation.IsFailure)
             return validation;

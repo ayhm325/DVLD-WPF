@@ -35,9 +35,9 @@ public interface ILicenseRepository
         int licenseClassId,
         int excludedLicenseId);
 
-    Task<bool> ActivateLicenseAsync(int licenseId);
+    Task<bool> ActivateLicenseAsync(int licenseId, DateOnly jordanToday);
 
-    Task<int> DeactivateExpiredLicensesAsync(DateTime jordanToday);
+    Task<int> DeactivateExpiredLicensesAsync(DateOnly jordanToday);
 
     Task<License?> GetNewerLicenseForDriverAndClassAsync(
         int driverId,

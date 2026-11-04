@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Application.Validators;
+using Application.Common.Time;
 
 namespace Application.Serialization;
 
@@ -55,7 +55,7 @@ public sealed class JordanFacilityDateTimeOffsetConverter : JsonConverter<DateTi
         // Timestamp without an offset represents Jordan facility wall-clock time.
         // The hosting machine's local timezone must never determine the meaning of an incoming timestamp.
         var localDateTime = DateTime.Parse(trimmed, CultureInfo.InvariantCulture, DateTimeStyles.None);
-        var jordanOffset = TestAppointmentValidator.JordanTimeZone.GetUtcOffset(localDateTime);
+        var jordanOffset = JordanTimeZoneProvider.TimeZone.GetUtcOffset(localDateTime);
         return new DateTimeOffset(localDateTime, jordanOffset);
     }
 

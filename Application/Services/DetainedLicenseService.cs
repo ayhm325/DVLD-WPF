@@ -1,4 +1,5 @@
 using Application.Common.Results;
+using Application.Common.Time;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DetainedLicenseDTO;
 using Application.Interfaces;
@@ -106,10 +107,9 @@ public sealed class DetainedLicenseService(
                             "License not found."));
 
                 var now = _clock.Now;
-                var today = now.Date;
-                var expirationDate = license.ExpirationDate.Date;
+                var today = _clock.Today;
 
-                if (today > expirationDate)
+                if (LicenseExpirationPolicy.IsExpired(license.ExpirationDate, today))
                     return await RollbackAsync(
                         transaction,
                         Result<DetainedLicenseDto>.FromConflict(
@@ -239,9 +239,8 @@ public sealed class DetainedLicenseService(
                             "Failed to create release application."));
 
                 var now = _clock.Now;
-                var today = now.Date;
-                var expirationDate = license.ExpirationDate.Date;
-                var isExpired = today > expirationDate;
+                var today = _clock.Today;
+                var isExpired = LicenseExpirationPolicy.IsExpired(license.ExpirationDate, today);
 
                 detention.IsReleased = true;
                 detention.ReleaseDate = now;
@@ -257,7 +256,8 @@ public sealed class DetainedLicenseService(
                 if (!hasAnotherActiveLicense &&
                     !isExpired &&
                     !await _licenseRepository.ActivateLicenseAsync(
-                        license.LicenseID))
+                        license.LicenseID,
+                        today))
                     return await RollbackAsync(
                         transaction,
                         Result.Failure(

@@ -1,5 +1,5 @@
-using System.Globalization;
 using Application.Common.Results;
+using Application.Common.Time;
 using Application.DTOs.TestAppointmentDTO;
 using Domain.Enums;
 
@@ -29,10 +29,7 @@ public static class TestAppointmentValidator
 
     private static readonly HashSet<TimeSpan> ValidSlotTimesSet = new(ValidSlotTimes);
 
-    public static TimeZoneInfo JordanTimeZone { get; } = ResolveJordanTimeZone();
-
-    public static DateTime GetCurrentJordanTime() =>
-        TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, JordanTimeZone);
+    public static TimeZoneInfo JordanTimeZone => JordanTimeZoneProvider.TimeZone;
 
     public static bool IsValidSlotTime(TimeSpan timeOfDay) =>
         ValidSlotTimesSet.Contains(timeOfDay);
@@ -48,25 +45,12 @@ public static class TestAppointmentValidator
             return default;
         }
 
-        DateTime inJordan;
-
-        switch (dateTime.Kind)
+        return dateTime.Kind switch
         {
-            case DateTimeKind.Utc:
-                inJordan = TimeZoneInfo.ConvertTimeFromUtc(dateTime, JordanTimeZone);
-                break;
-
-            case DateTimeKind.Local:
-                inJordan = TimeZoneInfo.ConvertTime(dateTime, TimeZoneInfo.Local, JordanTimeZone);
-                break;
-
-            case DateTimeKind.Unspecified:
-            default:
-                inJordan = dateTime;
-                break;
-        }
-
-        return DateTime.SpecifyKind(inJordan, DateTimeKind.Unspecified);
+            DateTimeKind.Utc => JordanTimeZoneProvider.ConvertUtcToJordan(dateTime),
+            DateTimeKind.Local => JordanTimeZoneProvider.ConvertUtcToJordan(dateTime.ToUniversalTime()),
+            _ => DateTime.SpecifyKind(dateTime, DateTimeKind.Unspecified)
+        };
     }
 
     public static DateTime ToFacilityTime(DateTimeOffset dateTimeOffset)
@@ -85,7 +69,7 @@ public static class TestAppointmentValidator
     // APPOINTMENT DATE & TIME VALIDATION
     // =========================================================
 
-    public static Result ValidateAppointmentDate(DateTime appointmentDate, DateTime? currentJordanTime = null)
+    public static Result ValidateAppointmentDate(DateTime appointmentDate, DateTime currentJordanTime)
     {
         if (appointmentDate == default)
         {
@@ -95,9 +79,7 @@ public static class TestAppointmentValidator
         var errors = new List<string>();
 
         var facilityDate = ToFacilityTime(appointmentDate);
-        var jordanNow = currentJordanTime.HasValue
-            ? ToFacilityTime(currentJordanTime.Value)
-            : GetCurrentJordanTime();
+        var jordanNow = ToFacilityTime(currentJordanTime);
         var currentJordanDate = jordanNow.Date;
 
         if (facilityDate <= jordanNow)
@@ -137,7 +119,7 @@ public static class TestAppointmentValidator
     // DTO & ACTION VALIDATORS
     // =========================================================
 
-    public static Result ValidateCreate(CreateTestAppointmentDto? dto, DateTime? currentJordanTime = null)
+    public static Result ValidateCreate(CreateTestAppointmentDto? dto, DateTime currentJordanTime)
     {
         if (dto is null)
         {
@@ -174,7 +156,11 @@ public static class TestAppointmentValidator
         return CreateResult(errors);
     }
 
-    public static Result ValidateSchedule(int localAppId, int testTypeId, DateTime appointmentDate, DateTime? currentJordanTime = null)
+    public static Result ValidateSchedule(
+        int localAppId,
+        int testTypeId,
+        DateTime appointmentDate,
+        DateTime currentJordanTime)
     {
         var errors = new List<string>();
 
@@ -247,7 +233,7 @@ public static class TestAppointmentValidator
         return CreateResult(errors);
     }
 
-    public static Result ValidateUpdate(UpdateTestAppointmentDto? dto, DateTime? currentJordanTime = null)
+    public static Result ValidateUpdate(UpdateTestAppointmentDto? dto, DateTime currentJordanTime)
     {
         if (dto is null)
         {
@@ -281,12 +267,10 @@ public static class TestAppointmentValidator
 
     public static Result ValidateModificationOrCancellationCutoff(
         DateTime appointmentDate,
-        DateTime? currentJordanTime = null)
+        DateTime currentJordanTime)
     {
         var facilityDate = ToFacilityTime(appointmentDate).Date;
-        var currentJordanDate = (currentJordanTime.HasValue
-            ? ToFacilityTime(currentJordanTime.Value)
-            : GetCurrentJordanTime()).Date;
+        var currentJordanDate = ToFacilityTime(currentJordanTime).Date;
 
         if ((facilityDate - currentJordanDate).Days < 2)
         {
@@ -316,27 +300,4 @@ public static class TestAppointmentValidator
         errors.Count == 0
             ? Result.Success()
             : Result.ValidationFailure(string.Join(Environment.NewLine, errors));
-
-    private static TimeZoneInfo ResolveJordanTimeZone()
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman");
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                return TimeZoneInfo.CreateCustomTimeZone(
-                    "Jordan Standard Time",
-                    TimeSpan.FromHours(3),
-                    "Jordan Standard Time",
-                    "Jordan Standard Time");
-            }
-        }
-    }
 }

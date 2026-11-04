@@ -46,19 +46,17 @@ public static class ApplicationMapper
         CreateApplicationDto dto,
         decimal paidFees,
         int createdByUserId,
-        DateTime? applicationDate = null)
+        DateTime applicationDate)
     {
         ArgumentNullException.ThrowIfNull(dto);
-
-        var now = applicationDate ?? DateTime.UtcNow;
 
         return new ApplicationD
         {
             ApplicantPersonID = dto.ApplicantPersonID,
             ApplicationTypeID = dto.ApplicationTypeID,
-            ApplicationDate = now,
+            ApplicationDate = applicationDate,
             ApplicationStatus = AppStatus.New,
-            LastStatusDate = now,
+            LastStatusDate = applicationDate,
             PaidFees = paidFees,
             CreatedByUserID = createdByUserId
         };

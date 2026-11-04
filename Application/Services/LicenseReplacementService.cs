@@ -1,4 +1,5 @@
 using Application.Common.Results;
+using Application.Common.Time;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
@@ -80,6 +81,15 @@ public sealed class LicenseReplacementService(
                         transaction,
                         Result<int>.FromNotFound("License not found."));
 
+                var now = _clock.Now;
+                var today = _clock.Today;
+
+                if (LicenseExpirationPolicy.IsExpired(oldLicense.ExpirationDate, today))
+                    return await RollbackAsync(
+                        transaction,
+                        Result<int>.FromConflict(
+                            "Cannot replace an expired license."));
+
                 if (!oldLicense.IsActive)
                     return await RollbackAsync(
                         transaction,
@@ -97,16 +107,6 @@ public sealed class LicenseReplacementService(
                         transaction,
                         Result<int>.FromNotFound(
                             "License class information is not available."));
-
-                var now = _clock.Now;
-                var today = now.Date;
-                var expirationDate = oldLicense.ExpirationDate.Date;
-
-                if (today > expirationDate)
-                    return await RollbackAsync(
-                        transaction,
-                        Result<int>.FromConflict(
-                            "Cannot replace an expired license."));
 
                 var applicationResult =
                     await _applicationService.AddNewApplicationAsync(

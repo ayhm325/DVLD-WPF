@@ -1,3 +1,4 @@
+using Application.Common.Time;
 using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -196,19 +197,18 @@ public sealed class LicenseRepository(DVLDDbContext context)
                     l.LicenseID != excludedLicenseId &&
                     l.IsActive);
 
-    public async Task<bool> ActivateLicenseAsync(int licenseId)
+    public async Task<bool> ActivateLicenseAsync(int licenseId, DateOnly jordanToday)
     {
         if (licenseId <= 0)
             return false;
 
-        var jordanToday = Application.Validators.TestAppointmentValidator
-            .GetCurrentJordanTime().Date;
+        var jordanTodayStart = jordanToday.ToDateTime(TimeOnly.MinValue);
 
         var affectedRows = await _context.Licenses
             .Where(l =>
                 l.LicenseID == licenseId &&
                 !l.IsActive &&
-                l.ExpirationDate.Date >= jordanToday)
+                l.ExpirationDate >= jordanTodayStart)
             .ExecuteUpdateAsync(setters =>
                 setters.SetProperty(
                     l => l.IsActive,
@@ -221,11 +221,11 @@ public sealed class LicenseRepository(DVLDDbContext context)
         return true;
     }
 
-    public async Task<int> DeactivateExpiredLicensesAsync(DateTime jordanToday)
+    public async Task<int> DeactivateExpiredLicensesAsync(DateOnly jordanToday)
     {
-        var cutoff = jordanToday.Date;
+        var cutoff = jordanToday.ToDateTime(TimeOnly.MinValue);
         var affected = await _context.Licenses
-            .Where(l => l.IsActive && l.ExpirationDate.Date < cutoff)
+            .Where(l => l.IsActive && l.ExpirationDate < cutoff)
             .ExecuteUpdateAsync(setters =>
                 setters.SetProperty(l => l.IsActive, false));
 
@@ -233,7 +233,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
         {
             foreach (var entry in _context.ChangeTracker.Entries<License>())
             {
-                if (entry.Entity.ExpirationDate.Date < cutoff)
+                if (LicenseExpirationPolicy.IsExpired(entry.Entity.ExpirationDate, jordanToday))
                 {
                     entry.Entity.IsActive = false;
                     entry.Property(l => l.IsActive).OriginalValue = false;

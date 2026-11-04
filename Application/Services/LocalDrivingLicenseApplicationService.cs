@@ -20,9 +20,9 @@ public sealed class LocalDrivingLicenseApplicationService(
     ILicenseClassService licenseClassService,
     ICurrentUserService currentUserService,
     IApplicationService applicationService,
+    IJordanClock clock,
     ITestAppointmentRepository? testAppointmentRepository = null,
-    IPersonRepository? personRepository = null,
-    IJordanClock? clock = null) : ILocalDrivingLicenseApplicationService
+    IPersonRepository? personRepository = null) : ILocalDrivingLicenseApplicationService
 {
     private const int NewLocalDrivingLicenseApplicationTypeId = 1;
 
@@ -42,12 +42,12 @@ public sealed class LocalDrivingLicenseApplicationService(
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     private readonly IApplicationService _applicationService =
         applicationService ?? throw new ArgumentNullException(nameof(applicationService));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
     private readonly ITestAppointmentRepository? _testAppointmentRepository =
         testAppointmentRepository;
     private readonly IPersonRepository? _personRepository =
         personRepository;
-    private readonly Func<DateTime> _nowProvider =
-        clock != null ? () => clock.Now : Application.Validators.TestAppointmentValidator.GetCurrentJordanTime;
 
     public async Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
     GetAllLocalDrivingLicenseApplicationsAsync(
@@ -148,12 +148,11 @@ public sealed class LocalDrivingLicenseApplicationService(
         if (licenseClassResult.IsFailure)
             return Result<int>.FromResult(licenseClassResult);
 
-
         if (licenseClassResult.Value is null)
             return Result<int>.FromNotFound(
                 "License class was not found.");
 
-        var nowJordan = _nowProvider();
+        var nowJordan = _clock.Now;
 
         var ageValidation = LocalDrivingLicenseApplicationValidator.ValidateAge(
             person.DateOfBirth,
@@ -262,7 +261,7 @@ public sealed class LocalDrivingLicenseApplicationService(
                 var ageValidation = LocalDrivingLicenseApplicationValidator.ValidateAge(
                     person.DateOfBirth,
                     licenseClassResult.Value!.MinAllowedAge,
-                    _nowProvider());
+                    _clock.Now);
 
                 if (ageValidation.IsFailure)
                     return Result<int>.FromValidationFailure(ageValidation.Error);
@@ -328,7 +327,7 @@ public sealed class LocalDrivingLicenseApplicationService(
                         var ageValidation = LocalDrivingLicenseApplicationValidator.ValidateAge(
                             person.DateOfBirth,
                             licenseClassResult.Value!.MinAllowedAge,
-                            _nowProvider());
+                            _clock.Now);
 
                         if (ageValidation.IsFailure)
                             return Result.ValidationFailure(ageValidation.Error);
@@ -467,7 +466,7 @@ public sealed class LocalDrivingLicenseApplicationService(
                     var activeAppointments =
                         await _testAppointmentRepository.GetActiveScheduledByLocalAppIdForUpdateAsync(localApplicationId);
 
-                    var nowJordan = Application.Validators.TestAppointmentValidator.GetCurrentJordanTime();
+                    var nowJordan = _clock.Now;
                     var currentUserId = _currentUserService.IsLoggedIn && _currentUserService.UserId > 0
                         ? _currentUserService.UserId
                         : (int?)null;

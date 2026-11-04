@@ -11,7 +11,8 @@ public sealed class DriverService(
     IDriverRepository repository,
     IPersonRepository personRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService) : IDriverService
+    ICurrentUserService currentUserService,
+    IJordanClock clock) : IDriverService
 {
     private readonly IDriverRepository _repository =
         repository ?? throw new ArgumentNullException(nameof(repository));
@@ -24,6 +25,9 @@ public sealed class DriverService(
 
     private readonly ICurrentUserService _currentUserService =
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<DriverDto>> GetByIdAsync(int id)
     {
@@ -129,7 +133,7 @@ public sealed class DriverService(
                 "This person is already registered as a driver.");
         }
 
-        var entity = DriverMapper.ToEntity(dto);
+        var entity = DriverMapper.ToEntity(dto, _clock.Now);
 
         entity.CreatedByUserID =
             _currentUserService.UserId;

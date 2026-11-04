@@ -1,22 +1,22 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
 public sealed class InternationalRepository(
-DVLDDbContext context) : IInternationalRepository
+    DVLDDbContext context) : IInternationalRepository
 {
     private readonly DVLDDbContext _context =
-    context ?? throw new ArgumentNullException(nameof(context));
+        context ?? throw new ArgumentNullException(nameof(context));
 
     private IQueryable<InternationalLicense> Query() =>
-    _context.InternationalLicenses
-        .Include(i => i.Application)
-        .Include(i => i.Driver)
-            .ThenInclude(d => d.Person)
-        .Include(i => i.IssuedUsingLocalLicense)
-        .Include(i => i.CreatedByUser);
+        _context.InternationalLicenses
+            .Include(i => i.Application)
+            .Include(i => i.Driver)
+                .ThenInclude(d => d.Person)
+            .Include(i => i.IssuedUsingLocalLicense)
+            .Include(i => i.CreatedByUser);
 
     public Task<List<InternationalLicense>> GetAllAsync() =>
         Query()
@@ -73,16 +73,22 @@ DVLDDbContext context) : IInternationalRepository
             : Task.FromResult(false);
 
     public Task<bool> HasActiveInternationalLicenseAsync(
-        int driverId) =>
-        driverId > 0
-            ? _context.InternationalLicenses
-                .AsNoTracking()
-                .AnyAsync(
-                    i =>
-                        i.DriverID == driverId &&
-                        i.IsActive &&
-                        i.ExpirationDate > DateTime.UtcNow)
-            : Task.FromResult(false);
+        int driverId,
+        DateOnly jordanToday)
+    {
+        if (driverId <= 0)
+            return Task.FromResult(false);
+
+        var jordanTodayStart = jordanToday.ToDateTime(TimeOnly.MinValue);
+
+        return _context.InternationalLicenses
+            .AsNoTracking()
+            .AnyAsync(
+                i =>
+                    i.DriverID == driverId &&
+                    i.IsActive &&
+                    i.ExpirationDate >= jordanTodayStart);
+    }
 
     public async Task AddAsync(
         InternationalLicense entity)

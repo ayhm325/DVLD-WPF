@@ -1,4 +1,5 @@
 using Application.Common.Results;
+using Application.Common.Time;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
@@ -72,10 +73,9 @@ public sealed class LicenseRenewalService(
                             "Old license not found."));
 
                 var now = _clock.Now;
-                var today = now.Date;
-                var expirationDate = oldLicense.ExpirationDate.Date;
+                var today = _clock.Today;
 
-                if (today <= expirationDate)
+                if (!LicenseExpirationPolicy.IsExpired(oldLicense.ExpirationDate, today))
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromConflict(

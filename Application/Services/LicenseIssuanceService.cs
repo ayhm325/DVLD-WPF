@@ -20,7 +20,8 @@ public sealed class LicenseIssuanceService(
     ICurrentUserService currentUserService,
     ILicenseClassService licenseClassService,
     ITestWorkflowService testWorkflowService,
-    ILogger<LicenseIssuanceService> logger) : ILicenseIssuanceService
+    ILogger<LicenseIssuanceService> logger,
+    IJordanClock clock) : ILicenseIssuanceService
 {
     private const int NewLocalDrivingLicenseApplicationTypeId = 1;
 
@@ -44,6 +45,8 @@ public sealed class LicenseIssuanceService(
         testWorkflowService ?? throw new ArgumentNullException(nameof(testWorkflowService));
     private readonly ILogger<LicenseIssuanceService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<int>> IssueFirstLicenseAsync(int localAppId, string? notes)
     {
@@ -198,7 +201,7 @@ public sealed class LicenseIssuanceService(
                 return Result<int>.FromConflict(
                     "The driver already has an active license for this license class.");
 
-            var issueDate = DateTime.UtcNow;
+            var issueDate = _clock.Now;
 
             var createLicenseDto = new CreateLicenseDto
             {

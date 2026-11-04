@@ -1,23 +1,17 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 using Application.Interfaces;
 
-namespace Application.Services
+namespace Application.Services;
+
+public sealed class DashboardService(
+    IDashboardRepository repository,
+    IJordanClock clock) : IDashboardService
 {
-    public class DashboardService : IDashboardService
-    {
-        private readonly IDashboardRepository _repository;
+    private readonly IDashboardRepository _repository =
+        repository ?? throw new ArgumentNullException(nameof(repository));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
-
-        public DashboardService(
-            IDashboardRepository repository)
-        {
-            _repository = repository;
-        }
-
-
-        public async Task<DashboardDto> GetStatisticsAsync()
-        {
-            return await _repository.GetStatisticsAsync();
-        }
-    }
+    public Task<DashboardDto> GetStatisticsAsync() =>
+        _repository.GetStatisticsAsync(_clock.Today);
 }

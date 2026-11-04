@@ -12,7 +12,8 @@ public sealed class ApplicationService(
     IApplicationRepository repository,
     IApplicationTypeRepository applicationTypeRepository,
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUserService) : IApplicationService
+    ICurrentUserService currentUserService,
+    IJordanClock clock) : IApplicationService
 {
     private readonly IApplicationRepository _repository =
         repository ?? throw new ArgumentNullException(nameof(repository));
@@ -22,6 +23,8 @@ public sealed class ApplicationService(
         unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     private readonly ICurrentUserService _currentUserService =
         currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public async Task<Result<List<ApplicationDto>>> GetAllApplicationsAsync()
     {
@@ -88,7 +91,11 @@ public sealed class ApplicationService(
         if (applicationType is null)
             return Result<int>.FromNotFound("Application type not found.");
 
-        var entity = ApplicationMapper.ToEntity(dto, applicationType.ApplicationFees, _currentUserService.UserId);
+        var entity = ApplicationMapper.ToEntity(
+            dto,
+            applicationType.ApplicationFees,
+            _currentUserService.UserId,
+            _clock.Now);
         await _repository.AddNewApplicationAsync(entity);
 
         var saved = await _unitOfWork.SaveChangesAsync();
@@ -151,7 +158,7 @@ public sealed class ApplicationService(
             return Result.Conflict("Application already cancelled.");
 
         entity.ApplicationStatus = AppStatus.Cancelled;
-        entity.LastStatusDate = DateTime.UtcNow;
+        entity.LastStatusDate = _clock.Now;
         return await SaveAsync("Cancel application failed.");
     }
 
@@ -182,7 +189,7 @@ public sealed class ApplicationService(
             return Result.Conflict("Cannot complete cancelled application.");
 
         entity.ApplicationStatus = AppStatus.Completed;
-        entity.LastStatusDate = DateTime.UtcNow;
+        entity.LastStatusDate = _clock.Now;
         return Result.Success();
     }
 

@@ -1,4 +1,5 @@
 using Application.Common.Results;
+using Application.Common.Time;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using Application.Mappers;
@@ -29,26 +30,27 @@ public sealed class LicenseQueryService(
         if (validation.IsFailure)
             return Result<LicenseDto>.FromValidationFailure(validation.Error);
 
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var license = await _licenseRepository.GetLicenseByIdAsync(licenseId);
         if (license is null)
             return Result<LicenseDto>.FromNotFound("License not found.");
 
-        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license);
+        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license, today);
         return Result<LicenseDto>.Success(LicenseMapper.ToDto(license, isExpired, isEligible, reason));
     }
 
     public async Task<Result<List<LicenseDto>>> GetAllAsync()
     {
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetAllLicensesAsync();
         var allDetained = await _detainedLicenseRepository.GetAllAsync() ?? Enumerable.Empty<DetainedLicense>();
         var activeDetainedIds = allDetained.Where(d => !d.IsReleased).Select(d => d.LicenseID).ToHashSet();
-        var today = _clock.Now.Date;
 
         var dtos = licenses.Select(l =>
         {
-            var isExpired = today > l.ExpirationDate.Date;
+            var isExpired = LicenseExpirationPolicy.IsExpired(l.ExpirationDate, today);
             bool isEligible;
             string? reason;
 
@@ -94,15 +96,15 @@ public sealed class LicenseQueryService(
         if (validation.IsFailure)
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByDriverIdAsync(driverId);
         var allDetained = await _detainedLicenseRepository.GetAllAsync() ?? Enumerable.Empty<DetainedLicense>();
         var activeDetainedIds = allDetained.Where(d => !d.IsReleased).Select(d => d.LicenseID).ToHashSet();
-        var today = _clock.Now.Date;
 
         var dtos = licenses.Select(l =>
         {
-            var isExpired = today > l.ExpirationDate.Date;
+            var isExpired = LicenseExpirationPolicy.IsExpired(l.ExpirationDate, today);
             bool isEligible;
             string? reason;
 
@@ -148,12 +150,13 @@ public sealed class LicenseQueryService(
         if (validation.IsFailure)
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId);
         var dtos = new List<LicenseDto>();
         foreach (var l in licenses)
         {
-            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l);
+            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l, today);
             dtos.Add(LicenseMapper.ToDto(l, isExpired, isEligible, reason));
         }
 
@@ -166,12 +169,13 @@ public sealed class LicenseQueryService(
         if (validation.IsFailure)
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByLicenseClassIdAsync(licenseClassId);
         var dtos = new List<LicenseDto>();
         foreach (var l in licenses)
         {
-            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l);
+            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l, today);
             dtos.Add(LicenseMapper.ToDto(l, isExpired, isEligible, reason));
         }
 
@@ -183,12 +187,13 @@ public sealed class LicenseQueryService(
         if (personId <= 0)
             return Result<List<LicenseDto>>.FromValidationFailure("Invalid person ID.");
 
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByPersonIdAsync(personId);
         var dtos = new List<LicenseDto>();
         foreach (var l in licenses)
         {
-            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l);
+            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l, today);
             dtos.Add(LicenseMapper.ToDto(l, isExpired, isEligible, reason));
         }
 
@@ -230,13 +235,14 @@ public sealed class LicenseQueryService(
         if (applicationId <= 0)
             return Result<DriverLicenseInfoDto>.FromValidationFailure("Invalid application ID.");
 
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId);
         var license = licenses.FirstOrDefault(x => x.LicenseClass == localApplication.LicenseClassID);
         if (license is null)
             return Result<DriverLicenseInfoDto>.FromNotFound("License for the selected license class was not found.");
 
-        return await GetLicenseDetailsResultAsync(license);
+        return await GetLicenseDetailsResultAsync(license, today);
     }
 
     public async Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(int licenseId)
@@ -245,20 +251,21 @@ public sealed class LicenseQueryService(
         if (validation.IsFailure)
             return Result<DriverLicenseInfoDto>.FromValidationFailure(validation.Error);
 
-        await _licenseRepository.DeactivateExpiredLicensesAsync(_clock.Now.Date);
+        var today = _clock.Today;
+        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var license = await _licenseRepository.GetLicenseByIdAsync(licenseId);
         if (license is null)
             return Result<DriverLicenseInfoDto>.FromNotFound("License not found.");
 
-        return await GetLicenseDetailsResultAsync(license);
+        return await GetLicenseDetailsResultAsync(license, today);
     }
 
     private async Task<(bool isExpired, bool isEligible, string? reason)> EvaluateRenewalEligibilityAsync(
         License license,
+        DateOnly today,
         bool? precomputedIsDetained = null)
     {
-        var today = _clock.Now.Date;
-        var isExpired = today > license.ExpirationDate.Date;
+        var isExpired = LicenseExpirationPolicy.IsExpired(license.ExpirationDate, today);
 
         if (!isExpired)
         {
@@ -285,7 +292,9 @@ public sealed class LicenseQueryService(
         return (true, true, null);
     }
 
-    private async Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsResultAsync(Domain.Entities.License license)
+    private async Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsResultAsync(
+        Domain.Entities.License license,
+        DateOnly today)
     {
         if (license.DriverID <= 0)
             return Result<DriverLicenseInfoDto>.FromFailure("License has an invalid driver.");
@@ -298,7 +307,7 @@ public sealed class LicenseQueryService(
 
         var person = PersonMapper.ToDto(license.Driver.Person);
         var isDetained = await _detainedLicenseRepository.IsLicenseDetainedAsync(license.LicenseID);
-        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license, isDetained);
+        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license, today, isDetained);
 
         return Result<DriverLicenseInfoDto>.Success(MapLicenseDetails(license, person, license.DriverID, isDetained, isExpired, isEligible, reason));
     }

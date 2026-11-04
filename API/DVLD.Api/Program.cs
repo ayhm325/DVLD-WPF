@@ -410,7 +410,7 @@ try
     using var scope = app.Services.CreateScope();
     var licenseRepo = scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
     var clock = scope.ServiceProvider.GetRequiredService<IJordanClock>();
-    await licenseRepo.DeactivateExpiredLicensesAsync(clock.Now.Date);
+    await licenseRepo.DeactivateExpiredLicensesAsync(clock.Today);
 }
 catch (Exception ex)
 {

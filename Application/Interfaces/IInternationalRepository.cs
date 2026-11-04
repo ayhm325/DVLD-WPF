@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
@@ -7,7 +7,7 @@ public interface IInternationalRepository
     Task<List<InternationalLicense>> GetAllAsync();
 
     Task<InternationalLicense?> GetByIdAsync(
-    int internationalLicenseId);
+        int internationalLicenseId);
 
     Task<List<InternationalLicense>> GetByDriverIdAsync(
         int driverId);
@@ -22,7 +22,8 @@ public interface IInternationalRepository
         int localLicenseId);
 
     Task<bool> HasActiveInternationalLicenseAsync(
-        int driverId);
+        int driverId,
+        DateOnly jordanToday);
 
     Task AddAsync(
         InternationalLicense entity);

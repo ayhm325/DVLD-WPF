@@ -1,23 +1,17 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.Interfaces;
 using Domain.Enums;
 
 namespace Application.Services;
 
-public sealed class TestWorkflowService : ITestWorkflowService
+public sealed class TestWorkflowService(
+    ITestAppointmentRepository repository,
+    IJordanClock clock) : ITestWorkflowService
 {
-    private readonly ITestAppointmentRepository _repository;
-    private readonly Func<DateTime> _nowProvider;
-
-    public TestWorkflowService(
-        ITestAppointmentRepository repository,
-        IJordanClock? clock = null)
-    {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _nowProvider = clock != null
-            ? () => clock.Now
-            : Application.Validators.TestAppointmentValidator.GetCurrentJordanTime;
-    }
+    private readonly ITestAppointmentRepository _repository =
+        repository ?? throw new ArgumentNullException(nameof(repository));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     private static readonly TestTypeEnum[] RequiredTests =
     [
@@ -145,7 +139,7 @@ public sealed class TestWorkflowService : ITestWorkflowService
                 "This appointment is already locked.");
         }
 
-        var currentFacilityTime = _nowProvider();
+        var currentFacilityTime = _clock.Now;
         if (appointment.AppointmentDate > currentFacilityTime)
         {
             return Result.Conflict(
@@ -181,6 +175,7 @@ public sealed class TestWorkflowService : ITestWorkflowService
             (TestTypeEnum)appointment.TestTypeID,
             "taken");
     }
+
     public async Task<bool> HasPassedAllTestsAsync(
         int localAppId)
     {

@@ -1,4 +1,4 @@
-﻿using Application.DTOs;
+using Application.DTOs;
 using Application.DTOs.DriverDTO;
 using Domain.Entities;
 
@@ -29,14 +29,16 @@ public static class DriverMapper
         return entities.Select(ToDto).ToList();
     }
 
-    public static Driver ToEntity(CreateDriverDto dto)
+    public static Driver ToEntity(
+        CreateDriverDto dto,
+        DateTime createdDate)
     {
         ArgumentNullException.ThrowIfNull(dto);
 
         return new Driver
         {
             PersonID = dto.PersonID,
-            CreatedDate = DateTime.UtcNow
+            CreatedDate = createdDate
         };
     }
 

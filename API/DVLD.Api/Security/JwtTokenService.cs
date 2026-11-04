@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Application.DTOs.AuthDTO;
@@ -10,17 +10,21 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DVLD.Api.Security;
 
-public sealed class JwtTokenService(IOptions<JwtOptions> options) : IJwtTokenService
+public sealed class JwtTokenService(
+    IOptions<JwtOptions> options,
+    IJordanClock clock) : IJwtTokenService
 {
     private readonly JwtOptions _options =
         options?.Value ?? throw new ArgumentNullException(nameof(options));
+    private readonly IJordanClock _clock =
+        clock ?? throw new ArgumentNullException(nameof(clock));
 
     public JwtTokenResult GenerateToken(UserDto user)
     {
         ArgumentNullException.ThrowIfNull(user);
 
         var expiresAtUtc =
-            DateTime.UtcNow.AddMinutes(_options.ExpirationMinutes);
+            _clock.UtcNow.AddMinutes(_options.ExpirationMinutes);
 
         var claims = new[]
         {
