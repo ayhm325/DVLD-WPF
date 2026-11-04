@@ -1,76 +1,633 @@
-trigger:
-- main
+# =============================================================================
+# DVLD — Continuous Integration Pipeline (Azure Pipelines)
+# Architecture:
+#   Stage 1 (Frontend_CI): Node.js 22 LTS, npm cache, npm ci, ESLint, tsc -b,
+#                          Vite production build, and frontend artifact upload.
+#   Stage 2 (Backend_CI):  .NET 8 SDK (from global.json), NuGet cache, Release
+#                          solution restore & build (including WPF on Windows),
+#                          Application Unit Tests, SQL Server LocalDB readiness
+#                          & isolation checks, API Integration Tests,
+#                          Infrastructure Integration Tests, Cobertura coverage,
+#                          residual test-DB cleanup, and API release artifact.
+# Quality Gate:
+#   Both stages are mandatory on every triggered CI / PR run. No mandatory step
+#   uses continueOnError or conditional path-bypassing.
+# =============================================================================
 
-pool:
-  vmImage: 'windows-latest'
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - API/**
+      - Application/**
+      - ClientApp/**
+      - Domain/**
+      - DVLD.Contracts/**
+      - Infrastructure/**
+      - Presentation (WPF)/**
+      - Test/**
+      - global.json
+      - azure-pipelines.yml
+    exclude:
+      - docs/**
+      - README.md
+      - ClientApp/docs/**
+      - ClientApp/README.md
+      - ClientApp/AGENTS.md
+      - ClientApp/SECURITY.md
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - API/**
+      - Application/**
+      - ClientApp/**
+      - Domain/**
+      - DVLD.Contracts/**
+      - Infrastructure/**
+      - Presentation (WPF)/**
+      - Test/**
+      - global.json
+      - azure-pipelines.yml
+    exclude:
+      - docs/**
+      - README.md
+      - ClientApp/docs/**
+      - ClientApp/README.md
+      - ClientApp/AGENTS.md
+      - ClientApp/SECURITY.md
 
 variables:
-- group: DVLD-Test-Secrets
-- name: solution
-  value: '**/*.sln'
-- name: buildConfiguration
-  value: 'Release'
-- name: DVLD_TEST_CONNECTION
-  value: 'Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
+  vmImageName: 'windows-latest'
+  buildConfiguration: 'Release'
+  solutionPath: 'Presentation (WPF)/DVLD_WPF.sln'
+  apiProjectPath: 'API/DVLD.Api/DVLD.Api.csproj'
+  unitTestProject: 'Test/Application.UnitTests/Application.UnitTests.csproj'
+  apiIntegrationTestProject: 'Test/API.IntegrationTests/API.IntegrationTests.csproj'
+  infraIntegrationTestProject: 'Test/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj'
+  nodeVersionSpec: '22.x'
 
-steps:
+stages:
+  # ===========================================================================
+  # STAGE 1: FRONTEND VALIDATION — ClientApp (React 19 + TypeScript 6 + Vite 8)
+  # ===========================================================================
+  - stage: Frontend_CI
+    displayName: 'Frontend CI — ClientApp'
+    dependsOn: []
+    jobs:
+      - job: Validate_ClientApp
+        displayName: 'Lint, Type-Check & Build ClientApp'
+        timeoutInMinutes: 15
+        cancelTimeoutInMinutes: 2
+        pool:
+          vmImage: $(vmImageName)
+        variables:
+          npm_config_cache: '$(Pipeline.Workspace)/.npm'
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 1
 
-- task: UseDotNet@2
-  displayName: 'Install .NET 8 SDK'
-  inputs:
-    packageType: 'sdk'
-    version: '8.x'
+          - task: UseNode@1
+            displayName: 'Install Node.js $(nodeVersionSpec) LTS'
+            inputs:
+              version: '$(nodeVersionSpec)'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Restore'
-  inputs:
-    command: 'restore'
-    projects: '$(solution)'
+          - task: Cache@2
+            displayName: 'Cache npm Packages'
+            inputs:
+              key: '"npm" | "$(Agent.OS)" | ClientApp/package-lock.json'
+              restoreKeys: |
+                "npm" | "$(Agent.OS)"
+              path: '$(npm_config_cache)'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build'
-  inputs:
-    command: 'build'
-    projects: '$(solution)'
-    arguments: '--configuration $(buildConfiguration) --no-restore'
+          - task: PowerShell@2
+            displayName: 'Install ClientApp Dependencies (npm ci)'
+            inputs:
+              targetType: 'inline'
+              workingDirectory: 'ClientApp'
+              failOnStderr: false
+              script: |
+                $ErrorActionPreference = 'Stop'
+                Write-Host "Node version: $(node --version)"
+                Write-Host "npm version:  $(npm.cmd --version)"
 
-# ---------------------------------------------------------
-# Unit Tests
-# ---------------------------------------------------------
+                if (-not (Test-Path 'package-lock.json')) {
+                  Write-Host "##vso[task.logissue type=error]ClientApp/package-lock.json is missing. Deterministic dependency installation cannot proceed."
+                  exit 1
+                }
 
-- task: DotNetCoreCLI@2
-  displayName: 'Run Application Unit Tests'
-  inputs:
-    command: 'test'
-    projects: 'Test/Application.UnitTests/Application.UnitTests.csproj'
-    arguments: '--configuration $(buildConfiguration) --no-build'
-    publishTestResults: true
+                npm.cmd ci --no-fund
+                if ($LASTEXITCODE -ne 0) {
+                  Write-Host "##vso[task.logissue type=error]npm ci failed with exit code $LASTEXITCODE."
+                  exit $LASTEXITCODE
+                }
 
-# ---------------------------------------------------------
-# API Integration Tests
-# ---------------------------------------------------------
+          - task: PowerShell@2
+            displayName: 'Run ESLint (npm run lint)'
+            inputs:
+              targetType: 'inline'
+              workingDirectory: 'ClientApp'
+              failOnStderr: false
+              script: |
+                $ErrorActionPreference = 'Stop'
+                npm.cmd run lint
+                if ($LASTEXITCODE -ne 0) {
+                  Write-Host "##vso[task.logissue type=error]ESLint validation failed with exit code $LASTEXITCODE."
+                  exit $LASTEXITCODE
+                }
 
-- task: DotNetCoreCLI@2
-  displayName: 'Run API Integration Tests'
-  inputs:
-    command: 'test'
-    projects: 'Test/API.IntegrationTests/API.IntegrationTests.csproj'
-    arguments: '--configuration $(buildConfiguration) --no-build'
-    publishTestResults: true
-  env:
-    DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
-    Jwt__SecretKey: '$(Jwt__SecretKey)'
+          - task: PowerShell@2
+            displayName: 'Run TypeScript Validation (tsc -b)'
+            inputs:
+              targetType: 'inline'
+              workingDirectory: 'ClientApp'
+              failOnStderr: false
+              script: |
+                $ErrorActionPreference = 'Stop'
+                npx.cmd --no-install tsc -b --pretty false
+                if ($LASTEXITCODE -ne 0) {
+                  Write-Host "##vso[task.logissue type=error]TypeScript project-references check (tsc -b) failed with exit code $LASTEXITCODE."
+                  exit $LASTEXITCODE
+                }
 
-# ---------------------------------------------------------
-# Infrastructure Integration Tests
-# ---------------------------------------------------------
+          - task: PowerShell@2
+            displayName: 'Build Production Bundle (npm run build)'
+            inputs:
+              targetType: 'inline'
+              workingDirectory: 'ClientApp'
+              failOnStderr: false
+              script: |
+                $ErrorActionPreference = 'Stop'
+                npm.cmd run build
+                if ($LASTEXITCODE -ne 0) {
+                  Write-Host "##vso[task.logissue type=error]ClientApp production build failed with exit code $LASTEXITCODE."
+                  exit $LASTEXITCODE
+                }
 
-- task: DotNetCoreCLI@2
-  displayName: 'Run Infrastructure Integration Tests'
-  inputs:
-    command: 'test'
-    projects: 'Test/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj'
-    arguments: '--configuration $(buildConfiguration) --no-build'
-    publishTestResults: true
-  env:
-    DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+                if (-not (Test-Path 'dist/index.html')) {
+                  Write-Host "##vso[task.logissue type=error]Build exited 0 but ClientApp/dist/index.html was not produced."
+                  exit 1
+                }
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish ClientApp Production Bundle'
+            condition: succeeded()
+            inputs:
+              targetPath: 'ClientApp/dist'
+              artifact: 'clientapp-dist'
+              publishLocation: 'pipeline'
+
+          - task: PowerShell@2
+            displayName: 'Collect Frontend Diagnostics on Failure'
+            condition: failed()
+            inputs:
+              targetType: 'inline'
+              failOnStderr: false
+              script: |
+                $diagDir = Join-Path '$(Build.ArtifactStagingDirectory)' 'clientapp-diagnostics'
+                New-Item -ItemType Directory -Path $diagDir -Force | Out-Null
+
+                @(
+                  "BuildId=$(Build.BuildId)",
+                  "NodeVersion=$(node --version 2>&1)",
+                  "NpmVersion=$(npm.cmd --version 2>&1)"
+                ) | Set-Content -Path (Join-Path $diagDir 'environment.txt')
+
+                $npmLogs = Join-Path '$(npm_config_cache)' '_logs'
+                if (Test-Path $npmLogs) {
+                  Copy-Item -Path (Join-Path $npmLogs '*') -Destination $diagDir -Recurse -Force -ErrorAction SilentlyContinue
+                }
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Frontend Failure Diagnostics'
+            condition: failed()
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/clientapp-diagnostics'
+              artifact: 'clientapp-diagnostics'
+              publishLocation: 'pipeline'
+
+  # ===========================================================================
+  # STAGE 2: BACKEND & SOLUTION VALIDATION — .NET 8 + SQL Server Integration
+  # ===========================================================================
+  - stage: Backend_CI
+    displayName: 'Backend & Solution CI — .NET 8'
+    dependsOn: []
+    jobs:
+      - job: Build_And_Test_Backend
+        displayName: 'Restore, Build, Unit & SQL Integration Tests'
+        timeoutInMinutes: 45
+        cancelTimeoutInMinutes: 5
+        pool:
+          vmImage: $(vmImageName)
+        variables:
+          # Scoped strictly to Backend_CI (Frontend_CI never receives backend secrets).
+          - group: DVLD-Test-Secrets
+          - name: NUGET_PACKAGES
+            value: '$(Pipeline.Workspace)/.nuget/packages'
+          - name: testResultsDirectory
+            value: '$(Agent.TempDirectory)/TestResults'
+          - name: DOTNET_CLI_TELEMETRY_OPTOUT
+            value: '1'
+          - name: DOTNET_NOLOGO
+            value: '1'
+          - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
+            value: '1'
+          # Base server-level connection used by fixtures to create/drop isolated
+          # DVLD_IntegrationTests_<GUID> databases. Never point to a named app DB.
+          - name: DVLD_TEST_CONNECTION
+            value: 'Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 1
+
+          - task: UseDotNet@2
+            displayName: 'Install .NET 8 SDK (from global.json)'
+            inputs:
+              packageType: 'sdk'
+              useGlobalJson: true
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          - task: Cache@2
+            displayName: 'Cache NuGet Packages'
+            inputs:
+              key: '"nuget" | "$(Agent.OS)" | global.json | **/*.csproj'
+              restoreKeys: |
+                "nuget" | "$(Agent.OS)" | global.json
+                "nuget" | "$(Agent.OS)"
+              path: '$(NUGET_PACKAGES)'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore Solution Dependencies'
+            inputs:
+              command: 'restore'
+              projects: '$(solutionPath)'
+              verbosityRestore: 'Minimal'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build Solution ($(buildConfiguration))'
+            inputs:
+              command: 'build'
+              projects: '$(solutionPath)'
+              arguments: '--configuration $(buildConfiguration) --no-restore'
+
+          - task: PowerShell@2
+            displayName: 'Mark Solution Build Complete'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "##vso[task.setvariable variable=SolutionBuilt]true"
+
+          # -------------------------------------------------------------------
+          # 1. Application Unit Tests (isolated, no SQL or JWT secrets injected)
+          # -------------------------------------------------------------------
+          - task: DotNetCoreCLI@2
+            displayName: 'Run Application Unit Tests'
+            condition: eq(variables['SolutionBuilt'], 'true')
+            inputs:
+              command: 'test'
+              projects: '$(unitTestProject)'
+              publishTestResults: false
+              arguments: >-
+                --configuration $(buildConfiguration)
+                --no-build
+                --logger "trx;LogFileName=Application.UnitTests.trx"
+                --results-directory "$(testResultsDirectory)/Application.UnitTests"
+                --collect:"XPlat Code Coverage"
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Application Unit Test Results'
+            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: 'Application.UnitTests/Application.UnitTests.trx'
+              searchFolder: '$(testResultsDirectory)'
+              testRunTitle: 'DVLD — Application Unit Tests'
+              failTaskOnFailedTests: true
+              failTaskOnMissingResultsFile: true
+              publishRunAttachments: true
+
+          # -------------------------------------------------------------------
+          # 2. SQL Server LocalDB & Secret Prerequisite Verification
+          # -------------------------------------------------------------------
+          - task: PowerShell@2
+            displayName: 'Initialize and Verify SQL Server Test Engine'
+            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            env:
+              DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+            inputs:
+              targetType: 'inline'
+              failOnStderr: false
+              script: |
+                $ErrorActionPreference = 'Stop'
+
+                if ([string]::IsNullOrWhiteSpace($env:DVLD_TEST_CONNECTION)) {
+                  Write-Host "##vso[task.logissue type=error]Database prerequisite failure: DVLD_TEST_CONNECTION is empty."
+                  exit 1
+                }
+
+                try {
+                  $builder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder($env:DVLD_TEST_CONNECTION)
+                }
+                catch {
+                  Write-Host "##vso[task.logissue type=error]Database prerequisite failure: DVLD_TEST_CONNECTION is not a valid SQL Server connection string."
+                  exit 1
+                }
+
+                if (-not [string]::IsNullOrWhiteSpace($builder.InitialCatalog) -and
+                    -not $builder.InitialCatalog.Equals('master', [System.StringComparison]::OrdinalIgnoreCase)) {
+                  Write-Host "##vso[task.logissue type=error]Database safety violation: DVLD_TEST_CONNECTION specifies InitialCatalog '$($builder.InitialCatalog)'. Integration fixtures require a server-level connection (empty InitialCatalog or 'master') so isolated DVLD_IntegrationTests_* databases are used."
+                  exit 1
+                }
+
+                $probeDataSource = $builder.DataSource
+                if ($probeDataSource -match '^\(localdb\)\\(.+)$') {
+                  $instanceName = $Matches[1]
+                  $localDbCmd = Get-Command SqlLocalDB.exe -ErrorAction SilentlyContinue
+                  if ($null -eq $localDbCmd) {
+                    Write-Host "##vso[task.logissue type=error]Database infrastructure failure: SqlLocalDB.exe is not installed on this Windows agent, cannot start LocalDB instance '$instanceName'."
+                    exit 1
+                  }
+
+                  $infoOutput = & SqlLocalDB.exe info $instanceName 2>&1
+                  if ($LASTEXITCODE -ne 0) {
+                    Write-Host "Creating SQL Server LocalDB instance '$instanceName'..."
+                    & SqlLocalDB.exe create $instanceName | Out-Host
+                    if ($LASTEXITCODE -ne 0) {
+                      Write-Host "##vso[task.logissue type=error]Database infrastructure failure: Failed to create SQL Server LocalDB instance '$instanceName'."
+                      exit 1
+                    }
+                  }
+
+                  Write-Host "Starting SQL Server LocalDB instance '$instanceName'..."
+                  & SqlLocalDB.exe start $instanceName | Out-Host
+                  if ($LASTEXITCODE -ne 0) {
+                    Write-Host "##vso[task.logissue type=error]Database infrastructure failure: Failed to start SQL Server LocalDB instance '$instanceName'."
+                    exit 1
+                  }
+
+                  $startedInfo = & SqlLocalDB.exe info $instanceName 2>&1
+                  $pipeLine = $startedInfo | Where-Object { $_ -match 'Instance pipe name:\s*(.+)$' } | Select-Object -First 1
+                  if ($pipeLine -match 'Instance pipe name:\s*(.+)$') {
+                    $probeDataSource = $Matches[1].Trim()
+                  }
+                }
+
+                $probeBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder($env:DVLD_TEST_CONNECTION)
+                $probeBuilder.DataSource = $probeDataSource
+                $probeBuilder.InitialCatalog = 'master'
+
+                try {
+                  $connection = New-Object System.Data.SqlClient.SqlConnection($probeBuilder.ConnectionString)
+                  try {
+                    $connection.Open()
+                    $command = $connection.CreateCommand()
+                    $command.CommandTimeout = 30
+                    $command.CommandText = "SELECT CAST(SERVERPROPERTY('ProductVersion') AS NVARCHAR(128)), CAST(SERVERPROPERTY('Edition') AS NVARCHAR(128));"
+                    $reader = $command.ExecuteReader()
+                    if ($reader.Read()) {
+                      Write-Host "SQL Server test engine verified: Version=$($reader.GetString(0)), Edition=$($reader.GetString(1))"
+                    }
+                    $reader.Close()
+                  }
+                  finally {
+                    $connection.Dispose()
+                  }
+                }
+                catch {
+                  Write-Host "##vso[task.logissue type=error]Database infrastructure failure: Unable to open a connection to 'master' on the SQL Server test engine ($($_.Exception.Message))."
+                  exit 1
+                }
+
+                Write-Host "##vso[task.setvariable variable=SqlProbeDataSource]$probeDataSource"
+                Write-Host "##vso[task.setvariable variable=SqlServerReady]true"
+
+          - task: PowerShell@2
+            displayName: 'Validate API Integration Test Secrets'
+            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            env:
+              JWT_SECRET_CANDIDATE: '$(Jwt__SecretKey)'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $ErrorActionPreference = 'Stop'
+                $unexpandedToken = '$' + '(Jwt__SecretKey)'
+
+                if ([string]::IsNullOrWhiteSpace($env:JWT_SECRET_CANDIDATE) -or
+                    $env:JWT_SECRET_CANDIDATE -eq $unexpandedToken) {
+                  Write-Host "##vso[task.logissue type=error]Missing prerequisite: Secret variable 'Jwt__SecretKey' from variable group 'DVLD-Test-Secrets' is not set."
+                  exit 1
+                }
+
+                $byteCount = [System.Text.Encoding]::UTF8.GetByteCount($env:JWT_SECRET_CANDIDATE)
+                if ($byteCount -lt 32) {
+                  Write-Host "##vso[task.logissue type=error]Invalid prerequisite: 'Jwt__SecretKey' in variable group 'DVLD-Test-Secrets' must be at least 32 UTF-8 bytes (required by DVLD.Api Program.cs)."
+                  exit 1
+                }
+
+                Write-Host "JWT signing key prerequisite verified (>= 32 UTF-8 bytes)."
+                Write-Host "##vso[task.setvariable variable=ApiPrerequisitesReady]true"
+
+          # -------------------------------------------------------------------
+          # 3. API Integration Tests (requires SQL Server + Jwt__SecretKey)
+          # -------------------------------------------------------------------
+          - task: DotNetCoreCLI@2
+            displayName: 'Run API Integration Tests'
+            condition: >-
+              and(
+                succeededOrFailed(),
+                eq(variables['SolutionBuilt'], 'true'),
+                eq(variables['SqlServerReady'], 'true'),
+                eq(variables['ApiPrerequisitesReady'], 'true')
+              )
+            env:
+              DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+              Jwt__SecretKey: '$(Jwt__SecretKey)'
+            inputs:
+              command: 'test'
+              projects: '$(apiIntegrationTestProject)'
+              publishTestResults: false
+              arguments: >-
+                --configuration $(buildConfiguration)
+                --no-build
+                --logger "trx;LogFileName=API.IntegrationTests.trx"
+                --results-directory "$(testResultsDirectory)/API.IntegrationTests"
+                --collect:"XPlat Code Coverage"
+
+          - task: PublishTestResults@2
+            displayName: 'Publish API Integration Test Results'
+            condition: >-
+              and(
+                succeededOrFailed(),
+                eq(variables['SolutionBuilt'], 'true'),
+                eq(variables['SqlServerReady'], 'true'),
+                eq(variables['ApiPrerequisitesReady'], 'true')
+              )
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: 'API.IntegrationTests/API.IntegrationTests.trx'
+              searchFolder: '$(testResultsDirectory)'
+              testRunTitle: 'DVLD — API Integration Tests'
+              failTaskOnFailedTests: true
+              failTaskOnMissingResultsFile: true
+              publishRunAttachments: true
+
+          # -------------------------------------------------------------------
+          # 4. Infrastructure Integration Tests (requires SQL Server only)
+          # -------------------------------------------------------------------
+          - task: DotNetCoreCLI@2
+            displayName: 'Run Infrastructure Integration Tests'
+            condition: >-
+              and(
+                succeededOrFailed(),
+                eq(variables['SolutionBuilt'], 'true'),
+                eq(variables['SqlServerReady'], 'true')
+              )
+            env:
+              DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+            inputs:
+              command: 'test'
+              projects: '$(infraIntegrationTestProject)'
+              publishTestResults: false
+              arguments: >-
+                --configuration $(buildConfiguration)
+                --no-build
+                --logger "trx;LogFileName=Infrastructure.IntegrationTests.trx"
+                --results-directory "$(testResultsDirectory)/Infrastructure.IntegrationTests"
+                --collect:"XPlat Code Coverage"
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Infrastructure Integration Test Results'
+            condition: >-
+              and(
+                succeededOrFailed(),
+                eq(variables['SolutionBuilt'], 'true'),
+                eq(variables['SqlServerReady'], 'true')
+              )
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: 'Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.trx'
+              searchFolder: '$(testResultsDirectory)'
+              testRunTitle: 'DVLD — Infrastructure Integration Tests'
+              failTaskOnFailedTests: true
+              failTaskOnMissingResultsFile: true
+              publishRunAttachments: true
+
+          # -------------------------------------------------------------------
+          # 5. Safe Residual Ephemeral Database Cleanup (DVLD_IntegrationTests_*)
+          # -------------------------------------------------------------------
+          - task: PowerShell@2
+            displayName: 'Clean Up Residual DVLD_IntegrationTests_* Databases'
+            condition: and(always(), eq(variables['SqlServerReady'], 'true'))
+            env:
+              DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+              SQL_PROBE_DATA_SOURCE: '$(SqlProbeDataSource)'
+            inputs:
+              targetType: 'inline'
+              failOnStderr: false
+              script: |
+                $ErrorActionPreference = 'Stop'
+                try {
+                  $cleanupBuilder = New-Object System.Data.SqlClient.SqlConnectionStringBuilder($env:DVLD_TEST_CONNECTION)
+                  $unexpandedProbe = '$' + '(SqlProbeDataSource)'
+                  if (-not [string]::IsNullOrWhiteSpace($env:SQL_PROBE_DATA_SOURCE) -and
+                      $env:SQL_PROBE_DATA_SOURCE -ne $unexpandedProbe) {
+                    $cleanupBuilder.DataSource = $env:SQL_PROBE_DATA_SOURCE
+                  }
+                  $cleanupBuilder.InitialCatalog = 'master'
+
+                  $connection = New-Object System.Data.SqlClient.SqlConnection($cleanupBuilder.ConnectionString)
+                  try {
+                    $connection.Open()
+                    $listCmd = $connection.CreateCommand()
+                    $listCmd.CommandTimeout = 60
+                    $listCmd.CommandText = @"
+                SELECT name
+                FROM sys.databases
+                WHERE name LIKE N'DVLD[_]IntegrationTests[_]%'
+                  AND database_id > 4;
+                "@
+                    $orphanDbs = New-Object System.Collections.Generic.List[string]
+                    $reader = $listCmd.ExecuteReader()
+                    while ($reader.Read()) {
+                      $orphanDbs.Add($reader.GetString(0))
+                    }
+                    $reader.Close()
+
+                    foreach ($dbName in $orphanDbs) {
+                      if ($dbName.StartsWith('DVLD_IntegrationTests_', [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $escapedIdentifier = $dbName.Replace(']', ']]')
+                        $escapedLiteral = $dbName.Replace("'", "''")
+                        $dropCmd = $connection.CreateCommand()
+                        $dropCmd.CommandTimeout = 120
+                        $dropCmd.CommandText = @"
+                IF DB_ID(N'$escapedLiteral') IS NOT NULL
+                BEGIN
+                  ALTER DATABASE [$escapedIdentifier] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                  DROP DATABASE [$escapedIdentifier];
+                END
+                "@
+                        [void]$dropCmd.ExecuteNonQuery()
+                        Write-Host "Dropped residual ephemeral test database: $dbName"
+                      }
+                    }
+
+                    if ($orphanDbs.Count -eq 0) {
+                      Write-Host "No residual DVLD_IntegrationTests_* databases found; fixture cleanup was clean."
+                    }
+                  }
+                  finally {
+                    $connection.Dispose()
+                  }
+                }
+                catch {
+                  Write-Host "##vso[task.logissue type=warning]Post-test residual database sweep encountered a non-fatal warning: $($_.Exception.Message)"
+                }
+
+          # -------------------------------------------------------------------
+          # 6. Code Coverage & CI Artifacts
+          # -------------------------------------------------------------------
+          - task: PublishCodeCoverageResults@2
+            displayName: 'Publish Backend Code Coverage (Cobertura)'
+            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            inputs:
+              summaryFileLocation: |
+                $(testResultsDirectory)/**/coverage.cobertura.xml
+                !$(testResultsDirectory)/**/In/**
+              failIfCoverageEmpty: false
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Backend Test & Coverage Reports'
+            condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
+            inputs:
+              targetPath: '$(testResultsDirectory)'
+              artifact: 'backend-test-and-coverage-reports'
+              publishLocation: 'pipeline'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Package DVLD.Api Release Output'
+            condition: succeeded()
+            inputs:
+              command: 'publish'
+              publishWebProjects: false
+              projects: '$(apiProjectPath)'
+              arguments: '--configuration $(buildConfiguration) --no-build --output "$(Build.ArtifactStagingDirectory)/dvld-api"'
+              zipAfterPublish: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish DVLD.Api Release Artifact'
+            condition: succeeded()
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)/dvld-api'
+              artifact: 'dvld-api-release'
+              publishLocation: 'pipeline'
