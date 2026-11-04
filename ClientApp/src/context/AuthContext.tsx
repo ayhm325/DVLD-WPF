@@ -118,6 +118,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthMessage(null)
   }, [])
 
+  const updateUser = useCallback((updatedUser: Partial<AuthUser>) => {
+    setSession((prev) => {
+      if (!prev) return null
+      const updated: AuthSession = {
+        ...prev,
+        user: {
+          ...prev.user,
+          ...updatedUser,
+        },
+      }
+      persistSession(updated)
+      return updated
+    })
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       accessToken: session?.accessToken ?? null,
@@ -128,8 +143,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       clearAuthMessage,
+      updateUser,
     }),
-    [session, isLoading, authMessage, login, logout, clearAuthMessage],
+    [session, isLoading, authMessage, login, logout, clearAuthMessage, updateUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

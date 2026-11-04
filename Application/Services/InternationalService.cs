@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.InternationalLicenseDTO;
 using Application.DTOs.LicenseDTO;
@@ -140,15 +140,11 @@ public sealed class InternationalService(
                         Result<int>.FromConflict(
                             "Only class 3 licenses can be issued internationally."));
 
-                if (!license.IsActive)
-                    return await RollbackAsync(
-                        transaction,
-                        Result<int>.FromConflict("The local license is not active."));
+                if (license.ExpirationDate.Date < Application.Validators.TestAppointmentValidator.GetCurrentJordanTime().Date)
+                    return await RollbackAsync(transaction, Result<int>.FromConflict("The local license is expired."));
 
-                if (license.ExpirationDate <= DateTime.UtcNow)
-                    return await RollbackAsync(
-                        transaction,
-                        Result<int>.FromConflict("The local license is expired."));
+                if (!license.IsActive)
+                    return await RollbackAsync(transaction, Result<int>.FromConflict("The local license is not active."));
 
                 if (license.Driver is null)
                     return await RollbackAsync(
@@ -255,7 +251,7 @@ public sealed class InternationalService(
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "The local license is not active.");
 
-        if (license.ExpirationDate <= DateTime.UtcNow)
+        if (license.ExpirationDate.Date < Application.Validators.TestAppointmentValidator.GetCurrentJordanTime().Date)
             return Result<DriverLicenseInfoDto>.FromConflict(
                 "The local license is expired.");
 

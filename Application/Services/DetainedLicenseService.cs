@@ -105,12 +105,6 @@ public sealed class DetainedLicenseService(
                         Result<DetainedLicenseDto>.FromNotFound(
                             "License not found."));
 
-                if (!license.IsActive)
-                    return await RollbackAsync(
-                        transaction,
-                        Result<DetainedLicenseDto>.FromConflict(
-                            "Only an active license can be detained."));
-
                 var now = _clock.Now;
                 var today = now.Date;
                 var expirationDate = license.ExpirationDate.Date;
@@ -120,6 +114,12 @@ public sealed class DetainedLicenseService(
                         transaction,
                         Result<DetainedLicenseDto>.FromConflict(
                             "An expired license cannot be detained."));
+
+                if (!license.IsActive)
+                    return await RollbackAsync(
+                        transaction,
+                        Result<DetainedLicenseDto>.FromConflict(
+                            "Only an active license can be detained."));
 
                 if (await _repository.IsLicenseDetainedAsync(dto.LicenseID))
                     return await RollbackAsync(

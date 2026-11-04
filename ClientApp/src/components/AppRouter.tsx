@@ -45,6 +45,8 @@ const CountriesPage = lazy(() => import('./CountriesPage'))
 const ApplicationTypesPage = lazy(() => import('./ApplicationTypesPage'))
 const LicenseClassesPage = lazy(() => import('./LicenseClassesPage'))
 const TestTypesPage = lazy(() => import('./TestTypesPage'))
+const MyProfilePage = lazy(() => import('./profile/MyProfilePage'))
+const ChangePasswordPage = lazy(() => import('./profile/ChangePasswordPage'))
 
 export type AppRouterProps = {
   activePage: string
@@ -419,6 +421,21 @@ export default function AppRouter({
 
       {activePage === 'Test Types' && (
         <TestTypesPage accessToken={accessToken} userRole={userRole} />
+      )}
+
+      {/* Account Management (Both Admin and Staff) */}
+      {activePage === 'My Profile' && (
+        <MyProfilePage
+          accessToken={accessToken}
+          onNavigate={onNavigate}
+        />
+      )}
+
+      {activePage === 'Change Password' && (
+        <ChangePasswordPage
+          accessToken={accessToken}
+          onNavigate={onNavigate}
+        />
       )}
     </Suspense>
   )

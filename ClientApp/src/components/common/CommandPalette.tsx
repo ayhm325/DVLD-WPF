@@ -19,6 +19,8 @@ import {
   RotateCw,
   Copy,
   ShieldAlert,
+  UserRound,
+  LockKeyhole,
 } from 'lucide-react'
 import { isPagePermitted } from '../../utils/permissions'
 
@@ -27,7 +29,7 @@ interface CommandItem {
   page: string
   title: string
   description: string
-  category: 'Pages' | 'Administration'
+  category: 'Pages' | 'Administration' | 'Account'
   icon: typeof LayoutDashboard
   keywords: string[]
 }
@@ -176,6 +178,24 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Administration',
     icon: Flag,
     keywords: ['countries', 'country', 'nations', 'citizenship'],
+  },
+  {
+    id: 'my-profile',
+    page: 'My Profile',
+    title: 'My Profile',
+    description: 'View employee identity records and manage personal contact details',
+    category: 'Account',
+    icon: UserRound,
+    keywords: ['profile', 'account', 'me', 'personal', 'contact', 'email', 'phone', 'address'],
+  },
+  {
+    id: 'change-password',
+    page: 'Change Password',
+    title: 'Change Password',
+    description: 'Update account password following DVLD enterprise security policies',
+    category: 'Account',
+    icon: LockKeyhole,
+    keywords: ['password', 'change password', 'credentials', 'security', 'auth', 'secret'],
   },
 ]
 

@@ -164,7 +164,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
         if (licenseId <= 0)
             return false;
 
-        await _context.Licenses
+        var affectedRows = await _context.Licenses
             .Where(l =>
                 l.LicenseID == licenseId &&
                 l.IsActive)
@@ -172,6 +172,9 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 setters.SetProperty(
                     l => l.IsActive,
                     false));
+
+        if (affectedRows <= 0)
+            return false;
 
         SyncTrackedLicenseActiveState(licenseId, false);
         return true;
@@ -198,11 +201,14 @@ public sealed class LicenseRepository(DVLDDbContext context)
         if (licenseId <= 0)
             return false;
 
+        var jordanToday = Application.Validators.TestAppointmentValidator
+            .GetCurrentJordanTime().Date;
+
         var affectedRows = await _context.Licenses
             .Where(l =>
                 l.LicenseID == licenseId &&
                 !l.IsActive &&
-                l.ExpirationDate > DateTime.UtcNow)
+                l.ExpirationDate.Date >= jordanToday)
             .ExecuteUpdateAsync(setters =>
                 setters.SetProperty(
                     l => l.IsActive,

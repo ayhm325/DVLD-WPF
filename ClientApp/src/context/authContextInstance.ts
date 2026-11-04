@@ -10,6 +10,7 @@ export type AuthContextValue = {
   login: (response: LoginResponse) => void
   logout: (reason?: string) => void
   clearAuthMessage: () => void
+  updateUser: (updatedUser: Partial<AuthUser>) => void
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined)

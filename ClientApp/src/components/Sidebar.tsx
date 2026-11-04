@@ -24,6 +24,8 @@ import {
   RotateCw,
   Copy,
   ShieldAlert,
+  UserRound,
+  LockKeyhole,
 } from 'lucide-react'
 
 type SidebarProps = {
@@ -70,12 +72,21 @@ export default function Sidebar({
     { page: 'Countries', icon: <Flag className="size-4" />, label: 'Countries' },
   ]
 
+  const allAccountPages: NavItemDef[] = [
+    { page: 'My Profile', icon: <UserRound className="size-4.5" />, label: 'My Profile' },
+    { page: 'Change Password', icon: <LockKeyhole className="size-4.5" />, label: 'Change Password' },
+  ]
+
   // Filter items strictly by role-based permissions
   const visibleMainNavItems = allMainNavItems.filter((item) =>
     isPagePermitted(item.page, user?.role),
   )
 
   const visibleSettingsPages = allSettingsPages.filter((item) =>
+    isPagePermitted(item.page, user?.role),
+  )
+
+  const visibleAccountPages = allAccountPages.filter((item) =>
     isPagePermitted(item.page, user?.role),
   )
 
@@ -356,27 +367,50 @@ export default function Sidebar({
                 </AnimatePresence>
               </>
             )}
+
+            {/* Region: Account Management Section */}
+            {visibleAccountPages.length > 0 && (
+              <>
+                <div className="nav-group-title flex items-center gap-2 px-2 mt-3 mb-1">
+                  <span className="size-2 rounded-full bg-indigo-400 shadow-[0_0_10px_#818cf8]" aria-hidden="true" />
+                  <span className="text-[10.5px] font-extrabold uppercase tracking-[2px] text-blue-200/70">
+                    ACCOUNT
+                  </span>
+                  <div className="h-[1px] flex-1 bg-gradient-to-r from-blue-500/50 via-blue-400/25 to-transparent ml-2" />
+                </div>
+                {visibleAccountPages.map((item) =>
+                  renderNavItem(item.page, item.icon, item.label || item.page),
+                )}
+              </>
+            )}
           </nav>
         </div>
 
         {/* Region C: Fixed User Profile & Logout Footer */}
         <div className="sidebar-footer shrink-0 relative z-10 mt-auto pt-2 px-1 border-t border-blue-500/15">
           <div className="user-profile-card flex items-center gap-3 p-3 rounded-2xl border-2 border-[#0090ff] bg-[#07122a]/95 shadow-[0_0_24px_rgba(0,140,255,0.55),inset_0_0_16px_rgba(0,140,255,0.2)] backdrop-blur-md">
-            <div className="user-avatar flex size-9.5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-[1.5px] border-blue-300/70 shadow-[0_0_14px_rgba(0,140,255,0.7)] text-white font-bold text-sm">
-              {initial}
-            </div>
+            <button
+              type="button"
+              className="flex items-center gap-3 min-w-0 flex-1 text-left cursor-pointer group/profile bg-transparent border-0 p-0"
+              onClick={() => handleNavClick('My Profile')}
+              title="View your verified employee profile"
+            >
+              <div className="user-avatar flex size-9.5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-[1.5px] border-blue-300/70 shadow-[0_0_14px_rgba(0,140,255,0.7)] text-white font-bold text-sm transition-transform group-hover/profile:scale-105">
+                {initial}
+              </div>
 
-            <div className="user-info flex flex-col min-w-0 flex-1 text-left">
-              <strong
-                className="text-xs font-bold text-white truncate leading-tight"
-                title={user?.fullName || user?.userName || 'User'}
-              >
-                {user?.fullName || user?.userName || 'User'}
-              </strong>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 mt-0.5 drop-shadow-[0_0_6px_rgba(0,229,255,0.6)]">
-                {user?.role || 'Staff'}
-              </span>
-            </div>
+              <div className="user-info flex flex-col min-w-0 flex-1 text-left">
+                <strong
+                  className="text-xs font-bold text-white truncate leading-tight group-hover/profile:text-cyan-300 transition-colors"
+                  title={user?.fullName || user?.userName || 'User'}
+                >
+                  {user?.fullName || user?.userName || 'User'}
+                </strong>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 mt-0.5 drop-shadow-[0_0_6px_rgba(0,229,255,0.6)]">
+                  {user?.role || 'Staff'}
+                </span>
+              </div>
+            </button>
 
             <button
               type="button"

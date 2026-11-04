@@ -93,8 +93,8 @@ public static class PersonMapper
             NationalityCountryID =
                 dto.NationalityCountryID,
 
-            ImagePath =
-                NormalizeOptional(dto.ImagePath)
+            // ImagePath is a server-owned storage key set only by the photo upload workflow.
+            ImagePath = null
         };
     }
 
@@ -141,11 +141,7 @@ public static class PersonMapper
         person.NationalityCountryID =
             dto.NationalityCountryID;
 
-        // Only update ImagePath if explicitly supplied; never erase an existing photo during ordinary updates
-        if (!string.IsNullOrWhiteSpace(dto.ImagePath))
-        {
-            person.ImagePath = NormalizeOptional(dto.ImagePath);
-        }
+        // ImagePath is server-owned; client-supplied values are ignored on update.
     }
 
     // =========================================================

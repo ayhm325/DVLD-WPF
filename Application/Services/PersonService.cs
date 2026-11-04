@@ -246,8 +246,7 @@ public sealed class PersonService : IPersonService
             !string.Equals(existingPerson.Address, personDto.Address.Trim(), StringComparison.Ordinal) ||
             !string.Equals(existingPerson.Phone, personDto.Phone.Trim(), StringComparison.Ordinal) ||
             !string.Equals(existingPerson.Email ?? string.Empty, (personDto.Email ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase) ||
-            existingPerson.NationalityCountryID != personDto.NationalityCountryID ||
-            (!string.IsNullOrWhiteSpace(personDto.ImagePath) && !string.Equals(existingPerson.ImagePath, personDto.ImagePath.Trim(), StringComparison.OrdinalIgnoreCase));
+            existingPerson.NationalityCountryID != personDto.NationalityCountryID;
 
         if (!hasChanges)
         {

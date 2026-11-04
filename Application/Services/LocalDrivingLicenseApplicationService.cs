@@ -1,4 +1,4 @@
-﻿using Application.Common.Pagination;
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
@@ -252,7 +252,7 @@ public sealed class LocalDrivingLicenseApplicationService(
 
         var licenseClassResult = await _licenseClassService.GetLicenseClassByIdAsync(dto.LicenseClassID);
         if (licenseClassResult.IsFailure)
-            return Result<int>.FromFailure(licenseClassResult.Error);
+            return Result<int>.FromResult(licenseClassResult);
 
         if (_personRepository != null)
         {
@@ -315,7 +315,7 @@ public sealed class LocalDrivingLicenseApplicationService(
                     await _licenseClassService.GetLicenseClassByIdAsync(dto.LicenseClassID);
 
                 if (licenseClassResult.IsFailure)
-                    return Result.Failure(licenseClassResult.Error);
+                    return Result.FromFailure(licenseClassResult);
 
                 if (existing.LicenseClassID == dto.LicenseClassID)
                     return Result.Success();
@@ -350,11 +350,7 @@ public sealed class LocalDrivingLicenseApplicationService(
 
                 existing.LicenseClassID = dto.LicenseClassID;
 
-                if (await _unitOfWork.SaveChangesAsync() <= 0)
-                {
-                    return Result.Failure(
-                        "No local driving license application changes were saved.");
-                }
+                await _unitOfWork.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return Result.Success();
             },

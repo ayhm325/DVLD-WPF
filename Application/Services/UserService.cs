@@ -341,12 +341,6 @@ public sealed class UserService : IUserService
             await _unitOfWork
                 .SaveChangesAsync();
 
-        if (saved <= 0)
-        {
-            return Result.Failure(
-                "No user changes were saved.");
-        }
-
         return Result.Success();
     }
 
@@ -424,8 +418,7 @@ public sealed class UserService : IUserService
 
         if (!currentPasswordValid)
         {
-            return Result.Failure(
-                "Current password is incorrect.");
+            return Result.ValidationFailure("Current password is incorrect.");
         }
 
         user.Password =

@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.DriverDTO;
 using Application.Interfaces;
@@ -189,10 +189,7 @@ public sealed class DriverService(
         var saved =
             await _unitOfWork.SaveChangesAsync();
 
-        return saved > 0
-            ? Result.Success()
-            : Result.Failure(
-                "No driver changes were saved.");
+        return Result.Success();
     }
 
     public async Task<Result> DeleteAsync(int id)

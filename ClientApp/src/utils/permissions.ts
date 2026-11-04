@@ -41,6 +41,8 @@ export type PageId =
   | 'License Classes'
   | 'Test Types'
   | 'Countries'
+  | 'My Profile'
+  | 'Change Password'
 
 /**
  * Explicit permission mapping connecting each frontend page
@@ -102,6 +104,10 @@ export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
 
   // Countries: CountriesController [Authorize] (Permanently read-only)
   'Countries': ['Admin', 'Staff'],
+
+  // Account Management: AuthController [Authorize]
+  'My Profile': ['Admin', 'Staff'],
+  'Change Password': ['Admin', 'Staff'],
 }
 
 /**
