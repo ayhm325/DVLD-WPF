@@ -302,7 +302,7 @@ stages:
           - name: localDbInstanceName
             value: 'DVLD_CI_$(Build.BuildId)_$(System.JobAttempt)'
           - name: DVLD_TEST_CONNECTION
-            value: 'Server=(localdb)\DVLD_CI_$(Build.BuildId)_$(System.JobAttempt);Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
+            value: 'Server=(localdb)\DVLD_CI_$(Build.BuildId)_$(System.JobAttempt);Initial Catalog=master;Integrated Security=true;TrustServerCertificate=true;Connection Timeout=30;'
         steps:
           - checkout: self
             clean: true
