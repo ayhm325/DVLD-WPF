@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from "react";
 import {
   UserPlus,
   Users,
@@ -8,54 +8,54 @@ import {
   Mail,
   Phone,
   MoreHorizontal,
-} from 'lucide-react'
-import type { Person } from '../types/Person'
-import { formatDate } from '../utils/formatters'
-import TableToolbar from './common/TableToolbar'
-import EmptyState from './common/EmptyState'
-import PersonPhoto from './common/PersonPhoto'
+} from "lucide-react";
+import type { Person } from "../types/Person";
+import { formatDate } from "../utils/formatters";
+import TableToolbar from "./common/TableToolbar";
+import EmptyState from "./common/EmptyState";
+import PersonPhoto from "./common/PersonPhoto";
 import DataTable, {
   type DataTableColumn,
   type DataTableRowAction,
-} from './common/DataTable'
+} from "./common/DataTable";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select'
+} from "./ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu'
-import { Button } from './ui/button'
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
 
-type SearchBy = 'all' | 'name' | 'nationalNo' | 'id' | 'phone'
+type SearchBy = "all" | "name" | "nationalNo" | "id" | "phone";
 
 const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
-  { value: 'all', label: 'All Fields' },
-  { value: 'name', label: 'Full Name' },
-  { value: 'nationalNo', label: 'National No.' },
-  { value: 'id', label: 'Person ID' },
-  { value: 'phone', label: 'Phone' },
-]
-type GenderFilter = 'all' | '0' | '1'
+  { value: "all", label: "All Fields" },
+  { value: "name", label: "Full Name" },
+  { value: "nationalNo", label: "National No." },
+  { value: "id", label: "Person ID" },
+  { value: "phone", label: "Phone" },
+];
+type GenderFilter = "all" | "0" | "1";
 
 export type PeopleTableProps = {
-  people: Person[]
-  searchName?: string
-  onSearchChange?: (value: string) => void
-  onAddPerson: () => void
-  onRefresh?: () => void
-  loading?: boolean
-  onShowDetails?: (person: Person) => void
-  onEditPerson?: (person: Person) => void
-  onDeletePerson?: (person: Person) => void
-}
+  people: Person[];
+  searchName?: string;
+  onSearchChange?: (value: string) => void;
+  onAddPerson: () => void;
+  onRefresh?: () => void;
+  loading?: boolean;
+  onShowDetails?: (person: Person) => void;
+  onEditPerson?: (person: Person) => void;
+  onDeletePerson?: (person: Person) => void;
+};
 
 export default function PeopleTable({
   people,
@@ -68,150 +68,161 @@ export default function PeopleTable({
   onEditPerson,
   onDeletePerson,
 }: PeopleTableProps) {
-  const [internalSearch, setInternalSearch] = useState(searchName ?? '')
-  const [searchBy, setSearchBy] = useState<SearchBy>('all')
-  const [genderFilter, setGenderFilter] = useState<GenderFilter>('all')
+  const [internalSearch, setInternalSearch] = useState(searchName ?? "");
+  const [searchBy, setSearchBy] = useState<SearchBy>("all");
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
 
-  const search = searchName !== undefined ? searchName : internalSearch
+  const search = searchName !== undefined ? searchName : internalSearch;
 
   function handleSearchChange(value: string) {
-    setInternalSearch(value)
-    onSearchChange?.(value)
+    setInternalSearch(value);
+    onSearchChange?.(value);
   }
 
   function handleResetFilters() {
-    handleSearchChange('')
-    setSearchBy('all')
-    setGenderFilter('all')
+    handleSearchChange("");
+    setSearchBy("all");
+    setGenderFilter("all");
   }
 
-  const isFiltered = Boolean(search.trim() || genderFilter !== 'all' || searchBy !== 'all')
+  const isFiltered = Boolean(
+    search.trim() || genderFilter !== "all" || searchBy !== "all",
+  );
 
   const filteredPeople = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = search.trim().toLowerCase();
 
     return people.filter((person) => {
-      if (genderFilter !== 'all' && String(person.gender) !== genderFilter) {
-        return false
+      if (genderFilter !== "all" && String(person.gender) !== genderFilter) {
+        return false;
       }
 
-      if (!query) return true
+      if (!query) return true;
 
-      const cleanIdQuery = query.replace(/^#/, '')
+      const cleanIdQuery = query.replace(/^#/, "");
 
-      if (searchBy === 'name') {
-        return (person.fullName || '').toLowerCase().includes(query)
+      if (searchBy === "name") {
+        return (person.fullName || "").toLowerCase().includes(query);
       }
-      if (searchBy === 'nationalNo') {
-        return (person.nationalNo || '').toLowerCase().includes(query)
+      if (searchBy === "nationalNo") {
+        return (person.nationalNo || "").toLowerCase().includes(query);
       }
-      if (searchBy === 'id') {
-        return cleanIdQuery.length > 0 && String(person.personId).includes(cleanIdQuery)
+      if (searchBy === "id") {
+        return (
+          cleanIdQuery.length > 0 &&
+          String(person.personId).includes(cleanIdQuery)
+        );
       }
-      if (searchBy === 'phone') {
-        return (person.phone || '').toLowerCase().includes(query)
+      if (searchBy === "phone") {
+        return (person.phone || "").toLowerCase().includes(query);
       }
 
       return (
-        (person.fullName || '').toLowerCase().includes(query) ||
-        (person.nationalNo || '').toLowerCase().includes(query) ||
-        (cleanIdQuery.length > 0 && String(person.personId).includes(cleanIdQuery)) ||
-        (person.phone || '').toLowerCase().includes(query)
-      )
-    })
-  }, [people, search, searchBy, genderFilter])
+        (person.fullName || "").toLowerCase().includes(query) ||
+        (person.nationalNo || "").toLowerCase().includes(query) ||
+        (cleanIdQuery.length > 0 &&
+          String(person.personId).includes(cleanIdQuery)) ||
+        (person.phone || "").toLowerCase().includes(query)
+      );
+    });
+  }, [people, search, searchBy, genderFilter]);
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
-      case 'name':
-        return 'Search by full name...'
-      case 'nationalNo':
-        return 'Search by national number...'
-      case 'id':
-        return 'Search by person ID...'
-      case 'phone':
-        return 'Search by phone number...'
+      case "name":
+        return "Search by full name...";
+      case "nationalNo":
+        return "Search by national number...";
+      case "id":
+        return "Search by person ID...";
+      case "phone":
+        return "Search by phone number...";
       default:
-        return 'Search by name, national no, ID, phone...'
+        return "Search by name, national no, ID, phone...";
     }
-  }, [searchBy])
+  }, [searchBy]);
 
   const getRowContextMenu = useCallback(
     (person: Person): DataTableRowAction<Person>[] => {
-      const hasEmail = Boolean(person.email && person.email.trim().length > 0)
-      const hasPhone = Boolean(person.phone && person.phone.trim().length > 0)
+      const hasEmail = Boolean(person.email && person.email.trim().length > 0);
+      const hasPhone = Boolean(person.phone && person.phone.trim().length > 0);
 
       return [
         {
-          key: 'show-details',
-          label: 'Show Details',
+          key: "show-details",
+          label: "Show Details",
           icon: <Eye className="size-4" />,
           separatorAfter: true,
           onClick: (p) => onShowDetails?.(p),
         },
         {
-          key: 'add-new-person',
-          label: 'Add New Person',
+          key: "add-new-person",
+          label: "Add New Person",
           icon: <UserPlus className="size-4" />,
           onClick: () => onAddPerson(),
         },
         {
-          key: 'edit',
-          label: 'Edit',
+          key: "edit",
+          label: "Edit",
           icon: <Pencil className="size-4" />,
           onClick: (p) => onEditPerson?.(p),
         },
         {
-          key: 'delete',
-          label: 'Delete',
+          key: "delete",
+          label: "Delete",
           icon: <Trash2 className="size-4" />,
           danger: true,
           separatorAfter: true,
           onClick: (p) => onDeletePerson?.(p),
         },
         {
-          key: 'send-email',
-          label: 'Send Email',
+          key: "send-email",
+          label: "Send Email",
           icon: <Mail className="size-4" />,
           disabled: !hasEmail,
           onClick: (p) => {
             if (p.email && p.email.trim()) {
-              window.location.href = `mailto:${encodeURIComponent(p.email.trim())}`
+              window.location.href = `mailto:${encodeURIComponent(p.email.trim())}`;
             }
           },
         },
         {
-          key: 'phone-call',
-          label: 'Phone Call',
+          key: "phone-call",
+          label: "Phone Call",
           icon: <Phone className="size-4" />,
           disabled: !hasPhone,
           onClick: (p) => {
             if (p.phone && p.phone.trim()) {
-              window.location.href = `tel:${encodeURIComponent(p.phone.trim())}`
+              window.location.href = `tel:${encodeURIComponent(p.phone.trim())}`;
             }
           },
         },
-      ]
+      ];
     },
     [onShowDetails, onAddPerson, onEditPerson, onDeletePerson],
-  )
+  );
 
   const columns = useMemo<DataTableColumn<Person>[]>(
     () => [
       {
-        key: 'personId',
-        header: 'ID',
-        headerClassName: 'w-16 col-compact',
-        className: 'col-compact',
+        key: "personId",
+        header: "ID",
+        headerClassName: "w-16 col-compact",
+        className: "col-compact",
         render: (person) => (
-          <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
+          <span
+            style={{
+              fontFamily: "ui-monospace, monospace",
+              color: "var(--dvld-table-text-muted, #94a3b8)",
+            }}
+          >
             #{person.personId}
           </span>
         ),
       },
       {
-        key: 'fullName',
-        header: 'Full Name',
+        key: "fullName",
+        header: "Full Name",
         render: (person) => (
           <div className="person-cell flex items-center gap-2.5">
             <PersonPhoto
@@ -226,84 +237,111 @@ export default function PeopleTable({
         ),
       },
       {
-        key: 'nationalNo',
-        header: 'National No.',
+        key: "nationalNo",
+        header: "National No.",
         render: (person) => (
-          <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
+          <span
+            style={{
+              fontVariantNumeric: "tabular-nums",
+              letterSpacing: "0.2px",
+              color: "var(--dvld-table-text-secondary, #c0cddf)",
+            }}
+          >
             {person.nationalNo}
           </span>
         ),
       },
       {
-        key: 'dateOfBirth',
-        header: 'Date of Birth',
+        key: "dateOfBirth",
+        header: "Date of Birth",
         render: (person) => (
-          <span style={{ color: 'var(--dvld-table-text-muted, #94a3b8)' }}>
+          <span style={{ color: "var(--dvld-table-text-muted, #94a3b8)" }}>
             {formatDate(person.dateOfBirth)}
           </span>
         ),
       },
       {
-        key: 'gender',
-        header: 'Gender',
-        render: (person) => (
-          <span className={`gender-badge ${person.gender === 0 ? 'is-male' : 'is-female'}`}>
-            {person.gender === 0 ? 'Male' : 'Female'}
-          </span>
-        ),
-      },
-      {
-        key: 'address',
-        header: 'Address',
+        key: "gender",
+        header: "Gender",
         render: (person) => (
           <span
-            className="max-w-[180px] truncate block"
-            title={person.address || '—'}
-            style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)' }}
+            className={`gender-badge ${person.gender === 0 ? "is-male" : "is-female"}`}
           >
-            {person.address || '—'}
+            {person.gender === 0 ? "Male" : "Female"}
           </span>
         ),
       },
       {
-        key: 'phone',
-        header: 'Phone',
-        render: (person) => (
-          <span style={{ fontVariantNumeric: 'tabular-nums', letterSpacing: '0.2px', color: 'var(--dvld-table-text-secondary, #c0cddf)' }}>
-            {person.phone || '—'}
-          </span>
-        ),
-      },
-      {
-        key: 'email',
-        header: 'Email',
+        key: "address",
+        header: "Address",
         render: (person) => (
           <span
-            className="max-w-[180px] truncate block"
-            title={person.email || '—'}
-            style={{ color: person.email ? 'var(--dvld-table-text-muted, #94a3b8)' : 'var(--dvld-table-text-muted, #64748b)' }}
+            className="max-w-45 truncate block"
+            title={person.address || "—"}
+            style={{ color: "var(--dvld-table-text-secondary, #c0cddf)" }}
           >
-            {person.email || '—'}
+            {person.address || "—"}
           </span>
         ),
       },
       {
-        key: 'countryName',
-        header: 'Country',
+        key: "phone",
+        header: "Phone",
         render: (person) => (
-          <span style={{ color: 'var(--dvld-table-text-secondary, #c0cddf)', fontWeight: 500 }}>
-            {person.countryName || '—'}
+          <span
+            style={{
+              fontVariantNumeric: "tabular-nums",
+              letterSpacing: "0.2px",
+              color: "var(--dvld-table-text-secondary, #c0cddf)",
+            }}
+          >
+            {person.phone || "—"}
           </span>
         ),
       },
       {
-        key: 'actions',
-        header: 'Actions',
-        headerClassName: 'w-20 text-center',
-        className: 'text-center',
+        key: "email",
+        header: "Email",
+        render: (person) => (
+          <span
+            className="max-w-45 truncate block"
+            title={person.email || "—"}
+            style={{
+              color: person.email
+                ? "var(--dvld-table-text-muted, #94a3b8)"
+                : "var(--dvld-table-text-muted, #64748b)",
+            }}
+          >
+            {person.email || "—"}
+          </span>
+        ),
+      },
+      {
+        key: "countryName",
+        header: "Country",
+        render: (person) => (
+          <span
+            style={{
+              color: "var(--dvld-table-text-secondary, #c0cddf)",
+              fontWeight: 500,
+            }}
+          >
+            {person.countryName || "—"}
+          </span>
+        ),
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        headerClassName: "w-20 text-center",
+        className: "text-center",
         render: (person) => {
-          const hasEmail = Boolean(person.email && person.email.trim().length > 0)
-          const hasPhone = Boolean(person.phone && person.phone.trim().length > 0)
+          const hasEmail = Boolean(
+            person.email && person.email.trim().length > 0,
+          );
+          const hasPhone = Boolean(
+            person.phone && person.phone.trim().length > 0,
+          );
 
           return (
             <DropdownMenu>
@@ -360,7 +398,7 @@ export default function PeopleTable({
                   disabled={!hasEmail}
                   onClick={() => {
                     if (person.email && person.email.trim()) {
-                      window.location.href = `mailto:${encodeURIComponent(person.email.trim())}`
+                      window.location.href = `mailto:${encodeURIComponent(person.email.trim())}`;
                     }
                   }}
                   className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-slate-200 focus:text-white focus:bg-surface-soft hover:bg-surface-soft"
@@ -372,7 +410,7 @@ export default function PeopleTable({
                   disabled={!hasPhone}
                   onClick={() => {
                     if (person.phone && person.phone.trim()) {
-                      window.location.href = `tel:${encodeURIComponent(person.phone.trim())}`
+                      window.location.href = `tel:${encodeURIComponent(person.phone.trim())}`;
                     }
                   }}
                   className="gap-2 text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 transition-colors text-slate-200 focus:text-white focus:bg-surface-soft hover:bg-surface-soft"
@@ -382,12 +420,12 @@ export default function PeopleTable({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          )
+          );
         },
       },
     ],
     [onShowDetails, onAddPerson, onEditPerson, onDeletePerson],
-  )
+  );
 
   return (
     <section className="panel">
@@ -400,7 +438,7 @@ export default function PeopleTable({
         <div className="people-header-actions">
           <span className="record-count">
             {loading
-              ? 'Loading...'
+              ? "Loading..."
               : filteredPeople.length === people.length
                 ? `${people.length} People`
                 : `${filteredPeople.length} of ${people.length} People`}
@@ -431,7 +469,7 @@ export default function PeopleTable({
               onValueChange={(val) => setGenderFilter(val as GenderFilter)}
             >
               <SelectTrigger
-                className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                className="h-10 min-h-10 w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
                 aria-label="Filter by gender"
               >
                 <SelectValue />
@@ -466,5 +504,5 @@ export default function PeopleTable({
         rowContextMenu={getRowContextMenu}
       />
     </section>
-  )
+  );
 }

@@ -1,55 +1,58 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from "react";
 import {
   getApplicationTypes,
   updateApplicationType,
-} from '../services/applicationTypeService'
-import type { ApplicationType } from '../types/ApplicationType'
-import { useAsyncData, useTableFilters } from '../hooks'
-import PageHero from './common/PageHero'
-import TableToolbar from './common/TableToolbar'
-import ErrorAlert from './common/ErrorAlert'
-import EmptyState from './common/EmptyState'
-import DataTableContainer from './common/DataTableContainer'
-import ApplicationTypeRow from './applicationTypes/ApplicationTypeRow'
-import { FileText as ApplicationsIcon } from 'lucide-react'
-import { canManageReferenceData } from '../utils/permissions'
-import { useAuth } from '../context/useAuth'
+} from "../services/applicationTypeService";
+import type { ApplicationType } from "../types/ApplicationType";
+import { useAsyncData, useTableFilters } from "../hooks";
+import PageHero from "./common/PageHero";
+import TableToolbar from "./common/TableToolbar";
+import ErrorAlert from "./common/ErrorAlert";
+import EmptyState from "./common/EmptyState";
+import DataTableContainer from "./common/DataTableContainer";
+import ApplicationTypeRow from "./applicationTypes/ApplicationTypeRow";
+import { FileText as ApplicationsIcon } from "lucide-react";
+import { canManageReferenceData } from "../utils/permissions";
+import { useAuth } from "../context/useAuth";
 
 type ApplicationTypesPageProps = {
-  accessToken: string
-  userRole?: string | null
-}
+  accessToken: string;
+  userRole?: string | null;
+};
 
 type EditForm = {
-  applicationTypeTitle: string
-  applicationTypeFees: string
-}
+  applicationTypeTitle: string;
+  applicationTypeFees: string;
+};
 
-type SearchBy = 'all' | 'title' | 'id'
+type SearchBy = "all" | "title" | "id";
 
 const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
-  { value: 'all', label: 'All Fields' },
-  { value: 'title', label: 'Type Name' },
-  { value: 'id', label: 'Type ID' },
-]
+  { value: "all", label: "All Fields" },
+  { value: "title", label: "Type Name" },
+  { value: "id", label: "Type ID" },
+];
 
 export default function ApplicationTypesPage({
   accessToken,
   userRole,
 }: ApplicationTypesPageProps) {
-  const { user } = useAuth()
-  const effectiveRole = userRole ?? user?.role
-  const canEdit = canManageReferenceData('Application Types', effectiveRole)
+  const { user } = useAuth();
+  const effectiveRole = userRole ?? user?.role;
+  const canEdit = canManageReferenceData("Application Types", effectiveRole);
 
-  const [success, setSuccess] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [success, setSuccess] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<EditForm>({
-    applicationTypeTitle: '',
-    applicationTypeFees: '',
-  })
-  const [saving, setSaving] = useState(false)
+    applicationTypeTitle: "",
+    applicationTypeFees: "",
+  });
+  const [saving, setSaving] = useState(false);
 
-  const fetcher = useCallback(() => getApplicationTypes(accessToken), [accessToken])
+  const fetcher = useCallback(
+    () => getApplicationTypes(accessToken),
+    [accessToken],
+  );
 
   const {
     data: items,
@@ -60,8 +63,8 @@ export default function ApplicationTypesPage({
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
     initialData: [],
-    defaultErrorMessage: 'Failed to load application types.',
-  })
+    defaultErrorMessage: "Failed to load application types.",
+  });
 
   const {
     search,
@@ -73,88 +76,88 @@ export default function ApplicationTypesPage({
     resetFilters: handleResetFilters,
   } = useTableFilters<ApplicationType, SearchBy>({
     data: items,
-    initialSearchField: 'all',
+    initialSearchField: "all",
     filterItem: (item, query, field) => {
-      if (!query) return true
+      if (!query) return true;
 
-      if (field === 'title') {
-        return item.applicationTypeTitle.toLowerCase().includes(query)
+      if (field === "title") {
+        return item.applicationTypeTitle.toLowerCase().includes(query);
       }
-      if (field === 'id') {
-        return String(item.applicationTypeId).includes(query)
+      if (field === "id") {
+        return String(item.applicationTypeId).includes(query);
       }
 
       // 'all'
       return (
         item.applicationTypeTitle.toLowerCase().includes(query) ||
         String(item.applicationTypeId).includes(query)
-      )
+      );
     },
-  })
+  });
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
-      case 'title':
-        return 'Search by application type name...'
-      case 'id':
-        return 'Search by application type ID...'
+      case "title":
+        return "Search by application type name...";
+      case "id":
+        return "Search by application type ID...";
       default:
-        return 'Search by type name or ID...'
+        return "Search by type name or ID...";
     }
-  }, [searchBy])
+  }, [searchBy]);
 
   function startEditing(item: ApplicationType) {
-    if (!canEdit) return
-    setEditingId(item.applicationTypeId)
+    if (!canEdit) return;
+    setEditingId(item.applicationTypeId);
     setEditForm({
       applicationTypeTitle: item.applicationTypeTitle,
       applicationTypeFees: String(item.applicationTypeFees),
-    })
-    setError('')
-    setSuccess('')
+    });
+    setError("");
+    setSuccess("");
   }
 
   async function handleSave() {
-    if (!canEdit || editingId === null || saving) return
+    if (!canEdit || editingId === null || saving) return;
 
-    const title = editForm.applicationTypeTitle.trim()
-    const fees = Number(editForm.applicationTypeFees)
+    const title = editForm.applicationTypeTitle.trim();
+    const fees = Number(editForm.applicationTypeFees);
 
     if (!title) {
-      setError('Application type name is required.')
-      return
+      setError("Application type name is required.");
+      return;
     }
 
     if (
-      editForm.applicationTypeFees.trim() === '' ||
+      editForm.applicationTypeFees.trim() === "" ||
       !Number.isFinite(fees) ||
       fees < 0
     ) {
-      setError('Enter a valid fee greater than or equal to zero.')
-      return
+      setError("Enter a valid fee greater than or equal to zero.");
+      return;
     }
 
-    setSaving(true)
-    setError('')
-    setSuccess('')
+    setSaving(true);
+    setError("");
+    setSuccess("");
 
     try {
       await updateApplicationType(accessToken, editingId, {
         applicationTypeTitle: title,
         applicationTypeFees: fees,
-      })
+      });
 
-      await refresh()
-      setEditingId(null)
-      setSuccess('Application type updated successfully.')
+      await refresh();
+      setEditingId(null);
+      setSuccess("Application type updated successfully.");
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Failed to update application type.',
-      )
+          : "Failed to update application type.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -171,7 +174,7 @@ export default function ApplicationTypesPage({
 
           <span className="record-count">
             {loading
-              ? 'Loading...'
+              ? "Loading..."
               : filteredItems.length === items.length
                 ? `${items.length} Types`
                 : `${filteredItems.length} of ${items.length} Types`}
@@ -188,26 +191,35 @@ export default function ApplicationTypesPage({
           onReset={handleResetFilters}
           isFiltered={isFiltered}
           onRefresh={() => {
-            setSuccess('')
-            void refresh()
+            setSuccess("");
+            void refresh();
           }}
           refreshing={loading}
         />
 
         {error && (
-          <div style={{ margin: '0 25px 20px' }}>
+          <div style={{ margin: "0 25px 20px" }}>
             <ErrorAlert
               message={error}
               onRetry={() => {
-                setSuccess('')
-                void refresh()
+                setSuccess("");
+                void refresh();
               }}
             />
           </div>
         )}
 
         {success && (
-          <p role="status" style={{ padding: '0 25px 20px', margin: 0, color: '#059669', fontWeight: 600, fontSize: 13 }}>
+          <p
+            role="status"
+            style={{
+              padding: "0 25px 20px",
+              margin: 0,
+              color: "#059669",
+              fontWeight: 600,
+              fontSize: 13,
+            }}
+          >
             {success}
           </p>
         )}
@@ -222,7 +234,9 @@ export default function ApplicationTypesPage({
                   <th className="w-16 col-compact">ID</th>
                   <th>Application Type</th>
                   <th className="w-28 whitespace-nowrap">Fees</th>
-                  {canEdit && <th className="w-32 whitespace-nowrap">Actions</th>}
+                  {canEdit && (
+                    <th className="w-32 whitespace-nowrap">Actions</th>
+                  )}
                 </tr>
               </thead>
 
@@ -239,8 +253,8 @@ export default function ApplicationTypesPage({
                     onFormChange={setEditForm}
                     onSave={() => void handleSave()}
                     onCancel={() => {
-                      setEditingId(null)
-                      setError('')
+                      setEditingId(null);
+                      setError("");
                     }}
                   />
                 ))}
@@ -252,8 +266,8 @@ export default function ApplicationTypesPage({
                         icon={<ApplicationsIcon size={36} />}
                         message={
                           items.length === 0
-                            ? 'No application types found.'
-                            : 'No application types match your search.'
+                            ? "No application types found."
+                            : "No application types match your search."
                         }
                       />
                     </td>
@@ -271,5 +285,5 @@ export default function ApplicationTypesPage({
         )}
       </section>
     </section>
-  )
+  );
 }

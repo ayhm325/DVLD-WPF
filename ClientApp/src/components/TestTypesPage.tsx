@@ -1,55 +1,52 @@
-import { useCallback, useMemo, useState } from 'react'
-import {
-  getTestTypes,
-  updateTestType,
-} from '../services/testTypeService'
-import type { TestType } from '../types/TestType'
-import { useAsyncData, useTableFilters } from '../hooks'
-import PageHero from './common/PageHero'
-import TableToolbar from './common/TableToolbar'
-import ErrorAlert from './common/ErrorAlert'
-import EmptyState from './common/EmptyState'
-import DataTableContainer from './common/DataTableContainer'
-import TestTypeRow from './testTypes/TestTypeRow'
-import { ClipboardList as TestTypeIcon } from 'lucide-react'
-import { canManageReferenceData } from '../utils/permissions'
-import { useAuth } from '../context/useAuth'
+import { useCallback, useMemo, useState } from "react";
+import { getTestTypes, updateTestType } from "../services/testTypeService";
+import type { TestType } from "../types/TestType";
+import { useAsyncData, useTableFilters } from "../hooks";
+import PageHero from "./common/PageHero";
+import TableToolbar from "./common/TableToolbar";
+import ErrorAlert from "./common/ErrorAlert";
+import EmptyState from "./common/EmptyState";
+import DataTableContainer from "./common/DataTableContainer";
+import TestTypeRow from "./testTypes/TestTypeRow";
+import { ClipboardList as TestTypeIcon } from "lucide-react";
+import { canManageReferenceData } from "../utils/permissions";
+import { useAuth } from "../context/useAuth";
 
 type Props = {
-  accessToken: string
-  userRole?: string | null
-}
+  accessToken: string;
+  userRole?: string | null;
+};
 
 type EditForm = {
-  testTypeTitle: string
-  testTypeDescription: string
-  testTypeFees: string
-}
+  testTypeTitle: string;
+  testTypeDescription: string;
+  testTypeFees: string;
+};
 
-type SearchBy = 'all' | 'title' | 'id' | 'desc'
+type SearchBy = "all" | "title" | "id" | "desc";
 
 const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
-  { value: 'all', label: 'All Fields' },
-  { value: 'title', label: 'Test Title' },
-  { value: 'id', label: 'Test ID' },
-  { value: 'desc', label: 'Description' },
-]
+  { value: "all", label: "All Fields" },
+  { value: "title", label: "Test Title" },
+  { value: "id", label: "Test ID" },
+  { value: "desc", label: "Description" },
+];
 
 export default function TestTypesPage({ accessToken, userRole }: Props) {
-  const { user } = useAuth()
-  const effectiveRole = userRole ?? user?.role
-  const canEdit = canManageReferenceData('Test Types', effectiveRole)
+  const { user } = useAuth();
+  const effectiveRole = userRole ?? user?.role;
+  const canEdit = canManageReferenceData("Test Types", effectiveRole);
 
-  const [success, setSuccess] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<EditForm>({
-    testTypeTitle: '',
-    testTypeDescription: '',
-    testTypeFees: '',
-  })
+    testTypeTitle: "",
+    testTypeDescription: "",
+    testTypeFees: "",
+  });
 
-  const fetcher = useCallback(() => getTestTypes(accessToken), [accessToken])
+  const fetcher = useCallback(() => getTestTypes(accessToken), [accessToken]);
 
   const {
     data: items,
@@ -60,8 +57,8 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
     initialData: [],
-    defaultErrorMessage: 'Failed to load test types.',
-  })
+    defaultErrorMessage: "Failed to load test types.",
+  });
 
   const {
     search,
@@ -73,18 +70,18 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
     resetFilters: handleResetFilters,
   } = useTableFilters<TestType, SearchBy>({
     data: items,
-    initialSearchField: 'all',
+    initialSearchField: "all",
     filterItem: (item, query, field) => {
-      if (!query) return true
+      if (!query) return true;
 
-      if (field === 'title') {
-        return item.testTypeTitle.toLowerCase().includes(query)
+      if (field === "title") {
+        return item.testTypeTitle.toLowerCase().includes(query);
       }
-      if (field === 'id') {
-        return String(item.testTypeId).includes(query)
+      if (field === "id") {
+        return String(item.testTypeId).includes(query);
       }
-      if (field === 'desc') {
-        return item.testTypeDescription.toLowerCase().includes(query)
+      if (field === "desc") {
+        return item.testTypeDescription.toLowerCase().includes(query);
       }
 
       // 'all'
@@ -92,78 +89,72 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
         item.testTypeTitle.toLowerCase().includes(query) ||
         item.testTypeDescription.toLowerCase().includes(query) ||
         String(item.testTypeId).includes(query)
-      )
+      );
     },
-  })
+  });
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
-      case 'title':
-        return 'Search by test type title...'
-      case 'id':
-        return 'Search by test type ID...'
-      case 'desc':
-        return 'Search by description...'
+      case "title":
+        return "Search by test type title...";
+      case "id":
+        return "Search by test type ID...";
+      case "desc":
+        return "Search by description...";
       default:
-        return 'Search by title, description, or ID...'
+        return "Search by title, description, or ID...";
     }
-  }, [searchBy])
+  }, [searchBy]);
 
   function startEditing(item: TestType) {
-    if (!canEdit) return
-    setEditingId(item.testTypeId)
+    if (!canEdit) return;
+    setEditingId(item.testTypeId);
     setForm({
       testTypeTitle: item.testTypeTitle,
       testTypeDescription: item.testTypeDescription,
       testTypeFees: String(item.testTypeFees),
-    })
-    setError('')
-    setSuccess('')
+    });
+    setError("");
+    setSuccess("");
   }
 
   async function saveChanges() {
-    if (!canEdit || editingId === null || saving) return
+    if (!canEdit || editingId === null || saving) return;
 
-    const title = form.testTypeTitle.trim()
-    const description = form.testTypeDescription.trim()
-    const fees = Number(form.testTypeFees)
+    const title = form.testTypeTitle.trim();
+    const description = form.testTypeDescription.trim();
+    const fees = Number(form.testTypeFees);
 
     if (!title) {
-      setError('Test type title is required.')
-      return
+      setError("Test type title is required.");
+      return;
     }
 
-    if (
-      form.testTypeFees.trim() === '' ||
-      !Number.isFinite(fees) ||
-      fees < 0
-    ) {
-      setError('Enter a valid fee greater than or equal to zero.')
-      return
+    if (form.testTypeFees.trim() === "" || !Number.isFinite(fees) || fees < 0) {
+      setError("Enter a valid fee greater than or equal to zero.");
+      return;
     }
 
-    setSaving(true)
-    setError('')
-    setSuccess('')
+    setSaving(true);
+    setError("");
+    setSuccess("");
 
     try {
       await updateTestType(accessToken, editingId, {
         testTypeTitle: title,
         testTypeDescription: description,
         testTypeFees: fees,
-      })
+      });
 
-      setEditingId(null)
-      setSuccess('Test type updated successfully.')
-      void refresh()
+      setEditingId(null);
+      setSuccess("Test type updated successfully.");
+      void refresh();
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to update test type.',
-      )
+        err instanceof Error ? err.message : "Failed to update test type.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -180,7 +171,7 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
 
           <span className="record-count">
             {loading
-              ? 'Loading...'
+              ? "Loading..."
               : filteredItems.length === items.length
                 ? `${items.length} Test Types`
                 : `${filteredItems.length} of ${items.length} Test Types`}
@@ -197,26 +188,35 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
           onReset={handleResetFilters}
           isFiltered={isFiltered}
           onRefresh={() => {
-            setSuccess('')
-            void refresh()
+            setSuccess("");
+            void refresh();
           }}
           refreshing={loading}
         />
 
         {error && (
-          <div style={{ margin: '0 25px 20px' }}>
+          <div style={{ margin: "0 25px 20px" }}>
             <ErrorAlert
               message={error}
               onRetry={() => {
-                setSuccess('')
-                void refresh()
+                setSuccess("");
+                void refresh();
               }}
             />
           </div>
         )}
 
         {success && (
-          <p role="status" style={{ padding: '0 25px 20px', margin: 0, color: '#059669', fontWeight: 600, fontSize: 13 }}>
+          <p
+            role="status"
+            style={{
+              padding: "0 25px 20px",
+              margin: 0,
+              color: "#059669",
+              fontWeight: 600,
+              fontSize: 13,
+            }}
+          >
             {success}
           </p>
         )}
@@ -232,7 +232,9 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
                   <th className="w-48 whitespace-nowrap">Test Type</th>
                   <th className="table-cell-description">Description</th>
                   <th className="w-28 whitespace-nowrap">Fees</th>
-                  {canEdit && <th className="w-32 whitespace-nowrap">Actions</th>}
+                  {canEdit && (
+                    <th className="w-32 whitespace-nowrap">Actions</th>
+                  )}
                 </tr>
               </thead>
 
@@ -249,8 +251,8 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
                     onFormChange={setForm}
                     onSave={() => void saveChanges()}
                     onCancel={() => {
-                      setEditingId(null)
-                      setError('')
+                      setEditingId(null);
+                      setError("");
                     }}
                   />
                 ))}
@@ -262,8 +264,8 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
                         icon={<TestTypeIcon size={36} />}
                         message={
                           items.length === 0
-                            ? 'No test types found.'
-                            : 'No test types match your search.'
+                            ? "No test types found."
+                            : "No test types match your search."
                         }
                       />
                     </td>
@@ -281,5 +283,5 @@ export default function TestTypesPage({ accessToken, userRole }: Props) {
         )}
       </section>
     </section>
-  )
+  );
 }

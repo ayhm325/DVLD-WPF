@@ -1,8 +1,10 @@
-﻿namespace DVLD.Contracts.User;
+namespace DVLD.Contracts.User;
 
 public sealed record UserResponse(
     int UserId,
     int PersonId,
     string UserName,
     bool IsActive,
-    string? PersonFullName);
+    string? PersonFullName,
+    int Role = 1,
+    string? ImagePath = null);

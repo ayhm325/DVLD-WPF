@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from "react";
 import {
   Users,
   Car,
@@ -7,36 +7,36 @@ import {
   RefreshCw,
   AlertCircle,
   TrendingUp,
-} from 'lucide-react'
-import PageHero from './common/PageHero'
-import PeopleTable from './PeopleTable'
-import StatsGrid from './common/StatsGrid'
-import StatCard from './common/StatCard'
-import ConfirmModal from './common/ConfirmModal'
-import ErrorAlert from './common/ErrorAlert'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Spinner } from '@/components/ui/spinner'
-import { cn } from '@/lib/utils'
-import { useDashboardStatistics } from '../hooks/useDashboardStatistics'
-import type { Person } from '../types/Person'
-import { formatNumber } from '../utils/formatters'
-import { deletePerson } from '../services/peopleService'
+} from "lucide-react";
+import PageHero from "./common/PageHero";
+import PeopleTable from "./PeopleTable";
+import StatsGrid from "./common/StatsGrid";
+import StatCard from "./common/StatCard";
+import ConfirmModal from "./common/ConfirmModal";
+import ErrorAlert from "./common/ErrorAlert";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+import { useDashboardStatistics } from "../hooks/useDashboardStatistics";
+import type { Person } from "../types/Person";
+import { formatNumber } from "../utils/formatters";
+import { deletePerson } from "../services/peopleService";
 
 export type DashboardPageProps = {
-  accessToken: string
-  statisticsRefreshKey?: number
-  people: Person[]
-  filteredPeople?: Person[]
-  searchName: string
-  onSearchChange: (value: string) => void
-  loadingPeople: boolean
-  peopleError: string
-  onRetryPeople: () => void
-  onAddPerson: () => void
-  onShowDetails?: (person: Person) => void
-  onEditPerson?: (person: Person) => void
-}
+  accessToken: string;
+  statisticsRefreshKey?: number;
+  people: Person[];
+  filteredPeople?: Person[];
+  searchName: string;
+  onSearchChange: (value: string) => void;
+  loadingPeople: boolean;
+  peopleError: string;
+  onRetryPeople: () => void;
+  onAddPerson: () => void;
+  onShowDetails?: (person: Person) => void;
+  onEditPerson?: (person: Person) => void;
+};
 
 export default function DashboardPage({
   accessToken,
@@ -54,36 +54,38 @@ export default function DashboardPage({
   const { statistics, loading, error, retry } = useDashboardStatistics(
     accessToken,
     statisticsRefreshKey,
-  )
+  );
 
-  const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
-  const [deleteSuccess, setDeleteSuccess] = useState('')
+  const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteSuccess, setDeleteSuccess] = useState("");
 
   async function handleConfirmDelete() {
-    if (!deletePersonTarget || isDeleting || !accessToken) return
+    if (!deletePersonTarget || isDeleting || !accessToken) return;
 
-    setIsDeleting(true)
-    setDeleteError('')
-    setDeleteSuccess('')
+    setIsDeleting(true);
+    setDeleteError("");
+    setDeleteSuccess("");
 
     try {
-      await deletePerson(accessToken, deletePersonTarget.personId)
+      await deletePerson(accessToken, deletePersonTarget.personId);
       setDeleteSuccess(
         `Person #${deletePersonTarget.personId} (${deletePersonTarget.fullName}) was deleted successfully.`,
-      )
-      setDeletePersonTarget(null)
-      onRetryPeople()
-      retry()
+      );
+      setDeletePersonTarget(null);
+      onRetryPeople();
+      retry();
     } catch (err) {
       setDeleteError(
         err instanceof Error
           ? err.message
           : `Failed to delete person #${deletePersonTarget.personId}.`,
-      )
+      );
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
   }
 
@@ -128,7 +130,12 @@ export default function DashboardPage({
               disabled={loading}
               className="h-9 gap-2 text-xs font-semibold text-white bg-[#0e1b33] hover:bg-[#142647] border border-[#263750] hover:border-blue-500/40 rounded-xl shadow-xs transition-all cursor-pointer"
             >
-              <RefreshCw className={cn('size-3.5 text-blue-400', loading && 'animate-spin')} />
+              <RefreshCw
+                className={cn(
+                  "size-3.5 text-blue-400",
+                  loading && "animate-spin",
+                )}
+              />
               <span>Refresh Counters</span>
             </Button>
           </div>
@@ -142,15 +149,13 @@ export default function DashboardPage({
             variant="blue"
             icon={<Users className="size-6" />}
             value={
-              loading ? (
-                '...'
-              ) : error ? (
-                '—'
-              ) : typeof statistics?.totalPeople === 'number' ? (
-                formatNumber(statistics.totalPeople)
-              ) : (
-                statistics?.totalPeople ?? '—'
-              )
+              loading
+                ? "..."
+                : error
+                  ? "—"
+                  : typeof statistics?.totalPeople === "number"
+                    ? formatNumber(statistics.totalPeople)
+                    : (statistics?.totalPeople ?? "—")
             }
             loading={loading}
             description="Registered citizens"
@@ -168,15 +173,13 @@ export default function DashboardPage({
             variant="emerald"
             icon={<Car className="size-6" />}
             value={
-              loading ? (
-                '...'
-              ) : error ? (
-                '—'
-              ) : typeof statistics?.totalDrivers === 'number' ? (
-                formatNumber(statistics.totalDrivers)
-              ) : (
-                statistics?.totalDrivers ?? '—'
-              )
+              loading
+                ? "..."
+                : error
+                  ? "—"
+                  : typeof statistics?.totalDrivers === "number"
+                    ? formatNumber(statistics.totalDrivers)
+                    : (statistics?.totalDrivers ?? "—")
             }
             loading={loading}
             description="Certified drivers"
@@ -194,15 +197,13 @@ export default function DashboardPage({
             variant="violet"
             icon={<IdCard className="size-6" />}
             value={
-              loading ? (
-                '...'
-              ) : error ? (
-                '—'
-              ) : typeof statistics?.activeLicenses === 'number' ? (
-                formatNumber(statistics.activeLicenses)
-              ) : (
-                statistics?.activeLicenses ?? '—'
-              )
+              loading
+                ? "..."
+                : error
+                  ? "—"
+                  : typeof statistics?.activeLicenses === "number"
+                    ? formatNumber(statistics.activeLicenses)
+                    : (statistics?.activeLicenses ?? "—")
             }
             loading={loading}
             description="Valid driving permits"
@@ -219,15 +220,13 @@ export default function DashboardPage({
             variant="amber"
             icon={<ClipboardList className="size-6" />}
             value={
-              loading ? (
-                '...'
-              ) : error ? (
-                '—'
-              ) : typeof statistics?.pendingApplications === 'number' ? (
-                formatNumber(statistics.pendingApplications)
-              ) : (
-                statistics?.pendingApplications ?? '—'
-              )
+              loading
+                ? "..."
+                : error
+                  ? "—"
+                  : typeof statistics?.pendingApplications === "number"
+                    ? formatNumber(statistics.pendingApplications)
+                    : (statistics?.pendingApplications ?? "—")
             }
             loading={loading}
             description="Awaiting review"
@@ -249,7 +248,9 @@ export default function DashboardPage({
           <div className="flex items-start sm:items-center gap-3">
             <AlertCircle className="size-5 shrink-0 text-red-600 mt-0.5 sm:mt-0" />
             <div>
-              <p className="font-semibold text-red-900">Statistics Loading Error</p>
+              <p className="font-semibold text-red-900">
+                Statistics Loading Error
+              </p>
               <p className="text-xs text-red-600/90 mt-0.5">{error}</p>
             </div>
           </div>
@@ -273,7 +274,9 @@ export default function DashboardPage({
           <div className="flex items-start sm:items-center gap-3">
             <AlertCircle className="size-5 shrink-0 text-red-600 mt-0.5 sm:mt-0" />
             <div>
-              <p className="font-semibold text-red-900">People List Loading Error</p>
+              <p className="font-semibold text-red-900">
+                People List Loading Error
+              </p>
               <p className="text-xs text-red-600/90 mt-0.5">{peopleError}</p>
             </div>
           </div>
@@ -293,7 +296,7 @@ export default function DashboardPage({
         <div style={{ marginBottom: 20 }}>
           <ErrorAlert
             message={deleteError}
-            onDismiss={() => setDeleteError('')}
+            onDismiss={() => setDeleteError("")}
           />
         </div>
       )}
@@ -308,7 +311,7 @@ export default function DashboardPage({
             <button
               type="button"
               className="text-slate-400 hover:text-white cursor-pointer ml-3"
-              onClick={() => setDeleteSuccess('')}
+              onClick={() => setDeleteSuccess("")}
               aria-label="Dismiss message"
             >
               ✕
@@ -328,9 +331,9 @@ export default function DashboardPage({
         onShowDetails={onShowDetails}
         onEditPerson={onEditPerson}
         onDeletePerson={(p) => {
-          setDeleteError('')
-          setDeleteSuccess('')
-          setDeletePersonTarget(p)
+          setDeleteError("");
+          setDeleteSuccess("");
+          setDeletePersonTarget(p);
         }}
       />
 
@@ -341,7 +344,7 @@ export default function DashboardPage({
         message={
           deletePersonTarget
             ? `Are you sure you want to delete person #${deletePersonTarget.personId} — "${deletePersonTarget.fullName}" (National No: ${deletePersonTarget.nationalNo})? This action cannot be undone.`
-            : ''
+            : ""
         }
         confirmText="Delete Person"
         cancelText="Cancel"
@@ -350,10 +353,10 @@ export default function DashboardPage({
         onConfirm={() => void handleConfirmDelete()}
         onCancel={() => {
           if (!isDeleting) {
-            setDeletePersonTarget(null)
+            setDeletePersonTarget(null);
           }
         }}
       />
     </section>
-  )
+  );
 }

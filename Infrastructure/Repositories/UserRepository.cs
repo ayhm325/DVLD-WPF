@@ -1,6 +1,7 @@
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -147,6 +148,16 @@ public sealed class UserRepository : IUserRepository
             .AsNoTracking()
             .AnyAsync(
                 u => u.UserId == userId && u.IsActive,
+                cancellationToken);
+    }
+
+    public Task<int> GetActiveAdminCountAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return _context.Users
+            .AsNoTracking()
+            .CountAsync(
+                u => u.Role == UserRole.Admin && u.IsActive,
                 cancellationToken);
     }
 

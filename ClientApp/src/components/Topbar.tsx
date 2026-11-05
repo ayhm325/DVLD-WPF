@@ -1,4 +1,4 @@
-import { useAuth } from '../context/useAuth'
+import { useAuth } from "../context/useAuth";
 import {
   ChevronDown,
   ChevronRight,
@@ -7,58 +7,60 @@ import {
   User as UserIcon,
   Search,
   ShieldCheck,
-} from 'lucide-react'
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export type TopbarProps = {
-  activePage: string
-  onToggleSidebar?: () => void
-  onRequestLogout: () => void
-  onOpenCommandPalette?: () => void
-  className?: string
-}
+  activePage: string;
+  onToggleSidebar?: () => void;
+  onRequestLogout: () => void;
+  onOpenCommandPalette?: () => void;
+  className?: string;
+};
 
 function getBreadcrumbs(page: string): { parent?: string; current: string } {
   switch (page) {
-    case 'Dashboard':
-      return { current: 'Dashboard' }
-    case 'People':
-      return { parent: 'Directory', current: 'People' }
-    case 'Add Person':
-      return { parent: 'Directory', current: 'Add New Person' }
-    case 'Edit Person':
-      return { parent: 'Directory', current: 'Edit Person' }
-    case 'Person Details':
-      return { parent: 'Directory', current: 'Person Details' }
-    case 'Drivers':
-      return { parent: 'Directory', current: 'Drivers' }
-    case 'Licenses':
-      return { parent: 'Management', current: 'Licenses' }
-    case 'Local Applications':
-      return { parent: 'Applications', current: 'Local Applications' }
-    case 'Test Appointments':
-      return { parent: 'Examinations', current: 'Test Appointments' }
-    case 'International Licenses':
-      return { parent: 'Applications', current: 'International Licenses' }
-    case 'Issue International License':
-      return { parent: 'Applications', current: 'Issue International' }
-    case 'Application Types':
-      return { parent: 'Settings', current: 'Application Types' }
-    case 'License Classes':
-      return { parent: 'Settings', current: 'License Classes' }
-    case 'Test Types':
-      return { parent: 'Settings', current: 'Test Types' }
-    case 'Countries':
-      return { parent: 'Settings', current: 'Countries' }
+    case "Dashboard":
+      return { current: "Dashboard" };
+    case "User Management":
+      return { parent: "Administration", current: "User Management" };
+    case "People":
+      return { parent: "Directory", current: "People" };
+    case "Add Person":
+      return { parent: "Directory", current: "Add New Person" };
+    case "Edit Person":
+      return { parent: "Directory", current: "Edit Person" };
+    case "Person Details":
+      return { parent: "Directory", current: "Person Details" };
+    case "Drivers":
+      return { parent: "Directory", current: "Drivers" };
+    case "Licenses":
+      return { parent: "Management", current: "Licenses" };
+    case "Local Applications":
+      return { parent: "Applications", current: "Local Applications" };
+    case "Test Appointments":
+      return { parent: "Examinations", current: "Test Appointments" };
+    case "International Licenses":
+      return { parent: "Applications", current: "International Licenses" };
+    case "Issue International License":
+      return { parent: "Applications", current: "Issue International" };
+    case "Application Types":
+      return { parent: "Settings", current: "Application Types" };
+    case "License Classes":
+      return { parent: "Settings", current: "License Classes" };
+    case "Test Types":
+      return { parent: "Settings", current: "Test Types" };
+    case "Countries":
+      return { parent: "Settings", current: "Countries" };
     default:
-      return { current: page }
+      return { current: page };
   }
 }
 
@@ -66,19 +68,19 @@ export default function Topbar({
   activePage,
   onRequestLogout,
   onOpenCommandPalette,
-  className = '',
+  className = "",
 }: TopbarProps) {
-  const { user } = useAuth()
-  const breadcrumbs = getBreadcrumbs(activePage)
+  const { user } = useAuth();
+  const breadcrumbs = getBreadcrumbs(activePage);
 
   const initial = user?.fullName
     ? user.fullName.charAt(0).toUpperCase()
     : user?.userName
       ? user.userName.charAt(0).toUpperCase()
-      : 'A'
+      : "A";
 
   return (
-    <header className={cn('topbar', className)}>
+    <header className={cn("topbar", className)}>
       {/* Layered flowing blue and cyan neon waves background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden select-none z-0">
         <svg
@@ -89,20 +91,38 @@ export default function Topbar({
           aria-hidden="true"
         >
           <defs>
-            <linearGradient id="topbar-wave-grad-1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <linearGradient
+              id="topbar-wave-grad-1"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
               <stop offset="0%" stopColor="#00d0ff" stopOpacity="0.1" />
               <stop offset="20%" stopColor="#00f0ff" stopOpacity="0.85" />
               <stop offset="50%" stopColor="#0080ff" stopOpacity="0.9" />
               <stop offset="85%" stopColor="#6366f1" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#00d0ff" stopOpacity="0.05" />
             </linearGradient>
-            <linearGradient id="topbar-wave-grad-2" x1="0%" y1="100%" x2="100%" y2="0%">
+            <linearGradient
+              id="topbar-wave-grad-2"
+              x1="0%"
+              y1="100%"
+              x2="100%"
+              y2="0%"
+            >
               <stop offset="0%" stopColor="#0080ff" stopOpacity="0.05" />
               <stop offset="35%" stopColor="#38bdf8" stopOpacity="0.75" />
               <stop offset="70%" stopColor="#00f0ff" stopOpacity="0.6" />
               <stop offset="100%" stopColor="#2563eb" stopOpacity="0.1" />
             </linearGradient>
-            <filter id="topbar-wave-glow" x="-20%" y="-40%" width="140%" height="180%">
+            <filter
+              id="topbar-wave-glow"
+              x="-20%"
+              y="-40%"
+              width="140%"
+              height="180%"
+            >
               <feGaussianBlur stdDeviation="3.5" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
@@ -110,7 +130,13 @@ export default function Topbar({
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
-            <filter id="topbar-particle-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <filter
+              id="topbar-particle-glow"
+              x="-50%"
+              y="-50%"
+              width="200%"
+              height="200%"
+            >
               <feGaussianBlur stdDeviation="2.5" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
@@ -125,7 +151,13 @@ export default function Topbar({
           </defs>
 
           {/* Ambient radiant light bloom */}
-          <rect x="0" y="0" width="1200" height="90" fill="url(#topbar-ambient-bloom)" />
+          <rect
+            x="0"
+            y="0"
+            width="1200"
+            height="90"
+            fill="url(#topbar-ambient-bloom)"
+          />
 
           {/* Primary undulating luminous neon wave */}
           <path
@@ -147,12 +179,48 @@ export default function Topbar({
           />
 
           {/* Glowing particle stars along the waves */}
-          <circle cx="220" cy="30" r="2.2" fill="#00f0ff" filter="url(#topbar-particle-glow)" />
-          <circle cx="380" cy="46" r="1.8" fill="#38bdf8" filter="url(#topbar-particle-glow)" />
-          <circle cx="520" cy="42" r="2.2" fill="#00f0ff" filter="url(#topbar-particle-glow)" />
-          <circle cx="720" cy="36" r="1.5" fill="#67e8f9" filter="url(#topbar-particle-glow)" />
-          <circle cx="910" cy="52" r="2" fill="#38bdf8" filter="url(#topbar-particle-glow)" />
-          <circle cx="1060" cy="35" r="1.6" fill="#00f0ff" filter="url(#topbar-particle-glow)" />
+          <circle
+            cx="220"
+            cy="30"
+            r="2.2"
+            fill="#00f0ff"
+            filter="url(#topbar-particle-glow)"
+          />
+          <circle
+            cx="380"
+            cy="46"
+            r="1.8"
+            fill="#38bdf8"
+            filter="url(#topbar-particle-glow)"
+          />
+          <circle
+            cx="520"
+            cy="42"
+            r="2.2"
+            fill="#00f0ff"
+            filter="url(#topbar-particle-glow)"
+          />
+          <circle
+            cx="720"
+            cy="36"
+            r="1.5"
+            fill="#67e8f9"
+            filter="url(#topbar-particle-glow)"
+          />
+          <circle
+            cx="910"
+            cy="52"
+            r="2"
+            fill="#38bdf8"
+            filter="url(#topbar-particle-glow)"
+          />
+          <circle
+            cx="1060"
+            cy="35"
+            r="1.6"
+            fill="#00f0ff"
+            filter="url(#topbar-particle-glow)"
+          />
         </svg>
       </div>
 
@@ -172,16 +240,27 @@ export default function Topbar({
             aria-label="Breadcrumb"
             className="topbar-breadcrumb flex items-center gap-1.5 mt-1 text-[11px] font-medium text-slate-400"
           >
-            <Home className="size-3 text-slate-400 shrink-0" aria-hidden="true" />
+            <Home
+              className="size-3 text-slate-400 shrink-0"
+              aria-hidden="true"
+            />
             <span>Home</span>
             {breadcrumbs.parent && (
               <>
-                <ChevronRight className="size-3 text-slate-500 shrink-0" aria-hidden="true" />
+                <ChevronRight
+                  className="size-3 text-slate-500 shrink-0"
+                  aria-hidden="true"
+                />
                 <span>{breadcrumbs.parent}</span>
               </>
             )}
-            <ChevronRight className="size-3 text-slate-500 shrink-0" aria-hidden="true" />
-            <span className="text-cyan-400 font-semibold">{breadcrumbs.current}</span>
+            <ChevronRight
+              className="size-3 text-slate-500 shrink-0"
+              aria-hidden="true"
+            />
+            <span className="text-cyan-400 font-semibold">
+              {breadcrumbs.current}
+            </span>
           </nav>
         </div>
       </div>
@@ -199,9 +278,7 @@ export default function Topbar({
             <Search className="size-4 text-cyan-400 drop-shadow-[0_0_8px_rgba(0,229,255,0.8)] shrink-0" />
             <span className="hidden sm:inline">Search anything...</span>
             <span className="sm:hidden">Search</span>
-            <kbd className="topbar-search-kbd">
-              Ctrl + K
-            </kbd>
+            <kbd className="topbar-search-kbd">Ctrl + K</kbd>
           </button>
         )}
 
@@ -213,7 +290,9 @@ export default function Topbar({
             <span className="status-pulse-ring absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
             <span className="status-pulse-dot relative inline-flex size-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
           </span>
-          <span className="font-semibold text-xs text-white">System Online</span>
+          <span className="font-semibold text-xs text-white">
+            System Online
+          </span>
           <svg
             className="topbar-status-waveform size-5 sm:w-7 sm:h-3.5 text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.7)] ml-0.5"
             viewBox="0 0 28 14"
@@ -229,7 +308,10 @@ export default function Topbar({
               strokeLinejoin="round"
             />
           </svg>
-          <ChevronDown className="size-3 text-emerald-400/80 ml-0.5" aria-hidden="true" />
+          <ChevronDown
+            className="size-3 text-emerald-400/80 ml-0.5"
+            aria-hidden="true"
+          />
         </div>
 
         {/* User Profile Accessible Dropdown */}
@@ -244,16 +326,22 @@ export default function Topbar({
               <div className="topbar-avatar">{initial}</div>
               <div className="topbar-user-meta hidden sm:flex flex-col text-left">
                 <span className="topbar-user-name">
-                  {user?.fullName || user?.userName || 'User'}
+                  {user?.fullName || user?.userName || "User"}
                 </span>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <ShieldCheck className="size-3 text-cyan-400 shrink-0" aria-hidden="true" />
+                  <ShieldCheck
+                    className="size-3 text-cyan-400 shrink-0"
+                    aria-hidden="true"
+                  />
                   <span className="topbar-user-role">
-                    {user?.role || 'Staff'}
+                    {user?.role || "Staff"}
                   </span>
                 </div>
               </div>
-              <ChevronDown className="topbar-chevron size-3.5 text-cyan-400 shrink-0 transition-transform duration-200" aria-hidden="true" />
+              <ChevronDown
+                className="topbar-chevron size-3.5 text-cyan-400 shrink-0 transition-transform duration-200"
+                aria-hidden="true"
+              />
             </button>
           </DropdownMenuTrigger>
 
@@ -263,9 +351,9 @@ export default function Topbar({
             className="w-72 p-0 overflow-hidden bg-[#061226]/95 border-2 border-[#0090ff] shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(0,140,255,0.4)] rounded-2xl z-50 backdrop-blur-xl ring-1 ring-white/10"
           >
             {/* Header: Dark navy to royal blue gradient with avatar, name, and role */}
-            <div className="bg-gradient-to-br from-[#050e20] via-[#091a3c] to-[#0f2d64] p-4 text-white border-b border-blue-500/30">
+            <div className="bg-linear-to-br from-[#050e20] via-[#091a3c] to-[#0f2d64] p-4 text-white border-b border-blue-500/30">
               <div className="flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-extrabold text-base shadow-[0_0_14px_rgba(0,140,255,0.8)] border-[1.5px] border-blue-300/80">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-white font-extrabold text-base shadow-[0_0_14px_rgba(0,140,255,0.8)] border-[1.5px] border-blue-300/80">
                   {initial}
                 </div>
                 <div className="flex flex-col min-w-0 flex-1">
@@ -274,9 +362,9 @@ export default function Topbar({
                   </span>
                   <strong
                     className="truncate text-sm font-bold text-white leading-tight mt-0.5"
-                    title={user?.fullName || user?.userName || 'User'}
+                    title={user?.fullName || user?.userName || "User"}
                   >
-                    {user?.fullName || user?.userName || 'User'}
+                    {user?.fullName || user?.userName || "User"}
                   </strong>
                   {user?.userName && (
                     <span className="text-xs text-slate-300 truncate font-mono">
@@ -290,7 +378,7 @@ export default function Topbar({
                   variant="secondary"
                   className="bg-blue-500/20 text-blue-200 border-blue-400/40 text-[10px] font-bold px-2.5 py-0.5"
                 >
-                  {user?.role || 'Staff'}
+                  {user?.role || "Staff"}
                 </Badge>
                 <span className="text-[10px] text-emerald-400 flex items-center gap-1.5 font-medium">
                   <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
@@ -328,5 +416,5 @@ export default function Topbar({
         </DropdownMenu>
       </div>
     </header>
-  )
+  );
 }

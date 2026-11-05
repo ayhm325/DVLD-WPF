@@ -18,6 +18,7 @@ export function isValidRole(role: unknown): role is UserRole {
 
 export type PageId =
   | 'Dashboard'
+  | 'User Management'
   | 'People'
   | 'Add Person'
   | 'Edit Person'
@@ -51,6 +52,9 @@ export type PageId =
 export const PAGE_PERMISSIONS: Record<PageId, readonly UserRole[]> = {
   // General Dashboard: Available to both Staff and Admin
   'Dashboard': ['Admin', 'Staff'],
+
+  // User Management: UsersController [Authorize(Policy = "AdminOnly")]
+  'User Management': ['Admin'],
 
   // People Management: PeopleController [Authorize(Policy = "StaffOrAdmin")]
   'People': ['Admin', 'Staff'],

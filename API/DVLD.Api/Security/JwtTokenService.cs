@@ -23,8 +23,7 @@ public sealed class JwtTokenService(
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        var expiresAtUtc =
-            _clock.UtcNow.AddMinutes(_options.ExpirationMinutes);
+        var expiresAtUtc = _clock.UtcNow.AddMinutes(_options.ExpirationMinutes);
 
         var claims = new[]
         {

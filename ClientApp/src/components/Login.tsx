@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { login as performLogin } from '../services/authService'
-import { useAuth } from '../context/useAuth'
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { login as performLogin } from "../services/authService";
+import { useAuth } from "../context/useAuth";
 import {
   Layers,
   User as UserIcon,
@@ -15,66 +15,75 @@ import {
   Car,
   FileCheck2,
   Building2,
-} from 'lucide-react'
-import './Login.css'
+} from "lucide-react";
+import "./Login.css";
 
 type LoginProps = {
-  onLoginSuccess?: (accessToken: string) => void
-}
+  onLoginSuccess?: (accessToken: string) => void;
+};
 
 export default function Login({ onLoginSuccess }: LoginProps) {
-  const { login: setAuthSession, authMessage, clearAuthMessage } = useAuth()
+  const { login: setAuthSession, authMessage, clearAuthMessage } = useAuth();
   const [userName, setUserName] = useState(
-    () => localStorage.getItem('dvld_remembered_username') || '',
-  )
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(
-    () => Boolean(localStorage.getItem('dvld_remembered_username')),
-  )
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+    () => localStorage.getItem("dvld_remembered_username") || "",
+  );
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() =>
+    Boolean(localStorage.getItem("dvld_remembered_username")),
+  );
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
-    if (loading) return
+    if (loading) return;
 
-    setError('')
-    clearAuthMessage()
-    setLoading(true)
+    setError("");
+    clearAuthMessage();
+    setLoading(true);
 
     try {
-      const trimmedUser = userName.trim()
-      const result = await performLogin({ userName: trimmedUser, password })
+      const trimmedUser = userName.trim();
+      const result = await performLogin({ userName: trimmedUser, password });
 
       if (rememberMe) {
-        localStorage.setItem('dvld_remembered_username', trimmedUser)
+        localStorage.setItem("dvld_remembered_username", trimmedUser);
       } else {
-        localStorage.removeItem('dvld_remembered_username')
+        localStorage.removeItem("dvld_remembered_username");
       }
 
-      setAuthSession(result)
+      setAuthSession(result);
       if (onLoginSuccess) {
-        onLoginSuccess(result.accessToken)
+        onLoginSuccess(result.accessToken);
       }
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Invalid username or password. Please verify your credentials.',
-      )
+          : "Invalid username or password. Please verify your credentials.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
     <div className="dvld-login-root">
       {/* Decorative ambient background glows aligned with Dashboard PageHero */}
-      <div className="dvld-ambient-glow dvld-ambient-glow-1" aria-hidden="true" />
-      <div className="dvld-ambient-glow dvld-ambient-glow-2" aria-hidden="true" />
-      <div className="dvld-ambient-glow dvld-ambient-glow-3" aria-hidden="true" />
+      <div
+        className="dvld-ambient-glow dvld-ambient-glow-1"
+        aria-hidden="true"
+      />
+      <div
+        className="dvld-ambient-glow dvld-ambient-glow-2"
+        aria-hidden="true"
+      />
+      <div
+        className="dvld-ambient-glow dvld-ambient-glow-3"
+        aria-hidden="true"
+      />
 
       {/* Decorative flowing electric light stream SVG matching Dashboard Hero */}
       <svg
@@ -85,13 +94,25 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         viewBox="0 0 1000 300"
       >
         <defs>
-          <linearGradient id="login-stream-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient
+            id="login-stream-grad"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="0%"
+          >
             <stop offset="0%" stopColor="#3b82f6" stopOpacity="0" />
             <stop offset="35%" stopColor="#38bdf8" stopOpacity="0.45" />
             <stop offset="70%" stopColor="#60a5fa" stopOpacity="0.65" />
             <stop offset="100%" stopColor="#00f0ff" stopOpacity="0.1" />
           </linearGradient>
-          <filter id="login-stream-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <filter
+            id="login-stream-glow"
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
             <feGaussianBlur stdDeviation="5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -137,18 +158,23 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               {/* Eyebrow with glowing cyan dot matching PageHero */}
               <div className="dvld-eyebrow-row">
                 <span className="dvld-eyebrow-dot" aria-hidden="true" />
-                <span className="dvld-eyebrow-text">THE HASHEMITE KINGDOM OF JORDAN</span>
+                <span className="dvld-eyebrow-text">
+                  THE HASHEMITE KINGDOM OF JORDAN
+                </span>
               </div>
 
               {/* Institutional Headline & Mission */}
               <div className="dvld-mission-section">
                 <h1 className="dvld-mission-heading">
-                  Driving forward.{' '}
-                  <span className="dvld-mission-highlight">Managing smarter.</span>
+                  Driving forward.{" "}
+                  <span className="dvld-mission-highlight">
+                    Managing smarter.
+                  </span>
                 </h1>
                 <p className="dvld-mission-desc">
-                  Centralized administrative portal for driver licensing, vehicle registration,
-                  and regulatory compliance services across the Kingdom.
+                  Centralized administrative portal for driver licensing,
+                  vehicle registration, and regulatory compliance services
+                  across the Kingdom.
                 </p>
               </div>
 
@@ -159,9 +185,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     <FileCheck2 size={18} />
                   </div>
                   <div className="dvld-service-content">
-                    <h2 className="dvld-service-title">Driver Licensing Management</h2>
+                    <h2 className="dvld-service-title">
+                      Driver Licensing Management
+                    </h2>
                     <p className="dvld-service-desc">
-                      Automated testing, renewals, and international permit issuance.
+                      Automated testing, renewals, and international permit
+                      issuance.
                     </p>
                   </div>
                 </div>
@@ -171,9 +200,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     <Car size={18} />
                   </div>
                   <div className="dvld-service-content">
-                    <h2 className="dvld-service-title">Vehicle Records & Ownership</h2>
+                    <h2 className="dvld-service-title">
+                      Vehicle Records & Ownership
+                    </h2>
                     <p className="dvld-service-desc">
-                      Secure registration, technical inspections, and ownership transfers.
+                      Secure registration, technical inspections, and ownership
+                      transfers.
                     </p>
                   </div>
                 </div>
@@ -183,9 +215,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     <Building2 size={18} />
                   </div>
                   <div className="dvld-service-content">
-                    <h2 className="dvld-service-title">Administrative Authority</h2>
+                    <h2 className="dvld-service-title">
+                      Administrative Authority
+                    </h2>
                     <p className="dvld-service-desc">
-                      Role-based governance under the Public Security Directorate.
+                      Role-based governance under the Public Security
+                      Directorate.
                     </p>
                   </div>
                 </div>
@@ -194,7 +229,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               {/* Institutional Live Status Footer */}
               <div className="dvld-brand-status">
                 <span className="dvld-status-dot" aria-hidden="true" />
-                <span>Central Directory Connected &bull; Public Security Directorate</span>
+                <span>
+                  Central Directory Connected &bull; Public Security Directorate
+                </span>
               </div>
             </div>
           </aside>
@@ -212,7 +249,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 </div>
                 <h2 className="dvld-auth-title">Welcome back</h2>
                 <p className="dvld-auth-subtitle">
-                  Please sign in with your credentials to access your administrative workspace.
+                  Please sign in with your credentials to access your
+                  administrative workspace.
                 </p>
               </header>
 
@@ -233,14 +271,21 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               )}
 
               {/* Login Form */}
-              <form className="dvld-auth-form" onSubmit={handleSubmit} noValidate>
+              <form
+                className="dvld-auth-form"
+                onSubmit={handleSubmit}
+                noValidate
+              >
                 {/* Username Input */}
                 <div className="dvld-form-group">
                   <label htmlFor="login-username" className="dvld-form-label">
                     Username
                   </label>
                   <div className="dvld-input-wrapper">
-                    <span className="dvld-input-leading-icon" aria-hidden="true">
+                    <span
+                      className="dvld-input-leading-icon"
+                      aria-hidden="true"
+                    >
                       <UserIcon size={18} />
                     </span>
                     <input
@@ -251,8 +296,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                       placeholder="Enter your administrative username"
                       value={userName}
                       onChange={(event) => {
-                        setUserName(event.target.value)
-                        if (error) setError('')
+                        setUserName(event.target.value);
+                        if (error) setError("");
                       }}
                       disabled={loading}
                       required
@@ -270,19 +315,22 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     </label>
                   </div>
                   <div className="dvld-input-wrapper">
-                    <span className="dvld-input-leading-icon" aria-hidden="true">
+                    <span
+                      className="dvld-input-leading-icon"
+                      aria-hidden="true"
+                    >
                       <LockIcon size={18} />
                     </span>
                     <input
                       id="login-password"
                       name="password"
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       placeholder="Enter your secure password"
                       value={password}
                       onChange={(event) => {
-                        setPassword(event.target.value)
-                        if (error) setError('')
+                        setPassword(event.target.value);
+                        if (error) setError("");
                       }}
                       disabled={loading}
                       required
@@ -292,11 +340,17 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                       type="button"
                       className="dvld-password-toggle"
                       onClick={() => setShowPassword((prev) => !prev)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                       aria-pressed={showPassword}
                       disabled={loading}
                     >
-                      {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                      {showPassword ? (
+                        <EyeOffIcon size={18} />
+                      ) : (
+                        <EyeIcon size={18} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -319,8 +373,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     className="dvld-forgot-btn"
                     onClick={() => {
                       setError(
-                        'Password reset is managed administratively. Please contact your DVLD Systems Administrator.',
-                      )
+                        "Password reset is managed administratively. Please contact your DVLD Systems Administrator.",
+                      );
                     }}
                   >
                     Forgot password?
@@ -349,8 +403,14 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
               {/* Security Footer Notice */}
               <div className="dvld-security-note">
-                <ShieldCheck size={16} className="dvld-security-icon shrink-0" />
-                <span>Protected by 256-bit encryption & token-based session security.</span>
+                <ShieldCheck
+                  size={16}
+                  className="dvld-security-icon shrink-0"
+                />
+                <span>
+                  Protected by 256-bit encryption & token-based session
+                  security.
+                </span>
               </div>
             </div>
           </main>
@@ -359,13 +419,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         {/* Global Page Footer */}
         <footer className="dvld-page-footer">
           <p className="dvld-footer-copyright">
-            &copy; 2026 Driver and Vehicle Licensing Department. All rights reserved.
+            &copy; 2026 Driver and Vehicle Licensing Department. All rights
+            reserved.
           </p>
           <p className="dvld-footer-notice">
-            Authorized Personnel Only &bull; Hashemite Kingdom of Jordan &bull; Public Security Directorate
+            Authorized Personnel Only &bull; Hashemite Kingdom of Jordan &bull;
+            Public Security Directorate
           </p>
         </footer>
       </div>
     </div>
-  )
+  );
 }

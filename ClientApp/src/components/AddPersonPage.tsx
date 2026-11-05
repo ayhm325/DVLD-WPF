@@ -1,66 +1,66 @@
-import { useEffect, useState } from 'react'
-import { getCountries } from '../services/countryService'
-import type { Country } from '../types/Country'
-import { createPerson, uploadPersonPhoto } from '../services/peopleService'
-import PageHero from './common/PageHero'
-import LoadingSpinner from './common/LoadingSpinner'
-import { Card } from './ui'
-import PersonForm, { type PersonFormSubmitValues } from './people/PersonForm'
+import { useEffect, useState } from "react";
+import { getCountries } from "../services/countryService";
+import type { Country } from "../types/Country";
+import { createPerson, uploadPersonPhoto } from "../services/peopleService";
+import PageHero from "./common/PageHero";
+import LoadingSpinner from "./common/LoadingSpinner";
+import { Card } from "./ui";
+import PersonForm, { type PersonFormSubmitValues } from "./people/PersonForm";
 
 export type AddPersonPageProps = {
-  accessToken: string
-  onBack: () => void
-  onPersonAdded: () => void
-}
+  accessToken: string;
+  onBack: () => void;
+  onPersonAdded: () => void;
+};
 
 export default function AddPersonPage({
   accessToken,
   onBack,
   onPersonAdded,
 }: AddPersonPageProps) {
-  const [countries, setCountries] = useState<Country[]>([])
-  const [loadingCountries, setLoadingCountries] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [loadingCountries, setLoadingCountries] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   // Load countries registry
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function loadCountries() {
       try {
-        setLoadingCountries(true)
-        setError('')
-        const result = await getCountries(accessToken)
+        setLoadingCountries(true);
+        setError("");
+        const result = await getCountries(accessToken);
         if (!cancelled) {
-          setCountries(result)
+          setCountries(result);
         }
       } catch (err) {
         if (!cancelled) {
           setError(
             err instanceof Error
               ? err.message
-              : 'Failed to load countries registry.',
-          )
+              : "Failed to load countries registry.",
+          );
         }
       } finally {
         if (!cancelled) {
-          setLoadingCountries(false)
+          setLoadingCountries(false);
         }
       }
     }
 
-    void loadCountries()
+    void loadCountries();
 
     return () => {
-      cancelled = true
-    }
-  }, [accessToken])
+      cancelled = true;
+    };
+  }, [accessToken]);
 
   // Submit person creation and photograph upload
   async function handleSubmit(values: PersonFormSubmitValues) {
-    setSaving(true)
-    setError('')
+    setSaving(true);
+    setError("");
 
     try {
       const created = await createPerson(accessToken, {
@@ -76,31 +76,35 @@ export default function AddPersonPage({
         email: values.email,
         nationalityCountryID: values.nationalityCountryID,
         imagePath: null,
-      })
+      });
 
       if (values.photoFile && created?.personId) {
         try {
-          await uploadPersonPhoto(accessToken, created.personId, values.photoFile)
+          await uploadPersonPhoto(
+            accessToken,
+            created.personId,
+            values.photoFile,
+          );
         } catch (uploadErr) {
           setError(
             uploadErr instanceof Error
               ? `Person record created successfully, but photograph upload failed: ${uploadErr.message}. You can upload the photo from the Edit page.`
-              : 'Person record created successfully, but photograph upload failed. You can upload the photo from the Edit page.',
-          )
-          setSaving(false)
-          return
+              : "Person record created successfully, but photograph upload failed. You can upload the photo from the Edit page.",
+          );
+          setSaving(false);
+          return;
         }
       }
 
-      onPersonAdded()
+      onPersonAdded();
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Failed to create person record. Please verify inputs and try again.',
-      )
+          : "Failed to create person record. Please verify inputs and try again.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -130,11 +134,11 @@ export default function AddPersonPage({
           loadingCountries={loadingCountries}
           saving={saving}
           error={error}
-          onClearError={() => setError('')}
+          onClearError={() => setError("")}
           onSubmit={handleSubmit}
           onCancel={onBack}
         />
       )}
     </section>
-  )
+  );
 }

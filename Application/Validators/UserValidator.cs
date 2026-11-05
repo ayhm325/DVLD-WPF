@@ -1,5 +1,6 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.UserDTO;
+using Domain.Enums;
 using System.Text.RegularExpressions;
 
 namespace Application.Validators;
@@ -36,6 +37,11 @@ public static class UserValidator
             errors.Add("A valid person must be selected.");
         }
 
+        if (!Enum.IsDefined(typeof(UserRole), dto.Role))
+        {
+            errors.Add("Invalid user role.");
+        }
+
         return CreateValidationResult(errors);
     }
 
@@ -58,6 +64,12 @@ public static class UserValidator
         if (dto.PersonId <= 0)
         {
             errors.Add("A valid person must be selected.");
+        }
+
+        if (dto.Role.HasValue &&
+            !Enum.IsDefined(typeof(UserRole), dto.Role.Value))
+        {
+            errors.Add("Invalid user role.");
         }
 
         return CreateValidationResult(errors);

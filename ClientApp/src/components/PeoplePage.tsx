@@ -1,29 +1,29 @@
-import { useMemo, useState } from 'react'
-import PeopleTable from './PeopleTable'
-import PageHero from './common/PageHero'
-import StatsGrid from './common/StatsGrid'
-import StatCard from './common/StatCard'
-import ErrorAlert from './common/ErrorAlert'
-import ConfirmModal from './common/ConfirmModal'
-import { Users as UsersIcon, User as UserIcon } from 'lucide-react'
-import type { Person } from '../types/Person'
-import { formatNumber } from '../utils/formatters'
-import { deletePerson } from '../services/peopleService'
-import { useAuth } from '../context/useAuth'
+import { useMemo, useState } from "react";
+import PeopleTable from "./PeopleTable";
+import PageHero from "./common/PageHero";
+import StatsGrid from "./common/StatsGrid";
+import StatCard from "./common/StatCard";
+import ErrorAlert from "./common/ErrorAlert";
+import ConfirmModal from "./common/ConfirmModal";
+import { Users as UsersIcon, User as UserIcon } from "lucide-react";
+import type { Person } from "../types/Person";
+import { formatNumber } from "../utils/formatters";
+import { deletePerson } from "../services/peopleService";
+import { useAuth } from "../context/useAuth";
 
 export type PeoplePageProps = {
-  accessToken?: string
-  people?: Person[]
-  filteredPeople: Person[]
-  searchName: string
-  onSearchChange: (value: string) => void
-  loadingPeople: boolean
-  peopleError: string
-  onRetryPeople: () => void
-  onAddPerson: () => void
-  onShowDetails?: (person: Person) => void
-  onEditPerson?: (person: Person) => void
-}
+  accessToken?: string;
+  people?: Person[];
+  filteredPeople: Person[];
+  searchName: string;
+  onSearchChange: (value: string) => void;
+  loadingPeople: boolean;
+  peopleError: string;
+  onRetryPeople: () => void;
+  onAddPerson: () => void;
+  onShowDetails?: (person: Person) => void;
+  onEditPerson?: (person: Person) => void;
+};
 
 export default function PeoplePage({
   accessToken: propToken,
@@ -38,45 +38,53 @@ export default function PeoplePage({
   onShowDetails,
   onEditPerson,
 }: PeoplePageProps) {
-  const { accessToken: contextToken } = useAuth()
-  const token = propToken || contextToken || ''
+  const { accessToken: contextToken } = useAuth();
+  const token = propToken || contextToken || "";
 
-  const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
-  const [deleteSuccess, setDeleteSuccess] = useState('')
+  const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteSuccess, setDeleteSuccess] = useState("");
 
   const people = useMemo(
     () => rawPeople ?? filteredPeople ?? [],
     [rawPeople, filteredPeople],
-  )
+  );
 
-  const totalPeople = people.length
-  const maleCount = useMemo(() => people.filter((p) => p.gender === 0).length, [people])
-  const femaleCount = useMemo(() => people.filter((p) => p.gender === 1).length, [people])
+  const totalPeople = people.length;
+  const maleCount = useMemo(
+    () => people.filter((p) => p.gender === 0).length,
+    [people],
+  );
+  const femaleCount = useMemo(
+    () => people.filter((p) => p.gender === 1).length,
+    [people],
+  );
 
   async function handleConfirmDelete() {
-    if (!deletePersonTarget || isDeleting || !token) return
+    if (!deletePersonTarget || isDeleting || !token) return;
 
-    setIsDeleting(true)
-    setDeleteError('')
-    setDeleteSuccess('')
+    setIsDeleting(true);
+    setDeleteError("");
+    setDeleteSuccess("");
 
     try {
-      await deletePerson(token, deletePersonTarget.personId)
+      await deletePerson(token, deletePersonTarget.personId);
       setDeleteSuccess(
         `Person #${deletePersonTarget.personId} (${deletePersonTarget.fullName}) was deleted successfully.`,
-      )
-      setDeletePersonTarget(null)
-      onRetryPeople()
+      );
+      setDeletePersonTarget(null);
+      onRetryPeople();
     } catch (err) {
       setDeleteError(
         err instanceof Error
           ? err.message
           : `Failed to delete person #${deletePersonTarget.personId}.`,
-      )
+      );
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
   }
 
@@ -89,7 +97,13 @@ export default function PeoplePage({
           label="Total People"
           variant="blue"
           icon={<UsersIcon size={20} />}
-          value={loadingPeople ? '...' : peopleError ? '—' : formatNumber(totalPeople)}
+          value={
+            loadingPeople
+              ? "..."
+              : peopleError
+                ? "—"
+                : formatNumber(totalPeople)
+          }
           description="Registered citizens"
         />
 
@@ -97,7 +111,9 @@ export default function PeoplePage({
           label="Male"
           variant="blue"
           icon={<UserIcon size={20} />}
-          value={loadingPeople ? '...' : peopleError ? '—' : formatNumber(maleCount)}
+          value={
+            loadingPeople ? "..." : peopleError ? "—" : formatNumber(maleCount)
+          }
           description="Registered male citizens"
         />
 
@@ -105,7 +121,13 @@ export default function PeoplePage({
           label="Female"
           variant="rose"
           icon={<UserIcon size={20} />}
-          value={loadingPeople ? '...' : peopleError ? '—' : formatNumber(femaleCount)}
+          value={
+            loadingPeople
+              ? "..."
+              : peopleError
+                ? "—"
+                : formatNumber(femaleCount)
+          }
           description="Registered female citizens"
         />
       </StatsGrid>
@@ -123,7 +145,7 @@ export default function PeoplePage({
         <div style={{ marginBottom: 20 }}>
           <ErrorAlert
             message={deleteError}
-            onDismiss={() => setDeleteError('')}
+            onDismiss={() => setDeleteError("")}
           />
         </div>
       )}
@@ -138,7 +160,7 @@ export default function PeoplePage({
             <button
               type="button"
               className="text-slate-400 hover:text-white cursor-pointer ml-3"
-              onClick={() => setDeleteSuccess('')}
+              onClick={() => setDeleteSuccess("")}
               aria-label="Dismiss message"
             >
               ✕
@@ -157,9 +179,9 @@ export default function PeoplePage({
         onShowDetails={onShowDetails}
         onEditPerson={onEditPerson}
         onDeletePerson={(p) => {
-          setDeleteError('')
-          setDeleteSuccess('')
-          setDeletePersonTarget(p)
+          setDeleteError("");
+          setDeleteSuccess("");
+          setDeletePersonTarget(p);
         }}
       />
 
@@ -170,7 +192,7 @@ export default function PeoplePage({
         message={
           deletePersonTarget
             ? `Are you sure you want to delete person #${deletePersonTarget.personId} — "${deletePersonTarget.fullName}" (National No: ${deletePersonTarget.nationalNo})? This action cannot be undone.`
-            : ''
+            : ""
         }
         confirmText="Delete Person"
         cancelText="Cancel"
@@ -179,10 +201,10 @@ export default function PeoplePage({
         onConfirm={() => void handleConfirmDelete()}
         onCancel={() => {
           if (!isDeleting) {
-            setDeletePersonTarget(null)
+            setDeletePersonTarget(null);
           }
         }}
       />
     </section>
-  )
+  );
 }

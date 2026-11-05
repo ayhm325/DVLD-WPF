@@ -1,50 +1,53 @@
-import { useCallback, useMemo } from 'react'
-import { getCountries } from '../services/countryService'
-import type { Country } from '../types/Country'
-import { useAsyncData, useTableFilters } from '../hooks'
-import PageHero from './common/PageHero'
-import TableToolbar from './common/TableToolbar'
-import ErrorAlert from './common/ErrorAlert'
-import EmptyState from './common/EmptyState'
-import DataTable, { type DataTableColumn } from './common/DataTable'
-import { Globe as GlobeIcon } from 'lucide-react'
+import { useCallback, useMemo } from "react";
+import { getCountries } from "../services/countryService";
+import type { Country } from "../types/Country";
+import { useAsyncData, useTableFilters } from "../hooks";
+import PageHero from "./common/PageHero";
+import TableToolbar from "./common/TableToolbar";
+import ErrorAlert from "./common/ErrorAlert";
+import EmptyState from "./common/EmptyState";
+import DataTable, { type DataTableColumn } from "./common/DataTable";
+import { Globe as GlobeIcon } from "lucide-react";
 
 type CountriesPageProps = {
-  accessToken: string
-  userRole?: string | null
-}
+  accessToken: string;
+  userRole?: string | null;
+};
 
-type SearchBy = 'all' | 'name' | 'id'
+type SearchBy = "all" | "name" | "id";
 
 const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
-  { value: 'all', label: 'All Fields' },
-  { value: 'name', label: 'Country Name' },
-  { value: 'id', label: 'Country ID' },
-]
+  { value: "all", label: "All Fields" },
+  { value: "name", label: "Country Name" },
+  { value: "id", label: "Country ID" },
+];
 
 const columns: DataTableColumn<Country>[] = [
   {
-    key: 'countryId',
-    header: 'Country ID',
-    headerClassName: 'w-28 col-compact',
+    key: "countryId",
+    header: "Country ID",
+    headerClassName: "w-28 col-compact",
     render: (country) => (
-      <span style={{ fontFamily: 'ui-monospace, monospace', color: 'var(--dvld-muted)' }}>
+      <span
+        style={{
+          fontFamily: "ui-monospace, monospace",
+          color: "var(--dvld-muted)",
+        }}
+      >
         #{country.countryId}
       </span>
     ),
   },
   {
-    key: 'countryName',
-    header: 'Country Name',
-    className: 'person-name',
+    key: "countryName",
+    header: "Country Name",
+    className: "person-name",
     accessor: (country) => country.countryName,
   },
-]
+];
 
-export default function CountriesPage({
-  accessToken,
-}: CountriesPageProps) {
-  const fetcher = useCallback(() => getCountries(accessToken), [accessToken])
+export default function CountriesPage({ accessToken }: CountriesPageProps) {
+  const fetcher = useCallback(() => getCountries(accessToken), [accessToken]);
 
   const {
     data: countries,
@@ -54,8 +57,8 @@ export default function CountriesPage({
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
     initialData: [],
-    defaultErrorMessage: 'Failed to load countries.',
-  })
+    defaultErrorMessage: "Failed to load countries.",
+  });
 
   const {
     search,
@@ -67,35 +70,35 @@ export default function CountriesPage({
     resetFilters: handleResetFilters,
   } = useTableFilters<Country, SearchBy>({
     data: countries,
-    initialSearchField: 'all',
+    initialSearchField: "all",
     filterItem: (country, query, field) => {
-      if (!query) return true
+      if (!query) return true;
 
-      if (field === 'name') {
-        return country.countryName.toLowerCase().includes(query)
+      if (field === "name") {
+        return country.countryName.toLowerCase().includes(query);
       }
-      if (field === 'id') {
-        return String(country.countryId).includes(query)
+      if (field === "id") {
+        return String(country.countryId).includes(query);
       }
 
       // 'all'
       return (
         country.countryName.toLowerCase().includes(query) ||
         String(country.countryId).includes(query)
-      )
+      );
     },
-  })
+  });
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
-      case 'name':
-        return 'Search by country name...'
-      case 'id':
-        return 'Search by country ID...'
+      case "name":
+        return "Search by country name...";
+      case "id":
+        return "Search by country ID...";
       default:
-        return 'Search by country name or ID...'
+        return "Search by country name or ID...";
     }
-  }, [searchBy])
+  }, [searchBy]);
 
   return (
     <section className="page-content">
@@ -110,9 +113,9 @@ export default function CountriesPage({
 
           <span className="record-count">
             {loading
-              ? 'Loading...'
+              ? "Loading..."
               : error
-                ? '—'
+                ? "—"
                 : filteredCountries.length === countries.length
                   ? `${countries.length} Countries`
                   : `${filteredCountries.length} of ${countries.length} Countries`}
@@ -135,7 +138,7 @@ export default function CountriesPage({
         />
 
         {error && (
-          <div style={{ margin: '0 25px 20px' }}>
+          <div style={{ margin: "0 25px 20px" }}>
             <ErrorAlert
               message={error}
               onRetry={() => void refresh()}
@@ -156,8 +159,8 @@ export default function CountriesPage({
                 icon={<GlobeIcon size={36} />}
                 message={
                   countries.length === 0
-                    ? 'No countries are registered.'
-                    : 'No countries match your search.'
+                    ? "No countries are registered."
+                    : "No countries match your search."
                 }
               />
             }
@@ -172,5 +175,5 @@ export default function CountriesPage({
         )}
       </section>
     </section>
-  )
+  );
 }

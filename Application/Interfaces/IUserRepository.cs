@@ -31,8 +31,10 @@ public interface IUserRepository
         int userId,
         CancellationToken cancellationToken = default);
 
+    Task<int> GetActiveAdminCountAsync(
+        CancellationToken cancellationToken = default);
+
     Task AddUserAsync(User user);
 
     void DeleteUser(User user);
-
 }

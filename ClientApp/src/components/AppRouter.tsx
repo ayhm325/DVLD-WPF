@@ -1,121 +1,120 @@
-import { lazy, Suspense } from 'react'
-import AccessDenied from './common/AccessDenied'
-import LoadingSpinner from './common/LoadingSpinner'
-import { isPagePermitted } from '../utils/permissions'
-import type { Person } from '../types/Person'
-import type { Driver } from '../types/Driver'
+import { lazy, Suspense } from "react";
+import AccessDenied from "./common/AccessDenied";
+import LoadingSpinner from "./common/LoadingSpinner";
+import { isPagePermitted } from "../utils/permissions";
+import type { Person } from "../types/Person";
+import type { Driver } from "../types/Driver";
 
-const DashboardPage = lazy(() => import('./DashboardPage'))
-const PeoplePage = lazy(() => import('./PeoplePage'))
-const AddPersonPage = lazy(() => import('./AddPersonPage'))
-const EditPersonPage = lazy(() => import('./people/EditPersonPage'))
-const PersonDetailsPage = lazy(() => import('./people/PersonDetailsPage'))
-const DriversPage = lazy(() => import('./DriversPage'))
-const LicensesPage = lazy(() => import('./LicensesPage'))
-const LicenseHistoryPage = lazy(() => import('./licenses/LicenseHistoryPage'))
+const DashboardPage = lazy(() => import("./DashboardPage"));
+const PeoplePage = lazy(() => import("./PeoplePage"));
+const AddPersonPage = lazy(() => import("./AddPersonPage"));
+const EditPersonPage = lazy(() => import("./people/EditPersonPage"));
+const PersonDetailsPage = lazy(() => import("./people/PersonDetailsPage"));
+const DriversPage = lazy(() => import("./DriversPage"));
+const LicensesPage = lazy(() => import("./LicensesPage"));
+const LicenseHistoryPage = lazy(() => import("./licenses/LicenseHistoryPage"));
 const InternationalLicensesPage = lazy(
-  () => import('./international license/InternationalLicensesPage'),
-)
+  () => import("./international license/InternationalLicensesPage"),
+);
 const IssueInternationalLicensePage = lazy(
-  () => import('./international license/IssueInternationalLicensePage'),
-)
+  () => import("./international license/IssueInternationalLicensePage"),
+);
 const LocalApplicationsPage = lazy(
-  () => import('./local applications/LocalApplicationsPage'),
-)
+  () => import("./local applications/LocalApplicationsPage"),
+);
 const TestAppointmentsPage = lazy(
-  () => import('./test appointments/TestAppointmentsPage'),
-)
+  () => import("./test appointments/TestAppointmentsPage"),
+);
 const AppointmentDetailsPage = lazy(
-  () => import('./test appointments/AppointmentDetailsPage'),
-)
+  () => import("./test appointments/AppointmentDetailsPage"),
+);
 const ScheduleAppointmentPage = lazy(
-  () => import('./test appointments/ScheduleAppointmentPage'),
-)
+  () => import("./test appointments/ScheduleAppointmentPage"),
+);
 const ManageTestAppointmentsPage = lazy(
-  () => import('./test appointments/ManageTestAppointmentsPage'),
-)
+  () => import("./test appointments/ManageTestAppointmentsPage"),
+);
 const TakeExaminationPage = lazy(
-  () => import('./test appointments/TakeExaminationPage'),
-)
-const RenewLicensePage = lazy(() => import('./licenses/RenewLicensePage'))
-const ReplaceLicensePage = lazy(() => import('./licenses/ReplaceLicensePage'))
-const DetainLicensePage = lazy(() => import('./detained/DetainLicensePage'))
-const DetainedLicensesPage = lazy(() => import('./detained/DetainedLicensesPage'))
-const CountriesPage = lazy(() => import('./CountriesPage'))
-const ApplicationTypesPage = lazy(() => import('./ApplicationTypesPage'))
-const LicenseClassesPage = lazy(() => import('./LicenseClassesPage'))
-const TestTypesPage = lazy(() => import('./TestTypesPage'))
-const MyProfilePage = lazy(() => import('./profile/MyProfilePage'))
-const ChangePasswordPage = lazy(() => import('./profile/ChangePasswordPage'))
+  () => import("./test appointments/TakeExaminationPage"),
+);
+const RenewLicensePage = lazy(() => import("./licenses/RenewLicensePage"));
+const ReplaceLicensePage = lazy(() => import("./licenses/ReplaceLicensePage"));
+const DetainLicensePage = lazy(() => import("./detained/DetainLicensePage"));
+const DetainedLicensesPage = lazy(
+  () => import("./detained/DetainedLicensesPage"),
+);
+const CountriesPage = lazy(() => import("./CountriesPage"));
+const ApplicationTypesPage = lazy(() => import("./ApplicationTypesPage"));
+const LicenseClassesPage = lazy(() => import("./LicenseClassesPage"));
+const TestTypesPage = lazy(() => import("./TestTypesPage"));
+const MyProfilePage = lazy(() => import("./profile/MyProfilePage"));
+const ChangePasswordPage = lazy(() => import("./profile/ChangePasswordPage"));
+const UsersPage = lazy(() => import("./users/UsersPage"));
 
 export type AppRouterProps = {
-  activePage: string
-  accessToken: string
-  userRole?: string | null
-  onNavigate: (page: string) => void
-  showIssueInternational: boolean
-  setShowIssueInternational: (show: boolean) => void
-  internationalRefreshKey: number
-  onInternationalIssued: () => void
-  statisticsRefreshKey: number
-  people: Person[]
-  filteredPeople: Person[]
-  searchName: string
-  onSearchChange: (value: string) => void
-  loadingPeople: boolean
-  peopleError: string
-  onRetryPeople: () => void
-  onAddPerson: () => void
-  onPersonAdded?: () => void
-  onShowDetails?: (person: Person) => void
-  onEditPerson?: (person: Person) => void
-  selectedPersonId?: number | null
-  setSelectedPersonId?: (id: number | null) => void
-  selectedDriver?: Driver | null
-  setSelectedDriver?: (driver: Driver | null) => void
-  onShowPersonInfo?: (personId: number) => void
-  onShowLicenseHistory?: (personId: number, driver?: Driver) => void
-  personDetailsSource?: string
-  licenseHistorySource?: string
-  selectedAppointmentId?: number | null
-  appointmentDetailsSource?: string
-  onShowAppointmentDetails?: (appointmentId: number, source?: string) => void
+  activePage: string;
+  accessToken: string;
+  userRole?: string | null;
+  onNavigate: (page: string) => void;
+  showIssueInternational: boolean;
+  setShowIssueInternational: (show: boolean) => void;
+  internationalRefreshKey: number;
+  onInternationalIssued: () => void;
+  statisticsRefreshKey: number;
+  people: Person[];
+  filteredPeople: Person[];
+  searchName: string;
+  onSearchChange: (value: string) => void;
+  loadingPeople: boolean;
+  peopleError: string;
+  onRetryPeople: () => void;
+  onAddPerson: () => void;
+  onPersonAdded?: () => void;
+  onShowDetails?: (person: Person) => void;
+  onEditPerson?: (person: Person) => void;
+  selectedPersonId?: number | null;
+  setSelectedPersonId?: (id: number | null) => void;
+  selectedDriver?: Driver | null;
+  setSelectedDriver?: (driver: Driver | null) => void;
+  onShowPersonInfo?: (personId: number) => void;
+  onShowLicenseHistory?: (personId: number, driver?: Driver) => void;
+  personDetailsSource?: string;
+  licenseHistorySource?: string;
+  selectedAppointmentId?: number | null;
+  appointmentDetailsSource?: string;
+  onShowAppointmentDetails?: (appointmentId: number, source?: string) => void;
   scheduleAppointmentContext?: {
-    localAppId?: number | null
-    testTypeId?: 1 | 2 | 3
-    returnPage?: string
-  } | null
+    localAppId?: number | null;
+    testTypeId?: 1 | 2 | 3;
+    returnPage?: string;
+  } | null;
   onScheduleAppointment?: (
     localAppId?: number | null,
     testTypeId?: 1 | 2 | 3,
     source?: string,
     reopenModalOnReturn?: boolean,
-  ) => void
+  ) => void;
   reopenModalTarget?: {
-    localAppId: number
-    testTypeId: 1 | 2 | 3
-  } | null
-  onClearReopenModalTarget?: () => void
+    localAppId: number;
+    testTypeId: 1 | 2 | 3;
+  } | null;
+  onClearReopenModalTarget?: () => void;
   manageTestAppointmentsContext?: {
-    localAppId: number
-    testTypeId?: 1 | 2 | 3
-    returnPage?: string
-  } | null
+    localAppId: number;
+    testTypeId?: 1 | 2 | 3;
+    returnPage?: string;
+  } | null;
   onManageTestAppointments?: (
     localAppId: number,
     sourceOrTestType?: 1 | 2 | 3 | string,
     source?: string,
-  ) => void
+  ) => void;
   takeExaminationContext?: {
-    appointmentId: number
-    returnPage?: string
-  } | null
-  onTakeExamination?: (
-    appointmentId: number,
-    source?: string,
-  ) => void
-}
-
+    appointmentId: number;
+    returnPage?: string;
+  } | null;
+  onTakeExamination?: (appointmentId: number, source?: string) => void;
+};
 
 export default function AppRouter({
   activePage,
@@ -157,7 +156,7 @@ export default function AppRouter({
   takeExaminationContext,
   onTakeExamination,
 }: AppRouterProps) {
-  const isCurrentPagePermitted = isPagePermitted(activePage, userRole)
+  const isCurrentPagePermitted = isPagePermitted(activePage, userRole);
 
   if (!isCurrentPagePermitted) {
     return (
@@ -165,22 +164,22 @@ export default function AppRouter({
         <AccessDenied
           pageTitle={activePage}
           userRole={userRole ?? undefined}
-          onBackToDashboard={() => onNavigate('Dashboard')}
+          onBackToDashboard={() => onNavigate("Dashboard")}
         />
       </section>
-    )
+    );
   }
 
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-[400px] w-full py-16">
+        <div className="flex items-center justify-center min-h-100 w-full py-16">
           <LoadingSpinner size="lg" />
         </div>
       }
     >
       {/* Dashboard */}
-      {activePage === 'Dashboard' && (
+      {activePage === "Dashboard" && (
         <DashboardPage
           accessToken={accessToken}
           statisticsRefreshKey={statisticsRefreshKey}
@@ -197,8 +196,13 @@ export default function AppRouter({
         />
       )}
 
+      {/* User Management (Admin only) */}
+      {activePage === "User Management" && (
+        <UsersPage accessToken={accessToken} onNavigate={onNavigate} />
+      )}
+
       {/* People */}
-      {activePage === 'People' && (
+      {activePage === "People" && (
         <PeoplePage
           accessToken={accessToken}
           people={people}
@@ -215,39 +219,39 @@ export default function AppRouter({
       )}
 
       {/* Add Person */}
-      {activePage === 'Add Person' && (
+      {activePage === "Add Person" && (
         <AddPersonPage
           accessToken={accessToken}
-          onBack={() => onNavigate('People')}
-          onPersonAdded={onPersonAdded ?? (() => onNavigate('People'))}
+          onBack={() => onNavigate("People")}
+          onPersonAdded={onPersonAdded ?? (() => onNavigate("People"))}
         />
       )}
 
       {/* Edit Person */}
-      {activePage === 'Edit Person' && (
+      {activePage === "Edit Person" && (
         <EditPersonPage
           accessToken={accessToken}
           personId={selectedPersonId ?? null}
-          onBack={() => onNavigate('People')}
-          onPersonUpdated={onPersonAdded ?? (() => onNavigate('People'))}
+          onBack={() => onNavigate("People")}
+          onPersonUpdated={onPersonAdded ?? (() => onNavigate("People"))}
         />
       )}
 
       {/* Person Details */}
-      {activePage === 'Person Details' && (
+      {activePage === "Person Details" && (
         <PersonDetailsPage
           accessToken={accessToken}
           personId={selectedPersonId ?? null}
-          onBack={() => onNavigate(personDetailsSource || 'People')}
+          onBack={() => onNavigate(personDetailsSource || "People")}
           onEdit={(id) => {
-            setSelectedPersonId?.(id)
-            onNavigate('Edit Person')
+            setSelectedPersonId?.(id);
+            onNavigate("Edit Person");
           }}
         />
       )}
 
       {/* Drivers */}
-      {activePage === 'Drivers' && (
+      {activePage === "Drivers" && (
         <DriversPage
           accessToken={accessToken}
           onShowPersonInfo={onShowPersonInfo}
@@ -256,22 +260,22 @@ export default function AppRouter({
       )}
 
       {/* Person License History */}
-      {activePage === 'Person License History' && (
+      {activePage === "Person License History" && (
         <LicenseHistoryPage
           accessToken={accessToken}
           personId={selectedPersonId}
           driver={selectedDriver}
-          onBack={() => onNavigate(licenseHistorySource || 'Drivers')}
+          onBack={() => onNavigate(licenseHistorySource || "Drivers")}
         />
       )}
 
       {/* Licenses */}
-      {activePage === 'Licenses' && (
+      {activePage === "Licenses" && (
         <LicensesPage accessToken={accessToken} onNavigate={onNavigate} />
       )}
 
       {/* International Licenses */}
-      {activePage === 'International Licenses' &&
+      {activePage === "International Licenses" &&
         (showIssueInternational ? (
           <IssueInternationalLicensePage
             accessToken={accessToken}
@@ -287,13 +291,13 @@ export default function AppRouter({
         ))}
 
       {/* Applications */}
-      {activePage === 'Local Applications' && (
+      {activePage === "Local Applications" && (
         <LocalApplicationsPage
           accessToken={accessToken}
           onShowLicenseHistory={onShowLicenseHistory}
           onShowAppointmentDetails={
             onShowAppointmentDetails
-              ? (id) => onShowAppointmentDetails(id, 'Local Applications')
+              ? (id) => onShowAppointmentDetails(id, "Local Applications")
               : undefined
           }
           onScheduleAppointment={onScheduleAppointment}
@@ -304,13 +308,13 @@ export default function AppRouter({
       )}
 
       {/* Test Appointments (Staff only) */}
-      {activePage === 'Test Appointments' && (
+      {activePage === "Test Appointments" && (
         <TestAppointmentsPage
           accessToken={accessToken}
           onNavigate={onNavigate}
           onShowAppointmentDetails={
             onShowAppointmentDetails
-              ? (id) => onShowAppointmentDetails(id, 'Test Appointments')
+              ? (id) => onShowAppointmentDetails(id, "Test Appointments")
               : undefined
           }
           onScheduleAppointment={onScheduleAppointment}
@@ -319,11 +323,13 @@ export default function AppRouter({
       )}
 
       {/* Appointment Details (Staff only) */}
-      {activePage === 'Appointment Details' && (
+      {activePage === "Appointment Details" && (
         <AppointmentDetailsPage
           accessToken={accessToken}
           appointmentId={selectedAppointmentId ?? null}
-          onBack={() => onNavigate(appointmentDetailsSource || 'Test Appointments')}
+          onBack={() =>
+            onNavigate(appointmentDetailsSource || "Test Appointments")
+          }
           onNavigate={onNavigate}
           onTakeExamination={onTakeExamination}
           userRole={userRole}
@@ -331,13 +337,15 @@ export default function AppRouter({
       )}
 
       {/* Manage Test Appointments (Staff only) */}
-      {(activePage === 'Manage Test Appointments' ||
-        activePage === 'Written Test Appointments') && (
+      {(activePage === "Manage Test Appointments" ||
+        activePage === "Written Test Appointments") && (
         <ManageTestAppointmentsPage
           accessToken={accessToken}
           localAppId={manageTestAppointmentsContext?.localAppId ?? null}
           onBack={() =>
-            onNavigate(manageTestAppointmentsContext?.returnPage || 'Local Applications')
+            onNavigate(
+              manageTestAppointmentsContext?.returnPage || "Local Applications",
+            )
           }
           onNavigate={onNavigate}
           onScheduleAppointment={onScheduleAppointment}
@@ -347,96 +355,100 @@ export default function AppRouter({
       )}
 
       {/* Take Examination (Staff only) */}
-      {activePage === 'Take Examination' && (
+      {activePage === "Take Examination" && (
         <TakeExaminationPage
           accessToken={accessToken}
           appointmentId={takeExaminationContext?.appointmentId ?? null}
           onBack={() =>
-            onNavigate(takeExaminationContext?.returnPage || 'Manage Test Appointments')
+            onNavigate(
+              takeExaminationContext?.returnPage || "Manage Test Appointments",
+            )
           }
-          returnPage={takeExaminationContext?.returnPage || 'Manage Test Appointments'}
+          returnPage={
+            takeExaminationContext?.returnPage || "Manage Test Appointments"
+          }
         />
       )}
 
       {/* Schedule Appointment (Staff only) */}
-      {activePage === 'Schedule Appointment' && (
+      {activePage === "Schedule Appointment" && (
         <ScheduleAppointmentPage
           accessToken={accessToken}
           initialLocalAppId={scheduleAppointmentContext?.localAppId ?? null}
           initialTestTypeId={scheduleAppointmentContext?.testTypeId ?? 1}
-          returnPage={scheduleAppointmentContext?.returnPage ?? 'Local Applications'}
-          onBack={() => onNavigate(scheduleAppointmentContext?.returnPage || 'Local Applications')}
+          returnPage={
+            scheduleAppointmentContext?.returnPage ?? "Local Applications"
+          }
+          onBack={() =>
+            onNavigate(
+              scheduleAppointmentContext?.returnPage || "Local Applications",
+            )
+          }
           onNavigate={onNavigate}
           onShowAppointmentDetails={onShowAppointmentDetails}
         />
       )}
 
       {/* License Renewal (Staff only) */}
-      {activePage === 'Renew License' && (
+      {activePage === "Renew License" && (
         <RenewLicensePage
           accessToken={accessToken}
-          onBack={() => onNavigate('Licenses')}
-          onRenewed={() => onNavigate('Licenses')}
+          onBack={() => onNavigate("Licenses")}
+          onRenewed={() => onNavigate("Licenses")}
         />
       )}
 
       {/* License Replacement (Staff only) */}
-      {activePage === 'Replace License' && (
+      {activePage === "Replace License" && (
         <ReplaceLicensePage
           accessToken={accessToken}
-          onBack={() => onNavigate('Licenses')}
-          onReplaced={() => onNavigate('Licenses')}
+          onBack={() => onNavigate("Licenses")}
+          onReplaced={() => onNavigate("Licenses")}
         />
       )}
 
       {/* License Detention (Staff only) */}
-      {activePage === 'Detain License' && (
+      {activePage === "Detain License" && (
         <DetainLicensePage
           accessToken={accessToken}
-          onBack={() => onNavigate('Detained Licenses')}
-          onDetained={() => onNavigate('Detained Licenses')}
+          onBack={() => onNavigate("Detained Licenses")}
+          onDetained={() => onNavigate("Detained Licenses")}
         />
       )}
 
       {/* Detained Licenses Registry (Staff only) */}
-      {activePage === 'Detained Licenses' && (
+      {activePage === "Detained Licenses" && (
         <DetainedLicensesPage
           accessToken={accessToken}
-          onNavigateToDetain={() => onNavigate('Detain License')}
+          onNavigateToDetain={() => onNavigate("Detain License")}
         />
       )}
 
       {/* Settings pages */}
-      {activePage === 'Countries' && (
+      {activePage === "Countries" && (
         <CountriesPage accessToken={accessToken} userRole={userRole} />
       )}
 
-      {activePage === 'Application Types' && (
+      {activePage === "Application Types" && (
         <ApplicationTypesPage accessToken={accessToken} userRole={userRole} />
       )}
 
-      {activePage === 'License Classes' && (
+      {activePage === "License Classes" && (
         <LicenseClassesPage accessToken={accessToken} userRole={userRole} />
       )}
 
-      {activePage === 'Test Types' && (
+      {activePage === "Test Types" && (
         <TestTypesPage accessToken={accessToken} userRole={userRole} />
       )}
 
       {/* Account Management (Both Admin and Staff) */}
-      {activePage === 'My Profile' && (
-        <MyProfilePage
-          accessToken={accessToken}
-          onNavigate={onNavigate}
-        />
+      {activePage === "My Profile" && (
+        <MyProfilePage accessToken={accessToken} onNavigate={onNavigate} />
       )}
 
-      {activePage === 'Change Password' && (
-        <ChangePasswordPage
-          accessToken={accessToken}
-          onNavigate={onNavigate}
-        />
+      {activePage === "Change Password" && (
+        <ChangePasswordPage accessToken={accessToken} onNavigate={onNavigate} />
       )}
     </Suspense>
-  )
+  );
 }

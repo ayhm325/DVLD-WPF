@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using API.IntegrationTests.Infrastructure;
@@ -402,6 +402,278 @@ public sealed class UsersControllerTests
             response, (HttpStatusCode)status, title, detail);
 
         factory.UserServiceMock.Verify(x => x.DeleteUserAsync(66), Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_WhenAuthenticatedAsStaff_ReturnsForbidden()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateClient(factory, 10, "Staff");
+
+        var response = await client.PostAsJsonAsync("/api/Users", new
+        {
+            PersonId = 700,
+            UserName = "newadmin",
+            Password = "Password123",
+            IsActive = true,
+            Role = 2
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.AddUserAsync(It.IsAny<CreateUserDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_WhenAuthenticatedAsStaff_ReturnsForbidden()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateClient(factory, 10, "Staff");
+
+        var response = await client.PutAsJsonAsync("/api/Users/55", new
+        {
+            PersonId = 555,
+            UserName = "updateduser",
+            IsActive = false
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Delete_WhenAuthenticatedAsStaff_ReturnsForbidden()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateClient(factory, 10, "Staff");
+
+        var response = await client.DeleteAsync("/api/Users/66");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.DeleteUserAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_WhenAdminCreatesAdminAccount_PassesAdminRoleToService()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+            .ReturnsAsync(Result<int>.Success(88));
+
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PostAsJsonAsync("/api/Users", new
+        {
+            PersonId = 700,
+            UserName = "adminuser",
+            Password = "Password123",
+            IsActive = true,
+            Role = 2
+        });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(88, await response.Content.ReadFromJsonAsync<int>());
+
+        factory.UserServiceMock.Verify(x => x.AddUserAsync(
+            It.Is<CreateUserDto>(d =>
+                d.PersonId == 700 &&
+                d.UserName == "adminuser" &&
+                d.Password == "Password123" &&
+                d.IsActive &&
+                d.Role == UserRole.Admin)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_WhenAdminSelectsStaffRole_PassesStaffRoleToService()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+            .ReturnsAsync(Result<int>.Success(91));
+
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PostAsJsonAsync("/api/Users", new
+        {
+            PersonId = 701,
+            UserName = "new_staff",
+            Password = "Password123!",
+            IsActive = true,
+            Role = 1
+        });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(91, await response.Content.ReadFromJsonAsync<int>());
+
+        factory.UserServiceMock.Verify(x => x.AddUserAsync(
+            It.Is<CreateUserDto>(d =>
+                d.PersonId == 701 &&
+                d.UserName == "new_staff" &&
+                d.IsActive &&
+                d.Role == UserRole.Staff)), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    [InlineData(99)]
+    public async Task Create_WithUnsupportedRole_ReturnsBadRequestWithoutCallingService(int role)
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PostAsJsonAsync("/api/Users", new
+        {
+            PersonId = 701,
+            UserName = "bad_role",
+            Password = "Password123!",
+            IsActive = true,
+            Role = role
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.AddUserAsync(It.IsAny<CreateUserDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_WithoutRole_DefaultsToStaffForBackwardCompatibility()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+            .ReturnsAsync(Result<int>.Success(92));
+
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PostAsJsonAsync("/api/Users", new
+        {
+            PersonId = 702,
+            UserName = "legacy_client",
+            Password = "Password123!",
+            IsActive = true
+        });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.AddUserAsync(
+            It.Is<CreateUserDto>(d => d.Role == UserRole.Staff)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Update_WhenAdminChangesRole_PassesRoleToService()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock.Setup(x =>
+                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>()))
+            .ReturnsAsync(Result.Success());
+
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PutAsJsonAsync("/api/Users/55", new
+        {
+            PersonId = 555,
+            UserName = "promoted",
+            IsActive = true,
+            Role = 2
+        });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(
+            55,
+            It.Is<UpdateUserDto>(d => d.Role == UserRole.Admin)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Update_WithoutRole_KeepsRoleUnchanged()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock.Setup(x =>
+                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>()))
+            .ReturnsAsync(Result.Success());
+
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PutAsJsonAsync("/api/Users/55", new
+        {
+            PersonId = 555,
+            UserName = "legacy",
+            IsActive = true
+        });
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(
+            55,
+            It.Is<UpdateUserDto>(d => d.Role == null)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Update_WithUnsupportedRole_ReturnsBadRequest()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PutAsJsonAsync("/api/Users/55", new
+        {
+            PersonId = 555,
+            UserName = "user55",
+            IsActive = true,
+            Role = 7
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_WhenStaffAttemptsRoleChange_ReturnsForbidden()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateClient(factory, 10, "Staff");
+
+        var response = await client.PutAsJsonAsync("/api/Users/10", new
+        {
+            PersonId = 100,
+            UserName = "self_promote",
+            IsActive = true,
+            Role = 2
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetDetails_WhenAuthenticatedAsStaff_ReturnsForbidden()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = CreateClient(factory, 10, "Staff");
+
+        var response = await client.GetAsync("/api/Users/2/details");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        factory.UserServiceMock.Verify(x => x.GetUserDetailsAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_ResponseNeverContainsPasswordOrHashFields()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock.Setup(x => x.GetAllUsersAsync())
+            .ReturnsAsync(Result<List<UserDto>>.Success(
+            [
+                new() { UserId = 2, PersonId = 2, UserName = "ayhm", IsActive = true, FullName = "Ayhm Admin", Role = UserRole.Admin }
+            ]));
+
+        using var client = CreateClient(factory, 2, "Admin");
+        var response = await client.GetAsync("/api/Users");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var json = await response.Content.ReadAsStringAsync();
+
+        Assert.DoesNotContain("password", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("passwordHash", json, StringComparison.OrdinalIgnoreCase);
     }
 
     private static HttpClient CreateClient(

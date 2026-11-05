@@ -144,6 +144,15 @@ const COMMAND_ITEMS: CommandItem[] = [
     keywords: ['detained', 'release', 'fines', 'unrelease', 'impound'],
   },
   {
+    id: 'user-management',
+    page: 'User Management',
+    title: 'User Management',
+    description: 'Manage system accounts, administrator roles, and active status',
+    category: 'Administration',
+    icon: Users,
+    keywords: ['users', 'user management', 'admins', 'accounts', 'roles', 'staff', 'permissions'],
+  },
+  {
     id: 'application-types',
     page: 'Application Types',
     title: 'Application Types & Fees',

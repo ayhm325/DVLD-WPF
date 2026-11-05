@@ -85,6 +85,31 @@ export const PAGE_HERO_CONFIG: Record<string, PageHeroConfigItem> = {
       },
     ],
   },
+  'User Management': {
+    eyebrow: 'ADMINISTRATION',
+    title: 'User',
+    highlight: 'Management',
+    description: 'Manage system accounts, administrator access, and user information.',
+    illustrationTag: 'ADMIN-USERS',
+    illustrationIcon: <ShieldCheck className="size-6" />,
+    floatingIcons: [
+      {
+        icon: <Users className="size-7" />,
+        color: 'blue',
+        position: 'left',
+      },
+      {
+        icon: <Shield className="size-6" />,
+        color: 'cyan',
+        position: 'top-right',
+      },
+      {
+        icon: <UserCheck className="size-6" />,
+        color: 'emerald',
+        position: 'bottom-right',
+      },
+    ],
+  },
   People: {
     eyebrow: 'PEOPLE MANAGEMENT',
     title: 'People',

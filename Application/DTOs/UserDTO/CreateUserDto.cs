@@ -1,4 +1,6 @@
-﻿namespace Application.DTOs.UserDTO
+using Domain.Enums;
+
+namespace Application.DTOs.UserDTO
 {
     public class CreateUserDto
     {
@@ -9,5 +11,7 @@
         public bool IsActive { get; set; }
 
         public int PersonId { get; set; }
+
+        public UserRole Role { get; set; } = UserRole.Staff;
     }
 }

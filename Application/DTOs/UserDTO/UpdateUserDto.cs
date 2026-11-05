@@ -1,4 +1,6 @@
-﻿namespace Application.DTOs.UserDTO
+using Domain.Enums;
+
+namespace Application.DTOs.UserDTO
 {
     public class UpdateUserDto
     {
@@ -9,5 +11,10 @@
         public bool IsActive { get; set; }
 
         public int PersonId { get; set; }
+
+        /// <summary>
+        /// Optional new role. Null keeps the user's current role unchanged.
+        /// </summary>
+        public UserRole? Role { get; set; }
     }
 }

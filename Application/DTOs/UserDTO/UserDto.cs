@@ -1,4 +1,4 @@
-﻿using Domain.Enums;
+using Domain.Enums;
 
 namespace Application.DTOs.UserDTO;
 
@@ -15,4 +15,6 @@ public sealed class UserDto
     public string FullName { get; init; } = string.Empty;
 
     public UserRole Role { get; init; }
+
+    public string? ImagePath { get; init; }
 }

@@ -1,4 +1,4 @@
-﻿using Application.DTOs.UserDTO;
+using Application.DTOs.UserDTO;
 using Domain.Entities;
 
 namespace Application.Mappings;
@@ -27,7 +27,8 @@ public static class UserMapper
             UserName = user.UserName,
             IsActive = user.IsActive,
             FullName = fullName,
-            Role = user.Role
+            Role = user.Role,
+            ImagePath = user.Person?.ImagePath
         };
     }
 
@@ -50,7 +51,7 @@ public static class UserMapper
             UserName = dto.UserName.Trim(),
             Password = hashedPassword,
             IsActive = dto.IsActive,
-            Role = Domain.Enums.UserRole.Staff
+            Role = dto.Role
         };
     }
 

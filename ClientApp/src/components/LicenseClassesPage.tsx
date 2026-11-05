@@ -1,65 +1,68 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from "react";
 import {
   getLicenseClasses,
   updateLicenseClass,
-} from '../services/licenseClassService'
-import type { LicenseClass } from '../types/LicenseClass'
-import { useAsyncData, useTableFilters } from '../hooks'
-import PageHero from './common/PageHero'
-import TableToolbar from './common/TableToolbar'
-import ErrorAlert from './common/ErrorAlert'
-import EmptyState from './common/EmptyState'
-import DataTableContainer from './common/DataTableContainer'
+} from "../services/licenseClassService";
+import type { LicenseClass } from "../types/LicenseClass";
+import { useAsyncData, useTableFilters } from "../hooks";
+import PageHero from "./common/PageHero";
+import TableToolbar from "./common/TableToolbar";
+import ErrorAlert from "./common/ErrorAlert";
+import EmptyState from "./common/EmptyState";
+import DataTableContainer from "./common/DataTableContainer";
 import LicenseClassRow, {
   type LicenseClassEditForm,
-} from './licenseClasses/LicenseClassRow'
+} from "./licenseClasses/LicenseClassRow";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select'
-import { IdCard as LicenseIcon } from 'lucide-react'
-import { canManageReferenceData } from '../utils/permissions'
-import { useAuth } from '../context/useAuth'
+} from "./ui/select";
+import { IdCard as LicenseIcon } from "lucide-react";
+import { canManageReferenceData } from "../utils/permissions";
+import { useAuth } from "../context/useAuth";
 
 type Props = {
-  accessToken: string
-  userRole?: string | null
-}
+  accessToken: string;
+  userRole?: string | null;
+};
 
-type SearchBy = 'all' | 'name' | 'id' | 'desc'
-type AgeFilter = 'all' | '18' | '21'
+type SearchBy = "all" | "name" | "id" | "desc";
+type AgeFilter = "all" | "18" | "21";
 
 interface LicenseClassFilters extends Record<string, unknown> {
-  ageFilter: AgeFilter
+  ageFilter: AgeFilter;
 }
 
 const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
-  { value: 'all', label: 'All Fields' },
-  { value: 'name', label: 'Class Name' },
-  { value: 'id', label: 'Class ID' },
-  { value: 'desc', label: 'Description' },
-]
+  { value: "all", label: "All Fields" },
+  { value: "name", label: "Class Name" },
+  { value: "id", label: "Class ID" },
+  { value: "desc", label: "Description" },
+];
 
 export default function LicenseClassesPage({ accessToken, userRole }: Props) {
-  const { user } = useAuth()
-  const effectiveRole = userRole ?? user?.role
-  const canEdit = canManageReferenceData('License Classes', effectiveRole)
+  const { user } = useAuth();
+  const effectiveRole = userRole ?? user?.role;
+  const canEdit = canManageReferenceData("License Classes", effectiveRole);
 
-  const [success, setSuccess] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [success, setSuccess] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<LicenseClassEditForm>({
-    licenseClassName: '',
-    licenseClassDescription: '',
-    minAllowedAge: '',
-    defaultValidityLength: '',
-    licenseClassFees: '',
-  })
-  const [saving, setSaving] = useState(false)
+    licenseClassName: "",
+    licenseClassDescription: "",
+    minAllowedAge: "",
+    defaultValidityLength: "",
+    licenseClassFees: "",
+  });
+  const [saving, setSaving] = useState(false);
 
-  const fetcher = useCallback(() => getLicenseClasses(accessToken), [accessToken])
+  const fetcher = useCallback(
+    () => getLicenseClasses(accessToken),
+    [accessToken],
+  );
 
   const {
     data: items,
@@ -70,8 +73,8 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
     initialData: [],
-    defaultErrorMessage: 'Failed to load license classes.',
-  })
+    defaultErrorMessage: "Failed to load license classes.",
+  });
 
   const {
     search,
@@ -85,24 +88,26 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
     resetFilters: handleResetFilters,
   } = useTableFilters<LicenseClass, SearchBy, LicenseClassFilters>({
     data: items,
-    initialSearchField: 'all',
-    initialFilters: { ageFilter: 'all' },
+    initialSearchField: "all",
+    initialFilters: { ageFilter: "all" },
     filterItem: (item, query, field, currentFilters) => {
       // 1. Age check
-      if (currentFilters.ageFilter === '18' && item.minAllowedAge < 18) return false
-      if (currentFilters.ageFilter === '21' && item.minAllowedAge < 21) return false
+      if (currentFilters.ageFilter === "18" && item.minAllowedAge < 18)
+        return false;
+      if (currentFilters.ageFilter === "21" && item.minAllowedAge < 21)
+        return false;
 
       // 2. Query check
-      if (!query) return true
+      if (!query) return true;
 
-      if (field === 'name') {
-        return item.licenseClassName.toLowerCase().includes(query)
+      if (field === "name") {
+        return item.licenseClassName.toLowerCase().includes(query);
       }
-      if (field === 'id') {
-        return String(item.licenseClassId).includes(query)
+      if (field === "id") {
+        return String(item.licenseClassId).includes(query);
       }
-      if (field === 'desc') {
-        return item.licenseClassDescription.toLowerCase().includes(query)
+      if (field === "desc") {
+        return item.licenseClassDescription.toLowerCase().includes(query);
       }
 
       // 'all'
@@ -110,84 +115,102 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
         item.licenseClassName.toLowerCase().includes(query) ||
         String(item.licenseClassId).includes(query) ||
         item.licenseClassDescription.toLowerCase().includes(query)
-      )
+      );
     },
-  })
+  });
 
-  const ageFilter = filters.ageFilter
+  const ageFilter = filters.ageFilter;
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
-      case 'name':
-        return 'Search by license class name...'
-      case 'id':
-        return 'Search by class ID...'
-      case 'desc':
-        return 'Search by description...'
+      case "name":
+        return "Search by license class name...";
+      case "id":
+        return "Search by class ID...";
+      case "desc":
+        return "Search by description...";
       default:
-        return 'Search by name, ID, or description...'
+        return "Search by name, ID, or description...";
     }
-  }, [searchBy])
+  }, [searchBy]);
 
   function startEditing(item: LicenseClass) {
-    if (!canEdit) return
-    setEditingId(item.licenseClassId)
+    if (!canEdit) return;
+    setEditingId(item.licenseClassId);
     setForm({
       licenseClassName: item.licenseClassName,
       licenseClassDescription: item.licenseClassDescription,
       minAllowedAge: String(item.minAllowedAge),
       defaultValidityLength: String(item.defaultValidityLength),
       licenseClassFees: String(item.licenseClassFees),
-    })
-    setError('')
-    setSuccess('')
+    });
+    setError("");
+    setSuccess("");
   }
 
   async function saveChanges() {
-    if (!canEdit || editingId === null || saving) return
+    if (!canEdit || editingId === null || saving) return;
 
-    const name = form.licenseClassName.trim()
-    const description = form.licenseClassDescription.trim()
-    const minAge = Number(form.minAllowedAge)
-    const validity = Number(form.defaultValidityLength)
-    const fees = Number(form.licenseClassFees)
+    const name = form.licenseClassName.trim();
+    const description = form.licenseClassDescription.trim();
+    const minAge = Number(form.minAllowedAge);
+    const validity = Number(form.defaultValidityLength);
+    const fees = Number(form.licenseClassFees);
 
     if (!name) {
-      setError('License class name is required.')
-      return
+      setError("License class name is required.");
+      return;
     }
     if (name.length > 100) {
-      setError('License class name cannot exceed 100 characters.')
-      return
+      setError("License class name cannot exceed 100 characters.");
+      return;
     }
 
     if (!description) {
-      setError('License class description is required.')
-      return
+      setError("License class description is required.");
+      return;
     }
     if (description.length > 500) {
-      setError('License class description cannot exceed 500 characters.')
-      return
+      setError("License class description cannot exceed 500 characters.");
+      return;
     }
 
-    if (form.minAllowedAge.trim() === '' || !Number.isInteger(minAge) || minAge <= 0 || minAge > 100) {
-      setError('Minimum allowed age must be a valid integer greater than zero.')
-      return
+    if (
+      form.minAllowedAge.trim() === "" ||
+      !Number.isInteger(minAge) ||
+      minAge <= 0 ||
+      minAge > 100
+    ) {
+      setError(
+        "Minimum allowed age must be a valid integer greater than zero.",
+      );
+      return;
     }
 
-    if (form.defaultValidityLength.trim() === '' || !Number.isInteger(validity) || validity <= 0 || validity > 100) {
-      setError('Default validity length must be a valid integer greater than zero.')
-      return
+    if (
+      form.defaultValidityLength.trim() === "" ||
+      !Number.isInteger(validity) ||
+      validity <= 0 ||
+      validity > 100
+    ) {
+      setError(
+        "Default validity length must be a valid integer greater than zero.",
+      );
+      return;
     }
 
-    if (form.licenseClassFees.trim() === '' || !Number.isFinite(fees) || fees < 0) {
-      setError('Enter a valid fee greater than or equal to zero.')
-      return
+    if (
+      form.licenseClassFees.trim() === "" ||
+      !Number.isFinite(fees) ||
+      fees < 0
+    ) {
+      setError("Enter a valid fee greater than or equal to zero.");
+      return;
     }
 
-    setSaving(true)
-    setError('')
-    setSuccess('')
+    setSaving(true);
+    setError("");
+    setSuccess("");
 
     try {
       await updateLicenseClass(accessToken, editingId, {
@@ -197,17 +220,17 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
         minAllowedAge: minAge,
         defaultValidityLength: validity,
         licenseClassFees: fees,
-      })
+      });
 
-      await refresh()
-      setEditingId(null)
-      setSuccess('License class updated successfully.')
+      await refresh();
+      setEditingId(null);
+      setSuccess("License class updated successfully.");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Failed to update license class.',
-      )
+        err instanceof Error ? err.message : "Failed to update license class.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -224,7 +247,7 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
 
           <span className="record-count">
             {loading
-              ? 'Loading...'
+              ? "Loading..."
               : filteredItems.length === items.length
                 ? `${items.length} Classes`
                 : `${filteredItems.length} of ${items.length} Classes`}
@@ -244,10 +267,12 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
             <div style={{ minWidth: 140 }} className="shrink-0">
               <Select
                 value={ageFilter}
-                onValueChange={(val) => setFilter('ageFilter', val as AgeFilter)}
+                onValueChange={(val) =>
+                  setFilter("ageFilter", val as AgeFilter)
+                }
               >
                 <SelectTrigger
-                  className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                  className="h-10 min-h-10 w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
                   aria-label="Filter by minimum age"
                 >
                   <SelectValue />
@@ -263,19 +288,19 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
           isFiltered={isFiltered}
           onReset={handleResetFilters}
           onRefresh={() => {
-            setSuccess('')
-            void refresh()
+            setSuccess("");
+            void refresh();
           }}
           refreshing={loading}
         />
 
         {error && (
-          <div style={{ margin: '0 25px 20px' }}>
+          <div style={{ margin: "0 25px 20px" }}>
             <ErrorAlert
               message={error}
               onRetry={() => {
-                setSuccess('')
-                void refresh()
+                setSuccess("");
+                void refresh();
               }}
             />
           </div>
@@ -285,9 +310,9 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
           <p
             role="status"
             style={{
-              padding: '0 25px 20px',
+              padding: "0 25px 20px",
               margin: 0,
-              color: '#059669',
+              color: "#059669",
               fontWeight: 600,
               fontSize: 13,
             }}
@@ -309,7 +334,9 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
                   <th className="w-28 whitespace-nowrap">Minimum Age</th>
                   <th className="w-32 whitespace-nowrap">Validity (Years)</th>
                   <th className="w-28 whitespace-nowrap">Fees</th>
-                  {canEdit && <th className="w-32 whitespace-nowrap">Actions</th>}
+                  {canEdit && (
+                    <th className="w-32 whitespace-nowrap">Actions</th>
+                  )}
                 </tr>
               </thead>
 
@@ -326,8 +353,8 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
                     onFormChange={setForm}
                     onSave={() => void saveChanges()}
                     onCancel={() => {
-                      setEditingId(null)
-                      setError('')
+                      setEditingId(null);
+                      setError("");
                     }}
                   />
                 ))}
@@ -339,8 +366,8 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
                         icon={<LicenseIcon size={36} />}
                         message={
                           items.length === 0
-                            ? 'No license classes found.'
-                            : 'No license classes match your search.'
+                            ? "No license classes found."
+                            : "No license classes match your search."
                         }
                       />
                     </td>
@@ -358,5 +385,5 @@ export default function LicenseClassesPage({ accessToken, userRole }: Props) {
         )}
       </section>
     </section>
-  )
+  );
 }

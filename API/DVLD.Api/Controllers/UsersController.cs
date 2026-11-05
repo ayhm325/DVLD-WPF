@@ -1,5 +1,7 @@
-﻿using Application.DTOs.UserDTO;
+using Application.Common.Results;
+using Application.DTOs.UserDTO;
 using Application.Interfaces;
+using Domain.Enums;
 using DVLD.Api.Results;
 using DVLD.Contracts.User;
 using DVLD.Contracts.Users;
@@ -108,6 +110,20 @@ public sealed class UsersController(
     public async Task<IActionResult> Create(
         [FromBody] CreateUserRequest request)
     {
+        UserRole targetRole = UserRole.Staff;
+
+        if (request.Role.HasValue)
+        {
+            if (!Enum.IsDefined(typeof(UserRole), request.Role.Value))
+            {
+                return Result
+                    .ValidationFailure("Invalid user role.")
+                    .ToActionResult(this);
+            }
+
+            targetRole = (UserRole)request.Role.Value;
+        }
+
         var result =
             await service.AddUserAsync(
                 new CreateUserDto
@@ -115,7 +131,8 @@ public sealed class UsersController(
                     PersonId = request.PersonId,
                     UserName = request.UserName,
                     Password = request.Password,
-                    IsActive = request.IsActive
+                    IsActive = request.IsActive,
+                    Role = targetRole
                 });
 
         if (result.IsFailure)
@@ -132,6 +149,20 @@ public sealed class UsersController(
         int id,
         [FromBody] UpdateUserRequest request)
     {
+        UserRole? targetRole = null;
+
+        if (request.Role.HasValue)
+        {
+            if (!Enum.IsDefined(typeof(UserRole), request.Role.Value))
+            {
+                return Result
+                    .ValidationFailure("Invalid user role.")
+                    .ToActionResult(this);
+            }
+
+            targetRole = (UserRole)request.Role.Value;
+        }
+
         var result =
             await service.UpdateUserAsync(
                 id,
@@ -139,7 +170,8 @@ public sealed class UsersController(
                 {
                     PersonId = request.PersonId,
                     UserName = request.UserName,
-                    IsActive = request.IsActive
+                    IsActive = request.IsActive,
+                    Role = targetRole
                 });
 
         return result.IsSuccess
@@ -165,5 +197,7 @@ public sealed class UsersController(
             PersonId: dto.PersonId,
             UserName: dto.UserName,
             IsActive: dto.IsActive,
-            PersonFullName: dto.FullName);
+            PersonFullName: dto.FullName,
+            Role: (int)dto.Role,
+            ImagePath: dto.ImagePath);
 }

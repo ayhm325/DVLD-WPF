@@ -3,6 +3,7 @@ using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Application.Mappings;
 using Application.Validators;
+using Domain.Enums;
 
 namespace Application.Services;
 
@@ -10,10 +11,19 @@ public sealed class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService? _currentUserService;
 
     public UserService(
-    IUserRepository userRepository,
-    IUnitOfWork unitOfWork)
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork)
+        : this(userRepository, unitOfWork, null)
+    {
+    }
+
+    public UserService(
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
+        ICurrentUserService? currentUserService)
     {
         _userRepository =
             userRepository
@@ -24,11 +34,19 @@ public sealed class UserService : IUserService
             unitOfWork
             ?? throw new ArgumentNullException(
                 nameof(unitOfWork));
+
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<List<UserDto>>>
         GetAllUsersAsync()
     {
+        if (IsNonAdminAuthenticatedCaller())
+        {
+            return Result<List<UserDto>>.FromForbidden(
+                "Administrator privileges are required.");
+        }
+
         var users =
             await _userRepository
                 .GetAllUsersAsync();
@@ -70,6 +88,12 @@ public sealed class UserService : IUserService
 
     public async Task<Result<UserDetailsDto>> GetUserDetailsAsync(int userId)
     {
+        if (IsNonAdminAuthenticatedCaller())
+        {
+            return Result<UserDetailsDto>.FromForbidden(
+                "Administrator privileges are required.");
+        }
+
         if (userId <= 0)
         {
             return Result<UserDetailsDto>.FromValidationFailure(
@@ -202,6 +226,12 @@ public sealed class UserService : IUserService
     public async Task<Result<int>>
         AddUserAsync(CreateUserDto dto)
     {
+        if (IsNonAdminAuthenticatedCaller())
+        {
+            return Result<int>.FromForbidden(
+                "Administrator privileges are required.");
+        }
+
         if (dto is null)
         {
             return Result<int>
@@ -275,6 +305,12 @@ public sealed class UserService : IUserService
             int id,
             UpdateUserDto dto)
     {
+        if (IsNonAdminAuthenticatedCaller())
+        {
+            return Result.Forbidden(
+                "Administrator privileges are required.");
+        }
+
         if (id <= 0)
         {
             return Result.ValidationFailure(
@@ -307,6 +343,66 @@ public sealed class UserService : IUserService
                 "User not found.");
         }
 
+        // Account safety rules
+        var targetRole = dto.Role ?? user.Role;
+        var isRoleChange = targetRole != user.Role;
+
+        if (id == 2 && user.Role == UserRole.Admin)
+        {
+            if (!dto.IsActive)
+            {
+                return Result.Forbidden(
+                    "The primary administrator account cannot be deactivated.");
+            }
+
+            if (isRoleChange)
+            {
+                return Result.Forbidden(
+                    "The primary administrator account role cannot be changed.");
+            }
+
+            if (string.Equals(user.UserName, "ayhm", StringComparison.OrdinalIgnoreCase) &&
+                (!string.Equals(user.UserName, dto.UserName.Trim(), StringComparison.Ordinal) ||
+                 user.PersonId != dto.PersonId))
+            {
+                return Result.Forbidden(
+                    "The primary administrator account cannot be modified.");
+            }
+        }
+
+        var isSelf =
+            _currentUserService is { IsLoggedIn: true } &&
+            _currentUserService.UserId == id;
+
+        if (isSelf && !dto.IsActive)
+        {
+            return Result.Forbidden(
+                "You cannot deactivate your own administrator account.");
+        }
+
+        if (isSelf && isRoleChange)
+        {
+            return Result.Forbidden(
+                "You cannot change your own role.");
+        }
+
+        var removesActiveAdmin =
+            user.Role == UserRole.Admin &&
+            user.IsActive &&
+            (!dto.IsActive || targetRole != UserRole.Admin);
+
+        if (removesActiveAdmin)
+        {
+            var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
+            if (activeAdminCount <= 1)
+            {
+                return Result.Conflict(
+                    !dto.IsActive
+                        ? "Cannot deactivate the last active administrator."
+                        : "Cannot change the role of the last active administrator.");
+            }
+        }
+
         var username =
             dto.UserName.Trim();
 
@@ -331,7 +427,8 @@ public sealed class UserService : IUserService
         bool hasChanges =
             !string.Equals(user.UserName, username, StringComparison.Ordinal) ||
             user.PersonId != dto.PersonId ||
-            user.IsActive != dto.IsActive;
+            user.IsActive != dto.IsActive ||
+            isRoleChange;
 
         if (!hasChanges)
         {
@@ -346,6 +443,9 @@ public sealed class UserService : IUserService
 
         user.IsActive =
             dto.IsActive;
+
+        user.Role =
+            targetRole;
 
         var saved =
             await _unitOfWork
@@ -363,6 +463,12 @@ public sealed class UserService : IUserService
     public async Task<Result>
         DeleteUserAsync(int id)
     {
+        if (IsNonAdminAuthenticatedCaller())
+        {
+            return Result.Forbidden(
+                "Administrator privileges are required.");
+        }
+
         if (id <= 0)
         {
             return Result.ValidationFailure(
@@ -377,6 +483,29 @@ public sealed class UserService : IUserService
         {
             return Result.NotFound(
                 "User not found.");
+        }
+
+        // Account safety rules
+        if (id == 2 && user.Role == UserRole.Admin)
+        {
+            return Result.Forbidden(
+                "The primary administrator account cannot be deleted.");
+        }
+
+        if (_currentUserService != null && _currentUserService.IsLoggedIn && _currentUserService.UserId == id)
+        {
+            return Result.Forbidden(
+                "You cannot delete your own administrator account.");
+        }
+
+        if (user.Role == UserRole.Admin)
+        {
+            var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
+            if (activeAdminCount <= 1)
+            {
+                return Result.Conflict(
+                    "Cannot delete the last administrator account.");
+            }
         }
 
         _userRepository
@@ -455,4 +584,7 @@ public sealed class UserService : IUserService
         return Result.Success();
     }
 
+    private bool IsNonAdminAuthenticatedCaller() =>
+        _currentUserService is { IsLoggedIn: true } &&
+        _currentUserService.Role != UserRole.Admin;
 }
