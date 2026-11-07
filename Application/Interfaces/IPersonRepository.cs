@@ -17,6 +17,8 @@ public interface IPersonRepository
     Task<Person?> GetPersonByNationalNoAsync(
         string nationalNo);
 
+    Task<PersonStatisticsDto> GetStatisticsAsync();
+
     Task<List<Person>> GetAllPersonsAsync();
 
     Task<Person?> GetPersonForUpdateAsync(int id);

@@ -11,6 +11,7 @@ import StatusBadge from "../common/StatusBadge";
 import { getActiveStatusProps } from "../../utils/status";
 import ErrorAlert from "../common/ErrorAlert";
 import EmptyState from "../common/EmptyState";
+import PaginationControls from "../common/PaginationControls";
 import DataTable, { type DataTableColumn } from "../common/DataTable";
 import LicenseDetailsModal from "./LicenseDetailsModal";
 import {
@@ -27,8 +28,6 @@ import {
   RotateCw,
   Copy,
   Lock,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "../ui";
 
@@ -144,12 +143,12 @@ export default function LicensesPage({
     return getLicensesPage(
       accessToken,
       pagination.page,
-      PAGE_SIZE,
+      pagination.pageSize,
       debouncedSearch,
       searchBy,
       statusFilter,
     );
-  }, [accessToken, pagination.page, debouncedSearch, searchBy, statusFilter]);
+  }, [accessToken, pagination.page, pagination.pageSize, debouncedSearch, searchBy, statusFilter]);
 
   const {
     data: page,
@@ -160,6 +159,7 @@ export default function LicensesPage({
     enabled: Boolean(accessToken),
     dependencies: [
       pagination.page,
+      pagination.pageSize,
       debouncedSearch,
       searchBy,
       statusFilter,
@@ -362,67 +362,19 @@ export default function LicensesPage({
         )}
 
         {!error && totalLicenses > 0 && (
-          <div
-            className="panel-footer"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              padding: "16px 24px",
-              borderTop: "1px solid #1e304d",
-            }}
-          >
-            <span className="text-xs text-slate-400">
-              Showing{" "}
-              <strong className="text-white">
-                {((page?.pageNumber ?? 1) - 1) * PAGE_SIZE + 1}
-              </strong>
-              –
-              <strong className="text-white">
-                {Math.min(
-                  (page?.pageNumber ?? 1) * PAGE_SIZE,
-                  totalLicenses,
-                )}
-              </strong>{" "}
-              of <strong className="text-white">{totalLicenses}</strong> licenses
-            </span>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button
-                type="button"
-                className="secondary-button"
-                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
-                disabled={!page?.hasPreviousPage || loading}
-                onClick={pagination.previousPage}
-              >
-                <ChevronLeft className="size-3.5" />
-                <span>Previous</span>
-              </button>
-
-              <span style={{ fontSize: 11, color: "var(--dvld-muted)" }}>
-                Page{" "}
-                <strong style={{ color: "var(--dvld-heading)" }}>
-                  {page?.pageNumber ?? pagination.page}
-                </strong>{" "}
-                of{" "}
-                <strong style={{ color: "var(--dvld-heading)" }}>
-                  {page?.totalPages ?? 1}
-                </strong>
-              </span>
-
-              <button
-                type="button"
-                className="secondary-button"
-                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
-                disabled={!page?.hasNextPage || loading}
-                onClick={pagination.nextPage}
-              >
-                <span>Next</span>
-                <ChevronRight className="size-3.5" />
-              </button>
-            </div>
-          </div>
+          <PaginationControls
+            pageNumber={page?.pageNumber ?? pagination.page}
+            pageSize={pagination.pageSize}
+            totalCount={totalLicenses}
+            totalPages={page?.totalPages ?? 1}
+            hasPreviousPage={Boolean(page?.hasPreviousPage)}
+            hasNextPage={Boolean(page?.hasNextPage)}
+            onPreviousPage={pagination.previousPage}
+            onNextPage={pagination.nextPage}
+            onPageSizeChange={pagination.setPageSize}
+            loading={loading}
+            itemName="licenses"
+          />
         )}
       </div>
 

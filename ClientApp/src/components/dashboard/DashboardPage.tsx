@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Users,
   Car,
@@ -9,7 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import PageHero from "../common/PageHero";
-import PeopleTable from "../people/PeopleTable";
+import PeopleTable, { type GenderFilter, type SearchBy } from "../people/PeopleTable";
 import StatsGrid from "../common/StatsGrid";
 import StatCard from "../common/StatCard";
 import ConfirmModal from "../common/ConfirmModal";
@@ -19,7 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { useDashboardStatistics } from "../../hooks/useDashboardStatistics";
-import { usePeopleData } from "../../context/usePeopleData";
+import { useAsyncData, useDebounce, usePagination } from "../../hooks";
+import { deletePerson, getPeoplePage } from "../../services/peopleService";
 import type { Person } from "../../types/Person";
 import { formatNumber } from "../../utils/formatters";
 
@@ -43,13 +44,63 @@ export default function DashboardPage({
     statisticsRefreshKey,
   );
 
+  const [search, setSearch] = useState("");
+  const [searchBy, setSearchBy] = useState<SearchBy>("all");
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const debouncedSearch = useDebounce(search, 400);
+
+  const pagination = usePagination({
+    pageSize: 10,
+    initialPage: 1,
+  });
+
+  const { resetPage } = pagination;
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedSearch, searchBy, genderFilter, resetPage]);
+
+  const fetcher = useCallback(() => {
+    return getPeoplePage(
+      accessToken,
+      pagination.page,
+      pagination.pageSize,
+      debouncedSearch,
+      searchBy,
+      genderFilter,
+    );
+  }, [
+    accessToken,
+    pagination.page,
+    pagination.pageSize,
+    debouncedSearch,
+    searchBy,
+    genderFilter,
+  ]);
+
   const {
-    people,
+    data: page,
     loading: loadingPeople,
     error: peopleError,
-    refreshPeople,
-    deletePersonRecord,
-  } = usePeopleData();
+    refresh: refreshPeople,
+  } = useAsyncData(fetcher, {
+    enabled: Boolean(accessToken),
+    dependencies: [
+      pagination.page,
+      pagination.pageSize,
+      debouncedSearch,
+      searchBy,
+      genderFilter,
+    ],
+    defaultErrorMessage: "Could not load people directory.",
+  });
+
+  const handleResetFilters = useCallback(() => {
+    setSearch("");
+    setSearchBy("all");
+    setGenderFilter("all");
+    resetPage();
+  }, [resetPage]);
 
   const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(
     null,
@@ -66,12 +117,13 @@ export default function DashboardPage({
     setDeleteSuccess("");
 
     try {
-      await deletePersonRecord(deletePersonTarget.personId);
+      await deletePerson(accessToken, deletePersonTarget.personId);
       setDeleteSuccess(
         `Person #${deletePersonTarget.personId} (${deletePersonTarget.fullName}) was deleted successfully.`,
       );
       setDeletePersonTarget(null);
       retry();
+      void refreshPeople();
     } catch (err) {
       setDeleteError(
         err instanceof Error
@@ -278,7 +330,7 @@ export default function DashboardPage({
             type="button"
             variant="outline"
             size="sm"
-            onClick={refreshPeople}
+            onClick={() => void refreshPeople()}
             className="border-red-300 text-red-700 hover:bg-red-100/70 shrink-0 self-start sm:self-auto bg-white"
           >
             Retry People List
@@ -316,9 +368,25 @@ export default function DashboardPage({
 
       {/* People Directory Table */}
       <PeopleTable
-        people={people}
+        people={page?.items ?? []}
+        search={search}
+        onSearchChange={setSearch}
+        searchBy={searchBy}
+        onSearchByChange={setSearchBy}
+        genderFilter={genderFilter}
+        onGenderFilterChange={setGenderFilter}
+        onResetFilters={handleResetFilters}
+        totalCount={page?.totalCount ?? 0}
+        pageNumber={page?.pageNumber ?? pagination.page}
+        pageSize={pagination.pageSize}
+        totalPages={page?.totalPages ?? 1}
+        hasPreviousPage={Boolean(page?.hasPreviousPage)}
+        hasNextPage={Boolean(page?.hasNextPage)}
+        onPreviousPage={pagination.previousPage}
+        onNextPage={pagination.nextPage}
+        onPageSizeChange={pagination.setPageSize}
         onAddPerson={onAddPerson}
-        onRefresh={refreshPeople}
+        onRefresh={() => void refreshPeople()}
         loading={loadingPeople}
         onShowDetails={onShowDetails}
         onEditPerson={onEditPerson}

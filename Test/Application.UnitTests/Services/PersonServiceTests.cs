@@ -1569,4 +1569,41 @@ public class PersonServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal("people/precious_photo.webp", person.ImagePath);
     }
+
+    [Fact]
+    public async Task GetStatisticsAsync_WhenRepositoryReturnsStats_ReturnsSuccessWithStats()
+    {
+        var expectedStats = new PersonStatisticsDto
+        {
+            TotalCount = 15,
+            MaleCount = 10,
+            FemaleCount = 5
+        };
+
+        _personRepositoryMock
+            .Setup(r => r.GetStatisticsAsync())
+            .ReturnsAsync(expectedStats);
+
+        var result = await _sut.GetStatisticsAsync();
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(15, result.Value.TotalCount);
+        Assert.Equal(10, result.Value.MaleCount);
+        Assert.Equal(5, result.Value.FemaleCount);
+    }
+
+    [Fact]
+    public async Task GetStatisticsAsync_WhenRepositoryThrows_ReturnsFailure()
+    {
+        _personRepositoryMock
+            .Setup(r => r.GetStatisticsAsync())
+            .ThrowsAsync(new InvalidOperationException("DB error"));
+
+        var result = await _sut.GetStatisticsAsync();
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal("Failed to retrieve people statistics.", result.Error);
+    }
 }

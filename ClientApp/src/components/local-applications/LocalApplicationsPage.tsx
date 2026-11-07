@@ -10,6 +10,7 @@ import StatsGrid from '../common/StatsGrid'
 import StatCard from '../common/StatCard'
 import TableToolbar from '../common/TableToolbar'
 import ErrorAlert from '../common/ErrorAlert'
+import PaginationControls from '../common/PaginationControls'
 import {
   Select,
   SelectContent,
@@ -31,8 +32,6 @@ import { formatNumber } from '../../utils/formatters'
 import { useAsyncData, usePagination, useDebounce } from '../../hooks'
 import {
   Plus as PlusIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   FileText as ApplicationsIcon,
   Check as CheckIcon,
   Clock as ClockIcon,
@@ -125,12 +124,12 @@ export default function LocalApplicationsPage({
     return getLocalDrivingLicenseApplications(
       accessToken,
       pagination.page,
-      PAGE_SIZE,
+      pagination.pageSize,
       debouncedSearch,
       searchBy,
       status,
     )
-  }, [accessToken, pagination.page, debouncedSearch, searchBy, status])
+  }, [accessToken, pagination.page, pagination.pageSize, debouncedSearch, searchBy, status])
 
   const {
     data: page,
@@ -139,7 +138,7 @@ export default function LocalApplicationsPage({
     refresh,
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
-    dependencies: [pagination.page, debouncedSearch, searchBy, status],
+    dependencies: [pagination.page, pagination.pageSize, debouncedSearch, searchBy, status],
     defaultErrorMessage: 'Could not load local applications.',
   })
 
@@ -446,85 +445,21 @@ export default function LocalApplicationsPage({
           onShowPersonLicenseHistory={(personId) => onShowLicenseHistory?.(personId)}
         />
 
-        <footer
-          className="panel-footer"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-          }}
-        >
-          <span>
-            {error
-              ? 'Failed to load applications'
-              : `Showing ${page?.items?.length ?? 0} of ${page?.totalCount ?? 0} applications`}
-          </span>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              type="button"
-              className="secondary-button"
-              style={{ minHeight: 34, padding: '6px 12px', fontSize: 11 }}
-              disabled={!page?.hasPreviousPage || loading}
-              onClick={pagination.previousPage}
-            >
-              <ChevronLeftIcon size={14} />
-              <span>Previous</span>
-            </button>
-
-            <span style={{ fontSize: 11, color: 'var(--dvld-muted)' }}>
-              Page{' '}
-              <strong style={{ color: 'var(--dvld-heading)' }}>
-                {page?.pageNumber ?? pagination.page}
-              </strong>{' '}
-              of{' '}
-              <strong style={{ color: 'var(--dvld-heading)' }}>
-                {error ? '—' : page?.totalPages ?? 0}
-              </strong>
-            </span>
-
-            <button
-              type="button"
-              className="secondary-button"
-              style={{ minHeight: 34, padding: '6px 12px', fontSize: 11 }}
-              disabled={!page?.hasNextPage || loading}
-              onClick={pagination.nextPage}
-            >
-              <span>Next</span>
-              <ChevronRightIcon size={14} />
-            </button>
-
-            <span
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                marginLeft: 6,
-                fontSize: 11,
-                color: 'var(--dvld-muted)',
-              }}
-            >
-              Rows
-              <span
-                style={{
-                  minHeight: 28,
-                  padding: '3px 10px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: 'var(--dvld-heading)',
-                  background: 'var(--dvld-surface-subtle)',
-                  border: '1px solid var(--dvld-border)',
-                  borderRadius: 'var(--dvld-radius-sm)',
-                }}
-              >
-                {PAGE_SIZE}
-              </span>
-            </span>
-          </div>
-        </footer>
+        {!error && (page?.totalCount ?? 0) > 0 && (
+          <PaginationControls
+            pageNumber={page?.pageNumber ?? pagination.page}
+            pageSize={pagination.pageSize}
+            totalCount={page?.totalCount ?? 0}
+            totalPages={page?.totalPages ?? 1}
+            hasPreviousPage={Boolean(page?.hasPreviousPage)}
+            hasNextPage={Boolean(page?.hasNextPage)}
+            onPreviousPage={pagination.previousPage}
+            onNextPage={pagination.nextPage}
+            onPageSizeChange={pagination.setPageSize}
+            loading={loading}
+            itemName="applications"
+          />
+        )}
       </section>
 
       {/* Application Details Modal */}

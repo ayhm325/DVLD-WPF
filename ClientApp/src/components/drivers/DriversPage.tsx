@@ -9,6 +9,7 @@ import StatCard from "../common/StatCard";
 import TableToolbar from "../common/TableToolbar";
 import ErrorAlert from "../common/ErrorAlert";
 import EmptyState from "../common/EmptyState";
+import PaginationControls from "../common/PaginationControls";
 import DataTable, {
   type DataTableColumn,
   type DataTableRowAction,
@@ -26,8 +27,6 @@ import {
   Check as CheckIcon,
   UserRound,
   History,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 
 export type DriversPageProps = {
@@ -168,7 +167,7 @@ export default function DriversPage({
     return getDriversPage(
       accessToken ?? "",
       pagination.page,
-      PAGE_SIZE,
+      pagination.pageSize,
       debouncedSearch,
       searchBy,
       licenseFilter,
@@ -177,6 +176,7 @@ export default function DriversPage({
     isServerPaged,
     accessToken,
     pagination.page,
+    pagination.pageSize,
     debouncedSearch,
     searchBy,
     licenseFilter,
@@ -191,6 +191,7 @@ export default function DriversPage({
     enabled: Boolean(accessToken && isServerPaged),
     dependencies: [
       pagination.page,
+      pagination.pageSize,
       debouncedSearch,
       searchBy,
       licenseFilter,
@@ -434,71 +435,19 @@ export default function DriversPage({
         )}
 
         {isServerPaged && !error && (page?.totalCount ?? 0) > 0 && (
-          <div
-            className="panel-footer"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              padding: "16px 24px",
-              borderTop: "1px solid #1e304d",
-            }}
-          >
-            <span className="text-xs text-slate-400">
-              Showing{" "}
-              <strong className="text-white">
-                {((page?.pageNumber ?? 1) - 1) * PAGE_SIZE + 1}
-              </strong>
-              –
-              <strong className="text-white">
-                {Math.min(
-                  (page?.pageNumber ?? 1) * PAGE_SIZE,
-                  page?.totalCount ?? 0,
-                )}
-              </strong>{" "}
-              of{" "}
-              <strong className="text-white">
-                {page?.totalCount ?? 0}
-              </strong>{" "}
-              drivers
-            </span>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <button
-                type="button"
-                className="secondary-button"
-                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
-                disabled={!page?.hasPreviousPage || loading}
-                onClick={pagination.previousPage}
-              >
-                <ChevronLeft className="size-3.5" />
-                <span>Previous</span>
-              </button>
-
-              <span style={{ fontSize: 11, color: "var(--dvld-muted)" }}>
-                Page{" "}
-                <strong style={{ color: "var(--dvld-heading)" }}>
-                  {page?.pageNumber ?? pagination.page}
-                </strong>{" "}
-                of{" "}
-                <strong style={{ color: "var(--dvld-heading)" }}>
-                  {page?.totalPages ?? 1}
-                </strong>
-              </span>
-
-              <button
-                type="button"
-                className="secondary-button"
-                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
-                disabled={!page?.hasNextPage || loading}
-                onClick={pagination.nextPage}
-              >
-                <span>Next</span>
-                <ChevronRight className="size-3.5" />
-              </button>
-            </div>
-          </div>
+          <PaginationControls
+            pageNumber={page?.pageNumber ?? pagination.page}
+            pageSize={pagination.pageSize}
+            totalCount={page?.totalCount ?? 0}
+            totalPages={page?.totalPages ?? 1}
+            hasPreviousPage={Boolean(page?.hasPreviousPage)}
+            hasNextPage={Boolean(page?.hasNextPage)}
+            onPreviousPage={pagination.previousPage}
+            onNextPage={pagination.nextPage}
+            onPageSizeChange={pagination.setPageSize}
+            loading={loading}
+            itemName="drivers"
+          />
         )}
       </div>
     </section>

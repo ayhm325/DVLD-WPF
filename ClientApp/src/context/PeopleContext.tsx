@@ -94,7 +94,9 @@ export function PeopleProvider({ children }: { children: ReactNode }) {
     currentTokenRef.current = accessToken;
     void Promise.resolve().then(() => {
       if (!active) return;
-      void refreshPeople();
+      setPeople([]);
+      setLoading(false);
+      setError("");
     });
 
     return () => {

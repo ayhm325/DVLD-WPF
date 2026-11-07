@@ -151,6 +151,26 @@ public sealed class PersonRepository : IPersonRepository
                 p => p.NationalNo == nationalNo);
     }
 
+    public async Task<PersonStatisticsDto> GetStatisticsAsync()
+    {
+        var genderCounts = await _context.People
+            .AsNoTracking()
+            .GroupBy(p => p.Gender)
+            .Select(g => new { Gender = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var maleCount = genderCounts.FirstOrDefault(x => x.Gender == Gender.Male)?.Count ?? 0;
+        var femaleCount = genderCounts.FirstOrDefault(x => x.Gender == Gender.Female)?.Count ?? 0;
+        var totalCount = genderCounts.Sum(x => x.Count);
+
+        return new PersonStatisticsDto
+        {
+            TotalCount = totalCount,
+            MaleCount = maleCount,
+            FemaleCount = femaleCount
+        };
+    }
+
     public Task<List<Person>> GetAllPersonsAsync()
     {
         return Query()

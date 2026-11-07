@@ -1,13 +1,5 @@
 import { useMemo } from 'react'
-import {
-  Clock,
-  RotateCcw,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  IdCard,
-} from 'lucide-react'
+import { Clock, RotateCcw, CheckCircle2, IdCard } from 'lucide-react'
 import type { License } from '../../types/License'
 import { formatDate } from '../../utils/formatters'
 import { getActiveStatusProps } from '../../utils/status'
@@ -15,15 +7,10 @@ import { cn } from '@/lib/utils'
 import StatusBadge from '../common/StatusBadge'
 import TableToolbar, { type SearchFieldOption } from '../common/TableToolbar'
 import DataTable, { type DataTableColumn } from '../common/DataTable'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select'
+import PaginationControls from '../common/PaginationControls'
 import { Button, Card, CardHeader, CardTitle, CardDescription } from '../ui'
-import { useTableFilters, usePagination } from '../../hooks'
+
+export type ExpiredLicensesSearchBy = 'all' | 'licenseId' | 'driver' | 'class'
 
 export interface ExpiredLicensesTableProps {
   expiredLicenses: License[]
@@ -32,15 +19,23 @@ export interface ExpiredLicensesTableProps {
   loadingDetails: boolean
   onSelectLicense: (licenseId: number) => void
   onRefresh: () => void
+  search?: string
+  onSearchChange?: (val: string) => void
+  searchBy?: ExpiredLicensesSearchBy
+  onSearchByChange?: (val: ExpiredLicensesSearchBy) => void
+  onResetFilters?: () => void
+  totalCount?: number
+  pageNumber?: number
+  pageSize?: number
+  totalPages?: number
+  hasPreviousPage?: boolean
+  hasNextPage?: boolean
+  onPreviousPage?: () => void
+  onNextPage?: () => void
+  onPageSizeChange?: (newPageSize: number) => void
 }
 
-type SearchBy = 'all' | 'licenseId' | 'driver' | 'class'
-
-interface ExpiredLicenseFilters extends Record<string, unknown> {
-  eligibilityFilter: 'all' | 'eligible' | 'ineligible'
-}
-
-const SEARCH_OPTIONS: SearchFieldOption<SearchBy>[] = [
+const SEARCH_OPTIONS: SearchFieldOption<ExpiredLicensesSearchBy>[] = [
   { value: 'all', label: 'All Fields' },
   { value: 'licenseId', label: 'License ID' },
   { value: 'driver', label: 'Driver Name' },
@@ -54,59 +49,22 @@ export default function ExpiredLicensesTable({
   loadingDetails,
   onSelectLicense,
   onRefresh,
+  search = '',
+  onSearchChange,
+  searchBy = 'all',
+  onSearchByChange,
+  onResetFilters,
+  totalCount = 0,
+  pageNumber = 1,
+  pageSize = 10,
+  totalPages = 1,
+  hasPreviousPage = false,
+  hasNextPage = false,
+  onPreviousPage = () => {},
+  onNextPage = () => {},
+  onPageSizeChange = () => {},
 }: ExpiredLicensesTableProps) {
-  // Search and Filtering for Expired Licenses
-  const {
-    search,
-    setSearch,
-    searchField: searchBy,
-    setSearchField: setSearchBy,
-    filters,
-    setFilter,
-    filteredData: filteredExpiredLicenses,
-    isFiltered,
-    resetFilters: handleResetFilters,
-  } = useTableFilters<License, SearchBy, ExpiredLicenseFilters>({
-    data: expiredLicenses,
-    initialSearchField: 'all',
-    initialFilters: { eligibilityFilter: 'all' },
-    filterItem: (lic, query, field, currentFilters) => {
-      // Authoritative Eligibility filter
-      if (currentFilters.eligibilityFilter === 'eligible' && !lic.isEligibleForRenewal) {
-        return false
-      }
-      if (currentFilters.eligibilityFilter === 'ineligible' && lic.isEligibleForRenewal) {
-        return false
-      }
-
-      // Query check
-      if (!query) return true
-
-      if (field === 'licenseId') {
-        return String(lic.licenseId).includes(query)
-      }
-      if (field === 'driver') {
-        return (lic.driverName ?? '').toLowerCase().includes(query)
-      }
-      if (field === 'class') {
-        return (lic.licenseClassName ?? '').toLowerCase().includes(query)
-      }
-
-      // 'all'
-      return (
-        String(lic.licenseId).includes(query) ||
-        (lic.driverName ?? '').toLowerCase().includes(query) ||
-        (lic.licenseClassName ?? '').toLowerCase().includes(query)
-      )
-    },
-  })
-
-  // Client-side Pagination
-  const pagination = usePagination<License>({
-    data: filteredExpiredLicenses,
-    pageSize: 10,
-    initialPage: 1,
-  })
+  const isFiltered = Boolean(search && search.trim()) || searchBy !== 'all'
 
   // Table Columns
   const columns = useMemo<DataTableColumn<License>[]>(
@@ -234,49 +192,29 @@ export default function ExpiredLicensesTable({
             </CardDescription>
           </div>
           <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 w-fit">
-            {filteredExpiredLicenses.length} {filteredExpiredLicenses.length === 1 ? 'License' : 'Licenses'} Found
+            {totalCount} {totalCount === 1 ? 'License' : 'Licenses'} Total
           </span>
         </div>
       </CardHeader>
 
       <div className="p-5 pt-0 space-y-4">
         {/* Table Toolbar */}
-        <TableToolbar<SearchBy>
+        <TableToolbar<ExpiredLicensesSearchBy>
           searchValue={search}
-          onSearchChange={setSearch}
+          onSearchChange={onSearchChange ?? (() => {})}
           searchPlaceholder="Search expired licenses by ID, driver, or class..."
           searchField={searchBy}
           searchFieldOptions={SEARCH_OPTIONS}
-          onSearchFieldChange={setSearchBy}
+          onSearchFieldChange={onSearchByChange ?? (() => {})}
           isFiltered={isFiltered}
-          onReset={handleResetFilters}
+          onReset={onResetFilters}
           onRefresh={onRefresh}
           refreshing={loading}
-          filters={
-            <div className="flex items-center gap-2">
-              <Filter className="size-4 text-slate-400 shrink-0" />
-              <Select
-                value={filters.eligibilityFilter}
-                onValueChange={(val) =>
-                  setFilter('eligibilityFilter', val as ExpiredLicenseFilters['eligibilityFilter'])
-                }
-              >
-                <SelectTrigger className="w-[180px] h-9 bg-[#081326] border-[#1b2f52] text-xs text-slate-200">
-                  <SelectValue placeholder="Eligibility Filter" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#0b162c] border-[#1b2f52] text-xs text-slate-200">
-                  <SelectItem value="all">All Expired Licenses</SelectItem>
-                  <SelectItem value="eligible">Eligible for Renewal</SelectItem>
-                  <SelectItem value="ineligible">Ineligible for Renewal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          }
         />
 
         {/* Expired Licenses DataTable */}
         <DataTable<License>
-          data={pagination.paginatedData ?? []}
+          data={expiredLicenses}
           columns={columns}
           getRowKey={(lic) => lic.licenseId}
           loading={loading}
@@ -286,51 +224,20 @@ export default function ExpiredLicensesTable({
         />
 
         {/* Table Pagination */}
-        {filteredExpiredLicenses.length > 0 && (
-          <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
-            <span>
-              Showing{' '}
-              <strong className="text-white">
-                {(pagination.page - 1) * pagination.pageSize + 1}
-              </strong>{' '}
-              to{' '}
-              <strong className="text-white">
-                {Math.min(
-                  pagination.page * pagination.pageSize,
-                  filteredExpiredLicenses.length,
-                )}
-              </strong>{' '}
-              of <strong className="text-white">{filteredExpiredLicenses.length}</strong> expired licenses
-            </span>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={pagination.previousPage}
-                disabled={!pagination.hasPreviousPage}
-                className="h-8 gap-1 text-xs bg-[#081326] border-[#1b2f52] text-slate-300 hover:text-white"
-              >
-                <ChevronLeft className="size-3.5" />
-                <span>Previous</span>
-              </Button>
-              <span className="font-mono text-xs px-2 text-slate-300">
-                Page {pagination.page} of {pagination.totalPages || 1}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={pagination.nextPage}
-                disabled={!pagination.hasNextPage}
-                className="h-8 gap-1 text-xs bg-[#081326] border-[#1b2f52] text-slate-300 hover:text-white"
-              >
-                <span>Next</span>
-                <ChevronRight className="size-3.5" />
-              </Button>
-            </div>
-          </div>
+        {totalCount > 0 && (
+          <PaginationControls
+            pageNumber={pageNumber}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            totalPages={totalPages}
+            hasPreviousPage={hasPreviousPage}
+            hasNextPage={hasNextPage}
+            onPreviousPage={onPreviousPage}
+            onNextPage={onNextPage}
+            onPageSizeChange={onPageSizeChange}
+            loading={loading}
+            itemName="expired licenses"
+          />
         )}
       </div>
     </Card>

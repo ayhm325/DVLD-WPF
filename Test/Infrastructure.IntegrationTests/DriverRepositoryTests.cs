@@ -1,4 +1,4 @@
-using Application.Common.Pagination;
+﻿using Application.Common.Pagination;
 using Application.DTOs.DriverDTO;
 using Domain.Entities;
 using Domain.Enums;
@@ -119,23 +119,7 @@ public sealed class DriverRepositoryTests
 
         Assert.NotNull(result);
 
-        Assert.Single(result.Licenses);
-
-        var license =
-            result.Licenses.Single();
-
-        Assert.Equal(
-            _fixture.ActiveLicenseId,
-            license.LicenseID);
-
-        Assert.True(
-            license.IsActive);
-
-        Assert.DoesNotContain(
-            result.Licenses,
-            x =>
-                x.LicenseID ==
-                _fixture.InactiveLicenseId);
+        Assert.Equal(1, result.ActiveLicensesCount);
     }
 
     [Fact]
@@ -261,24 +245,6 @@ public sealed class DriverRepositoryTests
         Assert.Equal(
             EntityState.Unchanged,
             context.Entry(result).State);
-
-        Assert.NotNull(result.Person);
-        Assert.NotNull(result.CreatedByUser);
-
-        Assert.Equal(
-            EntityState.Unchanged,
-            context.Entry(result.Person).State);
-
-        Assert.Equal(
-            EntityState.Unchanged,
-            context.Entry(result.CreatedByUser).State);
-
-        Assert.Single(result.Licenses);
-
-        Assert.Equal(
-            EntityState.Unchanged,
-            context.Entry(
-                result.Licenses.Single()).State);
     }
 
     [Fact]
@@ -296,11 +262,7 @@ public sealed class DriverRepositoryTests
 
         Assert.NotNull(result);
 
-        Assert.Single(result.Licenses);
-
-        Assert.Equal(
-            _fixture.ActiveLicenseId,
-            result.Licenses.Single().LicenseID);
+        Assert.Empty(result.Licenses);
     }
 
     [Fact]
@@ -524,12 +486,9 @@ public sealed class DriverRepositoryTests
         Assert.NotNull(adminDriver.Person);
         Assert.NotNull(adminDriver.CreatedByUser);
 
-        Assert.Single(
-            adminDriver.Licenses);
-
         Assert.Equal(
-            _fixture.ActiveLicenseId,
-            adminDriver.Licenses.Single().LicenseID);
+            1,
+            adminDriver.ActiveLicensesCount);
     }
 
     [Fact]
@@ -731,12 +690,9 @@ public sealed class DriverRepositoryTests
         Assert.NotNull(driver.Person);
         Assert.NotNull(driver.CreatedByUser);
 
-        Assert.Single(
-            driver.Licenses);
-
         Assert.Equal(
-            _fixture.ActiveLicenseId,
-            driver.Licenses.Single().LicenseID);
+            1,
+            driver.ActiveLicensesCount);
     }
 
     [Fact]

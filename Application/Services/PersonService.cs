@@ -117,6 +117,20 @@ public sealed class PersonService : IPersonService
             .Success(peopleDto);
     }
 
+    public async Task<Result<PersonStatisticsDto>> GetStatisticsAsync()
+    {
+        try
+        {
+            var statistics = await _personRepository.GetStatisticsAsync();
+            return Result<PersonStatisticsDto>.Success(statistics);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve people statistics.");
+            return Result<PersonStatisticsDto>.FromFailure("Failed to retrieve people statistics.");
+        }
+    }
+
     public async Task<Result<PersonDto>>
         GetPersonByIdAsync(int id)
     {

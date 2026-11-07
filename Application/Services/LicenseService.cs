@@ -29,6 +29,9 @@ public sealed class LicenseService(
     public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request) =>
         _queryService.GetAllAsync(request);
 
+    public Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync() =>
+        _queryService.GetRenewalSummaryAsync();
+
     public Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
         int driverId) =>
         _queryService.GetByDriverIdAsync(driverId);

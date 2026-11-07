@@ -27,8 +27,20 @@ export interface PeoplePageResponse {
   hasNextPage: boolean
 }
 
+export interface PeopleStatisticsResponse {
+  totalCount: number
+  maleCount: number
+  femaleCount: number
+}
+
 export function getPeople(accessToken: string): Promise<Person[]> {
   return apiRequest<Person[]>('/People', accessToken)
+}
+
+export function getPeopleStatistics(
+  accessToken: string,
+): Promise<PeopleStatisticsResponse> {
+  return apiRequest<PeopleStatisticsResponse>('/People/statistics', accessToken)
 }
 
 export function getPeoplePage(

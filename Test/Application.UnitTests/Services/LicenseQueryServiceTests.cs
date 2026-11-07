@@ -461,4 +461,28 @@ public sealed class LicenseQueryServiceTests
 
         Assert.Equal("query failed", ex.Message);
     }
+
+    [Fact]
+    public async Task GetRenewalSummaryAsync_WhenCalled_ReturnsCalculatedSummary()
+    {
+        var expired1 = CreateLicense(1, driverId: 10, licenseClass: 3);
+        expired1.ExpirationDate = new DateTime(2025, 1, 1);
+
+        var expired2 = CreateLicense(2, driverId: 20, licenseClass: 3);
+        expired2.ExpirationDate = new DateTime(2025, 1, 1);
+
+        _licenseRepository.Setup(x => x.GetAllLicensesAsync(true, It.IsAny<DateOnly?>()))
+            .ReturnsAsync([expired1, expired2]);
+
+        _detainedRepository.Setup(x => x.GetActiveDetainedLicenseIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([2]);
+
+        var result = await CreateService().GetRenewalSummaryAsync();
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value.TotalExpired);
+        Assert.Equal(1, result.Value.EligibleForRenewal);
+        Assert.Equal(1, result.Value.IneligibleForRenewal);
+    }
 }

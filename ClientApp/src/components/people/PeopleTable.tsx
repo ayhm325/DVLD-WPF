@@ -8,12 +8,11 @@ import {
   Mail,
   Phone,
   MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import type { Person } from "../../types/Person";
 import { formatDate } from "../../utils/formatters";
 import TableToolbar from "../common/TableToolbar";
+import PaginationControls from "../common/PaginationControls";
 import EmptyState from "../common/EmptyState";
 import PersonPhoto from "../common/PersonPhoto";
 import DataTable, {
@@ -60,11 +59,13 @@ export type PeopleTableProps = {
   onResetFilters?: () => void;
   totalCount?: number;
   pageNumber?: number;
+  pageSize?: number;
   totalPages?: number;
   hasPreviousPage?: boolean;
   hasNextPage?: boolean;
   onPreviousPage?: () => void;
   onNextPage?: () => void;
+  onPageSizeChange?: (newPageSize: number) => void;
   onAddPerson: () => void;
   onRefresh?: () => void;
   loading?: boolean;
@@ -85,11 +86,13 @@ export default function PeopleTable({
   onResetFilters,
   totalCount,
   pageNumber,
+  pageSize = 10,
   totalPages,
   hasPreviousPage,
   hasNextPage,
   onPreviousPage,
   onNextPage,
+  onPageSizeChange,
   onAddPerson,
   onRefresh,
   loading = false,
@@ -589,65 +592,19 @@ export default function PeopleTable({
       />
 
       {isServerPaged && !loading && totalCount !== undefined && totalCount > 0 && (
-        <div
-          className="panel-footer"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            paddingTop: 16,
-            marginTop: 16,
-            borderTop: "1px solid #1e304d",
-          }}
-        >
-          <span className="text-xs text-slate-400">
-            Showing{" "}
-            <strong className="text-white">
-              {((pageNumber ?? 1) - 1) * 10 + 1}
-            </strong>
-            –
-            <strong className="text-white">
-              {Math.min((pageNumber ?? 1) * 10, totalCount)}
-            </strong>{" "}
-            of <strong className="text-white">{totalCount}</strong> people
-          </span>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button
-              type="button"
-              className="secondary-button"
-              style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
-              disabled={!hasPreviousPage || loading}
-              onClick={onPreviousPage}
-            >
-              <ChevronLeft size={14} />
-              <span>Previous</span>
-            </button>
-
-            <span style={{ fontSize: 11, color: "var(--dvld-muted)" }}>
-              Page{" "}
-              <strong style={{ color: "var(--dvld-heading)" }}>
-                {pageNumber ?? 1}
-              </strong>{" "}
-              of{" "}
-              <strong style={{ color: "var(--dvld-heading)" }}>
-                {totalPages ?? 1}
-              </strong>
-            </span>
-
-            <button
-              type="button"
-              className="secondary-button"
-              style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
-              disabled={!hasNextPage || loading}
-              onClick={onNextPage}
-            >
-              <span>Next</span>
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        </div>
+        <PaginationControls
+          pageNumber={pageNumber ?? 1}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          totalPages={totalPages ?? 1}
+          hasPreviousPage={Boolean(hasPreviousPage)}
+          hasNextPage={Boolean(hasNextPage)}
+          onPreviousPage={onPreviousPage ?? (() => {})}
+          onNextPage={onNextPage ?? (() => {})}
+          onPageSizeChange={onPageSizeChange ?? (() => {})}
+          loading={loading}
+          itemName="people"
+        />
       )}
     </section>
   );

@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   ShieldCheck,
   Search,
@@ -64,6 +64,12 @@ export default function AddUserModal({
     error: peopleLoadError,
     refreshPeople,
   } = usePeopleData()
+
+  useEffect(() => {
+    if (isOpen && people.length === 0 && !loadingPeople) {
+      void refreshPeople()
+    }
+  }, [isOpen, people.length, loadingPeople, refreshPeople])
 
   const [personQuery, setPersonQuery] = useState('')
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)

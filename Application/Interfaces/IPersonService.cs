@@ -14,6 +14,8 @@ public interface IPersonService
 
     Task<Result<List<PersonDto>>> GetAllPeopleAsync();
 
+    Task<Result<PersonStatisticsDto>> GetStatisticsAsync();
+
     Task<Result<PersonDto>> GetPersonByIdAsync(
         int id);
 

@@ -56,6 +56,22 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
                 : Ok(unpagedResult.Value.Select(MapToResponse).ToList());
     }
 
+    [HttpGet("renewal-summary")]
+    public async Task<IActionResult> GetRenewalSummary()
+    {
+        var result = await service.GetRenewalSummaryAsync();
+        return result.IsFailure
+            ? result.ToActionResult(this)
+            : result.Value is null
+                ? UnexpectedResult()
+                : Ok(new
+                {
+                    totalExpired = result.Value.TotalExpired,
+                    eligibleForRenewal = result.Value.EligibleForRenewal,
+                    ineligibleForRenewal = result.Value.IneligibleForRenewal
+                });
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {

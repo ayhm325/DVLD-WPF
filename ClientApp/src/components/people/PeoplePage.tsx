@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PeopleTable, { type GenderFilter, type SearchBy } from "./PeopleTable";
 import PageHero from "../common/PageHero";
 import StatsGrid from "../common/StatsGrid";
@@ -8,10 +8,13 @@ import ConfirmModal from "../common/ConfirmModal";
 import { Users as UsersIcon, User as UserIcon } from "lucide-react";
 import type { Person } from "../../types/Person";
 import { formatNumber } from "../../utils/formatters";
-import { usePeopleData } from "../../context/usePeopleData";
 import { useAuth } from "../../context/useAuth";
 import { useAsyncData, usePagination, useDebounce } from "../../hooks";
-import { getPeoplePage } from "../../services/peopleService";
+import {
+  deletePerson,
+  getPeoplePage,
+  getPeopleStatistics,
+} from "../../services/peopleService";
 
 const PAGE_SIZE = 10;
 
@@ -27,11 +30,6 @@ export default function PeoplePage({
   onEditPerson,
 }: PeoplePageProps) {
   const { accessToken } = useAuth();
-  const {
-    people: contextPeople,
-    refreshPeople,
-    deletePersonRecord,
-  } = usePeopleData();
 
   const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(
     null,
@@ -61,12 +59,12 @@ export default function PeoplePage({
     return getPeoplePage(
       accessToken ?? "",
       pagination.page,
-      PAGE_SIZE,
+      pagination.pageSize,
       debouncedSearch,
       searchBy,
       genderFilter,
     );
-  }, [accessToken, pagination.page, debouncedSearch, searchBy, genderFilter]);
+  }, [accessToken, pagination.page, pagination.pageSize, debouncedSearch, searchBy, genderFilter]);
 
   const {
     data: page,
@@ -75,19 +73,23 @@ export default function PeoplePage({
     refresh,
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
-    dependencies: [pagination.page, debouncedSearch, searchBy, genderFilter],
+    dependencies: [pagination.page, pagination.pageSize, debouncedSearch, searchBy, genderFilter],
     defaultErrorMessage: "Could not load people directory.",
   });
 
-  const totalPeople = page?.totalCount ?? contextPeople.length;
-  const maleCount = useMemo(
-    () => contextPeople.filter((p) => p.gender === 0).length,
-    [contextPeople],
-  );
-  const femaleCount = useMemo(
-    () => contextPeople.filter((p) => p.gender === 1).length,
-    [contextPeople],
-  );
+  const statsFetcher = useCallback(() => {
+    return getPeopleStatistics(accessToken ?? "");
+  }, [accessToken]);
+
+  const { data: stats, refresh: refreshStats } = useAsyncData(statsFetcher, {
+    enabled: Boolean(accessToken),
+    dependencies: [accessToken],
+    defaultErrorMessage: "Could not load people statistics.",
+  });
+
+  const totalPeople = stats?.totalCount ?? page?.totalCount ?? 0;
+  const maleCount = stats?.maleCount ?? 0;
+  const femaleCount = stats?.femaleCount ?? 0;
 
   const handleResetFilters = useCallback(() => {
     setSearch("");
@@ -104,12 +106,13 @@ export default function PeoplePage({
     setDeleteSuccess("");
 
     try {
-      await deletePersonRecord(deletePersonTarget.personId);
+      await deletePerson(accessToken ?? "", deletePersonTarget.personId);
       setDeleteSuccess(
         `Person #${deletePersonTarget.personId} (${deletePersonTarget.fullName}) was deleted successfully.`,
       );
       setDeletePersonTarget(null);
       void refresh();
+      void refreshStats();
     } catch (err) {
       setDeleteError(
         err instanceof Error
@@ -204,11 +207,13 @@ export default function PeoplePage({
         people={page?.items ?? []}
         totalCount={page?.totalCount ?? 0}
         pageNumber={page?.pageNumber ?? pagination.page}
+        pageSize={pagination.pageSize}
         totalPages={page?.totalPages ?? 0}
         hasPreviousPage={Boolean(page?.hasPreviousPage)}
         hasNextPage={Boolean(page?.hasNextPage)}
         onPreviousPage={pagination.previousPage}
         onNextPage={pagination.nextPage}
+        onPageSizeChange={pagination.setPageSize}
         search={search}
         onSearchChange={setSearch}
         searchBy={searchBy}
@@ -219,7 +224,7 @@ export default function PeoplePage({
         onAddPerson={onAddPerson}
         onRefresh={() => {
           void refresh();
-          void refreshPeople();
+          void refreshStats();
         }}
         loading={loading}
         onShowDetails={onShowDetails}

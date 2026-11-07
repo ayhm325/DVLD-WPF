@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, type FormEvent } from 'react'
+import { useState, useMemo, useCallback, useEffect, type FormEvent } from 'react'
 import {
   ArrowLeft,
   Search,
@@ -11,8 +11,9 @@ import {
 } from 'lucide-react'
 import type { LocalLicenseInfo } from '../../types/License'
 import {
-  getLicenses,
   getLicenseDetailsById,
+  getLicenseRenewalSummary,
+  getLicensesPage,
   renewLicense,
 } from '../../services/licenseService'
 import { formatNumber } from '../../utils/formatters'
@@ -30,8 +31,8 @@ import {
   Input,
   Label,
 } from '../ui'
-import { useAsyncData } from '../../hooks'
-import ExpiredLicensesTable from './ExpiredLicensesTable'
+import { useAsyncData, useDebounce, usePagination } from '../../hooks'
+import ExpiredLicensesTable, { type ExpiredLicensesSearchBy } from './ExpiredLicensesTable'
 import RenewLicenseForm from './RenewLicenseForm'
 import RenewLicenseReceiptCard from './RenewLicenseReceiptCard'
 
@@ -59,27 +60,93 @@ export default function RenewLicensePage({
   const [successNotice, setSuccessNotice] = useState('')
   const [isManualSearchOpen, setIsManualSearchOpen] = useState(false)
 
-  // 1. Fetch Expired Licenses directly from the server using server-side filtering
-  const fetcher = useCallback(() => getLicenses(accessToken, true), [accessToken])
+  // 1. Fetch Renewal Summary metrics
+  const summaryFetcher = useCallback(
+    () => getLicenseRenewalSummary(accessToken),
+    [accessToken],
+  )
 
   const {
-    data: expiredLicenses = [],
+    data: summary,
+    loading: loadingStats,
+    error: statsError,
+    refresh: refreshSummary,
+  } = useAsyncData(summaryFetcher, {
+    enabled: Boolean(accessToken),
+    defaultErrorMessage: 'Could not load license renewal summary.',
+  })
+
+  const stats = useMemo(
+    () => ({
+      totalExpired: summary?.totalExpired ?? 0,
+      eligible: summary?.eligibleForRenewal ?? 0,
+      ineligible: summary?.ineligibleForRenewal ?? 0,
+    }),
+    [summary],
+  )
+
+  // 2. Server-side search & pagination for expired licenses
+  const [search, setSearch] = useState('')
+  const [searchBy, setSearchBy] = useState<ExpiredLicensesSearchBy>('all')
+  const debouncedSearch = useDebounce(search, 300)
+
+  const pagination = usePagination({
+    pageSize: 10,
+    initialPage: 1,
+  })
+
+  const { resetPage } = pagination
+
+  useEffect(() => {
+    resetPage()
+  }, [debouncedSearch, searchBy, resetPage])
+
+  const licensesFetcher = useCallback(
+    () =>
+      getLicensesPage(
+        accessToken,
+        pagination.page,
+        pagination.pageSize,
+        debouncedSearch,
+        searchBy,
+        undefined,
+        true, // isExpired = true
+      ),
+    [
+      accessToken,
+      pagination.page,
+      pagination.pageSize,
+      debouncedSearch,
+      searchBy,
+    ],
+  )
+
+  const {
+    data: page,
     loading: loadingLicenses,
     error: licensesError,
     refresh: refreshLicenses,
-  } = useAsyncData(fetcher, {
+  } = useAsyncData(licensesFetcher, {
     enabled: Boolean(accessToken),
-    initialData: [],
+    dependencies: [
+      pagination.page,
+      pagination.pageSize,
+      debouncedSearch,
+      searchBy,
+    ],
     defaultErrorMessage: 'Could not load licenses from server.',
   })
 
-  // Summary Metrics (100% authoritative from backend lifecycle and Jordan facility date)
-  const stats = useMemo(() => {
-    const totalExpired = expiredLicenses.length
-    const eligible = expiredLicenses.filter((lic) => lic.isEligibleForRenewal).length
-    const ineligible = totalExpired - eligible
-    return { totalExpired, eligible, ineligible }
-  }, [expiredLicenses])
+  const handleResetFilters = useCallback(() => {
+    setSearch('')
+    setSearchBy('all')
+    resetPage()
+  }, [resetPage])
+
+  const handleRefresh = useCallback(() => {
+    void refreshLicenses()
+    void refreshSummary()
+  }, [refreshLicenses, refreshSummary])
 
   // Reusable authoritative license loader (shared between Manual search and Table selection)
   const selectLicenseById = useCallback(
@@ -158,8 +225,8 @@ export default function RenewLicensePage({
         `Driving License #${license.licenseId} renewed successfully! New License ID is #${response.licenseId}.`,
       )
       onRenewed?.(response.licenseId)
-      // Refresh expired licenses list so the renewed license drops out of the expired queue
-      void refreshLicenses()
+      // Refresh expired licenses and summary metrics so counts update
+      handleRefresh()
     } catch (err) {
       setError(
         err instanceof Error
@@ -226,6 +293,7 @@ export default function RenewLicensePage({
 
       {error && <ErrorAlert title="Renewal Notice" message={error} />}
       {licensesError && <ErrorAlert title="Data Load Error" message={licensesError} />}
+      {statsError && <ErrorAlert title="Statistics Load Error" message={statsError} />}
 
       {/* Success Receipt Card */}
       {successNotice && newLicenseId && license && (
@@ -248,6 +316,7 @@ export default function RenewLicensePage({
           variant="violet"
           icon={<Clock size={20} />}
           value={formatNumber(stats.totalExpired)}
+          loading={loadingStats}
           description="Expired according to Jordan facility time"
         />
         <StatCard
@@ -255,6 +324,7 @@ export default function RenewLicensePage({
           variant="emerald"
           icon={<CheckCircle2 size={20} />}
           value={formatNumber(stats.eligible)}
+          loading={loadingStats}
           description="Active licenses expired and ready"
         />
         <StatCard
@@ -262,6 +332,7 @@ export default function RenewLicensePage({
           variant="rose"
           icon={<AlertTriangle size={20} />}
           value={formatNumber(stats.ineligible)}
+          loading={loadingStats}
           description="Inactive status prevents renewal"
         />
       </StatsGrid>
@@ -341,12 +412,26 @@ export default function RenewLicensePage({
 
       {/* Expired Licenses Section (B5 Discovery) */}
       <ExpiredLicensesTable
-        expiredLicenses={expiredLicenses}
+        expiredLicenses={page?.items ?? []}
         selectedLicenseId={license?.licenseId ?? null}
         loading={loadingLicenses}
         loadingDetails={loadingDetails}
         onSelectLicense={(id) => void selectLicenseById(id)}
-        onRefresh={refreshLicenses}
+        onRefresh={handleRefresh}
+        search={search}
+        onSearchChange={setSearch}
+        searchBy={searchBy}
+        onSearchByChange={setSearchBy}
+        onResetFilters={handleResetFilters}
+        totalCount={page?.totalCount ?? 0}
+        pageNumber={page?.pageNumber ?? pagination.page}
+        pageSize={pagination.pageSize}
+        totalPages={page?.totalPages ?? 1}
+        hasPreviousPage={Boolean(page?.hasPreviousPage)}
+        hasNextPage={Boolean(page?.hasNextPage)}
+        onPreviousPage={pagination.previousPage}
+        onNextPage={pagination.nextPage}
+        onPageSizeChange={pagination.setPageSize}
       />
     </section>
   )

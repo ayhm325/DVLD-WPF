@@ -56,6 +56,23 @@ public sealed class PeopleController(
                 .ToList());
     }
 
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetStatistics()
+    {
+        var result = await personService.GetStatisticsAsync();
+
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        var stats = result.Value!;
+        return Ok(new
+        {
+            totalCount = stats.TotalCount,
+            maleCount = stats.MaleCount,
+            femaleCount = stats.FemaleCount
+        });
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {

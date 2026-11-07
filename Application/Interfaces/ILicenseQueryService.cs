@@ -12,6 +12,7 @@ public interface ILicenseQueryService
     Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired);
     Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request);
     Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request);
+    Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync();
 
     Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
         int driverId);

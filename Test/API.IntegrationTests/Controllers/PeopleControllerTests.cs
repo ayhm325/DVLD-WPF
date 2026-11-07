@@ -668,6 +668,67 @@ public sealed class PeopleControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetStatistics_WithoutAuthentication_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/People/statistics");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.PersonServiceMock.Verify(x => x.GetStatisticsAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetStatistics_WhenAuthenticated_ReturnsStatistics()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        var stats = new PersonStatisticsDto
+        {
+            TotalCount = 20,
+            MaleCount = 12,
+            FemaleCount = 8
+        };
+
+        factory.PersonServiceMock.Setup(x => x.GetStatisticsAsync())
+            .ReturnsAsync(Result<PersonStatisticsDto>.Success(stats));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People/statistics");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var root = document.RootElement;
+        Assert.Equal(20, root.GetProperty("totalCount").GetInt32());
+        Assert.Equal(12, root.GetProperty("maleCount").GetInt32());
+        Assert.Equal(8, root.GetProperty("femaleCount").GetInt32());
+
+        factory.PersonServiceMock.Verify(x => x.GetStatisticsAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetStatistics_WhenServiceFails_Returns500ProblemDetails()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.PersonServiceMock.Setup(x => x.GetStatisticsAsync())
+            .ReturnsAsync(Result<PersonStatisticsDto>.FromFailure("Failed to retrieve people statistics."));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People/statistics");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
+    }
+
     private static object CreateUpdateRequest() => new
     {
         NationalNo = "9901234555",

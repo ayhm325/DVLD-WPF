@@ -555,6 +555,56 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
             Times.Once);
     }
 
+    [Fact]
+    public async Task GetRenewalSummary_WithoutAuthentication_Returns401()
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/Licenses/renewal-summary");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetRenewalSummary_WhenSuccessful_ReturnsRenewalSummary()
+    {
+        var summary = new RenewalSummaryDto
+        {
+            TotalExpired = 10,
+            EligibleForRenewal = 7,
+            IneligibleForRenewal = 3
+        };
+
+        _factory.LicenseServiceMock.Setup(x => x.GetRenewalSummaryAsync())
+            .ReturnsAsync(Result<RenewalSummaryDto>.Success(summary));
+
+        var response = await GetAsync("/api/Licenses/renewal-summary");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var root = document.RootElement;
+        Assert.Equal(10, root.GetProperty("totalExpired").GetInt32());
+        Assert.Equal(7, root.GetProperty("eligibleForRenewal").GetInt32());
+        Assert.Equal(3, root.GetProperty("ineligibleForRenewal").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetRenewalSummary_WhenServiceFails_ReturnsProblemDetails()
+    {
+        _factory.LicenseServiceMock.Setup(x => x.GetRenewalSummaryAsync())
+            .ReturnsAsync(Result<RenewalSummaryDto>.FromFailure("Query failed"));
+
+        var response = await GetAsync("/api/Licenses/renewal-summary");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
+    }
+
     private static void AssertLicense(LicenseResponse actual, LicenseDto expected)
     {
         Assert.Equal(expected.LicenseID, actual.LicenseId);

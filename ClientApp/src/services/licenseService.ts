@@ -27,9 +27,21 @@ export interface LicensePageResponse {
   hasNextPage: boolean
 }
 
+export interface RenewalSummaryResponse {
+  totalExpired: number
+  eligibleForRenewal: number
+  ineligibleForRenewal: number
+}
+
 export function getLicenses(accessToken: string, isExpired?: boolean): Promise<License[]> {
   const query = isExpired !== undefined ? `?isExpired=${isExpired}` : ''
   return apiRequest<License[]>(`/Licenses${query}`, accessToken)
+}
+
+export function getLicenseRenewalSummary(
+  accessToken: string,
+): Promise<RenewalSummaryResponse> {
+  return apiRequest<RenewalSummaryResponse>('/Licenses/renewal-summary', accessToken)
 }
 
 export function getLicensesPage(
