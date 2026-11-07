@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
@@ -51,7 +51,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
 
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.IsAny<PaginationRequest>()))
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
             .ReturnsAsync(Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
                 .Success(paged));
 
@@ -77,7 +77,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
             x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.Is<PaginationRequest>(p =>
+                It.Is<LocalDrivingLicenseApplicationQueryRequest>(p =>
                     p.PageNumber == 1 && p.PageSize == 10)),
             Times.Once);
     }
@@ -94,7 +94,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
 
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.IsAny<PaginationRequest>()))
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
             .ReturnsAsync(result);
 
         var response = await GetAuthenticatedAsync(
@@ -112,7 +112,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.IsAny<PaginationRequest>()))
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
             .ReturnsAsync(Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
                 .FromFailure("Database failure."));
 
@@ -732,6 +732,41 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         LastStatusDate = new DateTime(2026, 1, 10),
         CreatedByUserName = "admin"
     };
+
+    [Fact]
+    public async Task GetAll_WithSearchAndFilterQueryParameters_PassesFiltersToService()
+    {
+        var dto = CreateApplicationDto(10);
+        var paged = new PagedResult<LocalDrivingLicenseApplicationListDto>
+        {
+            Items = [dto],
+            PageNumber = 2,
+            PageSize = 5,
+            TotalCount = 1
+        };
+
+        _factory.LocalDrivingLicenseApplicationServiceMock
+            .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
+            .ReturnsAsync(Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
+                .Success(paged));
+
+        var response = await GetAuthenticatedAsync(
+            "/api/LocalDrivingLicenseApplications?pageNumber=2&pageSize=5&searchQuery=N123&searchBy=nationalno&statusFilter=New&licenseClassId=3");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
+            x => x.GetAllLocalDrivingLicenseApplicationsAsync(
+                It.Is<LocalDrivingLicenseApplicationQueryRequest>(p =>
+                    p.PageNumber == 2 &&
+                    p.PageSize == 5 &&
+                    p.SearchQuery == "N123" &&
+                    p.SearchBy == "nationalno" &&
+                    p.StatusFilter == "New" &&
+                    p.LicenseClassId == 3)),
+            Times.Once);
+    }
 
     private static async Task AssertProblemDetailsAsync(
         HttpResponseMessage response,

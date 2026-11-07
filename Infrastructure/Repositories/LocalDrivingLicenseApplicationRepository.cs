@@ -1,4 +1,5 @@
-﻿using Application.Common.Pagination;
+using Application.Common.Pagination;
+using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
@@ -20,12 +21,96 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
                 .ThenInclude(x => x.Person)
             .Include(x => x.LicenseClass);
 
+    public Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
+        PaginationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request is LocalDrivingLicenseApplicationQueryRequest queryRequest)
+        {
+            return GetAllAsync(queryRequest);
+        }
+
+        return GetAllAsync(new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        });
+    }
+
     public async Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
-    PaginationRequest request)
+        LocalDrivingLicenseApplicationQueryRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         var query = Query();
+
+        if (!string.IsNullOrWhiteSpace(request.StatusFilter) &&
+            !string.Equals(request.StatusFilter, "All", StringComparison.OrdinalIgnoreCase) &&
+            Enum.TryParse<AppStatus>(request.StatusFilter, true, out var status))
+        {
+            query = query.Where(x => x.Application.ApplicationStatus == status);
+        }
+
+        if (request.LicenseClassId.HasValue && request.LicenseClassId > 0)
+        {
+            query = query.Where(x => x.LicenseClassID == request.LicenseClassId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SearchQuery))
+        {
+            var term = request.SearchQuery.Trim();
+            var searchBy = request.SearchBy?.Trim().ToLowerInvariant() ?? "all";
+
+            switch (searchBy)
+            {
+                case "nationalno":
+                    query = query.Where(x => x.Application.Person.NationalNo.Contains(term));
+                    break;
+
+                case "name":
+                case "fullname":
+                    query = query.Where(x =>
+                        x.Application.Person.FirstName.Contains(term) ||
+                        x.Application.Person.SecondName.Contains(term) ||
+                        (x.Application.Person.ThirdName != null && x.Application.Person.ThirdName.Contains(term)) ||
+                        x.Application.Person.LastName.Contains(term) ||
+                        (x.Application.Person.FirstName + " " + x.Application.Person.LastName).Contains(term) ||
+                        (x.Application.Person.FirstName + " " + x.Application.Person.SecondName + " " + x.Application.Person.LastName).Contains(term));
+                    break;
+
+                case "appid":
+                case "localdrivinglicenseapplicationid":
+                    if (int.TryParse(term, out var appId))
+                    {
+                        query = query.Where(x => x.LocalDrivingLicenseApplicationID == appId);
+                    }
+                    else
+                    {
+                        query = query.Where(x => false);
+                    }
+                    break;
+
+                case "class":
+                    query = query.Where(x => x.LicenseClass.ClassName.Contains(term));
+                    break;
+
+                case "all":
+                default:
+                    var isNum = int.TryParse(term, out var id);
+                    query = query.Where(x =>
+                        x.Application.Person.NationalNo.Contains(term) ||
+                        x.Application.Person.FirstName.Contains(term) ||
+                        x.Application.Person.SecondName.Contains(term) ||
+                        (x.Application.Person.ThirdName != null && x.Application.Person.ThirdName.Contains(term)) ||
+                        x.Application.Person.LastName.Contains(term) ||
+                        (x.Application.Person.FirstName + " " + x.Application.Person.LastName).Contains(term) ||
+                        (x.Application.Person.FirstName + " " + x.Application.Person.SecondName + " " + x.Application.Person.LastName).Contains(term) ||
+                        x.LicenseClass.ClassName.Contains(term) ||
+                        (isNum && x.LocalDrivingLicenseApplicationID == id));
+                    break;
+            }
+        }
 
         var totalCount = await query.CountAsync();
 

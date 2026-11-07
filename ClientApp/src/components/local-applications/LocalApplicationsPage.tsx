@@ -28,7 +28,7 @@ import {
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
 import type { License } from '../../types/License'
 import { formatNumber } from '../../utils/formatters'
-import { useAsyncData, useTableFilters, usePagination } from '../../hooks'
+import { useAsyncData, usePagination, useDebounce } from '../../hooks'
 import {
   Plus as PlusIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -78,10 +78,6 @@ const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
   { value: 'class', label: 'Driving Class' },
 ]
 
-interface LocalAppFilters extends Record<string, unknown> {
-  status: string
-}
-
 export default function LocalApplicationsPage({
   accessToken,
   onShowLicenseHistory,
@@ -107,18 +103,34 @@ export default function LocalApplicationsPage({
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
+  const [search, setSearch] = useState('')
+  const [searchBy, setSearchBy] = useState<SearchBy>('all')
+  const [status, setStatus] = useState('All')
+
+  const debouncedSearch = useDebounce(search, 300)
+
   const pagination = usePagination({
     pageSize: PAGE_SIZE,
     initialPage: 1,
   })
+
+  const { resetPage } = pagination
+
+  // Whenever debounced search or filters change, ensure pagination resets to page 1
+  useEffect(() => {
+    resetPage()
+  }, [debouncedSearch, searchBy, status, resetPage])
 
   const fetcher = useCallback(() => {
     return getLocalDrivingLicenseApplications(
       accessToken,
       pagination.page,
       PAGE_SIZE,
+      debouncedSearch,
+      searchBy,
+      status,
     )
-  }, [accessToken, pagination.page])
+  }, [accessToken, pagination.page, debouncedSearch, searchBy, status])
 
   const {
     data: page,
@@ -127,7 +139,7 @@ export default function LocalApplicationsPage({
     refresh,
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
-    dependencies: [pagination.page],
+    dependencies: [pagination.page, debouncedSearch, searchBy, status],
     defaultErrorMessage: 'Could not load local applications.',
   })
 
@@ -142,56 +154,16 @@ export default function LocalApplicationsPage({
     }
   }, [reopenModalTarget, onClearReopenModalTarget, onManageTestAppointments])
 
-  const {
-    search,
-    setSearch,
-    searchField: searchBy,
-    setSearchField: setSearchBy,
-    filters,
-    setFilter,
-    filteredData: filteredItems,
-    isFiltered,
-    resetFilters: handleResetFilters,
-  } = useTableFilters<LocalDrivingLicenseApplication, SearchBy, LocalAppFilters>({
-    data: page?.items ?? [],
-    initialSearchField: 'all',
-    initialFilters: { status: 'All' },
-    onReset: pagination.resetPage,
-    filterItem: (item, query, field, currentFilters) => {
-      const statusText = (
-        item.statusText || item.applicationStatus || ''
-      ).toLowerCase()
+  const isFiltered = useMemo(() => {
+    return search.trim().length > 0 || searchBy !== 'all' || status !== 'All'
+  }, [search, searchBy, status])
 
-      const matchesStatus =
-        currentFilters.status === 'All' ||
-        statusText === currentFilters.status.toLowerCase()
-
-      if (!matchesStatus) return false
-      if (!query) return true
-
-      if (field === 'name') {
-        return (item.fullName ?? '').toLowerCase().includes(query)
-      }
-      if (field === 'nationalNo') {
-        return (item.nationalNo ?? '').toLowerCase().includes(query)
-      }
-      if (field === 'appId') {
-        return String(item.localDrivingLicenseApplicationId).includes(query)
-      }
-      if (field === 'class') {
-        return (item.licenseClassName ?? '').toLowerCase().includes(query)
-      }
-
-      return (
-        (item.fullName ?? '').toLowerCase().includes(query) ||
-        (item.nationalNo ?? '').toLowerCase().includes(query) ||
-        String(item.localDrivingLicenseApplicationId).includes(query) ||
-        (item.licenseClassName ?? '').toLowerCase().includes(query)
-      )
-    },
-  })
-
-  const status = filters.status
+  const handleResetFilters = useCallback(() => {
+    setSearch('')
+    setSearchBy('all')
+    setStatus('All')
+    pagination.resetPage()
+  }, [pagination])
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -357,7 +329,7 @@ export default function LocalApplicationsPage({
                 : error
                   ? '—'
                   : isFiltered
-                    ? `${filteredItems.length} of ${page?.totalCount ?? 0} Applications`
+                    ? `${page?.totalCount ?? 0} matching ${page?.totalCount === 1 ? 'Application' : 'Applications'}`
                     : `${page?.totalCount ?? 0} Applications`}
             </span>
 
@@ -390,7 +362,7 @@ export default function LocalApplicationsPage({
               <Select
                 value={status}
                 onValueChange={(val) => {
-                  setFilter('status', val)
+                  setStatus(val)
                   pagination.resetPage()
                 }}
               >
@@ -434,7 +406,7 @@ export default function LocalApplicationsPage({
         )}
 
         <LocalApplicationsList
-          items={filteredItems}
+          items={page?.items ?? []}
           loading={loading}
           onEdit={(application) => setView({ mode: 'edit', application })}
           onShowDetails={(application) => setSelectedAppForDetails(application)}
@@ -486,7 +458,7 @@ export default function LocalApplicationsPage({
           <span>
             {error
               ? 'Failed to load applications'
-              : `Showing ${filteredItems.length} of ${page?.totalCount ?? 0} applications`}
+              : `Showing ${page?.items?.length ?? 0} of ${page?.totalCount ?? 0} applications`}
           </span>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

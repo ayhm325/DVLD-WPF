@@ -1,6 +1,6 @@
-﻿namespace Application.Common.Pagination;
+namespace Application.Common.Pagination;
 
-public sealed class PaginationRequest
+public class PaginationRequest
 {
     private const int DefaultPageNumber = 1;
     private const int DefaultPageSize = 10;

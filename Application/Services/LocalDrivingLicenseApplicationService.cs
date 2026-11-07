@@ -49,13 +49,33 @@ public sealed class LocalDrivingLicenseApplicationService(
     private readonly IPersonRepository? _personRepository =
         personRepository;
 
-    public async Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
+    public Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
     GetAllLocalDrivingLicenseApplicationsAsync(
         PaginationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var pagedEntities = await _repository.GetAllAsync(request);
+        if (request is LocalDrivingLicenseApplicationQueryRequest queryRequest)
+        {
+            return GetAllLocalDrivingLicenseApplicationsAsync(queryRequest);
+        }
+
+        return GetAllInternalAsync(() => _repository.GetAllAsync(request));
+    }
+
+    public Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
+    GetAllLocalDrivingLicenseApplicationsAsync(
+        LocalDrivingLicenseApplicationQueryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return GetAllInternalAsync(() => _repository.GetAllAsync(request));
+    }
+
+    private async Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
+    GetAllInternalAsync(Func<Task<PagedResult<LocalDrivingLicenseApplication>>> fetcher)
+    {
+        var pagedEntities = await fetcher();
 
         var items = await MapListToDtoAsync(
             pagedEntities.Items);

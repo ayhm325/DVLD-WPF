@@ -10,9 +10,31 @@ export function getLocalDrivingLicenseApplications(
   accessToken: string,
   pageNumber: number,
   pageSize: number,
+  searchQuery?: string,
+  searchBy?: string,
+  statusFilter?: string,
+  licenseClassId?: number,
 ): Promise<LocalDrivingLicenseApplicationsPage> {
+  const params = new URLSearchParams({
+    pageNumber: String(pageNumber),
+    pageSize: String(pageSize),
+  })
+
+  if (searchQuery && searchQuery.trim()) {
+    params.set('searchQuery', searchQuery.trim())
+  }
+  if (searchBy && searchBy !== 'all') {
+    params.set('searchBy', searchBy)
+  }
+  if (statusFilter && statusFilter !== 'All') {
+    params.set('statusFilter', statusFilter)
+  }
+  if (licenseClassId && licenseClassId > 0) {
+    params.set('licenseClassId', String(licenseClassId))
+  }
+
   return apiRequest<LocalDrivingLicenseApplicationsPage>(
-    `/LocalDrivingLicenseApplications?pageNumber=${pageNumber}&pageSize=${pageSize}`,
+    `/LocalDrivingLicenseApplications?${params.toString()}`,
     accessToken,
   )
 }

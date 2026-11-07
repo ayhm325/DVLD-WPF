@@ -1,4 +1,4 @@
-﻿using Application.Common.Pagination;
+using Application.Common.Pagination;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
@@ -19,7 +19,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] PaginationRequest request)
+        [FromQuery] LocalDrivingLicenseApplicationQueryRequest request)
     {
         var result =
             await service

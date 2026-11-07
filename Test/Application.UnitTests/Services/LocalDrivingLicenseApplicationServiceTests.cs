@@ -186,6 +186,52 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     }
 
     [Fact]
+    public async Task GetAll_WithQueryRequest_PassesQueryRequestToRepositoryAndMapsResult()
+    {
+        var entities = new[] { CreateEntity(1, 10, 3) };
+
+        _repository.Setup(x => x.GetAllAsync(It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
+            .ReturnsAsync(new PagedResult<LocalDrivingLicenseApplication>
+            {
+                Items = entities,
+                PageNumber = 1,
+                PageSize = 10,
+                TotalCount = 1
+            });
+
+        _repository.Setup(x => x.GetPassedTestCountsAsync(It.IsAny<IEnumerable<int>>()))
+            .ReturnsAsync(new Dictionary<int, int> { [1] = 1 });
+
+        _licenseRepository.Setup(x => x.GetApplicationIdsWithLicensesAsync(It.IsAny<IEnumerable<int>>()))
+            .ReturnsAsync([]);
+
+        var query = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "N123",
+            SearchBy = "nationalno",
+            StatusFilter = "New",
+            LicenseClassId = 3
+        };
+
+        var result = await CreateService().GetAllLocalDrivingLicenseApplicationsAsync(query);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value!.Items);
+
+        _repository.Verify(x => x.GetAllAsync(
+            It.Is<LocalDrivingLicenseApplicationQueryRequest>(r =>
+                r.PageNumber == 1 &&
+                r.PageSize == 10 &&
+                r.SearchQuery == "N123" &&
+                r.SearchBy == "nationalno" &&
+                r.StatusFilter == "New" &&
+                r.LicenseClassId == 3)), Times.Once);
+    }
+
+    [Fact]
     public async Task GetById_WhenInvalid_ReturnsValidation()
     {
         var result = await CreateService().GetLocalDrivingLicenseApplicationByIdAsync(0);

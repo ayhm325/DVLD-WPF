@@ -1,4 +1,5 @@
-﻿using Application.Common.Pagination;
+using Application.Common.Pagination;
+using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
@@ -121,6 +122,179 @@ public sealed class LocalDrivingLicenseApplicationRepositoryTests
         var entity = Assert.Single(result.Items.Where(x => x.LocalDrivingLicenseApplicationID == seed.LocalApplicationId));
 
         Assert.Equal(EntityState.Detached, context.Entry(entity).State);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByNationalNo_ReturnsMatchingApplications()
+    {
+        var first = await SeedLocalApplicationAsync();
+        var second = await SeedLocalApplicationAsync();
+
+        await using var context = _database.CreateContext();
+        var firstPerson = await context.People.AsNoTracking().SingleAsync(p => p.PersonId == first.PersonId);
+        var repository = new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = firstPerson.NationalNo,
+            SearchBy = "nationalno"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(1, result.TotalCount);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(first.LocalApplicationId, item.LocalDrivingLicenseApplicationID);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenRecordIsBeyondFirstPage_FindsRecordOnPageOneWhenFiltered()
+    {
+        await SeedLocalApplicationAsync();
+        await SeedLocalApplicationAsync();
+        var target = await SeedLocalApplicationAsync();
+
+        await using var context = _database.CreateContext();
+        var targetPerson = await context.People.AsNoTracking().SingleAsync(p => p.PersonId == target.PersonId);
+        var repository = new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 1,
+            SearchQuery = targetPerson.NationalNo,
+            SearchBy = "nationalno"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(1, result.PageNumber);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(1, result.TotalPages);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(target.LocalApplicationId, item.LocalDrivingLicenseApplicationID);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByFullName_MatchesApplicant()
+    {
+        var seed = await SeedLocalApplicationAsync();
+
+        await using var context = _database.CreateContext();
+        var person = await context.People.SingleAsync(p => p.PersonId == seed.PersonId);
+        var uniqueName = $"Tariq_{Guid.NewGuid():N}";
+        person.FirstName = uniqueName;
+        await context.SaveChangesAsync();
+
+        var repository = new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = uniqueName,
+            SearchBy = "name"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(1, result.TotalCount);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(seed.LocalApplicationId, item.LocalDrivingLicenseApplicationID);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByLocalApplicationId_MatchesExactRecord()
+    {
+        var seed = await SeedLocalApplicationAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = seed.LocalApplicationId.ToString(),
+            SearchBy = "appid"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(1, result.TotalCount);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(seed.LocalApplicationId, item.LocalDrivingLicenseApplicationID);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenFilteringByStatus_ReturnsOnlyMatchingStatus()
+    {
+        var seed = await SeedLocalApplicationAsync();
+
+        await using var context = _database.CreateContext();
+        var app = await context.Applications.SingleAsync(a => a.ApplicationID == seed.ApplicationId);
+        app.ApplicationStatus = AppStatus.Cancelled;
+        await context.SaveChangesAsync();
+
+        var repository = new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 50,
+            StatusFilter = "Cancelled"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.True(result.TotalCount >= 1);
+        Assert.All(result.Items, item => Assert.Equal(AppStatus.Cancelled, item.Application.ApplicationStatus));
+        Assert.Contains(result.Items, x => x.LocalDrivingLicenseApplicationID == seed.LocalApplicationId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenFilteringByLicenseClassId_ReturnsOnlyMatchingClass()
+    {
+        var seed = await SeedLocalApplicationAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 50,
+            LicenseClassId = seed.LicenseClassId
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.True(result.TotalCount >= 1);
+        Assert.All(result.Items, item => Assert.Equal(seed.LicenseClassId, item.LicenseClassID));
+        Assert.Contains(result.Items, x => x.LocalDrivingLicenseApplicationID == seed.LocalApplicationId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchHasNoMatch_ReturnsEmptyPageWithZeroTotalCount()
+    {
+        await using var context = _database.CreateContext();
+        var repository = new LocalDrivingLicenseApplicationRepository(context);
+
+        var request = new LocalDrivingLicenseApplicationQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "NON_EXISTENT_QUERY_XYZ_9999",
+            SearchBy = "all"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(0, result.TotalCount);
+        Assert.Equal(0, result.TotalPages);
+        Assert.Empty(result.Items);
     }
 
     [Fact]
