@@ -23,6 +23,7 @@ import {
   LockKeyhole,
 } from 'lucide-react'
 import { isPagePermitted } from '../../utils/permissions'
+import { useNavigation } from '../../context/useNavigation'
 
 interface CommandItem {
   id: string
@@ -211,16 +212,18 @@ const COMMAND_ITEMS: CommandItem[] = [
 interface CommandPaletteProps {
   isOpen: boolean
   onClose: () => void
-  onNavigate: (page: string) => void
+  onNavigate?: (page: string) => void
   userRole?: string
 }
 
 export default function CommandPalette({
   isOpen,
   onClose,
-  onNavigate,
+  onNavigate: propOnNavigate,
   userRole,
 }: CommandPaletteProps) {
+  const nav = useNavigation()
+  const handleNavigate = propOnNavigate ?? nav.navigate
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -296,7 +299,7 @@ export default function CommandPalette({
     } else if (e.key === 'Enter') {
       e.preventDefault()
       if (filteredItems[selectedIndex]) {
-        onNavigate(filteredItems[selectedIndex].page)
+        handleNavigate(filteredItems[selectedIndex].page)
         handleClose()
       }
     } else if (e.key === 'Escape') {
@@ -391,7 +394,7 @@ export default function CommandPalette({
                     type="button"
                     data-index={index}
                     onClick={() => {
-                      onNavigate(item.page)
+                      handleNavigate(item.page)
                       handleClose()
                     }}
                     onMouseEnter={() => setSelectedIndex(index)}

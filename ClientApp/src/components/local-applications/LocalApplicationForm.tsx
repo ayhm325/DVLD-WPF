@@ -36,16 +36,13 @@ import {
 import {
   createLocalDrivingLicenseApplication,
   getLocalApplicationCreateInfo,
-  getLocalLicenseClasses,
-  getPersonById,
-  getPersonByNationalNo,
   updateLocalDrivingLicenseApplication,
 } from '../../services/localDrivingLicenseApplicationService'
-import type {
-  LocalApplicationPerson,
-  LocalDrivingLicenseApplication,
-  LocalLicenseClass,
-} from '../../types/LocalDrivingLicenseApplication'
+import { getPersonById, getPersonByNationalNo } from '../../services/peopleService'
+import { getLicenseClasses } from '../../services/licenseClassService'
+import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
+import type { PersonDetails } from '../../types/Person'
+import type { LicenseClass } from '../../types/LicenseClass'
 
 type Props = {
   accessToken: string
@@ -68,8 +65,8 @@ export default function LocalApplicationForm({
   const [step, setStep] = useState<Step>(isEdit ? 'application' : 'person')
   const [searchBy, setSearchBy] = useState<'id' | 'nationalNo'>('id')
   const [searchValue, setSearchValue] = useState('')
-  const [person, setPerson] = useState<LocalApplicationPerson | null>(null)
-  const [classes, setClasses] = useState<LocalLicenseClass[]>([])
+  const [person, setPerson] = useState<PersonDetails | null>(null)
+  const [classes, setClasses] = useState<LicenseClass[]>([])
   const [selectedClassId, setSelectedClassId] = useState(
     String(application?.licenseClassId ?? ''),
   )
@@ -87,7 +84,7 @@ export default function LocalApplicationForm({
       setError('')
       try {
         const [licenseClasses, createInfo] = await Promise.all([
-          getLocalLicenseClasses(accessToken),
+          getLicenseClasses(accessToken),
           getLocalApplicationCreateInfo(accessToken),
         ])
         if (cancelled) return

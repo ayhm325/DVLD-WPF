@@ -19,20 +19,13 @@ import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { useDashboardStatistics } from "../../hooks/useDashboardStatistics";
+import { usePeopleData } from "../../context/usePeopleData";
 import type { Person } from "../../types/Person";
 import { formatNumber } from "../../utils/formatters";
-import { deletePerson } from "../../services/peopleService";
 
 export type DashboardPageProps = {
   accessToken: string;
   statisticsRefreshKey?: number;
-  people: Person[];
-  filteredPeople?: Person[];
-  searchName: string;
-  onSearchChange: (value: string) => void;
-  loadingPeople: boolean;
-  peopleError: string;
-  onRetryPeople: () => void;
   onAddPerson: () => void;
   onShowDetails?: (person: Person) => void;
   onEditPerson?: (person: Person) => void;
@@ -41,12 +34,6 @@ export type DashboardPageProps = {
 export default function DashboardPage({
   accessToken,
   statisticsRefreshKey = 0,
-  people,
-  searchName,
-  onSearchChange,
-  loadingPeople,
-  peopleError,
-  onRetryPeople,
   onAddPerson,
   onShowDetails,
   onEditPerson,
@@ -56,6 +43,14 @@ export default function DashboardPage({
     statisticsRefreshKey,
   );
 
+  const {
+    people,
+    loading: loadingPeople,
+    error: peopleError,
+    refreshPeople,
+    deletePersonRecord,
+  } = usePeopleData();
+
   const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(
     null,
   );
@@ -64,19 +59,18 @@ export default function DashboardPage({
   const [deleteSuccess, setDeleteSuccess] = useState("");
 
   async function handleConfirmDelete() {
-    if (!deletePersonTarget || isDeleting || !accessToken) return;
+    if (!deletePersonTarget || isDeleting) return;
 
     setIsDeleting(true);
     setDeleteError("");
     setDeleteSuccess("");
 
     try {
-      await deletePerson(accessToken, deletePersonTarget.personId);
+      await deletePersonRecord(deletePersonTarget.personId);
       setDeleteSuccess(
         `Person #${deletePersonTarget.personId} (${deletePersonTarget.fullName}) was deleted successfully.`,
       );
       setDeletePersonTarget(null);
-      onRetryPeople();
       retry();
     } catch (err) {
       setDeleteError(
@@ -284,7 +278,7 @@ export default function DashboardPage({
             type="button"
             variant="outline"
             size="sm"
-            onClick={onRetryPeople}
+            onClick={refreshPeople}
             className="border-red-300 text-red-700 hover:bg-red-100/70 shrink-0 self-start sm:self-auto bg-white"
           >
             Retry People List
@@ -323,10 +317,8 @@ export default function DashboardPage({
       {/* People Directory Table */}
       <PeopleTable
         people={people}
-        searchName={searchName}
-        onSearchChange={onSearchChange}
         onAddPerson={onAddPerson}
-        onRefresh={onRetryPeople}
+        onRefresh={refreshPeople}
         loading={loadingPeople}
         onShowDetails={onShowDetails}
         onEditPerson={onEditPerson}

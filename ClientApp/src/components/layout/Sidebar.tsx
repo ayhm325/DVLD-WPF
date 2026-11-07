@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../context/useAuth";
+import { useNavigation } from "../../context/useNavigation";
 import { isPagePermitted } from "../../utils/permissions";
 import { cn } from "@/lib/utils";
 import {
@@ -29,8 +30,8 @@ import {
 } from "lucide-react";
 
 type SidebarProps = {
-  activePage: string;
-  onNavigate: (page: string) => void;
+  activePage?: string;
+  onNavigate?: (page: string) => void;
   isOpen?: boolean;
   onCloseMobile?: () => void;
   onRequestLogout: () => void;
@@ -43,13 +44,15 @@ interface NavItemDef {
 }
 
 export default function Sidebar({
-  activePage,
-  onNavigate,
+  activePage: propActivePage,
+  onNavigate: propOnNavigate,
   isOpen = false,
   onCloseMobile,
   onRequestLogout,
 }: SidebarProps) {
   const { user } = useAuth();
+  const nav = useNavigation();
+  const activePage = propActivePage ?? nav.activePage;
 
   const allMainNavItems: NavItemDef[] = [
     { page: "Dashboard", icon: <LayoutDashboard className="size-4.5" /> },
@@ -130,7 +133,11 @@ export default function Sidebar({
   const isSettingsActive = visibleSettingsPageNames.includes(activePage);
 
   const handleNavClick = (page: string) => {
-    onNavigate(page);
+    if (propOnNavigate) {
+      propOnNavigate(page);
+    } else {
+      nav.navigate(page);
+    }
     if (onCloseMobile) {
       onCloseMobile();
     }

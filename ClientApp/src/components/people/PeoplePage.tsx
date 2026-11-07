@@ -8,38 +8,26 @@ import ConfirmModal from "../common/ConfirmModal";
 import { Users as UsersIcon, User as UserIcon } from "lucide-react";
 import type { Person } from "../../types/Person";
 import { formatNumber } from "../../utils/formatters";
-import { deletePerson } from "../../services/peopleService";
-import { useAuth } from "../../context/useAuth";
+import { usePeopleData } from "../../context/usePeopleData";
 
 export type PeoplePageProps = {
-  accessToken?: string;
-  people?: Person[];
-  filteredPeople: Person[];
-  searchName: string;
-  onSearchChange: (value: string) => void;
-  loadingPeople: boolean;
-  peopleError: string;
-  onRetryPeople: () => void;
   onAddPerson: () => void;
   onShowDetails?: (person: Person) => void;
   onEditPerson?: (person: Person) => void;
 };
 
 export default function PeoplePage({
-  accessToken: propToken,
-  people: rawPeople,
-  filteredPeople,
-  searchName,
-  onSearchChange,
-  loadingPeople,
-  peopleError,
-  onRetryPeople,
   onAddPerson,
   onShowDetails,
   onEditPerson,
 }: PeoplePageProps) {
-  const { accessToken: contextToken } = useAuth();
-  const token = propToken || contextToken || "";
+  const {
+    people,
+    loading: loadingPeople,
+    error: peopleError,
+    refreshPeople,
+    deletePersonRecord,
+  } = usePeopleData();
 
   const [deletePersonTarget, setDeletePersonTarget] = useState<Person | null>(
     null,
@@ -47,11 +35,6 @@ export default function PeoplePage({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [deleteSuccess, setDeleteSuccess] = useState("");
-
-  const people = useMemo(
-    () => rawPeople ?? filteredPeople ?? [],
-    [rawPeople, filteredPeople],
-  );
 
   const totalPeople = people.length;
   const maleCount = useMemo(
@@ -64,19 +47,18 @@ export default function PeoplePage({
   );
 
   async function handleConfirmDelete() {
-    if (!deletePersonTarget || isDeleting || !token) return;
+    if (!deletePersonTarget || isDeleting) return;
 
     setIsDeleting(true);
     setDeleteError("");
     setDeleteSuccess("");
 
     try {
-      await deletePerson(token, deletePersonTarget.personId);
+      await deletePersonRecord(deletePersonTarget.personId);
       setDeleteSuccess(
         `Person #${deletePersonTarget.personId} (${deletePersonTarget.fullName}) was deleted successfully.`,
       );
       setDeletePersonTarget(null);
-      onRetryPeople();
     } catch (err) {
       setDeleteError(
         err instanceof Error
@@ -136,7 +118,7 @@ export default function PeoplePage({
         <ErrorAlert
           message={peopleError}
           style={{ marginBottom: 20 }}
-          onRetry={onRetryPeople}
+          onRetry={refreshPeople}
           retryLabel="Retry people"
         />
       )}
@@ -171,10 +153,8 @@ export default function PeoplePage({
 
       <PeopleTable
         people={people}
-        searchName={searchName}
-        onSearchChange={onSearchChange}
         onAddPerson={onAddPerson}
-        onRefresh={onRetryPeople}
+        onRefresh={refreshPeople}
         loading={loadingPeople}
         onShowDetails={onShowDetails}
         onEditPerson={onEditPerson}

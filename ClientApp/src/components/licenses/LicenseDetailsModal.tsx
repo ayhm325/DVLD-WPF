@@ -19,11 +19,10 @@ import { formatDate, formatCurrency } from '../../utils/formatters'
 import { getActiveStatusProps } from '../../utils/status'
 import { getLicenseDetailsById } from '../../services/licenseService'
 import { getInternationalLicenseById } from '../../services/internationalLicenseService'
-import type { License } from '../../types/License'
+import type { License, LocalLicenseInfo } from '../../types/License'
 import type {
   InternationalLicense,
   InternationalLicenseDetails,
-  LocalLicenseInfo,
 } from '../../types/InternationalLicense'
 
 export type LicenseModalTarget =

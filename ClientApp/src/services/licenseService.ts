@@ -1,12 +1,12 @@
 import { apiRequest } from './apiClient'
 import type {
   License,
+  LocalLicenseInfo,
   RenewLicenseRequest,
   RenewLicenseResponse,
   ReplaceLicenseRequest,
   ReplaceLicenseResponse,
 } from '../types/License'
-import type { LocalLicenseInfo } from '../types/InternationalLicense'
 
 export type {
   License,

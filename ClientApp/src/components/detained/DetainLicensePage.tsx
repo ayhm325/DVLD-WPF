@@ -14,7 +14,7 @@ import {
   DollarSign,
   Hash,
 } from 'lucide-react'
-import type { LocalLicenseInfo } from '../../types/InternationalLicense'
+import type { LocalLicenseInfo } from '../../types/License'
 import { getLicenseDetailsById } from '../../services/licenseService'
 import { detainLicense } from '../../services/detainedLicenseService'
 import { formatDate, formatCurrency } from '../../utils/formatters'

@@ -10,8 +10,8 @@ import {
 } from 'lucide-react'
 import type {
   InternationalLicenseDetails,
-  LocalLicenseInfo,
 } from '../../types/InternationalLicense'
+import type { LocalLicenseInfo } from '../../types/License'
 import {
   getLocalLicenseInfo,
   issueInternationalLicense,

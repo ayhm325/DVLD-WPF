@@ -13,7 +13,7 @@ import {
   Coins,
   Hash,
 } from 'lucide-react'
-import type { LocalLicenseInfo } from '../../types/InternationalLicense'
+import type { LocalLicenseInfo } from '../../types/License'
 import { getLicenseDetailsById, replaceLicense } from '../../services/licenseService'
 import { formatDate, formatCurrency } from '../../utils/formatters'
 import { isLicenseExpiredInJordan } from '../../utils/jordanTime'

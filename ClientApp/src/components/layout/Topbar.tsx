@@ -1,4 +1,5 @@
 import { useAuth } from "../../context/useAuth";
+import { useNavigation } from "../../context/useNavigation";
 import {
   ChevronDown,
   ChevronRight,
@@ -18,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export type TopbarProps = {
-  activePage: string;
+  activePage?: string;
   onToggleSidebar?: () => void;
   onRequestLogout: () => void;
   onOpenCommandPalette?: () => void;
@@ -65,12 +66,14 @@ function getBreadcrumbs(page: string): { parent?: string; current: string } {
 }
 
 export default function Topbar({
-  activePage,
+  activePage: propActivePage,
   onRequestLogout,
   onOpenCommandPalette,
   className = "",
 }: TopbarProps) {
   const { user } = useAuth();
+  const nav = useNavigation();
+  const activePage = propActivePage ?? nav.activePage;
   const breadcrumbs = getBreadcrumbs(activePage);
 
   const initial = user?.fullName

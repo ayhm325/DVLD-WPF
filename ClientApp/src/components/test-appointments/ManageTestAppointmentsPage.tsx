@@ -514,6 +514,41 @@ export default function ManageTestAppointmentsPage({
     [onShowAppointmentDetails, onTakeExamination, onNavigate],
   )
 
+  // Early return for missing context
+  if (!localAppId || localAppId <= 0) {
+    return (
+      <section className="page-content space-y-6">
+        <PageHero
+          pageId="Manage Test Appointments"
+          title="Test Appointments"
+          highlight="History"
+          description="Complete chronological examination history and appointment management across Vision, Written, and Practical (Street) tests."
+        />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onBack}
+            className="gap-2 text-slate-300 hover:text-white border-[#263e68] bg-[#0e1a33] hover:bg-[#16274a] rounded-xl cursor-pointer self-start"
+          >
+            <ArrowLeft className="size-4" />
+            <span>Back to Local Applications</span>
+          </Button>
+        </div>
+
+        <Card className="border-[#1b2f52] bg-[#0c192e] text-white p-12 text-center">
+          <EmptyState
+            icon={<AlertCircle className="size-10 text-amber-400" />}
+            message="Application ID Not Specified"
+            description="A valid local driving license application ID is required to manage test appointments. Please return to Local Applications and select an application."
+          />
+        </Card>
+      </section>
+    )
+  }
+
   return (
     <section className="page-content space-y-6">
       {/* 1. Informational PageHero (Immediately below Topbar, zero interactive controls inside) */}

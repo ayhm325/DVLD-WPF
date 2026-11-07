@@ -1,8 +1,8 @@
 import type {
   InternationalLicense,
   InternationalLicenseDetails,
-  LocalLicenseInfo,
 } from '../types/InternationalLicense'
+import type { LocalLicenseInfo } from '../types/License'
 
 import { apiRequest } from './apiClient'
 

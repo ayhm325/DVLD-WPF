@@ -1,20 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import PageHero from '../common/PageHero'
-import StatsGrid from '../common/StatsGrid'
-import StatCard from '../common/StatCard'
-import TableToolbar from '../common/TableToolbar'
 import ErrorAlert from '../common/ErrorAlert'
 import ConfirmModal from '../common/ConfirmModal'
-import DataTable, { type DataTableColumn, type DataTableRowAction } from '../common/DataTable'
-import StatusBadge from '../common/StatusBadge'
 import { Button } from '../ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select'
 import type { TestAppointment } from '../../types/TestAppointment'
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
 import { getAllAppointments, cancelTestAppointment } from '../../services/testAppointmentService'
@@ -26,15 +14,12 @@ import {
   CalendarDays,
   Clock,
   CheckCircle2,
-  AlertTriangle,
   Plus,
-  Eye,
-  FileText,
   Calendar,
-  XCircle,
-  AlertCircle,
-  Award,
 } from 'lucide-react'
+import { computeTabStats, type TabType, type TabStats } from './appointmentStats'
+import AppointmentSummary from './AppointmentSummary'
+import TestAppointmentsTable from './TestAppointmentsTable'
 
 export interface TestAppointmentsPageProps {
   accessToken: string
@@ -48,55 +33,9 @@ export interface TestAppointmentsPageProps {
   onTakeExamination?: (appointmentId: number, returnPage?: string) => void
 }
 
-type TabType = 'all' | 'today' | 'history'
-
 interface AppointmentsPageData {
   appointments: TestAppointment[]
   applications: LocalDrivingLicenseApplication[]
-}
-
-interface TabStats {
-  total: number
-  scheduled: number
-  completed: number
-  passed: number
-  failed: number
-  noShow: number
-  cancelled: number
-}
-
-function computeTabStats(dataset: TestAppointment[]): TabStats {
-  let scheduled = 0
-  let completed = 0
-  let passed = 0
-  let failed = 0
-  let noShow = 0
-  let cancelled = 0
-
-  dataset.forEach((apt) => {
-    const lifecycle = resolveAppointmentLifecycle(apt)
-    if (lifecycle.statusLabel === 'Cancelled') {
-      cancelled++
-    } else if (lifecycle.statusLabel === 'No-Show') {
-      noShow++
-    } else if (lifecycle.statusLabel === 'Completed') {
-      completed++
-      if (lifecycle.resultLabel === 'Passed') passed++
-      else if (lifecycle.resultLabel === 'Failed') failed++
-    } else if (lifecycle.statusLabel === 'Scheduled') {
-      scheduled++
-    }
-  })
-
-  return {
-    total: dataset.length,
-    scheduled,
-    completed,
-    passed,
-    failed,
-    noShow,
-    cancelled,
-  }
 }
 
 export default function TestAppointmentsPage({
@@ -244,6 +183,11 @@ export default function TestAppointmentsPage({
     setStatusFilter((prev) => (prev === targetStatus ? 'all' : targetStatus))
   }
 
+  const handleCancelAppointment = useCallback((appointment: TestAppointment) => {
+    setCancelError(null)
+    setAppointmentToCancel(appointment)
+  }, [])
+
   const handleConfirmCancel = useCallback(async () => {
     if (!appointmentToCancel) return
     setCancelling(true)
@@ -263,483 +207,29 @@ export default function TestAppointmentsPage({
     }
   }, [accessToken, appointmentToCancel, fetchData])
 
-  // Data Table Columns
-  const columns = useMemo<DataTableColumn<TestAppointment>[]>(() => [
-    {
-      key: 'testAppointmentId',
-      header: 'Appt ID',
-      sortable: true,
-      sortValue: (r) => r.testAppointmentId,
-      render: (r) => (
-        <div className="flex items-center gap-1.5 font-mono">
-          <span className="font-bold text-cyan-300">#{r.testAppointmentId}</span>
-          {Boolean(r.retakeTestApplicationId) && (
-            <span
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30"
-              title={`Retake Examination for Application #${r.retakeTestApplicationId}`}
-            >
-              Retake
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'appointmentDate',
-      header: 'Appointment Date & Slot',
-      sortable: true,
-      sortValue: (r) => new Date(r.appointmentDate).getTime(),
-      render: (r) => (
-        <div className="space-y-0.5">
-          <div className="font-medium text-white flex items-center gap-1.5">
-            <Clock className="size-3 text-cyan-400 shrink-0" />
-            <span>
-              {formatJordanAppointmentDateTime(r.appointmentDate, r.appointmentDateFormatted)}
-            </span>
-          </div>
-          <div className="text-[10px] text-slate-400 font-sans">Asia/Amman facility time</div>
-        </div>
-      ),
-    },
-    {
-      key: 'applicant',
-      header: 'Applicant / Candidate',
-      render: (r) => {
-        const app = applicationMap.get(r.localDrivingLicenseApplicationId)
-        return (
-          <div className="space-y-0.5">
-            <div className="font-semibold text-slate-200">
-              {app?.fullName ?? `Applicant (App #${r.localDrivingLicenseApplicationId})`}
-            </div>
-            {app?.nationalNo && (
-              <div className="text-[10px] font-mono text-cyan-300/80">
-                Nat ID: {app.nationalNo}
-              </div>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      key: 'localApplication',
-      header: 'Local Application',
-      render: (r) => {
-        const app = applicationMap.get(r.localDrivingLicenseApplicationId)
-        return (
-          <div className="space-y-0.5">
-            <div className="font-mono text-xs text-white">
-              App #{r.localDrivingLicenseApplicationId}
-            </div>
-            <div className="text-[10px] text-slate-400 truncate max-w-[160px]">
-              {app?.licenseClassName ?? 'Driving License'}
-            </div>
-          </div>
-        )
-      },
-    },
-    {
-      key: 'testTypeName',
-      header: 'Test Type',
-      sortable: true,
-      sortValue: (r) => r.testTypeName,
-      render: (r) => (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-900/80 border border-slate-700/60 text-slate-200">
-          <Award className="size-3.5 text-cyan-400" />
-          <span>{r.testTypeName}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'lifecycleStatus',
-      header: 'Lifecycle Status',
-      render: (r) => {
-        const lifecycle = resolveAppointmentLifecycle(r)
-        return (
-          <StatusBadge
-            variant={lifecycle.statusVariant}
-            label={lifecycle.statusLabel}
-            title={lifecycle.description}
-          />
-        )
-      },
-    },
-    {
-      key: 'result',
-      header: 'Exam Result',
-      render: (r) => {
-        const lifecycle = resolveAppointmentLifecycle(r)
-        if (lifecycle.resultLabel === 'Passed') {
-          return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              <CheckCircle2 className="size-3" />
-              <span>Passed</span>
-            </span>
-          )
-        }
-        if (lifecycle.resultLabel === 'Failed') {
-          return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-              <XCircle className="size-3" />
-              <span>Failed</span>
-            </span>
-          )
-        }
-        if (lifecycle.resultLabel === 'No-Show') {
-          return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
-              <AlertCircle className="size-3" />
-              <span>No-Show</span>
-            </span>
-          )
-        }
-        if (lifecycle.resultLabel === 'Cancelled') {
-          return (
-            <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-              <XCircle className="size-3 text-slate-500" />
-              <span>Cancelled</span>
-            </span>
-          )
-        }
-        return <span className="text-slate-400 font-medium text-[11px]">Not Taken</span>
-      },
-    },
-    {
-      key: 'paidFees',
-      header: 'Applicable Fee',
-      sortable: true,
-      sortValue: (r) => r.paidFees,
-      render: (r) => (
-        <span className="font-mono text-xs font-semibold text-emerald-400">
-          {r.paidFees.toFixed(2)} JOD
-        </span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      align: 'right',
-      render: (r) => (
-        <div className="flex items-center justify-end gap-1.5">
-          {!r.isLocked && (r.status === 'Scheduled' || r.status === 'Open') && (
-            <button
-              type="button"
-              onClick={() => {
-                setCancelError(null)
-                setAppointmentToCancel(r)
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 hover:border-rose-400 transition-all cursor-pointer shadow-sm"
-              title="Cancel scheduled appointment"
-            >
-              <XCircle className="size-3.5" />
-              <span>Cancel</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              if (onShowAppointmentDetails) {
-                onShowAppointmentDetails(r.testAppointmentId)
-              } else {
-                onNavigate?.('Appointment Details')
-              }
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 hover:border-cyan-400 transition-all cursor-pointer shadow-sm"
-            title="View comprehensive examination record and audit details"
-          >
-            <Eye className="size-3.5" />
-            <span>Details</span>
-          </button>
-        </div>
-      ),
-    },
-  ], [applicationMap, onNavigate, onShowAppointmentDetails])
-
-  // Context Menu Actions (Right-Click)
-  const rowContextMenu = useCallback(
-    (apt: TestAppointment): DataTableRowAction<TestAppointment>[] => {
-      const actions: DataTableRowAction<TestAppointment>[] = [
-        {
-          key: 'details',
-          label: 'View Appointment Details',
-          icon: <Eye className="size-4" />,
-          onClick: () => {
-            if (onShowAppointmentDetails) {
-              onShowAppointmentDetails(apt.testAppointmentId)
-            } else {
-              onNavigate?.('Appointment Details')
-            }
-          },
-        },
-      ]
-
-      if (!apt.isLocked && (apt.status === 'Scheduled' || apt.status === 'Open')) {
-        actions.push({
-          key: 'take-test',
-          label: 'Take Examination',
-          icon: <Award className="size-4 text-emerald-400" />,
-          onClick: () => {
-            if (onTakeExamination) {
-              onTakeExamination(apt.testAppointmentId, 'Test Appointments')
-            } else {
-              onNavigate?.('Take Examination')
-            }
-          },
-        })
-        actions.push({
-          key: 'cancel',
-          label: 'Cancel Appointment',
-          icon: <XCircle className="size-4 text-rose-400" />,
-          onClick: () => {
-            setCancelError(null)
-            setAppointmentToCancel(apt)
-          },
-        })
-      }
-
-      if (onNavigate) {
-        actions.push({
-          key: 'goto-app',
-          label: 'Go to Local Application',
-          icon: <FileText className="size-4" />,
-          onClick: () => onNavigate('Local Applications'),
-        })
-      }
-
-      return actions
-    },
-    [onNavigate, onShowAppointmentDetails, onTakeExamination],
-  )
+  const handleResetFilters = useCallback(() => {
+    setSearchQuery('')
+    setTestTypeFilter('all')
+    setStatusFilter('all')
+  }, [])
 
   return (
     <section className="page-content">
       {/* 1. Main Page Header without action buttons */}
       <PageHero pageId="Test Appointments" />
 
-      {/* 4. Context-Aware 5 KPI Cards */}
-      <StatsGrid columns={5} className="lg:grid-cols-5">
-        {activeTab === 'history' ? (
-          <>
-            {/* 1. Historical Total */}
-            <StatCard
-              label="Historical Total"
-              value={loading ? '...' : error ? '—' : currentStats.total}
-              icon={<Clock className="size-5" />}
-              variant="blue"
-              description="Concluded records"
-              onClick={() => handleKpiClick('all')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'all'
-                  ? 'ring-2 ring-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 2. Passed */}
-            <StatCard
-              label="Passed Tests"
-              value={loading ? '...' : error ? '—' : currentStats.passed}
-              icon={<CheckCircle2 className="size-5" />}
-              variant="emerald"
-              description="Successful evaluations"
-              onClick={() => handleKpiClick('passed')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'passed'
-                  ? 'ring-2 ring-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 3. Failed */}
-            <StatCard
-              label="Failed Tests"
-              value={loading ? '...' : error ? '—' : currentStats.failed}
-              icon={<XCircle className="size-5" />}
-              variant="rose"
-              description="Unsuccessful evaluations"
-              onClick={() => handleKpiClick('failed')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'failed'
-                  ? 'ring-2 ring-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 4. No-Show */}
-            <StatCard
-              label="No-Show Tests"
-              value={loading ? '...' : error ? '—' : currentStats.noShow}
-              icon={<AlertCircle className="size-5" />}
-              variant="amber"
-              description="Applicant did not attend"
-              onClick={() => handleKpiClick('noshow')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'noshow'
-                  ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 5. Cancelled */}
-            <StatCard
-              label="Cancelled Records"
-              value={loading ? '...' : error ? '—' : currentStats.cancelled}
-              icon={<AlertTriangle className="size-5" />}
-              variant="slate"
-              description="Soft-cancelled prior to test"
-              onClick={() => handleKpiClick('cancelled')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'cancelled'
-                  ? 'ring-2 ring-slate-400 shadow-[0_0_12px_rgba(148,163,184,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-          </>
-        ) : activeTab === 'today' ? (
-          <>
-            {/* 1. Today's Total */}
-            <StatCard
-              label="Today's Total"
-              value={loading ? '...' : error ? '—' : currentStats.total}
-              icon={<Calendar className="size-5" />}
-              variant="blue"
-              description={`Jordan facility: ${todayJordanStr}`}
-              onClick={() => handleKpiClick('all')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'all'
-                  ? 'ring-2 ring-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 2. Scheduled Today */}
-            <StatCard
-              label="Scheduled Today"
-              value={loading ? '...' : error ? '—' : currentStats.scheduled}
-              icon={<Clock className="size-5" />}
-              variant="purple"
-              description="Awaiting examination today"
-              onClick={() => handleKpiClick('scheduled')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'scheduled'
-                  ? 'ring-2 ring-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 3. Completed Today */}
-            <StatCard
-              label="Completed Today"
-              value={loading ? '...' : error ? '—' : currentStats.completed}
-              icon={<CheckCircle2 className="size-5" />}
-              variant="emerald"
-              description={`${currentStats.passed} Passed • ${currentStats.failed} Failed`}
-              onClick={() => handleKpiClick('completed')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'completed'
-                  ? 'ring-2 ring-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 4. No-Show Today */}
-            <StatCard
-              label="No-Show Today"
-              value={loading ? '...' : error ? '—' : currentStats.noShow}
-              icon={<AlertCircle className="size-5" />}
-              variant="amber"
-              description="Missed slot today"
-              onClick={() => handleKpiClick('noshow')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'noshow'
-                  ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 5. Cancelled Today */}
-            <StatCard
-              label="Cancelled Today"
-              value={loading ? '...' : error ? '—' : currentStats.cancelled}
-              icon={<AlertTriangle className="size-5" />}
-              variant="rose"
-              description="Cancelled today"
-              onClick={() => handleKpiClick('cancelled')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'cancelled'
-                  ? 'ring-2 ring-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-          </>
-        ) : (
-          <>
-            {/* 1. Total Appointments */}
-            <StatCard
-              label="Total Appointments"
-              value={loading ? '...' : error ? '—' : currentStats.total}
-              icon={<CalendarDays className="size-5" />}
-              variant="blue"
-              description="All recorded appointments"
-              onClick={() => handleKpiClick('all')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'all'
-                  ? 'ring-2 ring-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 2. Scheduled */}
-            <StatCard
-              label="Scheduled"
-              value={loading ? '...' : error ? '—' : currentStats.scheduled}
-              icon={<Clock className="size-5" />}
-              variant="purple"
-              description="Awaiting examination"
-              onClick={() => handleKpiClick('scheduled')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'scheduled'
-                  ? 'ring-2 ring-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 3. Completed */}
-            <StatCard
-              label="Completed"
-              value={loading ? '...' : error ? '—' : currentStats.completed}
-              icon={<CheckCircle2 className="size-5" />}
-              variant="emerald"
-              description={`${currentStats.passed} Passed • ${currentStats.failed} Failed`}
-              onClick={() => handleKpiClick('completed')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'completed'
-                  ? 'ring-2 ring-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 4. No-Show */}
-            <StatCard
-              label="No-Show"
-              value={loading ? '...' : error ? '—' : currentStats.noShow}
-              icon={<AlertCircle className="size-5" />}
-              variant="amber"
-              description="Applicant did not attend"
-              onClick={() => handleKpiClick('noshow')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'noshow'
-                  ? 'ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-            {/* 5. Cancelled */}
-            <StatCard
-              label="Cancelled"
-              value={loading ? '...' : error ? '—' : currentStats.cancelled}
-              icon={<AlertTriangle className="size-5" />}
-              variant="rose"
-              description="Cancelled appointments"
-              onClick={() => handleKpiClick('cancelled')}
-              className={`cursor-pointer transition-all ${
-                statusFilter === 'cancelled'
-                  ? 'ring-2 ring-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.3)]'
-                  : 'hover:border-slate-700'
-              }`}
-            />
-          </>
-        )}
-      </StatsGrid>
+      {/* 2. Context-Aware 5 KPI Cards */}
+      <AppointmentSummary
+        activeTab={activeTab}
+        currentStats={currentStats}
+        loading={loading}
+        error={Boolean(error)}
+        todayJordanStr={todayJordanStr}
+        statusFilter={statusFilter}
+        onKpiClick={handleKpiClick}
+      />
 
-      {/* Standard Panel Surface */}
+      {/* 3. Standard Panel Surface */}
       <div className="panel">
         <div className="panel-header">
           <div>
@@ -860,57 +350,6 @@ export default function TestAppointmentsPage({
           </div>
         </div>
 
-        {/* 2. TableToolbar with EXACT order:
-            1. Test Type filter (on the LEFT of search)
-            2. Search input
-            3. Appointment Status filter
-            4. Refresh action */}
-        <TableToolbar
-          searchField={testTypeFilter}
-          searchFieldOptions={[
-            { value: 'all', label: 'All Test Types' },
-            { value: '1', label: 'Vision Test' },
-            { value: '2', label: 'Written Test' },
-            { value: '3', label: 'Practical (Street) Test' },
-          ]}
-          onSearchFieldChange={setTestTypeFilter}
-          searchFieldMinWidth={170}
-          searchFieldAriaLabel="Filter by test type"
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder="Search by ID, candidate name, National ID..."
-          searchAriaLabel="Search test appointments"
-          filters={
-            <div style={{ minWidth: 170 }} className="shrink-0">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger
-                  className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg cursor-pointer"
-                  aria-label="Filter by appointment status"
-                >
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="scheduled">Scheduled (Active)</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="passed">Completed — Passed</SelectItem>
-                  <SelectItem value="failed">Completed — Failed</SelectItem>
-                  <SelectItem value="noshow">No-Show</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          }
-          isFiltered={Boolean(searchQuery || testTypeFilter !== 'all' || statusFilter !== 'all')}
-          onReset={() => {
-            setSearchQuery('')
-            setTestTypeFilter('all')
-            setStatusFilter('all')
-          }}
-          onRefresh={() => void fetchData()}
-          refreshing={loading}
-        />
-
         {actionFeedback && (
           <div style={{ margin: '0 25px 20px' }}>
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-emerald-300 text-xs flex items-center justify-between shadow-sm">
@@ -936,38 +375,28 @@ export default function TestAppointmentsPage({
           </div>
         )}
 
-        {/* Main Appointments Table */}
-        <DataTable
-          data={filteredAppointments}
-          columns={columns}
-          getRowKey={(r) => r.testAppointmentId}
+        {/* 4. Appointments Table with Toolbar, Columns, and Actions */}
+        <TestAppointmentsTable
+          appointments={filteredAppointments}
+          applicationMap={applicationMap}
           loading={loading}
-          loadingMessage="Loading test appointments from DVLD database..."
-          emptyMessage={
-            searchQuery || testTypeFilter !== 'all' || statusFilter !== 'all'
-              ? 'No appointment records matched your search and filter criteria.'
-              : activeTab === 'today'
-                ? 'No test appointments scheduled for today in Jordan facility time.'
-                : activeTab === 'history'
-                  ? 'No past examination history records found.'
-                  : 'No test appointments recorded in the system yet.'
-          }
-          emptyIcon={<CalendarDays className="size-8 text-slate-600" />}
-          minWidth={1000}
-          rowContextMenu={rowContextMenu}
-          onRowClick={(r) => {
-            if (onShowAppointmentDetails) {
-              onShowAppointmentDetails(r.testAppointmentId)
-            } else {
-              onNavigate?.('Appointment Details')
-            }
-          }}
-          ariaLabel="Driving test appointments table"
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          testTypeFilter={testTypeFilter}
+          onTestTypeFilterChange={setTestTypeFilter}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          onResetFilters={handleResetFilters}
+          onRefresh={() => void fetchData()}
+          activeTab={activeTab}
+          onShowAppointmentDetails={onShowAppointmentDetails}
+          onNavigate={onNavigate}
+          onTakeExamination={onTakeExamination}
+          onCancelAppointment={handleCancelAppointment}
         />
       </div>
 
-
-      {/* Cancellation Confirmation Dialog */}
+      {/* 5. Cancellation Confirmation Dialog */}
       <ConfirmModal
         isOpen={Boolean(appointmentToCancel)}
         title="Cancel Test Appointment"

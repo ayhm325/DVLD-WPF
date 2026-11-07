@@ -24,27 +24,6 @@ export type LocalDrivingLicenseApplicationsPage = {
   hasNextPage: boolean
 }
 
-export type LocalApplicationPerson = {
-  personId: number
-  nationalNo: string
-  fullName: string
-  dateOfBirth: string
-  gender: number
-  address: string
-  phone: string
-  email: string | null
-  countryName: string
-}
-
-export type LocalLicenseClass = {
-  licenseClassId: number
-  licenseClassName: string
-  licenseClassFees: number
-  licenseClassDescription?: string
-  minAllowedAge?: number
-  defaultValidityLength?: number
-}
-
 export type ApplicationBasicInfo = {
   applicantPersonId: number
   applicationId: number

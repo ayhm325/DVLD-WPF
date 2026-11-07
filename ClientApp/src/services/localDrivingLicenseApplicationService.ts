@@ -1,9 +1,7 @@
 import type {
   ApplicationBasicInfo,
-  LocalApplicationPerson,
   LocalDrivingLicenseApplication,
   LocalDrivingLicenseApplicationsPage,
-  LocalLicenseClass,
 } from '../types/LocalDrivingLicenseApplication'
 
 import { apiRequest } from './apiClient'
@@ -24,29 +22,6 @@ export function getLocalApplicationCreateInfo(
 ): Promise<{ applicationFees: number }> {
   return apiRequest<{ applicationFees: number }>(
     '/LocalDrivingLicenseApplications/create-info',
-    accessToken,
-  )
-}
-
-export function getLocalLicenseClasses(
-  accessToken: string,
-): Promise<LocalLicenseClass[]> {
-  return apiRequest<LocalLicenseClass[]>('/LicenseClasses', accessToken)
-}
-
-export function getPersonById(
-  accessToken: string,
-  personId: number,
-): Promise<LocalApplicationPerson> {
-  return apiRequest<LocalApplicationPerson>(`/People/${personId}`, accessToken)
-}
-
-export function getPersonByNationalNo(
-  accessToken: string,
-  nationalNo: string,
-): Promise<LocalApplicationPerson> {
-  return apiRequest<LocalApplicationPerson>(
-    `/People/national/${encodeURIComponent(nationalNo)}`,
     accessToken,
   )
 }

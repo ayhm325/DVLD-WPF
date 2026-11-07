@@ -27,25 +27,3 @@ export type InternationalLicenseDetails = {
   fees: number
   createdByUserName: string
 }
-
-export type LocalLicenseInfo = {
-  licenseId: number
-  licenseClass: string
-  issueDate: string
-  expirationDate: string
-  isActive: boolean
-  isExpired?: boolean
-  isEligibleForRenewal?: boolean
-  ineligibilityReason?: string | null
-  isDetained: boolean
-  issueReason: string
-  notes: string | null
-  licenseClassFees: number
-  driverId: number
-  personId: number
-  fullName: string
-  nationalNo: string
-  dateOfBirth: string
-  gender: string
-  imagePath: string
-}

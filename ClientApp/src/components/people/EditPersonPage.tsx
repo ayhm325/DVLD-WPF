@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { AlertCircle, ArrowLeft } from 'lucide-react'
 import { getCountries } from '../../services/countryService'
 import type { Country } from '../../types/Country'
 import {
@@ -11,6 +11,7 @@ import {
 import type { PersonDetails } from '../../types/Person'
 import PageHero from '../common/PageHero'
 import LoadingSpinner from '../common/LoadingSpinner'
+import EmptyState from '../common/EmptyState'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import PersonForm, { type PersonFormSubmitValues } from './PersonForm'
@@ -192,7 +193,15 @@ export default function EditPersonPage({
         </Button>
       </div>
 
-      {loadingCountries || loadingPerson ? (
+      {!personId || personId <= 0 ? (
+        <Card className="p-12 text-center border-[#1e3458] bg-[#0c1930]">
+          <EmptyState
+            icon={<AlertCircle className="size-10 text-amber-400" />}
+            message="No Person Specified for Editing"
+            description="A valid person ID is required to edit personal details. Please return to the People directory and select a person."
+          />
+        </Card>
+      ) : loadingCountries || loadingPerson ? (
         <Card className="p-12 text-center border-[#1e3458] bg-[#0c1930]">
           <LoadingSpinner
             message={

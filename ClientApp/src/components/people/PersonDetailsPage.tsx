@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   User,
   UserCheck,
+  UserX,
 } from 'lucide-react'
 import { getPersonById } from '../../services/peopleService'
 import type { PersonDetails } from '../../types/Person'
@@ -19,6 +20,7 @@ import { formatDate } from '../../utils/formatters'
 import PageHero from '../common/PageHero'
 import ErrorAlert from '../common/ErrorAlert'
 import LoadingSpinner from '../common/LoadingSpinner'
+import EmptyState from '../common/EmptyState'
 import PersonPhoto from '../common/PersonPhoto'
 import ModalShell from '../common/ModalShell'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
@@ -449,6 +451,14 @@ export default function PersonDetailsPage({
             </div>
           </ModalShell>
         </div>
+      ) : !person ? (
+        <Card className="border-[#1e3458] bg-[#0c1930] p-12 text-center">
+          <EmptyState
+            icon={<UserX size={40} className="text-amber-400" />}
+            message={error || 'Person Record Not Found'}
+            description="A valid person ID is required to inspect demographic records. Please return to the People directory."
+          />
+        </Card>
       ) : null}
     </section>
   )
