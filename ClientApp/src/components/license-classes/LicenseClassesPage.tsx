@@ -2,27 +2,27 @@ import { useCallback, useMemo, useState } from "react";
 import {
   getLicenseClasses,
   updateLicenseClass,
-} from "../services/licenseClassService";
-import type { LicenseClass } from "../types/LicenseClass";
-import { useAsyncData, useTableFilters } from "../hooks";
-import PageHero from "./common/PageHero";
-import TableToolbar from "./common/TableToolbar";
-import ErrorAlert from "./common/ErrorAlert";
-import EmptyState from "./common/EmptyState";
-import DataTableContainer from "./common/DataTableContainer";
+} from "../../services/licenseClassService";
+import type { LicenseClass } from "../../types/LicenseClass";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import PageHero from "../common/PageHero";
+import TableToolbar from "../common/TableToolbar";
+import ErrorAlert from "../common/ErrorAlert";
+import EmptyState from "../common/EmptyState";
+import DataTableContainer from "../common/DataTableContainer";
 import LicenseClassRow, {
   type LicenseClassEditForm,
-} from "./licenseClasses/LicenseClassRow";
+} from "./LicenseClassRow";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 import { IdCard as LicenseIcon } from "lucide-react";
-import { canManageReferenceData } from "../utils/permissions";
-import { useAuth } from "../context/useAuth";
+import { canManageReferenceData } from "../../utils/permissions";
+import { useAuth } from "../../context/useAuth";
 
 type Props = {
   accessToken: string;

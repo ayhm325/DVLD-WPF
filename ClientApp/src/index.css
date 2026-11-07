@@ -7,6 +7,7 @@
    Theme → توليد Utilities من التوكنات
 ================================================== */
 
+/* css-lint disable unknownAtRules -- @theme is a Tailwind CSS v4 directive */
 @theme {
   --radius-sm: 6px; /* مصدر واحد — كان مكررًا في :root */
   --radius-md: 10px;
@@ -74,6 +75,7 @@
   --color-table-border: var(--dvld-table-border);
   --color-table-row: var(--dvld-table-row-border);
 }
+/* css-lint enable unknownAtRules */
 
 /* ==================================================
    1. Design Tokens

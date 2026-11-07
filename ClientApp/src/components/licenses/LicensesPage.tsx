@@ -1,25 +1,25 @@
 import { useCallback, useMemo, useState } from "react";
-import { getLicenses } from "../services/licenseService";
-import type { License } from "../types/License";
-import { formatDate, formatCurrency, formatNumber } from "../utils/formatters";
-import { useAsyncData, useTableFilters } from "../hooks";
-import PageHero from "./common/PageHero";
-import StatsGrid from "./common/StatsGrid";
-import StatCard from "./common/StatCard";
-import TableToolbar from "./common/TableToolbar";
-import StatusBadge from "./common/StatusBadge";
-import { getActiveStatusProps } from "../utils/status";
-import ErrorAlert from "./common/ErrorAlert";
-import EmptyState from "./common/EmptyState";
-import DataTable, { type DataTableColumn } from "./common/DataTable";
-import LicenseDetailsModal from "./licenses/LicenseDetailsModal";
+import { getLicenses } from "../../services/licenseService";
+import type { License } from "../../types/License";
+import { formatDate, formatCurrency, formatNumber } from "../../utils/formatters";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import PageHero from "../common/PageHero";
+import StatsGrid from "../common/StatsGrid";
+import StatCard from "../common/StatCard";
+import TableToolbar from "../common/TableToolbar";
+import StatusBadge from "../common/StatusBadge";
+import { getActiveStatusProps } from "../../utils/status";
+import ErrorAlert from "../common/ErrorAlert";
+import EmptyState from "../common/EmptyState";
+import DataTable, { type DataTableColumn } from "../common/DataTable";
+import LicenseDetailsModal from "./LicenseDetailsModal";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 import {
   IdCard as LicenseIcon,
   Check as CheckIcon,
@@ -28,7 +28,7 @@ import {
   Copy,
   Lock,
 } from "lucide-react";
-import { Button } from "./ui";
+import { Button } from "../ui";
 
 type LicensesPageProps = {
   accessToken: string;

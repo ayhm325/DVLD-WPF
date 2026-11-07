@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useAuth } from "../context/useAuth";
-import { isPagePermitted } from "../utils/permissions";
+import { useAuth } from "../../context/useAuth";
+import { isPagePermitted } from "../../utils/permissions";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,

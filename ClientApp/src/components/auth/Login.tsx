@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { login as performLogin } from "../services/authService";
-import { useAuth } from "../context/useAuth";
+import { login as performLogin } from "../../services/authService";
+import { useAuth } from "../../context/useAuth";
 import {
   Layers,
   User as UserIcon,

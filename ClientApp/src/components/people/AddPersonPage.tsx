@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { getCountries } from "../services/countryService";
-import type { Country } from "../types/Country";
-import { createPerson, uploadPersonPhoto } from "../services/peopleService";
-import PageHero from "./common/PageHero";
-import LoadingSpinner from "./common/LoadingSpinner";
-import { Card } from "./ui";
-import PersonForm, { type PersonFormSubmitValues } from "./people/PersonForm";
+import { getCountries } from "../../services/countryService";
+import type { Country } from "../../types/Country";
+import { createPerson, uploadPersonPhoto } from "../../services/peopleService";
+import PageHero from "../common/PageHero";
+import LoadingSpinner from "../common/LoadingSpinner";
+import { Card } from "../ui";
+import PersonForm, { type PersonFormSubmitValues } from "./PersonForm";
 
 export type AddPersonPageProps = {
   accessToken: string;

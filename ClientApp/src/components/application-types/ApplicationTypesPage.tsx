@@ -2,18 +2,18 @@ import { useCallback, useMemo, useState } from "react";
 import {
   getApplicationTypes,
   updateApplicationType,
-} from "../services/applicationTypeService";
-import type { ApplicationType } from "../types/ApplicationType";
-import { useAsyncData, useTableFilters } from "../hooks";
-import PageHero from "./common/PageHero";
-import TableToolbar from "./common/TableToolbar";
-import ErrorAlert from "./common/ErrorAlert";
-import EmptyState from "./common/EmptyState";
-import DataTableContainer from "./common/DataTableContainer";
-import ApplicationTypeRow from "./applicationTypes/ApplicationTypeRow";
+} from "../../services/applicationTypeService";
+import type { ApplicationType } from "../../types/ApplicationType";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import PageHero from "../common/PageHero";
+import TableToolbar from "../common/TableToolbar";
+import ErrorAlert from "../common/ErrorAlert";
+import EmptyState from "../common/EmptyState";
+import DataTableContainer from "../common/DataTableContainer";
+import ApplicationTypeRow from "./ApplicationTypeRow";
 import { FileText as ApplicationsIcon } from "lucide-react";
-import { canManageReferenceData } from "../utils/permissions";
-import { useAuth } from "../context/useAuth";
+import { canManageReferenceData } from "../../utils/permissions";
+import { useAuth } from "../../context/useAuth";
 
 type ApplicationTypesPageProps = {
   accessToken: string;

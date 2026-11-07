@@ -1,12 +1,12 @@
 import { useCallback, useMemo } from "react";
-import { getCountries } from "../services/countryService";
-import type { Country } from "../types/Country";
-import { useAsyncData, useTableFilters } from "../hooks";
-import PageHero from "./common/PageHero";
-import TableToolbar from "./common/TableToolbar";
-import ErrorAlert from "./common/ErrorAlert";
-import EmptyState from "./common/EmptyState";
-import DataTable, { type DataTableColumn } from "./common/DataTable";
+import { getCountries } from "../../services/countryService";
+import type { Country } from "../../types/Country";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import PageHero from "../common/PageHero";
+import TableToolbar from "../common/TableToolbar";
+import ErrorAlert from "../common/ErrorAlert";
+import EmptyState from "../common/EmptyState";
+import DataTable, { type DataTableColumn } from "../common/DataTable";
 import { Globe as GlobeIcon } from "lucide-react";
 
 type CountriesPageProps = {

@@ -1,55 +1,59 @@
 import { lazy, Suspense } from "react";
-import AccessDenied from "./common/AccessDenied";
-import LoadingSpinner from "./common/LoadingSpinner";
-import { isPagePermitted } from "../utils/permissions";
-import type { Person } from "../types/Person";
-import type { Driver } from "../types/Driver";
+import AccessDenied from "../common/AccessDenied";
+import LoadingSpinner from "../common/LoadingSpinner";
+import { isPagePermitted } from "../../utils/permissions";
+import type { Person } from "../../types/Person";
+import type { Driver } from "../../types/Driver";
 
-const DashboardPage = lazy(() => import("./DashboardPage"));
-const PeoplePage = lazy(() => import("./PeoplePage"));
-const AddPersonPage = lazy(() => import("./AddPersonPage"));
-const EditPersonPage = lazy(() => import("./people/EditPersonPage"));
-const PersonDetailsPage = lazy(() => import("./people/PersonDetailsPage"));
-const DriversPage = lazy(() => import("./DriversPage"));
-const LicensesPage = lazy(() => import("./LicensesPage"));
-const LicenseHistoryPage = lazy(() => import("./licenses/LicenseHistoryPage"));
+const DashboardPage = lazy(() => import("../dashboard/DashboardPage"));
+const PeoplePage = lazy(() => import("../people/PeoplePage"));
+const AddPersonPage = lazy(() => import("../people/AddPersonPage"));
+const EditPersonPage = lazy(() => import("../people/EditPersonPage"));
+const PersonDetailsPage = lazy(() => import("../people/PersonDetailsPage"));
+const DriversPage = lazy(() => import("../drivers/DriversPage"));
+const LicensesPage = lazy(() => import("../licenses/LicensesPage"));
+const LicenseHistoryPage = lazy(() => import("../licenses/LicenseHistoryPage"));
 const InternationalLicensesPage = lazy(
-  () => import("./international license/InternationalLicensesPage"),
+  () => import("../international-licenses/InternationalLicensesPage"),
 );
 const IssueInternationalLicensePage = lazy(
-  () => import("./international license/IssueInternationalLicensePage"),
+  () => import("../international-licenses/IssueInternationalLicensePage"),
 );
 const LocalApplicationsPage = lazy(
-  () => import("./local applications/LocalApplicationsPage"),
+  () => import("../local-applications/LocalApplicationsPage"),
 );
 const TestAppointmentsPage = lazy(
-  () => import("./test appointments/TestAppointmentsPage"),
+  () => import("../test-appointments/TestAppointmentsPage"),
 );
 const AppointmentDetailsPage = lazy(
-  () => import("./test appointments/AppointmentDetailsPage"),
+  () => import("../test-appointments/AppointmentDetailsPage"),
 );
 const ScheduleAppointmentPage = lazy(
-  () => import("./test appointments/ScheduleAppointmentPage"),
+  () => import("../test-appointments/ScheduleAppointmentPage"),
 );
 const ManageTestAppointmentsPage = lazy(
-  () => import("./test appointments/ManageTestAppointmentsPage"),
+  () => import("../test-appointments/ManageTestAppointmentsPage"),
 );
 const TakeExaminationPage = lazy(
-  () => import("./test appointments/TakeExaminationPage"),
+  () => import("../test-appointments/TakeExaminationPage"),
 );
-const RenewLicensePage = lazy(() => import("./licenses/RenewLicensePage"));
-const ReplaceLicensePage = lazy(() => import("./licenses/ReplaceLicensePage"));
-const DetainLicensePage = lazy(() => import("./detained/DetainLicensePage"));
+const RenewLicensePage = lazy(() => import("../licenses/RenewLicensePage"));
+const ReplaceLicensePage = lazy(() => import("../licenses/ReplaceLicensePage"));
+const DetainLicensePage = lazy(() => import("../detained/DetainLicensePage"));
 const DetainedLicensesPage = lazy(
-  () => import("./detained/DetainedLicensesPage"),
+  () => import("../detained/DetainedLicensesPage"),
 );
-const CountriesPage = lazy(() => import("./CountriesPage"));
-const ApplicationTypesPage = lazy(() => import("./ApplicationTypesPage"));
-const LicenseClassesPage = lazy(() => import("./LicenseClassesPage"));
-const TestTypesPage = lazy(() => import("./TestTypesPage"));
-const MyProfilePage = lazy(() => import("./profile/MyProfilePage"));
-const ChangePasswordPage = lazy(() => import("./profile/ChangePasswordPage"));
-const UsersPage = lazy(() => import("./users/UsersPage"));
+const CountriesPage = lazy(() => import("../countries/CountriesPage"));
+const ApplicationTypesPage = lazy(
+  () => import("../application-types/ApplicationTypesPage"),
+);
+const LicenseClassesPage = lazy(
+  () => import("../license-classes/LicenseClassesPage"),
+);
+const TestTypesPage = lazy(() => import("../test-types/TestTypesPage"));
+const MyProfilePage = lazy(() => import("../profile/MyProfilePage"));
+const ChangePasswordPage = lazy(() => import("../profile/ChangePasswordPage"));
+const UsersPage = lazy(() => import("../users/UsersPage"));
 
 export type AppRouterProps = {
   activePage: string;

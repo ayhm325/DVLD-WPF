@@ -3,13 +3,13 @@ import { Code } from "lucide-react";
 
 import "./App.css";
 
-import Sidebar from "./components/Sidebar";
-import Topbar from "./components/Topbar";
-import Login from "./components/Login";
+import Sidebar from "./components/layout/Sidebar";
+import Topbar from "./components/layout/Topbar";
+import Login from "./components/auth/Login";
 import ConfirmModal from "./components/common/ConfirmModal";
 import LoadingSpinner from "./components/common/LoadingSpinner";
-import CommandPalette from "./components/common/CommandPalette";
-import AppRouter from "./components/AppRouter";
+import CommandPalette from "./components/layout/CommandPalette";
+import AppRouter from "./components/layout/AppRouter";
 
 import { useAuth } from "./context/useAuth";
 import { usePeople, useModal } from "./hooks";

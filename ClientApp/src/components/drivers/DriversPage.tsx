@@ -1,25 +1,25 @@
 import { useCallback, useMemo } from "react";
-import { getDrivers } from "../services/driverService";
-import type { Driver } from "../types/Driver";
-import { formatDate, formatNumber } from "../utils/formatters";
-import { useAsyncData, useTableFilters } from "../hooks";
-import PageHero from "./common/PageHero";
-import StatsGrid from "./common/StatsGrid";
-import StatCard from "./common/StatCard";
-import TableToolbar from "./common/TableToolbar";
-import ErrorAlert from "./common/ErrorAlert";
-import EmptyState from "./common/EmptyState";
+import { getDrivers } from "../../services/driverService";
+import type { Driver } from "../../types/Driver";
+import { formatDate, formatNumber } from "../../utils/formatters";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import PageHero from "../common/PageHero";
+import StatsGrid from "../common/StatsGrid";
+import StatCard from "../common/StatCard";
+import TableToolbar from "../common/TableToolbar";
+import ErrorAlert from "../common/ErrorAlert";
+import EmptyState from "../common/EmptyState";
 import DataTable, {
   type DataTableColumn,
   type DataTableRowAction,
-} from "./common/DataTable";
+} from "../common/DataTable";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 import {
   Car as DriversIcon,
   IdCard as LicenseIcon,

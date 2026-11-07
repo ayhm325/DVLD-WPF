@@ -1,16 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
-import { getTestTypes, updateTestType } from "../services/testTypeService";
-import type { TestType } from "../types/TestType";
-import { useAsyncData, useTableFilters } from "../hooks";
-import PageHero from "./common/PageHero";
-import TableToolbar from "./common/TableToolbar";
-import ErrorAlert from "./common/ErrorAlert";
-import EmptyState from "./common/EmptyState";
-import DataTableContainer from "./common/DataTableContainer";
-import TestTypeRow from "./testTypes/TestTypeRow";
+import { getTestTypes, updateTestType } from "../../services/testTypeService";
+import type { TestType } from "../../types/TestType";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import PageHero from "../common/PageHero";
+import TableToolbar from "../common/TableToolbar";
+import ErrorAlert from "../common/ErrorAlert";
+import EmptyState from "../common/EmptyState";
+import DataTableContainer from "../common/DataTableContainer";
+import TestTypeRow from "./TestTypeRow";
 import { ClipboardList as TestTypeIcon } from "lucide-react";
-import { canManageReferenceData } from "../utils/permissions";
-import { useAuth } from "../context/useAuth";
+import { canManageReferenceData } from "../../utils/permissions";
+import { useAuth } from "../../context/useAuth";
 
 type Props = {
   accessToken: string;

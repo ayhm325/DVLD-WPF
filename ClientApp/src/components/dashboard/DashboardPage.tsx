@@ -8,20 +8,20 @@ import {
   AlertCircle,
   TrendingUp,
 } from "lucide-react";
-import PageHero from "./common/PageHero";
-import PeopleTable from "./PeopleTable";
-import StatsGrid from "./common/StatsGrid";
-import StatCard from "./common/StatCard";
-import ConfirmModal from "./common/ConfirmModal";
-import ErrorAlert from "./common/ErrorAlert";
+import PageHero from "../common/PageHero";
+import PeopleTable from "../people/PeopleTable";
+import StatsGrid from "../common/StatsGrid";
+import StatCard from "../common/StatCard";
+import ConfirmModal from "../common/ConfirmModal";
+import ErrorAlert from "../common/ErrorAlert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Spinner } from "@/components/ui/spinner";
+import LoadingSpinner from "../common/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { useDashboardStatistics } from "../hooks/useDashboardStatistics";
-import type { Person } from "../types/Person";
-import { formatNumber } from "../utils/formatters";
-import { deletePerson } from "../services/peopleService";
+import { useDashboardStatistics } from "../../hooks/useDashboardStatistics";
+import type { Person } from "../../types/Person";
+import { formatNumber } from "../../utils/formatters";
+import { deletePerson } from "../../services/peopleService";
 
 export type DashboardPageProps = {
   accessToken: string;
@@ -118,7 +118,7 @@ export default function DashboardPage({
                 variant="secondary"
                 className="gap-1.5 py-1 text-xs font-normal bg-blue-500/15 text-blue-300 border-blue-500/30"
               >
-                <Spinner size="sm" />
+                <LoadingSpinner size="sm" message="" className="p-0" />
                 <span>Updating...</span>
               </Badge>
             )}

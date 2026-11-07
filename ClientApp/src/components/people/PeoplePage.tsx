@@ -1,15 +1,15 @@
 import { useMemo, useState } from "react";
 import PeopleTable from "./PeopleTable";
-import PageHero from "./common/PageHero";
-import StatsGrid from "./common/StatsGrid";
-import StatCard from "./common/StatCard";
-import ErrorAlert from "./common/ErrorAlert";
-import ConfirmModal from "./common/ConfirmModal";
+import PageHero from "../common/PageHero";
+import StatsGrid from "../common/StatsGrid";
+import StatCard from "../common/StatCard";
+import ErrorAlert from "../common/ErrorAlert";
+import ConfirmModal from "../common/ConfirmModal";
 import { Users as UsersIcon, User as UserIcon } from "lucide-react";
-import type { Person } from "../types/Person";
-import { formatNumber } from "../utils/formatters";
-import { deletePerson } from "../services/peopleService";
-import { useAuth } from "../context/useAuth";
+import type { Person } from "../../types/Person";
+import { formatNumber } from "../../utils/formatters";
+import { deletePerson } from "../../services/peopleService";
+import { useAuth } from "../../context/useAuth";
 
 export type PeoplePageProps = {
   accessToken?: string;

@@ -9,30 +9,30 @@ import {
   Phone,
   MoreHorizontal,
 } from "lucide-react";
-import type { Person } from "../types/Person";
-import { formatDate } from "../utils/formatters";
-import TableToolbar from "./common/TableToolbar";
-import EmptyState from "./common/EmptyState";
-import PersonPhoto from "./common/PersonPhoto";
+import type { Person } from "../../types/Person";
+import { formatDate } from "../../utils/formatters";
+import TableToolbar from "../common/TableToolbar";
+import EmptyState from "../common/EmptyState";
+import PersonPhoto from "../common/PersonPhoto";
 import DataTable, {
   type DataTableColumn,
   type DataTableRowAction,
-} from "./common/DataTable";
+} from "../common/DataTable";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Button } from "./ui/button";
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
 
 type SearchBy = "all" | "name" | "nationalNo" | "id" | "phone";
 
