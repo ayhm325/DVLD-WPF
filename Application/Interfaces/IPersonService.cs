@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 
@@ -5,6 +6,12 @@ namespace Application.Interfaces;
 
 public interface IPersonService
 {
+    Task<Result<PagedResult<PersonDto>>> GetAllPeopleAsync(
+        PersonQueryRequest request);
+
+    Task<Result<PagedResult<PersonDto>>> GetAllPeopleAsync(
+        PaginationRequest request);
+
     Task<Result<List<PersonDto>>> GetAllPeopleAsync();
 
     Task<Result<PersonDto>> GetPersonByIdAsync(

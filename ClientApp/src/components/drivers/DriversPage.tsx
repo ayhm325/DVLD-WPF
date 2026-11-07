@@ -1,8 +1,8 @@
-import { useCallback, useMemo } from "react";
-import { getDrivers } from "../../services/driverService";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getDriversPage } from "../../services/driverService";
 import type { Driver } from "../../types/Driver";
 import { formatDate, formatNumber } from "../../utils/formatters";
-import { useAsyncData, useTableFilters } from "../../hooks";
+import { useAsyncData, useDebounce, usePagination } from "../../hooks";
 import PageHero from "../common/PageHero";
 import StatsGrid from "../common/StatsGrid";
 import StatCard from "../common/StatCard";
@@ -26,6 +26,8 @@ import {
   Check as CheckIcon,
   UserRound,
   History,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export type DriversPageProps = {
@@ -41,9 +43,7 @@ export type DriversPageProps = {
 type SearchBy = "all" | "driverId" | "personId" | "name" | "nationalNo";
 type LicenseFilter = "all" | "active" | "none";
 
-interface DriverFilters extends Record<string, unknown> {
-  licenseFilter: LicenseFilter;
-}
+const PAGE_SIZE = 10;
 
 const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
   { value: "all", label: "All Fields" },
@@ -142,80 +142,77 @@ export default function DriversPage({
   onShowPersonInfo,
   onShowLicenseHistory,
 }: DriversPageProps) {
-  const fetcher = useCallback(() => getDrivers(accessToken!), [accessToken]);
+  const isServerPaged = externalDrivers === undefined;
+
+  const [search, setSearch] = useState("");
+  const [searchBy, setSearchBy] = useState<SearchBy>("all");
+  const [licenseFilter, setLicenseFilter] = useState<LicenseFilter>("all");
+
+  const debouncedSearch = useDebounce(search, 300);
+
+  const pagination = usePagination({
+    pageSize: PAGE_SIZE,
+    initialPage: 1,
+  });
+
+  const { resetPage } = pagination;
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedSearch, searchBy, licenseFilter, resetPage]);
+
+  const fetcher = useCallback(() => {
+    if (!isServerPaged) {
+      return Promise.resolve(null);
+    }
+    return getDriversPage(
+      accessToken ?? "",
+      pagination.page,
+      PAGE_SIZE,
+      debouncedSearch,
+      searchBy,
+      licenseFilter,
+    );
+  }, [
+    isServerPaged,
+    accessToken,
+    pagination.page,
+    debouncedSearch,
+    searchBy,
+    licenseFilter,
+  ]);
 
   const {
-    data: internalDrivers,
+    data: page,
     loading: internalLoading,
     error: internalError,
     refresh,
   } = useAsyncData(fetcher, {
-    enabled: Boolean(accessToken && externalDrivers === undefined),
-    initialData: [],
+    enabled: Boolean(accessToken && isServerPaged),
+    dependencies: [
+      pagination.page,
+      debouncedSearch,
+      searchBy,
+      licenseFilter,
+      isServerPaged,
+      accessToken,
+    ],
     defaultErrorMessage: "Failed to load drivers.",
   });
 
-  const drivers = externalDrivers ?? internalDrivers;
-  const loading = externalLoading ?? internalLoading;
-  const error = externalError ?? internalError;
-  const onRetry = externalOnRetry ?? (() => void refresh());
+  const loading = externalLoading ?? (isServerPaged ? internalLoading : false);
+  const error = externalError ?? (isServerPaged ? internalError : undefined);
+  const onRetry =
+    externalOnRetry ?? (isServerPaged ? () => void refresh() : () => {});
 
-  const {
-    search,
-    setSearch,
-    searchField: searchBy,
-    setSearchField: setSearchBy,
-    filters,
-    setFilter,
-    filteredData: filteredDrivers,
-    isFiltered,
-    resetFilters: handleResetFilters,
-  } = useTableFilters<Driver, SearchBy, DriverFilters>({
-    data: drivers,
-    initialSearchField: "all",
-    initialFilters: { licenseFilter: "all" },
-    filterItem: (driver, query, field, currentFilters) => {
-      // 1. License filter
-      if (
-        currentFilters.licenseFilter === "active" &&
-        (driver.activeLicenses || 0) <= 0
-      ) {
-        return false;
-      }
-      if (
-        currentFilters.licenseFilter === "none" &&
-        (driver.activeLicenses || 0) > 0
-      ) {
-        return false;
-      }
+  const isFiltered = Boolean(search.trim() || licenseFilter !== "all");
 
-      // 2. Query filter
-      if (!query) return true;
-
-      if (field === "driverId") {
-        return String(driver.driverId).includes(query);
-      }
-      if (field === "personId") {
-        return String(driver.personId).includes(query);
-      }
-      if (field === "name") {
-        return (driver.fullName ?? "").toLowerCase().includes(query);
-      }
-      if (field === "nationalNo") {
-        return (driver.nationalNo ?? "").toLowerCase().includes(query);
-      }
-
-      // 'all'
-      return [
-        String(driver.driverId),
-        String(driver.personId),
-        driver.fullName,
-        driver.nationalNo,
-      ].some((value) => (value ?? "").toLowerCase().includes(query));
-    },
-  });
-
-  const licenseFilter = filters.licenseFilter;
+  const handleResetFilters = useCallback(() => {
+    setSearch("");
+    setSearchBy("all");
+    setLicenseFilter("all");
+    resetPage();
+  }, [resetPage]);
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -232,14 +229,59 @@ export default function DriversPage({
     }
   }, [searchBy]);
 
-  const totalDrivers = drivers.length;
-  const totalActiveLicenses = drivers.reduce(
-    (total, driver) => total + (driver.activeLicenses || 0),
-    0,
-  );
-  const driversWithLicenses = drivers.filter(
-    (d) => (d.activeLicenses || 0) > 0,
-  ).length;
+  const driversList = useMemo(() => {
+    if (isServerPaged) {
+      return page?.items ?? [];
+    }
+
+    const fallbackList = externalDrivers ?? [];
+    return fallbackList.filter((driver) => {
+      if (licenseFilter === "active" && (driver.activeLicenses || 0) <= 0) {
+        return false;
+      }
+      if (licenseFilter === "none" && (driver.activeLicenses || 0) > 0) {
+        return false;
+      }
+
+      if (!search.trim()) return true;
+      const query = search.trim().toLowerCase();
+
+      if (searchBy === "driverId") {
+        return String(driver.driverId).includes(query);
+      }
+      if (searchBy === "personId") {
+        return String(driver.personId).includes(query);
+      }
+      if (searchBy === "name") {
+        return (driver.fullName ?? "").toLowerCase().includes(query);
+      }
+      if (searchBy === "nationalNo") {
+        return (driver.nationalNo ?? "").toLowerCase().includes(query);
+      }
+
+      return [
+        String(driver.driverId),
+        String(driver.personId),
+        driver.fullName,
+        driver.nationalNo,
+      ].some((val) => (val ?? "").toLowerCase().includes(query));
+    });
+  }, [isServerPaged, page?.items, externalDrivers, licenseFilter, search, searchBy]);
+
+  const totalDrivers = isServerPaged
+    ? (page?.totalCount ?? 0)
+    : (externalDrivers?.length ?? 0);
+
+  const totalActiveLicenses = useMemo(() => {
+    return driversList.reduce(
+      (total, driver) => total + (driver.activeLicenses || 0),
+      0,
+    );
+  }, [driversList]);
+
+  const driversWithLicenses = useMemo(() => {
+    return driversList.filter((d) => (d.activeLicenses || 0) > 0).length;
+  }, [driversList]);
 
   const getRowContextMenu = useCallback(
     (driver: Driver): DataTableRowAction<Driver>[] => [
@@ -279,7 +321,11 @@ export default function DriversPage({
           value={
             loading ? "..." : error ? "—" : formatNumber(totalActiveLicenses)
           }
-          description="Across listed drivers"
+          description={
+            isServerPaged
+              ? "Across loaded drivers"
+              : "Across listed drivers"
+          }
         />
 
         <StatCard
@@ -289,7 +335,11 @@ export default function DriversPage({
           value={
             loading ? "..." : error ? "—" : formatNumber(driversWithLicenses)
           }
-          description="Holding active licenses"
+          description={
+            isServerPaged
+              ? "Holding active licenses on page"
+              : "Holding active licenses"
+          }
         />
       </StatsGrid>
 
@@ -303,9 +353,13 @@ export default function DriversPage({
           <span className="record-count">
             {loading
               ? "Loading..."
-              : filteredDrivers.length === drivers.length
-                ? `${drivers.length} Drivers`
-                : `${filteredDrivers.length} of ${drivers.length} Drivers`}
+              : isServerPaged
+                ? isFiltered
+                  ? `${page?.totalCount ?? 0} of ${page?.totalCount ?? 0} Drivers`
+                  : `${page?.totalCount ?? 0} Drivers`
+                : driversList.length === (externalDrivers?.length ?? 0)
+                  ? `${externalDrivers?.length ?? 0} Drivers`
+                  : `${driversList.length} of ${externalDrivers?.length ?? 0} Drivers`}
           </span>
         </div>
 
@@ -323,7 +377,7 @@ export default function DriversPage({
               <Select
                 value={licenseFilter}
                 onValueChange={(val) =>
-                  setFilter("licenseFilter", val as LicenseFilter)
+                  setLicenseFilter(val as LicenseFilter)
                 }
               >
                 <SelectTrigger
@@ -360,7 +414,7 @@ export default function DriversPage({
 
         {!error && (
           <DataTable<Driver>
-            data={filteredDrivers}
+            data={driversList}
             columns={columns}
             getRowKey={(driver) => driver.driverId}
             loading={loading}
@@ -368,7 +422,7 @@ export default function DriversPage({
               <EmptyState
                 icon={<DriversIcon size={36} />}
                 message={
-                  drivers.length === 0
+                  totalDrivers === 0
                     ? "No drivers found."
                     : "No drivers match your search filters."
                 }
@@ -377,6 +431,74 @@ export default function DriversPage({
             minWidth={850}
             rowContextMenu={getRowContextMenu}
           />
+        )}
+
+        {isServerPaged && !error && (page?.totalCount ?? 0) > 0 && (
+          <div
+            className="panel-footer"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              padding: "16px 24px",
+              borderTop: "1px solid #1e304d",
+            }}
+          >
+            <span className="text-xs text-slate-400">
+              Showing{" "}
+              <strong className="text-white">
+                {((page?.pageNumber ?? 1) - 1) * PAGE_SIZE + 1}
+              </strong>
+              –
+              <strong className="text-white">
+                {Math.min(
+                  (page?.pageNumber ?? 1) * PAGE_SIZE,
+                  page?.totalCount ?? 0,
+                )}
+              </strong>{" "}
+              of{" "}
+              <strong className="text-white">
+                {page?.totalCount ?? 0}
+              </strong>{" "}
+              drivers
+            </span>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                type="button"
+                className="secondary-button"
+                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
+                disabled={!page?.hasPreviousPage || loading}
+                onClick={pagination.previousPage}
+              >
+                <ChevronLeft className="size-3.5" />
+                <span>Previous</span>
+              </button>
+
+              <span style={{ fontSize: 11, color: "var(--dvld-muted)" }}>
+                Page{" "}
+                <strong style={{ color: "var(--dvld-heading)" }}>
+                  {page?.pageNumber ?? pagination.page}
+                </strong>{" "}
+                of{" "}
+                <strong style={{ color: "var(--dvld-heading)" }}>
+                  {page?.totalPages ?? 1}
+                </strong>
+              </span>
+
+              <button
+                type="button"
+                className="secondary-button"
+                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
+                disabled={!page?.hasNextPage || loading}
+                onClick={pagination.nextPage}
+              >
+                <span>Next</span>
+                <ChevronRight className="size-3.5" />
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </section>

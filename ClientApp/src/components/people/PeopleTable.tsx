@@ -8,6 +8,8 @@ import {
   Mail,
   Phone,
   MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { Person } from "../../types/Person";
 import { formatDate } from "../../utils/formatters";
@@ -34,7 +36,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 
-type SearchBy = "all" | "name" | "nationalNo" | "id" | "phone";
+export type SearchBy = "all" | "name" | "nationalNo" | "id" | "phone";
 
 const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
   { value: "all", label: "All Fields" },
@@ -43,12 +45,26 @@ const SEARCH_OPTIONS: { value: SearchBy; label: string }[] = [
   { value: "id", label: "Person ID" },
   { value: "phone", label: "Phone" },
 ];
-type GenderFilter = "all" | "0" | "1";
+
+export type GenderFilter = "all" | "0" | "1";
 
 export type PeopleTableProps = {
   people: Person[];
   searchName?: string;
   onSearchChange?: (value: string) => void;
+  search?: string;
+  searchBy?: SearchBy;
+  onSearchByChange?: (value: SearchBy) => void;
+  genderFilter?: GenderFilter;
+  onGenderFilterChange?: (value: GenderFilter) => void;
+  onResetFilters?: () => void;
+  totalCount?: number;
+  pageNumber?: number;
+  totalPages?: number;
+  hasPreviousPage?: boolean;
+  hasNextPage?: boolean;
+  onPreviousPage?: () => void;
+  onNextPage?: () => void;
   onAddPerson: () => void;
   onRefresh?: () => void;
   loading?: boolean;
@@ -61,6 +77,19 @@ export default function PeopleTable({
   people,
   searchName,
   onSearchChange,
+  search,
+  searchBy,
+  onSearchByChange,
+  genderFilter,
+  onGenderFilterChange,
+  onResetFilters,
+  totalCount,
+  pageNumber,
+  totalPages,
+  hasPreviousPage,
+  hasNextPage,
+  onPreviousPage,
+  onNextPage,
   onAddPerson,
   onRefresh,
   loading = false,
@@ -69,31 +98,74 @@ export default function PeopleTable({
   onDeletePerson,
 }: PeopleTableProps) {
   const [internalSearch, setInternalSearch] = useState(searchName ?? "");
-  const [searchBy, setSearchBy] = useState<SearchBy>("all");
-  const [genderFilter, setGenderFilter] = useState<GenderFilter>("all");
+  const [internalSearchBy, setInternalSearchBy] = useState<SearchBy>("all");
+  const [internalGenderFilter, setInternalGenderFilter] =
+    useState<GenderFilter>("all");
 
-  const search = searchName !== undefined ? searchName : internalSearch;
+  const isServerPaged = totalCount !== undefined;
+  const activeSearch =
+    search !== undefined
+      ? search
+      : searchName !== undefined
+        ? searchName
+        : internalSearch;
+  const activeSearchBy =
+    searchBy !== undefined ? searchBy : internalSearchBy;
+  const activeGenderFilter =
+    genderFilter !== undefined ? genderFilter : internalGenderFilter;
 
   function handleSearchChange(value: string) {
-    setInternalSearch(value);
-    onSearchChange?.(value);
+    if (onSearchChange) {
+      onSearchChange(value);
+    } else {
+      setInternalSearch(value);
+    }
+  }
+
+  function handleSearchByChange(value: SearchBy) {
+    if (onSearchByChange) {
+      onSearchByChange(value);
+    } else {
+      setInternalSearchBy(value);
+    }
+  }
+
+  function handleGenderFilterChange(value: GenderFilter) {
+    if (onGenderFilterChange) {
+      onGenderFilterChange(value);
+    } else {
+      setInternalGenderFilter(value);
+    }
   }
 
   function handleResetFilters() {
-    handleSearchChange("");
-    setSearchBy("all");
-    setGenderFilter("all");
+    if (onResetFilters) {
+      onResetFilters();
+    } else {
+      handleSearchChange("");
+      setInternalSearchBy("all");
+      setInternalGenderFilter("all");
+    }
   }
 
   const isFiltered = Boolean(
-    search.trim() || genderFilter !== "all" || searchBy !== "all",
+    activeSearch.trim() ||
+      activeGenderFilter !== "all" ||
+      activeSearchBy !== "all",
   );
 
   const filteredPeople = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    if (isServerPaged) {
+      return people;
+    }
+
+    const query = activeSearch.trim().toLowerCase();
 
     return people.filter((person) => {
-      if (genderFilter !== "all" && String(person.gender) !== genderFilter) {
+      if (
+        activeGenderFilter !== "all" &&
+        String(person.gender) !== activeGenderFilter
+      ) {
         return false;
       }
 
@@ -101,19 +173,19 @@ export default function PeopleTable({
 
       const cleanIdQuery = query.replace(/^#/, "");
 
-      if (searchBy === "name") {
+      if (activeSearchBy === "name") {
         return (person.fullName || "").toLowerCase().includes(query);
       }
-      if (searchBy === "nationalNo") {
+      if (activeSearchBy === "nationalNo") {
         return (person.nationalNo || "").toLowerCase().includes(query);
       }
-      if (searchBy === "id") {
+      if (activeSearchBy === "id") {
         return (
           cleanIdQuery.length > 0 &&
           String(person.personId).includes(cleanIdQuery)
         );
       }
-      if (searchBy === "phone") {
+      if (activeSearchBy === "phone") {
         return (person.phone || "").toLowerCase().includes(query);
       }
 
@@ -125,10 +197,16 @@ export default function PeopleTable({
         (person.phone || "").toLowerCase().includes(query)
       );
     });
-  }, [people, search, searchBy, genderFilter]);
+  }, [
+    isServerPaged,
+    people,
+    activeSearch,
+    activeSearchBy,
+    activeGenderFilter,
+  ]);
 
   const placeholderText = useMemo(() => {
-    switch (searchBy) {
+    switch (activeSearchBy) {
       case "name":
         return "Search by full name...";
       case "nationalNo":
@@ -140,7 +218,7 @@ export default function PeopleTable({
       default:
         return "Search by name, national no, ID, phone...";
     }
-  }, [searchBy]);
+  }, [activeSearchBy]);
 
   const getRowContextMenu = useCallback(
     (person: Person): DataTableRowAction<Person>[] => {
@@ -439,9 +517,13 @@ export default function PeopleTable({
           <span className="record-count">
             {loading
               ? "Loading..."
-              : filteredPeople.length === people.length
-                ? `${people.length} People`
-                : `${filteredPeople.length} of ${people.length} People`}
+              : isServerPaged
+                ? isFiltered
+                  ? `${totalCount} of ${totalCount} People`
+                  : `${totalCount} People`
+                : filteredPeople.length === people.length
+                  ? `${people.length} People`
+                  : `${filteredPeople.length} of ${people.length} People`}
           </span>
 
           <button
@@ -456,17 +538,19 @@ export default function PeopleTable({
       </div>
 
       <TableToolbar<SearchBy>
-        searchValue={search}
+        searchValue={activeSearch}
         onSearchChange={handleSearchChange}
         searchPlaceholder={placeholderText}
-        searchField={searchBy}
+        searchField={activeSearchBy}
         searchFieldOptions={SEARCH_OPTIONS}
-        onSearchFieldChange={setSearchBy}
+        onSearchFieldChange={handleSearchByChange}
         filters={
           <div style={{ minWidth: 130 }} className="shrink-0">
             <Select
-              value={genderFilter}
-              onValueChange={(val) => setGenderFilter(val as GenderFilter)}
+              value={activeGenderFilter}
+              onValueChange={(val) =>
+                handleGenderFilterChange(val as GenderFilter)
+              }
             >
               <SelectTrigger
                 className="h-10 min-h-10 w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
@@ -503,6 +587,68 @@ export default function PeopleTable({
         minWidth={1100}
         rowContextMenu={getRowContextMenu}
       />
+
+      {isServerPaged && !loading && totalCount !== undefined && totalCount > 0 && (
+        <div
+          className="panel-footer"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            paddingTop: 16,
+            marginTop: 16,
+            borderTop: "1px solid #1e304d",
+          }}
+        >
+          <span className="text-xs text-slate-400">
+            Showing{" "}
+            <strong className="text-white">
+              {((pageNumber ?? 1) - 1) * 10 + 1}
+            </strong>
+            –
+            <strong className="text-white">
+              {Math.min((pageNumber ?? 1) * 10, totalCount)}
+            </strong>{" "}
+            of <strong className="text-white">{totalCount}</strong> people
+          </span>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              type="button"
+              className="secondary-button"
+              style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
+              disabled={!hasPreviousPage || loading}
+              onClick={onPreviousPage}
+            >
+              <ChevronLeft size={14} />
+              <span>Previous</span>
+            </button>
+
+            <span style={{ fontSize: 11, color: "var(--dvld-muted)" }}>
+              Page{" "}
+              <strong style={{ color: "var(--dvld-heading)" }}>
+                {pageNumber ?? 1}
+              </strong>{" "}
+              of{" "}
+              <strong style={{ color: "var(--dvld-heading)" }}>
+                {totalPages ?? 1}
+              </strong>
+            </span>
+
+            <button
+              type="button"
+              className="secondary-button"
+              style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
+              disabled={!hasNextPage || loading}
+              onClick={onNextPage}
+            >
+              <span>Next</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.DriverDTO;
@@ -1436,5 +1437,88 @@ public sealed class DriverServiceTests
         Assert.Equal(
             "Failed to delete driver.",
             result.Error);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithQueryRequest_ReturnsMappedPagedResult()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "Ahmad",
+            SearchBy = "name",
+            LicenseFilter = "active"
+        };
+
+        var pagedDrivers = new PagedResult<Driver>
+        {
+            Items = new List<Driver>
+            {
+                CreateDriver(1, 100),
+                CreateDriver(2, 200)
+            },
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 2
+        };
+
+        _repository
+            .Setup(r => r.GetAllAsync(request))
+            .ReturnsAsync(pagedDrivers);
+
+        // Act
+        var result = await service.GetAllAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value!.TotalCount);
+        Assert.Equal(1, result.Value.PageNumber);
+        Assert.Equal(10, result.Value.PageSize);
+        Assert.Equal(2, result.Value.Items.Count);
+        Assert.Equal(1, result.Value.Items[0].DriverID);
+        Assert.Equal(2, result.Value.Items[1].DriverID);
+
+        _repository.Verify(r => r.GetAllAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithPaginationRequest_DelegatesToRepository()
+    {
+        // Arrange
+        var service = CreateService();
+        var request = new PaginationRequest
+        {
+            PageNumber = 2,
+            PageSize = 5
+        };
+
+        var pagedDrivers = new PagedResult<Driver>
+        {
+            Items = new List<Driver>(),
+            PageNumber = 2,
+            PageSize = 5,
+            TotalCount = 10
+        };
+
+        _repository
+            .Setup(r => r.GetAllAsync(request))
+            .ReturnsAsync(pagedDrivers);
+
+        // Act
+        var result = await service.GetAllAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(10, result.Value!.TotalCount);
+        Assert.Equal(2, result.Value.PageNumber);
+        Assert.Equal(5, result.Value.PageSize);
+        Assert.Empty(result.Value.Items);
+
+        _repository.Verify(r => r.GetAllAsync(request), Times.Once);
     }
 }

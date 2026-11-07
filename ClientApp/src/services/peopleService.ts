@@ -17,8 +17,47 @@ export type {
   UploadPersonPhotoResponse,
 }
 
+export interface PeoplePageResponse {
+  items: Person[]
+  pageNumber: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+}
+
 export function getPeople(accessToken: string): Promise<Person[]> {
   return apiRequest<Person[]>('/People', accessToken)
+}
+
+export function getPeoplePage(
+  accessToken: string,
+  pageNumber: number,
+  pageSize: number,
+  searchQuery?: string,
+  searchBy?: string,
+  genderFilter?: string,
+): Promise<PeoplePageResponse> {
+  const params = new URLSearchParams({
+    pageNumber: String(pageNumber),
+    pageSize: String(pageSize),
+  })
+
+  if (searchQuery && searchQuery.trim()) {
+    params.set('searchQuery', searchQuery.trim())
+  }
+  if (searchBy && searchBy !== 'all') {
+    params.set('searchBy', searchBy)
+  }
+  if (genderFilter && genderFilter !== 'all') {
+    params.set('genderFilter', genderFilter)
+  }
+
+  return apiRequest<PeoplePageResponse>(
+    `/People?${params.toString()}`,
+    accessToken,
+  )
 }
 
 export function getPersonById(

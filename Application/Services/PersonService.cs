@@ -1,8 +1,10 @@
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
 using Application.Mappings;
 using Application.Validators;
+using Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Services;
@@ -53,6 +55,50 @@ public sealed class PersonService : IPersonService
             clock
             ?? throw new ArgumentNullException(
                 nameof(clock));
+    }
+
+    public Task<Result<PagedResult<PersonDto>>>
+    GetAllPeopleAsync(
+        PaginationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request is PersonQueryRequest queryRequest)
+        {
+            return GetAllPeopleAsync(queryRequest);
+        }
+
+        return GetAllInternalAsync(() => _personRepository.GetAllAsync(request));
+    }
+
+    public Task<Result<PagedResult<PersonDto>>>
+    GetAllPeopleAsync(
+        PersonQueryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return GetAllInternalAsync(() => _personRepository.GetAllAsync(request));
+    }
+
+    private async Task<Result<PagedResult<PersonDto>>>
+    GetAllInternalAsync(Func<Task<PagedResult<Person>>> fetcher)
+    {
+        var pagedEntities = await fetcher();
+
+        var items = pagedEntities.Items
+            .Select(PersonMapper.ToDto)
+            .ToList();
+
+        var result = new PagedResult<PersonDto>
+        {
+            Items = items,
+            PageNumber = pagedEntities.PageNumber,
+            PageSize = pagedEntities.PageSize,
+            TotalCount = pagedEntities.TotalCount
+        };
+
+        return Result<PagedResult<PersonDto>>
+            .Success(result);
     }
 
     public async Task<Result<List<PersonDto>>>

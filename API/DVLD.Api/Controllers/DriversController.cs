@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DriverDTO;
@@ -18,16 +18,45 @@ namespace DVLD.Api.Controllers;
 public sealed class DriversController(IDriverService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] DriverQueryRequest request)
     {
-        var result = await service.GetAllAsync();
+        if (Request.Query.ContainsKey("pageNumber") ||
+            Request.Query.ContainsKey("pageSize") ||
+            Request.Query.ContainsKey("searchQuery") ||
+            Request.Query.ContainsKey("searchBy") ||
+            Request.Query.ContainsKey("licenseFilter") ||
+            Request.Query.ContainsKey("paged"))
+        {
+            var result = await service.GetAllAsync(request);
 
-        if (result.IsFailure)
-            return result.ToActionResult(this);
+            if (result.IsFailure)
+                return result.ToActionResult(this);
 
-        return result.Value is null
+            var page = result.Value!;
+
+            return Ok(new
+            {
+                items = page.Items
+                    .Select(MapToListResponse)
+                    .ToList(),
+                pageNumber = page.PageNumber,
+                pageSize = page.PageSize,
+                totalCount = page.TotalCount,
+                totalPages = page.TotalPages,
+                hasPreviousPage = page.HasPreviousPage,
+                hasNextPage = page.HasNextPage
+            });
+        }
+
+        var unpagedResult = await service.GetAllAsync();
+
+        if (unpagedResult.IsFailure)
+            return unpagedResult.ToActionResult(this);
+
+        return unpagedResult.Value is null
             ? UnexpectedResult("Driver service returned a successful result without drivers.")
-            : Ok(result.Value.Select(MapToListResponse).ToList());
+            : Ok(unpagedResult.Value.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("{id:int}")]

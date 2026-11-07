@@ -14,15 +14,44 @@ public sealed class PeopleController(
     IPersonService personService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] PersonQueryRequest request)
     {
-        var result = await personService.GetAllPeopleAsync();
+        if (Request.Query.ContainsKey("pageNumber") ||
+            Request.Query.ContainsKey("pageSize") ||
+            Request.Query.ContainsKey("searchQuery") ||
+            Request.Query.ContainsKey("searchBy") ||
+            Request.Query.ContainsKey("genderFilter") ||
+            Request.Query.ContainsKey("paged"))
+        {
+            var result = await personService.GetAllPeopleAsync(request);
 
-        if (result.IsFailure)
-            return result.ToActionResult(this);
+            if (result.IsFailure)
+                return result.ToActionResult(this);
+
+            var page = result.Value!;
+
+            return Ok(new
+            {
+                items = page.Items
+                    .Select(ToListResponse)
+                    .ToList(),
+                pageNumber = page.PageNumber,
+                pageSize = page.PageSize,
+                totalCount = page.TotalCount,
+                totalPages = page.TotalPages,
+                hasPreviousPage = page.HasPreviousPage,
+                hasNextPage = page.HasNextPage
+            });
+        }
+
+        var unpagedResult = await personService.GetAllPeopleAsync();
+
+        if (unpagedResult.IsFailure)
+            return unpagedResult.ToActionResult(this);
 
         return Ok(
-            result.Value!
+            unpagedResult.Value!
                 .Select(ToListResponse)
                 .ToList());
     }

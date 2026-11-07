@@ -1,4 +1,6 @@
-﻿using Domain.Entities;
+using Application.Common.Pagination;
+using Application.DTOs.DriverDTO;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
@@ -11,6 +13,10 @@ public interface IDriverRepository
     Task<Driver?> GetForDeleteAsync(int id);
 
     Task<List<Driver>> GetAllAsync();
+
+    Task<PagedResult<Driver>> GetAllAsync(PaginationRequest request);
+
+    Task<PagedResult<Driver>> GetAllAsync(DriverQueryRequest request);
 
     Task<Driver?> GetByPersonIdAsync(int personId);
 

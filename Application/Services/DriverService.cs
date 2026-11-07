@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.DriverDTO;
@@ -53,6 +54,43 @@ public sealed class DriverService(
 
         return Result<List<DriverDto>>.Success(
             DriverMapper.ToDtoList(entities));
+    }
+
+    public Task<Result<PagedResult<DriverDto>>> GetAllAsync(PaginationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request is DriverQueryRequest queryRequest)
+        {
+            return GetAllAsync(queryRequest);
+        }
+
+        return GetAllInternalAsync(() => _repository.GetAllAsync(request));
+    }
+
+    public Task<Result<PagedResult<DriverDto>>> GetAllAsync(DriverQueryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return GetAllInternalAsync(() => _repository.GetAllAsync(request));
+    }
+
+    private async Task<Result<PagedResult<DriverDto>>> GetAllInternalAsync(
+        Func<Task<PagedResult<Domain.Entities.Driver>>> fetcher)
+    {
+        var pagedEntities = await fetcher();
+
+        var items = pagedEntities.Items
+            .Select(DriverMapper.ToDto)
+            .ToList();
+
+        return Result<PagedResult<DriverDto>>.Success(new PagedResult<DriverDto>
+        {
+            Items = items,
+            PageNumber = pagedEntities.PageNumber,
+            PageSize = pagedEntities.PageSize,
+            TotalCount = pagedEntities.TotalCount
+        });
     }
 
     public async Task<Result<DriverDto>> GetByPersonIdAsync(int personId)

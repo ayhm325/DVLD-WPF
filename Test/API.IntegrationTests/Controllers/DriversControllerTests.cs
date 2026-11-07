@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using Application.Common.Pagination;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.DriverDTO;
@@ -406,5 +407,83 @@ public sealed class DriversControllerTests
 
         Assert.True(body.TryGetProperty("traceId", out var traceId));
         Assert.False(string.IsNullOrWhiteSpace(traceId.GetString()));
+    }
+
+    [Fact]
+    public async Task GetAll_WithPaginationParams_ReturnsOkAndPagedResponse()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        var pagedDrivers = new PagedResult<DriverDto>
+        {
+            Items = new List<DriverDto>
+            {
+                new()
+                {
+                    DriverID = 10, PersonID = 20, FullName = "Ahmad Mohammed",
+                    NationalNo = "123456789", DateOfBirth = new(1990, 5, 10),
+                    Gender = Gender.Male, ImagePath = "ahmad.jpg", ActiveLicenses = 2,
+                    CreatedByUserID = 5, CreatedByUserName = "admin",
+                    CreatedDate = DateTime.Parse("2026-09-10 14:30:00")
+                }
+            },
+            PageNumber = 2,
+            PageSize = 5,
+            TotalCount = 11
+        };
+
+        factory.DriverServiceMock
+            .Setup(x => x.GetAllAsync(It.Is<DriverQueryRequest>(r =>
+                r.PageNumber == 2 &&
+                r.PageSize == 5 &&
+                r.SearchQuery == "Ahmad" &&
+                r.SearchBy == "name" &&
+                r.LicenseFilter == "active")))
+            .ReturnsAsync(Result<PagedResult<DriverDto>>.Success(pagedDrivers));
+
+        var response = await Authenticated(factory)
+            .GetAsync("/api/Drivers?pageNumber=2&pageSize=5&searchQuery=Ahmad&searchBy=name&licenseFilter=active");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var root = document.RootElement;
+        Assert.Equal(2, root.GetProperty("pageNumber").GetInt32());
+        Assert.Equal(5, root.GetProperty("pageSize").GetInt32());
+        Assert.Equal(11, root.GetProperty("totalCount").GetInt32());
+        Assert.Equal(3, root.GetProperty("totalPages").GetInt32());
+        Assert.True(root.GetProperty("hasPreviousPage").GetBoolean());
+        Assert.True(root.GetProperty("hasNextPage").GetBoolean());
+
+        var items = root.GetProperty("items");
+        Assert.Equal(JsonValueKind.Array, items.ValueKind);
+        Assert.Equal(1, items.GetArrayLength());
+        Assert.Equal(10, items[0].GetProperty("driverId").GetInt32());
+        Assert.Equal(20, items[0].GetProperty("personId").GetInt32());
+        Assert.Equal("Ahmad Mohammed", items[0].GetProperty("fullName").GetString());
+        Assert.Equal("123456789", items[0].GetProperty("nationalNo").GetString());
+
+        factory.DriverServiceMock.Verify(
+            x => x.GetAllAsync(It.IsAny<DriverQueryRequest>()),
+            Times.Once);
+        factory.DriverServiceMock.Verify(
+            x => x.GetAllAsync(),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_WithQueryParameters_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/Drivers?pageNumber=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.DriverServiceMock.Verify(
+            x => x.GetAllAsync(It.IsAny<DriverQueryRequest>()),
+            Times.Never);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+using Application.Common.Pagination;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.DriverDTO;
 
@@ -8,6 +9,8 @@ public interface IDriverService
 {
     Task<Result<DriverDto>> GetByIdAsync(int id);
     Task<Result<List<DriverDto>>> GetAllAsync();
+    Task<Result<PagedResult<DriverDto>>> GetAllAsync(PaginationRequest request);
+    Task<Result<PagedResult<DriverDto>>> GetAllAsync(DriverQueryRequest request);
     Task<Result<DriverDto>> GetByPersonIdAsync(int personId);
     Task<Result<List<DriverDto>>> GetByCreatedUserIdAsync(int userId);
 

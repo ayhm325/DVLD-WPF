@@ -1,4 +1,6 @@
-﻿using Domain.Entities;
+using Application.Common.Pagination;
+using Application.DTOs.DriverDTO;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
@@ -1097,6 +1099,232 @@ public sealed class DriverRepositoryTests
 
         Assert.Throws<ArgumentNullException>(
             () => repository.Delete(null!));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenRequestingBeyondPage1_ReturnsCorrectPageAndItems()
+    {
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 2,
+            PageSize = 1
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(2, result.PageNumber);
+        Assert.Equal(1, result.PageSize);
+        Assert.True(result.TotalCount >= 2);
+        Assert.Single(result.Items);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByDriverId_MatchesDriver()
+    {
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = _fixture.AdminDriverId.ToString(),
+            SearchBy = "driverid"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, d => d.DriverID == _fixture.AdminDriverId);
+        Assert.DoesNotContain(result.Items, d => d.DriverID == _fixture.StaffDriverId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByPersonId_MatchesDriver()
+    {
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = _fixture.StaffPersonId.ToString(),
+            SearchBy = "personid"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, d => d.PersonID == _fixture.StaffPersonId);
+        Assert.DoesNotContain(result.Items, d => d.PersonID == _fixture.AdminPersonId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByNationalNo_MatchesDriver()
+    {
+        var natNo = $"DRV_NAT_{Guid.NewGuid():N}"[..18];
+        var personId = await _fixture.AddPersonAsync("NatDriver", "Person", natNo);
+        var driverId = await _fixture.AddDriverAsync(personId, _fixture.AdminUserId);
+
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = natNo,
+            SearchBy = "nationalno"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, d => d.DriverID == driverId && d.Person.NationalNo == natNo);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByName_MatchesDriver()
+    {
+        var uniqueLast = $"Z_{Guid.NewGuid():N}"[..8];
+        var personId = await _fixture.AddPersonAsync("UniqueName", uniqueLast, $"NAT_{Guid.NewGuid():N}"[..18]);
+        var driverId = await _fixture.AddDriverAsync(personId, _fixture.AdminUserId);
+
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = uniqueLast,
+            SearchBy = "name"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, d => d.DriverID == driverId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingAllFields_MatchesDriver()
+    {
+        var uniqueLast = $"All_{Guid.NewGuid():N}"[..8];
+        var personId = await _fixture.AddPersonAsync("AllField", uniqueLast, $"NAT_{Guid.NewGuid():N}"[..18]);
+        var driverId = await _fixture.AddDriverAsync(personId, _fixture.AdminUserId);
+
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = uniqueLast,
+            SearchBy = "all"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, d => d.DriverID == driverId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenFilteringByActiveLicenses_ReturnsOnlyActive()
+    {
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 20,
+            LicenseFilter = "active"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, d => d.DriverID == _fixture.AdminDriverId);
+        Assert.All(result.Items, d => Assert.True((d.ActiveLicensesCount ?? 0) > 0));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenFilteringByNoActiveLicenses_ReturnsOnlyInactive()
+    {
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 20,
+            LicenseFilter = "none"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, d => d.DriverID == _fixture.StaffDriverId);
+        Assert.All(result.Items, d => Assert.Equal(0, d.ActiveLicensesCount ?? 0));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchYieldsNoMatches_ReturnsEmptyResultWithZeroCount()
+    {
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(context);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "NON_EXISTENT_DRIVER_SEARCH_QUERY_XYZ_12345",
+            SearchBy = "all"
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(0, result.TotalCount);
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_DeterministicOrdering_ReturnsSortedByDriverIdAscending()
+    {
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(queryContext);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 20
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.True(result.Items.Count >= 2);
+        for (int i = 0; i < result.Items.Count - 1; i++)
+        {
+            Assert.True(result.Items[i].DriverID < result.Items[i + 1].DriverID,
+                $"Expected DriverID {result.Items[i].DriverID} < {result.Items[i + 1].DriverID}");
+        }
+    }
+
+    [Fact]
+    public async Task GetAllAsync_BoundaryPageSize_ClampsToMax100()
+    {
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new DriverRepository(queryContext);
+
+        var request = new DriverQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 500
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(100, result.PageSize);
     }
 }
 

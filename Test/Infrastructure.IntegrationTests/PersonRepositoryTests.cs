@@ -1,4 +1,6 @@
-﻿using Domain.Entities;
+using Application.Common.Pagination;
+using Application.DTOs.PersonDTO;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
@@ -320,6 +322,204 @@ public sealed class PersonRepositoryTests
                     EntityState.Detached,
                     context.Entry(country).State);
             });
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenRequestingBeyondPage1_ReturnsCorrectPageAndItems()
+    {
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(context);
+
+        var request = new PersonQueryRequest
+        {
+            PageNumber = 2,
+            PageSize = 1
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(2, result.PageNumber);
+        Assert.Equal(1, result.PageSize);
+        Assert.True(result.TotalCount >= 2);
+        Assert.Single(result.Items);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByPartialNationalNo_MatchesCorrectPerson()
+    {
+        var uniqueNat = $"NAT{Guid.NewGuid():N}"[..18];
+        var person = _fixture.CreatePerson(uniqueNat);
+
+        await using (var seedContext = _fixture.Database.CreateContext())
+        {
+            seedContext.People.Add(person);
+            await seedContext.SaveChangesAsync();
+        }
+
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(queryContext);
+
+        var partialNat = uniqueNat[..10];
+        var request = new PersonQueryRequest
+        {
+            SearchQuery = partialNat,
+            SearchBy = "nationalno",
+            PageNumber = 1,
+            PageSize = 50
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Contains(result.Items, p => p.NationalNo == uniqueNat);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByName_MatchesFullNameWithSpacesAndPartialNames()
+    {
+        var uniqueLast = $"Z_{Guid.NewGuid():N}"[..10];
+        var person = _fixture.CreatePerson($"N_{Guid.NewGuid():N}"[..18]);
+        person.FirstName = "Tariq";
+        person.SecondName = "Saad";
+        person.LastName = uniqueLast;
+
+        await using (var seedContext = _fixture.Database.CreateContext())
+        {
+            seedContext.People.Add(person);
+            await seedContext.SaveChangesAsync();
+        }
+
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(queryContext);
+
+        // Search full name with space
+        var requestFullName = new PersonQueryRequest
+        {
+            SearchQuery = $"Tariq {uniqueLast}",
+            SearchBy = "name",
+            PageNumber = 1,
+            PageSize = 50
+        };
+
+        var resultFullName = await repository.GetAllAsync(requestFullName);
+        Assert.Contains(resultFullName.Items, p => p.PersonId == person.PersonId);
+
+        // Search partial first name
+        var requestPartial = new PersonQueryRequest
+        {
+            SearchQuery = "Tari",
+            SearchBy = "name",
+            PageNumber = 1,
+            PageSize = 50
+        };
+
+        var resultPartial = await repository.GetAllAsync(requestPartial);
+        Assert.Contains(resultPartial.Items, p => p.PersonId == person.PersonId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingByPersonId_MatchesExactPerson()
+    {
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(queryContext);
+
+        var request = new PersonQueryRequest
+        {
+            SearchQuery = $"#{_fixture.AdminPersonId}",
+            SearchBy = "id",
+            PageNumber = 1,
+            PageSize = 10
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Single(result.Items);
+        Assert.Equal(_fixture.AdminPersonId, result.Items[0].PersonId);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenFilteringByGender_ReturnsOnlyMatchingGender()
+    {
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(queryContext);
+
+        var requestMale = new PersonQueryRequest
+        {
+            GenderFilter = "0",
+            PageNumber = 1,
+            PageSize = 50
+        };
+
+        var resultMale = await repository.GetAllAsync(requestMale);
+        Assert.NotEmpty(resultMale.Items);
+        Assert.All(resultMale.Items, p => Assert.Equal(Gender.Male, p.Gender));
+
+        var requestFemale = new PersonQueryRequest
+        {
+            GenderFilter = "1",
+            PageNumber = 1,
+            PageSize = 50
+        };
+
+        var resultFemale = await repository.GetAllAsync(requestFemale);
+        Assert.All(resultFemale.Items, p => Assert.Equal(Gender.Female, p.Gender));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenSearchingNonExistentTerm_ReturnsEmptyItemsAndZeroCount()
+    {
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(queryContext);
+
+        var request = new PersonQueryRequest
+        {
+            SearchQuery = $"NON_EXISTENT_{Guid.NewGuid():N}",
+            SearchBy = "all",
+            PageNumber = 1,
+            PageSize = 10
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(0, result.TotalCount);
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_DeterministicOrdering_ReturnsSortedByPersonIdAscending()
+    {
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(queryContext);
+
+        var request = new PersonQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 20
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        for (int i = 0; i < result.Items.Count - 1; i++)
+        {
+            Assert.True(result.Items[i].PersonId < result.Items[i + 1].PersonId,
+                $"Expected PersonId {result.Items[i].PersonId} < {result.Items[i + 1].PersonId}");
+        }
+    }
+
+    [Fact]
+    public async Task GetAllAsync_BoundaryPageSize_ClampsToMax100()
+    {
+        await using var queryContext = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(queryContext);
+
+        var request = new PersonQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 500
+        };
+
+        var result = await repository.GetAllAsync(request);
+
+        Assert.Equal(100, result.PageSize);
     }
 
     [Fact]

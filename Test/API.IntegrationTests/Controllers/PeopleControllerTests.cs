@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using API.IntegrationTests.Infrastructure;
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Domain.Enums;
@@ -79,6 +80,70 @@ public sealed class PeopleControllerTests
             HttpStatusCode.InternalServerError,
             "An unexpected error occurred.",
             "The server could not complete the request.");
+    }
+
+    [Fact]
+    public async Task GetAll_WithQueryParameters_ReturnsPagedResponse()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        var pagedPeople = new PagedResult<PersonDto>
+        {
+            Items = new List<PersonDto>
+            {
+                CreatePersonDto(1, "9901234567", "Ahmad", "Mohammed", "Ali",
+                    "Obeidat", "Ahmad Mohammed Ali Obeidat", (int)Gender.Male, "Jordan")
+            },
+            PageNumber = 2,
+            PageSize = 5,
+            TotalCount = 6
+        };
+
+        factory.PersonServiceMock.Setup(x => x.GetAllPeopleAsync(It.Is<PersonQueryRequest>(r =>
+                r.PageNumber == 2 &&
+                r.PageSize == 5 &&
+                r.SearchQuery == "Ahmad" &&
+                r.SearchBy == "name" &&
+                r.GenderFilter == "0")))
+            .ReturnsAsync(Result<PagedResult<PersonDto>>.Success(pagedPeople));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People?pageNumber=2&pageSize=5&searchQuery=Ahmad&searchBy=name&genderFilter=0");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var root = document.RootElement;
+
+        Assert.Equal(JsonValueKind.Object, root.ValueKind);
+        Assert.Equal(2, root.GetProperty("pageNumber").GetInt32());
+        Assert.Equal(5, root.GetProperty("pageSize").GetInt32());
+        Assert.Equal(6, root.GetProperty("totalCount").GetInt32());
+        Assert.Equal(2, root.GetProperty("totalPages").GetInt32());
+        Assert.True(root.GetProperty("hasPreviousPage").GetBoolean());
+        Assert.False(root.GetProperty("hasNextPage").GetBoolean());
+
+        var items = root.GetProperty("items");
+        Assert.Equal(1, items.GetArrayLength());
+        Assert.Equal(1, items[0].GetProperty("personId").GetInt32());
+        Assert.Equal("Ahmad Mohammed Ali Obeidat", items[0].GetProperty("fullName").GetString());
+
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<PersonQueryRequest>()), Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_WithQueryParameters_Returns401()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/People?pageNumber=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<PersonQueryRequest>()), Times.Never);
     }
 
     [Fact]

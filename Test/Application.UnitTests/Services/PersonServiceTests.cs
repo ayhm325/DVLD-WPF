@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.PersonDTO;
 using Application.Interfaces;
@@ -365,6 +366,97 @@ public class PersonServiceTests
     }
 
     [Fact]
+    public async Task GetAllPeopleAsync_WithQueryRequest_ReturnsMappedPagedResult()
+    {
+        // Arrange
+        var request = new PersonQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "Ahmad",
+            SearchBy = "name",
+            GenderFilter = "0"
+        };
+
+        var pagedPeople = new PagedResult<Person>
+        {
+            Items = new List<Person>
+            {
+                CreatePerson(1, "1234567890"),
+                CreatePerson(2, "0987654321")
+            },
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 2
+        };
+
+        _personRepositoryMock
+            .Setup(r => r.GetAllAsync(request))
+            .ReturnsAsync(pagedPeople);
+
+        // Act
+        var result = await _sut.GetAllPeopleAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value!.TotalCount);
+        Assert.Equal(1, result.Value.PageNumber);
+        Assert.Equal(10, result.Value.PageSize);
+        Assert.Equal(2, result.Value.Items.Count);
+        Assert.Equal(1, result.Value.Items[0].PersonId);
+        Assert.Equal(2, result.Value.Items[1].PersonId);
+
+        _personRepositoryMock.Verify(r => r.GetAllAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllPeopleAsync_WithPaginationRequest_DelegatesToRepository()
+    {
+        // Arrange
+        var request = new PaginationRequest
+        {
+            PageNumber = 2,
+            PageSize = 5
+        };
+
+        var pagedPeople = new PagedResult<Person>
+        {
+            Items = new List<Person>(),
+            PageNumber = 2,
+            PageSize = 5,
+            TotalCount = 10
+        };
+
+        _personRepositoryMock
+            .Setup(r => r.GetAllAsync(request))
+            .ReturnsAsync(pagedPeople);
+
+        // Act
+        var result = await _sut.GetAllPeopleAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(10, result.Value!.TotalCount);
+        Assert.Equal(2, result.Value.PageNumber);
+        Assert.Equal(5, result.Value.PageSize);
+        Assert.Empty(result.Value.Items);
+
+        _personRepositoryMock.Verify(r => r.GetAllAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllPeopleAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _sut.GetAllPeopleAsync((PersonQueryRequest)null!));
+
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _sut.GetAllPeopleAsync((PaginationRequest)null!));
+    }
+
+    [Fact]
     public async Task GetAllPeopleAsync_NoPeople_ReturnsEmptyList()
     {
         // Arrange
@@ -385,6 +477,7 @@ public class PersonServiceTests
             repository => repository.GetAllPersonsAsync(),
             Times.Once);
     }
+
 
     // =========================================================
     // AddPersonAsync

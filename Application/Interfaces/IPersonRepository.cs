@@ -1,9 +1,17 @@
-﻿using Domain.Entities;
+using Application.Common.Pagination;
+using Application.DTOs.PersonDTO;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
 public interface IPersonRepository
 {
+    Task<PagedResult<Person>> GetAllAsync(
+        PersonQueryRequest request);
+
+    Task<PagedResult<Person>> GetAllAsync(
+        PaginationRequest request);
+
     Task<Person?> GetPersonByIdAsync(int id);
 
     Task<Person?> GetPersonByNationalNoAsync(
