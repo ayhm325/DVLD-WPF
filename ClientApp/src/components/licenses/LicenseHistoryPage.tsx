@@ -15,7 +15,6 @@ import type { Driver } from '../../types/Driver'
 import { getPersonById } from '../../services/peopleService'
 import { getLicensesByPersonId, getLicensesByDriverId } from '../../services/licenseService'
 import { getInternationalLicensesByDriverId } from '../../services/internationalLicenseService'
-import { getDrivers } from '../../services/driverService'
 import { formatDate } from '../../utils/formatters'
 import PageHero from '../common/PageHero'
 import StatsGrid from '../common/StatsGrid'
@@ -66,54 +65,69 @@ export default function LicenseHistoryPage({
       setError(null)
 
       try {
-        // 1. Fetch Person Details
-        const personData = await getPersonById(accessToken, personId!)
-        if (cancelled) return
-        setPerson(personData)
+        // 1. Fetch Person Details and Local Licenses concurrently
+        const [personRes, localRes] = await Promise.allSettled([
+          getPersonById(accessToken, personId!),
+          propDriver
+            ? getLicensesByDriverId(accessToken, propDriver.driverId)
+            : getLicensesByPersonId(accessToken, personId!),
+        ])
 
-        // 2. Resolve Driver record if not provided via props
-        let currentDriver = propDriver ?? null
-        if (!currentDriver) {
+        if (cancelled) return
+
+        let personData: PersonDetails | null = null
+        if (personRes.status === 'fulfilled') {
+          personData = personRes.value
+          setPerson(personData)
+        } else {
+          throw personRes.reason
+        }
+
+        const loadedLocalLicenses =
+          localRes.status === 'fulfilled' ? localRes.value || [] : []
+        setLocalLicenses(loadedLocalLicenses)
+
+        // 2. Resolve Driver identity targeted from props or loaded local licenses
+        const resolvedDriverId =
+          propDriver?.driverId ??
+          (loadedLocalLicenses.length > 0 ? loadedLocalLicenses[0].driverId : null)
+
+        if (propDriver) {
+          setResolvedDriver(propDriver)
+        } else if (resolvedDriverId && personData) {
+          setResolvedDriver({
+            driverId: resolvedDriverId,
+            personId: personId!,
+            fullName: personData.fullName,
+            nationalNo: personData.nationalNo,
+            activeLicenses: loadedLocalLicenses.filter((l) => l.isActive).length,
+            createdDate: loadedLocalLicenses[0]?.issueDate ?? '',
+            dateOfBirth: personData.dateOfBirth,
+          })
+        } else {
+          setResolvedDriver(null)
+        }
+
+        // 3. Fetch International Licenses if driver identity exists
+        if (resolvedDriverId) {
           try {
-            const allDrivers = await getDrivers(accessToken)
+            const intlLicenses = await getInternationalLicensesByDriverId(
+              accessToken,
+              resolvedDriverId,
+            )
             if (!cancelled) {
-              const matched = allDrivers.find((d) => d.personId === personId)
-              if (matched) {
-                currentDriver = matched
-                setResolvedDriver(matched)
-              }
+              setInternationalLicenses(intlLicenses || [])
             }
           } catch {
-            // Optional driver lookup failure does not abort person info
+            if (!cancelled) {
+              setInternationalLicenses([])
+            }
           }
-        }
-
-        // 3. Fetch Local and International Licenses concurrently
-        const localPromise = currentDriver
-          ? getLicensesByDriverId(accessToken, currentDriver.driverId)
-          : getLicensesByPersonId(accessToken, personId!)
-
-        const intlPromise = currentDriver
-          ? getInternationalLicensesByDriverId(accessToken, currentDriver.driverId)
-          : Promise.resolve<InternationalLicense[]>([])
-
-        const [localRes, intlRes] = await Promise.allSettled([localPromise, intlPromise])
-
-        if (cancelled) return
-
-        if (localRes.status === 'fulfilled') {
-          setLocalLicenses(localRes.value || [])
-        } else {
-          setLocalLicenses([])
-        }
-
-        if (intlRes.status === 'fulfilled') {
-          setInternationalLicenses(intlRes.value || [])
         } else {
           setInternationalLicenses([])
         }
 
-        if (localRes.status === 'rejected' && intlRes.status === 'rejected') {
+        if (localRes.status === 'rejected') {
           setError('Failed to retrieve license records for this person.')
         }
       } catch (err) {

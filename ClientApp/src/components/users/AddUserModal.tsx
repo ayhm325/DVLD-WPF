@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import {
   ShieldCheck,
   Search,
@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select'
-import { getPeople } from '../../services/peopleService'
+import { usePeopleData } from '../../context/usePeopleData'
 import { createUser } from '../../services/userService'
 import type { Person } from '../../types/Person'
 import type { User } from '../../types/User'
@@ -58,9 +58,12 @@ export default function AddUserModal({
   onCreated,
   onNavigateToAddPerson,
 }: AddUserModalProps) {
-  const [people, setPeople] = useState<Person[]>([])
-  const [loadingPeople, setLoadingPeople] = useState(false)
-  const [peopleLoadError, setPeopleLoadError] = useState<string | null>(null)
+  const {
+    people,
+    loading: loadingPeople,
+    error: peopleLoadError,
+    refreshPeople,
+  } = usePeopleData()
 
   const [personQuery, setPersonQuery] = useState('')
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
@@ -91,42 +94,6 @@ export default function AddUserModal({
     setFieldErrors({})
     setSubmitError(null)
   }
-
-  useEffect(() => {
-    if (!isOpen || !accessToken) {
-      return
-    }
-
-    let active = true
-
-    async function loadDirectory() {
-      setLoadingPeople(true)
-      setPeopleLoadError(null)
-
-      try {
-        const list = await getPeople(accessToken)
-        if (!active) return
-        setPeople(list)
-      } catch (err) {
-        if (!active) return
-        setPeopleLoadError(
-          err instanceof Error
-            ? err.message
-            : 'Failed to load people directory for account linking.',
-        )
-      } finally {
-        if (active) {
-          setLoadingPeople(false)
-        }
-      }
-    }
-
-    void loadDirectory()
-
-    return () => {
-      active = false
-    }
-  }, [isOpen, accessToken])
 
   const linkedPersonIds = useMemo(
     () => new Set(existingUsers.map((u) => u.personId)),
@@ -280,7 +247,12 @@ export default function AddUserModal({
     >
       <form id="add-user-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
         {submitError && <ErrorAlert message={submitError} />}
-        {peopleLoadError && <ErrorAlert message={peopleLoadError} />}
+        {peopleLoadError && (
+          <ErrorAlert
+            message={peopleLoadError}
+            onRetry={refreshPeople}
+          />
+        )}
 
         {/* Step 1: Linked Person Selection */}
         <div className="space-y-2.5">

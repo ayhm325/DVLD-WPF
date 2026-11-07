@@ -23,7 +23,6 @@ import {
   cancelLocalDrivingLicenseApplication,
 } from '../../services/localDrivingLicenseApplicationService'
 import {
-  getLicensesByPersonId,
   getLicenseDetailsByLocalAppId,
 } from '../../services/licenseService'
 import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
@@ -107,9 +106,6 @@ export default function LocalApplicationsPage({
 
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [personLicenseHistoryMap, setPersonLicenseHistoryMap] = useState<
-    Record<number, boolean>
-  >({})
 
   const pagination = usePagination({
     pageSize: PAGE_SIZE,
@@ -134,42 +130,6 @@ export default function LocalApplicationsPage({
     dependencies: [pagination.page],
     defaultErrorMessage: 'Could not load local applications.',
   })
-
-  // Pre-fetch person license counts for rows on the current page to accurately enable/disable "Show Person License History"
-  useEffect(() => {
-    if (!accessToken || !page?.items || page.items.length === 0) return
-
-    let cancelled = false
-    const uniquePersonIds = Array.from(
-      new Set(
-        page.items
-          .map((x) => x.applicantPersonId)
-          .filter((id) => Boolean(id) && id > 0),
-      ),
-    )
-
-    Promise.all(
-      uniquePersonIds.map(async (personId) => {
-        try {
-          const licenses = await getLicensesByPersonId(accessToken, personId)
-          return { personId, hasHistory: licenses.length > 0 }
-        } catch {
-          return { personId, hasHistory: false }
-        }
-      }),
-    ).then((results) => {
-      if (cancelled) return
-      const map: Record<number, boolean> = {}
-      for (const r of results) {
-        map[r.personId] = r.hasHistory
-      }
-      setPersonLicenseHistoryMap(map)
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [accessToken, page?.items])
 
   // Auto-redirect to dedicated appointments page if returning from ScheduleAppointmentPage
   useEffect(() => {
@@ -512,7 +472,6 @@ export default function LocalApplicationsPage({
           onIssueLicense={(application) => setIssueLicenseTarget(application)}
           onShowLicense={handleShowLicense}
           onShowPersonLicenseHistory={(personId) => onShowLicenseHistory?.(personId)}
-          personLicenseHistoryMap={personLicenseHistoryMap}
         />
 
         <footer

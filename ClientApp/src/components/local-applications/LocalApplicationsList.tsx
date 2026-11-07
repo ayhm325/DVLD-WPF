@@ -32,7 +32,6 @@ type Props = {
   onIssueLicense: (application: LocalDrivingLicenseApplication) => void
   onShowLicense: (application: LocalDrivingLicenseApplication) => void
   onShowPersonLicenseHistory: (personId: number) => void
-  personLicenseHistoryMap?: Record<number, boolean>
 }
 
 function getApplicationStatusVariant(status: string): StatusVariant {
@@ -61,7 +60,6 @@ export default function LocalApplicationsList({
   onIssueLicense,
   onShowLicense,
   onShowPersonLicenseHistory,
-  personLicenseHistoryMap,
 }: Props) {
   const columns: DataTableColumn<LocalDrivingLicenseApplication>[] = [
     {
@@ -135,9 +133,7 @@ export default function LocalApplicationsList({
         .trim()
         .toLowerCase()
       const isNew = status === 'new'
-      const hasHistory = Boolean(
-        personLicenseHistoryMap?.[item.applicantPersonId] || item.hasLicense,
-      )
+      const hasValidApplicant = Boolean(item.applicantPersonId && item.applicantPersonId > 0)
 
       return [
         {
@@ -229,7 +225,7 @@ export default function LocalApplicationsList({
           key: 'show-history',
           label: 'Show Person License History',
           icon: <History className="size-4 text-indigo-400" />,
-          disabled: !hasHistory,
+          disabled: !hasValidApplicant,
           onClick: () => onShowPersonLicenseHistory(item.applicantPersonId),
         },
       ]
@@ -244,7 +240,6 @@ export default function LocalApplicationsList({
       onIssueLicense,
       onShowLicense,
       onShowPersonLicenseHistory,
-      personLicenseHistoryMap,
     ],
   )
 
