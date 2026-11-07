@@ -14,16 +14,46 @@ namespace DVLD.Api.Controllers;
 public sealed class LicensesController(ILicenseService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] bool? isExpired = null)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] LicenseQueryRequest request)
     {
-        var result = isExpired.HasValue
-            ? await service.GetAllAsync(isExpired.Value)
+        if (Request.Query.ContainsKey("pageNumber") ||
+            Request.Query.ContainsKey("pageSize") ||
+            Request.Query.ContainsKey("searchQuery") ||
+            Request.Query.ContainsKey("searchBy") ||
+            Request.Query.ContainsKey("statusFilter") ||
+            Request.Query.ContainsKey("paged"))
+        {
+            var result = await service.GetAllAsync(request);
+
+            if (result.IsFailure)
+                return result.ToActionResult(this);
+
+            var page = result.Value!;
+
+            return Ok(new
+            {
+                items = page.Items
+                    .Select(MapToResponse)
+                    .ToList(),
+                pageNumber = page.PageNumber,
+                pageSize = page.PageSize,
+                totalCount = page.TotalCount,
+                totalPages = page.TotalPages,
+                hasPreviousPage = page.HasPreviousPage,
+                hasNextPage = page.HasNextPage
+            });
+        }
+
+        var unpagedResult = request.IsExpired.HasValue
+            ? await service.GetAllAsync(request.IsExpired.Value)
             : await service.GetAllAsync();
-        return result.IsFailure
-            ? result.ToActionResult(this)
-            : result.Value is null
+
+        return unpagedResult.IsFailure
+            ? unpagedResult.ToActionResult(this)
+            : unpagedResult.Value is null
                 ? UnexpectedResult()
-                : Ok(result.Value.Select(MapToResponse).ToList());
+                : Ok(unpagedResult.Value.Select(MapToResponse).ToList());
     }
 
     [HttpGet("{id:int}")]

@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
-import { getLicenses } from "../../services/licenseService";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getLicensesPage } from "../../services/licenseService";
 import type { License } from "../../types/License";
 import { formatDate, formatCurrency, formatNumber } from "../../utils/formatters";
-import { useAsyncData, useTableFilters } from "../../hooks";
+import { useAsyncData, useDebounce, usePagination } from "../../hooks";
 import PageHero from "../common/PageHero";
 import StatsGrid from "../common/StatsGrid";
 import StatCard from "../common/StatCard";
@@ -27,6 +27,8 @@ import {
   RotateCw,
   Copy,
   Lock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "../ui";
 
@@ -37,9 +39,7 @@ type LicensesPageProps = {
 
 type SearchBy = "all" | "licenseId" | "appId" | "driver" | "class";
 
-interface LicenseFilters extends Record<string, unknown> {
-  statusFilter: string;
-}
+const PAGE_SIZE = 10;
 
 const SEARCH_OPTIONS: Array<{ value: SearchBy; label: string }> = [
   { value: "all", label: "All Fields" },
@@ -122,70 +122,60 @@ export default function LicensesPage({
 }: LicensesPageProps) {
   const [selectedLicenseForDetails, setSelectedLicenseForDetails] =
     useState<License | null>(null);
-  const fetcher = useCallback(() => getLicenses(accessToken), [accessToken]);
+
+  const [search, setSearch] = useState("");
+  const [searchBy, setSearchBy] = useState<SearchBy>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const debouncedSearch = useDebounce(search, 300);
+
+  const pagination = usePagination({
+    pageSize: PAGE_SIZE,
+    initialPage: 1,
+  });
+
+  const { resetPage } = pagination;
+
+  useEffect(() => {
+    resetPage();
+  }, [debouncedSearch, searchBy, statusFilter, resetPage]);
+
+  const fetcher = useCallback(() => {
+    return getLicensesPage(
+      accessToken,
+      pagination.page,
+      PAGE_SIZE,
+      debouncedSearch,
+      searchBy,
+      statusFilter,
+    );
+  }, [accessToken, pagination.page, debouncedSearch, searchBy, statusFilter]);
 
   const {
-    data: licenses,
+    data: page,
     loading,
     error,
     refresh,
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
-    initialData: [],
+    dependencies: [
+      pagination.page,
+      debouncedSearch,
+      searchBy,
+      statusFilter,
+      accessToken,
+    ],
     defaultErrorMessage: "Failed to load licenses.",
   });
 
-  const {
-    search,
-    setSearch,
-    searchField: searchBy,
-    setSearchField: setSearchBy,
-    filters,
-    setFilter,
-    filteredData: filteredLicenses,
-    isFiltered,
-    resetFilters: handleResetFilters,
-  } = useTableFilters<License, SearchBy, LicenseFilters>({
-    data: licenses,
-    initialSearchField: "all",
-    initialFilters: { statusFilter: "all" },
-    filterItem: (license, query, field, currentFilters) => {
-      // 1. Status check
-      const currentStatus = currentFilters.statusFilter;
-      const matchesStatus =
-        currentStatus === "all" ||
-        (currentStatus === "active" && license.isActive) ||
-        (currentStatus === "inactive" && !license.isActive);
+  const isFiltered = Boolean(search.trim() || statusFilter !== "all");
 
-      if (!matchesStatus) return false;
-
-      // 2. Query check
-      if (!query) return true;
-
-      if (field === "licenseId") {
-        return String(license.licenseId).includes(query);
-      }
-      if (field === "appId") {
-        return String(license.applicationId).includes(query);
-      }
-      if (field === "driver") {
-        return (license.driverName ?? "").toLowerCase().includes(query);
-      }
-      if (field === "class") {
-        return (license.licenseClassName ?? "").toLowerCase().includes(query);
-      }
-
-      // 'all'
-      return (
-        String(license.licenseId).includes(query) ||
-        String(license.applicationId).includes(query) ||
-        (license.driverName ?? "").toLowerCase().includes(query) ||
-        (license.licenseClassName ?? "").toLowerCase().includes(query)
-      );
-    },
-  });
-
-  const statusFilter = filters.statusFilter;
+  const handleResetFilters = useCallback(() => {
+    setSearch("");
+    setSearchBy("all");
+    setStatusFilter("all");
+    resetPage();
+  }, [resetPage]);
 
   const placeholderText = useMemo(() => {
     switch (searchBy) {
@@ -202,6 +192,17 @@ export default function LicensesPage({
     }
   }, [searchBy]);
 
+  const totalLicenses = page?.totalCount ?? 0;
+  const licensesList = useMemo(() => page?.items ?? [], [page?.items]);
+
+  const activeOnPage = useMemo(() => {
+    return licensesList.filter((lic) => lic.isActive).length;
+  }, [licensesList]);
+
+  const inactiveOnPage = useMemo(() => {
+    return licensesList.filter((lic) => !lic.isActive).length;
+  }, [licensesList]);
+
   return (
     <section className="page-content">
       <PageHero pageId="Licenses" />
@@ -211,40 +212,24 @@ export default function LicensesPage({
           label="Total Licenses"
           variant="violet"
           icon={<LicenseIcon size={20} />}
-          value={loading ? "..." : error ? "—" : formatNumber(licenses.length)}
-          description="All returned records"
+          value={loading ? "..." : error ? "—" : formatNumber(totalLicenses)}
+          description="Registered driving licenses"
         />
 
         <StatCard
-          label="Active Licenses"
+          label="Active on Page"
           variant="emerald"
           icon={<CheckIcon size={20} />}
-          value={
-            loading
-              ? "..."
-              : error
-                ? "—"
-                : formatNumber(
-                    licenses.filter((license) => license.isActive).length,
-                  )
-          }
-          description="Marked active by the system"
+          value={loading ? "..." : error ? "—" : formatNumber(activeOnPage)}
+          description="Active licenses on current page"
         />
 
         <StatCard
-          label="Inactive Licenses"
+          label="Inactive on Page"
           variant="slate"
           icon={<ClockIcon size={20} />}
-          value={
-            loading
-              ? "..."
-              : error
-                ? "—"
-                : formatNumber(
-                    licenses.filter((license) => !license.isActive).length,
-                  )
-          }
-          description="Not currently active"
+          value={loading ? "..." : error ? "—" : formatNumber(inactiveOnPage)}
+          description="Inactive / expired on current page"
         />
       </StatsGrid>
 
@@ -294,9 +279,9 @@ export default function LicensesPage({
             <span className="record-count">
               {loading
                 ? "Loading..."
-                : filteredLicenses.length === licenses.length
-                  ? `${licenses.length} Licenses`
-                  : `${filteredLicenses.length} of ${licenses.length} Licenses`}
+                : isFiltered
+                  ? `${totalLicenses} of ${totalLicenses} Licenses`
+                  : `${totalLicenses} Licenses`}
             </span>
           </div>
         </div>
@@ -314,7 +299,7 @@ export default function LicensesPage({
             <div style={{ minWidth: 140 }} className="shrink-0">
               <Select
                 value={statusFilter}
-                onValueChange={(val) => setFilter("statusFilter", val)}
+                onValueChange={(val) => setStatusFilter(val)}
               >
                 <SelectTrigger
                   className="h-10 min-h-10 w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
@@ -350,7 +335,7 @@ export default function LicensesPage({
 
         {!error && (
           <DataTable<License>
-            data={filteredLicenses}
+            data={licensesList}
             columns={columns}
             getRowKey={(license) => license.licenseId}
             loading={loading}
@@ -358,7 +343,7 @@ export default function LicensesPage({
               <EmptyState
                 icon={<LicenseIcon size={36} />}
                 message={
-                  licenses.length === 0
+                  totalLicenses === 0
                     ? "No licenses found."
                     : "No licenses match your filters."
                 }
@@ -374,6 +359,70 @@ export default function LicensesPage({
               },
             ]}
           />
+        )}
+
+        {!error && totalLicenses > 0 && (
+          <div
+            className="panel-footer"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              padding: "16px 24px",
+              borderTop: "1px solid #1e304d",
+            }}
+          >
+            <span className="text-xs text-slate-400">
+              Showing{" "}
+              <strong className="text-white">
+                {((page?.pageNumber ?? 1) - 1) * PAGE_SIZE + 1}
+              </strong>
+              –
+              <strong className="text-white">
+                {Math.min(
+                  (page?.pageNumber ?? 1) * PAGE_SIZE,
+                  totalLicenses,
+                )}
+              </strong>{" "}
+              of <strong className="text-white">{totalLicenses}</strong> licenses
+            </span>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                type="button"
+                className="secondary-button"
+                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
+                disabled={!page?.hasPreviousPage || loading}
+                onClick={pagination.previousPage}
+              >
+                <ChevronLeft className="size-3.5" />
+                <span>Previous</span>
+              </button>
+
+              <span style={{ fontSize: 11, color: "var(--dvld-muted)" }}>
+                Page{" "}
+                <strong style={{ color: "var(--dvld-heading)" }}>
+                  {page?.pageNumber ?? pagination.page}
+                </strong>{" "}
+                of{" "}
+                <strong style={{ color: "var(--dvld-heading)" }}>
+                  {page?.totalPages ?? 1}
+                </strong>
+              </span>
+
+              <button
+                type="button"
+                className="secondary-button"
+                style={{ minHeight: 34, padding: "6px 12px", fontSize: 11 }}
+                disabled={!page?.hasNextPage || loading}
+                onClick={pagination.nextPage}
+              >
+                <span>Next</span>
+                <ChevronRight className="size-3.5" />
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

@@ -1,4 +1,5 @@
-﻿using API.IntegrationTests.Infrastructure;
+using Application.Common.Pagination;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Domain.Enums;
@@ -475,6 +476,83 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
         request.Headers.Add("X-Test-FullName", "Test User");
         request.Headers.Add("X-Test-Role", role);
         return request;
+    }
+
+    [Fact]
+    public async Task GetAll_WithoutAuthentication_WithQueryParameters_Returns401()
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/Licenses?pageNumber=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAll_WithPaginationParams_ReturnsOkAndPagedResponse()
+    {
+        var dto = CreateLicenseDto();
+        var pagedLicenses = new PagedResult<LicenseDto>
+        {
+            Items = [dto],
+            PageNumber = 2,
+            PageSize = 5,
+            TotalCount = 11
+        };
+
+        _factory.LicenseServiceMock
+            .Setup(x => x.GetAllAsync(It.Is<LicenseQueryRequest>(r =>
+                r.PageNumber == 2 &&
+                r.PageSize == 5 &&
+                r.SearchQuery == "123" &&
+                r.SearchBy == "licenseid" &&
+                r.StatusFilter == "active")))
+            .ReturnsAsync(Result<PagedResult<LicenseDto>>.Success(pagedLicenses));
+
+        var response = await GetAsync("/api/Licenses?pageNumber=2&pageSize=5&searchQuery=123&searchBy=licenseid&statusFilter=active");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var root = document.RootElement;
+        Assert.Equal(2, root.GetProperty("pageNumber").GetInt32());
+        Assert.Equal(5, root.GetProperty("pageSize").GetInt32());
+        Assert.Equal(11, root.GetProperty("totalCount").GetInt32());
+        Assert.Equal(3, root.GetProperty("totalPages").GetInt32());
+        Assert.True(root.GetProperty("hasPreviousPage").GetBoolean());
+        Assert.True(root.GetProperty("hasNextPage").GetBoolean());
+
+        var items = root.GetProperty("items");
+        Assert.Equal(JsonValueKind.Array, items.ValueKind);
+        Assert.Equal(1, items.GetArrayLength());
+        Assert.Equal(dto.LicenseID, items[0].GetProperty("licenseId").GetInt32());
+        Assert.Equal(dto.DriverName, items[0].GetProperty("driverName").GetString());
+    }
+
+    [Fact]
+    public async Task GetAll_WithExpiredQueryParam_PassesIsExpiredToService()
+    {
+        var dto = CreateLicenseDto();
+        var pagedLicenses = new PagedResult<LicenseDto>
+        {
+            Items = [dto],
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 1
+        };
+
+        _factory.LicenseServiceMock
+            .Setup(x => x.GetAllAsync(It.Is<LicenseQueryRequest>(r =>
+                r.IsExpired == true)))
+            .ReturnsAsync(Result<PagedResult<LicenseDto>>.Success(pagedLicenses));
+
+        var response = await GetAsync("/api/Licenses?paged=true&isExpired=true");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        _factory.LicenseServiceMock.Verify(
+            x => x.GetAllAsync(It.Is<LicenseQueryRequest>(r => r.IsExpired == true)),
+            Times.Once);
     }
 
     private static void AssertLicense(LicenseResponse actual, LicenseDto expected)

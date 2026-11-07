@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+using Application.Common.Pagination;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.Interfaces;
@@ -138,6 +139,79 @@ public sealed class LicenseQueryServiceTests
         Assert.Equal(2, result.Value!.Count);
         Assert.Equal(1, result.Value[0].LicenseID);
         Assert.Equal(2, result.Value[1].LicenseID);
+    }
+
+    [Fact]
+    public async Task GetAll_WhenPaginationRequestIsNull_ThrowsArgumentNullException()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            CreateService().GetAllAsync((PaginationRequest)null!));
+    }
+
+    [Fact]
+    public async Task GetAll_WhenLicenseQueryRequestIsNull_ThrowsArgumentNullException()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            CreateService().GetAllAsync((LicenseQueryRequest)null!));
+    }
+
+    [Fact]
+    public async Task GetAll_WithPaginationRequest_ReturnsMappedPagedResult()
+    {
+        var request = new PaginationRequest { PageNumber = 2, PageSize = 10 };
+        var paged = new PagedResult<License>
+        {
+            Items = [CreateLicense(1), CreateLicense(2)],
+            PageNumber = 2,
+            PageSize = 10,
+            TotalCount = 25
+        };
+
+        _licenseRepository
+            .Setup(x => x.GetAllLicensesAsync(It.Is<LicenseQueryRequest>(r => r.PageNumber == 2 && r.PageSize == 10), It.IsAny<DateOnly>()))
+            .ReturnsAsync(paged);
+
+        var result = await CreateService().GetAllAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Items.Count);
+        Assert.Equal(2, result.Value.PageNumber);
+        Assert.Equal(10, result.Value.PageSize);
+        Assert.Equal(25, result.Value.TotalCount);
+        Assert.Equal(1, result.Value.Items[0].LicenseID);
+        Assert.Equal(2, result.Value.Items[1].LicenseID);
+    }
+
+    [Fact]
+    public async Task GetAll_WithLicenseQueryRequest_ReturnsMappedPagedResultWithFilters()
+    {
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "123",
+            SearchBy = "LicenseID",
+            StatusFilter = "active",
+            IsExpired = false
+        };
+        var paged = new PagedResult<License>
+        {
+            Items = [CreateLicense(123)],
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 1
+        };
+
+        _licenseRepository
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .ReturnsAsync(paged);
+
+        var result = await CreateService().GetAllAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(result.Value!.Items);
+        Assert.Equal(123, result.Value.Items[0].LicenseID);
+        Assert.Equal(1, result.Value.TotalCount);
     }
 
     [Fact]

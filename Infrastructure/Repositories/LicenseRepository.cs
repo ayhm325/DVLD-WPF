@@ -1,4 +1,6 @@
+using Application.Common.Pagination;
 using Application.Common.Time;
+using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -49,7 +51,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .FirstOrDefaultAsync();
 
     public Task<List<License>> GetAllLicensesAsync() =>
-        GetAllLicensesAsync(null, null);
+        GetAllLicensesAsync((bool?)null, null);
 
     public Task<List<License>> GetAllLicensesAsync(bool? isExpired, DateOnly? jordanToday = null)
     {
@@ -66,6 +68,137 @@ public sealed class LicenseRepository(DVLDDbContext context)
         return query
             .OrderByDescending(l => l.IssueDate)
             .ToListAsync();
+    }
+
+    public Task<PagedResult<License>> GetAllLicensesAsync(PaginationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request is LicenseQueryRequest queryRequest)
+        {
+            return GetAllLicensesAsync(queryRequest, null);
+        }
+
+        return GetAllLicensesAsync(new LicenseQueryRequest
+        {
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        }, null);
+    }
+
+    public async Task<PagedResult<License>> GetAllLicensesAsync(
+        LicenseQueryRequest request,
+        DateOnly? jordanToday = null)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var query = Query().AsNoTracking().AsSplitQuery();
+
+        if (request.IsExpired.HasValue && jordanToday.HasValue)
+        {
+            var cutoff = jordanToday.Value.ToDateTime(TimeOnly.MinValue);
+            query = request.IsExpired.Value
+                ? query.Where(l => l.ExpirationDate < cutoff)
+                : query.Where(l => l.ExpirationDate >= cutoff);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.StatusFilter))
+        {
+            var status = request.StatusFilter.Trim().ToLowerInvariant();
+            if (status == "active")
+            {
+                query = query.Where(l => l.IsActive);
+            }
+            else if (status == "inactive")
+            {
+                query = query.Where(l => !l.IsActive);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SearchQuery))
+        {
+            var term = request.SearchQuery.Trim();
+            var searchBy = request.SearchBy?.Trim().ToLowerInvariant() ?? "all";
+
+            switch (searchBy)
+            {
+                case "licenseid":
+                case "id":
+                    var cleanLicenseId = term.TrimStart('#');
+                    if (int.TryParse(cleanLicenseId, out var licenseId))
+                    {
+                        query = query.Where(l => l.LicenseID == licenseId);
+                    }
+                    else
+                    {
+                        query = query.Where(l => false);
+                    }
+                    break;
+
+                case "appid":
+                case "applicationid":
+                    var cleanAppId = term.TrimStart('#');
+                    if (int.TryParse(cleanAppId, out var appId))
+                    {
+                        query = query.Where(l => l.ApplicationID == appId);
+                    }
+                    else
+                    {
+                        query = query.Where(l => false);
+                    }
+                    break;
+
+                case "driver":
+                case "drivername":
+                case "name":
+                    query = query.Where(l =>
+                        l.Driver.Person.FirstName.Contains(term) ||
+                        l.Driver.Person.SecondName.Contains(term) ||
+                        (l.Driver.Person.ThirdName != null && l.Driver.Person.ThirdName.Contains(term)) ||
+                        l.Driver.Person.LastName.Contains(term) ||
+                        (l.Driver.Person.FirstName + " " + l.Driver.Person.LastName).Contains(term) ||
+                        (l.Driver.Person.FirstName + " " + l.Driver.Person.SecondName + " " + l.Driver.Person.LastName).Contains(term));
+                    break;
+
+                case "class":
+                case "classname":
+                case "licenseclass":
+                    query = query.Where(l => l.LicenseClassInfo.ClassName.Contains(term));
+                    break;
+
+                case "all":
+                default:
+                    var cleanTerm = term.TrimStart('#');
+                    var isNum = int.TryParse(cleanTerm, out var parsedNum);
+                    query = query.Where(l =>
+                        (isNum && (l.LicenseID == parsedNum || l.ApplicationID == parsedNum)) ||
+                        l.Driver.Person.FirstName.Contains(term) ||
+                        l.Driver.Person.SecondName.Contains(term) ||
+                        (l.Driver.Person.ThirdName != null && l.Driver.Person.ThirdName.Contains(term)) ||
+                        l.Driver.Person.LastName.Contains(term) ||
+                        (l.Driver.Person.FirstName + " " + l.Driver.Person.LastName).Contains(term) ||
+                        (l.Driver.Person.FirstName + " " + l.Driver.Person.SecondName + " " + l.Driver.Person.LastName).Contains(term) ||
+                        l.LicenseClassInfo.ClassName.Contains(term));
+                    break;
+            }
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(l => l.IssueDate)
+            .ThenByDescending(l => l.LicenseID)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<License>
+        {
+            Items = items,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            TotalCount = totalCount
+        };
     }
 
     public Task<List<License>> GetLicensesByDriverIdAsync(int driverId) =>

@@ -1,3 +1,5 @@
+using Application.Common.Pagination;
+using Application.DTOs.LicenseDTO;
 using Domain.Entities;
 
 namespace Application.Interfaces;
@@ -9,6 +11,9 @@ public interface ILicenseRepository
 
     Task<List<License>> GetAllLicensesAsync();
     Task<List<License>> GetAllLicensesAsync(bool? isExpired, DateOnly? jordanToday = null);
+    Task<PagedResult<License>> GetAllLicensesAsync(PaginationRequest request);
+    Task<PagedResult<License>> GetAllLicensesAsync(LicenseQueryRequest request, DateOnly? jordanToday = null);
+
     Task<List<License>> GetLicensesByDriverIdAsync(int driverId);
     Task<List<License>> GetLicensesByApplicationIdAsync(
         int applicationId);

@@ -1,4 +1,6 @@
-﻿using Domain.Entities;
+using Application.Common.Pagination;
+using Application.DTOs.LicenseDTO;
+using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.IntegrationTests.Fixtures;
 using Infrastructure.Repositories;
@@ -1493,6 +1495,327 @@ public sealed class LicenseRepositoryTests
         await context.SaveChangesAsync();
 
         return licenseClass;
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenRequestingBeyondPage1_ReturnsCorrectPageAndItems()
+    {
+        // Arrange
+        await SeedLicenseAsync();
+        await SeedLicenseAsync();
+        await SeedLicenseAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 2,
+            PageSize = 1
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.TotalCount >= 3);
+        Assert.Equal(2, result.PageNumber);
+        Assert.Equal(1, result.PageSize);
+        Assert.Single(result.Items);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenSearchingByLicenseId_MatchesLicense()
+    {
+        // Arrange
+        var seed = await SeedLicenseAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = seed.LicenseId.ToString(),
+            SearchBy = "licenseid"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains(result.Items, l => l.LicenseID == seed.LicenseId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenSearchingByAppId_MatchesLicense()
+    {
+        // Arrange
+        var seed = await SeedLicenseAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = seed.ApplicationId.ToString(),
+            SearchBy = "applicationid"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains(result.Items, l => l.LicenseID == seed.LicenseId && l.ApplicationID == seed.ApplicationId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenSearchingByDriverName_MatchesLicense()
+    {
+        // Arrange
+        var seed = await SeedLicenseAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+        var person = await context.People.SingleAsync(p => p.PersonId == seed.PersonId);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = person.LastName,
+            SearchBy = "drivername"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains(result.Items, l => l.LicenseID == seed.LicenseId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenSearchingByClassName_MatchesLicense()
+    {
+        // Arrange
+        var seed = await SeedLicenseAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+        var licenseClass = await context.LicenseClasses.SingleAsync(c => c.LicenseClassID == seed.LicenseClassId);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = licenseClass.ClassName,
+            SearchBy = "classname"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains(result.Items, l => l.LicenseID == seed.LicenseId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenSearchingAllFields_MatchesLicense()
+    {
+        // Arrange
+        var seed = await SeedLicenseAsync();
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+        var person = await context.People.SingleAsync(p => p.PersonId == seed.PersonId);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = person.LastName,
+            SearchBy = "all"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Contains(result.Items, l => l.LicenseID == seed.LicenseId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenFilteringByActiveStatus_ReturnsOnlyActive()
+    {
+        // Arrange
+        var activeSeed = await SeedLicenseAsync(isActive: true);
+        var inactiveSeed = await SeedLicenseAsync(isActive: false);
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 50,
+            StatusFilter = "active"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.All(result.Items, l => Assert.True(l.IsActive));
+        Assert.Contains(result.Items, l => l.LicenseID == activeSeed.LicenseId);
+        Assert.DoesNotContain(result.Items, l => l.LicenseID == inactiveSeed.LicenseId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenFilteringByInactiveStatus_ReturnsOnlyInactive()
+    {
+        // Arrange
+        var activeSeed = await SeedLicenseAsync(isActive: true);
+        var inactiveSeed = await SeedLicenseAsync(isActive: false);
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 50,
+            StatusFilter = "inactive"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.All(result.Items, l => Assert.False(l.IsActive));
+        Assert.Contains(result.Items, l => l.LicenseID == inactiveSeed.LicenseId);
+        Assert.DoesNotContain(result.Items, l => l.LicenseID == activeSeed.LicenseId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenFilteringByExpired_ReturnsOnlyExpired()
+    {
+        // Arrange
+        var today = new DateOnly(2026, 11, 8);
+        var expiredSeed = await SeedLicenseAsync(
+            issueDate: new DateTime(2020, 1, 1),
+            expirationDate: new DateTime(2026, 11, 7));
+        var validSeed = await SeedLicenseAsync(
+            issueDate: new DateTime(2026, 1, 1),
+            expirationDate: new DateTime(2028, 1, 1));
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 50,
+            IsExpired = true
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, today);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.All(result.Items, l => Assert.True(DateOnly.FromDateTime(l.ExpirationDate) < today));
+        Assert.Contains(result.Items, l => l.LicenseID == expiredSeed.LicenseId);
+        Assert.DoesNotContain(result.Items, l => l.LicenseID == validSeed.LicenseId);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_WhenSearchYieldsNoMatches_ReturnsEmptyResultWithZeroCount()
+    {
+        // Arrange
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "NON_EXISTENT_LICENSE_SEARCH_XYZ_9999",
+            SearchBy = "all"
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(0, result.TotalCount);
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_DeterministicOrdering_ReturnsSortedByIssueDateAndIdDescending()
+    {
+        // Arrange
+        var seed1 = await SeedLicenseAsync(issueDate: new DateTime(2024, 1, 1));
+        var seed2 = await SeedLicenseAsync(issueDate: new DateTime(2026, 6, 1));
+        var seed3 = await SeedLicenseAsync(issueDate: new DateTime(2025, 1, 1));
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 50
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        for (int i = 0; i < result.Items.Count - 1; i++)
+        {
+            var current = result.Items[i];
+            var next = result.Items[i + 1];
+            Assert.True(
+                current.IssueDate > next.IssueDate ||
+                (current.IssueDate == next.IssueDate && current.LicenseID > next.LicenseID),
+                $"Items at {i} and {i + 1} violated deterministic ordering.");
+        }
+    }
+
+    [Fact]
+    public async Task GetAllLicensesAsync_BoundaryPageSize_ClampsToMax100()
+    {
+        // Arrange
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var request = new LicenseQueryRequest
+        {
+            PageNumber = -5,
+            PageSize = 500
+        };
+
+        // Act
+        var result = await repository.GetAllLicensesAsync(request, DateOnly.FromDateTime(DateTime.UtcNow));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(1, result.PageNumber);
+        Assert.Equal(100, result.PageSize);
     }
 
     private sealed record LicenseSeed(

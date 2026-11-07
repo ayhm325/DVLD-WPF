@@ -17,9 +17,52 @@ export type {
   ReplaceLicenseResponse,
 }
 
+export interface LicensePageResponse {
+  items: License[]
+  pageNumber: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+}
+
 export function getLicenses(accessToken: string, isExpired?: boolean): Promise<License[]> {
   const query = isExpired !== undefined ? `?isExpired=${isExpired}` : ''
   return apiRequest<License[]>(`/Licenses${query}`, accessToken)
+}
+
+export function getLicensesPage(
+  accessToken: string,
+  pageNumber: number,
+  pageSize: number,
+  searchQuery?: string,
+  searchBy?: string,
+  statusFilter?: string,
+  isExpired?: boolean,
+): Promise<LicensePageResponse> {
+  const params = new URLSearchParams({
+    pageNumber: String(pageNumber),
+    pageSize: String(pageSize),
+  })
+
+  if (searchQuery && searchQuery.trim()) {
+    params.set('searchQuery', searchQuery.trim())
+  }
+  if (searchBy && searchBy !== 'all') {
+    params.set('searchBy', searchBy)
+  }
+  if (statusFilter && statusFilter !== 'all') {
+    params.set('statusFilter', statusFilter)
+  }
+  if (isExpired !== undefined) {
+    params.set('isExpired', String(isExpired))
+  }
+
+  return apiRequest<LicensePageResponse>(
+    `/Licenses?${params.toString()}`,
+    accessToken,
+  )
 }
 
 export function getLicensesByDriverId(accessToken: string, driverId: number): Promise<License[]> {

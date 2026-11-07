@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.Common.Time;
 using Application.DTOs.LicenseDTO;
@@ -40,7 +41,7 @@ public sealed class LicenseQueryService(
     }
 
     public Task<Result<List<LicenseDto>>> GetAllAsync() =>
-        GetAllAsync(null);
+        GetAllAsync((bool?)null);
 
     public async Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired)
     {
@@ -50,6 +51,39 @@ public sealed class LicenseQueryService(
             : await _licenseRepository.GetAllLicensesAsync();
         var dtos = await MapToDtosBatchAsync(licenses ?? [], today, checkExternalNewerIfMissing: false);
         return Result<List<LicenseDto>>.Success(dtos);
+    }
+
+    public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request is LicenseQueryRequest queryRequest)
+        {
+            return GetAllAsync(queryRequest);
+        }
+
+        return GetAllAsync(new LicenseQueryRequest
+        {
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        });
+    }
+
+    public async Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var today = _clock.Today;
+        var pagedLicenses = await _licenseRepository.GetAllLicensesAsync(request, today);
+        var dtos = await MapToDtosBatchAsync(pagedLicenses.Items, today, checkExternalNewerIfMissing: true);
+
+        return Result<PagedResult<LicenseDto>>.Success(new PagedResult<LicenseDto>
+        {
+            Items = dtos,
+            PageNumber = pagedLicenses.PageNumber,
+            PageSize = pagedLicenses.PageSize,
+            TotalCount = pagedLicenses.TotalCount
+        });
     }
 
     public async Task<Result<List<LicenseDto>>> GetByDriverIdAsync(int driverId)

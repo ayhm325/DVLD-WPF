@@ -1,4 +1,5 @@
-﻿using Application.Common.Results;
+using Application.Common.Pagination;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using Application.Services;
@@ -54,6 +55,50 @@ public sealed class LicenseServiceTests
         _queryService.Verify(
             x => x.GetAllAsync(),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithPaginationRequest_DelegatesToQueryService()
+    {
+        var request = new PaginationRequest { PageNumber = 2, PageSize = 10 };
+        var expected = Result<PagedResult<LicenseDto>>.Success(new PagedResult<LicenseDto>
+        {
+            Items = [],
+            PageNumber = 2,
+            PageSize = 10,
+            TotalCount = 0
+        });
+
+        _queryService
+            .Setup(x => x.GetAllAsync(request))
+            .ReturnsAsync(expected);
+
+        var result = await CreateService().GetAllAsync(request);
+
+        Assert.Same(expected, result);
+        _queryService.Verify(x => x.GetAllAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithLicenseQueryRequest_DelegatesToQueryService()
+    {
+        var request = new LicenseQueryRequest { PageNumber = 1, PageSize = 20, SearchQuery = "test" };
+        var expected = Result<PagedResult<LicenseDto>>.Success(new PagedResult<LicenseDto>
+        {
+            Items = [],
+            PageNumber = 1,
+            PageSize = 20,
+            TotalCount = 0
+        });
+
+        _queryService
+            .Setup(x => x.GetAllAsync(request))
+            .ReturnsAsync(expected);
+
+        var result = await CreateService().GetAllAsync(request);
+
+        Assert.Same(expected, result);
+        _queryService.Verify(x => x.GetAllAsync(request), Times.Once);
     }
 
     [Fact]

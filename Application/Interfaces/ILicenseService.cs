@@ -1,3 +1,4 @@
+using Application.Common.Pagination;
 using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 
@@ -9,6 +10,8 @@ public interface ILicenseService
 
     Task<Result<List<LicenseDto>>> GetAllAsync();
     Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired);
+    Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request);
+    Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request);
 
     Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
         int driverId);
