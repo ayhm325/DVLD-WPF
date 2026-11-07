@@ -252,6 +252,9 @@ builder.Services.AddOptions<NoShowProcessorOptions>()
     .Bind(builder.Configuration.GetSection(NoShowProcessorOptions.SectionName));
 builder.Services.AddScoped<INoShowProcessorService, NoShowProcessorService>();
 builder.Services.AddHostedService<DVLD.Api.BackgroundServices.NoShowBackgroundService>();
+builder.Services.AddOptions<LicenseExpirationOptions>()
+    .Bind(builder.Configuration.GetSection(LicenseExpirationOptions.SectionName));
+builder.Services.AddHostedService<DVLD.Api.BackgroundServices.LicenseExpirationBackgroundService>();
 
 builder.Services.AddScoped<
     ITestAppointmentService,

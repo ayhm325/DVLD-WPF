@@ -31,7 +31,6 @@ public sealed class LicenseQueryService(
             return Result<LicenseDto>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var license = await _licenseRepository.GetLicenseByIdAsync(licenseId);
         if (license is null)
             return Result<LicenseDto>.FromNotFound("License not found.");
@@ -40,53 +39,16 @@ public sealed class LicenseQueryService(
         return Result<LicenseDto>.Success(LicenseMapper.ToDto(license, isExpired, isEligible, reason));
     }
 
-    public async Task<Result<List<LicenseDto>>> GetAllAsync()
+    public Task<Result<List<LicenseDto>>> GetAllAsync() =>
+        GetAllAsync(null);
+
+    public async Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired)
     {
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
-        var licenses = await _licenseRepository.GetAllLicensesAsync();
-        var allDetained = await _detainedLicenseRepository.GetAllAsync() ?? Enumerable.Empty<DetainedLicense>();
-        var activeDetainedIds = allDetained.Where(d => !d.IsReleased).Select(d => d.LicenseID).ToHashSet();
-
-        var dtos = licenses.Select(l =>
-        {
-            var isExpired = LicenseExpirationPolicy.IsExpired(l.ExpirationDate, today);
-            bool isEligible;
-            string? reason;
-
-            if (!isExpired)
-            {
-                isEligible = false;
-                reason = "License is not expired yet. Renewal is only permitted starting the calendar day after expiration.";
-            }
-            else if (activeDetainedIds.Contains(l.LicenseID))
-            {
-                isEligible = false;
-                reason = "Cannot renew a currently detained license. The license must be released first.";
-            }
-            else
-            {
-                var newer = licenses.FirstOrDefault(other =>
-                    other.DriverID == l.DriverID &&
-                    other.LicenseClass == l.LicenseClass &&
-                    other.LicenseID > l.LicenseID);
-
-                if (newer != null)
-                {
-                    isEligible = false;
-                    var action = newer.IssueReason == Domain.Enums.IssueReason.Renew ? "renewed" : "superseded";
-                    reason = $"This license was already {action} (License #{newer.LicenseID}).";
-                }
-                else
-                {
-                    isEligible = true;
-                    reason = null;
-                }
-            }
-
-            return LicenseMapper.ToDto(l, isExpired, isEligible, reason);
-        }).ToList();
-
+        var licenses = isExpired.HasValue
+            ? await _licenseRepository.GetAllLicensesAsync(isExpired.Value, today)
+            : await _licenseRepository.GetAllLicensesAsync();
+        var dtos = await MapToDtosBatchAsync(licenses ?? [], today, checkExternalNewerIfMissing: false);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
@@ -97,50 +59,8 @@ public sealed class LicenseQueryService(
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByDriverIdAsync(driverId);
-        var allDetained = await _detainedLicenseRepository.GetAllAsync() ?? Enumerable.Empty<DetainedLicense>();
-        var activeDetainedIds = allDetained.Where(d => !d.IsReleased).Select(d => d.LicenseID).ToHashSet();
-
-        var dtos = licenses.Select(l =>
-        {
-            var isExpired = LicenseExpirationPolicy.IsExpired(l.ExpirationDate, today);
-            bool isEligible;
-            string? reason;
-
-            if (!isExpired)
-            {
-                isEligible = false;
-                reason = "License is not expired yet. Renewal is only permitted starting the calendar day after expiration.";
-            }
-            else if (activeDetainedIds.Contains(l.LicenseID))
-            {
-                isEligible = false;
-                reason = "Cannot renew a currently detained license. The license must be released first.";
-            }
-            else
-            {
-                var newer = licenses.FirstOrDefault(other =>
-                    other.DriverID == l.DriverID &&
-                    other.LicenseClass == l.LicenseClass &&
-                    other.LicenseID > l.LicenseID);
-
-                if (newer != null)
-                {
-                    isEligible = false;
-                    var action = newer.IssueReason == Domain.Enums.IssueReason.Renew ? "renewed" : "superseded";
-                    reason = $"This license was already {action} (License #{newer.LicenseID}).";
-                }
-                else
-                {
-                    isEligible = true;
-                    reason = null;
-                }
-            }
-
-            return LicenseMapper.ToDto(l, isExpired, isEligible, reason);
-        }).ToList();
-
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
@@ -151,15 +71,8 @@ public sealed class LicenseQueryService(
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId);
-        var dtos = new List<LicenseDto>();
-        foreach (var l in licenses)
-        {
-            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l, today);
-            dtos.Add(LicenseMapper.ToDto(l, isExpired, isEligible, reason));
-        }
-
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: true);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
@@ -170,15 +83,8 @@ public sealed class LicenseQueryService(
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByLicenseClassIdAsync(licenseClassId);
-        var dtos = new List<LicenseDto>();
-        foreach (var l in licenses)
-        {
-            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l, today);
-            dtos.Add(LicenseMapper.ToDto(l, isExpired, isEligible, reason));
-        }
-
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
@@ -188,15 +94,8 @@ public sealed class LicenseQueryService(
             return Result<List<LicenseDto>>.FromValidationFailure("Invalid person ID.");
 
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByPersonIdAsync(personId);
-        var dtos = new List<LicenseDto>();
-        foreach (var l in licenses)
-        {
-            var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(l, today);
-            dtos.Add(LicenseMapper.ToDto(l, isExpired, isEligible, reason));
-        }
-
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
@@ -236,7 +135,6 @@ public sealed class LicenseQueryService(
             return Result<DriverLicenseInfoDto>.FromValidationFailure("Invalid application ID.");
 
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId);
         var license = licenses.FirstOrDefault(x => x.LicenseClass == localApplication.LicenseClassID);
         if (license is null)
@@ -252,12 +150,82 @@ public sealed class LicenseQueryService(
             return Result<DriverLicenseInfoDto>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        await _licenseRepository.DeactivateExpiredLicensesAsync(today);
         var license = await _licenseRepository.GetLicenseByIdAsync(licenseId);
         if (license is null)
             return Result<DriverLicenseInfoDto>.FromNotFound("License not found.");
 
         return await GetLicenseDetailsResultAsync(license, today);
+    }
+
+    private async Task<List<LicenseDto>> MapToDtosBatchAsync(
+        IReadOnlyList<License>? licenses,
+        DateOnly today,
+        bool checkExternalNewerIfMissing = false)
+    {
+        if (licenses == null || licenses.Count == 0)
+            return [];
+
+        var licenseIds = licenses
+            .Select(l => l.LicenseID)
+            .Where(id => id > 0)
+            .Distinct();
+
+        var activeDetainedIds = await _detainedLicenseRepository
+            .GetActiveDetainedLicenseIdsAsync(licenseIds);
+
+        var dtos = new List<LicenseDto>(licenses.Count);
+
+        foreach (var l in licenses)
+        {
+            var isExpired = LicenseExpirationPolicy.IsExpired(l.ExpirationDate, today);
+            bool isEligible;
+            string? reason;
+
+            if (!isExpired)
+            {
+                isEligible = false;
+                reason = "License is not expired yet. Renewal is only permitted starting the calendar day after expiration.";
+            }
+            else if (activeDetainedIds.Contains(l.LicenseID))
+            {
+                isEligible = false;
+                reason = "Cannot renew a currently detained license. The license must be released first.";
+            }
+            else
+            {
+                var newer = licenses
+                    .Where(other =>
+                        other.DriverID == l.DriverID &&
+                        other.LicenseClass == l.LicenseClass &&
+                        other.LicenseID > l.LicenseID)
+                    .OrderByDescending(other => other.LicenseID)
+                    .FirstOrDefault();
+
+                if (newer is null && checkExternalNewerIfMissing)
+                {
+                    newer = await _licenseRepository.GetNewerLicenseForDriverAndClassAsync(
+                        l.DriverID,
+                        l.LicenseClass,
+                        l.LicenseID);
+                }
+
+                if (newer is not null)
+                {
+                    isEligible = false;
+                    var action = newer.IssueReason == Domain.Enums.IssueReason.Renew ? "renewed" : "superseded";
+                    reason = $"This license was already {action} (License #{newer.LicenseID}).";
+                }
+                else
+                {
+                    isEligible = true;
+                    reason = null;
+                }
+            }
+
+            dtos.Add(LicenseMapper.ToDto(l, isExpired, isEligible, reason));
+        }
+
+        return dtos;
     }
 
     private async Task<(bool isExpired, bool isEligible, string? reason)> EvaluateRenewalEligibilityAsync(
@@ -325,7 +293,7 @@ public sealed class LicenseQueryService(
             LicenseClass = license.LicenseClassInfo?.ClassName ?? "Unknown",
             IssueDate = license.IssueDate,
             ExpirationDate = license.ExpirationDate,
-            IsActive = license.IsActive,
+            IsActive = license.IsActive && !isExpired,
             IsDetained = isDetained,
             IsExpired = isExpired,
             IsEligibleForRenewal = isEligible,

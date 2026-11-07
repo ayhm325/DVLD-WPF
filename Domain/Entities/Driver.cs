@@ -1,4 +1,4 @@
-﻿namespace Domain.Entities
+namespace Domain.Entities
 {
     public class Driver
     {
@@ -12,6 +12,9 @@
 
 
         public DateTime CreatedDate { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public int? ActiveLicensesCount { get; set; }
 
 
 

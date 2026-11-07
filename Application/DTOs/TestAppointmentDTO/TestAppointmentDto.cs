@@ -16,6 +16,12 @@ public class TestAppointmentDto
 
     public int LocalDrivingLicenseApplicationID { get; set; }
 
+    public string ApplicantFullName { get; set; } = string.Empty;
+
+    public string NationalNo { get; set; } = string.Empty;
+
+    public string LicenseClassName { get; set; } = string.Empty;
+
     public DateTime AppointmentDate { get; set; }
 
     public decimal PaidFees { get; set; }
@@ -38,6 +44,9 @@ public class TestAppointmentDto
     // UI / Display Helpers
     // =========================================================
 
+    public string AppointmentDateFormatted =>
+        AppointmentDate.ToString("yyyy-MM-dd HH:mm");
+
     public string TestResultText =>
         TestResult.ToString();
 
@@ -49,7 +58,4 @@ public class TestAppointmentDto
             AppointmentStatus.NoShow => "NoShow",
             _ => IsLocked ? "Locked" : "Open"
         };
-
-    public string AppointmentDateFormatted =>
-        AppointmentDate.ToString("yyyy-MM-dd HH:mm");
 }

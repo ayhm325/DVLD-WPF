@@ -39,6 +39,18 @@ public static class TestAppointmentMapper
             LocalDrivingLicenseApplicationID =
                 entity.LocalDrivingLicenseApplicationID,
 
+            ApplicantFullName =
+                entity.LocalDrivingLicenseApplication?.Application?.Person?.FullName
+                ?? string.Empty,
+
+            NationalNo =
+                entity.LocalDrivingLicenseApplication?.Application?.Person?.NationalNo
+                ?? string.Empty,
+
+            LicenseClassName =
+                entity.LocalDrivingLicenseApplication?.LicenseClass?.ClassName
+                ?? string.Empty,
+
             AppointmentDate =
                 entity.AppointmentDate,
 

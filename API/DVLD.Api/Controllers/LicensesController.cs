@@ -14,9 +14,11 @@ namespace DVLD.Api.Controllers;
 public sealed class LicensesController(ILicenseService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] bool? isExpired = null)
     {
-        var result = await service.GetAllAsync();
+        var result = isExpired.HasValue
+            ? await service.GetAllAsync(isExpired.Value)
+            : await service.GetAllAsync();
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null

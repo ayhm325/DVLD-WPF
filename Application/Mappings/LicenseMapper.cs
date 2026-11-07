@@ -35,7 +35,7 @@ public static class LicenseMapper
             ExpirationDate = license.ExpirationDate,
             Notes = license.Notes,
             PaidFees = license.PaidFees,
-            IsActive = license.IsActive,
+            IsActive = license.IsActive && !isExpired,
             IsExpired = isExpired,
             IsEligibleForRenewal = isEligibleForRenewal,
             IneligibilityReason = ineligibilityReason,

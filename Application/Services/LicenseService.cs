@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 
@@ -18,6 +18,9 @@ public sealed class LicenseService(
 
     public Task<Result<List<LicenseDto>>> GetAllAsync() =>
         _queryService.GetAllAsync();
+
+    public Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired) =>
+        _queryService.GetAllAsync(isExpired);
 
     public Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
         int driverId) =>
@@ -51,8 +54,7 @@ public sealed class LicenseService(
         int localAppId) =>
         _queryService.GetDetailsAsync(localAppId);
 
-    public Task<Result<DriverLicenseInfoDto>>
-        GetLicenseDetailsByIdAsync(
-            int licenseId) =>
+    public Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(
+        int licenseId) =>
         _queryService.GetLicenseDetailsByIdAsync(licenseId);
 }

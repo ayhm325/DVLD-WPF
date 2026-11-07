@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 
 namespace Application.Interfaces;
 
@@ -12,6 +12,10 @@ public interface IDetainedLicenseRepository
         int licenseId);
 
     Task<bool> IsLicenseDetainedAsync(int licenseId);
+
+    Task<HashSet<int>> GetActiveDetainedLicenseIdsAsync(
+        IEnumerable<int> licenseIds,
+        CancellationToken cancellationToken = default);
 
     Task AddAsync(DetainedLicense entity);
 

@@ -1,4 +1,4 @@
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -13,6 +13,13 @@ public sealed class ApiWebApplicationFactory
     : WebApplicationFactory<Program>
 {
     public Mock<IAuthService> AuthServiceMock { get; } = new();
+
+    public ApiWebApplicationFactory()
+    {
+        AuthServiceMock
+            .Setup(x => x.LoginAsync(It.IsAny<Application.DTOs.UserDTO.LoginRequestDto>()))
+            .ReturnsAsync(Application.Common.Results.Result<Application.DTOs.AuthDTO.LoginResponseDto>.FromFailure("Invalid username or password."));
+    }
 
     public Mock<IUserService> UserServiceMock { get; } = new();
 
@@ -60,6 +67,7 @@ public sealed class ApiWebApplicationFactory
         builder.ConfigureTestServices(services =>
         {
             services.Configure<Application.Options.NoShowProcessorOptions>(opts => opts.IsEnabled = false);
+            services.Configure<Application.Options.LicenseExpirationOptions>(opts => opts.IsEnabled = false);
 
             services.RemoveAll<IAuthService>();
             services.AddScoped(_ => AuthServiceMock.Object);

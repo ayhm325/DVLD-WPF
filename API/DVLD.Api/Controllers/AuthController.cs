@@ -27,12 +27,24 @@ public sealed class AuthController(
     public async Task<IActionResult> Login(
         [FromBody] ContractAuth.LoginRequest request)
     {
+        if (request is null)
+        {
+            return BadRequest(new { error = "Login data is required." });
+        }
+
         var result = await authService.LoginAsync(
             new LoginRequestDto
             {
                 UserName = request.UserName,
                 Password = request.Password
             });
+
+        if (result is null)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new { error = "An unexpected error occurred." });
+        }
 
         if (result.IsFailure)
         {

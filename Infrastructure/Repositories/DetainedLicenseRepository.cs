@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,6 +50,30 @@ public sealed class DetainedLicenseRepository(
                     d.LicenseID == licenseId &&
                     !d.IsReleased)
             : Task.FromResult(false);
+
+    public async Task<HashSet<int>> GetActiveDetainedLicenseIdsAsync(
+        IEnumerable<int> licenseIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (licenseIds is null)
+            return [];
+
+        var ids = licenseIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (ids.Count == 0)
+            return [];
+
+        var activeIds = await _context.DetainedLicenses
+            .AsNoTracking()
+            .Where(d => !d.IsReleased && ids.Contains(d.LicenseID))
+            .Select(d => d.LicenseID)
+            .ToListAsync(cancellationToken);
+
+        return activeIds.ToHashSet();
+    }
 
     public async Task AddAsync(DetainedLicense entity)
     {

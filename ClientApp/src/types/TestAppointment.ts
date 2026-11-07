@@ -3,6 +3,9 @@ export type TestAppointment = {
   testTypeId: number
   testTypeName: string
   localDrivingLicenseApplicationId: number
+  applicantFullName?: string
+  nationalNo?: string
+  licenseClassName?: string
   appointmentDate: string
   appointmentDateFormatted?: string
   paidFees: number
@@ -82,5 +85,3 @@ export type ExaminationAttemptStats = {
   noShowAttempts: number
   nextTrialNumber: number
 }
-
-

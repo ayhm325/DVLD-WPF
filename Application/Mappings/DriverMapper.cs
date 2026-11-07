@@ -20,7 +20,7 @@ public static class DriverMapper
             CreatedByUserID = entity.CreatedByUserID,
             CreatedByUserName = entity.CreatedByUser?.UserName ?? string.Empty,
             CreatedDate = entity.CreatedDate,
-            ActiveLicenses = entity.Licenses?.Count(l => l.IsActive) ?? 0
+            ActiveLicenses = entity.ActiveLicensesCount ?? entity.Licenses?.Count(l => l.IsActive) ?? 0
         };
     }
 

@@ -27,7 +27,7 @@ import { formatJordanAppointmentDateTime } from '../../utils/jordanTime'
 
 export interface TestAppointmentsTableProps {
   appointments: TestAppointment[]
-  applicationMap: Map<number, LocalDrivingLicenseApplication>
+  applicationMap?: Map<number, LocalDrivingLicenseApplication>
   loading: boolean
   searchQuery: string
   onSearchChange: (query: string) => void
@@ -104,15 +104,16 @@ export default function TestAppointmentsTable({
       key: 'applicant',
       header: 'Applicant / Candidate',
       render: (r) => {
-        const app = applicationMap.get(r.localDrivingLicenseApplicationId)
+        const candidateName = r.applicantFullName || applicationMap?.get(r.localDrivingLicenseApplicationId)?.fullName || `Applicant (App #${r.localDrivingLicenseApplicationId})`
+        const nationalId = r.nationalNo || applicationMap?.get(r.localDrivingLicenseApplicationId)?.nationalNo
         return (
           <div className="space-y-0.5">
             <div className="font-semibold text-slate-200">
-              {app?.fullName ?? `Applicant (App #${r.localDrivingLicenseApplicationId})`}
+              {candidateName}
             </div>
-            {app?.nationalNo && (
+            {nationalId && (
               <div className="text-[10px] font-mono text-cyan-300/80">
-                Nat ID: {app.nationalNo}
+                Nat ID: {nationalId}
               </div>
             )}
           </div>
@@ -123,14 +124,14 @@ export default function TestAppointmentsTable({
       key: 'localApplication',
       header: 'Local Application',
       render: (r) => {
-        const app = applicationMap.get(r.localDrivingLicenseApplicationId)
+        const className = r.licenseClassName || applicationMap?.get(r.localDrivingLicenseApplicationId)?.licenseClassName || 'Driving License'
         return (
           <div className="space-y-0.5">
             <div className="font-mono text-xs text-white">
               App #{r.localDrivingLicenseApplicationId}
             </div>
             <div className="text-[10px] text-slate-400 truncate max-w-[160px]">
-              {app?.licenseClassName ?? 'Driving License'}
+              {className}
             </div>
           </div>
         )

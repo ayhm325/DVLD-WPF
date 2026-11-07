@@ -303,6 +303,15 @@ public sealed class TestAppointmentsController(
             LocalDrivingLicenseApplicationId =
                 dto.LocalDrivingLicenseApplicationID,
 
+            ApplicantFullName =
+                dto.ApplicantFullName,
+
+            NationalNo =
+                dto.NationalNo,
+
+            LicenseClassName =
+                dto.LicenseClassName,
+
             AppointmentDate =
                 dto.AppointmentDate,
 

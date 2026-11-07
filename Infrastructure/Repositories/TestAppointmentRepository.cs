@@ -19,6 +19,10 @@ public sealed class TestAppointmentRepository(
         _context.TestAppointments
             .Include(x => x.TestType)
             .Include(x => x.LocalDrivingLicenseApplication)
+                .ThenInclude(x => x.Application)
+                    .ThenInclude(x => x.Person)
+            .Include(x => x.LocalDrivingLicenseApplication)
+                .ThenInclude(x => x.LicenseClass)
             .Include(x => x.User)
             .Include(x => x.Test)
             .Include(x => x.RetakeTestApplication);

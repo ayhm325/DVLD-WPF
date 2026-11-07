@@ -8,6 +8,9 @@ public sealed class TestAppointmentResponse
     public string CreatedByUserName { get; init; } = string.Empty;
     public string TestTypeName { get; init; } = string.Empty;
     public int LocalDrivingLicenseApplicationId { get; init; }
+    public string ApplicantFullName { get; init; } = string.Empty;
+    public string NationalNo { get; init; } = string.Empty;
+    public string LicenseClassName { get; init; } = string.Empty;
     public DateTime AppointmentDate { get; init; }
     public decimal PaidFees { get; init; }
     public int CreatedByUserId { get; init; }

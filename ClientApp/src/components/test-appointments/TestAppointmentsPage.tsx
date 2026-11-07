@@ -4,9 +4,7 @@ import ErrorAlert from '../common/ErrorAlert'
 import ConfirmModal from '../common/ConfirmModal'
 import { Button } from '../ui/button'
 import type { TestAppointment } from '../../types/TestAppointment'
-import type { LocalDrivingLicenseApplication } from '../../types/LocalDrivingLicenseApplication'
 import { getAllAppointments, cancelTestAppointment } from '../../services/testAppointmentService'
-import { getLocalDrivingLicenseApplications } from '../../services/localDrivingLicenseApplicationService'
 import { resolveAppointmentLifecycle } from '../../utils/status'
 import { formatJordanAppointmentDateTime, getJordanDateString } from '../../utils/jordanTime'
 import { useAsyncData } from '../../hooks'
@@ -33,11 +31,6 @@ export interface TestAppointmentsPageProps {
   onTakeExamination?: (appointmentId: number, returnPage?: string) => void
 }
 
-interface AppointmentsPageData {
-  appointments: TestAppointment[]
-  applications: LocalDrivingLicenseApplication[]
-}
-
 export default function TestAppointmentsPage({
   accessToken,
   onNavigate,
@@ -60,38 +53,20 @@ export default function TestAppointmentsPage({
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   // Asynchronous data fetcher using project standard hook
-  const fetcher = useCallback(async (): Promise<AppointmentsPageData> => {
-    const [apptData, appData] = await Promise.all([
-      getAllAppointments(accessToken),
-      getLocalDrivingLicenseApplications(accessToken, 1, 500)
-        .then((res) => res.items)
-        .catch(() => []),
-    ])
-    return { appointments: apptData, applications: appData }
+  const fetcher = useCallback((): Promise<TestAppointment[]> => {
+    return getAllAppointments(accessToken)
   }, [accessToken])
 
   const {
-    data,
+    data: appointments = [],
     loading,
     error,
     refresh: fetchData,
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
-    initialData: { appointments: [], applications: [] },
+    initialData: [],
     defaultErrorMessage: 'Failed to retrieve test appointments from server.',
   })
-
-  const appointments = data.appointments
-  const applications = data.applications
-
-  // Lookup map: LocalDrivingLicenseApplicationId -> LocalDrivingLicenseApplication
-  const applicationMap = useMemo(() => {
-    const map = new Map<number, LocalDrivingLicenseApplication>()
-    applications.forEach((app) => {
-      map.set(app.localDrivingLicenseApplicationId, app)
-    })
-    return map
-  }, [applications])
 
   // Current Jordan facility date string (YYYY-MM-DD)
   const todayJordanStr = useMemo(() => getJordanDateString(new Date(), 0), [])
@@ -144,7 +119,6 @@ export default function TestAppointmentsPage({
     const query = searchQuery.trim().toLowerCase()
 
     return baseData.filter((apt) => {
-      const app = applicationMap.get(apt.localDrivingLicenseApplicationId)
       const lifecycle = resolveAppointmentLifecycle(apt)
 
       // Test Type Filter
@@ -171,12 +145,12 @@ export default function TestAppointmentsPage({
       const matchTestType = apt.testTypeName.toLowerCase().includes(query)
       const matchStatus = lifecycle.statusLabel.toLowerCase().includes(query)
       const matchResult = lifecycle.resultLabel.toLowerCase().includes(query)
-      const matchName = app?.fullName?.toLowerCase().includes(query) ?? false
-      const matchNationalNo = app?.nationalNo?.toLowerCase().includes(query) ?? false
+      const matchName = apt.applicantFullName?.toLowerCase().includes(query) ?? false
+      const matchNationalNo = apt.nationalNo?.toLowerCase().includes(query) ?? false
 
       return matchId || matchAppId || matchTestType || matchStatus || matchResult || matchName || matchNationalNo
     })
-  }, [baseData, searchQuery, testTypeFilter, statusFilter, applicationMap])
+  }, [baseData, searchQuery, testTypeFilter, statusFilter])
 
   // Interactive KPI card click handler
   const handleKpiClick = (targetStatus: string) => {
@@ -378,7 +352,6 @@ export default function TestAppointmentsPage({
         {/* 4. Appointments Table with Toolbar, Columns, and Actions */}
         <TestAppointmentsTable
           appointments={filteredAppointments}
-          applicationMap={applicationMap}
           loading={loading}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

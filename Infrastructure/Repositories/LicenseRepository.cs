@@ -49,11 +49,24 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .FirstOrDefaultAsync();
 
     public Task<List<License>> GetAllLicensesAsync() =>
-        Query()
-            .AsNoTracking()
-            .AsSplitQuery()
+        GetAllLicensesAsync(null, null);
+
+    public Task<List<License>> GetAllLicensesAsync(bool? isExpired, DateOnly? jordanToday = null)
+    {
+        var query = Query().AsNoTracking().AsSplitQuery();
+
+        if (isExpired.HasValue && jordanToday.HasValue)
+        {
+            var cutoff = jordanToday.Value.ToDateTime(TimeOnly.MinValue);
+            query = isExpired.Value
+                ? query.Where(l => l.ExpirationDate < cutoff)
+                : query.Where(l => l.ExpirationDate >= cutoff);
+        }
+
+        return query
             .OrderByDescending(l => l.IssueDate)
             .ToListAsync();
+    }
 
     public Task<List<License>> GetLicensesByDriverIdAsync(int driverId) =>
         driverId <= 0

@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 
 namespace Application.Interfaces;
@@ -8,6 +8,7 @@ public interface ILicenseQueryService
     Task<Result<LicenseDto>> GetByIdAsync(int licenseId);
 
     Task<Result<List<LicenseDto>>> GetAllAsync();
+    Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired);
 
     Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
         int driverId);

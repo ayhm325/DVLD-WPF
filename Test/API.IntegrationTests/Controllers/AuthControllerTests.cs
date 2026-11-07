@@ -1,4 +1,4 @@
-using API.IntegrationTests.Infrastructure;
+﻿using API.IntegrationTests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Application.Common.Results;
 using Application.DTOs.AuthDTO;
@@ -213,6 +213,9 @@ public sealed class AuthControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
         var client = factory.CreateClient();
+        factory.AuthServiceMock
+            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
+            .ReturnsAsync(Result<LoginResponseDto>.FromFailure("Invalid username or password."));
 
         for (var attempt = 1; attempt <= 5; attempt++)
         {
@@ -224,8 +227,8 @@ public sealed class AuthControllerTests
                     Password = "WrongPassword123"
                 });
 
-            Assert.NotEqual(
-                HttpStatusCode.TooManyRequests,
+            Assert.Equal(
+                HttpStatusCode.Unauthorized,
                 response.StatusCode);
         }
 
@@ -604,5 +607,31 @@ public sealed class AuthControllerTests
         public string Username { get; init; } = string.Empty;
         public string FullName { get; init; } = string.Empty;
         public string Role { get; init; } = string.Empty;
+    }
+
+    [Fact]
+    public async Task Login_WhenAuthServiceReturnsNullResult_Returns500InternalServerErrorWithoutThrowing()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        factory.AuthServiceMock
+            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
+            .ReturnsAsync((Result<LoginResponseDto>)null! );
+
+        var response = await factory.CreateClient().PostAsJsonAsync(
+            "/api/Auth/login",
+            new { UserName = "testuser", Password = "Password123" });
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_WhenRequestIsNull_ReturnsBadRequest()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        var client = factory.CreateClient();
+        var content = new StringContent("null", System.Text.Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/api/Auth/login", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

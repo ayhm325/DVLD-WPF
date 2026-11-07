@@ -59,11 +59,11 @@ export default function RenewLicensePage({
   const [successNotice, setSuccessNotice] = useState('')
   const [isManualSearchOpen, setIsManualSearchOpen] = useState(false)
 
-  // 1. Fetch All Licenses to discover Expired Licenses from the real API
-  const fetcher = useCallback(() => getLicenses(accessToken), [accessToken])
+  // 1. Fetch Expired Licenses directly from the server using server-side filtering
+  const fetcher = useCallback(() => getLicenses(accessToken, true), [accessToken])
 
   const {
-    data: allLicenses = [],
+    data: expiredLicenses = [],
     loading: loadingLicenses,
     error: licensesError,
     refresh: refreshLicenses,
@@ -72,11 +72,6 @@ export default function RenewLicensePage({
     initialData: [],
     defaultErrorMessage: 'Could not load licenses from server.',
   })
-
-  // 2. Filter down to licenses expired according to Jordan facility local date
-  const expiredLicenses = useMemo(() => {
-    return allLicenses.filter((lic) => lic.isExpired ?? isLicenseExpiredInJordan(lic.expirationDate))
-  }, [allLicenses])
 
   // Summary Metrics (100% authoritative from backend lifecycle and Jordan facility date)
   const stats = useMemo(() => {

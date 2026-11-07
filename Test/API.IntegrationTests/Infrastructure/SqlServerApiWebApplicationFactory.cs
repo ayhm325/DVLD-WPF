@@ -1,4 +1,4 @@
-using Infrastructure;
+﻿using Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -40,6 +40,9 @@ public sealed class SqlServerApiWebApplicationFactory
 
         builder.ConfigureTestServices(services =>
         {
+            services.Configure<Application.Options.NoShowProcessorOptions>(opts => opts.IsEnabled = false);
+            services.Configure<Application.Options.LicenseExpirationOptions>(opts => opts.IsEnabled = false);
+
             services.RemoveAll<IHttpContextAccessor>();
 
             services.AddHttpContextAccessor();

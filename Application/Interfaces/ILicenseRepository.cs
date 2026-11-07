@@ -8,6 +8,7 @@ public interface ILicenseRepository
     Task<License?> GetByDriverIdAsync(int driverId);
 
     Task<List<License>> GetAllLicensesAsync();
+    Task<List<License>> GetAllLicensesAsync(bool? isExpired, DateOnly? jordanToday = null);
     Task<List<License>> GetLicensesByDriverIdAsync(int driverId);
     Task<List<License>> GetLicensesByApplicationIdAsync(
         int applicationId);

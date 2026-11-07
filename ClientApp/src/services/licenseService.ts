@@ -17,8 +17,9 @@ export type {
   ReplaceLicenseResponse,
 }
 
-export function getLicenses(accessToken: string): Promise<License[]> {
-  return apiRequest<License[]>('/Licenses', accessToken)
+export function getLicenses(accessToken: string, isExpired?: boolean): Promise<License[]> {
+  const query = isExpired !== undefined ? `?isExpired=${isExpired}` : ''
+  return apiRequest<License[]>(`/Licenses${query}`, accessToken)
 }
 
 export function getLicensesByDriverId(accessToken: string, driverId: number): Promise<License[]> {
