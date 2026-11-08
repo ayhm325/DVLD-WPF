@@ -15,9 +15,7 @@ public sealed class DriverRepository(DVLDDbContext context)
     private IQueryable<Driver> QueryWithBasicInfo() =>
         _context.Drivers
             .Include(d => d.Person)
-            .Include(d => d.CreatedByUser)
-            .Include(d => d.Licenses
-                .Where(l => l.IsActive));
+            .Include(d => d.CreatedByUser);
 
     private IQueryable<Driver> QueryForDelete() =>
         _context.Drivers
@@ -29,22 +27,27 @@ public sealed class DriverRepository(DVLDDbContext context)
         if (id <= 0)
             return null;
 
-        var driver = await QueryWithBasicInfo()
+        var result = await QueryWithBasicInfo()
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.DriverID == id);
+            .Where(d => d.DriverID == id)
+            .Select(d => new
+            {
+                Driver = d,
+                ActiveCount = d.Licenses.Count(l => l.IsActive)
+            })
+            .FirstOrDefaultAsync();
 
-        if (driver is not null)
-        {
-            driver.ActiveLicensesCount = driver.Licenses.Count(l => l.IsActive);
-        }
+        if (result is null)
+            return null;
 
-        return driver;
+        result.Driver.ActiveLicensesCount = result.ActiveCount;
+        return result.Driver;
     }
 
     public Task<Driver?> GetForUpdateAsync(int id) =>
         id <= 0
             ? Task.FromResult<Driver?>(null)
-            : QueryWithBasicInfo()
+            : _context.Drivers
                 .FirstOrDefaultAsync(d => d.DriverID == id);
 
     public Task<Driver?> GetForDeleteAsync(int id) =>
@@ -56,18 +59,22 @@ public sealed class DriverRepository(DVLDDbContext context)
 
     public async Task<List<Driver>> GetAllAsync()
     {
-        var drivers = await QueryWithBasicInfo()
+        var results = await QueryWithBasicInfo()
             .AsNoTracking()
-            .AsSplitQuery()
-            .OrderBy(d => d.DriverID)
+            .Select(d => new
+            {
+                Driver = d,
+                ActiveCount = d.Licenses.Count(l => l.IsActive)
+            })
+            .OrderBy(x => x.Driver.DriverID)
             .ToListAsync();
 
-        foreach (var driver in drivers)
+        foreach (var item in results)
         {
-            driver.ActiveLicensesCount = driver.Licenses.Count(l => l.IsActive);
+            item.Driver.ActiveLicensesCount = item.ActiveCount;
         }
 
-        return drivers;
+        return results.Select(x => x.Driver).ToList();
     }
 
     public Task<PagedResult<Driver>> GetAllAsync(PaginationRequest request)
@@ -175,17 +182,21 @@ public sealed class DriverRepository(DVLDDbContext context)
             .OrderBy(d => d.DriverID)
             .Skip(request.Skip)
             .Take(request.PageSize)
-            .AsSplitQuery()
+            .Select(d => new
+            {
+                Driver = d,
+                ActiveCount = d.Licenses.Count(l => l.IsActive)
+            })
             .ToListAsync();
 
         foreach (var item in pagedResults)
         {
-            item.ActiveLicensesCount = item.Licenses.Count(l => l.IsActive);
+            item.Driver.ActiveLicensesCount = item.ActiveCount;
         }
 
         return new PagedResult<Driver>
         {
-            Items = pagedResults,
+            Items = pagedResults.Select(x => x.Driver).ToList(),
             PageNumber = request.PageNumber,
             PageSize = request.PageSize,
             TotalCount = totalCount
@@ -197,16 +208,21 @@ public sealed class DriverRepository(DVLDDbContext context)
         if (personId <= 0)
             return null;
 
-        var driver = await QueryWithBasicInfo()
+        var result = await QueryWithBasicInfo()
             .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.PersonID == personId);
+            .Where(d => d.PersonID == personId)
+            .Select(d => new
+            {
+                Driver = d,
+                ActiveCount = d.Licenses.Count(l => l.IsActive)
+            })
+            .FirstOrDefaultAsync();
 
-        if (driver is not null)
-        {
-            driver.ActiveLicensesCount = driver.Licenses.Count(l => l.IsActive);
-        }
+        if (result is null)
+            return null;
 
-        return driver;
+        result.Driver.ActiveLicensesCount = result.ActiveCount;
+        return result.Driver;
     }
 
     public async Task<List<Driver>> GetByCreatedUserIdAsync(int userId)
@@ -214,19 +230,23 @@ public sealed class DriverRepository(DVLDDbContext context)
         if (userId <= 0)
             return [];
 
-        var drivers = await QueryWithBasicInfo()
+        var results = await QueryWithBasicInfo()
             .AsNoTracking()
-            .AsSplitQuery()
             .Where(d => d.CreatedByUserID == userId)
-            .OrderBy(d => d.DriverID)
+            .Select(d => new
+            {
+                Driver = d,
+                ActiveCount = d.Licenses.Count(l => l.IsActive)
+            })
+            .OrderBy(x => x.Driver.DriverID)
             .ToListAsync();
 
-        foreach (var driver in drivers)
+        foreach (var item in results)
         {
-            driver.ActiveLicensesCount = driver.Licenses.Count(l => l.IsActive);
+            item.Driver.ActiveLicensesCount = item.ActiveCount;
         }
 
-        return drivers;
+        return results.Select(x => x.Driver).ToList();
     }
 
     public Task<bool> ExistsByIdAsync(int driverId) =>

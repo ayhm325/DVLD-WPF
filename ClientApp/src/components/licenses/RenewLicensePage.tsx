@@ -328,12 +328,12 @@ export default function RenewLicensePage({
           description="Active licenses expired and ready"
         />
         <StatCard
-          label="Ineligible (Inactive)"
+          label="Ineligible for Renewal"
           variant="rose"
           icon={<AlertTriangle size={20} />}
           value={formatNumber(stats.ineligible)}
           loading={loadingStats}
-          description="Inactive status prevents renewal"
+          description="Detained or already superseded"
         />
       </StatsGrid>
 

@@ -9,6 +9,9 @@ public interface IPersonService
     Task<Result<PagedResult<PersonDto>>> GetAllPeopleAsync(
         PersonQueryRequest request);
 
+    Task<Result<PagedResult<PersonDto>>> GetPeopleAvailableForUserAsync(
+        PersonQueryRequest request);
+
     Task<Result<PagedResult<PersonDto>>> GetAllPeopleAsync(
         PaginationRequest request);
 

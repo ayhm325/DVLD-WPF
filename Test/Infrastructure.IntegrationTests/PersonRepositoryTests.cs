@@ -924,6 +924,39 @@ public sealed class PersonRepositoryTests
 
         await cleanupContext.SaveChangesAsync();
     }
+
+    [Fact]
+    public async Task GetPeopleAvailableForUserAsync_ExcludesPeopleWithLinkedUsers_AndSupportsPaginationAndSearch()
+    {
+        var unlinkedNationalNo = $"UNLINK-{Guid.NewGuid():N}"[..20];
+        var unlinkedPerson = _fixture.CreatePerson(unlinkedNationalNo);
+        unlinkedPerson.FirstName = "AvailableCandidate";
+
+        await using (var seedCtx = _fixture.Database.CreateContext())
+        {
+            seedCtx.People.Add(unlinkedPerson);
+            await seedCtx.SaveChangesAsync();
+        }
+
+        await using var context = _fixture.Database.CreateContext();
+        var repository = new PersonRepository(context);
+
+        var request = new PersonQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "AvailableCandidate",
+            SearchBy = "all"
+        };
+
+        var result = await repository.GetPeopleAvailableForUserAsync(request);
+
+        Assert.NotNull(result);
+        Assert.True(result.TotalCount >= 1);
+        Assert.Contains(result.Items, p => p.PersonId == unlinkedPerson.PersonId);
+        Assert.DoesNotContain(result.Items, p => p.PersonId == _fixture.AdminPersonId);
+        Assert.DoesNotContain(result.Items, p => p.PersonId == _fixture.StaffPersonId);
+    }
 }
 
 public sealed class PersonRepositoryDatabaseFixture

@@ -729,6 +729,70 @@ public sealed class PeopleControllerTests
             "The server could not complete the request.");
     }
 
+    [Fact]
+    public async Task GetPeopleAvailableForUser_Unauthenticated_ReturnsUnauthorized()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/People/available-for-user?pageNumber=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        factory.PersonServiceMock.Verify(
+            x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetPeopleAvailableForUser_Authenticated_ReturnsPagedResult()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        var pagedPeople = new PagedResult<PersonDto>
+        {
+            Items = new List<PersonDto>
+            {
+                CreatePersonDto(1, "1234567890", "Ahmad", "Mohammad", "Ali", "Obeidat", "Ahmad Mohammad Ali Obeidat", (int)Gender.Male, "Jordan")
+            },
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 1
+        };
+
+        factory.PersonServiceMock.Setup(x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>()))
+            .ReturnsAsync(Result<PagedResult<PersonDto>>.Success(pagedPeople));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People/available-for-user?pageNumber=1&pageSize=10&search=Ahmad");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(content);
+        var root = doc.RootElement;
+        Assert.Equal(1, root.GetProperty("totalCount").GetInt32());
+        Assert.Equal(1, root.GetProperty("pageNumber").GetInt32());
+        Assert.Equal(1, root.GetProperty("items").GetArrayLength());
+        Assert.Equal("Ahmad Mohammad Ali Obeidat", root.GetProperty("items")[0].GetProperty("fullName").GetString());
+    }
+
+    [Fact]
+    public async Task GetPeopleAvailableForUser_WhenServiceFails_Returns500ProblemDetails()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.PersonServiceMock.Setup(x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>()))
+            .ReturnsAsync(Result<PagedResult<PersonDto>>.FromFailure("Failed to retrieve available people."));
+
+        using var client = CreateAuthenticatedClient(factory, 10);
+        var response = await client.GetAsync("/api/People/available-for-user?pageNumber=1&pageSize=10");
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "An unexpected error occurred.",
+            "The server could not complete the request.");
+    }
+
     private static object CreateUpdateRequest() => new
     {
         NationalNo = "9901234555",

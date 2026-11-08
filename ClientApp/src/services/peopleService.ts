@@ -72,6 +72,37 @@ export function getPeoplePage(
   )
 }
 
+export function getPeopleAvailableForUser(
+  accessToken: string,
+  pageNumber = 1,
+  pageSize = 10,
+  searchQuery?: string,
+  searchBy?: string,
+  genderFilter?: string,
+  signal?: AbortSignal,
+): Promise<PeoplePageResponse> {
+  const params = new URLSearchParams({
+    pageNumber: String(pageNumber),
+    pageSize: String(pageSize),
+  })
+
+  if (searchQuery && searchQuery.trim()) {
+    params.set('searchQuery', searchQuery.trim())
+  }
+  if (searchBy && searchBy !== 'all') {
+    params.set('searchBy', searchBy)
+  }
+  if (genderFilter && genderFilter !== 'all') {
+    params.set('genderFilter', genderFilter)
+  }
+
+  return apiRequest<PeoplePageResponse>(
+    `/People/available-for-user?${params.toString()}`,
+    accessToken,
+    signal ? { signal } : undefined,
+  )
+}
+
 export function getPersonById(
   accessToken: string,
   personId: number,

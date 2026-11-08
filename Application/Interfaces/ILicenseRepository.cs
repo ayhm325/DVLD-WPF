@@ -45,6 +45,10 @@ public interface ILicenseRepository
 
     Task<int> DeactivateExpiredLicensesAsync(DateOnly jordanToday);
 
+    Task<RenewalSummaryDto> GetRenewalSummaryAsync(
+        DateOnly jordanToday,
+        CancellationToken cancellationToken = default);
+
     Task<License?> GetNewerLicenseForDriverAndClassAsync(
         int driverId,
         int licenseClassId,

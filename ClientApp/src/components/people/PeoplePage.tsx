@@ -81,15 +81,16 @@ export default function PeoplePage({
     return getPeopleStatistics(accessToken ?? "");
   }, [accessToken]);
 
-  const { data: stats, refresh: refreshStats } = useAsyncData(statsFetcher, {
+  const {
+    data: stats,
+    loading: loadingStats,
+    error: statsError,
+    refresh: refreshStats,
+  } = useAsyncData(statsFetcher, {
     enabled: Boolean(accessToken),
     dependencies: [accessToken],
     defaultErrorMessage: "Could not load people statistics.",
   });
-
-  const totalPeople = stats?.totalCount ?? page?.totalCount ?? 0;
-  const maleCount = stats?.maleCount ?? 0;
-  const femaleCount = stats?.femaleCount ?? 0;
 
   const handleResetFilters = useCallback(() => {
     setSearch("");
@@ -134,11 +135,11 @@ export default function PeoplePage({
           variant="blue"
           icon={<UsersIcon size={20} />}
           value={
-            loading
+            loadingStats
               ? "..."
-              : error
+              : statsError
                 ? "—"
-                : formatNumber(totalPeople)
+                : formatNumber(stats?.totalCount ?? 0)
           }
           description="Registered citizens"
         />
@@ -147,7 +148,13 @@ export default function PeoplePage({
           label="Male"
           variant="blue"
           icon={<UserIcon size={20} />}
-          value={loading ? "..." : error ? "—" : formatNumber(maleCount)}
+          value={
+            loadingStats
+              ? "..."
+              : statsError
+                ? "—"
+                : formatNumber(stats?.maleCount ?? 0)
+          }
           description="Registered male citizens"
         />
 
@@ -156,15 +163,24 @@ export default function PeoplePage({
           variant="rose"
           icon={<UserIcon size={20} />}
           value={
-            loading
+            loadingStats
               ? "..."
-              : error
+              : statsError
                 ? "—"
-                : formatNumber(femaleCount)
+                : formatNumber(stats?.femaleCount ?? 0)
           }
           description="Registered female citizens"
         />
       </StatsGrid>
+
+      {statsError && (
+        <ErrorAlert
+          message={statsError}
+          style={{ marginBottom: 20 }}
+          onRetry={refreshStats}
+          retryLabel="Retry statistics"
+        />
+      )}
 
       {error && (
         <ErrorAlert

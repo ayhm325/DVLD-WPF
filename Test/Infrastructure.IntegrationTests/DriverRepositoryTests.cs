@@ -105,7 +105,7 @@ public sealed class DriverRepositoryTests
     }
 
     [Fact]
-    public async Task GetByIdAsync_ShouldLoadOnlyActiveLicenses()
+    public async Task GetByIdAsync_ShouldPopulateActiveLicensesCountAndNotLoadLicensesCollection()
     {
         await using var context =
             _fixture.Database.CreateContext();
@@ -118,24 +118,8 @@ public sealed class DriverRepositoryTests
                 _fixture.AdminDriverId);
 
         Assert.NotNull(result);
-
-        Assert.Single(result.Licenses);
-
-        var license =
-            result.Licenses.Single();
-
-        Assert.Equal(
-            _fixture.ActiveLicenseId,
-            license.LicenseID);
-
-        Assert.True(
-            license.IsActive);
-
-        Assert.DoesNotContain(
-            result.Licenses,
-            x =>
-                x.LicenseID ==
-                _fixture.InactiveLicenseId);
+        Assert.Equal(1, result.ActiveLicensesCount);
+        Assert.Empty(result.Licenses);
     }
 
     [Fact]
@@ -244,7 +228,7 @@ public sealed class DriverRepositoryTests
     }
 
     [Fact]
-    public async Task GetForUpdateAsync_ShouldTrackDriverAndIncludedNavigations()
+    public async Task GetForUpdateAsync_ShouldTrackDriverEntity()
     {
         await using var context =
             _fixture.Database.CreateContext();
@@ -261,28 +245,10 @@ public sealed class DriverRepositoryTests
         Assert.Equal(
             EntityState.Unchanged,
             context.Entry(result).State);
-
-        Assert.NotNull(result.Person);
-        Assert.NotNull(result.CreatedByUser);
-
-        Assert.Equal(
-            EntityState.Unchanged,
-            context.Entry(result.Person).State);
-
-        Assert.Equal(
-            EntityState.Unchanged,
-            context.Entry(result.CreatedByUser).State);
-
-        Assert.Single(result.Licenses);
-
-        Assert.Equal(
-            EntityState.Unchanged,
-            context.Entry(
-                result.Licenses.Single()).State);
     }
 
     [Fact]
-    public async Task GetForUpdateAsync_ShouldReturnOnlyActiveLicenses()
+    public async Task GetForUpdateAsync_ShouldNotLoadLicensesCollection()
     {
         await using var context =
             _fixture.Database.CreateContext();
@@ -296,11 +262,7 @@ public sealed class DriverRepositoryTests
 
         Assert.NotNull(result);
 
-        Assert.Single(result.Licenses);
-
-        Assert.Equal(
-            _fixture.ActiveLicenseId,
-            result.Licenses.Single().LicenseID);
+        Assert.Empty(result.Licenses);
     }
 
     [Fact]
@@ -502,7 +464,7 @@ public sealed class DriverRepositoryTests
     }
 
     [Fact]
-    public async Task GetAllAsync_ShouldLoadBasicInfoAndOnlyActiveLicenses()
+    public async Task GetAllAsync_ShouldLoadBasicInfoAndPopulateActiveLicensesCount()
     {
         await using var context =
             _fixture.Database.CreateContext();
@@ -523,13 +485,8 @@ public sealed class DriverRepositoryTests
 
         Assert.NotNull(adminDriver.Person);
         Assert.NotNull(adminDriver.CreatedByUser);
-
-        Assert.Single(
-            adminDriver.Licenses);
-
-        Assert.Equal(
-            _fixture.ActiveLicenseId,
-            adminDriver.Licenses.Single().LicenseID);
+        Assert.Equal(1, adminDriver.ActiveLicensesCount);
+        Assert.Empty(adminDriver.Licenses);
     }
 
     [Fact]
@@ -708,7 +665,7 @@ public sealed class DriverRepositoryTests
     }
 
     [Fact]
-    public async Task GetByCreatedUserIdAsync_ShouldReturnBasicInfoAndOnlyActiveLicenses()
+    public async Task GetByCreatedUserIdAsync_ShouldReturnBasicInfoAndPopulateActiveLicensesCount()
     {
         await using var context =
             _fixture.Database.CreateContext();
@@ -730,13 +687,8 @@ public sealed class DriverRepositoryTests
 
         Assert.NotNull(driver.Person);
         Assert.NotNull(driver.CreatedByUser);
-
-        Assert.Single(
-            driver.Licenses);
-
-        Assert.Equal(
-            _fixture.ActiveLicenseId,
-            driver.Licenses.Single().LicenseID);
+        Assert.Equal(1, driver.ActiveLicensesCount);
+        Assert.Empty(driver.Licenses);
     }
 
     [Fact]

@@ -46,8 +46,56 @@ public sealed class PersonRepository : IPersonRepository
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var query = Query();
+        var query = ApplyPersonFilters(Query(), request);
 
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(p => p.PersonId)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<Person>
+        {
+            Items = items,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            TotalCount = totalCount
+        };
+    }
+
+    public async Task<PagedResult<Person>> GetPeopleAvailableForUserAsync(
+        PersonQueryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var query = Query()
+            .Where(p => !_context.Users.Any(u => u.PersonId == p.PersonId));
+
+        query = ApplyPersonFilters(query, request);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(p => p.PersonId)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<Person>
+        {
+            Items = items,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            TotalCount = totalCount
+        };
+    }
+
+    private static IQueryable<Person> ApplyPersonFilters(
+        IQueryable<Person> query,
+        PersonQueryRequest request)
+    {
         if (!string.IsNullOrWhiteSpace(request.GenderFilter) &&
             !string.Equals(request.GenderFilter, "all", StringComparison.OrdinalIgnoreCase))
         {
@@ -119,21 +167,7 @@ public sealed class PersonRepository : IPersonRepository
             }
         }
 
-        var totalCount = await query.CountAsync();
-
-        var items = await query
-            .OrderBy(p => p.PersonId)
-            .Skip(request.Skip)
-            .Take(request.PageSize)
-            .ToListAsync();
-
-        return new PagedResult<Person>
-        {
-            Items = items,
-            PageNumber = request.PageNumber,
-            PageSize = request.PageSize,
-            TotalCount = totalCount
-        };
+        return query;
     }
 
     public Task<Person?> GetPersonByIdAsync(int id)

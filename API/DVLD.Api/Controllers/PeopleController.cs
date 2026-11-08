@@ -73,6 +73,31 @@ public sealed class PeopleController(
         });
     }
 
+    [HttpGet("available-for-user")]
+    public async Task<IActionResult> GetAvailableForUser(
+        [FromQuery] PersonQueryRequest request)
+    {
+        var result = await personService.GetPeopleAvailableForUserAsync(request);
+
+        if (result.IsFailure)
+            return result.ToActionResult(this);
+
+        var page = result.Value!;
+
+        return Ok(new
+        {
+            items = page.Items
+                .Select(ToListResponse)
+                .ToList(),
+            pageNumber = page.PageNumber,
+            pageSize = page.PageSize,
+            totalCount = page.TotalCount,
+            totalPages = page.TotalPages,
+            hasPreviousPage = page.HasPreviousPage,
+            hasNextPage = page.HasNextPage
+        });
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {

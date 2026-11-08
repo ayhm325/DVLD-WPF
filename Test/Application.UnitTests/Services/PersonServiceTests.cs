@@ -1606,4 +1606,62 @@ public class PersonServiceTests
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal("Failed to retrieve people statistics.", result.Error);
     }
+
+    [Fact]
+    public async Task GetPeopleAvailableForUserAsync_WhenValidRequest_ReturnsMappedPagedResult()
+    {
+        var request = new PersonQueryRequest
+        {
+            PageNumber = 1,
+            PageSize = 10,
+            SearchQuery = "Omar"
+        };
+
+        var pagedPeople = new PagedResult<Person>
+        {
+            Items = new List<Person>
+            {
+                CreatePerson(5, "9998887776")
+            },
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 1
+        };
+
+        _personRepositoryMock
+            .Setup(r => r.GetPeopleAvailableForUserAsync(request))
+            .ReturnsAsync(pagedPeople);
+
+        var result = await _sut.GetPeopleAvailableForUserAsync(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(1, result.Value!.TotalCount);
+        Assert.Single(result.Value.Items);
+        Assert.Equal(5, result.Value.Items[0].PersonId);
+        _personRepositoryMock.Verify(r => r.GetPeopleAvailableForUserAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPeopleAvailableForUserAsync_WhenRequestIsNull_ThrowsArgumentNullException()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => _sut.GetPeopleAvailableForUserAsync(null!));
+    }
+
+    [Fact]
+    public async Task GetPeopleAvailableForUserAsync_WhenRepositoryThrows_ReturnsFailure()
+    {
+        var request = new PersonQueryRequest { PageNumber = 1, PageSize = 10 };
+
+        _personRepositoryMock
+            .Setup(r => r.GetPeopleAvailableForUserAsync(request))
+            .ThrowsAsync(new InvalidOperationException("DB error"));
+
+        var result = await _sut.GetPeopleAvailableForUserAsync(request);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal("Failed to retrieve available people.", result.Error);
+    }
 }

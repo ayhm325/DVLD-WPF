@@ -89,19 +89,8 @@ public sealed class LicenseQueryService(
     public async Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync()
     {
         var today = _clock.Today;
-        var expiredLicenses = await _licenseRepository.GetAllLicensesAsync(true, today);
-        var dtos = await MapToDtosBatchAsync(expiredLicenses ?? [], today, checkExternalNewerIfMissing: false);
-
-        var totalExpired = dtos.Count;
-        var eligible = dtos.Count(d => d.IsEligibleForRenewal);
-        var ineligible = totalExpired - eligible;
-
-        return Result<RenewalSummaryDto>.Success(new RenewalSummaryDto
-        {
-            TotalExpired = totalExpired,
-            EligibleForRenewal = eligible,
-            IneligibleForRenewal = ineligible
-        });
+        var summary = await _licenseRepository.GetRenewalSummaryAsync(today);
+        return Result<RenewalSummaryDto>.Success(summary);
     }
 
     public async Task<Result<List<LicenseDto>>> GetByDriverIdAsync(int driverId)

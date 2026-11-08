@@ -405,6 +405,46 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .OrderByDescending(l => l.LicenseID)
                 .FirstOrDefaultAsync();
 
+    public async Task<RenewalSummaryDto> GetRenewalSummaryAsync(
+        DateOnly jordanToday,
+        CancellationToken cancellationToken = default)
+    {
+        var cutoff = jordanToday.ToDateTime(TimeOnly.MinValue);
+
+        var expiredQuery = _context.Licenses
+            .AsNoTracking()
+            .Where(l => l.ExpirationDate < cutoff);
+
+        var totalExpired = await expiredQuery.CountAsync(cancellationToken);
+
+        if (totalExpired == 0)
+        {
+            return new RenewalSummaryDto
+            {
+                TotalExpired = 0,
+                EligibleForRenewal = 0,
+                IneligibleForRenewal = 0
+            };
+        }
+
+        var eligibleCount = await expiredQuery
+            .Where(l => !_context.Licenses.Any(newer =>
+                newer.DriverID == l.DriverID &&
+                newer.LicenseClass == l.LicenseClass &&
+                newer.LicenseID > l.LicenseID))
+            .Where(l => !_context.DetainedLicenses.Any(d =>
+                d.LicenseID == l.LicenseID &&
+                !d.IsReleased))
+            .CountAsync(cancellationToken);
+
+        return new RenewalSummaryDto
+        {
+            TotalExpired = totalExpired,
+            EligibleForRenewal = eligibleCount,
+            IneligibleForRenewal = totalExpired - eligibleCount
+        };
+    }
+
     private void SyncTrackedLicenseActiveState(
         int licenseId,
         bool isActive)

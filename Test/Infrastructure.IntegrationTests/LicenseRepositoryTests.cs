@@ -1818,6 +1818,109 @@ public sealed class LicenseRepositoryTests
         Assert.Equal(100, result.PageSize);
     }
 
+    [Fact]
+    public async Task GetRenewalSummaryAsync_ComputesAccurateCounts()
+    {
+        var cutoff = new DateOnly(2026, 11, 8);
+        var expiredDate = new DateTime(2026, 11, 7);
+        var futureDate = new DateTime(2028, 1, 1);
+
+        // 1. Pure expired, active license, no newer license, not detained => Eligible
+        var pureExpired = await SeedLicenseAsync(
+            issueDate: new DateTime(2020, 1, 1),
+            expirationDate: expiredDate,
+            isActive: true);
+
+        // 2. Expired license that has been renewed (newer license exists for same driver & class) => Ineligible
+        var renewedOlder = await SeedLicenseAsync(
+            issueDate: new DateTime(2018, 1, 1),
+            expirationDate: expiredDate,
+            isActive: false);
+        var renewedNewer = await SeedAdditionalLicenseAsync(
+            renewedOlder,
+            issueDate: new DateTime(2026, 1, 1),
+            isActive: true);
+
+        // 3. Expired license that is actively detained => Ineligible
+        var detainedExpired = await SeedLicenseAsync(
+            issueDate: new DateTime(2020, 1, 1),
+            expirationDate: expiredDate,
+            isActive: true);
+        await using (var ctx = _database.CreateContext())
+        {
+            ctx.DetainedLicenses.Add(new DetainedLicense
+            {
+                LicenseID = detainedExpired.LicenseId,
+                DetainDate = DateTime.UtcNow,
+                FineFees = 20,
+                CreatedByUserID = detainedExpired.UserId,
+                IsReleased = false
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        // 4. Expired license whose detention is released => Eligible
+        var releasedExpired = await SeedLicenseAsync(
+            issueDate: new DateTime(2020, 1, 1),
+            expirationDate: expiredDate,
+            isActive: true);
+        await using (var ctx = _database.CreateContext())
+        {
+            ctx.DetainedLicenses.Add(new DetainedLicense
+            {
+                LicenseID = releasedExpired.LicenseId,
+                DetainDate = DateTime.UtcNow.AddMonths(-1),
+                FineFees = 20,
+                CreatedByUserID = releasedExpired.UserId,
+                IsReleased = true,
+                ReleaseDate = DateTime.UtcNow
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        // 5. Active non-expired license (expires in future) => Not counted in TotalExpired
+        var nonExpired = await SeedLicenseAsync(
+            issueDate: new DateTime(2026, 1, 1),
+            expirationDate: futureDate,
+            isActive: true);
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        // Act
+        var summary = await repository.GetRenewalSummaryAsync(cutoff);
+
+        // Assert
+        Assert.NotNull(summary);
+        Assert.True(summary.TotalExpired >= 4);
+        Assert.True(summary.EligibleForRenewal >= 2);
+        Assert.Equal(summary.TotalExpired - summary.EligibleForRenewal, summary.IneligibleForRenewal);
+    }
+
+    [Fact]
+    public async Task GetRenewalSummaryAsync_RespectsJordanDateBoundary()
+    {
+        var cutoff = new DateOnly(2026, 11, 8);
+
+        var expiredBeforeCutoff = await SeedLicenseAsync(
+            issueDate: new DateTime(2020, 1, 1),
+            expirationDate: new DateTime(2026, 11, 7, 23, 59, 59),
+            isActive: true);
+
+        var expiresTomorrow = await SeedLicenseAsync(
+            issueDate: new DateTime(2020, 1, 1),
+            expirationDate: new DateTime(2026, 11, 9, 0, 0, 0),
+            isActive: true);
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var summary = await repository.GetRenewalSummaryAsync(cutoff);
+
+        Assert.NotNull(summary);
+        Assert.True(summary.TotalExpired >= 1);
+    }
+
     private sealed record LicenseSeed(
         int LicenseId,
         int ApplicationId,

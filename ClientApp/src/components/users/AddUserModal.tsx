@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   ShieldCheck,
   Search,
@@ -28,10 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select'
-import { usePeopleData } from '../../context/usePeopleData'
+import PaginationControls from '../common/PaginationControls'
+import { getPeopleAvailableForUser } from '../../services/peopleService'
 import { createUser } from '../../services/userService'
 import type { Person } from '../../types/Person'
 import type { User } from '../../types/User'
+import { usePagination, useDebounce, useAsyncData } from '../../hooks'
 import { validatePassword, validateUsername } from './userValidation'
 
 export interface AddUserModalProps {
@@ -58,20 +60,46 @@ export default function AddUserModal({
   onCreated,
   onNavigateToAddPerson,
 }: AddUserModalProps) {
-  const {
-    people,
-    loading: loadingPeople,
-    error: peopleLoadError,
-    refreshPeople,
-  } = usePeopleData()
-
-  useEffect(() => {
-    if (isOpen && people.length === 0 && !loadingPeople) {
-      void refreshPeople()
-    }
-  }, [isOpen, people.length, loadingPeople, refreshPeople])
-
   const [personQuery, setPersonQuery] = useState('')
+  const debouncedQuery = useDebounce(personQuery, 300)
+
+  const pagination = usePagination({
+    pageSize: 10,
+    initialPage: 1,
+  })
+
+  const { resetPage } = pagination
+
+  // Reset page when search or pageSize changes
+  useEffect(() => {
+    resetPage()
+  }, [debouncedQuery, pagination.pageSize, resetPage])
+
+  const fetchCandidates = useCallback(async () => {
+    return getPeopleAvailableForUser(
+      accessToken,
+      pagination.page,
+      pagination.pageSize,
+      debouncedQuery,
+      'all',
+    )
+  }, [accessToken, pagination.page, pagination.pageSize, debouncedQuery])
+
+  const {
+    data: candidateResult,
+    loading: loadingCandidates,
+    error: candidateError,
+    refresh: refreshCandidates,
+  } = useAsyncData(fetchCandidates, {
+    enabled: isOpen && Boolean(accessToken),
+    dependencies: [pagination.page, pagination.pageSize, debouncedQuery],
+    defaultErrorMessage: 'Failed to load eligible people.',
+  })
+
+  const candidates = candidateResult?.items ?? []
+  const totalCount = candidateResult?.totalCount ?? 0
+  const totalPages = candidateResult?.totalPages ?? 1
+
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
 
   const [userName, setUserName] = useState('')
@@ -87,6 +115,11 @@ export default function AddUserModal({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const linkedPersonIds = useMemo(
+    () => new Set(existingUsers.map((u) => u.personId)),
+    [existingUsers],
+  )
+
   const resetForm = () => {
     setPersonQuery('')
     setSelectedPerson(null)
@@ -100,33 +133,6 @@ export default function AddUserModal({
     setFieldErrors({})
     setSubmitError(null)
   }
-
-  const linkedPersonIds = useMemo(
-    () => new Set(existingUsers.map((u) => u.personId)),
-    [existingUsers],
-  )
-
-  const eligiblePeople = useMemo(
-    () => people.filter((p) => !linkedPersonIds.has(p.personId)),
-    [people, linkedPersonIds],
-  )
-
-  const filteredCandidates = useMemo(() => {
-    const q = personQuery.trim().toLowerCase()
-    if (!q) {
-      return eligiblePeople.slice(0, 6)
-    }
-    return eligiblePeople
-      .filter(
-        (p) =>
-          p.fullName.toLowerCase().includes(q) ||
-          p.nationalNo.toLowerCase().includes(q) ||
-          String(p.personId) === q ||
-          p.phone.toLowerCase().includes(q) ||
-          (p.email && p.email.toLowerCase().includes(q)),
-      )
-      .slice(0, 8)
-  }, [eligiblePeople, personQuery])
 
   const passwordMinMet = password.length >= 8
   const passwordMaxMet = password.length > 0 && password.length <= 100
@@ -233,7 +239,7 @@ export default function AddUserModal({
             type="submit"
             form="add-user-form"
             size="sm"
-            disabled={submitting || loadingPeople}
+            disabled={submitting || loadingCandidates}
             className="gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold shadow-md shadow-blue-600/20 cursor-pointer"
           >
             {submitting ? (
@@ -253,10 +259,11 @@ export default function AddUserModal({
     >
       <form id="add-user-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
         {submitError && <ErrorAlert message={submitError} />}
-        {peopleLoadError && (
+        {candidateError && (
           <ErrorAlert
-            message={peopleLoadError}
-            onRetry={refreshPeople}
+            message={candidateError}
+            onRetry={() => void refreshCandidates()}
+            retryLabel="Retry"
           />
         )}
 
@@ -355,16 +362,31 @@ export default function AddUserModal({
               </div>
 
               <div className="rounded-xl border border-[#223656] bg-[#0a1324] overflow-hidden">
-                {loadingPeople ? (
+                {loadingCandidates ? (
                   <div className="py-6 flex justify-center">
                     <LoadingSpinner size="sm" message="Loading eligible people..." />
                   </div>
-                ) : eligiblePeople.length === 0 ? (
+                ) : candidateError ? (
+                  <div className="p-4 text-center">
+                    <p className="text-xs text-rose-400 mb-2">{candidateError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void refreshCandidates()}
+                      className="h-7 text-xs bg-[#14233c] border-[#263750] text-slate-300 hover:text-white cursor-pointer"
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                ) : candidates.length === 0 ? (
                   <div className="p-4 text-center space-y-2">
                     <p className="text-xs text-slate-300 font-medium">
-                      Every registered person currently has a linked user account.
+                      {debouncedQuery
+                        ? `No unlinked person matched "${debouncedQuery}".`
+                        : 'Every registered person currently has a linked user account.'}
                     </p>
-                    {onNavigateToAddPerson && (
+                    {onNavigateToAddPerson && !debouncedQuery && (
                       <Button
                         type="button"
                         variant="outline"
@@ -380,46 +402,59 @@ export default function AddUserModal({
                       </Button>
                     )}
                   </div>
-                ) : filteredCandidates.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-400">
-                    No unlinked person matched &quot;{personQuery}&quot;.
-                  </div>
                 ) : (
-                  <div className="divide-y divide-[#1a2b47] max-h-44 overflow-y-auto">
-                    {filteredCandidates.map((person) => (
-                      <button
-                        key={person.personId}
-                        type="button"
-                        onClick={() => {
-                          setSelectedPerson(person)
-                          setFieldErrors((prev) => ({ ...prev, personId: undefined }))
-                        }}
-                        className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left hover:bg-[#13233f] transition-colors cursor-pointer bg-transparent border-0"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <PersonPhoto
-                            personId={person.personId}
-                            hasPhoto={Boolean(person.imagePath ?? person.hasPhoto)}
-                            photoKey={person.imagePath}
-                            fullName={person.fullName}
-                            accessToken={accessToken}
-                            size="xs"
-                          />
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-white truncate">
-                              {person.fullName}
-                            </p>
-                            <p className="text-[11px] text-slate-400 font-mono truncate">
-                              National No: {person.nationalNo} · ID #{person.personId}
-                            </p>
+                  <>
+                    <div className="divide-y divide-[#1a2b47] max-h-44 overflow-y-auto">
+                      {candidates.map((person) => (
+                        <button
+                          key={person.personId}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPerson(person)
+                            setFieldErrors((prev) => ({ ...prev, personId: undefined }))
+                          }}
+                          className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left hover:bg-[#13233f] transition-colors cursor-pointer bg-transparent border-0"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <PersonPhoto
+                              personId={person.personId}
+                              hasPhoto={Boolean(person.imagePath ?? person.hasPhoto)}
+                              photoKey={person.imagePath}
+                              fullName={person.fullName}
+                              accessToken={accessToken}
+                              size="xs"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-white truncate">
+                                {person.fullName}
+                              </p>
+                              <p className="text-[11px] text-slate-400 font-mono truncate">
+                                National No: {person.nationalNo} · ID #{person.personId}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <span className="shrink-0 text-[11px] font-semibold text-cyan-400">
-                          Select
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                          <span className="shrink-0 text-[11px] font-semibold text-cyan-400">
+                            Select
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    {totalCount > 0 && (
+                      <PaginationControls
+                        pageNumber={pagination.page}
+                        pageSize={pagination.pageSize}
+                        totalCount={totalCount}
+                        totalPages={totalPages}
+                        hasPreviousPage={pagination.hasPreviousPage}
+                        hasNextPage={pagination.hasNextPage}
+                        onPreviousPage={pagination.previousPage}
+                        onNextPage={pagination.nextPage}
+                        onPageSizeChange={pagination.setPageSize}
+                        loading={loadingCandidates}
+                        itemName="candidates"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>

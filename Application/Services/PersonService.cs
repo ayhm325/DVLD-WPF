@@ -80,6 +80,15 @@ public sealed class PersonService : IPersonService
         return GetAllInternalAsync(() => _personRepository.GetAllAsync(request));
     }
 
+    public Task<Result<PagedResult<PersonDto>>>
+    GetPeopleAvailableForUserAsync(
+        PersonQueryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        return GetAllInternalAsync(() => _personRepository.GetPeopleAvailableForUserAsync(request));
+    }
+
     private async Task<Result<PagedResult<PersonDto>>>
     GetAllInternalAsync(Func<Task<PagedResult<Person>>> fetcher)
     {
