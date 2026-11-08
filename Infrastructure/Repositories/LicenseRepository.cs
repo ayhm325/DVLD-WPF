@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Application.Common.Pagination;
 using Application.Common.Time;
 using Application.DTOs.LicenseDTO;
@@ -404,6 +405,106 @@ public sealed class LicenseRepository(DVLDDbContext context)
                             l.LicenseID > licenseId)
                 .OrderByDescending(l => l.LicenseID)
                 .FirstOrDefaultAsync();
+
+    public async Task<Dictionary<int, License>> GetNewerLicensesBatchAsync(
+        IEnumerable<License> licenses,
+        CancellationToken cancellationToken = default)
+    {
+        if (licenses is null)
+            return [];
+
+        var candidateList = licenses
+            .Where(l => l is not null && l.DriverID > 0 && l.LicenseClass > 0 && l.LicenseID > 0)
+            .ToList();
+
+        if (candidateList.Count == 0)
+            return [];
+
+        var candidatePairs = candidateList
+            .GroupBy(c => (c.DriverID, c.LicenseClass))
+            .Select(g => (
+                DriverId: g.Key.DriverID,
+                LicenseClassId: g.Key.LicenseClass,
+                MinLicenseId: g.Min(c => c.LicenseID)))
+            .ToList();
+
+        var predicate = BuildCandidatePairsPredicate(candidatePairs);
+
+        var potentialNewer = await _context.Licenses
+            .AsNoTracking()
+            .Where(predicate)
+            .Select(l => new
+            {
+                l.LicenseID,
+                l.DriverID,
+                l.LicenseClass,
+                l.IssueReason
+            })
+            .ToListAsync(cancellationToken);
+
+        var result = new Dictionary<int, License>();
+
+        foreach (var candidate in candidateList)
+        {
+            var newer = potentialNewer
+                .Where(p => p.DriverID == candidate.DriverID &&
+                            p.LicenseClass == candidate.LicenseClass &&
+                            p.LicenseID > candidate.LicenseID)
+                .OrderByDescending(p => p.LicenseID)
+                .FirstOrDefault();
+
+            if (newer is not null)
+            {
+                result[candidate.LicenseID] = new License
+                {
+                    LicenseID = newer.LicenseID,
+                    DriverID = newer.DriverID,
+                    LicenseClass = newer.LicenseClass,
+                    IssueReason = newer.IssueReason
+                };
+            }
+        }
+
+        return result;
+    }
+
+    private static Expression<Func<License, bool>> BuildCandidatePairsPredicate(
+        IReadOnlyList<(int DriverId, int LicenseClassId, int MinLicenseId)> pairs)
+    {
+        var parameter = Expression.Parameter(typeof(License), "l");
+        Expression? combined = null;
+
+        var driverIdProp = Expression.Property(parameter, nameof(License.DriverID));
+        var classIdProp = Expression.Property(parameter, nameof(License.LicenseClass));
+        var licenseIdProp = Expression.Property(parameter, nameof(License.LicenseID));
+
+        foreach (var pair in pairs)
+        {
+            var driverEqual = Expression.Equal(
+                driverIdProp,
+                Expression.Constant(pair.DriverId, typeof(int)));
+
+            var classEqual = Expression.Equal(
+                classIdProp,
+                Expression.Constant(pair.LicenseClassId, typeof(int)));
+
+            var idGreater = Expression.GreaterThan(
+                licenseIdProp,
+                Expression.Constant(pair.MinLicenseId, typeof(int)));
+
+            var pairCondition = Expression.AndAlso(
+                Expression.AndAlso(driverEqual, classEqual),
+                idGreater);
+
+            combined = combined == null
+                ? pairCondition
+                : Expression.OrElse(combined, pairCondition);
+        }
+
+        return Expression.Lambda<Func<License, bool>>(
+            combined ?? Expression.Constant(false),
+            parameter);
+    }
 
     public async Task<RenewalSummaryDto> GetRenewalSummaryAsync(
         DateOnly jordanToday,

@@ -214,6 +214,27 @@ public sealed class LicenseQueryService(
         var activeDetainedIds = await _detainedLicenseRepository
             .GetActiveDetainedLicenseIdsAsync(licenseIds);
 
+        Dictionary<int, License>? externalNewerMap = null;
+
+        if (checkExternalNewerIfMissing)
+        {
+            var candidateLicenses = licenses
+                .Where(l =>
+                    LicenseExpirationPolicy.IsExpired(l.ExpirationDate, today) &&
+                    !activeDetainedIds.Contains(l.LicenseID) &&
+                    !licenses.Any(other =>
+                        other.DriverID == l.DriverID &&
+                        other.LicenseClass == l.LicenseClass &&
+                        other.LicenseID > l.LicenseID))
+                .ToList();
+
+            if (candidateLicenses.Count > 0)
+            {
+                externalNewerMap = await _licenseRepository
+                    .GetNewerLicensesBatchAsync(candidateLicenses);
+            }
+        }
+
         var dtos = new List<LicenseDto>(licenses.Count);
 
         foreach (var l in licenses)
@@ -242,12 +263,9 @@ public sealed class LicenseQueryService(
                     .OrderByDescending(other => other.LicenseID)
                     .FirstOrDefault();
 
-                if (newer is null && checkExternalNewerIfMissing)
+                if (newer is null && externalNewerMap is not null)
                 {
-                    newer = await _licenseRepository.GetNewerLicenseForDriverAndClassAsync(
-                        l.DriverID,
-                        l.LicenseClass,
-                        l.LicenseID);
+                    externalNewerMap.TryGetValue(l.LicenseID, out newer);
                 }
 
                 if (newer is not null)

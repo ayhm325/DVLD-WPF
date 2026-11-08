@@ -53,4 +53,8 @@ public interface ILicenseRepository
         int driverId,
         int licenseClassId,
         int licenseId);
+
+    Task<Dictionary<int, License>> GetNewerLicensesBatchAsync(
+        IEnumerable<License> licenses,
+        CancellationToken cancellationToken = default);
 }

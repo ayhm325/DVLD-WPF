@@ -1966,6 +1966,109 @@ public sealed class LicenseRepositoryTests
         Assert.Equal(summary.TotalExpired - summary.EligibleForRenewal, summary.IneligibleForRenewal);
     }
 
+    [Fact]
+    public async Task GetNewerLicensesBatchAsync_WhenEmptyOrNull_ReturnsEmptyDictionary()
+    {
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var nullResult = await repository.GetNewerLicensesBatchAsync(null!);
+        var emptyResult = await repository.GetNewerLicensesBatchAsync([]);
+
+        Assert.NotNull(nullResult);
+        Assert.Empty(nullResult);
+        Assert.NotNull(emptyResult);
+        Assert.Empty(emptyResult);
+    }
+
+    [Fact]
+    public async Task GetNewerLicensesBatchAsync_WhenMultipleDriversAndClasses_ReturnsCorrectNewestPerDriverAndClass()
+    {
+        // Arrange
+        // Driver 1, Class A: older (lic1), newer (lic2)
+        var seed1 = await SeedLicenseAsync(issueDate: DateTime.UtcNow.AddYears(-3), isActive: false);
+        var seed2 = await SeedAdditionalLicenseAsync(seed1, issueDate: DateTime.UtcNow.AddYears(-1), isActive: true, createNewLicenseClass: false);
+
+        // Driver 2, Class B: single license (no newer)
+        var seed3 = await SeedLicenseAsync(issueDate: DateTime.UtcNow.AddYears(-2), isActive: true);
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var cand1 = new License { LicenseID = seed1.LicenseId, DriverID = seed1.DriverId, LicenseClass = seed1.LicenseClassId };
+        var cand3 = new License { LicenseID = seed3.LicenseId, DriverID = seed3.DriverId, LicenseClass = seed3.LicenseClassId };
+
+        // Act
+        var result = await repository.GetNewerLicensesBatchAsync([cand1, cand3]);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.ContainsKey(seed1.LicenseId));
+        Assert.Equal(seed2.LicenseId, result[seed1.LicenseId].LicenseID);
+
+        // cand3 has no newer license
+        Assert.False(result.ContainsKey(seed3.LicenseId));
+    }
+
+    [Fact]
+    public async Task GetNewerLicensesBatchAsync_WhenMultipleLicensesForSameDriverAndClass_SelectsNewestDescending()
+    {
+        // Arrange: Driver has 3 sequential licenses in the same class: Lic1 < Lic2 < Lic3
+        var seed1 = await SeedLicenseAsync(issueDate: DateTime.UtcNow.AddYears(-4), isActive: false);
+        var seed2 = await SeedAdditionalLicenseAsync(seed1, issueDate: DateTime.UtcNow.AddYears(-2), isActive: false, createNewLicenseClass: false);
+        var seed3 = await SeedAdditionalLicenseAsync(seed1, issueDate: DateTime.UtcNow.AddMonths(-6), isActive: true, createNewLicenseClass: false);
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var cand1 = new License { LicenseID = seed1.LicenseId, DriverID = seed1.DriverId, LicenseClass = seed1.LicenseClassId };
+        var cand2 = new License { LicenseID = seed2.LicenseId, DriverID = seed2.DriverId, LicenseClass = seed2.LicenseClassId };
+
+        // Act
+        var result = await repository.GetNewerLicensesBatchAsync([cand1, cand2]);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(seed3.LicenseId, result[seed1.LicenseId].LicenseID);
+        Assert.Equal(seed3.LicenseId, result[seed2.LicenseId].LicenseID);
+    }
+
+    [Fact]
+    public async Task GetNewerLicensesBatchAsync_WhenUnrelatedDriverAndClassCombinations_DoesNotCrossMatch()
+    {
+        // Arrange
+        // Driver 1: has Lic1 in Class A (older), Lic2 in Class B (different class, newer)
+        var seed1 = await SeedLicenseAsync(issueDate: DateTime.UtcNow.AddYears(-3), isActive: false);
+        var seed2 = await SeedAdditionalLicenseAsync(seed1, issueDate: DateTime.UtcNow.AddYears(-1), isActive: true, createNewLicenseClass: true);
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var cand1 = new License { LicenseID = seed1.LicenseId, DriverID = seed1.DriverId, LicenseClass = seed1.LicenseClassId };
+
+        // Act: cand1 is Class A. Lic2 is Class B. Must not cross-match.
+        var result = await repository.GetNewerLicensesBatchAsync([cand1]);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.False(result.ContainsKey(seed1.LicenseId));
+    }
+
+    [Fact]
+    public async Task GetNewerLicensesBatchAsync_WhenCancelled_ThrowsOperationCanceledException()
+    {
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var cand = new License { LicenseID = 1, DriverID = 1, LicenseClass = 1 };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.GetNewerLicensesBatchAsync([cand], cts.Token));
+    }
+
     private sealed record LicenseSeed(
         int LicenseId,
         int ApplicationId,

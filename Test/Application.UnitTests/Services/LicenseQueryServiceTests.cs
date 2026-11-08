@@ -484,4 +484,237 @@ public sealed class LicenseQueryServiceTests
         Assert.Equal(3, result.Value.IneligibleForRenewal);
         _licenseRepository.Verify(x => x.GetRenewalSummaryAsync(_clock.Object.Today, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task GetAllAsync_WhenMultipleExpiredLicenses_ExecutesSingleBatchedQueryAndMapsRenewalEligibilityCorrectly()
+    {
+        // Arrange
+        var request = new LicenseQueryRequest { PageNumber = 1, PageSize = 10 };
+        var expiredDate = new DateTime(2025, 1, 1);
+
+        var lic1 = new License { LicenseID = 1, DriverID = 10, LicenseClass = 3, ExpirationDate = expiredDate, IsActive = false, IssueReason = Domain.Enums.IssueReason.FirstTime };
+        var lic2 = new License { LicenseID = 2, DriverID = 20, LicenseClass = 3, ExpirationDate = expiredDate, IsActive = false, IssueReason = Domain.Enums.IssueReason.FirstTime };
+        var lic3 = new License { LicenseID = 3, DriverID = 30, LicenseClass = 3, ExpirationDate = expiredDate, IsActive = false, IssueReason = Domain.Enums.IssueReason.FirstTime };
+
+        var paged = new PagedResult<License>
+        {
+            Items = [lic1, lic2, lic3],
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 3
+        };
+
+        _licenseRepository
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .ReturnsAsync(paged);
+
+        _detainedRepository
+            .Setup(x => x.GetActiveDetainedLicenseIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var newerMap = new Dictionary<int, License>
+        {
+            [1] = new License { LicenseID = 4, DriverID = 10, LicenseClass = 3, IssueReason = Domain.Enums.IssueReason.Renew },
+            [2] = new License { LicenseID = 5, DriverID = 20, LicenseClass = 3, IssueReason = Domain.Enums.IssueReason.ReplacementForDamaged }
+        };
+
+        _licenseRepository
+            .Setup(x => x.GetNewerLicensesBatchAsync(It.IsAny<IEnumerable<License>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(newerMap);
+
+        // Act
+        var result = await CreateService().GetAllAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value!.Items.Count);
+
+        // PERF-01 verification: exactly one batched query call; zero sequential per-row queries
+        _licenseRepository.Verify(
+            x => x.GetNewerLicensesBatchAsync(
+                It.Is<IEnumerable<License>>(candidates => candidates.Count() == 3),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _licenseRepository.Verify(
+            x => x.GetNewerLicenseForDriverAndClassAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<int>()),
+            Times.Never);
+
+        // Mappings check
+        var item1 = result.Value.Items.First(i => i.LicenseID == 1);
+        Assert.False(item1.IsEligibleForRenewal);
+        Assert.Equal("This license was already renewed (License #4).", item1.IneligibilityReason);
+
+        var item2 = result.Value.Items.First(i => i.LicenseID == 2);
+        Assert.False(item2.IsEligibleForRenewal);
+        Assert.Equal("This license was already superseded (License #5).", item2.IneligibilityReason);
+
+        var item3 = result.Value.Items.First(i => i.LicenseID == 3);
+        Assert.True(item3.IsEligibleForRenewal);
+        Assert.Null(item3.IneligibilityReason);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenLicensesAreUnexpiredOrDetained_DoesNotExecuteNewerLicensesBatchQuery()
+    {
+        // Arrange
+        var request = new LicenseQueryRequest { PageNumber = 1, PageSize = 10 };
+        var licUnexpired = new License { LicenseID = 1, DriverID = 10, LicenseClass = 3, ExpirationDate = new DateTime(2030, 1, 1), IsActive = true };
+        var licDetained = new License { LicenseID = 2, DriverID = 20, LicenseClass = 3, ExpirationDate = new DateTime(2025, 1, 1), IsActive = false };
+
+        var paged = new PagedResult<License>
+        {
+            Items = [licUnexpired, licDetained],
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 2
+        };
+
+        _licenseRepository
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .ReturnsAsync(paged);
+
+        _detainedRepository
+            .Setup(x => x.GetActiveDetainedLicenseIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([2]); // Lic 2 is detained
+
+        // Act
+        var result = await CreateService().GetAllAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Items.Count);
+
+        // Neither license qualifies for newer lookup -> 0 queries executed
+        _licenseRepository.Verify(
+            x => x.GetNewerLicensesBatchAsync(It.IsAny<IEnumerable<License>>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _licenseRepository.Verify(
+            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Never);
+
+        Assert.False(result.Value.Items[0].IsEligibleForRenewal);
+        Assert.Equal("License is not expired yet. Renewal is only permitted starting the calendar day after expiration.", result.Value.Items[0].IneligibilityReason);
+
+        Assert.False(result.Value.Items[1].IsEligibleForRenewal);
+        Assert.Equal("Cannot renew a currently detained license. The license must be released first.", result.Value.Items[1].IneligibilityReason);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenNewerLicenseExistsInMemoryPage_ExcludesFromBatchQuery()
+    {
+        // Arrange
+        var request = new LicenseQueryRequest { PageNumber = 1, PageSize = 10 };
+        var expiredDate = new DateTime(2025, 1, 1);
+
+        // Same driver, same class, older and newer both in the same page
+        var licOld = new License { LicenseID = 10, DriverID = 5, LicenseClass = 3, ExpirationDate = expiredDate, IsActive = false, IssueReason = Domain.Enums.IssueReason.FirstTime };
+        var licNew = new License { LicenseID = 15, DriverID = 5, LicenseClass = 3, ExpirationDate = new DateTime(2035, 1, 1), IsActive = true, IssueReason = Domain.Enums.IssueReason.Renew };
+
+        var paged = new PagedResult<License>
+        {
+            Items = [licOld, licNew],
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 2
+        };
+
+        _licenseRepository
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .ReturnsAsync(paged);
+
+        _detainedRepository
+            .Setup(x => x.GetActiveDetainedLicenseIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        // Act
+        var result = await CreateService().GetAllAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        // licOld found licNew in-memory, licNew is not expired -> 0 external queries needed
+        _licenseRepository.Verify(
+            x => x.GetNewerLicensesBatchAsync(It.IsAny<IEnumerable<License>>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _licenseRepository.Verify(
+            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Never);
+
+        var oldItem = result.Value!.Items.First(i => i.LicenseID == 10);
+        Assert.False(oldItem.IsEligibleForRenewal);
+        Assert.Equal("This license was already renewed (License #15).", oldItem.IneligibilityReason);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenEmptyPage_ReturnsEmptyWithoutQueryingNewer()
+    {
+        // Arrange
+        var request = new LicenseQueryRequest { PageNumber = 1, PageSize = 10 };
+        var paged = new PagedResult<License>
+        {
+            Items = [],
+            PageNumber = 1,
+            PageSize = 10,
+            TotalCount = 0
+        };
+
+        _licenseRepository
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .ReturnsAsync(paged);
+
+        // Act
+        var result = await CreateService().GetAllAsync(request);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value!.Items);
+
+        _licenseRepository.Verify(
+            x => x.GetNewerLicensesBatchAsync(It.IsAny<IEnumerable<License>>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByApplicationIdAsync_WhenExpiredLicensesPresent_ExecutesBatchedQueryNotIndividualQueries()
+    {
+        // Arrange
+        var expiredDate = new DateTime(2025, 1, 1);
+        var lic1 = new License { LicenseID = 101, DriverID = 50, LicenseClass = 1, ExpirationDate = expiredDate, IsActive = false, IssueReason = Domain.Enums.IssueReason.FirstTime };
+        var lic2 = new License { LicenseID = 102, DriverID = 60, LicenseClass = 2, ExpirationDate = expiredDate, IsActive = false, IssueReason = Domain.Enums.IssueReason.FirstTime };
+
+        _licenseRepository
+            .Setup(x => x.GetLicensesByApplicationIdAsync(55))
+            .ReturnsAsync([lic1, lic2]);
+
+        _detainedRepository
+            .Setup(x => x.GetActiveDetainedLicenseIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        _licenseRepository
+            .Setup(x => x.GetNewerLicensesBatchAsync(It.IsAny<IEnumerable<License>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<int, License>());
+
+        // Act
+        var result = await CreateService().GetByApplicationIdAsync(55);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Count);
+
+        _licenseRepository.Verify(
+            x => x.GetNewerLicensesBatchAsync(
+                It.Is<IEnumerable<License>>(c => c.Count() == 2),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _licenseRepository.Verify(
+            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Never);
+    }
 }
