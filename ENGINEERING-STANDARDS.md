@@ -183,3 +183,42 @@ Data integrity under concurrent access is enforced through a combination of data
 1. **Targeted Diffs:** Never reformat an entire file to change one line. Retain existing indentation, spacing, and bracket styles.
 2. **Preserve Documentation:** Preserve all existing comments, docstrings, and license headers unless explicitly instructed to update them.
 3. **No Unapproved Patterns:** Do not introduce MediatR, CQRS, Dapper, AutoMapper, or external message queues. The repository architecture relies on explicit C# interfaces, DI, and manual mapping for transparency and debuggability.
+
+---
+
+## 8. Time & Timezone Handling Invariants (Jordan Standard Time Standard)
+
+The DVLD management system enforces strict, deterministic time-handling rules across persistence, application logic, and user presentation:
+
+```mermaid
+flowchart LR
+    Clock["IJordanClock Singleton (Program.cs:250)"] --> DB["Database Persistence (UTC DateTime)"]
+    Clock --> Logic["Domain / Business Rules (Jordan Local Date / UTC Now)"]
+    Clock --> API["API Output (ISO 8601 UTC Serialization)"]
+    API --> UI["ClientApp (Jordan Local Presentation)"]
+```
+
+1. **UTC Storage Invariant:**
+   - All `DateTime` timestamps stored in SQL Server must represent UTC (`DateTimeKind.Utc`).
+   - Direct database column storage of local time is strictly prohibited to ensure temporal consistency and seamless data replication.
+2. **Deterministic Timezone Representation:**
+   - Official department civic business operates under **Jordan Standard Time (`Asia/Amman`)**.
+   - Note on Daylight Saving Time: Jordan permanently abolished seasonal DST in October 2022. The kingdom observes UTC+3 year-round.
+3. **Clock Abstraction & DI Registration (`IJordanClock`):**
+   - Direct invocation of `DateTime.Now`, `DateTime.Today`, or `DateTime.UtcNow` inside domain entities, repositories, or application services is prohibited.
+   - All components must inject [`IJordanClock`](file:///d:/DVLD-WPF/Application/Interfaces/IJordanClock.cs) (registered as a singleton in `API/DVLD.Api/Program.cs` line 250).
+   - The authoritative interface defines:
+     ```csharp
+     public interface IJordanClock
+     {
+         DateTime Now { get; }      // Jordan local wall-clock date and time (DateTimeKind.Unspecified)
+         DateOnly Today { get; }    // Jordan local calendar date
+         DateTime UtcNow { get; }   // Current UTC instant (DateTimeKind.Utc)
+     }
+     ```
+   - `IJordanClock.Now`: Returns the current Jordan local wall-clock date and time.
+   - `IJordanClock.Today`: Returns the current Jordan local calendar date (used for applicant minimum legal age checks, license issue dates, expiration dates, and appointment slot scheduling).
+   - `IJordanClock.UtcNow`: Returns the current UTC instant for technical timestamps (such as JWT tokens and audit records).
+4. **Client & API Presentation:**
+   - Backend API endpoints return ISO 8601 formatted UTC strings (e.g. `2026-11-08T12:00:00Z`).
+   - `ClientApp` parses ISO strings and displays formatted dates according to Jordanian administrative conventions.

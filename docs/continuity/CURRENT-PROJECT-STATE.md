@@ -21,6 +21,13 @@ This document provides a point-in-time snapshot of the DVLD project state, gover
 > - **No Database Inspection:** No database connections to LocalDB or SQL Server were opened; `DVLDf` remains strictly uninspected and protected.
 > - **Evidence Origin:** Information regarding existing code structure and previous audit results is labeled `REPORTED` based on existing repository governance documents (`docs/audits/`, `ENGINEERING-ROADMAP.md`, `ENGINEERING-DECISIONS.md`). Current empirical verification of all items remains `PENDING` until authorized.
 
+### 1.3 Foundational Engineering Discovery References
+This repository maintains two permanent, code-verified discovery reports in `docs/audits/`:
+- [`docs/audits/phase-a-repository-discovery.md`](../audits/phase-a-repository-discovery.md) (Baseline commit `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`, dated 2026-11-08).
+- [`docs/audits/phase-a-supplementary-review.md`](../audits/phase-a-supplementary-review.md) (Baseline commit `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`, dated 2026-11-08).
+
+*Evidentiary Boundary:* Both reports reflect static code analysis of the pre-remediation baseline. They serve as foundational historical evidence, not current source-of-truth guarantees of active runtime state.
+
 ---
 
 ## 2. Architecture and Technology Context

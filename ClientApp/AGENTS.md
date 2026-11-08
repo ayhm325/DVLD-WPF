@@ -23,20 +23,17 @@ Before implementing changes or answering architectural questions, AI agents must
 
 ```mermaid
 flowchart TD
-    A["ClientApp/AGENTS.md (Operational Rules & Boundaries)"] --> B["ClientApp/README.md (Master Entry Point)"]
-    B --> C["docs/ARCHITECTURE.md (Component Tree & Routing)"]
-    B --> D["docs/API-INTEGRATION.md & SECURITY.md (HTTP & Security)"]
-    B --> E["docs/FEATURE-STATUS.md (Feature Matrix)"]
-    B --> F["docs/DEVELOPMENT.md (Dev Workflow & Quality Gates)"]
+    A["ClientApp/AGENTS.md (Operational Rules & Boundaries)"] --> B["ClientApp/README.md (Master Entry Point & Setup)"]
+    B --> C["docs/development/TARGET-ARCHITECTURE.md (System Architecture & API Contracts)"]
+    B --> D["SECURITY-STANDARDS.md (Auth Policies, SoD, Session Lifecycle)"]
+    B --> E["ENGINEERING-STANDARDS.md (Persistence, Concurrency, Result Pattern)"]
 ```
 
-1. [`AGENTS.md`](./AGENTS.md) — Universal operational instructions, governance rules, and safety boundaries (this document).
-2. [`README.md`](./README.md) — Authoritative project entry point, technology stack, setup scripts, and high-level feature matrix.
-3. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — Directory layout, component hierarchy, page routing, and state management.
-4. [`docs/API-INTEGRATION.md`](./docs/API-INTEGRATION.md) — Centralized HTTP transport (`apiClient.ts`), endpoints consumed, JWT handling, and RBAC policies.
-5. [`SECURITY.md`](./SECURITY.md) — Session storage threat model, per-tab isolation, XSS prevention, and CSP headers.
-6. [`docs/FEATURE-STATUS.md`](./docs/FEATURE-STATUS.md) — Canonical status matrix for all frontend features, endpoints, and components.
-7. [`docs/DEVELOPMENT.md`](./docs/DEVELOPMENT.md) — Local workflows, TypeScript strict conventions, ESLint rules, and extension guidelines.
+1. [`ClientApp/AGENTS.md`](./AGENTS.md) — Universal operational instructions, governance rules, and safety boundaries for frontend development (this document).
+2. [`ClientApp/README.md`](./README.md) — Authoritative project entry point, technology stack, setup scripts, development workflows, and feature baseline summary.
+3. [`docs/development/TARGET-ARCHITECTURE.md`](../docs/development/TARGET-ARCHITECTURE.md) — System architecture, Clean Architecture layers, API contracts, and component interaction flows.
+4. [`SECURITY-STANDARDS.md`](../SECURITY-STANDARDS.md) — Authentication architecture, Segregation of Duties (SoD), role policies, and file upload validation.
+5. [`ENGINEERING-STANDARDS.md`](../ENGINEERING-STANDARDS.md) — Architecture invariants, Jordan Time handling, and concurrency rules.
 
 ---
 
@@ -54,12 +51,19 @@ flowchart TD
 3. **Shared Design System (`src/components/common/` & `src/components/ui/`):**
    - Reusable enterprise UI components: `DataTable`, `TableToolbar`, `StatusBadge`, `StatCard`, `PageHero`, `ErrorAlert`, `EmptyState`, `ConfirmModal`, `ModalShell`.
    - Accessible primitives based on Radix UI (`@radix-ui/react-*`) and Tailwind CSS v4.
-4. **Data Fetching & Custom Hooks (`src/hooks/`):**
+4. **TypeScript & Linter Standards:**
+   - Target `ES2023`, `DOM`.
+   - Strict module resolution with `verbatimModuleSyntax: true` — **always use `import type` for type-only imports**.
+   - Path alias `@/*` maps to `./src/*`.
+   - Strict compiler checks: `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`.
+5. **Data Fetching & Custom Hooks (`src/hooks/`):**
    - Centralize stateful data operations into dedicated hooks (`usePeople`, `useDashboardStatistics`, `useAsyncData`).
    - Abstract pagination and filtering via `usePagination`, `useTableFilters`, and `useDebounce`.
-5. **HTTP Transport Client (`src/services/apiClient.ts`):**
+6. **HTTP Transport Client (`src/services/apiClient.ts`):**
    - Route all API calls through `apiRequest<T>()`. Never call `fetch()` directly inside UI components.
-   - Automated 401 interception triggers session termination and friendly login redirect.
+   - Automatically injects `Authorization: Bearer <token>` when authenticated.
+   - Normalizes RFC 7807 `ProblemDetails` into strongly-typed `ApiError` instances for user-facing alert messages.
+   - Automated 401 interception triggers session termination via `setUnauthorizedHandler()` and redirect to login with a friendly session-expired notice.
 
 ---
 

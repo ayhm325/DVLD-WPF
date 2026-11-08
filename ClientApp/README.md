@@ -2,7 +2,7 @@
 
 `ClientApp` is the browser-based React + TypeScript + Vite single-page application for the Driving & Vehicle Licensing Department (DVLD) system. It communicates with `DVLD.Api` over HTTP + JSON + JWT (`http://localhost:5260/api`).
 
-> **Operational Status:** `ClientApp` is an active, fully functional administrative web portal. All core departmental views, authentication flows, management tables, settings modals, and navigation workflows are implemented and verified against the backend API. See [`docs/FEATURE-STATUS.md`](docs/FEATURE-STATUS.md) for the complete feature matrix.
+> **Operational Status:** `ClientApp` is an active administrative web portal. All core departmental views, authentication flows, management tables, settings modals, and navigation workflows are implemented as baseline foundations. Governance rules and development standards are maintained in [`AGENTS.md`](./AGENTS.md) and [`docs/development/DEVELOPMENT-PLAN.md`](../docs/development/DEVELOPMENT-PLAN.md).
 
 ---
 
@@ -56,9 +56,14 @@ npm run lint
 npm run preview
 ```
 
+> **Windows PowerShell Execution Policy Note:** If Windows PowerShell execution policy restricts running `npm.ps1`, invoke the command line wrapper directly (e.g. `npm.cmd run dev`, `npm.cmd run build`, `npm.cmd run lint`).
+
 ---
 
 ## 4. Feature Implementation Summary
+
+> [!NOTE]
+> The feature matrix below reflects verified baseline frontend foundations established at commit `29e43d6` (historical 2026-11-01). Ongoing automated end-to-end and integration verification across all views is tracked under Milestone M4 in [`docs/development/DEVELOPMENT-PLAN.md`](../docs/development/DEVELOPMENT-PLAN.md).
 
 | Feature / View | Status | Implementation Details |
 |---|---|---|
@@ -78,12 +83,11 @@ npm run preview
 
 ---
 
-## 5. Documentation Directory (`ClientApp/docs/`)
+## 5. Frontend Governance & Target Architecture References
 
-Authoritative documentation for `ClientApp` is organized under [`ClientApp/docs/`](docs/):
+Authoritative documentation for `ClientApp` is organized under the repository governance suite:
 
-- [**Architecture Guide** (`docs/ARCHITECTURE.md`)](docs/ARCHITECTURE.md) — Directory layout, component hierarchy, state management, and navigation routing.
-- [**API Integration & Security** (`docs/API-INTEGRATION.md`)](docs/API-INTEGRATION.md) — Service modules, endpoint mapping, JWT handling, error normalization, and RBAC policy interactions.
-- [**Feature Status Matrix** (`docs/FEATURE-STATUS.md`)](docs/FEATURE-STATUS.md) — Canonical status matrix for all frontend features, endpoints, and components.
-- [**Development Guide** (`docs/DEVELOPMENT.md`)](docs/DEVELOPMENT.md) — Local workflows, TypeScript strict conventions, ESLint rules, and extension guidelines.
-- [**Security Policy** (`SECURITY.md`)](SECURITY.md) — Session storage threat model, XSS prevention audit, CSP headers, and RBAC role mapping.
+- [**Frontend Agent Governance** (`ClientApp/AGENTS.md`)](./AGENTS.md) — Operational instructions, TypeScript standards, and component isolation rules.
+- [**Target Technical Architecture** (`docs/development/TARGET-ARCHITECTURE.md`)](../docs/development/TARGET-ARCHITECTURE.md) — Component layout, state management, HTTP client transport, and authentication lifecycle.
+- [**Modernization Development Plan** (`docs/development/DEVELOPMENT-PLAN.md`)](../docs/development/DEVELOPMENT-PLAN.md) — Milestone roadmap, workstream sequencing, and integration verification.
+- [**Security Standards** (`SECURITY-STANDARDS.md`)](../SECURITY-STANDARDS.md) — Session storage threat model, per-tab isolation, XSS prevention, and RBAC policies.
