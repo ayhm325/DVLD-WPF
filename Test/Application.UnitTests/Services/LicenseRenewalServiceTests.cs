@@ -49,7 +49,7 @@ public class LicenseRenewalServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
+            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -70,7 +70,7 @@ public class LicenseRenewalServiceTests
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
         Assert.Equal("Authenticated user is required.", result.Error);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
+            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _unitOfWork.Verify(x => x.ExecuteInTransactionAsync(
             It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
@@ -95,7 +95,7 @@ public class LicenseRenewalServiceTests
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
         Assert.Equal("Authenticated user is required.", result.Error);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
+            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -104,7 +104,7 @@ public class LicenseRenewalServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(2))
+            .Setup(x => x.GetApplicationTypeByIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.FromNotFound(
                     "Application type not found."));
@@ -126,7 +126,7 @@ public class LicenseRenewalServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(2))
+            .Setup(x => x.GetApplicationTypeByIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(null!));
 
@@ -193,7 +193,7 @@ public class LicenseRenewalServiceTests
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var sut = CreateSut();
@@ -233,7 +233,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
         _applicationService.Verify(
-            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
+            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -261,7 +261,7 @@ public class LicenseRenewalServiceTests
         Assert.Equal("Cannot renew a currently detained license. The license must be released first.", result.Error);
         VerifyRollback(transaction);
         _applicationService.Verify(
-            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
+            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -292,7 +292,7 @@ public class LicenseRenewalServiceTests
         Assert.Equal("License #10 has already been renewed.", result.Error);
         VerifyRollback(transaction);
         _applicationService.Verify(
-            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
+            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -323,7 +323,7 @@ public class LicenseRenewalServiceTests
         Assert.Equal("License #10 has already been superseded.", result.Error);
         VerifyRollback(transaction);
         _applicationService.Verify(
-            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()),
+            x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -439,7 +439,8 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.FromConflict(
                     "Application already exists."));
@@ -470,7 +471,8 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(0));
 
         var sut = CreateSut();
@@ -548,7 +550,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
         _applicationService.Verify(
-            x => x.CompleteApplicationStateAsync(It.IsAny<int>()),
+            x => x.CompleteApplicationStateAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -577,7 +579,7 @@ public class LicenseRenewalServiceTests
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Conflict(
                     "Application could not be completed."));
@@ -621,7 +623,7 @@ public class LicenseRenewalServiceTests
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var sut = CreateSut();
@@ -643,7 +645,7 @@ public class LicenseRenewalServiceTests
                     license.Notes == null)),
             Times.Once);
         _applicationService.Verify(
-            x => x.CompleteApplicationStateAsync(100),
+            x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()),
             Times.Once);
         transaction.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
@@ -678,7 +680,7 @@ public class LicenseRenewalServiceTests
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var sut = CreateSut();
@@ -719,7 +721,7 @@ public class LicenseRenewalServiceTests
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var sut = CreateSut();
@@ -772,7 +774,7 @@ public class LicenseRenewalServiceTests
     private void SetupValidApplicationType()
     {
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(2))
+            .Setup(x => x.GetApplicationTypeByIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(
                     new ApplicationTypeDto
@@ -838,7 +840,7 @@ public class LicenseRenewalServiceTests
 
     private void SetupSuccessfulRenewalApplication() =>
         _applicationService
-            .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()))
+            .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(100));
 
     private License CreateExpiredLicense()

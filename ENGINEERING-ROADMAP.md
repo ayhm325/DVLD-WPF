@@ -224,11 +224,11 @@ graph TD
 - **Evidence Classification:** `CONFIRMED`
 - **Priority:** `P2`
 - **Affected Components:** `API/DVLD.Api/Controllers/`, `Application/Services/`, `Infrastructure/Repositories/`.
-- **Description:** Several controller actions, service methods, and repository queries omit `CancellationToken` parameters, allowing orphaned database queries to continue executing after client disconnection.
-- **Proposed Technical Remediation:** Pass `CancellationToken` from controller parameters through application services to all async EF Core queries.
+- **Description:** Controller actions, service methods, and repository queries omit `CancellationToken` parameters, allowing orphaned database queries to continue executing after client disconnection.
+- **Proposed Technical Remediation:** Pass `CancellationToken` from controller parameters through application services to all async EF Core queries across 5 domain bundles. See inventory in `docs/audits/api-01-cancellation-token-inventory.md`.
 - **Verification Requirements:** Unit and integration tests asserting cancellation propagates to EF Core queries.
-- **Current Status:** `Confirmed / Planned`
-- **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.3 Scope).**
+- **Current Status:** **`In Progress`** (Bundle 1: `Applications` & `ApplicationTypes` implemented and verified; remaining bundles pending).
+- **Implementation Authorization:** **AUTHORIZED (Phase 12.3 Scope).**
 
 #### [REST-01] Standardize Error Payloads on RFC 7807 ProblemDetails
 - **Finding ID:** `REST-01`

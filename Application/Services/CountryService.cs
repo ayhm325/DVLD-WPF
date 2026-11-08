@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.CountryDTO;
 using Application.Interfaces;
 using Application.Mappings;
@@ -14,10 +14,11 @@ public class CountryService : ICountryService
         _countryRepository = countryRepository;
     }
 
-    public async Task<Result<List<CountryDto>>> GetAllCountriesAsync()
+    public async Task<Result<List<CountryDto>>> GetAllCountriesAsync(
+        CancellationToken cancellationToken = default)
     {
         var countries =
-            await _countryRepository.GetAllCountriesAsync();
+            await _countryRepository.GetAllCountriesAsync(cancellationToken);
 
         var result =
             countries

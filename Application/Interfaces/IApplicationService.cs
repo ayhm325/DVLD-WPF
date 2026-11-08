@@ -10,16 +10,23 @@ public interface IApplicationService
     // =========================================================
 
     Task<Result<List<ApplicationDto>>>
-        GetAllApplicationsAsync();
+        GetAllApplicationsAsync(
+            CancellationToken cancellationToken = default);
 
     Task<Result<ApplicationDto>>
-        GetApplicationByIdAsync(int id);
+        GetApplicationByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default);
 
     Task<Result<ApplicationBasicInfoDto>>
-        GetBasicInfoAsync(int id);
+        GetBasicInfoAsync(
+            int id,
+            CancellationToken cancellationToken = default);
 
     Task<Result<ApplicationDto>>
-    GetApplicationForIssuanceAsync(int id);
+        GetApplicationForIssuanceAsync(
+            int id,
+            CancellationToken cancellationToken = default);
 
 
     // =========================================================
@@ -28,11 +35,13 @@ public interface IApplicationService
 
     Task<Result<int>>
         AddNewApplicationAsync(
-            CreateApplicationDto dto);
+            CreateApplicationDto dto,
+            CancellationToken cancellationToken = default);
 
     Task<Result>
         UpdateApplicationAsync(
-            UpdateApplicationDto dto);
+            UpdateApplicationDto dto,
+            CancellationToken cancellationToken = default);
 
 
     // =========================================================
@@ -40,7 +49,9 @@ public interface IApplicationService
     // =========================================================
 
     Task<Result>
-        DeleteApplicationAsync(int id);
+        DeleteApplicationAsync(
+            int id,
+            CancellationToken cancellationToken = default);
 
 
     // =========================================================
@@ -48,7 +59,9 @@ public interface IApplicationService
     // =========================================================
 
     Task<Result>
-        CancelApplicationAsync(int id);
+        CancelApplicationAsync(
+            int id,
+            CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Mutates the application status to Completed without calling SaveChangesAsync.
@@ -56,5 +69,7 @@ public interface IApplicationService
     /// and persistence boundary. The outer caller is responsible for flushing changes.
     /// </summary>
     Task<Result>
-        CompleteApplicationStateAsync(int id);
+        CompleteApplicationStateAsync(
+            int id,
+            CancellationToken cancellationToken = default);
 }

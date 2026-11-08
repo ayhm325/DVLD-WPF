@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs;
 using DVLD.Contracts.ApplicationType;
@@ -28,7 +28,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetAllApplicationTypesAsync())
+            .Setup(x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<ApplicationTypeDto>>.Success(
             [
                 new()
@@ -49,7 +49,7 @@ public sealed class ApplicationTypesControllerTests
         Assert.Equal(1, item.ApplicationTypeId);
 
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetAllApplicationTypesAsync(), Times.Once);
+            x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class ApplicationTypesControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()), Times.Never);
+            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetApplicationTypeByIdAsync(1))
+            .Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationTypeDto>.Success(new()
             {
                 ApplicationTypeId = 1,
@@ -87,7 +87,7 @@ public sealed class ApplicationTypesControllerTests
         Assert.Equal(1, result.ApplicationTypeId);
 
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetApplicationTypeByIdAsync(1), Times.Once);
+            x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetAllApplicationTypesAsync())
+            .Setup(x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<ApplicationTypeDto>>.Success(
             [
                 new()
@@ -135,7 +135,7 @@ public sealed class ApplicationTypesControllerTests
             });
 
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetAllApplicationTypesAsync(), Times.Once);
+            x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetAllApplicationTypesAsync())
+            .Setup(x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<ApplicationTypeDto>>.FromFailure(
                 "Failed to load application types."));
 
@@ -161,7 +161,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetApplicationTypeByIdAsync(3))
+            .Setup(x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationTypeDto>.Success(new()
             {
                 ApplicationTypeId = 3,
@@ -181,7 +181,7 @@ public sealed class ApplicationTypesControllerTests
         Assert.Equal(25m, result.ApplicationTypeFees);
 
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetApplicationTypeByIdAsync(3), Times.Once);
+            x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetApplicationTypeByIdAsync(99))
+            .Setup(x => x.GetApplicationTypeByIdAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationTypeDto>.FromNotFound(
                 "Application type not found."));
 
@@ -207,7 +207,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetApplicationTypeByIdAsync(0))
+            .Setup(x => x.GetApplicationTypeByIdAsync(0, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationTypeDto>.FromValidationFailure(
                 "Invalid application type ID."));
 
@@ -224,7 +224,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationTypeDto>.FromFailure(
                 "Unexpected application type failure."));
 
@@ -270,7 +270,8 @@ public sealed class ApplicationTypesControllerTests
                 It.Is<ApplicationTypeDto>(d =>
                     d.ApplicationTypeId == 4 &&
                     d.ApplicationTypeTitle == "Updated Type" &&
-                    d.ApplicationTypeFees == 30m)))
+                    d.ApplicationTypeFees == 30m),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(
@@ -292,7 +293,8 @@ public sealed class ApplicationTypesControllerTests
                 It.Is<ApplicationTypeDto>(d =>
                     d.ApplicationTypeId == 4 &&
                     d.ApplicationTypeTitle == "Updated Type" &&
-                    d.ApplicationTypeFees == 30m)),
+                    d.ApplicationTypeFees == 30m),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -302,7 +304,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(4, It.IsAny<ApplicationTypeDto>()))
+            .Setup(x => x.UpdateApplicationTypeAsync(4, It.IsAny<ApplicationTypeDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.ValidationFailure("Invalid application type data."));
 
         await AssertProblemDetailsAsync(
@@ -323,7 +325,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>()))
+            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.NotFound("Application type not found."));
 
         await AssertProblemDetailsAsync(
@@ -339,7 +341,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>()))
+            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Conflict(
                 "Application type update conflicts with existing data."));
 
@@ -356,7 +358,7 @@ public sealed class ApplicationTypesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.ApplicationTypeServiceMock
-            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>()))
+            .Setup(x => x.UpdateApplicationTypeAsync(10, It.IsAny<ApplicationTypeDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure("Failed to save application type changes."));
 
         await AssertProblemDetailsAsync(
@@ -398,13 +400,14 @@ public sealed class ApplicationTypesControllerTests
 
     private static void VerifyGetNever(ApiWebApplicationFactory factory) =>
         factory.ApplicationTypeServiceMock.Verify(
-            x => x.GetAllApplicationTypesAsync(), Times.Never);
+            x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()), Times.Never);
 
     private static void VerifyUpdateNever(ApiWebApplicationFactory factory) =>
         factory.ApplicationTypeServiceMock.Verify(
             x => x.UpdateApplicationTypeAsync(
                 It.IsAny<int>(),
-                It.IsAny<ApplicationTypeDto>()),
+                It.IsAny<ApplicationTypeDto>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
 
     private static async Task AssertProblemDetailsAsync(

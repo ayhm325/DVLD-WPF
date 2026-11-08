@@ -786,7 +786,7 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.FromNotFound("Application type not found."));
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
@@ -804,7 +804,7 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(null!));
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
@@ -834,7 +834,7 @@ public sealed class DetainedLicenseServiceTests
                     Driver = null!
                 });
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
@@ -852,12 +852,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.FromConflict("Application conflict."));
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
@@ -879,12 +880,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(0));
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
@@ -902,12 +904,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -921,7 +924,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         SetupCommit();
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
@@ -931,7 +934,8 @@ public sealed class DetainedLicenseServiceTests
             x => x.AddNewApplicationAsync(
                 It.Is<CreateApplicationDto>(application =>
                     application.ApplicantPersonID == 30 &&
-                    application.ApplicationTypeID == 5)),
+                    application.ApplicationTypeID == 5),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -943,12 +947,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -962,7 +967,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         SetupCommit();
         var result =
@@ -1000,12 +1005,13 @@ public sealed class DetainedLicenseServiceTests
                     }
                 });
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -1019,7 +1025,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         SetupCommit();
         var result =
@@ -1041,12 +1047,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -1063,7 +1070,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         SetupCommit();
         var result =
@@ -1084,12 +1091,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -1126,12 +1134,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -1157,7 +1166,8 @@ public sealed class DetainedLicenseServiceTests
             Times.Once);
         _applicationService.Verify(
             x => x.CompleteApplicationStateAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -1169,12 +1179,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -1188,7 +1199,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Conflict(
                     "Could not complete release application."));
@@ -1229,12 +1240,13 @@ public sealed class DetainedLicenseServiceTests
             .ReturnsAsync(detention);
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -1248,7 +1260,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var before = Common.FakeJordanClock.DefaultJordanNow;
         var result =
@@ -1276,12 +1288,13 @@ public sealed class DetainedLicenseServiceTests
         SetupValidReleaseDetention();
         SetupValidLicense();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(5))
+            .Setup(x => x.GetApplicationTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 5 }));
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _licenseRepository
@@ -1295,7 +1308,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var result =
             await CreateService()
@@ -1307,7 +1320,7 @@ public sealed class DetainedLicenseServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
         _applicationService.Verify(
-            x => x.CompleteApplicationStateAsync(700),
+            x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()),
             Times.Once);
         _transaction.Verify(
             x => x.CommitAsync(

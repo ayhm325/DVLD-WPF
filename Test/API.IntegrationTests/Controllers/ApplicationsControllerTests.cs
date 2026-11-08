@@ -28,7 +28,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         var response = await _client.GetAsync("/api/Applications");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(), Times.Never);
+        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         var response = await SendAsync(HttpMethod.Get, "/api/Applications", role: "Admin");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(), Times.Never);
+        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Equal(40, item.CreatedByUserId);
         Assert.Equal("admin", item.CreatedByUserName);
 
-        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(), Times.Once);
+        _factory.ApplicationServiceMock.Verify(x => x.GetAllApplicationsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         };
 
         _factory.ApplicationServiceMock
-            .Setup(x => x.GetApplicationByIdAsync(100))
+            .Setup(x => x.GetApplicationByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationDto>.Success(dto));
 
         var response = await SendAsync(HttpMethod.Get, "/api/Applications/100");
@@ -168,14 +168,14 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Equal("staff", result.CreatedByUserName);
 
         _factory.ApplicationServiceMock.Verify(
-            x => x.GetApplicationByIdAsync(100), Times.Once);
+            x => x.GetApplicationByIdAsync(100, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetById_WhenNotFound_ReturnsNotFound()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.GetApplicationByIdAsync(100))
+            .Setup(x => x.GetApplicationByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationDto>.FromNotFound("application not found"));
 
         await AssertFailureAsync(
@@ -202,7 +202,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         };
 
         _factory.ApplicationServiceMock
-            .Setup(x => x.GetBasicInfoAsync(20))
+            .Setup(x => x.GetBasicInfoAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationBasicInfoDto>.Success(dto));
 
         var response = await SendAsync(
@@ -225,14 +225,14 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Equal(new DateTime(2026, 3, 2), result.LastStatusDate);
         Assert.Equal("admin", result.CreatedByUserName);
 
-        _factory.ApplicationServiceMock.Verify(x => x.GetBasicInfoAsync(20), Times.Once);
+        _factory.ApplicationServiceMock.Verify(x => x.GetBasicInfoAsync(20, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetBasicInfo_WhenNotFound_ReturnsNotFound()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.GetBasicInfoAsync(20))
+            .Setup(x => x.GetBasicInfoAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationBasicInfoDto>.FromNotFound("not found"));
 
         await AssertFailureAsync(
@@ -247,7 +247,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     {
         _factory.ApplicationServiceMock
             .Setup(x => x.AddNewApplicationAsync(It.Is<CreateApplicationDto>(
-                d => d.ApplicantPersonID == 100 && d.ApplicationTypeID == 200)))
+                d => d.ApplicantPersonID == 100 && d.ApplicationTypeID == 200), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(500));
 
         var response = await SendAsync(
@@ -268,7 +268,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
 
         _factory.ApplicationServiceMock.Verify(
             x => x.AddNewApplicationAsync(It.Is<CreateApplicationDto>(
-                d => d.ApplicantPersonID == 100 && d.ApplicationTypeID == 200)),
+                d => d.ApplicantPersonID == 100 && d.ApplicationTypeID == 200), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -276,7 +276,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     public async Task Create_WhenValidationFails_ReturnsBadRequest()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()))
+            .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromValidationFailure("validation error"));
 
         await AssertFailureAsync(
@@ -297,7 +297,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     public async Task Create_WhenConflictOccurs_ReturnsConflict()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()))
+            .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromConflict("conflict"));
 
         await AssertFailureAsync(
@@ -333,7 +333,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             "Route application ID does not match request application ID.");
 
         _factory.ApplicationServiceMock.Verify(
-            x => x.UpdateApplicationAsync(It.IsAny<UpdateApplicationDto>()),
+            x => x.UpdateApplicationAsync(It.IsAny<UpdateApplicationDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -342,7 +342,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     {
         _factory.ApplicationServiceMock
             .Setup(x => x.UpdateApplicationAsync(It.Is<UpdateApplicationDto>(
-                d => d.ApplicationID == 100 && d.ApplicationTypeID == 300)))
+                d => d.ApplicationID == 100 && d.ApplicationTypeID == 300), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(
@@ -358,7 +358,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
 
         _factory.ApplicationServiceMock.Verify(
             x => x.UpdateApplicationAsync(It.Is<UpdateApplicationDto>(
-                d => d.ApplicationID == 100 && d.ApplicationTypeID == 300)),
+                d => d.ApplicationID == 100 && d.ApplicationTypeID == 300), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -404,21 +404,21 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     public async Task Delete_WhenSuccessful_ReturnsNoContent()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.DeleteApplicationAsync(100))
+            .Setup(x => x.DeleteApplicationAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(HttpMethod.Delete, "/api/Applications/100");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         _factory.ApplicationServiceMock.Verify(
-            x => x.DeleteApplicationAsync(100), Times.Once);
+            x => x.DeleteApplicationAsync(100, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Delete_WhenNotFound_ReturnsNotFound()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.DeleteApplicationAsync(100))
+            .Setup(x => x.DeleteApplicationAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.NotFound("application not found"));
 
         await AssertFailureAsync(
@@ -443,7 +443,7 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     public async Task Cancel_WhenSuccessful_ReturnsNoContent()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.CancelApplicationAsync(100))
+            .Setup(x => x.CancelApplicationAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(
@@ -452,14 +452,14 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         _factory.ApplicationServiceMock.Verify(
-            x => x.CancelApplicationAsync(100), Times.Once);
+            x => x.CancelApplicationAsync(100, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Cancel_WhenForbidden_ReturnsForbidden()
     {
         _factory.ApplicationServiceMock
-            .Setup(x => x.CancelApplicationAsync(100))
+            .Setup(x => x.CancelApplicationAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Forbidden("forbidden"));
 
         await AssertFailureAsync(
@@ -473,12 +473,12 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
 
     private void SetupGetAll(Result<List<ApplicationDto>> result) =>
         _factory.ApplicationServiceMock
-            .Setup(x => x.GetAllApplicationsAsync())
+            .Setup(x => x.GetAllApplicationsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
     private void SetupUpdate(Result result) =>
         _factory.ApplicationServiceMock
-            .Setup(x => x.UpdateApplicationAsync(It.IsAny<UpdateApplicationDto>()))
+            .Setup(x => x.UpdateApplicationAsync(It.IsAny<UpdateApplicationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
     private async Task<HttpResponseMessage> SendAsync(

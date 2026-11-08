@@ -14,10 +14,10 @@ public sealed class ApplicationTypesController(
     IApplicationTypeService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetAllApplicationTypesAsync();
+            await service.GetAllApplicationTypesAsync(cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -29,10 +29,10 @@ public sealed class ApplicationTypesController(
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetApplicationTypeByIdAsync(id);
+            await service.GetApplicationTypeByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -46,7 +46,8 @@ public sealed class ApplicationTypesController(
     public async Task<IActionResult> Update(
         int id,
         [FromBody]
-        UpdateApplicationTypeRequest request)
+        UpdateApplicationTypeRequest request,
+        CancellationToken cancellationToken = default)
     {
         var dto = new ApplicationTypeDto
         {
@@ -60,7 +61,8 @@ public sealed class ApplicationTypesController(
         var result =
             await service.UpdateApplicationTypeAsync(
                 id,
-                dto);
+                dto,
+                cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

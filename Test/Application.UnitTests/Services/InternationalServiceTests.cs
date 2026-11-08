@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DriverDTO;
@@ -84,7 +84,7 @@ public sealed class InternationalServiceTests
     private void SetupApplicationTypeSuccess()
     {
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(6))
+            .Setup(x => x.GetApplicationTypeByIdAsync(6, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(
                     new ApplicationTypeDto
@@ -150,7 +150,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _repository
@@ -166,7 +167,7 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         SetupCommit();
         SetupRollback();
@@ -462,7 +463,7 @@ public sealed class InternationalServiceTests
             "Invalid local license ID.",
             result.Error);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()),
+            x => x.GetApplicationTypeByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -484,7 +485,8 @@ public sealed class InternationalServiceTests
             result.Error);
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -510,7 +512,7 @@ public sealed class InternationalServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(6))
+            .Setup(x => x.GetApplicationTypeByIdAsync(6, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.FromNotFound("Application type not found."));
         var result = await CreateService().IssueInternationalLicenseAsync(100);
@@ -533,7 +535,7 @@ public sealed class InternationalServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(6))
+            .Setup(x => x.GetApplicationTypeByIdAsync(6, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(null!));
         var result = await CreateService().IssueInternationalLicenseAsync(100);
@@ -759,7 +761,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.FromConflict(
                     "Application conflict."));
@@ -796,7 +799,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(0));
         var result = await CreateService().IssueInternationalLicenseAsync(100);
@@ -828,7 +832,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _repository
@@ -842,7 +847,7 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         SetupCommit();
         var result = await CreateService().IssueInternationalLicenseAsync(100);
@@ -851,7 +856,8 @@ public sealed class InternationalServiceTests
             x => x.AddNewApplicationAsync(
                 It.Is<CreateApplicationDto>(dto =>
                     dto.ApplicantPersonID == 30 &&
-                    dto.ApplicationTypeID == 6)),
+                    dto.ApplicationTypeID == 6),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -870,7 +876,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _repository
@@ -893,7 +900,8 @@ public sealed class InternationalServiceTests
             result.Error);
         _applicationService.Verify(
             x => x.CompleteApplicationStateAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
         _transaction.Verify(
             x => x.CommitAsync(
@@ -916,7 +924,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _repository
@@ -952,7 +961,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         InternationalLicense? createdEntity = null;
@@ -970,7 +980,7 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         SetupCommit();
         var before = _clock.Now;
@@ -1010,7 +1020,8 @@ public sealed class InternationalServiceTests
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(700));
         _repository
@@ -1024,7 +1035,7 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(700))
+            .Setup(x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Conflict(
                     "Could not complete application."));
@@ -1066,7 +1077,7 @@ public sealed class InternationalServiceTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
         _applicationService.Verify(
-            x => x.CompleteApplicationStateAsync(700),
+            x => x.CompleteApplicationStateAsync(700, It.IsAny<CancellationToken>()),
             Times.Once);
         _transaction.Verify(
             x => x.CommitAsync(

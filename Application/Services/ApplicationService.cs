@@ -26,38 +26,44 @@ public sealed class ApplicationService(
     private readonly IJordanClock _clock =
         clock ?? throw new ArgumentNullException(nameof(clock));
 
-    public async Task<Result<List<ApplicationDto>>> GetAllApplicationsAsync()
+    public async Task<Result<List<ApplicationDto>>> GetAllApplicationsAsync(
+        CancellationToken cancellationToken = default)
     {
-        var entities = await _repository.GetAllApplicationsAsync();
+        var entities = await _repository.GetAllApplicationsAsync(cancellationToken);
         return Result<List<ApplicationDto>>.Success(entities.Select(ApplicationMapper.ToDto).ToList());
     }
 
-    public async Task<Result<ApplicationBasicInfoDto>> GetBasicInfoAsync(int id)
+    public async Task<Result<ApplicationBasicInfoDto>> GetBasicInfoAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var validation = ApplicationValidator.ValidateId(id);
         if (validation.IsFailure)
             return Result<ApplicationBasicInfoDto>.FromValidationFailure(validation.Error);
 
-        var entity = await _repository.GetApplicationByIdAsync(id);
+        var entity = await _repository.GetApplicationByIdAsync(id, cancellationToken);
         return entity is null
             ? Result<ApplicationBasicInfoDto>.FromNotFound("Application not found.")
             : Result<ApplicationBasicInfoDto>.Success(ApplicationMapper.ToBasicInfoDto(entity));
     }
 
-    public async Task<Result<ApplicationDto>> GetApplicationByIdAsync(int id)
+    public async Task<Result<ApplicationDto>> GetApplicationByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var validation = ApplicationValidator.ValidateId(id);
         if (validation.IsFailure)
             return Result<ApplicationDto>.FromValidationFailure(validation.Error);
 
-        var entity = await _repository.GetApplicationByIdAsync(id);
+        var entity = await _repository.GetApplicationByIdAsync(id, cancellationToken);
         return entity is null
             ? Result<ApplicationDto>.FromNotFound("Application not found.")
             : Result<ApplicationDto>.Success(ApplicationMapper.ToDto(entity));
     }
 
-    public async Task<Result<ApplicationDto>>
-    GetApplicationForIssuanceAsync(int id)
+    public async Task<Result<ApplicationDto>> GetApplicationForIssuanceAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var validation =
             ApplicationValidator.ValidateId(id);
@@ -69,7 +75,7 @@ public sealed class ApplicationService(
 
         var entity =
             await _repository
-                .GetApplicationForIssuanceAsync(id);
+                .GetApplicationForIssuanceAsync(id, cancellationToken);
 
         return entity is null
             ? Result<ApplicationDto>.FromNotFound(
@@ -78,7 +84,9 @@ public sealed class ApplicationService(
                 ApplicationMapper.ToDto(entity));
     }
 
-    public async Task<Result<int>> AddNewApplicationAsync(CreateApplicationDto dto)
+    public async Task<Result<int>> AddNewApplicationAsync(
+        CreateApplicationDto dto,
+        CancellationToken cancellationToken = default)
     {
         var validation = ApplicationValidator.ValidateCreate(dto);
         if (validation.IsFailure)
@@ -87,7 +95,7 @@ public sealed class ApplicationService(
         if (!IsAuthenticated())
             return Result<int>.FromForbidden("Authenticated user is required.");
 
-        var applicationType = await _applicationTypeRepository.GetApplicationTypeByIdAsync(dto.ApplicationTypeID);
+        var applicationType = await _applicationTypeRepository.GetApplicationTypeByIdAsync(dto.ApplicationTypeID, cancellationToken);
         if (applicationType is null)
             return Result<int>.FromNotFound("Application type not found.");
 
@@ -96,21 +104,23 @@ public sealed class ApplicationService(
             applicationType.ApplicationFees,
             _currentUserService.UserId,
             _clock.Now);
-        await _repository.AddNewApplicationAsync(entity);
+        await _repository.AddNewApplicationAsync(entity, cancellationToken);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync(cancellationToken);
         return saved > 0 && entity.ApplicationID > 0
             ? Result<int>.Success(entity.ApplicationID)
             : Result<int>.FromFailure("Failed to create application.");
     }
 
-    public async Task<Result> UpdateApplicationAsync(UpdateApplicationDto dto)
+    public async Task<Result> UpdateApplicationAsync(
+        UpdateApplicationDto dto,
+        CancellationToken cancellationToken = default)
     {
         var validation = ApplicationValidator.ValidateUpdate(dto);
         if (validation.IsFailure)
             return Result.ValidationFailure(validation.Error);
 
-        var entity = await _repository.GetApplicationForUpdateAsync(dto.ApplicationID);
+        var entity = await _repository.GetApplicationForUpdateAsync(dto.ApplicationID, cancellationToken);
         if (entity is null)
             return Result.NotFound("Application not found.");
 
@@ -119,35 +129,39 @@ public sealed class ApplicationService(
         if (entity.ApplicationStatus == AppStatus.Cancelled)
             return Result.Conflict("Cancelled applications cannot be modified.");
 
-        var applicationType = await _applicationTypeRepository.GetApplicationTypeByIdAsync(dto.ApplicationTypeID);
+        var applicationType = await _applicationTypeRepository.GetApplicationTypeByIdAsync(dto.ApplicationTypeID, cancellationToken);
         if (applicationType is null)
             return Result.NotFound("Application type not found.");
 
         entity.ApplicationTypeID = dto.ApplicationTypeID;
         entity.PaidFees = applicationType.ApplicationFees;
 
-        return await SaveAsync("Application update failed.");
+        return await SaveAsync("Application update failed.", cancellationToken);
     }
 
-    public async Task<Result> DeleteApplicationAsync(int id)
+    public async Task<Result> DeleteApplicationAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var validation = ApplicationValidator.ValidateId(id);
         if (validation.IsFailure)
             return Result.ValidationFailure(validation.Error);
 
-        var entity = await _repository.GetApplicationForUpdateAsync(id);
+        var entity = await _repository.GetApplicationForUpdateAsync(id, cancellationToken);
         if (entity is null)
             return Result.NotFound("Application not found.");
         if (entity.ApplicationStatus == AppStatus.Completed)
             return Result.Conflict("Cannot delete completed application.");
 
         _repository.DeleteApplication(entity);
-        return await SaveAsync("Delete application failed.");
+        return await SaveAsync("Delete application failed.", cancellationToken);
     }
 
-    public async Task<Result> CancelApplicationAsync(int applicationId)
+    public async Task<Result> CancelApplicationAsync(
+        int applicationId,
+        CancellationToken cancellationToken = default)
     {
-        var entityResult = await GetTrackedApplicationAsync(applicationId);
+        var entityResult = await GetTrackedApplicationAsync(applicationId, cancellationToken);
         if (entityResult.IsFailure)
             return Result.FromFailure(entityResult);
 
@@ -159,7 +173,7 @@ public sealed class ApplicationService(
 
         entity.ApplicationStatus = AppStatus.Cancelled;
         entity.LastStatusDate = _clock.Now;
-        return await SaveAsync("Cancel application failed.");
+        return await SaveAsync("Cancel application failed.", cancellationToken);
     }
 
     /// <summary>
@@ -167,9 +181,11 @@ public sealed class ApplicationService(
     /// Use this when called from within an outer Unit of Work transaction so that
     /// the outer workflow controls the single SaveChangesAsync boundary.
     /// </summary>
-    public async Task<Result> CompleteApplicationStateAsync(int applicationId)
+    public async Task<Result> CompleteApplicationStateAsync(
+        int applicationId,
+        CancellationToken cancellationToken = default)
     {
-        var entityResult = await GetTrackedApplicationAsync(applicationId);
+        var entityResult = await GetTrackedApplicationAsync(applicationId, cancellationToken);
         if (entityResult.IsFailure)
             return Result.FromFailure(entityResult);
 
@@ -187,18 +203,20 @@ public sealed class ApplicationService(
     private bool IsAuthenticated() =>
         _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;
 
-    private async Task<Result<ApplicationD>> GetTrackedApplicationAsync(int id)
+    private async Task<Result<ApplicationD>> GetTrackedApplicationAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var validation = ApplicationValidator.ValidateId(id);
         if (validation.IsFailure)
             return Result<ApplicationD>.FromValidationFailure(validation.Error);
 
-        var entity = await _repository.GetApplicationForUpdateAsync(id);
+        var entity = await _repository.GetApplicationForUpdateAsync(id, cancellationToken);
         return entity is null
             ? Result<ApplicationD>.FromNotFound("Application not found.")
             : Result<ApplicationD>.Success(entity);
     }
 
-    private async Task<Result> SaveAsync(string errorMessage) =>
-        await _unitOfWork.SaveChangesAsync() > 0 ? Result.Success() : Result.Failure(errorMessage);
+    private async Task<Result> SaveAsync(string errorMessage, CancellationToken cancellationToken = default) =>
+        await _unitOfWork.SaveChangesAsync(cancellationToken) > 0 ? Result.Success() : Result.Failure(errorMessage);
 }

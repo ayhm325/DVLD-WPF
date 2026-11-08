@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
@@ -1874,13 +1874,15 @@ public sealed class TestAppointmentServiceTests
         _applicationService.Verify(
             x =>
                 x.GetBasicInfoAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
 
         _applicationService.Verify(
             x =>
                 x.AddNewApplicationAsync(
-                    It.IsAny<CreateApplicationDto>()),
+                    It.IsAny<CreateApplicationDto>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
 
         _transaction.Verify(
@@ -1930,7 +1932,8 @@ public sealed class TestAppointmentServiceTests
         _applicationService
             .Setup(x =>
                 x.AddNewApplicationAsync(
-                    It.IsAny<CreateApplicationDto>()))
+                    It.IsAny<CreateApplicationDto>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(900));
 
@@ -1980,7 +1983,8 @@ public sealed class TestAppointmentServiceTests
                     It.Is<CreateApplicationDto>(
                         dto =>
                             dto.ApplicantPersonID == 55 &&
-                            dto.ApplicationTypeID == 7)),
+                            dto.ApplicationTypeID == 7),
+                    It.IsAny<CancellationToken>()),
             Times.Once);
 
         _transaction.Verify(
@@ -2034,7 +2038,8 @@ public sealed class TestAppointmentServiceTests
         _applicationService.Verify(
             x =>
                 x.AddNewApplicationAsync(
-                    It.IsAny<CreateApplicationDto>()),
+                    It.IsAny<CreateApplicationDto>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -2122,7 +2127,8 @@ public sealed class TestAppointmentServiceTests
         _applicationService
             .Setup(x =>
                 x.AddNewApplicationAsync(
-                    It.IsAny<CreateApplicationDto>()))
+                    It.IsAny<CreateApplicationDto>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(900));
 
@@ -2168,7 +2174,8 @@ public sealed class TestAppointmentServiceTests
                     It.Is<CreateApplicationDto>(
                         dto =>
                             dto.ApplicantPersonID == 55 &&
-                            dto.ApplicationTypeID == 7)),
+                            dto.ApplicationTypeID == 7),
+                    It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -2212,7 +2219,8 @@ public sealed class TestAppointmentServiceTests
         _applicationService
             .Setup(x =>
                 x.AddNewApplicationAsync(
-                    It.IsAny<CreateApplicationDto>()))
+                    It.IsAny<CreateApplicationDto>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.FromFailure(
                     "Failed to create retake application."));

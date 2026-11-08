@@ -14,9 +14,9 @@ namespace DVLD.Api.Controllers;
 public sealed class ApplicationsController(IApplicationService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
-        var result = await service.GetAllApplicationsAsync();
+        var result = await service.GetAllApplicationsAsync(cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
 
         return result.Value is null
@@ -25,9 +25,9 @@ public sealed class ApplicationsController(IApplicationService service) : Contro
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetApplicationByIdAsync(id);
+        var result = await service.GetApplicationByIdAsync(id, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
 
         return result.Value is null
@@ -36,9 +36,9 @@ public sealed class ApplicationsController(IApplicationService service) : Contro
     }
 
     [HttpGet("{id:int}/basic-info")]
-    public async Task<IActionResult> GetBasicInfo(int id)
+    public async Task<IActionResult> GetBasicInfo(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetBasicInfoAsync(id);
+        var result = await service.GetBasicInfoAsync(id, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
 
         return result.Value is null
@@ -47,13 +47,13 @@ public sealed class ApplicationsController(IApplicationService service) : Contro
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateApplicationRequest request)
+    public async Task<IActionResult> Create(CreateApplicationRequest request, CancellationToken cancellationToken = default)
     {
         var result = await service.AddNewApplicationAsync(new CreateApplicationDto
         {
             ApplicantPersonID = request.ApplicantPersonId,
             ApplicationTypeID = request.ApplicationTypeId
-        });
+        }, cancellationToken);
 
         if (result.IsFailure) return result.ToActionResult(this);
 
@@ -61,7 +61,7 @@ public sealed class ApplicationsController(IApplicationService service) : Contro
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, UpdateApplicationRequest request)
+    public async Task<IActionResult> Update(int id, UpdateApplicationRequest request, CancellationToken cancellationToken = default)
     {
         if (id != request.ApplicationId)
             return Result.ValidationFailure("Route application ID does not match request application ID.").ToActionResult(this);
@@ -70,22 +70,22 @@ public sealed class ApplicationsController(IApplicationService service) : Contro
         {
             ApplicationID = request.ApplicationId,
             ApplicationTypeID = request.ApplicationTypeId
-        });
+        }, cancellationToken);
 
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.DeleteApplicationAsync(id);
+        var result = await service.DeleteApplicationAsync(id, cancellationToken);
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
     [HttpPost("{id:int}/cancel")]
-    public async Task<IActionResult> Cancel(int id)
+    public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.CancelApplicationAsync(id);
+        var result = await service.CancelApplicationAsync(id, cancellationToken);
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 

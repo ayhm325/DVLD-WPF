@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs;
 using DVLD.Contracts.LicenseClass;

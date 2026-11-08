@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.Interfaces;
 using Application.Validators;
@@ -23,11 +23,12 @@ public sealed class ApplicationTypeService(
     // =========================================================
 
     public async Task<Result<List<ApplicationTypeDto>>>
-        GetAllApplicationTypesAsync()
+        GetAllApplicationTypesAsync(
+            CancellationToken cancellationToken = default)
     {
         var appTypes =
             await _applicationTypeRepository
-                .GetAllApplicationTypesAsync();
+                .GetAllApplicationTypesAsync(cancellationToken);
 
         return Result<List<ApplicationTypeDto>>.Success(
             appTypes.Select(MapToDto).ToList());
@@ -38,7 +39,9 @@ public sealed class ApplicationTypeService(
     // =========================================================
 
     public async Task<Result<ApplicationTypeDto>>
-        GetApplicationTypeByIdAsync(int id)
+        GetApplicationTypeByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
@@ -48,7 +51,7 @@ public sealed class ApplicationTypeService(
 
         var appType =
             await _applicationTypeRepository
-                .GetApplicationTypeByIdAsync(id);
+                .GetApplicationTypeByIdAsync(id, cancellationToken);
 
         if (appType is null)
         {
@@ -66,7 +69,8 @@ public sealed class ApplicationTypeService(
 
     public async Task<Result> UpdateApplicationTypeAsync(
         int id,
-        ApplicationTypeDto dto)
+        ApplicationTypeDto dto,
+        CancellationToken cancellationToken = default)
     {
         var validation =
             ApplicationTypeValidator.ValidateUpdate(
@@ -81,7 +85,7 @@ public sealed class ApplicationTypeService(
 
         var appType =
             await _applicationTypeRepository
-                .GetApplicationTypeByIdAsync(id);
+                .GetApplicationTypeByIdAsync(id, cancellationToken);
 
         if (appType is null)
         {
@@ -97,7 +101,7 @@ public sealed class ApplicationTypeService(
 
         var updated =
             await _applicationTypeRepository
-                .UpdateApplicationTypeAsync(appType);
+                .UpdateApplicationTypeAsync(appType, cancellationToken);
 
         if (!updated)
         {
@@ -106,7 +110,7 @@ public sealed class ApplicationTypeService(
         }
 
         var saved =
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0
             ? Result.Success()

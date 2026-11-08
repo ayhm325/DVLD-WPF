@@ -1,4 +1,4 @@
-﻿using Application.DTOs.TestTypeDTO;
+using Application.DTOs.TestTypeDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
 using DVLD.Contracts.TestType;

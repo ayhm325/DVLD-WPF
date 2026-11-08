@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.Interfaces;
 using Application.Services;
@@ -49,7 +49,7 @@ public sealed class ApplicationTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllApplicationTypesAsync())
+            .Setup(x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateEntity(1, "New License", 50m),
@@ -86,7 +86,7 @@ public sealed class ApplicationTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllApplicationTypesAsync())
+            .Setup(x => x.GetAllApplicationTypesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var result =
@@ -110,7 +110,7 @@ public sealed class ApplicationTypeServiceTests
         var service = CreateService();
 
         var result =
-            await service.GetApplicationTypeByIdAsync(id);
+            await service.GetApplicationTypeByIdAsync(id, It.IsAny<CancellationToken>());
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -122,7 +122,7 @@ public sealed class ApplicationTypeServiceTests
 
         _repository.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -133,11 +133,11 @@ public sealed class ApplicationTypeServiceTests
 
         _repository
             .Setup(x =>
-                x.GetApplicationTypeByIdAsync(10))
+                x.GetApplicationTypeByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((ApplicationType?)null);
 
         var result =
-            await service.GetApplicationTypeByIdAsync(10);
+            await service.GetApplicationTypeByIdAsync(10, It.IsAny<CancellationToken>());
 
         Assert.True(result.IsFailure);
         Assert.Equal(
@@ -155,7 +155,7 @@ public sealed class ApplicationTypeServiceTests
 
         _repository
             .Setup(x =>
-                x.GetApplicationTypeByIdAsync(10))
+                x.GetApplicationTypeByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 CreateEntity(
                     10,
@@ -163,7 +163,7 @@ public sealed class ApplicationTypeServiceTests
                     125m));
 
         var result =
-            await service.GetApplicationTypeByIdAsync(10);
+            await service.GetApplicationTypeByIdAsync(10, It.IsAny<CancellationToken>());
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
@@ -206,7 +206,7 @@ public sealed class ApplicationTypeServiceTests
 
         _repository.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -230,7 +230,7 @@ public sealed class ApplicationTypeServiceTests
 
         _repository.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -366,7 +366,7 @@ public sealed class ApplicationTypeServiceTests
 
         _repository
             .Setup(x =>
-                x.GetApplicationTypeByIdAsync(10))
+                x.GetApplicationTypeByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((ApplicationType?)null);
 
         var result =
@@ -384,7 +384,7 @@ public sealed class ApplicationTypeServiceTests
 
         _repository.Verify(
             x => x.UpdateApplicationTypeAsync(
-                It.IsAny<ApplicationType>()),
+                It.IsAny<ApplicationType>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWork.Verify(
@@ -410,12 +410,12 @@ public sealed class ApplicationTypeServiceTests
 
         _repository
             .Setup(x =>
-                x.GetApplicationTypeByIdAsync(10))
+                x.GetApplicationTypeByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _repository
             .Setup(x =>
-                x.UpdateApplicationTypeAsync(entity))
+                x.UpdateApplicationTypeAsync(entity, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result =
@@ -457,12 +457,12 @@ public sealed class ApplicationTypeServiceTests
 
         _repository
             .Setup(x =>
-                x.GetApplicationTypeByIdAsync(10))
+                x.GetApplicationTypeByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _repository
             .Setup(x =>
-                x.UpdateApplicationTypeAsync(entity))
+                x.UpdateApplicationTypeAsync(entity, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _unitOfWork
@@ -490,7 +490,7 @@ public sealed class ApplicationTypeServiceTests
 
         _repository.Verify(
             x =>
-                x.UpdateApplicationTypeAsync(entity),
+                x.UpdateApplicationTypeAsync(entity, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWork.Verify(
@@ -513,12 +513,12 @@ public sealed class ApplicationTypeServiceTests
 
         _repository
             .Setup(x =>
-                x.GetApplicationTypeByIdAsync(1))
+                x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _repository
             .Setup(x =>
-                x.UpdateApplicationTypeAsync(entity))
+                x.UpdateApplicationTypeAsync(entity, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _unitOfWork
@@ -549,12 +549,12 @@ public sealed class ApplicationTypeServiceTests
 
         _repository
             .Setup(x =>
-                x.GetApplicationTypeByIdAsync(1))
+                x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _repository
             .Setup(x =>
-                x.UpdateApplicationTypeAsync(entity))
+                x.UpdateApplicationTypeAsync(entity, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _unitOfWork

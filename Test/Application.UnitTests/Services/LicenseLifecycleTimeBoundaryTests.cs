@@ -58,18 +58,18 @@ public sealed class LicenseLifecycleTimeBoundaryTests
 
         _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        _applicationTypeService.Setup(x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()))
-            .ReturnsAsync((int id) => Result<ApplicationTypeDto>.Success(new ApplicationTypeDto
+        _applicationTypeService.Setup(x => x.GetApplicationTypeByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((int id, CancellationToken _) => Result<ApplicationTypeDto>.Success(new ApplicationTypeDto
             {
                 ApplicationTypeId = id,
                 ApplicationTypeTitle = $"App Type {id}",
                 ApplicationTypeFees = 10m
             }));
 
-        _applicationService.Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>()))
+        _applicationService.Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(100));
 
-        _applicationService.Setup(x => x.CompleteApplicationStateAsync(It.IsAny<int>()))
+        _applicationService.Setup(x => x.CompleteApplicationStateAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _licenseRepository.Setup(x => x.DeactivateLicenseAsync(It.IsAny<int>())).ReturnsAsync(true);

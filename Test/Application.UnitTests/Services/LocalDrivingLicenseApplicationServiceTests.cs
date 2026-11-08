@@ -255,7 +255,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     [Fact]
     public async Task GetNewFees_WhenApplicationTypeNotFound_ReturnsNotFound()
     {
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((ApplicationType?)null);
 
         var result = await CreateService().GetNewLocalDrivingLicenseApplicationFeesAsync();
@@ -267,7 +267,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     [Fact]
     public async Task GetNewFees_WhenApplicationTypeExists_ReturnsFees()
     {
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 42.5m });
 
         var result = await CreateService().GetNewLocalDrivingLicenseApplicationFeesAsync();
@@ -369,7 +369,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
 
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         _applicationService.Verify(
-            x => x.CancelApplicationAsync(It.IsAny<int>()), Times.Never);
+            x => x.CancelApplicationAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -402,12 +402,12 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         SetupTransaction();
         _repository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(CreateEntity(5));
         var expected = Result.Success();
-        _applicationService.Setup(x => x.CancelApplicationAsync(10)).ReturnsAsync(expected);
+        _applicationService.Setup(x => x.CancelApplicationAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
         var result = await CreateService().CancelLocalDrivingLicenseApplicationAsync(5);
 
         Assert.True(result.IsSuccess);
-        _applicationService.Verify(x => x.CancelApplicationAsync(10), Times.Once);
+        _applicationService.Verify(x => x.CancelApplicationAsync(10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -415,7 +415,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
     {
         SetupTransaction();
         _repository.Setup(x => x.GetByIdAsync(5)).ReturnsAsync(CreateEntity(5));
-        _applicationService.Setup(x => x.CancelApplicationAsync(10)).ReturnsAsync(Result.Success());
+        _applicationService.Setup(x => x.CancelApplicationAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
 
         var activeAppointment = new TestAppointment
         {
@@ -678,13 +678,13 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
 
-        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
-            .Callback<ApplicationD>(app => app.ApplicationID = 100)
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationD, CancellationToken>((app, _) => app.ApplicationID = 100)
             .Returns(Task.CompletedTask);
 
         _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
@@ -722,13 +722,13 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
 
-        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
-            .Callback<ApplicationD>(app => app.ApplicationID = 101)
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationD, CancellationToken>((app, _) => app.ApplicationID = 101)
             .Returns(Task.CompletedTask);
 
         _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
@@ -765,13 +765,13 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
 
-        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
-            .Callback<ApplicationD>(app => app.ApplicationID = 102)
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationD, CancellationToken>((app, _) => app.ApplicationID = 102)
             .Returns(Task.CompletedTask);
 
         _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
@@ -841,13 +841,13 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = (byte)minAllowedAge }));
 
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(25, 3)).ReturnsAsync((int?)null);
 
-        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
-            .Callback<ApplicationD>(app => app.ApplicationID = 103)
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationD, CancellationToken>((app, _) => app.ApplicationID = 103)
             .Returns(Task.CompletedTask);
 
         _repository.Setup(x => x.AddAsync(It.IsAny<LocalDrivingLicenseApplication>()))
@@ -917,14 +917,14 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
 
         ApplicationD? capturedApplication = null;
-        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
-            .Callback<ApplicationD>(app =>
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationD, CancellationToken>((app, _) =>
             {
                 capturedApplication = app;
                 app.ApplicationID = 200;
@@ -970,7 +970,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync(88);
@@ -980,7 +980,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
         Assert.Contains("already exists", result.Error);
-        _applicationRepository.Verify(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()), Times.Never);
+        _applicationRepository.Verify(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()), Times.Never);
         _transaction.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
         _transaction.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -1007,12 +1007,12 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
-        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m });
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 3)).ReturnsAsync((int?)null);
 
-        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
+        _applicationRepository.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);

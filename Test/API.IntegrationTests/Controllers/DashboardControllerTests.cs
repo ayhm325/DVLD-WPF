@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.DTOs;
 using DVLD.Contracts.Dashboard;
 using Moq;

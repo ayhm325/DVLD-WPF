@@ -14,10 +14,10 @@ public sealed class CountriesController(
     ICountryService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetAllCountriesAsync();
+            await service.GetAllCountriesAsync(cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);

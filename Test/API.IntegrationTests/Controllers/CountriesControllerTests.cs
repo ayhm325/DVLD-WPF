@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.CountryDTO;
 using DVLD.Contracts.Country;
@@ -28,7 +28,7 @@ public sealed class CountriesControllerTests : IClassFixture<ApiWebApplicationFa
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.CountryServiceMock.Verify(
-            x => x.GetAllCountriesAsync(), Times.Never);
+            x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class CountriesControllerTests : IClassFixture<ApiWebApplicationFa
         };
 
         _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<CountryDto>>.Success(countries));
 
         var response = await _client.SendAsync(CreateAuthenticatedRequest());
@@ -65,7 +65,7 @@ public sealed class CountriesControllerTests : IClassFixture<ApiWebApplicationFa
             });
 
         _factory.CountryServiceMock.Verify(
-            x => x.GetAllCountriesAsync(), Times.Once);
+            x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class CountriesControllerTests : IClassFixture<ApiWebApplicationFa
     public async Task GetAll_WhenSuccessfulWithEmptyList_ReturnsEmptyArray()
     {
         _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<CountryDto>>.Success([]));
 
         var response = await _client.SendAsync(CreateAuthenticatedRequest());
@@ -148,7 +148,7 @@ public sealed class CountriesControllerTests : IClassFixture<ApiWebApplicationFa
     private void SetupFailure(Result<List<CountryDto>> result)
     {
         _factory.CountryServiceMock
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
     }
 

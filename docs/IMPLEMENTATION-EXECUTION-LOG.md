@@ -325,7 +325,7 @@ All **24 active roadmap tasks** from [`ENGINEERING-ROADMAP.md`](../ENGINEERING-R
 | **`AUD-01`** | Transactional SQL Server Audit Logging for Core Business Mutations | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Schema Gate 5 (DBA) & `DEC-AUD-01` |
 | **`INT-03`** | Detained License Replacement Validation (`LicenseReplacementService.cs`) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Licensing Authority Gate 3 (`DEC-POL-01`) |
 | **`TEST-01`** | Throttled Integration Test Migrations (LocalDB SSL Workaround) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Needs runtime validation against LocalDB concurrency |
-| **`API-01`** | Propagate `CancellationToken` Across Endpoints | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Framework cancellation propagation across API |
+| **`API-01`** | Propagate `CancellationToken` Across Endpoints | **Phase 12.3** | **P2** | **In Progress** | **AUTHORIZED** | Active implementation across 5 domain bundles; Bundle 1 in progress |
 | **`REST-01`** | Standardize Error Payloads on RFC 7807 `ProblemDetails` | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Aligns with `ADR-P02` across all controllers |
 | **`SEC-01`** | Segregation of Duties Model B Policy Alignment (`ClientApp/` & API) | **Phase 12.4** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Aligns with `ADR-O01` / `DEC-RBAC-01`; frontend role guards |
 | **`SEC-03`** | Rate Limiting on Password Change (`AuthController.cs`) | **Phase 12.5** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Phase 12.5 Scope; endpoint rate limiting |
@@ -508,23 +508,43 @@ flowchart TD
       - `Application.UnitTests`: 926 passed, 0 failed (exit code 0).
       - `API.IntegrationTests` (`ApplicationsControllerTests`): 53 passed, 0 failed (exit code 0).
   11. Recorded 19-field execution record for `INT-01` in Section 2.4 and updated catalog status to `Verified`.
-- **Working Tree State at Session End:**
-  - Active Branch: `main`
-  - Current HEAD: `77325a123a6e6ec796f7c16295e94aab63965b6b`
-  - Modified Tracked Files:
-    - `API/DVLD.Api/Controllers/ApplicationsController.cs`
-    - `Application/Interfaces/IApplicationService.cs`
-    - `Application/Services/ApplicationService.cs`
-    - `Test/API.IntegrationTests/Controllers/ApplicationsControllerTests.cs`
-    - `Test/Application.UnitTests/Common/JordanClockTimeStandardizationTests.cs`
-    - `Test/Application.UnitTests/Services/ApplicationServiceTests.cs`
-    - `ENGINEERING-DECISIONS.md`
-    - `ENGINEERING-ROADMAP.md`
-    - `docs/IMPLEMENTATION-EXECUTION-LOG.md`
+- **Commit Baseline:** `INT-01` committed at `256df5bca58838c86ad428c1f8a3a4c8ebc4875f` (`refactor(api): remove unsafe direct application completion endpoint (INT-01)`).
 - **Phase 12.2 Completion Status:**
-  - **Phase 12.2 (Backend Integrity & Performance) is 100% COMPLETE.** All four tasks (`INT-01`, `INT-02`, `PERF-01`, `PERF-02`) are implemented, verified, and documented.
-- **Next Phase Transition:**
-  - Transitioning from Phase 12.2 to **Phase 12.3 (Reliability, Observability & Core Policy)**. Gated on human approval for new NuGet packages (`AspNetCore.HealthChecks.SqlServer`, `Serilog.AspNetCore`) and external statutory/DBA gates (`DEC-POL-01`, `DEC-AUD-01`).
+  - **Phase 12.2 (Backend Integrity & Performance) is 100% COMPLETE.** All four tasks (`INT-01`, `INT-02`, `PERF-01`, `PERF-02`) are implemented, verified, and committed.
+
+### Session 8: Task API-01 In-Progress Implementation & Verification
+- **Date & Timestamp:** 2026-11-09 00:50:00 +03:00
+- **Session Goals:** Begin implementation of `API-01` (Propagate `CancellationToken` Across Endpoints). Perform static inventory, analyze call chains, address Moq expression tree compatibility (CS0854), and implement end-to-end propagation across domain bundles.
+- **Architectural Discovery & Inventory:**
+  - Audited full async call stack across 20 Controllers, 26 Application Services, 15 Repositories, UnitOfWork, and Background Services.
+  - Exactly 141 async repository methods, 153 async service methods, and 111 controller actions verified.
+  - Documented complete inventory in [`docs/audits/api-01-cancellation-token-inventory.md`](./audits/api-01-cancellation-token-inventory.md).
+- **Technical Finding (C# CS0854 & Moq Compatibility):**
+  - C# compiler rule CS0854 forbids optional arguments inside expression trees (`Expression<Func<T, Task>>`).
+  - Resolved by explicitly passing `It.IsAny<CancellationToken>()` in Moq setups and verifies, which cleanly matches `HttpContext.RequestAborted` at runtime.
+- **Completed Work (Bundle 1: Applications & ApplicationTypes):**
+  1. `IApplicationRepository` & `ApplicationRepository`: Added `CancellationToken cancellationToken = default` across all 12 async methods; passed token to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `SingleOrDefaultAsync`, `AnyAsync`, `AddAsync`.
+  2. `IApplicationService` & `ApplicationService`: Added `cancellationToken` across all methods; updated `SaveAsync` to pass token to `_unitOfWork.SaveChangesAsync(cancellationToken)`.
+  3. `ApplicationsController`: Added `CancellationToken cancellationToken = default` across all 7 actions and forwarded to service calls.
+  4. `IApplicationTypeRepository` & `ApplicationTypeRepository`: Added `cancellationToken` across all 3 async methods; passed token to EF Core `ToListAsync` and `FirstOrDefaultAsync`.
+  5. `IApplicationTypeService` & `ApplicationTypeService`: Added `cancellationToken` across all 3 methods; forwarded to repository and `_unitOfWork.SaveChangesAsync(cancellationToken)`.
+  6. `ApplicationTypesController`: Added `CancellationToken cancellationToken = default` across all 3 actions and forwarded to service calls.
+  7. Updated Moq test setups in:
+     - `ApplicationsControllerTests` (53 tests)
+     - `ApplicationTypesControllerTests` (17 tests)
+     - `ApplicationServiceTests`
+     - `ApplicationTypeServiceTests`
+     - `JordanClockTimeStandardizationTests`
+- **Verified Test Executions:**
+  - `Test/API.IntegrationTests` (`ApplicationsControllerTests`): **53 passed, 0 failed** (Duration: 210 ms, exit code 0).
+  - `Test/API.IntegrationTests` (`ApplicationTypesControllerTests`): **17 passed, 0 failed** (Duration: 921 ms, exit code 0).
+- **Remaining Scope for API-01:**
+  - Bundle 1 (remainder): `Countries`, `Dashboard`, `LicenseClasses`, `TestTypes`.
+  - Bundle 2: `People`, `Users`, `Auth`.
+  - Bundle 3: `Drivers`, `LocalDrivingLicenseApplications`.
+  - Bundle 4: `TestAppointments`, `Tests`, `TestWorkflow`.
+  - Bundle 5: `Licenses`, `LicenseQuery`, `LicenseIssuance`, `LicenseRenewal`, `LicenseReplacement`, `DetainedLicenses`, `InternationalLicenses`, `LicenseExpirationBackgroundService`.
+- **Current Task Status:** `API-01` is **In Progress** (Active). Single atomic commit will be performed upon 100% completion of all bundles and full test suite verification.
 
 ---
 

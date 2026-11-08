@@ -160,7 +160,8 @@ public class LicenseIssuanceServiceTests
         _applicationServiceMock.Verify(
             service =>
                 service.GetApplicationForIssuanceAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -177,7 +178,7 @@ public class LicenseIssuanceServiceTests
                 Result<int>.Success(applicationId));
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationByIdAsync(applicationId))
+                service.GetApplicationByIdAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.FromNotFound(
                     "Application was not found."));
@@ -204,7 +205,7 @@ public class LicenseIssuanceServiceTests
             applicationTypeId: 2);
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationByIdAsync(applicationId))
+                service.GetApplicationByIdAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
         Result<int> result =
@@ -230,7 +231,7 @@ public class LicenseIssuanceServiceTests
             applicantPersonId: 0);
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationByIdAsync(applicationId))
+                service.GetApplicationByIdAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
         Result<int> result =
@@ -262,7 +263,7 @@ public class LicenseIssuanceServiceTests
             applicantPersonId: personId);
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationForIssuanceAsync(applicationId))
+                service.GetApplicationForIssuanceAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
         _personServiceMock
@@ -454,7 +455,7 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationForIssuanceAsync(applicationId))
+                service.GetApplicationForIssuanceAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(
                     CreateApplication(applicationId, personId, AppStatus.Cancelled)));
@@ -491,7 +492,7 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _applicationServiceMock
             .SetupSequence(service =>
-                service.GetApplicationForIssuanceAsync(applicationId))
+                service.GetApplicationForIssuanceAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(
                     CreateApplication(
@@ -833,7 +834,7 @@ public class LicenseIssuanceServiceTests
             .ReturnsAsync(1);
         _applicationServiceMock
             .Setup(service =>
-                service.CompleteApplicationStateAsync(applicationId))
+                service.CompleteApplicationStateAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Failure("Failed to complete application."));
         Result<int> result =
@@ -901,7 +902,7 @@ public class LicenseIssuanceServiceTests
             .ReturnsAsync(1);
         _applicationServiceMock
             .Setup(service =>
-                service.CompleteApplicationStateAsync(applicationId))
+                service.CompleteApplicationStateAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
@@ -945,7 +946,7 @@ public class LicenseIssuanceServiceTests
             Times.Once);
         _applicationServiceMock.Verify(
             service =>
-                service.CompleteApplicationStateAsync(applicationId),
+                service.CompleteApplicationStateAsync(applicationId, It.IsAny<CancellationToken>()),
             Times.Once);
         _transactionMock.Verify(
             transaction =>
@@ -1018,7 +1019,7 @@ public class LicenseIssuanceServiceTests
                     CreateLicenseClass(
                         licenseClassId)));
         _applicationServiceMock
-            .Setup(service => service.GetApplicationForIssuanceAsync(applicationId))
+            .Setup(service => service.GetApplicationForIssuanceAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationDto>.Success(CreateApplication(applicationId, personId)));
         _testWorkflowServiceMock
             .Setup(service => service.HasPassedAllTestsAsync(localAppId))
@@ -1057,12 +1058,12 @@ public class LicenseIssuanceServiceTests
             applicantPersonId);
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationByIdAsync(applicationId))
+                service.GetApplicationByIdAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
         _applicationServiceMock
             .Setup(service =>
-                service.GetApplicationForIssuanceAsync(applicationId))
+                service.GetApplicationForIssuanceAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationDto>.Success(application));
     }
@@ -1109,7 +1110,8 @@ public class LicenseIssuanceServiceTests
         _applicationServiceMock
             .Setup(service =>
                 service.CompleteApplicationStateAsync(
-                    It.IsAny<int>()))
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
     }
     private void SetupSuccessfulCompletion(
@@ -1117,7 +1119,7 @@ public class LicenseIssuanceServiceTests
     {
         _applicationServiceMock
             .Setup(service =>
-                service.CompleteApplicationStateAsync(applicationId))
+                service.CompleteApplicationStateAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
     }
     private static ApplicationDto CreateApplication(

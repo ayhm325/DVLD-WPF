@@ -23,12 +23,13 @@ public class ApplicationTypeRepository
     // =========================================================
 
     public async Task<List<ApplicationType>>
-        GetAllApplicationTypesAsync()
+        GetAllApplicationTypesAsync(
+            CancellationToken cancellationToken = default)
     {
         return await _context.ApplicationTypes
             .AsNoTracking()
             .OrderBy(x => x.ApplicationTypeId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     // =========================================================
@@ -36,7 +37,9 @@ public class ApplicationTypeRepository
     // =========================================================
 
     public async Task<ApplicationType?>
-        GetApplicationTypeByIdAsync(int id)
+        GetApplicationTypeByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return null;
@@ -45,7 +48,8 @@ public class ApplicationTypeRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x =>
-                    x.ApplicationTypeId == id);
+                    x.ApplicationTypeId == id,
+                cancellationToken);
     }
 
     // =========================================================
@@ -54,7 +58,8 @@ public class ApplicationTypeRepository
 
     public async Task<bool>
         UpdateApplicationTypeAsync(
-            ApplicationType appType)
+            ApplicationType appType,
+            CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(
             appType);
@@ -67,7 +72,8 @@ public class ApplicationTypeRepository
                 .FirstOrDefaultAsync(
                     x =>
                         x.ApplicationTypeId ==
-                        appType.ApplicationTypeId);
+                        appType.ApplicationTypeId,
+                    cancellationToken);
 
         if (existing is null)
             return false;

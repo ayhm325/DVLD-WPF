@@ -1,4 +1,4 @@
-﻿using Application.DTOs.CountryDTO;
+using Application.DTOs.CountryDTO;
 using Application.Interfaces;
 using Application.Services;
 using Domain.Entities;
@@ -28,7 +28,7 @@ public sealed class CountryServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateEntity(1, "Jordan"),
@@ -55,7 +55,7 @@ public sealed class CountryServiceTests
         Assert.Equal("Palestine", countries[2].CountryName);
 
         _repository.Verify(
-            x => x.GetAllCountriesAsync(),
+            x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -65,7 +65,7 @@ public sealed class CountryServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var result = await service.GetAllCountriesAsync();
@@ -78,7 +78,7 @@ public sealed class CountryServiceTests
         Assert.Empty(countries);
 
         _repository.Verify(
-            x => x.GetAllCountriesAsync(),
+            x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -88,7 +88,7 @@ public sealed class CountryServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateEntity(10, "Z"),
@@ -114,7 +114,7 @@ public sealed class CountryServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateEntity(100, "Jordan")
@@ -140,7 +140,7 @@ public sealed class CountryServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException("Database error"));
 
@@ -157,7 +157,7 @@ public sealed class CountryServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllCountriesAsync())
+            .Setup(x => x.GetAllCountriesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((List<Country>)null!);
 
         var exception =

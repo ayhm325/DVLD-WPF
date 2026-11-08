@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +35,8 @@ public sealed class ApplicationRepository : IApplicationRepository
     // =========================================================
 
     public Task<ApplicationD?> GetApplicationByIdAsync(
-        int id)
+        int id,
+        CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult<ApplicationD?>(
@@ -43,7 +44,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
         return Query()
             .FirstOrDefaultAsync(
-                a => a.ApplicationID == id);
+                a => a.ApplicationID == id,
+                cancellationToken);
     }
 
 
@@ -52,7 +54,8 @@ public sealed class ApplicationRepository : IApplicationRepository
     // =========================================================
 
     public Task<ApplicationD?> GetApplicationForUpdateAsync(
-        int id)
+        int id,
+        CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult<ApplicationD?>(
@@ -60,7 +63,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
         return _context.Applications
             .FirstOrDefaultAsync(
-                a => a.ApplicationID == id);
+                a => a.ApplicationID == id,
+                cancellationToken);
     }
 
 
@@ -69,12 +73,13 @@ public sealed class ApplicationRepository : IApplicationRepository
     // =========================================================
 
     public Task<List<ApplicationD>>
-        GetAllApplicationsAsync()
+        GetAllApplicationsAsync(
+            CancellationToken cancellationToken = default)
     {
         return Query()
             .OrderByDescending(
                 a => a.ApplicationID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 
@@ -84,7 +89,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
     public Task<List<ApplicationD>>
         GetApplicationsByPersonIdAsync(
-            int personId)
+            int personId,
+            CancellationToken cancellationToken = default)
     {
         if (personId <= 0)
             return Task.FromResult(
@@ -97,7 +103,7 @@ public sealed class ApplicationRepository : IApplicationRepository
                     personId)
             .OrderByDescending(
                 a => a.ApplicationID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 
@@ -107,7 +113,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
     public Task<List<ApplicationD>>
         GetApplicationsByApplicationTypeIdAsync(
-            int applicationTypeId)
+            int applicationTypeId,
+            CancellationToken cancellationToken = default)
     {
         if (applicationTypeId <= 0)
             return Task.FromResult(
@@ -120,7 +127,7 @@ public sealed class ApplicationRepository : IApplicationRepository
                     applicationTypeId)
             .OrderByDescending(
                 a => a.ApplicationID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 
@@ -130,7 +137,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
     public Task<List<ApplicationD>>
         GetApplicationsByUserIdAsync(
-            int userId)
+            int userId,
+            CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
             return Task.FromResult(
@@ -143,7 +151,7 @@ public sealed class ApplicationRepository : IApplicationRepository
                     userId)
             .OrderByDescending(
                 a => a.ApplicationID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 
@@ -153,7 +161,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
     public Task<List<ApplicationD>>
         GetApplicationsByStatusAsync(
-            AppStatus status)
+            AppStatus status,
+            CancellationToken cancellationToken = default)
     {
         if (!Enum.IsDefined(status))
             return Task.FromResult(
@@ -166,7 +175,7 @@ public sealed class ApplicationRepository : IApplicationRepository
                     status)
             .OrderByDescending(
                 a => a.ApplicationID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     // =========================================================
@@ -174,7 +183,8 @@ public sealed class ApplicationRepository : IApplicationRepository
     // =========================================================
 
     public Task<ApplicationD?> GetApplicationForIssuanceAsync(
-    int id)
+        int id,
+        CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult<ApplicationD?>(
@@ -187,7 +197,7 @@ public sealed class ApplicationRepository : IApplicationRepository
                 FROM [Applications] WITH (UPDLOCK, ROWLOCK)
                 WHERE [ApplicationID] = {id}
                 """)
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     // =========================================================
@@ -196,7 +206,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
     public Task<bool>
         IsApplicationExistsByIdAsync(
-            int id)
+            int id,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult(false);
@@ -205,7 +216,8 @@ public sealed class ApplicationRepository : IApplicationRepository
             .AsNoTracking()
             .AnyAsync(
                 a =>
-                    a.ApplicationID == id);
+                    a.ApplicationID == id,
+                cancellationToken);
     }
 
 
@@ -215,7 +227,8 @@ public sealed class ApplicationRepository : IApplicationRepository
 
     public Task<bool>
         IsPersonHasActiveApplicationAsync(
-            int personId)
+            int personId,
+            CancellationToken cancellationToken = default)
     {
         if (personId <= 0)
             return Task.FromResult(false);
@@ -227,7 +240,8 @@ public sealed class ApplicationRepository : IApplicationRepository
                     a.ApplicantPersonID ==
                         personId &&
                     a.ApplicationStatus ==
-                        AppStatus.New);
+                        AppStatus.New,
+                cancellationToken);
     }
 
 
@@ -238,7 +252,8 @@ public sealed class ApplicationRepository : IApplicationRepository
     public Task<bool>
         IsPersonHasActiveApplicationOfTypeAsync(
             int personId,
-            int applicationTypeId)
+            int applicationTypeId,
+            CancellationToken cancellationToken = default)
     {
         if (personId <= 0 ||
             applicationTypeId <= 0)
@@ -255,7 +270,8 @@ public sealed class ApplicationRepository : IApplicationRepository
                     a.ApplicationTypeID ==
                         applicationTypeId &&
                     a.ApplicationStatus ==
-                        AppStatus.New);
+                        AppStatus.New,
+                cancellationToken);
     }
 
 
@@ -264,13 +280,14 @@ public sealed class ApplicationRepository : IApplicationRepository
     // =========================================================
 
     public async Task AddNewApplicationAsync(
-        ApplicationD application)
+        ApplicationD application,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(
             application);
 
         await _context.Applications
-            .AddAsync(application);
+            .AddAsync(application, cancellationToken);
 
         // No SaveChangesAsync here.
         // UnitOfWork owns persistence.

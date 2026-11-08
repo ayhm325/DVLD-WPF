@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Domain.Enums;
 
 namespace Application.Interfaces;
@@ -10,50 +10,60 @@ public interface IApplicationRepository
     // =========================================================
 
     Task<ApplicationD?> GetApplicationByIdAsync(
-        int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<ApplicationD?> GetApplicationForUpdateAsync(
-        int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
-    Task<List<ApplicationD>> GetAllApplicationsAsync();
+    Task<List<ApplicationD>> GetAllApplicationsAsync(
+        CancellationToken cancellationToken = default);
 
     Task<List<ApplicationD>> GetApplicationsByPersonIdAsync(
-        int personId);
+        int personId,
+        CancellationToken cancellationToken = default);
 
     Task<List<ApplicationD>> GetApplicationsByApplicationTypeIdAsync(
-        int applicationTypeId);
+        int applicationTypeId,
+        CancellationToken cancellationToken = default);
 
     Task<List<ApplicationD>> GetApplicationsByUserIdAsync(
-        int userId);
+        int userId,
+        CancellationToken cancellationToken = default);
 
     Task<List<ApplicationD>> GetApplicationsByStatusAsync(
-        AppStatus status);
+        AppStatus status,
+        CancellationToken cancellationToken = default);
 
     Task<ApplicationD?> GetApplicationForIssuanceAsync(
-    int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
     // =========================================================
     // CHECKS
     // =========================================================
 
     Task<bool> IsApplicationExistsByIdAsync(
-        int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<bool> IsPersonHasActiveApplicationAsync(
-        int personId);
+        int personId,
+        CancellationToken cancellationToken = default);
 
     Task<bool> IsPersonHasActiveApplicationOfTypeAsync(
         int personId,
-        int applicationTypeId);
-
-   
+        int applicationTypeId,
+        CancellationToken cancellationToken = default);
 
     // =========================================================
     // CREATE
     // =========================================================
 
     Task AddNewApplicationAsync(
-        ApplicationD application);
+        ApplicationD application,
+        CancellationToken cancellationToken = default);
 
 
     // =========================================================

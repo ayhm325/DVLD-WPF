@@ -53,7 +53,8 @@ public class LicenseReplacementServiceTests
             Times.Never);
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -111,7 +112,8 @@ public class LicenseReplacementServiceTests
             result.Error);
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
         _unitOfWork.Verify(
             x => x.ExecuteInTransactionAsync(
@@ -142,7 +144,8 @@ public class LicenseReplacementServiceTests
             result.Error);
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -162,7 +165,8 @@ public class LicenseReplacementServiceTests
             result.Error);
         _applicationTypeService.Verify(
             x => x.GetApplicationTypeByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -187,7 +191,7 @@ public class LicenseReplacementServiceTests
             ErrorType.Failure,
             result.ErrorType);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(3),
+            x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -195,7 +199,7 @@ public class LicenseReplacementServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(3))
+            .Setup(x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.FromNotFound(
                     "Application type not found."));
@@ -208,10 +212,10 @@ public class LicenseReplacementServiceTests
             ErrorType.NotFound,
             result.ErrorType);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(3),
+            x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()),
             Times.Once);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(4),
+            x => x.GetApplicationTypeByIdAsync(4, It.IsAny<CancellationToken>()),
             Times.Never);
         _unitOfWork.Verify(
             x => x.ExecuteInTransactionAsync(
@@ -225,7 +229,7 @@ public class LicenseReplacementServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(4))
+            .Setup(x => x.GetApplicationTypeByIdAsync(4, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.FromNotFound(
                     "Application type not found."));
@@ -238,10 +242,10 @@ public class LicenseReplacementServiceTests
             ErrorType.NotFound,
             result.ErrorType);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(4),
+            x => x.GetApplicationTypeByIdAsync(4, It.IsAny<CancellationToken>()),
             Times.Once);
         _applicationTypeService.Verify(
-            x => x.GetApplicationTypeByIdAsync(3),
+            x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -249,7 +253,7 @@ public class LicenseReplacementServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(3))
+            .Setup(x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.FromConflict(
                     "Replacement application type conflict."));
@@ -276,7 +280,7 @@ public class LicenseReplacementServiceTests
     {
         SetupAuthenticatedUser();
         _applicationTypeService
-            .Setup(x => x.GetApplicationTypeByIdAsync(3))
+            .Setup(x => x.GetApplicationTypeByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(null!));
         var sut = CreateSut();
@@ -344,7 +348,8 @@ public class LicenseReplacementServiceTests
         VerifyRollback(transaction);
         _applicationService.Verify(
             x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()),
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -418,7 +423,8 @@ public class LicenseReplacementServiceTests
         VerifyRollback(transaction);
         _applicationService.Verify(
             x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()),
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -432,7 +438,8 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.FromConflict(
                     "Replacement application already exists."));
@@ -464,7 +471,8 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(0));
         var sut = CreateSut();
@@ -502,7 +510,8 @@ public class LicenseReplacementServiceTests
                 It.Is<CreateApplicationDto>(dto =>
                     dto.ApplicantPersonID ==
                         oldLicense.Driver.PersonID &&
-                    dto.ApplicationTypeID == 3)),
+                    dto.ApplicationTypeID == 3),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -570,7 +579,8 @@ public class LicenseReplacementServiceTests
         VerifyRollback(transaction);
         _applicationService.Verify(
             x => x.CompleteApplicationStateAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -633,7 +643,7 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure("Application could not be completed."));
 
         var sut = CreateSut();
@@ -679,7 +689,7 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -719,7 +729,7 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -759,7 +769,7 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -798,7 +808,7 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -840,7 +850,7 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -880,7 +890,7 @@ public class LicenseReplacementServiceTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _applicationService
-            .Setup(x => x.CompleteApplicationStateAsync(100))
+            .Setup(x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -938,7 +948,7 @@ public class LicenseReplacementServiceTests
     {
         _applicationTypeService
             .Setup(x => x.GetApplicationTypeByIdAsync(
-                applicationTypeId))
+                applicationTypeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<ApplicationTypeDto>.Success(
                     new ApplicationTypeDto
@@ -1008,7 +1018,8 @@ public class LicenseReplacementServiceTests
     {
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
-                It.IsAny<CreateApplicationDto>()))
+                It.IsAny<CreateApplicationDto>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(100));
     }
@@ -1074,10 +1085,11 @@ public class LicenseReplacementServiceTests
                     dto.ApplicantPersonID ==
                         oldLicense.Driver.PersonID &&
                     dto.ApplicationTypeID ==
-                        expectedApplicationTypeId)),
+                        expectedApplicationTypeId),
+                It.IsAny<CancellationToken>()),
             Times.Once);
         _applicationService.Verify(
-            x => x.CompleteApplicationStateAsync(100),
+            x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()),
             Times.Once);
         transaction.Verify(
             x => x.CommitAsync(

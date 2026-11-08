@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,11 +23,12 @@ public class CountryRepository
     // =========================================================
 
     public async Task<List<Country>>
-        GetAllCountriesAsync()
+        GetAllCountriesAsync(
+            CancellationToken cancellationToken = default)
     {
         return await _context.Countries
             .AsNoTracking()
             .OrderBy(c => c.CountryName)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 }

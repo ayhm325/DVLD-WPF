@@ -165,7 +165,7 @@ public sealed class JordanClockTimeStandardizationTests
 
         currentUser.SetupGet(x => x.IsLoggedIn).Returns(true);
         currentUser.SetupGet(x => x.UserId).Returns(7);
-        appTypeService.Setup(x => x.GetApplicationTypeByIdAsync(6))
+        appTypeService.Setup(x => x.GetApplicationTypeByIdAsync(6, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 6 }));
         uow.Setup(x => x.ExecuteInTransactionAsync(
                 It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
@@ -228,7 +228,7 @@ public sealed class JordanClockTimeStandardizationTests
 
         currentUser.SetupGet(x => x.IsLoggedIn).Returns(true);
         currentUser.SetupGet(x => x.UserId).Returns(1);
-        appTypeService.Setup(x => x.GetApplicationTypeByIdAsync(It.IsAny<int>()))
+        appTypeService.Setup(x => x.GetApplicationTypeByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationTypeDto>.Success(new ApplicationTypeDto { ApplicationTypeId = 3 }));
         uow.Setup(x => x.ExecuteInTransactionAsync(
                 It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
@@ -291,7 +291,7 @@ public sealed class JordanClockTimeStandardizationTests
 
         currentUser.SetupGet(x => x.IsLoggedIn).Returns(true);
         currentUser.SetupGet(x => x.UserId).Returns(10);
-        appTypeRepo.Setup(x => x.GetApplicationTypeByIdAsync(1))
+        appTypeRepo.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationType { ApplicationTypeId = 1, ApplicationFees = 15m, ApplicationTypeTitle = "New Local" });
         uow.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
@@ -300,8 +300,8 @@ public sealed class JordanClockTimeStandardizationTests
         var sut = new ApplicationService(appRepo.Object, appTypeRepo.Object, uow.Object, currentUser.Object, clock);
 
         ApplicationD? stored = null;
-        appRepo.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>()))
-            .Callback<ApplicationD>(a =>
+        appRepo.Setup(x => x.AddNewApplicationAsync(It.IsAny<ApplicationD>(), It.IsAny<CancellationToken>()))
+            .Callback<ApplicationD, CancellationToken>((a, _) =>
             {
                 a.ApplicationID = 500;
                 stored = a;
@@ -321,7 +321,7 @@ public sealed class JordanClockTimeStandardizationTests
 
         // Advance 5 minutes -> complete application -> LastStatusDate advances monotonically in Jordan time
         clock.Advance(TimeSpan.FromMinutes(5));
-        appRepo.Setup(x => x.GetApplicationForUpdateAsync(500)).ReturnsAsync(stored);
+        appRepo.Setup(x => x.GetApplicationForUpdateAsync(500, It.IsAny<CancellationToken>())).ReturnsAsync(stored);
 
         var completeResult = await sut.CompleteApplicationStateAsync(500);
         Assert.True(completeResult.IsSuccess);
