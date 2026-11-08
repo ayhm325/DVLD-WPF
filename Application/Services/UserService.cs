@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Results;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
@@ -283,21 +284,36 @@ public sealed class UserService : IUserService
         await _userRepository
             .AddUserAsync(user);
 
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
+        try
+        {
+            var saved =
+                await _unitOfWork
+                    .SaveChangesAsync();
 
-        if (saved <= 0 ||
-            user.UserId <= 0)
+            if (saved <= 0 ||
+                user.UserId <= 0)
+            {
+                return Result<int>
+                    .FromFailure(
+                        "Failed to create user.");
+            }
+
+            return Result<int>
+                .Success(
+                    user.UserId);
+        }
+        catch (DuplicateUsernameException)
         {
             return Result<int>
-                .FromFailure(
-                    "Failed to create user.");
+                .FromConflict(
+                    "Username is already in use.");
         }
-
-        return Result<int>
-            .Success(
-                user.UserId);
+        catch (DuplicatePersonUserException)
+        {
+            return Result<int>
+                .FromConflict(
+                    "This person is already associated with a user account.");
+        }
     }
 
     public async Task<Result>
@@ -447,17 +463,30 @@ public sealed class UserService : IUserService
         user.Role =
             targetRole;
 
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync();
-
-        if (saved <= 0)
+        try
         {
-            return Result.Failure(
-                "No user changes were saved.");
-        }
+            var saved =
+                await _unitOfWork
+                    .SaveChangesAsync();
 
-        return Result.Success();
+            if (saved <= 0)
+            {
+                return Result.Failure(
+                    "No user changes were saved.");
+            }
+
+            return Result.Success();
+        }
+        catch (DuplicateUsernameException)
+        {
+            return Result.Conflict(
+                "Username is already in use by another user.");
+        }
+        catch (DuplicatePersonUserException)
+        {
+            return Result.Conflict(
+                "This person is already associated with another user account.");
+        }
     }
 
     public async Task<Result>

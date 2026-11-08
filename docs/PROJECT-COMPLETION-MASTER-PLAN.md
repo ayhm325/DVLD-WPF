@@ -3,7 +3,7 @@
 
 > **Authority Level:** Authoritative Consolidation & Master Completion Plan  
 > **Parent Document:** [`AGENTS.md`](../AGENTS.md)  
-> **Canonical Cross-References:** [`ENGINEERING-ROADMAP.md`](../ENGINEERING-ROADMAP.md) | [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md) | [`ENGINEERING-STANDARDS.md`](../ENGINEERING-STANDARDS.md) | [`SECURITY-STANDARDS.md`](../SECURITY-STANDARDS.md) | [`TESTING-STANDARDS.md`](../TESTING-STANDARDS.md) | [`AI-ENGINEERING-INSTRUCTIONS.md`](../AI-ENGINEERING-INSTRUCTIONS.md)  
+> **Canonical Cross-References:** [`ENGINEERING-ROADMAP.md`](../ENGINEERING-ROADMAP.md) | [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md) | [`ENGINEERING-STANDARDS.md`](../ENGINEERING-STANDARDS.md) | [`SECURITY-STANDARDS.md`](../SECURITY-STANDARDS.md) | [`TESTING-STANDARDS.md`](../TESTING-STANDARDS.md) | [`AI-ENGINEERING-INSTRUCTIONS.md`](../AI-ENGINEERING-INSTRUCTIONS.md) | [`docs/IMPLEMENTATION-EXECUTION-LOG.md`](./IMPLEMENTATION-EXECUTION-LOG.md)
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Active Backend:** ASP.NET Core 8 Web API (`DVLD.Api`)  
 > **Active Frontend:** React 19 SPA (`ClientApp/`)  
@@ -65,6 +65,7 @@ graph TD
    - [`ENGINEERING-ROADMAP.md`](../ENGINEERING-ROADMAP.md) remains the sole authoritative engineering execution backlog.
    - [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md) remains the sole authoritative decision register.
    - [`SECURITY-STANDARDS.md`](../SECURITY-STANDARDS.md) and [`TESTING-STANDARDS.md`](../TESTING-STANDARDS.md) remain the sole technical authorities for security controls and test specifications.
+   - [`docs/IMPLEMENTATION-EXECUTION-LOG.md`](./IMPLEMENTATION-EXECUTION-LOG.md) serves as the authoritative chronological ledger and audit trail for task lifecycle tracking and execution verification.
 2. **Zero Implementation Authority:** Publication of this Master Plan grants **zero** authorization to write code, modify schemas, install packages, or execute migrations. Phases 12.2 through 12.5 remain strictly **PROPOSED / UNAUTHORIZED**.
 3. **Database Protection:** The database `DVLDf` is strictly protected. Zero integration tests, automated drops, truncations, or unverified migrations may ever target `DVLDf`. All automated integration tests run exclusively against ephemeral test databases (`DVLD_IntegrationTests_<GUID>`).
 

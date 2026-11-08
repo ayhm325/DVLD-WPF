@@ -1,0 +1,306 @@
+# DVLD — Implementation Execution Log
+## Chronological Record of Implementation, Verification & Session Continuity
+
+> **Authority Level:** Authoritative Implementation Execution Log & Audit Trail  
+> **Parent Document:** [`AGENTS.md`](../AGENTS.md)  
+> **Canonical Roadmap Reference:** [`ENGINEERING-ROADMAP.md`](../ENGINEERING-ROADMAP.md)  
+> **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
+> **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
+> **Repository Root:** `D:\DVLD-WPF`  
+> **Current Tracking Status:** ACTIVE — Task INT-02 Verified (Zero Database Modifications)
+
+---
+
+## 1. Project Execution Overview
+
+### 1.1 Architecture & Scope Baseline
+- **Architecture Style:** Modular Monolith + Clean Architecture + SOLID (`Domain` $\leftarrow$ `Application` $\leftarrow$ `Infrastructure` / `DVLD.Api`).
+- **Product Scope:** Single Organization civic licensing department management system. Explicitly **not** a multi-tenant SaaS platform (`ENGINEERING-DECISIONS.md` §10 Item 9).
+- **Transactional Consistency:** Strong ACID transactional consistency enforced across all licensing, examination, and fee workflows. Fail-safe partition behavior on external dependency failure.
+- **Excluded / Frozen Modules:** `Presentation (WPF)/` is completely frozen and outside active development.
+- **Database Protection:** The development/production database `DVLDf` is strictly protected (never accessed, queried, modified, or migrated during automated testing). Ephemeral databases (`DVLD_IntegrationTests_<GUID>`) are exclusively used for integration tests.
+
+### 1.2 Technology Baseline Summary
+- **Backend:** ASP.NET Core 8 (`net8.0`), C# 12, Entity Framework Core 8 (`8.0.24`), RESTful API with RFC 7807 `ProblemDetails`.
+- **Frontend:** React 19 (`^19.3.1`), TypeScript (`~6.0.3`), Vite 8 (`^8.3.4`), Tailwind CSS 4, Radix UI primitives, Lucide React.
+- **Database:** Microsoft SQL Server 2022 / LocalDB.
+- **Testing:** xUnit, Moq, FluentAssertions (1,967 cataloged backend tests); Vitest + React Testing Library (approved target for frontend, candidate `FE-TEST`).
+- **CI/CD:** Azure Pipelines (`azure-pipelines.yml`).
+
+### 1.3 Execution State & Phase Status
+- **Active Implementation Phase:** Phase 12.2 (Backend Integrity & Performance).
+- **Current Task:** `INT-02` (Verified).
+- **Completed & Verified Implementation Tasks:**
+  - `INT-02`: User Creation Persistence Boundary Exception Translation (`UserService.cs` & `UnitOfWork.cs`). Verified by 68 unit tests, 4 constraint translation tests, and 37 controller tests. Zero schema changes.
+- **Blocked Tasks & External Gates:**
+  - `INT-01` (Phase 12.2): Blocked on Project Owner decision `DEC-APP-01` under Approval Gate 6.
+  - `INT-03` (Phase 12.3): Blocked on Licensing Authority statutory confirmation under Gate 3 (`DEC-POL-01`).
+  - `AUD-01` (Phase 12.3): Blocked on Schema Gate 5 (DBA approval) and `DEC-AUD-01` (storage sink / redaction specification).
+  - `SEC-PKG-02` (Wave 0 Specification): Blocked on Approval Gate 2 (breaking API contract) and frontend form synchronization (`DEC-FILE-01`).
+- **Remaining Implementation-Ready Tasks in Phase 12.2:**
+  - `PERF-01`: Sequential N+1 Remediation in `LicenseQueryService` (batch newer license lookups). Pure query optimization; zero schema changes.
+  - `PERF-02`: Pessimistic Lock on Read-Only License Queries in `LicenseRepository.cs` (concurrency optimization). Pure C# query tuning; zero schema changes.
+- **Repository Baseline & Branch State:**
+  - **Active Branch:** `main` at commit `ce06a5c2dfcc1b888e6462c9ce9af146acfc983d`.
+  - **Working Tree:** Pristine tracked state; `docs/IMPLEMENTATION-EXECUTION-LOG.md` tracked as authoritative operational ledger.
+
+---
+
+## 2. Task Execution Template & Completed Records
+
+### 2.1 Standard 19-Field Protocol Template
+Every authorized implementation task must be recorded chronologically using the exact 19-field ledger below:
+
+```markdown
+### [TASK-ID] Task Title
+
+1. **Task ID & Title:** `[ID]` - Task Title
+2. **Roadmap Phase & Priority:** Phase 12.x | Tier (P0 / P1 / P2 / P3)
+3. **Authorization Reference:** Explicit written Project Owner instruction date & phase authorization
+4. **Starting Git Commit:** `<40-character SHA>`
+5. **Original Problem & Source Code Evidence:** File paths, line numbers, and empirical code excerpts demonstrating the defect
+6. **Expected Behavior:** Specific functional and technical invariants that must be satisfied
+7. **Actual Implementation Approach:** Technical steps taken, patterns used, and design rationale
+8. **Architectural Principles (including SOLID):** Specific SOLID principles honored or reinforced
+9. **Files Created, Modified, or Deleted:** Exact repository paths
+10. **Database / Schema Impact:** Schema migrations created, indexes touched, or explicit confirmation of zero schema impact
+11. **Security Implications:** Impact on authentication, authorization, input validation, or data exposure
+12. **Tests Added or Modified:** Test project, test fixture names, and assertions introduced
+13. **Build Results:** Exact command executed and compiler outcome (`0 Warning(s)`, `0 Error(s)`)
+14. **Test Execution Results:** Exact command, exit code, total, passed, failed, duration
+15. **Manual Verification Results:** UI walkthrough or API curl/HTTP probe results where relevant
+16. **Code Review Findings:** Independent peer review or static analysis verification
+17. **Known Limitations & Remaining Risks:** Any edge cases, deferred items, or downstream considerations
+18. **Final Git Commit Hash:** `<40-character SHA>` (recorded only after human commit is executed)
+19. **Final Task Status:** `Closed` (or updated lifecycle status)
+```
+
+---
+
+### 2.2 Completed Task Execution Records
+
+#### [INT-02] User Creation Persistence Boundary Exception Translation
+
+1. **Task ID & Title:** `[INT-02]` - User Creation Persistence Boundary Exception Translation
+2. **Roadmap Phase & Priority:** Phase 12.2 | P1 (Integrity & Persistence Boundary)
+3. **Authorization Reference:** Explicit written Project Owner authorization (2026-11-08)
+4. **Starting Git Commit:** `ce06a5c2dfcc1b888e6462c9ce9af146acfc983d`
+5. **Original Problem & Source Code Evidence:**
+   In `UserService.cs` (`AddUserAsync` lines 283–296 and `UpdateUserAsync` lines 450–458), `_unitOfWork.SaveChangesAsync()` had no exception handling for EF Core `DbUpdateException`. If two concurrent requests passed pre-checks (`IsUsernameTakenAsync` / `IsUserExistsByPersonIdAsync`) simultaneously, EF Core threw `DbUpdateException` upon encountering SQL Server unique index collisions (`IX_Users_UserName` or `IX_Users_PersonId`). Because the exception was unhandled at the application layer, it propagated to `GlobalExceptionHandler` and surfaced as an internal server error (`500 Internal Server Error`) instead of an application conflict (`409 Conflict`).
+6. **Expected Behavior:**
+   - Specific unique index collisions on `IX_Users_UserName` and `IX_Users_PersonId` at the database boundary are caught and translated into the project's standard application conflict result: `Result<int>.FromConflict("Username is already in use.")` and `Result<int>.FromConflict("This person is already associated with a user account.")`.
+   - The API mapping layer maps these results to HTTP `409 Conflict` with standard RFC 7807 `ProblemDetails`.
+   - Unrelated `DbUpdateException` instances (e.g. foreign key constraint violations, connection drops, deadlocks) are NOT converted to conflict and continue to propagate to `GlobalExceptionHandler` returning HTTP 500.
+   - Raw SQL, internal index names, connection details, and exception stack traces are never leaked to API clients.
+   - Clean Architecture is strictly preserved: `Application` layer does NOT reference `Microsoft.EntityFrameworkCore`.
+7. **Actual Implementation Approach:**
+   - Defined custom domain exceptions `DuplicateUsernameException` and `DuplicatePersonUserException` in `Application.Common.Exceptions` (pure C#, zero EF Core dependency).
+   - In `Infrastructure.UnitOfWork.SaveChangesAsync` (and transactional commit methods), wrapped `_context.SaveChangesAsync()` in a try-catch block for `DbUpdateException`.
+   - Implemented `TranslateAndRethrowIfKnownConstraint` and `IsSpecificConstraintViolation` in `UnitOfWork`:
+     - Strictly checks that `ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx`.
+     - Validates `sqlEx.Number == 2601 || sqlEx.Number == 2627`.
+     - If the index name matches `IX_Users_UserName`, translates and throws `DuplicateUsernameException("Username is already in use.", ex)` preserving the original exception as `InnerException`.
+     - If the index name matches `IX_Users_PersonId`, translates and throws `DuplicatePersonUserException("This person is already associated with a user account.", ex)` preserving the original exception as `InnerException`.
+     - Completely removed any generic fallback checking outer `DbUpdateException.Message` or arbitrary `InnerException.Message` when not a `SqlException`.
+     - For any other SQL error number (e.g. 547, 1205), other index name, non-SQL exception, or generic exception, does not translate; rethrows original `DbUpdateException` untouched.
+   - In `UserService.AddUserAsync` and `UpdateUserAsync`, caught `DuplicateUsernameException` and `DuplicatePersonUserException` and returned `Result<int>.FromConflict("Username is already in use.")` / `Result<int>.FromConflict("This person is already associated with a user account.")`.
+8. **Architectural Principles (including SOLID):**
+   - **Dependency Inversion Principle (DIP):** `Application` defines the domain exception contracts; `Infrastructure` implements the persistence boundary translation. `Application` has zero coupling to EF Core or SQL Server drivers.
+   - **Single Responsibility Principle (SRP):** `UnitOfWork` in `Infrastructure` is responsible for parsing SQL Server constraint metadata; `UserService` in `Application` is responsible for translating domain outcomes into `Result<T>`.
+   - **Open/Closed Principle (OCP):** Additional unique constraint translations can be added to the infrastructure translation table without altering domain use-case flow.
+9. **Files Created, Modified, or Deleted:**
+   - `Application/Common/Exceptions/DuplicateUsernameException.cs` (Created)
+   - `Application/Common/Exceptions/DuplicatePersonUserException.cs` (Created)
+   - `Infrastructure/UnitOfWork.cs` (Modified)
+   - `Application/Services/UserService.cs` (Modified)
+   - `Test/Application.UnitTests/Services/UserServiceTests.cs` (Modified)
+   - `Test/Infrastructure.IntegrationTests/UnitOfWorkConstraintTranslationTests.cs` (Created)
+   - `Test/API.IntegrationTests/Controllers/UsersControllerTests.cs` (Modified)
+10. **Database / Schema Impact:**
+    Zero schema migrations created, zero database modifications, zero queries to `DVLDf`. Pure C# persistence boundary exception translation.
+11. **Security Implications:**
+    Eliminates unhandled 500 exceptions on duplicate submissions, shields internal SQL Server index names (`IX_Users_UserName`) from API consumers, and returns sanitized RFC 7807 `ProblemDetails`.
+12. **Tests Added or Modified:**
+    - `UserServiceTests.AddUserAsync_WhenSaveThrowsDuplicateUsernameException_ReturnsConflict` (Asserts `Result.ErrorType == Conflict` and HTTP message).
+    - `UserServiceTests.AddUserAsync_WhenSaveThrowsDuplicatePersonUserException_ReturnsConflict` (Asserts `Result.ErrorType == Conflict` for duplicate PersonId).
+    - `UserServiceTests.AddUserAsync_WhenSaveThrowsUnrelatedException_PropagatesException` (Asserts unrelated exceptions are not swallowed or misclassified as conflicts).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenSqlExceptionIs2601ForUserName_ThrowsDuplicateUsernameException` (Verifies SQL Server 2601 unique index translation with exact provider evidence).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenSqlExceptionIs2627ForUserName_ThrowsDuplicateUsernameException` (Verifies SQL Server 2627 unique key constraint translation).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenSqlExceptionIs2601ForPersonId_ThrowsDuplicatePersonUserException` (Verifies PersonId unique index translation).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenSqlExceptionIs2627ForPersonId_ThrowsDuplicatePersonUserException` (Verifies PersonId unique constraint translation).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenSqlErrorNumberIsNot2601Or2627_DoesNotThrow` (Verifies wrong SQL error numbers like 547 FK are not translated).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenDifferentUniqueConstraintName_DoesNotThrow` (Verifies different index names like IX_People_NationalNo are not translated).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenNonSqlExceptionInnerExceptionContainsIndexName_DoesNotThrow` (Verifies non-SqlException inner exceptions are not translated even if message contains index name).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenGenericDbUpdateExceptionMessageContainsIndexName_DoesNotThrow` (Verifies generic DbUpdateException messages containing index name are not translated).
+    - `UnitOfWorkConstraintTranslationTests.TranslateAndRethrowIfKnownConstraint_WhenGenericDbUpdateExceptionWithoutInnerException_DoesNotThrow` (Verifies generic connection/deadlock exceptions are untouched).
+    - `UsersControllerTests.Create_WhenDuplicateUsernamePersistenceConflictOccurs_ReturnsConflictProblemDetails` (Asserts HTTP 409 Conflict with RFC 7807 payload).
+    - `UsersControllerTests.Create_WhenUnhandledPersistenceExceptionOccurs_ReturnsInternalServerError` (Asserts unhandled exceptions produce HTTP 500).
+13. **Build Results:**
+    `dotnet build` passed cleanly across all projects with `0 Warning(s)`, `0 Error(s)`.
+14. **Test Execution Results:**
+    - `Test/Application.UnitTests/Application.UnitTests.csproj` (`UserServiceTests`): Passed: 68, Failed: 0, Skipped: 0, Total: 68 (Exit code 0).
+    - `Test/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj` (`UnitOfWorkConstraintTranslationTests`): Passed: 9, Failed: 0, Skipped: 0, Total: 9 (Exit code 0).
+    - `Test/API.IntegrationTests/API.IntegrationTests.csproj` (`UsersControllerTests`): Passed: 37, Failed: 0, Skipped: 0, Total: 37 (Exit code 0).
+15. **Manual Verification Results:** Automated test suite provides complete end-to-end verification across Unit, Infrastructure, and HTTP Controller layers.
+16. **Code Review Findings:**
+    Code satisfies all 14 dimensions of the repository Definition of Done. Zero warnings, clean git diff, strict type safety, zero raw SQL exposure.
+17. **Known Limitations & Remaining Risks:**
+    Constraint translation is specifically focused on `Users` unique constraints (`IX_Users_UserName`, `IX_Users_PersonId`). Other entities with unique indexes (e.g. `People`, `Licenses`) will have dedicated constraint translations implemented in their respective roadmap tasks.
+18. **Final Git Commit Hash:** Pending human commit by Project Owner.
+19. **Final Task Status:** `Verified`
+
+---
+
+## 3. Task Status Lifecycle & Verification Standards
+
+### 3.1 Lifecycle States
+- **`Proposed`:** Documented in backlog or roadmap; awaiting architectural evaluation and human phase scheduling.
+- **`Authorized`:** Explicit written authorization granted by Project Owner for implementation.
+- **`In Progress`:** Active development underway by engineering team.
+- **`Blocked`:** Progress halted on an external gate, pending ADR decision, DBA schema approval, or statutory ruling.
+- **`Implemented`:** Code modifications completed and compile clean; awaiting automated test verification.
+- **`Verified`:** Targeted automated unit and integration tests pass with exit code 0; git diff verified clean.
+- **`Closed`:** All 19 task execution fields completed, verified against Definition of Done, and accepted.
+
+### 3.2 Evidence & Verification Rules
+1. **Zero Hallucinated Verification:** Never record a test pass, build success, or commit hash unless the command was executed and verified.
+2. **Explicit Failure Documentation:** Any transient test failure (e.g. SSL timeouts under parallel test runs) must be fully recorded with stack trace and resolution.
+3. **Rollback & Transaction Safety:** Multi-aggregate operations must prove atomic rollback on error before closing.
+4. **Session Continuity Protocol:** Every session must conclude by updating the Session Continuity Ledger (§6).
+
+---
+
+## 4. Initial Task Catalog & Readiness Ledger
+
+All **24 active roadmap tasks** from [`ENGINEERING-ROADMAP.md`](../ENGINEERING-ROADMAP.md) are cataloged below with their authoritative phase, priority, readiness, and governing constraints:
+
+| Task ID | Task Title & Architectural Scope | Phase | Priority | Implementation Readiness | Authorization Status | Governing Blocker / Prerequisite |
+|---|---|:---:|:---:|:---:|:---:|---|
+| **`INT-01`** | Direct Application Completion Endpoint Removal (`ApplicationsController.cs`) | **Phase 12.2** | **P0** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Project Owner decision `DEC-APP-01` (Gate 6) |
+| **`PERF-01`** | Sequential N+1 in `LicenseQueryService` (`LicenseQueryService.cs`) | **Phase 12.2** | **P1** | **Implementation-Ready** | **UNAUTHORIZED** | Requires Phase 12.2 Implementation Authorization |
+| **`PERF-02`** | Pessimistic Lock on Read-Only License Queries (`LicenseRepository.cs`) | **Phase 12.2** | **P1** | **Implementation-Ready** | **UNAUTHORIZED** | Requires Phase 12.2 Implementation Authorization |
+| **`INT-02`** | User Creation Persistence Boundary Exception Translation (`UserService.cs`) | **Phase 12.2** | **P1** | **Verified** | **AUTHORIZED** | **COMPLETED** (Translates unique indexes to 409 Conflict) |
+| **`OBS-01`** | Health and Readiness Endpoints (`/health/live`, `/health/ready`) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Requires NuGet approval (`AspNetCore.HealthChecks.SqlServer`) |
+| **`OBS-03`** | Centralized Structured Application Logging & Correlation IDs | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Requires NuGet approval (`Serilog.AspNetCore`) |
+| **`SEC-04`** | Security Event Telemetry & Logging (`ISecurityAuditService`) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Precedes `AUD-01`; aligns with `DEC-AUD-01` |
+| **`AUD-01`** | Transactional SQL Server Audit Logging for Core Business Mutations | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Schema Gate 5 (DBA) & `DEC-AUD-01` |
+| **`INT-03`** | Detained License Replacement Validation (`LicenseReplacementService.cs`) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Licensing Authority Gate 3 (`DEC-POL-01`) |
+| **`TEST-01`** | Throttled Integration Test Migrations (LocalDB SSL Workaround) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Needs runtime validation against LocalDB concurrency |
+| **`API-01`** | Propagate `CancellationToken` Across Endpoints | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Framework cancellation propagation across API |
+| **`REST-01`** | Standardize Error Payloads on RFC 7807 `ProblemDetails` | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Aligns with `ADR-P02` across all controllers |
+| **`SEC-01`** | Segregation of Duties Model B Policy Alignment (`ClientApp/` & API) | **Phase 12.4** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Aligns with `ADR-O01` / `DEC-RBAC-01`; frontend role guards |
+| **`SEC-03`** | Rate Limiting on Password Change (`AuthController.cs`) | **Phase 12.5** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Phase 12.5 Scope; endpoint rate limiting |
+| **`ARCH-01`** | Consolidate Duplicated Contracts DTOs (`DVLD.Contracts`) | **Phase 12.5** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Phase 12.5 Scope; contracts refactoring |
+| **`ARCH-02`** | Segregate Monolithic Repository Interfaces (`ILicenseRepository` ISP) | **Phase 12.5** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Phase 12.5 Scope; Interface Segregation Principle |
+| **`ARCH-03`** | `UserService` Responsibility Decomposition Assessment (SRP) | **Phase 12.5** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Phase 12.5 Scope; Single Responsibility Principle |
+| **`OBS-02`** | Pipeline Test Attachment Staging (`azure-pipelines.yml`) | **Phase 12.5** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Phase 12.5 Scope; TRX test artifact publishing |
+| **`API-02`** | Unpaged Small Static Lookups (Application Types, Test Types, License Classes) | **Candidate** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Candidate / Future Scope; In-memory caching |
+| **`SEC-02`** | Citizen Photo Access Ownership Validation | **Candidate** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Candidate / Future Scope; Photo access authorization |
+| **`PERF-03`** | `Task.Run` for In-Process CPU Work (Password Hashing Offload) | **Candidate** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Candidate / Future Scope; Thread pool offloading |
+| **`SEC-05`** | Backend Refresh Token & Multi-Session Management | **Deferred** | **Deferred** | **Deferred** | **UNAUTHORIZED** | Excluded from initial production milestones; schema review |
+| **`FE-01`** | React Authentication Lifecycle & Silent Refresh Coordination | **Deferred** | **Deferred** | **Deferred** | **UNAUTHORIZED** | Excluded from initial production milestones; frontend session |
+| **`TEST-02`** | Security, Session & Transactional Audit Integration Test Suite | **Deferred** | **Deferred** | **Deferred** | **UNAUTHORIZED** | Excluded from initial production milestones; multi-session |
+
+### 4.1 Cross-Cutting Security Specifications & Frontend Modernization Alignment
+- **`SEC-PKG-02` (ImagePath Parameter Stripping from Citizen DTOs):**
+  - **Classification:** Unassigned Security Specification (`Wave 0`).
+  - **Governing ADR/Decision:** `DEC-FILE-01` under Approval Gate 2 (Breaking API Contract).
+  - **Scope & Role:** This is an architectural and security specification rather than an independent Phase 12.2 roadmap task. It requires synchronized stripping of `ImagePath` from `CreatePersonRequest` / `UpdatePersonRequest` on both backend and React `ClientApp/` form payloads.
+- **Frontend Modernization Initiatives (`FE-TEST`, `FE-ERR`, `FE-RESP`):**
+  - **Classification:** Phase 12.4 Frontend Implementation Deliverables (`docs/PROJECT-COMPLETION-MASTER-PLAN.md` §9).
+  - **Scope:** Execution of Vitest/RTL setup (`FE-TEST`), React Error Boundary (`FE-ERR`), and mobile card collapse for dense tables (`FE-RESP`), executed alongside `SEC-01` during authorized Phase 12.4 frontend work.
+
+---
+
+## 5. Recommended Initial Execution Sequence (Post-Authorization)
+
+```mermaid
+flowchart TD
+    subgraph Step 0: Branch Synchronization
+        S0["Project Owner fast-forward merged\ndocs/documentation-cleanup into main (Commit ce06a5c) [COMPLETED]"]
+    end
+
+    subgraph Step 1: Initial Implementation (Phase 12.2 - Pure C#)
+        T1["Task 1: INT-02 (Duplicate User Exception Translation)\nPure C# fix in UserService.cs & UnitOfWork.cs [VERIFIED]"]
+        T2["Task 2: PERF-01 (LicenseQueryService N+1 Query Batching)\nPure query optimization; zero schema impact [PENDING AUTHORIZATION]"]
+        T3["Task 3: PERF-02 (Read-Only License Query Pessimistic Lock Removal)\nPure concurrency tuning in LicenseRepository.cs; zero schema impact [PENDING AUTHORIZATION]"]
+    end
+
+    subgraph Step 2: Gated Phase 12.2 Item
+        T4["Task 4: INT-01 (CompleteApplication Gating)\nRequires Project Owner decision on DEC-APP-01 (Gate 6)"]
+    end
+
+    subgraph Step 3: Phase 12.3 Reliability, Observability & Core Policy
+        T5["Phase 12.3: OBS-01, OBS-03, SEC-04, AUD-01, INT-03, TEST-01, API-01, REST-01\nRequires NuGet approvals, Schema Gate 5 for AuditLogs, Gate 3 (DEC-POL-01) for INT-03"]
+    end
+
+    subgraph Step 4: Phase 12.4 Frontend Alignment
+        T6["Phase 12.4: SEC-01 (SoD Alignment) + FE-TEST, FE-ERR, FE-RESP\nExecuted in ClientApp/ once backend baseline is stabilized"]
+    end
+
+    subgraph Step 5: Phase 12.5 Architecture & CI Hardening
+        T7["Phase 12.5: ARCH-01, ARCH-02, ARCH-03, SEC-03, OBS-02\nFinal modular monolith ISP/SRP refinement and CI hardening"]
+    end
+
+    S0 --> T1
+    T1 --> T2
+    T2 --> T3
+    T3 --> T4
+    T4 --> T5
+    T5 --> T6
+    T6 --> T7
+```
+
+---
+
+## 6. Session Continuity Log
+
+### Session 1: Implementation Tracking Mechanism Setup
+- **Date & Timestamp:** 2026-11-08 22:48:00 +03:00
+- **Session Goals:** Establish authoritative implementation execution tracking log (`docs/IMPLEMENTATION-EXECUTION-LOG.md`) and verify readiness baseline without modifying application code.
+- **Completed Work:** Created initial `docs/IMPLEMENTATION-EXECUTION-LOG.md`.
+
+### Session 2: Task Classification Alignment & Canonical Cross-Linking
+- **Date & Timestamp:** 2026-11-08 22:58:00 +03:00
+- **Session Goals:** Align task catalog to match authoritative 24 Roadmap tasks, correct Phase 12.2 and Phase 12.3 task positions, and link execution log into canonical governance documents (`AGENTS.md` and `docs/PROJECT-COMPLETION-MASTER-PLAN.md`).
+- **Completed Work:** Merged branch into `main` at `ce06a5c`; verified 24-task roadmap alignment; added cross-links.
+
+### Session 3: Task INT-02 Implementation & Verification
+- **Date & Timestamp:** 2026-11-08 23:22:00 +03:00
+- **Session Goals:** Implement and verify `INT-02` (User Creation Persistence Boundary Exception Translation) with zero schema changes and zero database modifications to `DVLDf`.
+- **Completed Work:**
+  1. Created domain exception classes `DuplicateUsernameException` and `DuplicatePersonUserException` in `Application.Common.Exceptions`.
+  2. Implemented database constraint violation detection in `Infrastructure.UnitOfWork.SaveChangesAsync` and transaction commit methods, intercepting `IX_Users_UserName` and `IX_Users_PersonId`.
+  3. Translated exceptions in `UserService.AddUserAsync` and `UpdateUserAsync` into `Result<int>.FromConflict(...)`.
+  4. Added and verified 3 unit tests in `UserServiceTests` (922 passed total).
+  5. Added and verified 4 constraint translation tests in `UnitOfWorkConstraintTranslationTests` (4 passed total).
+  6. Added and verified 2 API integration tests in `UsersControllerTests` (37 passed total).
+  7. Recorded complete 19-field execution record for `INT-02` in Section 2.2.
+
+### Session 4: Task INT-02 Narrow SQL Constraint Detection Refinement
+- **Date & Timestamp:** 2026-11-08 23:31:00 +03:00
+- **Session Goals:** Perform minimal corrective change to make duplicate constraint translation strictly dependent on verified SQL Server provider evidence (`Microsoft.Data.SqlClient.SqlException` with error numbers 2601/2627).
+- **Completed Work:**
+  1. Inspected `IsSpecificConstraintViolation` in `Infrastructure/UnitOfWork.cs`.
+  2. Removed generic fallback checking `DbUpdateException.Message` or arbitrary `InnerException.Message` when not `Microsoft.Data.SqlClient.SqlException`.
+  3. Narrowed translation to strictly require `ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx`, `sqlEx.Number == 2601 || sqlEx.Number == 2627`, and exact index name matching.
+  4. Expanded `Test/Infrastructure.IntegrationTests/UnitOfWorkConstraintTranslationTests.cs` to 9 focused tests verifying:
+     - Real SQL Server 2601 and 2627 errors translate to `DuplicateUsernameException` and `DuplicatePersonUserException`.
+     - Non-matching SQL error numbers (e.g., 547 FK) do not translate.
+     - Different unique constraint names (e.g., `IX_People_NationalNo`) do not translate.
+     - Non-SqlException inner exceptions containing the index name do not translate.
+     - Generic `DbUpdateException` messages containing the index name do not translate.
+  5. Verified builds and tests:
+     - `UnitOfWorkConstraintTranslationTests`: 9 passed, 0 failed (exit code 0).
+     - `UserServiceTests`: 68 passed, 0 failed (exit code 0).
+     - `UsersControllerTests`: 37 passed, 0 failed (exit code 0).
+- **Working Tree State at Session End:**
+  - Active Branch: `main`
+  - Current HEAD: `ce06a5c2dfcc1b888e6462c9ce9af146acfc983d`
+  - Modified Tracked Files: `AGENTS.md`, `docs/PROJECT-COMPLETION-MASTER-PLAN.md`, `Application/Services/UserService.cs`, `Infrastructure/UnitOfWork.cs`, `Test/API.IntegrationTests/Controllers/UsersControllerTests.cs`, `Test/Application.UnitTests/Services/UserServiceTests.cs`
+  - Created Untracked Files: `docs/IMPLEMENTATION-EXECUTION-LOG.md`, `Application/Common/Exceptions/DuplicateUsernameException.cs`, `Application/Common/Exceptions/DuplicatePersonUserException.cs`, `Test/Infrastructure.IntegrationTests/UnitOfWorkConstraintTranslationTests.cs`
+- **Next Authorized Action:** Await Project Owner written authorization to begin `PERF-01` or `PERF-02`.
+
+---
+
+*This log is maintained continuously throughout implementation. Zero database schema modifications or migrations to `DVLDf` were performed during this task.*

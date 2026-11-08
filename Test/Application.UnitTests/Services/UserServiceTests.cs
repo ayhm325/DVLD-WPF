@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Results;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
@@ -714,6 +715,116 @@ public class UserServiceTests
             unitOfWork =>
                 unitOfWork.SaveChangesAsync(
                     It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AddUserAsync_WhenSaveThrowsDuplicateUsernameException_ReturnsConflict()
+    {
+        // Arrange
+        var dto = CreateValidCreateUserDto();
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUsernameTakenAsync(dto.UserName))
+            .ReturnsAsync(false);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUserExistsByPersonIdAsync(dto.PersonId))
+            .ReturnsAsync(false);
+
+        _unitOfWorkMock
+            .Setup(unitOfWork =>
+                unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DuplicateUsernameException());
+
+        // Act
+        Result<int> result = await _sut.AddUserAsync(dto);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Username is already in use.", result.Error);
+
+        _userRepositoryMock.Verify(
+            repository => repository.AddUserAsync(It.IsAny<User>()),
+            Times.Once);
+
+        _unitOfWorkMock.Verify(
+            unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AddUserAsync_WhenSaveThrowsDuplicatePersonUserException_ReturnsConflict()
+    {
+        // Arrange
+        var dto = CreateValidCreateUserDto();
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUsernameTakenAsync(dto.UserName))
+            .ReturnsAsync(false);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUserExistsByPersonIdAsync(dto.PersonId))
+            .ReturnsAsync(false);
+
+        _unitOfWorkMock
+            .Setup(unitOfWork =>
+                unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DuplicatePersonUserException());
+
+        // Act
+        Result<int> result = await _sut.AddUserAsync(dto);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("This person is already associated with a user account.", result.Error);
+
+        _userRepositoryMock.Verify(
+            repository => repository.AddUserAsync(It.IsAny<User>()),
+            Times.Once);
+
+        _unitOfWorkMock.Verify(
+            unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AddUserAsync_WhenSaveThrowsUnrelatedException_PropagatesException()
+    {
+        // Arrange
+        var dto = CreateValidCreateUserDto();
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUsernameTakenAsync(dto.UserName))
+            .ReturnsAsync(false);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.IsUserExistsByPersonIdAsync(dto.PersonId))
+            .ReturnsAsync(false);
+
+        _unitOfWorkMock
+            .Setup(unitOfWork =>
+                unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Unrelated database error."));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.AddUserAsync(dto));
+
+        _userRepositoryMock.Verify(
+            repository => repository.AddUserAsync(It.IsAny<User>()),
+            Times.Once);
+
+        _unitOfWorkMock.Verify(
+            unitOfWork => unitOfWork.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

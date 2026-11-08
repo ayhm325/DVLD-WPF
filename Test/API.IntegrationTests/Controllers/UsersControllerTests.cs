@@ -309,6 +309,54 @@ public sealed class UsersControllerTests
     }
 
     [Fact]
+    public async Task Create_WhenDuplicateUsernamePersistenceConflictOccurs_ReturnsConflictProblemDetails()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        const string expectedDetail = "Username is already in use.";
+
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+            .ReturnsAsync(Result<int>.FromConflict(expectedDetail));
+
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PostAsJsonAsync("/api/Users", new
+        {
+            PersonId = 700,
+            UserName = "duplicate_user",
+            Password = "Password123",
+            IsActive = true
+        });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.Conflict,
+            "Conflict",
+            expectedDetail);
+    }
+
+    [Fact]
+    public async Task Create_WhenUnhandledPersistenceExceptionOccurs_ReturnsInternalServerError()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+            .ThrowsAsync(new InvalidOperationException("Simulated database failure."));
+
+        using var client = CreateClient(factory, 10, "Admin");
+
+        var response = await client.PostAsJsonAsync("/api/Users", new
+        {
+            PersonId = 700,
+            UserName = "any_user",
+            Password = "Password123",
+            IsActive = true
+        });
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Update_WhenServiceSucceeds_ReturnsNoContent()
     {
         await using var factory = new ApiWebApplicationFactory();

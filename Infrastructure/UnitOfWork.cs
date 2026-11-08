@@ -1,3 +1,4 @@
+using Application.Common.Exceptions;
 using Application.Common.Results;
 using Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -19,9 +20,19 @@ public sealed class UnitOfWork : IUnitOfWork
             ?? throw new ArgumentNullException(nameof(context));
     }
 
-    public Task<int> SaveChangesAsync(
-        CancellationToken cancellationToken = default) =>
-        _context.SaveChangesAsync(cancellationToken);
+    public async Task<int> SaveChangesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            TranslateAndRethrowIfKnownConstraint(ex);
+            throw;
+        }
+    }
 
     public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(
         CancellationToken cancellationToken = default)
@@ -57,8 +68,8 @@ public sealed class UnitOfWork : IUnitOfWork
     public Task<T> ExecuteInTransactionAsync<T>(
         Func<IUnitOfWorkTransaction, Task<T>> operation,
         IsolationLevel isolationLevel,
-        CancellationToken cancellationToken = default) =>
-        ExecuteInTransactionCoreAsync(
+        CancellationToken cancellationToken = default)
+        => ExecuteInTransactionCoreAsync(
             operation,
             verifySucceeded: null,
             isolationLevel,
@@ -138,7 +149,15 @@ public sealed class UnitOfWork : IUnitOfWork
                 }
                 else
                 {
-                    await _context.SaveChangesAsync(cancellationToken);
+                    try
+                    {
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        TranslateAndRethrowIfKnownConstraint(ex);
+                        throw;
+                    }
                 }
 
                 tracker.Detach();
@@ -238,6 +257,41 @@ public sealed class UnitOfWork : IUnitOfWork
         }
     }
 
+
+    public static void TranslateAndRethrowIfKnownConstraint(DbUpdateException ex)
+    {
+        if (IsSpecificConstraintViolation(ex, "IX_Users_UserName"))
+        {
+            throw new DuplicateUsernameException(
+                "Username is already in use.",
+                ex);
+        }
+
+        if (IsSpecificConstraintViolation(ex, "IX_Users_PersonId"))
+        {
+            throw new DuplicatePersonUserException(
+                "This person is already associated with a user account.",
+                ex);
+        }
+    }
+
+    private static bool IsSpecificConstraintViolation(
+        DbUpdateException ex,
+        string indexOrConstraintName)
+    {
+        if (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx)
+        {
+            if (sqlEx.Number == 2601 || sqlEx.Number == 2627)
+            {
+                return sqlEx.Message.Contains(
+                    indexOrConstraintName,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        return false;
+    }
+
     private sealed class UnitOfWorkTransaction : IUnitOfWorkTransaction
     {
         private readonly DVLDDbContext _context;
@@ -281,7 +335,15 @@ public sealed class UnitOfWork : IUnitOfWork
             if (_isCompleted)
                 return;
 
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+            {
+                TranslateAndRethrowIfKnownConstraint(ex);
+                throw;
+            }
 
             if (!_deferPhysicalCommit)
             {
