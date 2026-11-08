@@ -39,7 +39,7 @@ Decisions are classified using explicit statuses:
 | **ADR-R02** | Rejection of Multi-Tenant IDOR Claim on Citizen Photos (SEC-02) | **REJECTED** | Security | `PeopleController.cs` |
 | **ADR-R03** | Rejection of Pagination on Tiny Static Reference Tables (API-02) | **REJECTED** | API Design | Reference Controllers |
 | **ADR-O01** | Retention vs. Relaxation of Segregation of Duties (SEC-01) | **APPROVED** | Security Policy | Authorization Policies |
-| **ADR-O02** | Detained License Replacement Policy (INT-03) | **APPROVED** | Business Rule | `LicenseReplacementService.cs` |
+| **ADR-O02** | Detained License Replacement Policy (INT-03) | **PROVISIONALLY SELECTED — OFFICIAL POLICY VERIFICATION REQUIRED** | Business Rule | `LicenseReplacementService.cs` |
 
 ---
 
@@ -175,9 +175,9 @@ Decisions are classified using explicit statuses:
   - A separate explicit human authorization is required before implementation.
 
 ### ADR-O02: Detained License Replacement Policy (INT-03)
-- **Status:** `APPROVED` (Decision Date: 2026-11-08)
+- **Status:** `PROVISIONALLY SELECTED — OFFICIAL POLICY VERIFICATION REQUIRED` (Provisional Direction Date: 2026-11-08)
 - **Context:** Static code inspection confirms that `LicenseReplacementService` does not check whether a license is detained before issuing a replacement.
-- **Approved Business Rule:**
+- **Provisionally Selected Business Rule:**
   1. A driving license with an active detention must not be replaced.
   2. The active detention must first be resolved through the existing Release Detained License workflow.
   3. Once the detention is released, replacement may proceed if all other replacement business validations are satisfied.
@@ -187,12 +187,14 @@ Decisions are classified using explicit statuses:
   - This is a project-specific business rule.
   - The project simulates core licensing operations of a Driving and Vehicle Licensing Department.
   - Government paperwork, official evidence, external authority correspondence, temporary permits, and other real-world administrative procedures are outside the project's intended scope unless explicitly introduced later.
-  - Do not describe this decision as a confirmed legal requirement or official Jordanian procedure.
+  - Do not describe this decision as a confirmed legal requirement or official Jordanian procedure. Official policy verification remains required.
 - **Technical Questions — Not Yet Decided:**
   The following implementation details are not yet decided and must not be invented or assumed:
   - Is detention associated with `LicenseId`, `DriverId`, or both?
   - How should the system identify the active detention when validating a replacement?
   - What historical relationships must be preserved when a replacement creates a new license record?
+  - Lost-license and damaged-license replacement procedures must not be assumed to have identical requirements.
+  - What official policy verification is still required?
   - *Mandatory Investigation Gate:* These remain technical questions requiring inspection of the existing Domain model, repositories, and workflows before implementation. Do not change the data model or implementation in this phase.
 - **Implementation Authorization:**
   - **Phase 12.2 remains NOT AUTHORIZED.**
