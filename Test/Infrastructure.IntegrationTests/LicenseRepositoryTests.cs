@@ -1921,6 +1921,51 @@ public sealed class LicenseRepositoryTests
         Assert.True(summary.TotalExpired >= 1);
     }
 
+    [Fact]
+    public async Task GetRenewalSummaryAsync_WhenExpiredLicenseHasAnotherActiveLicenseForSameDriverAndClass_ExcludesFromEligible()
+    {
+        var cutoff = new DateOnly(2026, 11, 8);
+        var expiredDate = new DateTime(2026, 11, 7);
+
+        // Standard eligible expired license (different driver/class)
+        var legitimateEligible = await SeedLicenseAsync(
+            issueDate: new DateTime(2020, 1, 1),
+            expirationDate: expiredDate,
+            isActive: true);
+
+        // Driver with active license (License A, active, not expired)
+        var activeLicense = await SeedLicenseAsync(
+            issueDate: new DateTime(2026, 1, 1),
+            expirationDate: new DateTime(2028, 1, 1),
+            isActive: true);
+
+        // Same driver and same class has an expired inactive license (License B, inactive, expired)
+        var expiredInactiveLicense = await SeedAdditionalLicenseAsync(
+            activeLicense,
+            issueDate: new DateTime(2020, 1, 1),
+            isActive: false,
+            createNewLicenseClass: false);
+
+        // Ensure expiredInactiveLicense expiration date is before cutoff
+        await using (var ctx = _database.CreateContext())
+        {
+            var lic = await ctx.Licenses.SingleAsync(l => l.LicenseID == expiredInactiveLicense.LicenseId);
+            lic.ExpirationDate = expiredDate;
+            await ctx.SaveChangesAsync();
+        }
+
+        await using var context = _database.CreateContext();
+        var repository = new LicenseRepository(context);
+
+        var summary = await repository.GetRenewalSummaryAsync(cutoff);
+
+        Assert.NotNull(summary);
+        // The expiredInactiveLicense is in TotalExpired, but NOT in EligibleForRenewal because activeLicense is active for the same driver and class
+        Assert.True(summary.TotalExpired >= 2);
+        Assert.True(summary.IneligibleForRenewal >= 1);
+        Assert.Equal(summary.TotalExpired - summary.EligibleForRenewal, summary.IneligibleForRenewal);
+    }
+
     private sealed record LicenseSeed(
         int LicenseId,
         int ApplicationId,

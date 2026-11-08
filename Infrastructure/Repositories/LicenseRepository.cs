@@ -432,6 +432,11 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 newer.DriverID == l.DriverID &&
                 newer.LicenseClass == l.LicenseClass &&
                 newer.LicenseID > l.LicenseID))
+            .Where(l => !_context.Licenses.Any(other =>
+                other.DriverID == l.DriverID &&
+                other.LicenseClass == l.LicenseClass &&
+                other.LicenseID != l.LicenseID &&
+                other.IsActive))
             .Where(l => !_context.DetainedLicenses.Any(d =>
                 d.LicenseID == l.LicenseID &&
                 !d.IsReleased))

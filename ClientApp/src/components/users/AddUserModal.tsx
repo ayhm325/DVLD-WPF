@@ -63,9 +63,13 @@ export default function AddUserModal({
   const [personQuery, setPersonQuery] = useState('')
   const debouncedQuery = useDebounce(personQuery, 300)
 
+  const [serverMeta, setServerMeta] = useState<{ totalCount?: number; totalPages?: number }>({})
+
   const pagination = usePagination({
     pageSize: 10,
     initialPage: 1,
+    totalCount: serverMeta.totalCount,
+    totalPages: serverMeta.totalPages,
   })
 
   const { resetPage } = pagination
@@ -94,11 +98,14 @@ export default function AddUserModal({
     enabled: isOpen && Boolean(accessToken),
     dependencies: [pagination.page, pagination.pageSize, debouncedQuery],
     defaultErrorMessage: 'Failed to load eligible people.',
+    onSuccess: (data) => {
+      setServerMeta({ totalCount: data.totalCount, totalPages: data.totalPages })
+    },
   })
 
   const candidates = candidateResult?.items ?? []
-  const totalCount = candidateResult?.totalCount ?? 0
-  const totalPages = candidateResult?.totalPages ?? 1
+  const totalCount = candidateResult?.totalCount ?? serverMeta.totalCount ?? 0
+  const totalPages = candidateResult?.totalPages ?? serverMeta.totalPages ?? 1
 
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
 
@@ -122,6 +129,7 @@ export default function AddUserModal({
 
   const resetForm = () => {
     setPersonQuery('')
+    setServerMeta({})
     setSelectedPerson(null)
     setUserName('')
     setPassword('')
