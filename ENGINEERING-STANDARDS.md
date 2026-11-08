@@ -2,6 +2,7 @@
 
 > **Authority Level:** Mandatory Backend & Full-Stack Development Standards  
 > **Parent Document:** [`AGENTS.md`](./AGENTS.md)  
+> **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Baseline Commit:** `baa356705c3b5c364a9c5aabf0cd62a5aa21e4b9`  
 > **Governance Status:** CONSOLIDATED & ENFORCED (Phase 2.1 Reconciled)  

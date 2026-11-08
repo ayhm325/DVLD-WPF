@@ -36,6 +36,9 @@ To maintain strict historical and semantic integrity, the decision accounting is
 - **DEFERRED:** Formally excluded from initial release milestones and postponed to a future roadmap phase.
 - **POLICY UNRESOLVED:** Multiple strategic alternatives submitted for Project Owner selection.
 
+> [!NOTE]
+> For comprehensive implementation stage mappings, open decision prerequisites, and subsystem maturity evaluations tied to these decision records, consult the standalone master plan [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md).
+
 ---
 
 ## 2. Master Decision Summary Matrix

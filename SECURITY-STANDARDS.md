@@ -2,6 +2,7 @@
 
 > **Authority Level:** Mandatory Security Baseline  
 > **Parent Document:** [`AGENTS.md`](./AGENTS.md)  
+> **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Baseline Commit:** `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`  
 
@@ -172,7 +173,8 @@ The DVLD platform security governance maintains complete traceability between th
 | **`RSK-20`** | Authorized Insider Mass PII Harvesting via Unbounded Collections | `TESTING-STANDARDS.md` §7.13 | Threat Scenario | Mitigated under `SEC-PKG-03` (Clamping $\le 50$) |
 
 > [!IMPORTANT]
-> **Definitive Clarification on `RSK-08`:**
+> **Definitive Clarification on `RSK-08` & `RSK-11` (Gate 8):**
 > - Foundational empirical finding **`RSK-S08`** (Timing Side-Channel) remapped to **`RSK-03`** (`SEC-PKG-08` / `TST-AUTH-03`).
 > - Identifier **`RSK-08`** is exclusively assigned to **Multi-Factor Authentication (MFA) for Administrative Roles** (`DEC-AUTH-03`).
+> - Identifier **`RSK-11`** governs citizen PII and photograph/biometric exposure. Production Approval Gate 8 requires formal legal and regulatory review regarding data privacy and statutory compliance under the Jordan Personal Data Protection Law (Law No. 24 of 2023). Engineering data minimization and masking practices are distinguished from confirmed statutory obligations, and legal verification remains an outstanding project item.
 > - There is zero duplication across active or historical risk registers.

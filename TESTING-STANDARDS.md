@@ -2,6 +2,7 @@
 
 > **Authority Level:** Mandatory Testing & Quality Assurance Standards  
 > **Parent Document:** [`AGENTS.md`](./AGENTS.md)  
+> **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Baseline Commit:** `baa356705c3b5c364a9c5aabf0cd62a5aa21e4b9`  
 > **Governance Status:** CONSOLIDATED & ENFORCED (Phase 2)  
@@ -98,6 +99,7 @@ For baseline reference, historical execution metrics recorded during the Phase 1
 | **`Application.UnitTests`** | 919 | 919 | **919** | 0 | 100% pass rate in memory. |
 | **`API.IntegrationTests`** | 436 | 1 | **1** | 0 | Only 1 smoke test (`Swagger_EndpointReturnsSuccessAndCorrectContentType`) was executed and passed. **435 tests were cataloged but not executed.** |
 | **`Infrastructure.IntegrationTests`** | 612 | 612 | **611** | **1** | 611 passed. Exactly 1 test failed due to a transient SSL pre-login handshake timeout. |
+| **`ClientApp/` (Frontend)** | 0 | 0 | **0** | **0** | Zero automated tests in `ClientApp/` at current inspected baseline (`FE-TEST` candidate requirement). |
 | **Total Test Inventory** | **1,967** | **1,532** | **1,531** | **1** | Total cataloged test suite size: 1,967 tests. (1,967 is the cataloged inventory, NOT the passed count). |
 
 ---
