@@ -153,7 +153,7 @@ public class LicenseRenewalServiceTests
         SetupTransaction(transaction);
 
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync((License?)null);
 
         var sut = CreateSut();
@@ -220,7 +220,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.ExpirationDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(10);
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -247,7 +247,7 @@ public class LicenseRenewalServiceTests
 
         var oldLicense = CreateExpiredLicense();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
         _detainedLicenseRepository
             .Setup(x => x.IsLicenseDetainedAsync(10))
@@ -275,7 +275,7 @@ public class LicenseRenewalServiceTests
 
         var oldLicense = CreateExpiredLicense();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
         _detainedLicenseRepository
             .Setup(x => x.IsLicenseDetainedAsync(10))
@@ -306,7 +306,7 @@ public class LicenseRenewalServiceTests
 
         var oldLicense = CreateExpiredLicense();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
         _detainedLicenseRepository
             .Setup(x => x.IsLicenseDetainedAsync(10))
@@ -338,7 +338,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.Driver = null!;
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -363,7 +363,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo = null!;
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -388,7 +388,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo.DefaultValidityLength = 0;
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -413,7 +413,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo.ClassFees = -1;
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -746,7 +746,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ThrowsAsync(
                 new InvalidOperationException("Database failure."));
 
@@ -834,7 +834,7 @@ public class LicenseRenewalServiceTests
     }
 
     private void SetupOldLicense(License license) =>
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
 
     private void SetupSuccessfulRenewalApplication() =>
         _applicationService

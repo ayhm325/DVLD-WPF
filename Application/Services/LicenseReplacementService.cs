@@ -74,7 +74,7 @@ public sealed class LicenseReplacementService(
             async transaction =>
             {
                 var oldLicense =
-                    await _licenseRepository.GetLicenseByIdAsync(oldLicenseId);
+                    await _licenseRepository.GetForUpdateAsync(oldLicenseId);
 
                 if (oldLicense is null)
                     return await RollbackAsync(

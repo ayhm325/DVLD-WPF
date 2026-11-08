@@ -98,7 +98,7 @@ public sealed class DetainedLicenseService(
             async transaction =>
             {
                 var license =
-                    await _licenseRepository.GetLicenseByIdAsync(dto.LicenseID);
+                    await _licenseRepository.GetForUpdateAsync(dto.LicenseID);
 
                 if (license is null)
                     return await RollbackAsync(
@@ -187,7 +187,7 @@ public sealed class DetainedLicenseService(
                         Result.Conflict("License is already released."));
 
                 var license =
-                    await _licenseRepository.GetLicenseByIdAsync(
+                    await _licenseRepository.GetForUpdateAsync(
                         detention.LicenseID);
 
                 if (license is null)

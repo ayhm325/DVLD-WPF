@@ -29,20 +29,20 @@
 
 ### 1.3 Execution State & Phase Status
 - **Active Implementation Phase:** Phase 12.2 (Backend Integrity & Performance).
-- **Current Task:** `PERF-01` (Verified).
+- **Current Task:** `PERF-02` (Verified).
 - **Completed & Verified Implementation Tasks:**
   - `INT-02`: User Creation Persistence Boundary Exception Translation (`UserService.cs` & `UnitOfWork.cs`). Verified by 68 unit tests, 9 constraint translation tests, and 37 controller tests. Committed in `4191f09`.
-  - `PERF-01`: LicenseQueryService N+1 Query Remediation (`LicenseQueryService.cs` & `LicenseRepository.cs`). Batched newer license lookups via `GetNewerLicensesBatchAsync`. Verified by 927 unit tests (including 5 new targeted batch tests) and 83 controller tests. Zero schema changes.
+  - `PERF-01`: LicenseQueryService N+1 Query Remediation (`LicenseQueryService.cs` & `LicenseRepository.cs`). Batched newer license lookups via `GetNewerLicensesBatchAsync`. Verified by 927 unit tests, 5 isolated DB repository batch tests, and 83 controller tests. Committed in `60a0751`.
+  - `PERF-02`: Pessimistic Lock on Read-Only License Queries in `LicenseRepository.cs` (concurrency optimization). Separated shared non-locking read queries (`GetLicenseByIdAsync`) from state-modifying update locks (`GetForUpdateAsync` with `WITH (UPDLOCK, HOLDLOCK)`). Verified by 927 unit tests, 26 isolated DB repository tests (including concurrent reader tests), and 83 controller tests. Zero schema changes.
 - **Blocked Tasks & External Gates:**
   - `INT-01` (Phase 12.2): Blocked on Project Owner decision `DEC-APP-01` under Approval Gate 6.
   - `INT-03` (Phase 12.3): Blocked on Licensing Authority statutory confirmation under Gate 3 (`DEC-POL-01`).
   - `AUD-01` (Phase 12.3): Blocked on Schema Gate 5 (DBA approval) and `DEC-AUD-01` (storage sink / redaction specification).
   - `SEC-PKG-02` (Wave 0 Specification): Blocked on Approval Gate 2 (breaking API contract) and frontend form synchronization (`DEC-FILE-01`).
 - **Remaining Implementation-Ready Tasks in Phase 12.2:**
-
-  - `PERF-02`: Pessimistic Lock on Read-Only License Queries in `LicenseRepository.cs` (concurrency optimization). Pure C# query tuning; zero schema changes.
+  - `INT-01`: Direct Application Completion Endpoint Removal (P0, gated on `DEC-APP-01` / Approval Gate 6).
 - **Repository Baseline & Branch State:**
-  - **Active Branch:** `main` at commit `4191f09148419688df295f54394e3579be6a8946`.
+  - **Active Branch:** `main` at commit `60a0751ec46a0df37f410161577c3a8959b297ee`.
   - **Working Tree:** Pristine tracked state; `docs/IMPLEMENTATION-EXECUTION-LOG.md` tracked as authoritative operational ledger.
 
 ---
@@ -211,6 +211,43 @@ Every authorized implementation task must be recorded chronologically using the 
 15. **Manual Verification Results:** Query count verification asserted via Moq repository call invocation counts: `Times.Once` for batched query, `Times.Never` for sequential query.
 16. **Code Review Findings:** Code adheres strictly to repository standards and Definition of Done. Zero warnings, zero speculative abstractions, minimal surgical scope. Candidate-pair predicate generates exact pair combinations bounded by page size without Cartesian product blowup.
 17. **Known Limitations & Remaining Risks:** None. Both in-memory and isolated SQL Server repository integration tests verified with zero defects.
+18. **Final Git Commit Hash:** `60a0751ec46a0df37f410161577c3a8959b297ee`
+19. **Final Task Status:** `Verified`
+
+### 2.3 Task PERF-02: Pessimistic Lock on Read-Only License Queries
+
+1. **Task ID:** `PERF-02`
+2. **Task Title:** Pessimistic Lock on Read-Only License Queries (`LicenseRepository.cs`)
+3. **Roadmap Phase & Priority:** Phase 12.2 (Backend Integrity & Performance) — Priority P1 (Provisional Engineering Priority)
+4. **Governing Architectural Decisions:** `ADR-P01` (Separation of Non-Locking Reads from Update-Locking Queries)
+5. **Authorization Reference:** Explicitly authorized by Project Owner for implementation.
+6. **Execution Date & Session:** 2026-11-09, Session 6
+7. **Architectural Layer & Component:** Infrastructure & Application (`Infrastructure/Repositories/LicenseRepository.cs`, `Application/Interfaces/ILicenseRepository.cs`, `Application/Services/`)
+8. **Root Cause Analysis:** `LicenseRepository.GetLicenseByIdAsync` hardcoded `WITH (UPDLOCK, HOLDLOCK)` table hints on all queries. Read-only endpoints (`GET /api/licenses/{id}` and `/details` via `LicenseQueryService`) acquired update locks (`U`) instead of shared locks (`S`), serializing concurrent readers against one another and blocking behind write transactions.
+9. **Implementation Summary:**
+   - Added `Task<License?> GetForUpdateAsync(int id)` to `ILicenseRepository`.
+   - Refactored `LicenseRepository.GetLicenseByIdAsync` to execute standard EF Core LINQ queries (`Query().AsNoTracking().AsSplitQuery().FirstOrDefaultAsync(l => l.LicenseID == id)`) without `WITH (UPDLOCK, HOLDLOCK)`.
+   - Implemented `LicenseRepository.GetForUpdateAsync` preserving pessimistic update locking (`WITH (UPDLOCK, HOLDLOCK)`) exclusively for state-modifying write workflows.
+   - Updated write mutation services (`LicenseRenewalService`, `LicenseReplacementService`, and `DetainedLicenseService`) to use `GetForUpdateAsync`.
+   - Retained non-locking reads in read-only query service (`LicenseQueryService.GetLicenseByIdAsync` and `GetLicenseDetailsByIdAsync`).
+10. **Database Schema & Migration Evidence:**
+    Zero schema migrations created, zero table modifications, zero indexes modified, zero queries to `DVLDf`.
+11. **Security Implications:**
+    Eliminates reader-reader and reader-writer lock contention and denial-of-service vulnerabilities on read-heavy public endpoints while preserving data integrity on transactional mutations.
+12. **Tests Added or Modified:**
+    - `LicenseRepositoryTests.GetForUpdateAsync_ShouldReturnLicenseWithRelatedData`: asserts entity and related graph loading under update lock.
+    - `LicenseRepositoryTests.GetForUpdateAsync_ShouldReturnNullForInvalidId`: verifies edge cases on non-positive IDs.
+    - `LicenseRepositoryTests.GetLicenseByIdAsync_WhenMultipleReadersExecuteConcurrently_CompleteSuccessfullyWithoutBlocking`: asserts concurrent non-locking readers execute simultaneously without blocking.
+    - Updated mock setups in `LicenseRenewalServiceTests`, `LicenseReplacementServiceTests`, `DetainedLicenseServiceTests`, `JordanClockTimeStandardizationTests`, and `LicenseLifecycleTimeBoundaryTests` to supply `GetForUpdateAsync`.
+13. **Build Results:**
+    `dotnet build` passed cleanly across all affected projects with `0 Warning(s)`, `0 Error(s)`.
+14. **Test Execution Results:**
+    - `Test/Application.UnitTests/Application.UnitTests.csproj`: Passed: 927, Failed: 0, Skipped: 0, Total: 927 (Duration: 7 s, Exit code 0).
+    - `Test/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj` (`LicenseRepositoryTests`): Passed: 26, Failed: 0, Skipped: 0, Total: 26 (Duration: 6 s, Exit code 0, executed against isolated dynamic database `DVLD_IntegrationTests_<GUID>` via `DVLD_TEST_CONNECTION`).
+    - `Test/API.IntegrationTests/API.IntegrationTests.csproj` (`LicensesControllerTests`): Passed: 83, Failed: 0, Skipped: 0, Total: 83 (Duration: 3 s, Exit code 0).
+15. **Manual Verification Results:** Concurrency behavior validated: 5 concurrent asynchronous readers executing `GetLicenseByIdAsync` complete cleanly in parallel.
+16. **Code Review Findings:** Strict adherence to `ADR-P01`. Shared reads completely detached from update lock hints; update lock retained exclusively for write operations. Verified transaction boundaries for all 4 write workflows: UnitOfWork transaction begins prior to `GetForUpdateAsync`, locks remain held until commit/rollback, zero reads performed outside transactions, and `.AsNoTracking()` causes zero state loss or persistence bypass due to direct `ExecuteUpdateAsync` or explicit add/save operations.
+17. **Known Limitations & Remaining Risks:** None. Both in-memory and isolated SQL Server repository integration tests verified with zero defects.
 18. **Final Git Commit Hash:** Pending human commit by Project Owner.
 19. **Final Task Status:** `Verified`
 
@@ -243,7 +280,7 @@ All **24 active roadmap tasks** from [`ENGINEERING-ROADMAP.md`](../ENGINEERING-R
 |---|---|:---:|:---:|:---:|:---:|---|
 | **`INT-01`** | Direct Application Completion Endpoint Removal (`ApplicationsController.cs`) | **Phase 12.2** | **P0** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Project Owner decision `DEC-APP-01` (Gate 6) |
 | **`PERF-01`** | Sequential N+1 in `LicenseQueryService` (`LicenseQueryService.cs`) | **Phase 12.2** | **P1** | **Verified** | **AUTHORIZED** | **COMPLETED** (Batched newer license lookup via `GetNewerLicensesBatchAsync`) |
-| **`PERF-02`** | Pessimistic Lock on Read-Only License Queries (`LicenseRepository.cs`) | **Phase 12.2** | **P1** | **Implementation-Ready** | **UNAUTHORIZED** | Requires Phase 12.2 Implementation Authorization |
+| **`PERF-02`** | Pessimistic Lock on Read-Only License Queries (`LicenseRepository.cs`) | **Phase 12.2** | **P1** | **Verified** | **AUTHORIZED** | **COMPLETED** (Separated shared reads from `GetForUpdateAsync` per `ADR-P01`) |
 | **`INT-02`** | User Creation Persistence Boundary Exception Translation (`UserService.cs`) | **Phase 12.2** | **P1** | **Verified** | **AUTHORIZED** | **COMPLETED** (Translates unique indexes to 409 Conflict) |
 | **`OBS-01`** | Health and Readiness Endpoints (`/health/live`, `/health/ready`) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Requires NuGet approval (`AspNetCore.HealthChecks.SqlServer`) |
 | **`OBS-03`** | Centralized Structured Application Logging & Correlation IDs | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Requires NuGet approval (`Serilog.AspNetCore`) |
@@ -288,7 +325,7 @@ flowchart TD
     subgraph Step 1: Initial Implementation (Phase 12.2 - Pure C#)
         T1["Task 1: INT-02 (Duplicate User Exception Translation)\nPure C# fix in UserService.cs & UnitOfWork.cs [VERIFIED]"]
         T2["Task 2: PERF-01 (LicenseQueryService N+1 Query Batching)\nPure query optimization; zero schema impact [VERIFIED]"]
-        T3["Task 3: PERF-02 (Read-Only License Query Pessimistic Lock Removal)\nPure concurrency tuning in LicenseRepository.cs; zero schema impact [PENDING AUTHORIZATION]"]
+        T3["Task 3: PERF-02 (Read-Only License Query Pessimistic Lock Removal)\nSeparated shared non-locking reads from GetForUpdateAsync [VERIFIED]"]
     end
 
     subgraph Step 2: Gated Phase 12.2 Item
@@ -378,9 +415,45 @@ flowchart TD
   6. Recorded 19-field execution record for `PERF-01` in Section 2.2 and updated catalog status to `Verified`.
 - **Working Tree State at Session End:**
   - Active Branch: `main`
-  - Current HEAD: `4191f09148419688df295f54394e3579be6a8946`
-  - Modified Tracked Files: `Application/Interfaces/ILicenseRepository.cs`, `Application/Services/LicenseQueryService.cs`, `Infrastructure/Repositories/LicenseRepository.cs`, `Test/Application.UnitTests/Services/LicenseQueryServiceTests.cs`, `docs/IMPLEMENTATION-EXECUTION-LOG.md`
-- **Next Authorized Action:** Await Project Owner written authorization to begin `PERF-02` or next task.
+  - Current HEAD: `60a0751ec46a0df37f410161577c3a8959b297ee` (Commit of `PERF-01`)
+  - Modified Tracked Files: `Application/Interfaces/ILicenseRepository.cs`, `Application/Services/LicenseQueryService.cs`, `Infrastructure/Repositories/LicenseRepository.cs`, `Test/Application.UnitTests/Services/LicenseQueryServiceTests.cs`, `Test/Infrastructure.IntegrationTests/LicenseRepositoryTests.cs`, `docs/IMPLEMENTATION-EXECUTION-LOG.md`
+- **Next Authorized Action:** Project Owner authorized proceeding to `PERF-02`.
+
+### Session 6: Task PERF-02 Implementation & Verification
+- **Date & Timestamp:** 2026-11-09 00:15:00 +03:00
+- **Session Goals:** Implement and verify `PERF-02` (Pessimistic Lock on Read-Only License Queries in `LicenseRepository.cs`) with zero schema changes, zero database modifications to `DVLDf`, and zero changes to WPF/React.
+- **Completed Work:**
+  1. Inspected `GetLicenseByIdAsync` in `Infrastructure/Repositories/LicenseRepository.cs` and confirmed hardcoded `WITH (UPDLOCK, HOLDLOCK)` hint on all read-only calls.
+  2. Declared `Task<License?> GetForUpdateAsync(int id)` in `Application/Interfaces/ILicenseRepository.cs`.
+  3. Refactored `LicenseRepository.GetLicenseByIdAsync` to execute standard EF Core LINQ query (`Query().AsNoTracking().AsSplitQuery().FirstOrDefaultAsync(l => l.LicenseID == id)`) without `WITH (UPDLOCK, HOLDLOCK)`.
+  4. Implemented `LicenseRepository.GetForUpdateAsync` preserving pessimistic update locking (`WITH (UPDLOCK, HOLDLOCK)`) exclusively for state-modifying write workflows.
+  5. Updated write mutation services (`LicenseRenewalService.RenewLicenseAsync`, `LicenseReplacementService.ReplaceLicenseAsync`, `DetainedLicenseService.DetainLicenseAsync`, `DetainedLicenseService.ReleaseLicenseAsync`) to call `GetForUpdateAsync`.
+  6. Verified `LicenseQueryService.GetLicenseByIdAsync` and `GetLicenseDetailsByIdAsync` retain non-locking `GetLicenseByIdAsync`.
+  7. Updated mock configurations in unit tests (`LicenseRenewalServiceTests`, `LicenseReplacementServiceTests`, `DetainedLicenseServiceTests`, `JordanClockTimeStandardizationTests`, `LicenseLifecycleTimeBoundaryTests`).
+  8. Added repository integration tests in `LicenseRepositoryTests` for `GetForUpdateAsync` and concurrent reader non-blocking verification (`GetLicenseByIdAsync_WhenMultipleReadersExecuteConcurrently_CompleteSuccessfullyWithoutBlocking`).
+  9. Executed full test suite:
+     - `Application.UnitTests`: 927 passed, 0 failed (exit code 0).
+     - `Infrastructure.IntegrationTests` (`LicenseRepositoryTests`): 26 passed, 0 failed (exit code 0, executed on isolated dynamic database `DVLD_IntegrationTests_<GUID>`).
+     - `API.IntegrationTests` (`LicensesControllerTests`): 83 passed, 0 failed (exit code 0).
+  10. Recorded 19-field execution record for `PERF-02` in Section 2.3 and updated catalog status to `Verified`.
+- **Working Tree State at Session End:**
+  - Active Branch: `main`
+  - Current HEAD: `60a0751ec46a0df37f410161577c3a8959b297ee`
+  - Modified Tracked Files:
+    - `Application/Interfaces/ILicenseRepository.cs`
+    - `Application/Services/DetainedLicenseService.cs`
+    - `Application/Services/LicenseRenewalService.cs`
+    - `Application/Services/LicenseReplacementService.cs`
+    - `Infrastructure/Repositories/LicenseRepository.cs`
+    - `Test/Application.UnitTests/Common/JordanClockTimeStandardizationTests.cs`
+    - `Test/Application.UnitTests/Services/DetainedLicenseServiceTests.cs`
+    - `Test/Application.UnitTests/Services/LicenseLifecycleTimeBoundaryTests.cs`
+    - `Test/Application.UnitTests/Services/LicenseRenewalServiceTests.cs`
+    - `Test/Application.UnitTests/Services/LicenseReplacementServiceTests.cs`
+    - `Test/Infrastructure.IntegrationTests/LicenseRepositoryTests.cs`
+    - `docs/IMPLEMENTATION-EXECUTION-LOG.md`
+- **Next Task Evaluation in Phase 12.2:**
+  - `INT-01`: Direct Application Completion Endpoint Removal (`ApplicationsController.cs`) — GATED / BLOCKED on Project Owner decision `DEC-APP-01` (Approval Gate 6: Breaking API endpoint removal vs 30-day telemetry observation window). Requires Project Owner decision before proceeding.
 
 ---
 

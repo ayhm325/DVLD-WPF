@@ -255,6 +255,7 @@ public sealed class JordanClockTimeStandardizationTests
             LicenseClassInfo = new LicenseClass { LicenseClassID = 3, DefaultValidityLength = 10 }
         };
         licenseRepo.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(expiredInactiveLicense);
+        licenseRepo.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(expiredInactiveLicense);
 
         // 2026-11-04 21:00:00Z = 2026-11-05 00:00:00 Jordan
         var clock = FakeJordanClock.FromUtc(new DateTime(2026, 11, 4, 21, 0, 0, DateTimeKind.Utc));

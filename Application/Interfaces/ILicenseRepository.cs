@@ -7,6 +7,7 @@ namespace Application.Interfaces;
 public interface ILicenseRepository
 {
     Task<License?> GetLicenseByIdAsync(int id);
+    Task<License?> GetForUpdateAsync(int id);
     Task<License?> GetByDriverIdAsync(int driverId);
 
     Task<List<License>> GetAllLicensesAsync();

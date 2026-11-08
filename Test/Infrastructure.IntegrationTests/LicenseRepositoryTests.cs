@@ -63,6 +63,69 @@ public sealed class LicenseRepositoryTests
     }
 
     [Fact]
+    public async Task GetForUpdateAsync_ShouldReturnLicenseWithRelatedData()
+    {
+        // Arrange
+        var seed = await SeedLicenseAsync();
+
+        await using var context = _database.CreateContext();
+
+        var repository = new LicenseRepository(context);
+
+        // Act
+        var result =
+            await repository.GetForUpdateAsync(seed.LicenseId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(seed.LicenseId, result.LicenseID);
+
+        Assert.NotNull(result.Driver);
+        Assert.NotNull(result.Driver.Person);
+        Assert.NotNull(result.LicenseClassInfo);
+        Assert.NotNull(result.CreatedByUser);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GetForUpdateAsync_ShouldReturnNullForInvalidId(
+        int id)
+    {
+        // Arrange
+        await using var context = _database.CreateContext();
+
+        var repository = new LicenseRepository(context);
+
+        // Act
+        var result =
+            await repository.GetForUpdateAsync(id);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetLicenseByIdAsync_WhenMultipleReadersExecuteConcurrently_CompleteSuccessfullyWithoutBlocking()
+    {
+        // Arrange
+        var seed = await SeedLicenseAsync();
+
+        // Spin up multiple concurrent readers simulating concurrent GET /api/licenses/{id} requests
+        var tasks = Enumerable.Range(0, 5).Select(async _ =>
+        {
+            await using var context = _database.CreateContext();
+            var repo = new LicenseRepository(context);
+            var lic = await repo.GetLicenseByIdAsync(seed.LicenseId);
+            Assert.NotNull(lic);
+            Assert.Equal(seed.LicenseId, lic.LicenseID);
+        });
+
+        // Act & Assert
+        await Task.WhenAll(tasks);
+    }
+
+    [Fact]
     public async Task GetByDriverIdAsync_ShouldReturnMostRecentLicense()
     {
         // Arrange

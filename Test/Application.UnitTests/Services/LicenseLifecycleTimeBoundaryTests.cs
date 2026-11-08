@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DetainedLicenseDTO;
@@ -128,6 +128,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
 
         var license = CreateStandardLicense(isActive: true);
         _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
 
         // 1. Renewal must be prohibited (early renewal not allowed)
         var renewalService = CreateRenewalService();
@@ -161,6 +162,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
 
         var license = CreateStandardLicense(isActive: true);
         _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
 
         // 1. Renewal must be allowed
         var renewalService = CreateRenewalService();
@@ -194,6 +196,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
 
         var license = CreateStandardLicense(isActive: true);
         _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
 
         // Renewal is allowed because it is Nov 4 in Jordan
         var renewalService = CreateRenewalService();
@@ -232,6 +235,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
 
         _detainedRepository.Setup(x => x.GetByIdForUpdateAsync(5)).ReturnsAsync(detention);
         _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
         _licenseRepository.Setup(x => x.HasAnotherActiveLicenseAsync(20, 3, 10)).ReturnsAsync(false);
 
         var detainedService = CreateDetainedService();
@@ -264,6 +268,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
 
         _detainedRepository.Setup(x => x.GetByIdForUpdateAsync(5)).ReturnsAsync(detention);
         _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
         _licenseRepository.Setup(x => x.HasAnotherActiveLicenseAsync(20, 3, 10)).ReturnsAsync(false);
 
         var detainedService = CreateDetainedService();

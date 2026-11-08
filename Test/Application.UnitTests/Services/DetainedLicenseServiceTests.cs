@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.DetainedLicenseDTO;
@@ -89,7 +89,7 @@ public sealed class DetainedLicenseServiceTests
         int personId = 30)
     {
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(licenseId))
+            .Setup(x => x.GetForUpdateAsync(licenseId))
             .ReturnsAsync(
                 new License
                 {
@@ -394,7 +394,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100))
             .ReturnsAsync((License?)null);
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
         var result = await CreateService().AddAsync(dto);
@@ -413,7 +413,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100))
             .ReturnsAsync(
                 new License
                 {
@@ -434,7 +434,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100))
             .ReturnsAsync(
                 new License
                 {
@@ -676,7 +676,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100))
             .ThrowsAsync(new InvalidOperationException("Database failure."));
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => CreateService().AddAsync(
@@ -769,7 +769,7 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidReleaseDetention();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100))
             .ReturnsAsync((License?)null);
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
         var result = await CreateService().ReleaseAsync(dto);
@@ -821,7 +821,7 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidReleaseDetention();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100))
             .ReturnsAsync(
                 new License
                 {
@@ -983,7 +983,7 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidReleaseDetention();
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100))
             .ReturnsAsync(
                 new License
                 {

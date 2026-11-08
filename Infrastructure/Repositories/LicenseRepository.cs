@@ -26,6 +26,17 @@ public sealed class LicenseRepository(DVLDDbContext context)
         if (id <= 0)
             return Task.FromResult<License?>(null);
 
+        return Query()
+            .AsNoTracking()
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(l => l.LicenseID == id);
+    }
+
+    public Task<License?> GetForUpdateAsync(int id)
+    {
+        if (id <= 0)
+            return Task.FromResult<License?>(null);
+
         return _context.Licenses
             .FromSqlInterpolated($"""
             SELECT *

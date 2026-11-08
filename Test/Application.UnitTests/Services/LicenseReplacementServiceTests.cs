@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LicenseDTO;
@@ -305,7 +305,7 @@ public class LicenseReplacementServiceTests
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync((License?)null);
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -902,7 +902,7 @@ public class LicenseReplacementServiceTests
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database failure."));
@@ -1001,7 +1001,7 @@ public class LicenseReplacementServiceTests
         License license)
     {
         _licenseRepository
-            .Setup(x => x.GetLicenseByIdAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10))
             .ReturnsAsync(license);
     }
     private void SetupSuccessfulReplacementApplication()
