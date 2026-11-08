@@ -20,7 +20,7 @@ All AI agents operating within this repository **must** strictly adhere to the o
 
 ## 2. Governance Document Suite
 
-This document is the authoritative entry point. Detailed specifications are maintained in seven specialized governance documents:
+This document is the authoritative entry point. Detailed specifications are maintained in eight specialized governance and domain documents:
 
 | Document | Primary Focus & Authority |
 |---|---|
@@ -31,6 +31,7 @@ This document is the authoritative entry point. Detailed specifications are main
 | [`TESTING-STANDARDS.md`](./TESTING-STANDARDS.md) | Test isolation, test database lifecycle (`DVLD_IntegrationTests_<GUID>`), parallel migration throttling, and CI publishing. |
 | [`ENGINEERING-ROADMAP.md`](./ENGINEERING-ROADMAP.md) | Prioritized remediation backlog (P0, P1 provisional, P2, P3), evidence classifications, and action items. |
 | [`ENGINEERING-DECISIONS.md`](./ENGINEERING-DECISIONS.md) | Architectural Decision Records (ADRs) covering accepted decisions, constraints, proposals, rejections, and open business items. |
+| [`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`](./docs/domain/LICENSING-DOMAIN-SPECIFICATION.md) | Authoritative civic licensing domain business invariants, sequential examination progression, application lifecycle, and post-issuance workflows. |
 
 ---
 

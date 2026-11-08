@@ -428,35 +428,35 @@ flowchart LR
 
 ### Finding INT-01 (Severity: Critical — P0)
 - **Title:** Unchecked Direct Application Completion Bypasses Workflows
-- **Location:** [`API/DVLD.Api/Controllers/ApplicationsController.cs#L85-L90`](file:///d:/DVLD-WPF/API/DVLD.Api/Controllers/ApplicationsController.cs#L85-L90)
+- **Location:** [`API/DVLD.Api/Controllers/ApplicationsController.cs#L85-L90`](../../API/DVLD.Api/Controllers/ApplicationsController.cs#L85-L90)
 - **Evidence:** `POST /api/applications/{id}/complete` calls `CompleteApplicationAsync(id)` directly, setting `ApplicationStatus = Completed` without verifying test pass requirements or creating license records.
 - **Impact:** Corrupts applicant records and locks them out of ever receiving a valid driving license.
 - **Recommendation:** Remove endpoint and method; restrict completion to internal domain workflow transactions.
 
 ### Finding PERF-01 (Severity: High — P1)
 - **Title:** Sequential N+1 Queries in `LicenseQueryService.MapToDtosBatchAsync`
-- **Location:** [`Application/Services/LicenseQueryService.cs#L237-L252`](file:///d:/DVLD-WPF/Application/Services/LicenseQueryService.cs#L237-L252)
+- **Location:** [`Application/Services/LicenseQueryService.cs#L237-L252`](../../Application/Services/LicenseQueryService.cs#L237-L252)
 - **Evidence:** Iterates over paged licenses, calling `_licenseRepository.GetNewerLicenseForDriverAndClassAsync` individually for each expired license (up to 50 queries per page).
 - **Impact:** High database round-trip latency on license management screens.
 - **Recommendation:** Replace per-row queries with a single batch query in `ILicenseRepository`.
 
 ### Finding PERF-02 (Severity: High — P1)
 - **Title:** Pessimistic Range Locks on Read-Only License Endpoints
-- **Location:** [`Infrastructure/Repositories/LicenseRepository.cs#L28-L41`](file:///d:/DVLD-WPF/Infrastructure/Repositories/LicenseRepository.cs#L28-L41)
+- **Location:** [`Infrastructure/Repositories/LicenseRepository.cs#L28-L41`](../../Infrastructure/Repositories/LicenseRepository.cs#L28-L41)
 - **Evidence:** `GetLicenseByIdAsync` hardcodes `WITH (UPDLOCK, HOLDLOCK)`. Read queries (`GET /api/licenses/{id}`) acquire update locks, serializing readers and blocking behind write transactions.
 - **Impact:** High latency and avoidable deadlock risks.
 - **Recommendation:** Separate non-locking `GetLicenseByIdAsync` from update-locking `GetForUpdateAsync`.
 
 ### Finding INT-02 (Severity: High — P1)
 - **Title:** Unhandled `DbUpdateException` on Concurrent User Creation
-- **Location:** [`Application/Services/UserService.cs#L275-L295`](file:///d:/DVLD-WPF/Application/Services/UserService.cs#L275-L295)
+- **Location:** [`Application/Services/UserService.cs#L275-L295`](../../Application/Services/UserService.cs#L275-L295)
 - **Evidence:** Concurrent creation of a user with identical `PersonID` or `UserName` bypasses read checks and triggers a SQL unique constraint violation, throwing an unhandled `DbUpdateException` that returns HTTP 500 instead of HTTP 409 Conflict.
 - **Impact:** Unexpected server crashes and improper REST error status.
 - **Recommendation:** Catch `DbUpdateException` in `UserService.AddUserAsync` and translate to `Result.Conflict`.
 
 ### Finding TEST-01 (Severity: Medium — P2)
 - **Title:** Unthrottled Database Initialization Causes Transient SSL Handshake Timeouts
-- **Location:** [`Test/Infrastructure.IntegrationTests/Fixtures/SqlServerTestDatabase.cs#L40-L48`](file:///d:/DVLD-WPF/Test/Infrastructure.IntegrationTests/Fixtures/SqlServerTestDatabase.cs#L40-L48)
+- **Location:** [`Test/Infrastructure.IntegrationTests/Fixtures/SqlServerTestDatabase.cs#L40-L48`](../../Test/Infrastructure.IntegrationTests/Fixtures/SqlServerTestDatabase.cs#L40-L48)
 - **Evidence:** Parallel xUnit test classes simultaneously invoke `context.Database.MigrateAsync()`. In contrast, `SqlServerApiWebApplicationFactory.cs` uses `SemaphoreSlim(2, 2)` to eliminate connection exhaustion.
 - **Impact:** Flaky local and CI test execution.
 - **Recommendation:** Add `SemaphoreSlim(2, 2)` throttling to `SqlServerTestDatabase.InitializeAsync`.

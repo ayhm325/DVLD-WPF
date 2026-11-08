@@ -89,7 +89,7 @@ docs/
 - Backend authorization is the security boundary
 - Client role-based UI is a usability mechanism, not the security boundary
 - WPF Presentation is MVVM-oriented, not claimed to be pure MVVM
-- React frontend (`ClientApp`) is under active iterative development and documented separately under [`ClientApp/README.md`](ClientApp/README.md) and [`ClientApp/docs/`](ClientApp/docs/ARCHITECTURE.md)
+- React frontend (`ClientApp`) is under active iterative development and documented separately under [`ClientApp/README.md`](ClientApp/README.md) and [`ClientApp/AGENTS.md`](ClientApp/AGENTS.md)
 
 ## Run the API and Clients
 
@@ -115,7 +115,7 @@ npm install
 npm run dev
 ```
 
-See [`ClientApp/README.md`](ClientApp/README.md) and [`ClientApp/docs/`](ClientApp/docs/ARCHITECTURE.md) for React setup, scripts, and current feature implementation status (`Implemented`, `Partially Implemented`, and `Not Implemented`).
+See [`ClientApp/README.md`](ClientApp/README.md) and [`ClientApp/AGENTS.md`](ClientApp/AGENTS.md) for React setup, scripts, and frontend development standards.
 
 ## Run all .NET tests
 
@@ -131,24 +131,41 @@ dotnet test ".\Test\API.IntegrationTests\API.IntegrationTests.csproj" --configur
 dotnet test ".\Test\Infrastructure.IntegrationTests\Infrastructure.IntegrationTests.csproj" --configuration Release
 ```
 
-## Documentation
+## Documentation Hierarchy & System References
 
-### Core System, Backend & WPF Documentation (`docs/`)
-- [System Documentation](docs/SYSTEM-DOCUMENTATION.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [API Reference](docs/API.md)
-- [Business Workflows](docs/BUSINESS-WORKFLOWS.md)
-- [Database](docs/DATABASE.md)
-- [Security](docs/SECURITY.md)
-- [Testing](docs/TESTING.md)
-- [Documentation Audit](docs/DOCUMENTATION-AUDIT.md)
+The DVLD repository maintains a strictly governed, streamlined documentation hierarchy:
 
-### React Frontend Documentation (`ClientApp/`)
-- [ClientApp Setup & Overview](ClientApp/README.md)
-- [ClientApp Architecture](ClientApp/docs/ARCHITECTURE.md)
-- [ClientApp API Integration & Auth](ClientApp/docs/API-INTEGRATION.md)
-- [ClientApp Feature Status Matrix](ClientApp/docs/FEATURE-STATUS.md)
-- [ClientApp Development Guide](ClientApp/docs/DEVELOPMENT.md)
+### 1. Root Engineering Standards & Governance
+- [**AI Engineering Governance** (`AGENTS.md`)](AGENTS.md) — Universal mandatory AI rules, safety gates, and Git protocols.
+- [**AI Engineering Instructions** (`AI-ENGINEERING-INSTRUCTIONS.md`)](AI-ENGINEERING-INSTRUCTIONS.md) — Mandatory 10-step engineering workflow.
+- [**Engineering Standards** (`ENGINEERING-STANDARDS.md`)](ENGINEERING-STANDARDS.md) — Architectural invariants, UnitOfWork, Jordan Time, and concurrency rules.
+- [**Security Standards** (`SECURITY-STANDARDS.md`)](SECURITY-STANDARDS.md) — Authentication architecture, SoD (ADR-O01 Model B), and profile photo upload protection.
+- [**Testing Standards** (`TESTING-STANDARDS.md`)](TESTING-STANDARDS.md) — Test isolation, ephemeral database lifecycle (`DVLD_IntegrationTests_<GUID>`), and CI rules.
+- [**Technology Stack** (`TECHNOLOGY-STACK.md`)](TECHNOLOGY-STACK.md) — Verified inventory of frameworks, package manifests, and dependencies.
+- [**Architectural Decisions** (`ENGINEERING-DECISIONS.md`)](ENGINEERING-DECISIONS.md) — Formal Architectural Decision Records (ADRs).
+- [**Engineering Roadmap** (`ENGINEERING-ROADMAP.md`)](ENGINEERING-ROADMAP.md) — Prioritized remediation backlog and evidence tracking.
+
+### 2. Session Continuity Suite (`docs/continuity/`)
+- [**Project Charter & Continuity** (`docs/continuity/PROJECT-CHARTER-AND-CONTINUITY.md`)](docs/continuity/PROJECT-CHARTER-AND-CONTINUITY.md) — Operational charter, authority model, and continuity framework.
+- [**Current Project State** (`docs/continuity/snapshots/CURRENT-PROJECT-STATE-2026-11-08.md`)](docs/continuity/snapshots/CURRENT-PROJECT-STATE-2026-11-08.md) — Baseline point-in-time snapshot of codebase health.
+- [**Correction Log** (`docs/continuity/CORRECTION-LOG.md`)](docs/continuity/CORRECTION-LOG.md) — Immutable chronological log of corrections.
+- [**Session Logs** (`docs/continuity/SESSION-LOGS/`)](docs/continuity/SESSION-LOGS/README.md) — Session handoff log conventions.
+
+### 3. Civic Domain Specifications (`docs/domain/`)
+- [**Licensing Domain Specification** (`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`)](docs/domain/LICENSING-DOMAIN-SPECIFICATION.md) — Authoritative domain business invariants, sequential examination progression, application lifecycle, and post-issuance workflows.
+
+### 4. Foundational Engineering Discovery Reports (`docs/audits/`)
+- [**Phase A Discovery Report** (`docs/audits/phase-a-repository-discovery.md`)](docs/audits/phase-a-repository-discovery.md) — Deep architectural baseline discovery (Commit `29e43d6`).
+- [**Phase A.1 Supplementary Review** (`docs/audits/phase-a-supplementary-review.md`)](docs/audits/phase-a-supplementary-review.md) — 11 detailed workflow analyses, UnitOfWork deep analysis, and SQL locking.
+- [**Security Architecture Audit** (`docs/audits/phase-a-security-architecture-audit.md`)](docs/audits/phase-a-security-architecture-audit.md) — Consolidated security audit, STRIDE threat model, and 13-risk register (Commit `29e43d6`).
+
+### 5. Preserved Historical Planning & Sources (`docs/archive/`)
+- [**Historical Planning Archive** (`docs/archive/historical-planning/`)](docs/archive/historical-planning/) — Preserved original development plan, vision, target architecture, and early risks register.
+- [**Security Sources Archive** (`docs/archive/security-sources/`)](docs/archive/security-sources/) — Preserved Security Master Plan and Implementation Readiness Assessment.
+
+### 6. Frontend Development & Governance (`ClientApp/`)
+- [**ClientApp Overview & Setup** (`ClientApp/README.md`)](ClientApp/README.md) — Vite SPA setup, scripts, and feature baseline summary.
+- [**Frontend Agent Governance** (`ClientApp/AGENTS.md`)](ClientApp/AGENTS.md) — Frontend AI instructions, TypeScript standards, and design system rules.
 
 ## Test inventory and verification status
 

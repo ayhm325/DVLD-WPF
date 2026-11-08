@@ -1,204 +1,388 @@
-# Architecture Decision Records (ADR) Register
+# Architecture Decision Records (ADR) & Policy Register
 
-> **Authority Level:** Authoritative Architectural & Technical Decision Register  
+> **Authority Level:** Sole Authoritative Architectural, Technical & Security Decision Register  
 > **Parent Document:** [`AGENTS.md`](./AGENTS.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Baseline Commit:** `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`  
+> **Baseline Commit:** `9b6d22f8728463f7b80c1341582016e1dda1972f`  
+> **Governance Status:** CONSOLIDATED & ENFORCED (Phase 1)  
 
 ---
 
-## 1. Decision Framework & Taxonomy
+## 1. Decision Framework & Four Accounting Tiers
 
-This register records the historical, active, proposed, rejected, and open architectural decisions governing the DVLD repository. All modifications to architecture, technology selection, or security boundaries must be submitted as Architecture Decision Records (ADRs).
+This register constitutes the sole authoritative catalog of all architectural, technical, operational, and security decisions governing the DVLD repository. All modifications to architecture, system boundaries, security controls, or domain invariants must be recorded herein.
 
-Decisions are classified using explicit statuses:
-- **ACCEPTED:** Actively implemented, validated in code, and recognized as the architectural standard.
-- **APPROVED:** Formally approved business/architectural decision awaiting implementation authorization.
-- **CONSTRAINT:** A non-negotiable operational or legacy boundary enforced on the project.
-- **PROPOSED:** An engineered recommendation scheduled in the roadmap but not yet authorized or implemented.
-- **REJECTED:** Demonstrably evaluated and rejected due to adverse performance, complexity, or flawed premises.
-- **OPEN BUSINESS DECISION:** A business policy or legal question requiring formal stakeholder sign-off before technical execution.
+To maintain strict historical and semantic integrity, the decision accounting is structured into four unambiguous tiers:
 
----
+1. **Tier 1 — Historical Source Identifiers (Exactly 31 Identifiers):**
+   - **15 Architecture Decision Records (ADR):** `ADR-001` through `ADR-005`, `ADR-C01`, `ADR-C02`, `ADR-P01` through `ADR-P03`, `ADR-R01` through `ADR-R03`, `ADR-O01`, and `ADR-O02`.
+   - **16 Security Decisions (DEC):** `DEC-AUTH-01` through `DEC-AUTH-03`, `DEC-CRED-01`, `DEC-CRED-02`, `DEC-AUD-01`, `DEC-AUD-02`, `DEC-APP-01`, `DEC-RBAC-01`, `DEC-FILE-01`, `DEC-DEP-01`, `DEC-DEP-02`, `DEC-POL-01`, `DEC-POL-02`, `DEC-SEC05-01`, and `DEC-SEC05-02`.
+   - *Sum:* $15 + 16 = \mathbf{31}$ original source identifiers.
+2. **Tier 2 — Cross-Reference Relationships (3 Relationships):**
+   - Three pairs of records address common domain problems across architectural and security/regulatory dimensions (`ADR-O02` $\leftrightarrow$ `DEC-POL-01`, `ADR-P03` $\leftrightarrow$ `DEC-APP-01`, `ADR-O01` $\leftrightarrow$ `DEC-RBAC-01`). They are linked by cross-references, not collapsed.
+3. **Tier 3 — Canonical Decision Topics / Problem Groups (28 Topics):**
+   - Grouping records by core platform problem space yields exactly **28 distinct decision topics** ($31 - 3 = 28$).
+4. **Tier 4 — Independently Preserved Decision Records (Exactly 31 Records):**
+   - All 31 historical records retain their independent identity, individual authority, specific lifecycle status, technical rationale, and implementation authorization boundary. **Zero records are deleted, collapsed, or discarded.**
 
-## 2. ADR Summary Matrix
-
-| ADR ID | Title | Status | Category | Scope |
-|---|---|---|---|---|
-| **ADR-001** | Layered Onion Architecture with UnitOfWork State Machine | **ACCEPTED** | Core Architecture | Backend (`API`, `App`, `Infra`, `Domain`) |
-| **ADR-002** | Independent React SPA Client with Centralized Transport | **ACCEPTED** | Frontend Architecture | `ClientApp/` |
-| **ADR-003** | JWT Bearer Token Authentication with Dynamic DB Revocation | **ACCEPTED** | Security Architecture | `DVLD.Api`, `Program.cs` |
-| **ADR-004** | Distributed Slot Mutual Exclusion via `sp_getapplock` | **ACCEPTED** | Concurrency Architecture | `Infrastructure`, SQL Server |
-| **ADR-005** | Functional `Result<T>` Modeling over Domain Exceptions | **ACCEPTED** | Design Pattern | `Application`, Controllers |
-| **ADR-C01** | Exclusion and Freeze of Legacy WPF Desktop Client | **CONSTRAINT** | Project Scope | `Presentation (WPF)/` |
-| **ADR-C02** | Isolation of Production Database (`DVLDf`) from Automated Testing | **CONSTRAINT** | Database Safety | All Test Suites, CI |
-| **ADR-P01** | Separation of Non-Locking Reads from Update-Locking Queries (PERF-02) | **PROPOSED** | Performance / Concurrency | `LicenseRepository.cs` |
-| **ADR-P02** | Standardized RFC 7807 ProblemDetails across All Endpoints (REST-01) | **PROPOSED** | API Standards | All Controllers, Error Handlers |
-| **ADR-P03** | Deletion of Orphaned Direct Completion Endpoint (INT-01) | **PROPOSED** | Domain Integrity | `ApplicationsController.cs` |
-| **ADR-R01** | Rejection of `Task.Run` for In-Process CPU Work (PERF-03) | **REJECTED** | Concurrency | `Application Services` |
-| **ADR-R02** | Rejection of Multi-Tenant IDOR Claim on Citizen Photos (SEC-02) | **REJECTED** | Security | `PeopleController.cs` |
-| **ADR-R03** | Rejection of Pagination on Tiny Static Reference Tables (API-02) | **REJECTED** | API Design | Reference Controllers |
-| **ADR-O01** | Retention vs. Relaxation of Segregation of Duties (SEC-01) | **APPROVED** | Security Policy | Authorization Policies |
-| **ADR-O02** | Detained License Replacement Policy (INT-03) | **PROVISIONALLY SELECTED — OFFICIAL POLICY VERIFICATION REQUIRED** | Business Rule | `LicenseReplacementService.cs` |
+### Explicit Lifecycle Statuses
+- **ACCEPTED:** Actively implemented in code, validated by test suites, and enforced as active architecture.
+- **CONSTRAINT:** Non-negotiable operational boundary, repository rule, or legacy freeze.
+- **APPROVED POLICY:** Formally approved business or civic policy; does **not** grant implementation authorization.
+- **PROPOSED:** Engineered technical recommendation submitted for evaluation; strictly **not authorized**.
+- **REJECTED:** Demonstrably evaluated and rejected due to flawed premises or architectural anti-patterns.
+- **PROVISIONALLY SELECTED:** Internal engineering baseline direction awaiting mandatory external legal/regulatory confirmation.
+- **REGULATORY CONFIRMATION PENDING:** External statutory question awaiting formal sign-off from the Licensing Authority or Legal Counsel under Gate 3.
+- **DEFERRED:** Formally excluded from initial release milestones and postponed to a future roadmap phase.
+- **POLICY UNRESOLVED:** Multiple strategic alternatives submitted for Project Owner selection.
 
 ---
 
-## 3. Accepted Architecture Decisions
+## 2. Master Decision Summary Matrix
+
+| Record ID | Original Title & Scope | Governance Status | Designated Authority | Related Backlog / Package | Implementation Authorization |
+|:---|:---|:---:|:---:|:---:|:---:|
+| **`ADR-001`** | Layered Onion Architecture with UnitOfWork State Machine | **ACCEPTED** | System Architect | Core Architecture | Implemented / Active |
+| **`ADR-002`** | Independent React SPA Client with Centralized Transport | **ACCEPTED** | System Architect | `ClientApp/` | Implemented / Active |
+| **`ADR-003`** | JWT Bearer Token Authentication with Dynamic DB Revocation | **ACCEPTED** | Security Architect | `DVLD.Api`, `Program.cs` | Implemented / Active |
+| **`ADR-004`** | Distributed Slot Mutual Exclusion via `sp_getapplock` | **ACCEPTED** | Database Architect | `Infrastructure` | Implemented / Active |
+| **`ADR-005`** | Functional `Result<T>` Modeling over Domain Exceptions | **ACCEPTED** | Application Architect | `Application` Services | Implemented / Active |
+| **`ADR-C01`** | Exclusion and Freeze of Legacy WPF Desktop Client | **CONSTRAINT** | Governance Authority | `Presentation (WPF)/` | Enforced / Frozen |
+| **`ADR-C02`** | Isolation of Production Database (`DVLDf`) from Automated Testing | **CONSTRAINT** | Governance Authority | All Test Suites, CI | Enforced / Protected |
+| **`ADR-P01`** | Separation of Non-Locking Reads from Update-Locking Queries (`PERF-02`) | **PROPOSED** | Performance Architect | `PERF-02`, Phase 12.2 | **NOT AUTHORIZED** |
+| **`ADR-P02`** | Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`) | **PROPOSED** | API Lead | `REST-01`, Phase 12.3 | **NOT AUTHORIZED** |
+| **`ADR-P03`** | Deletion of Orphaned Direct Completion Endpoint (`INT-01`) | **PROPOSED** | Software Architect | `INT-01`, Phase 12.2 | **NOT AUTHORIZED** |
+| **`ADR-R01`** | Rejection of `Task.Run` for In-Process CPU Work (`PERF-03`) | **REJECTED** | Application Architect | `Application Services` | Rejected / Inactive |
+| **`ADR-R02`** | Rejection of Multi-Tenant IDOR Claim on Citizen Photos (`SEC-02`) | **REJECTED** | Security Lead | `SEC-02`, `PeopleController` | Rejected / Inactive |
+| **`ADR-R03`** | Rejection of Pagination on Tiny Static Reference Tables (`API-02`) | **REJECTED** | API Lead | `API-02`, Reference Data | Rejected / Inactive |
+| **`ADR-O01`** | Retention vs. Relaxation of Segregation of Duties (`SEC-01`) | **APPROVED POLICY** | Business Stakeholders | `SEC-01`, Model B | **NOT AUTHORIZED** |
+| **`ADR-O02`** | Detained License Replacement Policy (`INT-03`) | **PROVISIONALLY SELECTED** | Lead Architect | `INT-03`, Domestic Replace | **NOT AUTHORIZED** |
+| **`DEC-AUTH-01`** | Target Stateless JWT Access Token Lifetime (15m vs 30m vs 60m) | **PROPOSAL (UNAPPROVED)** | Project Owner | `SEC-PKG-10`, `RSK-04` | **NOT AUTHORIZED** |
+| **`DEC-AUTH-02`** | Server-Side Architecture for JWT Revocation (Stateless vs Cache vs DB) | **PROPOSAL (UNAPPROVED)** | Project Owner / Architect | `SEC-PKG-10`, Phase 12.2 | **NOT AUTHORIZED** |
+| **`DEC-AUTH-03`** | Mandatory Multi-Factor Authentication (MFA / TOTP) for Admin Roles | **DEFERRED TO FUTURE PHASE** | Project Owner | `RSK-08`, Future Phase | **DEFERRED / UNAUTHORIZED** |
+| **`DEC-CRED-01`** | Password Complexity Policy (NIST SP 800-63B vs Legacy Composition) | **PROPOSAL (UNAPPROVED)** | Project Owner | `SEC-PKG-09`, `RSK-07` | **NOT AUTHORIZED** |
+| **`DEC-CRED-02`** | Account Lockout Strategy & Thresholds (Hard Lockout vs Exponential Delay) | **POLICY UNRESOLVED** | Project Owner | `SEC-PKG-11`, `RSK-05`, Gate 5 | **NOT AUTHORIZED** |
+| **`DEC-AUD-01`** | Dedicated Security Audit Trail Storage Sink (Rolling JSON vs SQL Server) | **PROPOSAL (UNAPPROVED)** | Project Owner | `SEC-PKG-06`, `SEC-04` | **NOT AUTHORIZED** |
+| **`DEC-AUD-02`** | Audit Sink Failure Handling & In-Memory Ring Buffer Architecture | **PROPOSAL (UNAPPROVED)** | Software Architect | `SEC-PKG-06`, `SEC-04` | **NOT AUTHORIZED** |
+| **`DEC-APP-01`** | Deletion vs 30-Day Telemetry Window for `CompleteApplication` Endpoint | **PROPOSAL (UNAPPROVED)** | Project Owner / API Lead | `SEC-PKG-01`, `INT-01` | **NOT AUTHORIZED** |
+| **`DEC-RBAC-01`** | Administrative Read-Only Inspection Access under SoD Model B | **PROPOSAL (UNAPPROVED)** | Project Owner | `SEC-PKG-05`, `SEC-01` | **NOT AUTHORIZED** |
+| **`DEC-FILE-01`** | ImagePath Sanitization & Cross-User Deletion Defense Strategy | **PROPOSAL (UNAPPROVED)** | System Architect | `SEC-PKG-02`, `RSK-02` | **NOT AUTHORIZED** |
+| **`DEC-DEP-01`** | Production Hosting Topology & Reverse Proxy CIDR Trust Configuration | **PROPOSAL (UNAPPROVED)** | DevOps / Infrastructure | `SEC-PKG-12`, `SEC-PKG-13` | **NOT AUTHORIZED** |
+| **`DEC-DEP-02`** | Content-Security-Policy (CSP) Header Ownership (API vs SPA Host) | **PROPOSAL (UNAPPROVED)** | System Architect | `SEC-PKG-12`, `RSK-16` | **NOT AUTHORIZED** |
+| **`DEC-POL-01`** | Statutory Ban on Detained License Replacement under Jordanian Traffic Law | **REGULATORY PENDING** | Licensing Authority / Legal | `SEC-PKG-15`, `INT-03`, Gate 3 | **BLOCKED ON LEGAL** |
+| **`DEC-POL-02`** | Statutory Ban on International Permits for Detained Domestic Licenses | **REGULATORY PENDING** | Licensing Authority / Legal | `SEC-PKG-16`, `RSK-14`, Gate 3 | **BLOCKED ON LEGAL** |
+| **`DEC-SEC05-01`**| Refresh Token Transport Mechanism (HttpOnly Cookie vs Hybrid Header) | **DEFERRED PROPOSAL** | Architect / Project Owner | `SEC-PKG-17`, `SEC-05` | **DEFERRED / UNAUTHORIZED** |
+| **`DEC-SEC05-02`**| Token Invalidation Scope upon Reuse Detection (Subtree vs Family-wide) | **DEFERRED PROPOSAL** | Architect / Project Owner | `SEC-PKG-17`, `SEC-05` | **DEFERRED / UNAUTHORIZED** |
+
+---
+
+## 3. Detailed Cross-Reference Relationships
+
+The three cross-reference relationships connect records that evaluate the same underlying domain or technical topic across architectural intent, operational execution, and statutory authority without collapsing their distinct governance properties:
+
+```mermaid
+flowchart LR
+    subgraph CR1 ["Cross-Reference 1: Detained License Replacement"]
+        ADR_O02["ADR-O02: Internal Engineering Direction<br/>(Provisionally Selected Baseline)<br/>Authority: Software Architect"] <--> DEC_POL01["DEC-POL-01: External Regulatory Question<br/>(Statutory Check: Confirmation Pending)<br/>Authority: Licensing Authority / Legal"]
+    end
+
+    subgraph CR2 ["Cross-Reference 2: CompleteApplication Route"]
+        ADR_P03["ADR-P03: Architectural Intent<br/>(Proposed Permanent Route Deletion)<br/>Authority: Software Architect"] <--> DEC_APP01["DEC-APP-01: Operational Execution Strategy<br/>(30-Day Telemetry Window Prerequisite)<br/>Authority: Project Owner / API Lead"]
+    end
+
+    subgraph CR3 ["Cross-Reference 3: SoD Model B Administration"]
+        ADR_O01["ADR-O01: Approved Civic Policy<br/>(Model B: Strict Counter Mutation Ban)<br/>Authority: Business Stakeholders"] <--> DEC_RBAC01["DEC-RBAC-01: Inspection Clause Proposal<br/>(Read-Only GET Visibility Proposal)<br/>Authority: Security Architect / PO"]
+    end
+```
+
+### Relationship 1: `ADR-O02` $\longleftrightarrow$ `DEC-POL-01` (Detained License Replacement Policy)
+- **Shared Subject:** Prevention of replacing actively detained driving licenses.
+- **Preserved Distinction:**
+  - `ADR-O02` records the **internal architectural consensus** selecting Option A (statutory ban on replacements) to guide domain model assumptions and service structure.
+  - `DEC-POL-01` records the **external regulatory requirement** under Gate 3 confirming whether Jordanian Traffic Law permits administrative waivers or strictly bars replacements.
+- **Enforcement Rule:** `ADR-O02` cannot be finalized and zero implementation code in `LicenseReplacementService.cs` may be authorized until `DEC-POL-01` receives formal written sign-off from the Licensing Authority and Legal Counsel.
+
+### Relationship 2: `ADR-P03` $\longleftrightarrow$ `DEC-APP-01` (Direct Application Completion Route)
+- **Shared Subject:** Elimination of the orphaned workflow bypass route `POST /api/applications/{id}/complete`.
+- **Preserved Distinction:**
+  - `ADR-P03` establishes the **architectural decision** to delete the route and remove the underlying `CompleteApplicationAsync` service method to prevent integrity corruption (`INT-01`).
+  - `DEC-APP-01` establishes the **operational deployment strategy** requiring a 30-day telemetry observation window with deprecation headers before permanent route deletion to verify zero external consumers exist.
+- **Enforcement Rule:** Hard route removal under `ADR-P03` is gated upon operational telemetry data verified under `DEC-APP-01`.
+
+### Relationship 3: `ADR-O01` $\longleftrightarrow$ `DEC-RBAC-01` (Segregation of Duties Model B)
+- **Shared Subject:** Administrative role boundaries relative to operational licensing counter actions.
+- **Preserved Distinction:**
+  - `ADR-O01` is the **binding civic policy record** approving Model B (retaining strict separation: `Staff` executes counter transactions, `Admin` manages users/system configuration, with no cross-role inheritance).
+  - `DEC-RBAC-01` is an **unapproved operational proposal** evaluating whether administrators should receive read-only GET visibility on applications and licenses for audit purposes without mutation rights.
+- **Enforcement Rule:** `ADR-O01` remains approved policy. `DEC-RBAC-01` remains an unapproved proposal. Counter mutation endpoints remain strictly `StaffOnly`.
+
+---
+
+## 4. Accepted Architecture Decisions
 
 ### ADR-001: Layered Onion Architecture with UnitOfWork State Machine
-- **Status:** `ACCEPTED`
-- **Context:** The system coordinates high-stakes legal licensing workflows involving citizens, tests, fees, and driving credentials requiring coordinated multi-entity persistence.
-- **Decision:** Implement Onion Architecture with explicit directional dependency rules:
-  - `Domain` is independent and has zero dependencies.
-  - `Application` depends only on `Domain`.
-  - `Infrastructure` depends on `Application` (implementing interfaces) and `Domain` (mapping entities).
-  - `DVLD.Api` acts as composition root, referencing `Application`, `Infrastructure`, and `DVLD.Contracts`.
+- **Status:** `ACCEPTED` (Implemented & Active)
+- **Context:** DVLD coordinates legal licensing workflows involving citizens, appointments, examination results, fee collection, and driving credentials requiring coordinated persistence.
+- **Decision:** Enforce Onion Architecture with explicit directional dependency rules:
+  - `Domain` has zero external dependencies.
+  - `Application` depends exclusively on `Domain`.
+  - `Infrastructure` implements `Application` abstractions and maps persistence via EF Core 8.
+  - `DVLD.Api` serves as composition root.
   - `Application` must **never** depend on `Infrastructure`.
-  - Encapsulate transactional data access within repositories governed by a Scoped `UnitOfWork` implementing deferred physical commits, ambiguous commit verification, and execution strategy retries.
-- **Architectural Scope & Atomicity Boundaries:**
-  - Atomicity is provided within the boundary of an active database transaction. Achieving atomicity depends on defining correct transaction boundaries, ensuring all participating write operations enlist in the same transaction, and verifying that commit/rollback behaviors succeed.
-  - Unit of Work does **not** provide an absolute guarantee against all partial writes under every catastrophic failure (e.g., partial external filesystem side-effects during photo uploads, or unhandled process crashes prior to rollback).
-  - On handled failure results and caught exceptions, explicit rollback and `ChangeTracker.Clear()` prevent stale or corrupted EF Core tracker state from leaking into subsequent requests.
+  - Transactional persistence is encapsulated in repositories governed by a Scoped `UnitOfWork` with execution strategy retries and ambiguous commit detection.
+- **Consequences:** Clear architectural layering. Persistence exceptions must be translated at repository boundaries into domain results.
 
 ### ADR-002: Independent React SPA Client with Centralized Transport
-- **Status:** `ACCEPTED`
-- **Context:** The legacy WPF client needed modernization for web access without disrupting existing desktop operations.
-- **Decision:** Build an independent React 19 + TypeScript + Vite single-page application (`ClientApp/`) communicating over HTTP + JSON + JWT. Route all requests through a centralized `apiClient.ts` with automated 401 session interception.
-- **Consequences:** Clean separation of concerns. Frontend state is isolated; backend API remains the sole authority.
+- **Status:** `ACCEPTED` (Implemented & Active)
+- **Context:** Modern web access was required without coupling client presentation to the legacy desktop codebase.
+- **Decision:** Construct an independent React 19 + TypeScript + Vite SPA (`ClientApp/`) communicating over HTTP + JSON + JWT. Route requests through centralized `apiClient.ts` with automatic 401 interception.
+- **Consequences:** Clean separation of concerns. Backend API remains the sole validation authority.
 
 ### ADR-003: JWT Bearer Token Authentication with Dynamic DB Revocation
-- **Status:** `ACCEPTED`
-- **Context:** Stateless JWT tokens cannot natively be invalidated before expiration without distributed cache infrastructure.
-- **Decision:** Implement `JwtBearerEvents.OnTokenValidated` to verify `IUserService.IsUserActiveAsync(userId)` directly in SQL Server on every authenticated request.
-- **Consequences:** Provides immediate user deactivation capability without managing Redis blacklists or distributed state.
+- **Status:** `ACCEPTED` (Implemented & Active)
+- **Context:** Stateless JWT tokens cannot natively be revoked immediately upon user deactivation without distributed state.
+- **Decision:** Implement `JwtBearerEvents.OnTokenValidated` in `Program.cs` to verify `IUserService.IsUserActiveAsync(userId)` in SQL Server on every authenticated request.
+- **Consequences:** Provides immediate deactivation defense without requiring distributed cache infrastructure.
 
 ### ADR-004: Distributed Slot Mutual Exclusion via `sp_getapplock`
-- **Status:** `ACCEPTED`
-- **Context:** Test appointment scheduling experiences race conditions on test slot capacities that table-level locks or serializable isolation cannot prevent without serializing the entire table.
-- **Decision:** Utilize SQL Server's `sp_getapplock` with exclusive transaction locks on deterministic slot keys (`DVLD_Slot_{testTypeId}_{dateTime}`).
-- **Required Conditions for Concurrency Protection:**
-  - `sp_getapplock` provides effective mutual exclusion only when all following conditions are satisfied:
-    1. **Consistent Resource Naming:** Every scheduling and rescheduling path must generate identical, deterministic lock keys.
-    2. **Correct Lock Scope & Ownership:** `@LockOwner` must be set to `'Transaction'` and run inside an active transaction.
-    3. **Explicit Acquisition Checking:** Return codes must be validated (return value `>= 0` indicates successful acquisition; `< 0` indicates timeout or deadlock).
-    4. **Transaction Lifetime Alignment:** The transaction must remain open until all slot validation and appointment insert statements are staged.
-    5. **Universal Protocol Adherence:** All code paths that reserve or modify slot capacity must adhere to this exact lock protocol; any path bypassing the lock protocol can cause race conditions.
-  - Limitations: Lock acquisition timeouts and deadlocks must be caught and converted to clean failure outcomes rather than unhandled server faults.
+- **Status:** `ACCEPTED` (Implemented & Active)
+- **Context:** Test appointment booking suffers concurrency race conditions on appointment slot capacities.
+- **Decision:** Utilize SQL Server `sp_getapplock` with exclusive transaction locks on deterministic slot resource keys (`DVLD_Slot_{testTypeId}_{dateTime}`).
+- **Required Invariants:** Consistent deterministic lock naming, `@LockOwner = 'Transaction'`, explicit acquisition return code checking (`>= 0`), and transaction lifetime alignment.
 
 ### ADR-005: Functional `Result<T>` Modeling over Domain Exceptions
-- **Status:** `ACCEPTED`
-- **Context:** Using exceptions for control flow (e.g., "license expired", "person not found") introduces heavy stack-trace overhead and obscures API contracts.
-- **Decision:** Use explicit `Result` and `Result<T>` return types for all Application Service workflows.
-- **Consequences:** Clear, predictable execution paths. Controllers cleanly map failure results to HTTP 400, 404, or 409 status codes.
+- **Status:** `ACCEPTED` (Implemented & Active)
+- **Context:** Using exceptions for business validation creates stack trace overhead and obscures contract outcomes.
+- **Decision:** Use explicit `Result` and `Result<T>` return types for all application service workflows.
+- **Consequences:** Predictable control flow. Controllers cleanly map failure results to standard HTTP error codes.
 
 ---
 
-## 4. Architectural Constraints
+## 5. Architectural Constraints
 
 ### ADR-C01: Exclusion and Freeze of Legacy WPF Desktop Client
-- **Status:** `CONSTRAINT`
-- **Context:** The repository contains a legacy WPF desktop client in `Presentation (WPF)/`.
-- **Constraint:** The WPF application is **frozen** and explicitly out of scope for the current engineering and remediation roadmap. AI agents and engineers must not refactor, audit, or rewrite WPF code unless explicitly commissioned.
+- **Status:** `CONSTRAINT` (Enforced & Frozen)
+- **Context:** The repository contains a legacy desktop client in `Presentation (WPF)/`.
+- **Constraint:** The WPF desktop application is **frozen** and explicitly excluded from active engineering, audits, refactoring, and test execution unless explicitly commissioned in writing by the Project Owner.
 
 ### ADR-C02: Isolation of Production Database (`DVLDf`) from Automated Testing
-- **Status:** `CONSTRAINT`
-- **Context:** The primary development database is named `DVLDf`.
-- **Constraint:** Automated integration tests are strictly prohibited from connecting to, dropping, or mutating `DVLDf`. All integration tests must target ephemeral `DVLD_IntegrationTests_<GUID>` databases configured via `DVLD_TEST_CONNECTION`.
+- **Status:** `CONSTRAINT` (Enforced & Protected)
+- **Context:** The local/production development database is named `DVLDf`.
+- **Constraint:** Automated test suites are **strictly prohibited** from connecting to, querying, migrating, dropping, or mutating `DVLDf`. All integration tests must target ephemeral databases named `DVLD_IntegrationTests_<GUID>` configured exclusively via `DVLD_TEST_CONNECTION`. Connecting to `master` strictly as an administrative connection to create/drop ephemeral test databases is permitted; using `master` as an integration test database is strictly prohibited.
 
 ---
 
-## 5. Proposed Architecture Decisions (Pending Phase 12 Execution)
+## 6. Proposed Architecture Decisions (Pending Phase 12 Execution)
 
-### ADR-P01: Separation of Non-Locking Reads from Update-Locking Queries (PERF-02)
-- **Status:** `PROPOSED`
-- **Context:** `LicenseRepository.GetLicenseByIdAsync` currently hardcodes `WITH (UPDLOCK, HOLDLOCK)`, serializing read-only queries against concurrent updates and other readers.
-- **Proposal:** Refactor `GetLicenseByIdAsync` to execute ordinary shared reads. Introduce a dedicated `GetForUpdateAsync` method exclusively for write workflows.
-- **Consequences:** Eliminates unnecessary reader serialization.
+### ADR-P01: Separation of Non-Locking Reads from Update-Locking Queries (`PERF-02`)
+- **Status:** `PROPOSED` (**NOT AUTHORIZED**)
+- **Context:** `LicenseRepository.GetLicenseByIdAsync` hardcodes `WITH (UPDLOCK, HOLDLOCK)`, serializing read-only queries against concurrent readers.
+- **Proposal:** Refactor `GetLicenseByIdAsync` to execute ordinary shared reads. Introduce a dedicated `GetForUpdateAsync` method exclusively for state-modifying write workflows.
+- **Consequences:** Eliminates unnecessary reader serialization. Requires Phase 12.2 authorization.
 
-### ADR-P02: Standardized RFC 7807 ProblemDetails across All Endpoints (REST-01)
-- **Status:** `PROPOSED`
-- **Context:** `AuthController` returns ad-hoc `{ error = "..." }` schemas, while `GlobalExceptionHandler` returns standard `ProblemDetails`.
-- **Proposal:** Standardize all controller failure outcomes on RFC 7807 `ProblemDetails`.
-- **Consequences:** Simplifies client-side error parsing in `ClientApp`.
+### ADR-P02: Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`)
+- **Status:** `PROPOSED` (**NOT AUTHORIZED**)
+- **Context:** `AuthController` returns custom `{ error = "..." }` schemas, while `GlobalExceptionHandler` returns standard `ProblemDetails`.
+- **Proposal:** Standardize all controller failure responses on RFC 7807 `ProblemDetails` (`Content-Type: application/problem+json`).
+- **Consequences:** Uniform client-side error handling in `ClientApp`. Requires Phase 12.3 authorization.
 
-### ADR-P03: Deletion of Orphaned Direct Completion Endpoint (INT-01)
-- **Status:** `PROPOSED`
-- **Context:** `POST /api/applications/{id}/complete` allows unauthorized, direct mutation of applications to `Completed` without prerequisites.
-- **Proposal:** Delete endpoint and underlying service method.
-- **Consequences & Approval Prerequisite:** Removing or altering a public API endpoint represents a potentially breaking API contract change. **Explicit Human Engineering Approval is strictly mandatory** before deleting the endpoint, altering its contract, or removing its underlying service method. Closes critical data corruption vulnerability once approved.
+### ADR-P03: Deletion of Orphaned Direct Completion Endpoint (`INT-01`)
+- **Status:** `PROPOSED` (**NOT AUTHORIZED**)
+- **Context:** `POST /api/applications/{id}/complete` allows authenticated staff to complete applications directly, bypassing test and fee invariants.
+- **Proposal:** Delete endpoint and underlying service method following telemetry observation window (`DEC-APP-01`).
+- **Consequences:** Eliminates critical integrity defect. Breaking API contract change requiring Phase 12.2 authorization.
 
 ---
 
-## 6. Rejected Architecture Recommendations
+## 7. Rejected Architecture Recommendations
 
-### ADR-R01: Rejection of `Task.Run` for In-Process CPU Work (PERF-03)
+### ADR-R01: Rejection of `Task.Run` for In-Process CPU Work (`PERF-03`)
 - **Status:** `REJECTED`
-- **Proposal:** Wrap BCrypt hashing and SkiaSharp image resizing inside `Task.Run()` to "offload work from request threads".
-- **Rejection Rational:** In ASP.NET Core, HTTP requests already execute on ThreadPool worker threads. Calling `Task.Run()` queues another delegate to the same ThreadPool, incurring context switching, allocation overhead, and thread pool starvation under load.
-- **Decision:** Execute CPU-bound computation synchronously on the active request thread.
+- **Proposal:** Wrap BCrypt hashing and SkiaSharp image resizing in `Task.Run()` to "offload work from request threads".
+- **Rejection Rationale:** ASP.NET Core requests execute on ThreadPool threads. Calling `Task.Run()` queues another delegate to the same pool, incurring thread starvation and context switching overhead. CPU-bound work must run synchronously on the active request thread.
 
-### ADR-R02: Rejection of Multi-Tenant IDOR Claim on Citizen Photos (SEC-02)
+### ADR-R02: Rejection of Multi-Tenant IDOR Claim on Citizen Photos (`SEC-02`)
 - **Status:** `REJECTED`
 - **Proposal:** Treat photo retrieval without user-ownership checks as an Insecure Direct Object Reference (IDOR) vulnerability.
-- **Rejection Rationale:** DVLD is an internal government department portal. Authenticated actors are staff members managing public citizen records. Citizens have no logins or resource ownership.
-- **Decision:** Retain role-based access control and audit logging; reject the multi-tenant IDOR premise.
+- **Rejection Rationale:** DVLD is an internal departmental portal where authenticated staff manage public citizen records. Citizens do not log in. Resource access is governed by staff role authorization and audit logging, not multi-tenant record ownership.
 
-### ADR-R03: Rejection of Pagination on Tiny Static Reference Tables (API-02)
+### ADR-R03: Rejection of Pagination on Tiny Static Reference Tables (`API-02`)
 - **Status:** `REJECTED (INFORMATIONAL)`
-- **Proposal:** Mandate pagination on reference data endpoints (`ApplicationTypes`, `TestTypes`, `Countries`).
-- **Rejection Rationale:** These tables hold small, static datasets (7 application types, 3 test types, 195 countries) that rarely change. Paginating them introduces client overhead with zero database performance gain.
-- **Decision:** Retain unpaged cached GET endpoints for small static lookups.
+- **Proposal:** Mandate pagination on static reference tables (`ApplicationTypes`, `TestTypes`, `Countries`).
+- **Rejection Rationale:** Reference tables contain tiny, static datasets (7 application types, 3 test types, 195 countries). Paginating them introduces client overhead with zero performance benefit. Retain unpaged cached GET endpoints.
 
 ---
 
-## 7. Business Decisions & Policy Records (ADR-O01 & ADR-O02)
+## 8. Business Decisions & Policy Records
 
-### ADR-O01: Retention vs. Relaxation of Segregation of Duties (SEC-01)
-- **Status:** `APPROVED` (Decision Date: 2026-11-08)
-- **Context:** The API enforces `[Authorize(Policy = "StaffOnly")]` on operational licensing endpoints (`Applications`, `Licenses`, `Detentions`). Administrators (`Admin`) attempting counter operations receive HTTP 403 Forbidden.
-- **Historical Options Evaluated:**
-  - *Model A (Role Hierarchy):* Relax `StaffOnly` to `StaffOrAdmin`, granting administrators superuser operational rights.
-  - *Model B (Explicit Permission Separation - Selected):* Maintain strict separation between Administrative system management and Staff counter operations to prevent internal fraud.
-- **Human Decision Record (2026-11-08):**
-  - **Selected Model:** **Model B — Explicit Permission Separation**.
-  - **Decisions Enforced:**
-    - Admin does not automatically inherit Staff operational permissions.
-    - Staff does not receive administrative user-management permissions.
-    - Shared capabilities must be explicitly defined and authorized.
-    - Any future exception or permission expansion requires separate documented approval.
-    - The existing authorization model must remain unchanged unless a separately authorized implementation phase is approved.
-- **Implementation Authorization:**
-  - **Phase 12.2 remains NOT AUTHORIZED.**
-  - No source-code changes are authorized.
-  - No test modifications are authorized.
-  - No database or schema changes are authorized.
-  - A separate explicit human authorization is required before implementation.
+### ADR-O01: Retention vs. Relaxation of Segregation of Duties (`SEC-01`)
+- **Status:** `APPROVED POLICY` (Decision Date: 2026-11-08)
+- **Context:** The API enforces `[Authorize(Policy = "StaffOnly")]` on operational counter endpoints (`Applications`, `Licenses`, `Detentions`). Administrators attempting counter transactions receive HTTP 403 Forbidden.
+- **Policy Record:** Enforce **Model B — Explicit Permission Separation**:
+  - `Admin` role does not inherit `Staff` operational permissions.
+  - `Staff` role does not receive user management or system configuration permissions.
+  - Operational counter transactions remain strictly restricted to `Staff`.
+- **Implementation Authorization:** **NOT AUTHORIZED.** Modifying backend role policies or frontend navigation remains unauthorized until Phase 12.2 is approved.
 
-### ADR-O02: Detained License Replacement Policy (INT-03)
-- **Status:** `PROVISIONALLY SELECTED — OFFICIAL POLICY VERIFICATION REQUIRED` (Provisional Direction Date: 2026-11-08)
-- **Context:** Static code inspection confirms that `LicenseReplacementService` does not check whether a license is detained before issuing a replacement.
-- **Provisionally Selected Business Rule:**
+### ADR-O02: Detained License Replacement Policy (`INT-03`)
+- **Status:** `PROVISIONALLY SELECTED` (Provisional Baseline: 2026-11-08)
+- **Context:** `LicenseReplacementService` currently issues replacements without checking whether a license is actively detained.
+- **Provisional Business Rule (Option A):**
   1. A driving license with an active detention must not be replaced.
-  2. The active detention must first be resolved through the existing Release Detained License workflow.
-  3. Once the detention is released, replacement may proceed if all other replacement business validations are satisfied.
-  4. Historical detention and release records must remain preserved. Replacing a license must not erase or rewrite historical detention records.
-  - **Purpose:** Maintain consistency between the detention workflow and the license replacement workflow and prevent replacement from bypassing an active detention.
-- **Important Scope Clarification:**
-  - This is a project-specific business rule.
-  - The project simulates core licensing operations of a Driving and Vehicle Licensing Department.
-  - Government paperwork, official evidence, external authority correspondence, temporary permits, and other real-world administrative procedures are outside the project's intended scope unless explicitly introduced later.
-  - Do not describe this decision as a confirmed legal requirement or official Jordanian procedure. Official policy verification remains required.
-- **Technical Questions — Not Yet Decided:**
-  The following implementation details are not yet decided and must not be invented or assumed:
-  - Is detention associated with `LicenseId`, `DriverId`, or both?
-  - How should the system identify the active detention when validating a replacement?
-  - What historical relationships must be preserved when a replacement creates a new license record?
-  - Lost-license and damaged-license replacement procedures must not be assumed to have identical requirements.
-  - What official policy verification is still required?
-  - *Mandatory Investigation Gate:* These remain technical questions requiring inspection of the existing Domain model, repositories, and workflows before implementation. Do not change the data model or implementation in this phase.
-- **Implementation Authorization:**
-  - **Phase 12.2 remains NOT AUTHORIZED.**
-  - No source-code changes are authorized.
-  - No test modifications are authorized.
-  - No database or schema changes are authorized.
-  - A separate explicit human authorization is required before implementation.
+  2. The detention must first be resolved through the Release Detained License workflow.
+  3. Once released, replacement may proceed if all other invariants are met.
+  4. Historical detention and release records must remain preserved.
+- **Implementation Authorization:** **NOT AUTHORIZED.** Cross-referenced to `DEC-POL-01`. Code changes remain strictly blocked pending written confirmation from the Licensing Authority.
+
+---
+
+## 9. Security Architecture & Policy Decisions
+
+### DEC-AUTH-01: Target Stateless JWT Access Token Lifetime
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Identity & Authentication (`RSK-04`, `SEC-PKG-10`)
+- **Strategic Question:** What target access token lifetime should be configured for stateless JWTs prior to refresh token implementation?
+- **Options Evaluated:** Option 1: 15 minutes; Option 2: 30 minutes; Option 3: 60 minutes.
+- **Architectural Proposal:** Option 2 (30 minutes) is proposed for Project Owner evaluation to balance containment with usability during staff shifts. The 30-minute value is an **unapproved proposal**, NOT an approved setting.
+- **Authority:** Project Owner (Gate 2).
+
+### DEC-AUTH-02: Server-Side Architecture for JWT Token Revocation
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Identity & Session Management (`SEC-PKG-10`, Phase 12.2)
+- **Strategic Question:** What server-side architecture should be adopted for JWT token revocation?
+- **Options Evaluated:** Option 1: Purely stateless (rely on short lifetime); Option 2: Distributed in-memory blocklist (Redis); Option 3: Dedicated database token tracking table.
+- **Architectural Proposal:** Option 1 for initial milestone, transitioning to Option 2 or 3 under Phase 12.2.
+- **Authority:** Project Owner / Architect.
+
+### DEC-AUTH-03: Multi-Factor Authentication (MFA) for Administrative Roles
+- **Status:** `DEFERRED TO FUTURE PHASE` (**NOT AUTHORIZED**)
+- **Domain:** Identity & Access Governance (`RSK-08`)
+- **Strategic Question:** Should Multi-Factor Authentication (MFA) be required for administrative roles?
+- **Options Evaluated:** Option 1: Single-factor static passwords; Option 2: Mandatory TOTP (RFC 6238) for `Admin`; Option 3: Optional MFA for all staff.
+- **Architectural Proposal:** Option 2 (Mandatory TOTP for Admin) deferred to a future security roadmap phase.
+- **Authority:** Project Owner.
+
+### DEC-CRED-01: Password Complexity Standard
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Credentials & Authentication (`RSK-07`, `SEC-PKG-09`)
+- **Strategic Question:** Which password complexity standard should be enforced by `UserValidator`?
+- **Options Evaluated:** Option 1: Legacy composition rules (upper/lower/digit/special, min length 10); Option 2: Modern NIST SP 800-63B (min 12–16 chars, no composition rules, 10k breached password blocklist).
+- **Architectural Proposal:** Option 2 (NIST SP 800-63B) proposed to eliminate predictable character mutations.
+- **Authority:** Project Owner (Gate 2).
+
+### DEC-CRED-02: Account Lockout Strategy & Thresholds
+- **Status:** `POLICY UNRESOLVED` (**NOT AUTHORIZED**)
+- **Domain:** Brute-Force Defense (`RSK-05`, `SEC-PKG-11`, Schema Gate 5)
+- **Strategic Question:** What account lockout strategy and thresholds should be enforced against brute-force attacks?
+- **Options Evaluated:** Option 1: Hard lockout after $N$ failures for $M$ minutes; Option 2: Progressive exponential delays (anti-DoS mitigation); Option 3: Hybrid model requiring administrative unlock.
+- **Architectural Proposal:** Submitted for Project Owner selection. Exact threshold ($N$) and duration ($M$) remain open pending authorization.
+- **Authority:** Project Owner (Gate 5).
+
+### DEC-AUD-01: Dedicated Security Audit Trail Storage Sink
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Forensics & Observability (`RSK-06`, `SEC-PKG-06`, `SEC-04`)
+- **Strategic Question:** What storage sink should be utilized for the dedicated Security Audit Trail?
+- **Options Evaluated:** Option 1: Isolated rolling JSON log files with OS ACLs; Option 2: Dedicated SQL Server `SecurityAuditLogs` table; Option 3: External SIEM / Syslog endpoint.
+- **Architectural Proposal:** Option 1 (Rolling JSON) proposed for initial phase to avoid schema migrations, migrating to Option 2 or 3 for enterprise deployments.
+- **Authority:** Project Owner (Gate 2).
+
+### DEC-AUD-02: Security Audit Sink Failure Handling Policy & Ring Buffer Architecture
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Forensics & Availability (`SEC-PKG-06`, `SEC-04`)
+- **Strategic Question:** What failure handling policy should govern the system if the security audit sink is unavailable?
+- **Options Evaluated:** Option 1: Fail-Closed (reject authentication/user operations if audit write fails); Option 2: Fail-Open with local in-memory fallback ring buffer.
+- **Architectural Proposal:** Option 2 (Fail-Open with local ring buffer) proposed to prevent audit sink disk/network faults from causing departmental denial of service.
+- **Authority:** Software Architect / Project Owner.
+
+### DEC-APP-01: Application Completion Route Telemetry Window
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Workflow Integrity (`INT-01`, `SEC-PKG-01`, `ADR-P03`)
+- **Strategic Question:** Can `POST /api/applications/{id}/complete` be deleted immediately without breaking external integrations?
+- **Options Evaluated:** Option 1: Immediate route deletion; Option 2: 30-day telemetry observation window with deprecation headers before removal; Option 3: Restrict route to `Admin`.
+- **Architectural Proposal:** Option 2 (Telemetry window) proposed to verify zero external consumers prior to hard deletion.
+- **Authority:** Project Owner / API Lead.
+
+### DEC-RBAC-01: Administrative Read-Only Inspection Access under Model B
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Role-Based Access Control (`SEC-01`, `SEC-PKG-05`, `ADR-O01`)
+- **Strategic Question:** Should an architectural proposal be prepared to formally amend ADR-O01 Model B to grant Administrators read-only inspection access to operational counter records?
+- **Options Evaluated:** Option 1 (Approved Model B): Retain strict Segregation of Duties; counter records remain strictly `StaffOnly`; Option 2 (Future ADR Amendment): Formal review to evaluate amending Model B to permit read-only inspection (`StaffOrAdmin`) for Administrators.
+- **Architectural Proposal:** Option 1 preserves approved ADR-O01 Model B governance baseline. Option 2 remains an open proposal requiring a dedicated ADR amendment.
+- **Authority:** Project Owner.
+
+### DEC-FILE-01: Citizen Image Ownership & Cross-User Deletion Defense
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Storage & Input Sanitization (`RSK-02`, `SEC-PKG-02`)
+- **Strategic Question:** What architecture should govern citizen image ownership and cross-user deletion defense?
+- **Options Evaluated:** Option 1: Complete removal of `ImagePath` from DTOs; server generates GUIDs via dedicated multipart upload; Option 2: Retain DTO property, but enforce database-backed ownership verification in `PhysicalFileStorageService`.
+- **Architectural Proposal:** Option 1 (Server-managed DTO sanitization) proposed to completely eliminate client-supplied path attack surface.
+- **Authority:** Software Architect / Project Owner.
+
+### DEC-DEP-01: Authoritative Production Hosting Topology & Reverse Proxy CIDRs
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Infrastructure & Operations (`RSK-16`, `SEC-PKG-12`, `SEC-PKG-13`)
+- **Strategic Question:** What is the authoritative production hosting topology and reverse proxy configuration?
+- **Options Evaluated:** Option 1: Direct Kestrel on host; Option 2: Reverse proxy behind Nginx/Envoy on Linux container; Option 3: IIS / YARP on Windows Server.
+- **Architectural Proposal:** Document required CIDRs and environment bindings for Option 2 or Option 3.
+- **Authority:** DevOps / Infrastructure Lead.
+
+### DEC-DEP-02: Content Security Policy (CSP) Header Ownership
+- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Domain:** Transport Security (`RSK-16`, `SEC-PKG-12`)
+- **Strategic Question:** Which tier owns Content Security Policy (CSP) and frontend HTTP response headers?
+- **Options Evaluated:** Option 1: API middleware serves CSP for all responses; Option 2: Reverse proxy or CDN hosting the React SPA serves CSP; API serves pure data headers.
+- **Architectural Proposal:** Option 2 (SPA Host ownership), as `DVLD.Api` serves strictly JSON payloads.
+- **Authority:** System Architect / DevOps.
+
+### DEC-POL-01: Statutory Prohibition of Detained License Replacement
+- **Status:** `REGULATORY CONFIRMATION PENDING` (**BLOCKED ON LEGAL**)
+- **Domain:** Civic Licensing Policy (`RSK-13`, `SEC-PKG-15`, `INT-03`, Gate 3)
+- **Strategic Question:** Does official Jordanian licensing regulation prohibit issuing replacements for actively detained licenses?
+- **Options Evaluated:** Option 1: Absolute statutory ban (ADR-O02 Option A); Option 2: Replacement permitted under judicial waiver or administrative authorization.
+- **Architectural Proposal:** ADR-O02 Option A provisionally selected; requires official licensing authority verification.
+- **Authority:** Licensing Authority / Legal Counsel.
+
+### DEC-POL-02: Statutory Domestic Detention Verification for International Permits
+- **Status:** `REGULATORY CONFIRMATION PENDING` (**BLOCKED ON LEGAL**)
+- **Domain:** Civic Licensing Policy (`RSK-14`, `SEC-PKG-16`, Gate 3)
+- **Strategic Question:** Does official licensing regulation bar issuing international driving permits to drivers with detained domestic licenses?
+- **Options Evaluated:** Option 1: Mandatory verification and block if domestic license is detained; Option 2: Permitted if domestic physical credential is presented regardless of system detention state.
+- **Architectural Proposal:** Option 1 (Mandatory block) aligns with international convention intent; requires formal regulatory confirmation. Distinct from `INT-03`.
+- **Authority:** Licensing Authority / Legal Counsel.
+
+### DEC-SEC05-01: Refresh Token Transport Mechanism
+- **Status:** `DEFERRED / STRICTLY UNAUTHORIZED`
+- **Domain:** Session Modernization (`SEC-05`, `SEC-PKG-17`, Phase 12.2 Modernization Track)
+- **Strategic Question:** Which transport mechanism should be implemented for refresh tokens in SEC-05 / Phase 12.2?
+- **Options Evaluated:** Option A: `HttpOnly`, `Secure`, `SameSite=Strict` cookies; Option B: Authorization Bearer header in request body; Option C: Hybrid (in-memory access token + cookie-based refresh token).
+- **Architectural Proposal:** Option C (Hybrid) isolates refresh tokens from client scripts while allowing stateless API execution.
+- **Authority:** Architect / Project Owner.
+
+### DEC-SEC05-02: Token Invalidation Scope upon Reuse Detection
+- **Status:** `DEFERRED / STRICTLY UNAUTHORIZED`
+- **Domain:** Session Modernization (`SEC-05`, `SEC-PKG-17`, Phase 12.2 Modernization Track)
+- **Strategic Question:** What is the invalidation scope upon detecting refresh token reuse?
+- **Options Evaluated:** Option 1: Invalidate only the compromised token sub-tree; Option 2: Invalidate entire token family across all sessions for the affected user account.
+- **Architectural Proposal:** Option 2 (Family-wide invalidation) provides maximum breach containment.
+- **Authority:** Architect / Project Owner.
+
+---
+
+## 10. Mandatory Governance & Risk Acceptance Boundaries
+
+1. **`RSK-11` (Plaintext PII Exposure in Citizen & User DTOs):**
+   - **Risk Description:** `PersonResponse` and `UserDetailsResponse` return unmasked national IDs, birth dates, home addresses, phone numbers, and personal details to all authenticated staff without field-level masking.
+   - **Required Risk Owner Role:** Project Owner / Data Protection Officer (DPO).
+   - **Risk Owner Assignment Status:** **PENDING** (No individual appointed).
+   - **Formal Risk Acceptance Status:** **NOT GRANTED**. Formal risk acceptance has not been authorized or executed.
+   - **Production Eligibility Gate:** The DVLD platform is **strictly ineligible for production release** until documented formal risk acceptance is executed under Gate 8 by the authorized Risk Owner. Documenting `RSK-11` in a register does not satisfy or accept the risk.
+2. **Schema Gate 5 (`Users` Table Lockout Columns):**
+   - Adding `AccessFailedCount`, `LockoutEnd`, and `LockoutEnabled` requires separate human DBA/schema approval. Zero database schema modifications or migrations are authorized.
+3. **Segregation of Duties Enforcement (`ADR-O01` / `SEC-01`):**
+   - Model B is an approved policy record. Code changes in backend controllers or frontend navigation guards remain strictly unauthorized.
+4. **Detained License Replacement Preconditions (`ADR-O02` / `DEC-POL-01`):**
+   - Option A is provisionally selected for internal architecture. Code changes in `LicenseReplacementService.cs` remain strictly blocked on written confirmation from the Licensing Authority.
+5. **International Permit Domestic Detention Preconditions (`DEC-POL-02`):**
+   - Regulatory confirmation remains pending. Code changes in `InternationalService.cs` remain strictly blocked on written confirmation from the Licensing Authority. Distinct from `INT-03`.
+6. **Session Modernization Track (`SEC-05`, `FE-01`, `TEST-02`, `SEC-PKG-17`):**
+   - All session modernization work items remain deferred and strictly unauthorized.

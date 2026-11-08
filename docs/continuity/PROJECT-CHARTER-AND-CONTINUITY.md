@@ -174,7 +174,7 @@ A fundamental governance rule governs all session logging and continuity documen
 Project continuity relies on accurate, evidence-backed historical records governed by traceability and no-silent-rewrite controls:
 
 ### 7.1 Current Project State as a Snapshot
-- [`CURRENT-PROJECT-STATE.md`](./CURRENT-PROJECT-STATE.md) represents a **point-in-time dated snapshot**, not a real-time reflection of the repository.
+- [`snapshots/CURRENT-PROJECT-STATE-2026-11-08.md`](./snapshots/CURRENT-PROJECT-STATE-2026-11-08.md) represents a **point-in-time dated snapshot**, not a real-time reflection of the repository.
 - Changes to the repository do not automatically mutate the snapshot until an authorized state update is performed.
 
 ### 7.2 Session Log Governance
@@ -265,3 +265,39 @@ The system strictly partitions logging into three distinct operational domains:
 ### 9.2 Frozen Codebases (`Presentation (WPF)/`)
 - The legacy WPF desktop client located in `Presentation (WPF)/` is **frozen** and explicitly out of scope.
 - No AI assistant may audit, refactor, or modify WPF code unless explicitly instructed in writing by the Project Owner.
+
+---
+
+## 10. Foundational Engineering Discovery References
+
+The DVLD repository permanently maintains two foundational engineering discovery reports authored during the initial architectural baseline discovery on 2026-11-08:
+
+1. [`docs/audits/phase-a-repository-discovery.md`](../audits/phase-a-repository-discovery.md): Initial deep repository discovery covering solution architecture, technology inventory, business workflow maps, execution paths, and security posture.
+2. [`docs/audits/phase-a-supplementary-review.md`](../audits/phase-a-supplementary-review.md): Supplementary deep discovery providing 11 detailed workflow analyses, UnitOfWork and transaction analysis, SQL Server locking and concurrency analysis, and reconciled findings.
+
+### 10.1 Classification and Invariants
+- **Classification:** `KEEP — FOUNDATIONAL HISTORICAL ENGINEERING EVIDENCE`.
+- **Baseline Commit:** `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3` (`main`).
+- **Date of Discovery:** `2026-11-08`.
+- **Evidentiary Limitations:** Both reports reflect a static code analysis conducted at the baseline commit. They do not reflect subsequent phase remediations and must **never** be cited as real-time guarantees of current codebase state.
+- **Evidentiary Weight:** Observations in these reports constitute historical evidence. They must not be converted into approved business rules or architectural decisions without separate policy sign-off and current source verification.
+
+### 10.2 Mandatory Scoped Consultation Rule
+All future AI coding assistants, system architects, and pair-programming agents **must consult these foundational reports** if and only if their assigned task materially involves:
+- System architecture or cross-layer dependency boundaries.
+- Database transactions, UnitOfWork mechanics, or SQL Server concurrency/locking behavior.
+- Core domain licensing workflows (e.g., LDL application submission, 3-tier test sequencing, first-time license issuance, renewals, replacements, or detentions).
+- Cross-cutting security, JWT authentication lifecycles, or file upload storage mechanics.
+- Test suite architecture or ephemeral test database provisioning.
+
+*Note:* Consultation is not required for isolated styling, typographical, or documentation metadata adjustments. Consultation does not grant authority to modify repository files, run tests, or access databases.
+
+---
+
+## 11. Modernization Development & Domain Documentation Structure
+
+Active domain specifications and preserved historical planning reside across specialized documentation directories:
+
+- [`LICENSING-DOMAIN-SPECIFICATION.md`](../domain/LICENSING-DOMAIN-SPECIFICATION.md) — Authoritative domain business constraints, Local Driving License lifecycle, 3-tier sequential exam prerequisites, and post-issuance workflows.
+- [`docs/archive/historical-planning/`](../archive/historical-planning/) — Preserved original development plan, modernization vision, target architecture draft, and scoped blocker register.
+- [`docs/archive/security-sources/`](../archive/security-sources/) — Preserved historical Security Master Plan and Security Implementation Readiness Assessment.
