@@ -386,3 +386,5 @@ flowchart LR
    - Regulatory confirmation remains pending. Code changes in `InternationalService.cs` remain strictly blocked on written confirmation from the Licensing Authority. Distinct from `INT-03`.
 6. **Session Modernization Track (`SEC-05`, `FE-01`, `TEST-02`, `SEC-PKG-17`):**
    - All session modernization work items remain deferred and strictly unauthorized.
+7. **Canonical Risk Register Mapping:**
+   - Active decisions reference risks by their unified two-digit identifiers (`RSK-01` through `RSK-20`), where foundational Phase A empirical findings (`RSK-S01`–`RSK-S13`) are remapped (`RSK-S08` maps to `RSK-03` Timing Side-Channel, `RSK-08` is exclusively Multi-Factor Authentication under `DEC-AUTH-03`, `RSK-05` governs Account Lockout / DoS under `DEC-CRED-02` / Schema Gate 5, and `RSK-11` governs Plaintext PII Exposure under Gate 8). The complete authoritative mapping ledger is maintained in [`SECURITY-STANDARDS.md`](./SECURITY-STANDARDS.md) §7.
