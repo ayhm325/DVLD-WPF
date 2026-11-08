@@ -147,21 +147,23 @@ The DVLD repository maintains a strictly governed, streamlined documentation hie
 
 ### 2. Session Continuity Suite (`docs/continuity/`)
 - [**Project Charter & Continuity** (`docs/continuity/PROJECT-CHARTER-AND-CONTINUITY.md`)](docs/continuity/PROJECT-CHARTER-AND-CONTINUITY.md) — Operational charter, authority model, and continuity framework.
-- [**Current Project State** (`docs/continuity/CURRENT-PROJECT-STATE.md`)](docs/continuity/CURRENT-PROJECT-STATE.md) — Point-in-time snapshot of codebase health and active milestones.
+- [**Current Project State** (`docs/continuity/snapshots/CURRENT-PROJECT-STATE-2026-11-08.md`)](docs/continuity/snapshots/CURRENT-PROJECT-STATE-2026-11-08.md) — Baseline point-in-time snapshot of codebase health.
 - [**Correction Log** (`docs/continuity/CORRECTION-LOG.md`)](docs/continuity/CORRECTION-LOG.md) — Immutable chronological log of corrections.
 - [**Session Logs** (`docs/continuity/SESSION-LOGS/`)](docs/continuity/SESSION-LOGS/README.md) — Session handoff log conventions.
 
-### 3. Modernization Development Planning (`docs/development/`)
-- [**Development Vision** (`docs/development/DEVELOPMENT-VISION.md`)](docs/development/DEVELOPMENT-VISION.md) — Modernization objectives, civic capabilities, and target user experience.
-- [**Development Plan** (`docs/development/DEVELOPMENT-PLAN.md`)](docs/development/DEVELOPMENT-PLAN.md) — Phased workstreams, milestones, licensing business constraints, and 3D findings register.
-- [**Target Architecture** (`docs/development/TARGET-ARCHITECTURE.md`)](docs/development/TARGET-ARCHITECTURE.md) — Clean Architecture layers, API contracts, React client patterns, and media storage.
-- [**Risks & Open Decisions** (`docs/development/RISKS-AND-OPEN-DECISIONS.md`)](docs/development/RISKS-AND-OPEN-DECISIONS.md) — Centralized catalog of unresolved decisions, risks, and scoped workstream blockers.
+### 3. Civic Domain Specifications (`docs/domain/`)
+- [**Licensing Domain Specification** (`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`)](docs/domain/LICENSING-DOMAIN-SPECIFICATION.md) — Authoritative domain business invariants, sequential examination progression, application lifecycle, and post-issuance workflows.
 
 ### 4. Foundational Engineering Discovery Reports (`docs/audits/`)
 - [**Phase A Discovery Report** (`docs/audits/phase-a-repository-discovery.md`)](docs/audits/phase-a-repository-discovery.md) — Deep architectural baseline discovery (Commit `29e43d6`).
 - [**Phase A.1 Supplementary Review** (`docs/audits/phase-a-supplementary-review.md`)](docs/audits/phase-a-supplementary-review.md) — 11 detailed workflow analyses, UnitOfWork deep analysis, and SQL locking.
+- [**Security Architecture Audit** (`docs/audits/phase-a-security-architecture-audit.md`)](docs/audits/phase-a-security-architecture-audit.md) — Consolidated security audit, STRIDE threat model, and 13-risk register (Commit `29e43d6`).
 
-### 5. Frontend Development & Governance (`ClientApp/`)
+### 5. Preserved Historical Planning & Sources (`docs/archive/`)
+- [**Historical Planning Archive** (`docs/archive/historical-planning/`)](docs/archive/historical-planning/) — Preserved original development plan, vision, target architecture, and early risks register.
+- [**Security Sources Archive** (`docs/archive/security-sources/`)](docs/archive/security-sources/) — Preserved Security Master Plan and Implementation Readiness Assessment.
+
+### 6. Frontend Development & Governance (`ClientApp/`)
 - [**ClientApp Overview & Setup** (`ClientApp/README.md`)](ClientApp/README.md) — Vite SPA setup, scripts, and feature baseline summary.
 - [**Frontend Agent Governance** (`ClientApp/AGENTS.md`)](ClientApp/AGENTS.md) — Frontend AI instructions, TypeScript standards, and design system rules.
 

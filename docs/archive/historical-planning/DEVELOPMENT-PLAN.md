@@ -24,7 +24,7 @@
 
 ## 2. Core Licensing Domain Business Constraints
 
-*These domain invariants were extracted and validated from historical business discovery in [`docs/audits/phase-a-supplementary-review.md`](../audits/phase-a-supplementary-review.md) §3.*
+*These domain invariants were extracted and validated from historical business discovery in [`docs/audits/phase-a-supplementary-review.md`](../../audits/phase-a-supplementary-review.md) §3.*
 
 ### 2.1 Local Driving License (LDL) Application Lifecycle
 1. **Prerequisite Citizen Demographic Profile:** An applicant must exist in the `People` directory before an application can be created.
@@ -124,7 +124,7 @@ graph LR
 
 ## 4. Evidence-Backed Findings Register (Three-Dimensional Model)
 
-The following historical findings—extracted from Phase A ([`docs/audits/phase-a-repository-discovery.md`](../audits/phase-a-repository-discovery.md)) and Phase A.1 ([`docs/audits/phase-a-supplementary-review.md`](../audits/phase-a-supplementary-review.md))—are tracked across three orthogonal dimensions:
+The following historical findings—extracted from Phase A ([`docs/audits/phase-a-repository-discovery.md`](../../audits/phase-a-repository-discovery.md)) and Phase A.1 ([`docs/audits/phase-a-supplementary-review.md`](../../audits/phase-a-supplementary-review.md))—are tracked across three orthogonal dimensions:
 
 | Finding ID & Description | Dimension A: Evidence Status | Dimension B: Decision Status | Dimension C: Implementation Status | Source Anchor & Baseline |
 |---|---|---|---|---|

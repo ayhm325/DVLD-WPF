@@ -174,7 +174,7 @@ A fundamental governance rule governs all session logging and continuity documen
 Project continuity relies on accurate, evidence-backed historical records governed by traceability and no-silent-rewrite controls:
 
 ### 7.1 Current Project State as a Snapshot
-- [`CURRENT-PROJECT-STATE.md`](./CURRENT-PROJECT-STATE.md) represents a **point-in-time dated snapshot**, not a real-time reflection of the repository.
+- [`snapshots/CURRENT-PROJECT-STATE-2026-11-08.md`](./snapshots/CURRENT-PROJECT-STATE-2026-11-08.md) represents a **point-in-time dated snapshot**, not a real-time reflection of the repository.
 - Changes to the repository do not automatically mutate the snapshot until an authorized state update is performed.
 
 ### 7.2 Session Log Governance
@@ -294,11 +294,10 @@ All future AI coding assistants, system architects, and pair-programming agents 
 
 ---
 
-## 11. Modernization Development Documentation Structure
+## 11. Modernization Development & Domain Documentation Structure
 
-Active technical planning and system design for the modernization cycle reside under [`docs/development/`](../development/):
+Active domain specifications and preserved historical planning reside across specialized documentation directories:
 
-- [`DEVELOPMENT-VISION.md`](../development/DEVELOPMENT-VISION.md) — Strategic objectives, modernized product capabilities, and intended user outcomes.
-- [`DEVELOPMENT-PLAN.md`](../development/DEVELOPMENT-PLAN.md) — Phased workstreams, milestones, entry/exit criteria, licensing business constraints, and evidence-backed findings register.
-- [`TARGET-ARCHITECTURE.md`](../development/TARGET-ARCHITECTURE.md) — Target technical design, Clean Architecture layers, API contracts, React 19 client patterns, and media storage architecture.
-- [`RISKS-AND-OPEN-DECISIONS.md`](../development/RISKS-AND-OPEN-DECISIONS.md) — Scoped catalog of unresolved architectural decisions, technical risks, and non-blocking workstream dependencies.
+- [`LICENSING-DOMAIN-SPECIFICATION.md`](../domain/LICENSING-DOMAIN-SPECIFICATION.md) — Authoritative domain business constraints, Local Driving License lifecycle, 3-tier sequential exam prerequisites, and post-issuance workflows.
+- [`docs/archive/historical-planning/`](../archive/historical-planning/) — Preserved original development plan, modernization vision, target architecture draft, and scoped blocker register.
+- [`docs/archive/security-sources/`](../archive/security-sources/) — Preserved historical Security Master Plan and Security Implementation Readiness Assessment.

@@ -24,16 +24,16 @@ Before implementing changes or answering architectural questions, AI agents must
 ```mermaid
 flowchart TD
     A["ClientApp/AGENTS.md (Operational Rules & Boundaries)"] --> B["ClientApp/README.md (Master Entry Point & Setup)"]
-    B --> C["docs/development/TARGET-ARCHITECTURE.md (System Architecture & API Contracts)"]
+    B --> C["ENGINEERING-STANDARDS.md (System Architecture, Layering & Contracts)"]
     B --> D["SECURITY-STANDARDS.md (Auth Policies, SoD, Session Lifecycle)"]
-    B --> E["ENGINEERING-STANDARDS.md (Persistence, Concurrency, Result Pattern)"]
+    B --> E["docs/domain/LICENSING-DOMAIN-SPECIFICATION.md (Domain Business Rules)"]
 ```
 
 1. [`ClientApp/AGENTS.md`](./AGENTS.md) — Universal operational instructions, governance rules, and safety boundaries for frontend development (this document).
 2. [`ClientApp/README.md`](./README.md) — Authoritative project entry point, technology stack, setup scripts, development workflows, and feature baseline summary.
-3. [`docs/development/TARGET-ARCHITECTURE.md`](../docs/development/TARGET-ARCHITECTURE.md) — System architecture, Clean Architecture layers, API contracts, and component interaction flows.
+3. [`ENGINEERING-STANDARDS.md`](../ENGINEERING-STANDARDS.md) — System architecture, Clean Architecture layers, API contracts, persistence, and concurrency rules.
 4. [`SECURITY-STANDARDS.md`](../SECURITY-STANDARDS.md) — Authentication architecture, Segregation of Duties (SoD), role policies, and file upload validation.
-5. [`ENGINEERING-STANDARDS.md`](../ENGINEERING-STANDARDS.md) — Architecture invariants, Jordan Time handling, and concurrency rules.
+5. [`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`](../docs/domain/LICENSING-DOMAIN-SPECIFICATION.md) — Authoritative domain business invariants and licensing workflow constraints.
 
 ---
 

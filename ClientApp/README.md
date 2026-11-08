@@ -2,7 +2,7 @@
 
 `ClientApp` is the browser-based React + TypeScript + Vite single-page application for the Driving & Vehicle Licensing Department (DVLD) system. It communicates with `DVLD.Api` over HTTP + JSON + JWT (`http://localhost:5260/api`).
 
-> **Operational Status:** `ClientApp` is an active administrative web portal. All core departmental views, authentication flows, management tables, settings modals, and navigation workflows are implemented as baseline foundations. Governance rules and development standards are maintained in [`AGENTS.md`](./AGENTS.md) and [`docs/development/DEVELOPMENT-PLAN.md`](../docs/development/DEVELOPMENT-PLAN.md).
+> **Operational Status:** `ClientApp` is an active administrative web portal. All core departmental views, authentication flows, management tables, settings modals, and navigation workflows are implemented as baseline foundations. Governance rules and development standards are maintained in [`AGENTS.md`](./AGENTS.md) and [`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`](../docs/domain/LICENSING-DOMAIN-SPECIFICATION.md).
 
 ---
 
@@ -63,7 +63,7 @@ npm run preview
 ## 4. Feature Implementation Summary
 
 > [!NOTE]
-> The feature matrix below reflects verified baseline frontend foundations established at commit `29e43d6` (historical 2026-11-01). Ongoing automated end-to-end and integration verification across all views is tracked under Milestone M4 in [`docs/development/DEVELOPMENT-PLAN.md`](../docs/development/DEVELOPMENT-PLAN.md).
+> The feature matrix below reflects verified baseline frontend foundations established at commit `29e43d6` (historical 2026-11-01). Ongoing automated end-to-end and integration verification across all views is tracked under Phase 12 in [`ENGINEERING-ROADMAP.md`](../ENGINEERING-ROADMAP.md).
 
 | Feature / View | Status | Implementation Details |
 |---|---|---|
@@ -88,6 +88,7 @@ npm run preview
 Authoritative documentation for `ClientApp` is organized under the repository governance suite:
 
 - [**Frontend Agent Governance** (`ClientApp/AGENTS.md`)](./AGENTS.md) — Operational instructions, TypeScript standards, and component isolation rules.
-- [**Target Technical Architecture** (`docs/development/TARGET-ARCHITECTURE.md`)](../docs/development/TARGET-ARCHITECTURE.md) — Component layout, state management, HTTP client transport, and authentication lifecycle.
-- [**Modernization Development Plan** (`docs/development/DEVELOPMENT-PLAN.md`)](../docs/development/DEVELOPMENT-PLAN.md) — Milestone roadmap, workstream sequencing, and integration verification.
+- [**Engineering Standards** (`ENGINEERING-STANDARDS.md`)](../ENGINEERING-STANDARDS.md) — System architecture, Clean Architecture layers, API contracts, persistence, and concurrency rules.
+- [**Licensing Domain Specification** (`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`)](../docs/domain/LICENSING-DOMAIN-SPECIFICATION.md) — Authoritative domain business invariants and licensing workflow constraints.
 - [**Security Standards** (`SECURITY-STANDARDS.md`)](../SECURITY-STANDARDS.md) — Session storage threat model, per-tab isolation, XSS prevention, and RBAC policies.
+- [**Preserved Target Architecture Archive** (`docs/archive/historical-planning/TARGET-ARCHITECTURE.md`)](../docs/archive/historical-planning/TARGET-ARCHITECTURE.md) — Preserved historical target architecture draft and media pipeline flowchart.

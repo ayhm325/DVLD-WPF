@@ -23,8 +23,8 @@ This document provides a point-in-time snapshot of the DVLD project state, gover
 
 ### 1.3 Foundational Engineering Discovery References
 This repository maintains two permanent, code-verified discovery reports in `docs/audits/`:
-- [`docs/audits/phase-a-repository-discovery.md`](../audits/phase-a-repository-discovery.md) (Baseline commit `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`, dated 2026-11-08).
-- [`docs/audits/phase-a-supplementary-review.md`](../audits/phase-a-supplementary-review.md) (Baseline commit `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`, dated 2026-11-08).
+- [`docs/audits/phase-a-repository-discovery.md`](../../audits/phase-a-repository-discovery.md) (Baseline commit `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`, dated 2026-11-08).
+- [`docs/audits/phase-a-supplementary-review.md`](../../audits/phase-a-supplementary-review.md) (Baseline commit `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`, dated 2026-11-08).
 
 *Evidentiary Boundary:* Both reports reflect static code analysis of the pre-remediation baseline. They serve as foundational historical evidence, not current source-of-truth guarantees of active runtime state.
 
@@ -86,7 +86,7 @@ The following milestones are recorded from the cited documentation. Confidence l
 Current engineering activity is focused on governance finalization and preparation for future implementation phases:
 
 - **Recent Governance Deliverable:** Initial DVLD Project Continuity documentation suite created under `docs/continuity/`; content is pending Project Owner review and acceptance.
-- **Roadmap Priorities (from [`ENGINEERING-ROADMAP.md`](../../ENGINEERING-ROADMAP.md)):**
+- **Roadmap Priorities (from [`ENGINEERING-ROADMAP.md`](../../../ENGINEERING-ROADMAP.md)):**
   - **P0 Critical Integrity:** `INT-01` (Direct Application Complete Endpoint remediation).
   - **P1 Provisional Performance:** `PERF-01` (Sequential N+1 query in `LicenseQueryService`), `INT-02` (Persistence violation handling in `UserService`).
   - **P2 Reliability & Observability:** `OBS-01` (Health checks), `OBS-03` (Structured Serilog logging), `SEC-04` (Security telemetry), `AUD-01` (Transactional SQL audit logging), `SEC-05` (Refresh token rotation), `FE-01` (React silent refresh coordination), `TEST-02` (Integration test suite), `INT-03` (Detained license check).

@@ -22,7 +22,7 @@
 
 ### 1.1 Executive Summary
 
-This **Security Master Plan** establishes a unified, evidence-based, architecture-aware security implementation roadmap for the Driver & Vehicle Licensing Department (DVLD) platform. It consolidates the empirical findings from the Security Implementation Readiness Assessment (`docs/development/SECURITY-IMPLEMENTATION-READINESS.md`), aligns them with core engineering governance (`AI-ENGINEERING-INSTRUCTIONS.md`, `ENGINEERING-STANDARDS.md`, `SECURITY-STANDARDS.md`), and structures remediation into a dependency-aware, non-linear execution sequence.
+This **Security Master Plan** establishes a unified, evidence-based, architecture-aware security implementation roadmap for the Driver & Vehicle Licensing Department (DVLD) platform. It consolidates the empirical findings from the Security Implementation Readiness Assessment (`SECURITY-IMPLEMENTATION-READINESS.md`), aligns them with core engineering governance (`AI-ENGINEERING-INSTRUCTIONS.md`, `ENGINEERING-STANDARDS.md`, `SECURITY-STANDARDS.md`), and structures remediation into a dependency-aware, non-linear execution sequence.
 
 #### Document-Wide Reconciled Metrics
 The platform security baseline comprises:

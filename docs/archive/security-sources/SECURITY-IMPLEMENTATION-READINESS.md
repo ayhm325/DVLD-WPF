@@ -5,7 +5,7 @@
 > **Repository:** `D:\DVLD-WPF`  
 > **Evaluation Baseline Commit:** `9b6d22f8728463f7b80c1341582016e1dda1972f`  
 > **Active Branch:** `docs/documentation-cleanup`  
-> **Governance Authority:** [AGENTS.md](../../AGENTS.md) | [AI-ENGINEERING-INSTRUCTIONS.md](../../AI-ENGINEERING-INSTRUCTIONS.md) | [SECURITY-STANDARDS.md](../../SECURITY-STANDARDS.md) | [ENGINEERING-STANDARDS.md](../../ENGINEERING-STANDARDS.md)  
+> **Governance Authority:** [AGENTS.md](../../../AGENTS.md) | [AI-ENGINEERING-INSTRUCTIONS.md](../../../AI-ENGINEERING-INSTRUCTIONS.md) | [SECURITY-STANDARDS.md](../../../SECURITY-STANDARDS.md) | [ENGINEERING-STANDARDS.md](../../../ENGINEERING-STANDARDS.md)  
 > **Security Status:** `READ-ONLY PLANNING DELIVERABLE — ZERO CODE OR CONFIGURATION MUTATION`  
 
 ---
