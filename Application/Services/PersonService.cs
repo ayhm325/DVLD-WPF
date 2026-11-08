@@ -80,13 +80,25 @@ public sealed class PersonService : IPersonService
         return GetAllInternalAsync(() => _personRepository.GetAllAsync(request));
     }
 
-    public Task<Result<PagedResult<PersonDto>>>
+    public async Task<Result<PagedResult<PersonDto>>>
     GetPeopleAvailableForUserAsync(
         PersonQueryRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        return GetAllInternalAsync(() => _personRepository.GetPeopleAvailableForUserAsync(request));
+        try
+        {
+            return await GetAllInternalAsync(() => _personRepository.GetPeopleAvailableForUserAsync(request));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve available people.");
+            return Result<PagedResult<PersonDto>>.FromFailure("Failed to retrieve available people.");
+        }
     }
 
     private async Task<Result<PagedResult<PersonDto>>>
