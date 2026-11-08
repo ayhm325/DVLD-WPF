@@ -428,3 +428,124 @@ The following boundaries govern all engineering activities across the repository
 8. **Decoupling of Civic Invariants:** `SEC-PKG-16` (international permit detention) is strictly distinct from `INT-03` (domestic license replacement).
 9. **Zero New Canonical Task IDs:** All security specifications are incorporated without creating new canonical backlog IDs.
 10. **Canonical Risk Register Integration:** Active engineering standards reference risks using unified identifiers (`RSK-01`–`RSK-20`), where foundational Phase A empirical findings (`RSK-S01`–`RSK-S13`) are remapped (e.g. `RSK-S08` maps to `RSK-03` Timing Defense; `RSK-08` is exclusively Multi-Factor Authentication; `RSK-05` governs Account Lockout DoS; `RSK-11` governs Plaintext PII Exposure). The authoritative canonical mapping ledger is maintained in [`SECURITY-STANDARDS.md`](./SECURITY-STANDARDS.md) §7.
+
+---
+
+## 12. SOLID Principles & Clean Code Standards
+
+To ensure long-term maintainability, testability, and structural integrity across the DVLD codebase, all active development and future remediation must adhere to the five SOLID principles grounded in actual empirical source evidence:
+
+### 12.1 Single Responsibility Principle (SRP)
+- **Status:** **Partially Compliant.**
+- **Empirical Baseline:**
+  - *Compliant Architecture:* Workflow-specific service decomposition in license management cleanly separates concerns: [`LicenseIssuanceService`](file:///d:/DVLD-WPF/Application/Services/LicenseIssuanceService.cs), [`LicenseRenewalService`](file:///d:/DVLD-WPF/Application/Services/LicenseRenewalService.cs), [`LicenseReplacementService`](file:///d:/DVLD-WPF/Application/Services/LicenseReplacementService.cs), and [`LicenseQueryService`](file:///d:/DVLD-WPF/Application/Services/LicenseQueryService.cs). Validation is cleanly isolated in static validator classes (`PersonValidator`, `UserValidator`), and DTO projection is isolated in mappers (`UserMapper`, `PersonMapper`).
+  - *Identified Gaps:* [`UserService.cs`](file:///d:/DVLD-WPF/Application/Services/UserService.cs) (590 lines) conflates user demographic CRUD with credential verification, BCrypt password hashing, and role authorization checks. [`ApplicationsController.cs`](file:///d:/DVLD-WPF/API/DVLD.Api/Controllers/ApplicationsController.cs#L85-L90) houses the orphan `Complete` endpoint bypassing business workflow services (`INT-01`).
+  - *Future Remediation Direction:* Under proposed roadmap task `ARCH-03`, assess decomposing `UserService` into a dedicated `IUserCredentialService` (password hashing, credential validation) while preserving user profile orchestration in `UserService`, avoiding unnecessary abstractions until Phase 12.5.
+- **Architectural Rules:**
+  1. API Controllers must act solely as thin HTTP transport coordinators (routing, model binding, authorization, status code mapping via `ResultHttpMapper`). Controllers must never execute business rules or interact directly with Entity Framework DbContexts.
+  2. Application Services must orchestrate a single bounded business workflow. Domain entities must remain pure POCOs free of infrastructure or presentation dependencies.
+
+### 12.2 Open/Closed Principle (OCP)
+- **Status:** **Partially Compliant.**
+- **Empirical Baseline:**
+  - *Compliant Architecture:* Repository abstractions (`IPersonRepository`, `ILicenseRepository`) and service interfaces enable behavioral extension via decorators (e.g., caching decorators for static lookups under `API-02`) without altering core business orchestration.
+  - *Identified Gaps:* Examination progression in [`TestWorkflowService.cs`](file:///d:/DVLD-WPF/Application/Services/TestWorkflowService.cs#L16-L21) hardcodes the sequential array `[Theory, Written, Practical]`. Adding or modifying test types requires modifying procedural service logic rather than configuring extensible domain rules.
+- **Architectural Rules:**
+  1. Prefer polymorphism, strategy patterns, and decorator patterns over sprawling `switch` statements when branching on domain entity types or examination classifications.
+  2. Error handling and domain response envelopes must extend `Result<T>` rather than altering core method signatures.
+
+### 12.3 Liskov Substitution Principle (LSP)
+- **Status:** **Verified Compliant.**
+- **Empirical Baseline:**
+  - *Compliant Architecture:* The domain model avoids fragile polymorphic inheritance hierarchies. Standalone POCO entities (`Person`, `User`, `License`) use clean composition and 1-to-1 foreign key relationships. Repository implementations (`PersonRepository`, `LicenseRepository`) honor all contract invariants of their respective interfaces without throwing `NotImplementedException` or mutating caller expectations. [`PhysicalFileStorageService`](file:///d:/DVLD-WPF/Infrastructure/Services/PhysicalFileStorageService.cs) honors `IFileStorageService` return semantics across missing keys and valid streams.
+- **Architectural Rules:**
+  1. Subtypes or interface implementations must be fully substitutable for their base abstractions without altering program correctness or throwing unexpected runtime exceptions.
+  2. Avoid entity inheritance hierarchies in Entity Framework Core mappings (favor Table-Per-Type or clean composition over Table-Per-Hierarchy with discriminator columns).
+
+### 12.4 Interface Segregation Principle (ISP)
+- **Status:** **Partially Compliant.**
+- **Empirical Baseline:**
+  - *Compliant Architecture:* License workflow interfaces are cleanly segregated into client-specific contracts (`ILicenseIssuanceService`, `ILicenseRenewalService`, `ILicenseReplacementService`, `ILicenseQueryService`). Infrastructure services expose small, focused interfaces (`IJordanClock`, `IFileStorageService`, `IImageProcessingService`).
+  - *Identified Gaps:* [`ILicenseRepository.cs`](file:///d:/DVLD-WPF/Application/Interfaces/ILicenseRepository.cs#L7-L56) has expanded into a monolithic 25-method interface coupling CRUD queries, pagination filters, background maintenance (`DeactivateExpiredLicensesAsync`), and dashboard reporting aggregates (`GetRenewalSummaryAsync`), forcing test fixtures and alternative implementations to satisfy dozens of unrelated methods.
+- **Architectural Rules:**
+  1. Clients must not be forced to depend on interface methods they do not use. Monolithic repositories must be refactored into cohesive role interfaces (e.g. `ILicenseRepository`, `ILicenseExpirationMaintenanceRepository`, `ILicenseReportingRepository` under roadmap task `ARCH-02`).
+  2. Service interfaces consumed by API controllers must expose only the operation methods required by those endpoints.
+
+### 12.5 Dependency Inversion Principle (DIP)
+- **Status:** **Verified Compliant.**
+- **Empirical Baseline:**
+  - *Compliant Architecture:* High-level orchestration in `Application/` depends strictly on abstractions defined in `Application/Interfaces/` (`IUnitOfWork`, `IPersonRepository`, `IFileStorageService`). Low-level implementations reside in `Infrastructure/` and `API/DVLD.Api/`. [`Application/Application.csproj`](file:///d:/DVLD-WPF/Application/Application.csproj) references only `Domain/` and contains **zero** project references to `Infrastructure/` or `DVLD.Api/`. All dependencies are bound in the IoC container in [`Program.cs`](file:///d:/DVLD-WPF/API/DVLD.Api/Program.cs#L200-L295).
+- **Architectural Rules:**
+  1. High-level modules must never depend on low-level modules; both must depend on abstractions.
+  2. Abstractions must never depend on implementation details. Details (EF Core, SQL Server, file system, BCrypt) must depend on abstractions.
+  3. Strict inward reference direction: `Domain` $\leftarrow$ `Application` $\leftarrow$ `Infrastructure` / `DVLD.Api`.
+
+---
+
+## 13. System Design & Scalability Standards for DVLD Modular Monolith
+
+### 13.1 Architecture Style — Modular Monolith
+The DVLD system is architecturally designed and validated as an enterprise **Modular Monolith** (`ADR-001`). Microservice decomposition is explicitly rejected (`ADR-R03`) due to the tight transactional coupling inherent in civic licensing (license creation, application completion, test appointment validation, and fee charging must execute as a single atomic SQL Server transaction). Introducing distributed sagas, two-phase commits, and eventual consistency introduces unacceptable legal credential hazards for a departmental agency.
+
+### 13.2 Transactional Consistency & Partition Fail-Safe Standards
+As a centralized single-database enterprise application, the CAP theorem does not apply as a blanket architectural label. Rather, the following foundational consistency standards govern:
+1. **Strong Transactional Consistency (ACID):** Critical civic licensing workflows (license issuance, examination progression, license replacement, and detention lifecycle) require strict transactional atomicity and immediate consistency. Eventual consistency is unacceptable for legally binding credentials.
+2. **Fail-Safe Behavior on Dependency/Partition Failure:** If a distributed partition or external dependency failure (e.g. distributed cache, external payment gateway, or network storage) prevents guaranteeing a critical business invariant, the operation must **fail safely** (abort the transaction and return an RFC 7807 problem details response) rather than commit an inconsistent or partially completed state.
+
+### 13.3 Evaluation Matrix: The 17 System Design Concepts
+
+| Concept | Classification | Technical Justification & Implementation Baseline |
+|---|:---:|---|
+| **1. Load Balancing** | **Prepare for Future** | `DVLD.Api` is stateless (JWT auth, no in-memory session state). Multiple API nodes can sit behind an L7 reverse proxy (Nginx / Azure Application Gateway / IIS ARR) as concurrency expands across regional offices. |
+| **2. Caching** | **Implement Now** | Roadmap task `API-02`: In-memory caching (`IMemoryCache`) for immutable static reference lookups (`Countries`, `LicenseClasses`, `ApplicationTypes`, `TestTypes`). Eliminates redundant database roundtrips for frequent UI dropdowns. |
+| **3. CDN** | **Not Applicable / Not Justified** | DVLD is an internal civic intranet/extranet application for staff and officers. Citizen photographs are sensitive biometric data that must never be cached on public CDN edge nodes. Static SPA bundles are served via local web servers. |
+| **4. API Gateway** | **Not Applicable / Not Justified** | DVLD is a single Modular Monolith Web API, not a microservice fleet. Introducing YARP, Ocelot, or Kong adds unnecessary network hops and operational latency without architectural benefit. Reverse proxy needs are met by IIS/Kestrel. |
+| **5. Microservices** | **Not Applicable / Not Justified** | Formally rejected under `ADR-001` / `ADR-R03`. Civic credential issuance requires strong ACID transactions across multiple aggregates. Distributed transactions introduce eventual consistency bugs and unnecessary operational complexity. |
+| **6. Monolithic Architecture** | **Implement Now** | Current verified architecture. Modular Monolith with clean internal layer boundaries (`Domain`, `Application`, `Infrastructure`, `DVLD.Api`). Optimal for deployment simplicity, operational debuggability, and transactional safety. |
+| **7. Replication** | **Conditional — Only When Needed** | SQL Server Always On Availability Groups with asynchronous read-only replicas can be introduced if heavy analytical or reporting workloads cause lock contention on the primary OLTP instance. Unjustified at current staff scale. |
+| **8. Partitioning** | **Conditional — Only When Needed** | Table partitioning (by Year/Month) on the `AuditLogs` table will be valuable once audit logging accumulates multi-million record histories. Database sharding is unjustified for regional civic licensing scale. |
+| **9. Message Queues** | **Conditional — Only When Needed** | External asynchronous notifications (SMS/Email alerts for license expiration) or audit offloading can utilize RabbitMQ or Azure Service Bus in future phases (`SEC-05`). In-process hosted services cleanly handle current scheduled sweeps. |
+| **10. Rate Limiting** | **Implement Now** | Roadmap tasks `SEC-03` (`POST /api/auth/change-password` rate limiting) and `SEC-PKG-03` (collection pagination clamping $PageSize \le 50$). Protects against brute-force attacks and resource exhaustion. |
+| **11. Consistent Hashing** | **Not Applicable / Not Justified** | Applicable to distributed caching rings (Memcached/DynamoDB) across dynamic clusters. DVLD utilizes a centralized SQL Server database and single-node or shared Redis caches; consistent hashing has zero application. |
+| **12. CAP Theorem (Consistency Principles)** | **Implement Now** | Apply relevant consistency principles; do not classify the entire application as CP. Strong transactional consistency is strictly enforced for all legal licensing mutations. |
+| **13. Horizontal Scaling** | **Prepare for Future** | API tier is stateless and ready for horizontal scale. Full multi-instance deployment requires externalizing the distributed token revocation list (`DEC-AUTH-01`) and mounting shared network storage (SMB/NFS or Azure Blob) for citizen photos. |
+| **14. Vertical Scaling** | **Implement Now** | The primary, cost-effective scaling path for DVLD. Scaling SQL Server database compute (vCPUs), memory (RAM for buffer pool), and high-throughput NVMe SSD storage easily supports tens of thousands of daily civic transactions. |
+| **15. Fault Tolerance** | **Implement Now** | `GlobalExceptionHandler` RFC 7807 shielding, SQL Server execution retry strategy (`EnableRetryOnFailure` in `UnitOfWork.ExecuteInTransactionAsync`), and Health Checks (`OBS-01`). |
+| **16. Circuit Breaker** | **Conditional — Only When Needed** | Circuit breakers (Polly) are appropriate when integrating unreliable external third-party HTTP services (e.g. national payment gateways or external SMS gateways). Unjustified for local database and storage calls. |
+| **17. Event-Driven Architecture** | **Conditional — Only When Needed** | Direct service orchestration remains the approved design; in-process event buses were evaluated and rejected (`ADR-R01`, `ADR-R02`) to prevent speculative indirection. Internal domain events considered only when justified. |
+
+---
+
+## 14. Formal Technology Baseline & Evaluation
+
+The technology stack is governed by verified package manifests and explicit architectural approvals. Zero unauthorized packages may be introduced:
+
+| Engineering Area | Intended Baseline Technology | Governance Classification | Technical Rationale & Architectural Boundary |
+|---|---|:---:|---|
+| **Backend Framework** | ASP.NET Core 8 (`Microsoft.AspNetCore.App`) | **Existing and Retained** | Modern LTS web framework providing high-throughput Kestrel hosting, dependency injection, and endpoint routing. |
+| **Programming Language** | C# 12 / .NET 8 SDK | **Existing and Retained** | Type-safe, high-performance runtime across `API/`, `Application/`, `Infrastructure/`, and `Domain/`. |
+| **Frontend Framework** | React 19 (`react: ^19.3.1`) | **Existing and Retained** | Current active SPA in `ClientApp/`. Zero React 18 or legacy web dependencies. |
+| **Frontend Language** | TypeScript (`typescript: ~6.0.3`) | **Existing and Retained** | Full type safety across contracts, API hooks, and UI components in `ClientApp/`. |
+| **Frontend Build Tool** | Vite 8 (`vite: ^8.3.4`) | **Existing and Retained** | Fast HMR dev server and optimized production rollup bundler. |
+| **UI Styling** | Tailwind CSS 4 (`tailwindcss: ^4.3.3`) | **Existing and Retained** | Modern utility-first CSS framework with Vite plugin integration. |
+| **UI Primitives** | Radix UI Primitives | **Existing and Retained** | Accessible, unstyled UI components (Dialog, Dropdown, Select, Tooltip). |
+| **Iconography** | Lucide React (`lucide-react: ^1.65.0`) | **Existing and Retained** | Lightweight SVG icon library. |
+| **Relational Database** | Microsoft SQL Server (LocalDB / Enterprise) | **Existing and Retained** | Centralized transactional database supporting ACID transactions, table constraints, and `sp_getapplock`. |
+| **ORM / Data Access** | Entity Framework Core 8 (`EF Core 8.0.24`) | **Existing and Retained** | Code-first mapping with migrations, change tracking, and execution retry strategies. |
+| **API Architectural Style** | RESTful JSON Web API | **Existing and Retained** | HTTP verbs, RFC 7807 `ProblemDetails` error envelopes, and `Result<T>` mapping via `ResultHttpMapper`. |
+| **API Documentation** | OpenAPI 3.0 / Swagger UI (`Swashbuckle.AspNetCore 6.6.2`) | **Existing and Retained** | Interactive API specification generated at `/swagger`. |
+| **Authentication** | JWT Bearer Tokens (`JwtBearerHandler`) | **Existing and Retained** | Stateless HMAC-SHA256 tokens; lifecycle governed under `DEC-AUTH-01/02`. |
+| **Authorization** | Policy-Based (`StaffOnly`, `AdminOnly`) | **Existing and Retained** | ASP.NET Core authorization policies enforcing Segregation of Duties (`ADR-O01`). |
+| **Structured Logging** | Serilog (`Serilog.AspNetCore`) | **Approved Target** | Roadmap task `OBS-03` (Phase 12.3); requires NuGet approval before package install. |
+| **Distributed Tracing** | OpenTelemetry | **Conditional / Verification Required** | Not currently installed. Conditional upon distributed APM requirements in future hosting topology. |
+| **Backend Testing** | xUnit, Moq, FluentAssertions | **Existing and Retained** | 1,967 cataloged tests across `Application.UnitTests`, `Infrastructure.IntegrationTests`, and `API.IntegrationTests`. |
+| **Frontend Unit Testing** | Vitest + React Testing Library | **Approved Target** | Roadmap candidate `FE-TEST` (Phase 12.4); requires npm approval before install. |
+| **End-to-End (E2E) Testing** | Playwright | **Conditional / Verification Required** | Not currently installed. Conditional upon full-stack regression automation needs post-Phase 12.4. |
+| **CI/CD Platform** | Azure Pipelines (`azure-pipelines.yml`) | **Existing and Retained** | Automated multi-stage build and test execution pipeline (`OBS-02`). |
+| **Source Control** | Git + GitHub | **Existing and Retained** | Distributed version control governed by strict safety rules. |
+
+### 13.4 Scalability, Reliability, Performance & Security Synthesis
+1. **Stateless API Design:** Authentication relies on signed JWT Bearer tokens. Controller instances hold no user session state in memory.
+2. **Transaction Integrity & Retries:** Multi-aggregate operations utilize `UnitOfWork.ExecuteInTransactionAsync`, which wraps operations in EF Core's `IExecutionStrategy` and resets the `ChangeTracker` on retry to handle transient database connection faults safely.
+3. **Idempotency Guarantees:** Critical workflow endpoints (license issuance, detention release) enforce unique database constraints and application status validations (`AppStatus.Completed`, `IsActive = true`) to ensure replayed requests return deterministic conflict errors without duplicating legal credentials.
+4. **Defense in Depth:** Input validation in static validators, parameterized SQL via EF Core, path normalization in file storage, and rate limiting protect against OWASP Top 10 vulnerabilities.

@@ -30,6 +30,9 @@ The DVLD repository enforces a three-tiered testing strategy ensuring fast feedb
        └──────────────────────────────────────────────┘
 ```
 
+### 1.1 Interface Segregation & Test Double Standards
+Unit test fixtures in `Application.UnitTests` must rely on cohesive, segregated role interfaces rather than monolithic interfaces. In accordance with the Interface Segregation Principle (ISP) and roadmap task `ARCH-02`, test doubles (mocks) must never be forced to supply dummy implementations for dozens of unrelated repository methods.
+
 ---
 
 ## 2. Critical Database Safety & Test Isolation Rules

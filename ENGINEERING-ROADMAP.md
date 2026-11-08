@@ -55,6 +55,8 @@ graph TD
     subgraph P3["P3: Architecture & Quality Cleanup"]
         SEC03["SEC-03: Add Rate Limiting to Password Change"]
         ARCH01["ARCH-01: Consolidate Duplicate Contracts DTOs"]
+        ARCH02["ARCH-02: Segregate Monolithic Repository Interfaces"]
+        ARCH03["ARCH-03: UserService Responsibility Decomposition"]
         OBS02["OBS-02: Pipeline Test Attachment Staging"]
     end
 
@@ -282,6 +284,30 @@ graph TD
 - **Current Status:** `Confirmed / Planned`
 - **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.5 Scope).**
 
+#### [ARCH-02] Segregate Monolithic Repository Interfaces (ILicenseRepository ISP Refinement)
+- **Finding ID:** `ARCH-02`
+- **Evidence Classification:** `CONFIRMED`
+- **Priority:** `P3`
+- **Affected Components:** `Application/Interfaces/ILicenseRepository.cs`, `Infrastructure/Repositories/LicenseRepository.cs`.
+- **Description:** `ILicenseRepository` has accumulated 25 methods coupling core CRUD operations, pagination filters, background scheduled sweeps (`DeactivateExpiredLicensesAsync`), and dashboard reporting aggregates (`GetRenewalSummaryAsync`), violating the Interface Segregation Principle (ISP) and complicating unit test doubles.
+- **Proposed Technical Remediation:** Segregate into cohesive role interfaces (`ILicenseRepository`, `ILicenseExpirationMaintenanceRepository`, `ILicenseReportingRepository`). Concrete `LicenseRepository` implements all interfaces preserving binary compatibility, while services depend strictly on their required role interface.
+- **Scope Boundary Enforcement:** Pure C# interface segregation refactoring. Zero database schema modifications, zero API contract changes, zero entity changes.
+- **Verification Requirements:** Solution build succeeds with zero errors; unit tests for `LicenseExpirationBackgroundService` compile and run using isolated maintenance interface mocks.
+- **Current Status:** `Proposed / Planned`
+- **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.5 Scope).**
+
+#### [ARCH-03] UserService Responsibility Decomposition Assessment (SRP Refinement)
+- **Finding ID:** `ARCH-03`
+- **Evidence Classification:** `CONFIRMED`
+- **Priority:** `P3`
+- **Affected Components:** `Application/Services/UserService.cs`, `Application/Interfaces/IUserService.cs`.
+- **Description:** `UserService` (590 lines) conflates user demographic CRUD with credential verification, BCrypt password hashing, and role authorization checks, concentrating multiple distinct responsibilities into a single service class.
+- **Proposed Technical Remediation:** Evaluate decomposing `UserService` into focused components—specifically extracting an `IUserCredentialService` or `IPasswordHashingService` for credential and password operations—while retaining user profile orchestration in `UserService`. Zero premature abstractions prior to Phase 12.5.
+- **Scope Boundary Enforcement:** Pure C# application service refactoring. Zero database schema modifications, zero API route or contract changes.
+- **Verification Requirements:** Solution build succeeds with zero compiler warnings; existing unit and integration tests for user creation, update, and password change pass with code 0.
+- **Current Status:** `Proposed / Planned`
+- **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.5 Scope).**
+
 #### [OBS-02] Pipeline Test Attachment Staging
 - **Finding ID:** `OBS-02`
 - **Evidence Classification:** `CONFIRMED`
@@ -392,7 +418,7 @@ The 17 security packages defined in [`docs/archive/security-sources/SECURITY-MAS
 | **Phase 12.2** | P0 & P1 Critical Integrity & Performance (`INT-01`, `INT-02`, `PERF-01`) | **PROPOSED / NOT AUTHORIZED** | Requires explicit human review and approval of Phase 12.2 scope; telemetry verification for `INT-01` (`DEC-APP-01`). |
 | **Phase 12.3** | P2 Observability, Reliability & Transactional Audit Logging (`OBS-01`, `OBS-03`, `SEC-04`, `AUD-01`, `REST-01`, `API-01`, `INT-03`, `TEST-01`) | **PLANNED / NOT AUTHORIZED** | Requires Phase 12.2 completion; NuGet approval for Serilog/HealthChecks; human DBA approval for `AuditLogs` migration; `DEC-POL-01` regulatory confirmation for `INT-03`; empirical validation of `TEST-01`. |
 | **Phase 12.4** | Frontend Alignment, Test Harness Setup & SoD Verification (`SEC-01` Client Guards, Vitest/RTL Setup) | **PLANNED / NOT AUTHORIZED** | Requires Phase 12.3 baseline; Vitest framework setup in `ClientApp/`; explicit human approval for frontend role guard changes. |
-| **Phase 12.5** | P3 Architecture Cleanup, Password Rate Limiting & CI Hardening (`ARCH-01`, `SEC-03`, `OBS-02`) | **PLANNED / NOT AUTHORIZED** | Scheduled following Phase 12.4 completion. |
+| **Phase 12.5** | P3 Architecture Cleanup, Password Rate Limiting & CI Hardening (`ARCH-01`, `ARCH-02`, `ARCH-03`, `SEC-03`, `OBS-02`) | **PLANNED / NOT AUTHORIZED** | Scheduled following Phase 12.4 completion. |
 | **Deferred Modernization Track** | Full-Stack Session Management (`SEC-05`, `FE-01`, `TEST-02`, `SEC-PKG-17`, `DEC-SEC05-01/02`) | **DEFERRED / STRICTLY UNAUTHORIZED** | Excluded from initial production milestones; requires formal Project Owner authorization and schema review for `UserSessions` and `RefreshTokens`. |
 
 ---

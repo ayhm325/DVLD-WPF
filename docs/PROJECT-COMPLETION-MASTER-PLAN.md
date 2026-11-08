@@ -68,6 +68,12 @@ graph TD
 2. **Zero Implementation Authority:** Publication of this Master Plan grants **zero** authorization to write code, modify schemas, install packages, or execute migrations. Phases 12.2 through 12.5 remain strictly **PROPOSED / UNAUTHORIZED**.
 3. **Database Protection:** The database `DVLDf` is strictly protected. Zero integration tests, automated drops, truncations, or unverified migrations may ever target `DVLDf`. All automated integration tests run exclusively against ephemeral test databases (`DVLD_IntegrationTests_<GUID>`).
 
+### 1.4 Product Scope Decision — Single Organization Architecture (Rejection of Multi-Tenancy)
+The DVLD platform is formally designated and designed as an enterprise production management system for a **single organization** (the civic licensing authority). It is explicitly **not** a multi-tenant SaaS platform.
+- **Centralized Relational Infrastructure:** A single centralized SQL Server database (`DVLDf`) backs all authorized departmental branch offices and counter operations.
+- **Role & Access Model:** Access control is strictly user- and role-based (`Staff`, `Admin`) under Segregation of Duties (`ADR-O01`).
+- **Zero Multi-Tenant Artifacts:** Tenant IDs, dynamic schema resolution, tenant isolation middleware, and tenant partitioning are explicitly excluded from the architecture.
+
 ---
 
 ## 2. System Architecture and Subsystem Maturity Assessment
@@ -83,6 +89,67 @@ Rather than relying on arbitrary, indefensible completion percentages, the platf
 | **Automated Testing Suite** | **Comprehensive Backend Unit & Integration / Zero Frontend** | 1,967 cataloged backend tests (919 unit tests, 612 infrastructure integration tests, 436 API integration tests). In historical Phase 12.1 runs, 1,531 passed, 1 failed (transient SSL pre-login timeout), and 435 remained unexecuted. The React frontend has **zero** automated tests (no Vitest, no Jest, no RTL). |
 | **React SPA Frontend** | **Core UI Functional / Missing Production Safety** | React 19 + TypeScript 6 + Vite 8 SPA. Navigation, authentication state, data tables, and modal workflows are functional. Missing: React Error Boundary (`FE-ERR`), automated component/integration tests (`FE-TEST`), mobile card collapse for narrow screens (`FE-RESP`), and defensive client-side role guards on protected navigation links (`SEC-01`). |
 | **Observability, Operations & CI** | **Basic Logging / Missing Enterprise Telemetry** | ASP.NET Core default `ILogger` writing plain console output. Missing: Serilog structured logging with request correlation IDs (`OBS-03`), ASP.NET Core Health Checks (`OBS-01`), automated CI test execution with artifact publishing, disaster recovery runbooks, and formal backup topology (`OPS-DR`). |
+
+### 2.1 SOLID Principles Compliance Matrix
+A comprehensive source-code evaluation of the five SOLID principles is formally maintained in [`ENGINEERING-STANDARDS.md`](../ENGINEERING-STANDARDS.md) §12:
+
+| Principle | Compliance Status | Key Code Evidence & Architectural Finding |
+|---|:---:|---|
+| **Single Responsibility (SRP)** | **Partially Compliant** | Focused service decomposition in license workflows (`LicenseIssuanceService`, `LicenseRenewalService`, `LicenseReplacementService`, `LicenseQueryService`); gap identified in `UserService.cs` (590 lines conflating CRUD with credential checks and role authorization). |
+| **Open/Closed (OCP)** | **Partially Compliant** | Repository abstractions and `Result<T>` envelopes support extension without modifying consumers; gap identified in `TestWorkflowService.cs` where sequential test progression (`[Theory, Written, Practical]`) is hardcoded in procedural logic. |
+| **Liskov Substitution (LSP)** | **Verified Compliant** | Clean POCO composition over fragile entity inheritance; repository implementations strictly honor interface invariants; `PhysicalFileStorageService` honors `IFileStorageService` contracts. |
+| **Interface Segregation (ISP)** | **Partially Compliant** | Fine-grained license service contracts; gap identified in monolithic `ILicenseRepository.cs` (25 methods coupling CRUD, pagination, background cleanup, and reporting), addressed via roadmap task `ARCH-02`. |
+| **Dependency Inversion (DIP)** | **Verified Compliant** | Clean Architecture dependency flow: `Application.csproj` references only `Domain.csproj` with zero references to `Infrastructure` or `DVLD.Api`. All dependencies injected via interfaces in `Program.cs`. |
+
+### 2.2 System Design & Scalability Evaluation (17 Concepts)
+The DVLD system is architected as an enterprise **Modular Monolith** (`ADR-001`, `ADR-R03`) adhering strictly to the **CP (Consistency & Partition Tolerance)** principle under the CAP Theorem. Full technical justifications for all 17 system design concepts are maintained in [`ENGINEERING-STANDARDS.md`](../ENGINEERING-STANDARDS.md) §13:
+
+| Concept | Classification | Core Architectural Rationale for DVLD |
+|---|:---:|---|
+| **1. Load Balancing** | **Prepare for Future** | Stateless JWT authentication enables horizontal load balancing across multiple Kestrel nodes as regional center concurrency grows. |
+| **2. Caching** | **Implement Now** | Roadmap task `API-02`: In-memory caching for immutable static reference tables (`Countries`, `LicenseClasses`, `ApplicationTypes`, `TestTypes`). |
+| **3. CDN** | **Not Applicable / Not Justified** | Internal departmental extranet/intranet; citizen photographs are private biometric PII and must never be cached on public edge CDNs. |
+| **4. API Gateway** | **Not Applicable / Not Justified** | Modular Monolith Web API requires no microservice routing layer. Reverse proxy needs are handled by standard IIS/Kestrel. |
+| **5. Microservices** | **Not Applicable / Not Justified** | Formally rejected (`ADR-001`, `ADR-R03`). Civic credential issuance requires strong ACID transactions across multiple aggregates; distributed sagas introduce legal credential hazards. |
+| **6. Monolithic Architecture** | **Implement Now** | Current Modular Monolith architecture is optimal for operational debuggability, single-unit deployment, and transactional safety. |
+| **7. Replication** | **Conditional — Only When Needed** | SQL Server Always On read replicas can be added if heavy reporting queries compete with OLTP counter transactions. |
+| **8. Partitioning** | **Conditional — Only When Needed** | Table partitioning on `AuditLogs` for multi-year legal retention; database sharding is unjustified for regional civic scale. |
+| **9. Message Queues** | **Conditional — Only When Needed** | Asynchronous notifications (SMS/Email) or audit offloading in future phases (`SEC-05`); in-process background services cleanly handle current sweeps. |
+| **10. Rate Limiting** | **Implement Now** | Roadmap tasks `SEC-03` (password change endpoint limiter) and `SEC-PKG-03` (query collection clamping $PageSize \le 50$). |
+| **11. Consistent Hashing** | **Not Applicable / Not Justified** | No dynamic distributed caching rings or sharded database clusters exist or are required. |
+| **12. CAP Theorem (Consistency Principles)** | **Implement Now** | Apply relevant consistency principles; do not classify the entire application as CP. Strong transactional consistency is strictly enforced for all legal licensing mutations. |
+| **13. Horizontal Scaling** | **Prepare for Future** | API tier is stateless; requires shared distributed token revocation list (`DEC-AUTH-01`) and centralized storage for photos before multi-node scale. |
+| **14. Vertical Scaling** | **Implement Now** | Primary scaling model: provisioning dedicated SQL Server CPU cores, RAM, and NVMe SSD storage easily supports tens of thousands of daily civic operations. |
+| **15. Fault Tolerance** | **Implement Now** | `GlobalExceptionHandler` RFC 7807 shielding, SQL Server execution retry strategy (`EnableRetryOnFailure`), and Health Checks (`OBS-01`). |
+| **16. Circuit Breaker** | **Conditional — Only When Needed** | Justified when integrating external third-party HTTP services (e.g. government payment gateways); unjustified for internal SQL Server calls. |
+| **17. Event-Driven Architecture** | **Conditional — Only When Needed** | Direct service orchestration remains the approved model; in-process event buses were evaluated and rejected (`ADR-R01`, `ADR-R02`). Internal domain events considered only when justified. |
+
+### 2.3 Formal Technology Baseline & Evaluation
+The technology stack is governed by verified package manifests and explicit architectural approvals. Zero unauthorized packages may be introduced:
+
+| Engineering Area | Intended Baseline Technology | Governance Classification | Technical Rationale & Architectural Boundary |
+|---|---|:---:|---|
+| **Backend Framework** | ASP.NET Core 8 (`Microsoft.AspNetCore.App`) | **Existing and Retained** | Modern LTS web framework providing high-throughput Kestrel hosting, dependency injection, and endpoint routing. |
+| **Programming Language** | C# 12 / .NET 8 SDK | **Existing and Retained** | Type-safe, high-performance runtime across `API/`, `Application/`, `Infrastructure/`, and `Domain/`. |
+| **Frontend Framework** | React 19 (`react: ^19.3.1`) | **Existing and Retained** | Current active SPA in `ClientApp/`. Zero React 18 or legacy web dependencies. |
+| **Frontend Language** | TypeScript (`typescript: ~6.0.3`) | **Existing and Retained** | Full type safety across contracts, API hooks, and UI components in `ClientApp/`. |
+| **Frontend Build Tool** | Vite 8 (`vite: ^8.3.4`) | **Existing and Retained** | Fast HMR dev server and optimized production rollup bundler. |
+| **UI Styling** | Tailwind CSS 4 (`tailwindcss: ^4.3.3`) | **Existing and Retained** | Modern utility-first CSS framework with Vite plugin integration. |
+| **UI Primitives** | Radix UI Primitives | **Existing and Retained** | Accessible, unstyled UI components (Dialog, Dropdown, Select, Tooltip). |
+| **Iconography** | Lucide React (`lucide-react: ^1.65.0`) | **Existing and Retained** | Lightweight SVG icon library. |
+| **Relational Database** | Microsoft SQL Server (LocalDB / Enterprise) | **Existing and Retained** | Centralized transactional database supporting ACID transactions, table constraints, and `sp_getapplock`. |
+| **ORM / Data Access** | Entity Framework Core 8 (`EF Core 8.0.24`) | **Existing and Retained** | Code-first mapping with migrations, change tracking, and execution retry strategies. |
+| **API Architectural Style** | RESTful JSON Web API | **Existing and Retained** | HTTP verbs, RFC 7807 `ProblemDetails` error envelopes, and `Result<T>` mapping via `ResultHttpMapper`. |
+| **API Documentation** | OpenAPI 3.0 / Swagger UI (`Swashbuckle.AspNetCore 6.6.2`) | **Existing and Retained** | Interactive API specification generated at `/swagger`. |
+| **Authentication** | JWT Bearer Tokens (`JwtBearerHandler`) | **Existing and Retained** | Stateless HMAC-SHA256 tokens; lifecycle governed under `DEC-AUTH-01/02`. |
+| **Authorization** | Policy-Based (`StaffOnly`, `AdminOnly`) | **Existing and Retained** | ASP.NET Core authorization policies enforcing Segregation of Duties (`ADR-O01`). |
+| **Structured Logging** | Serilog (`Serilog.AspNetCore`) | **Approved Target** | Roadmap task `OBS-03` (Phase 12.3); requires NuGet approval before package install. |
+| **Distributed Tracing** | OpenTelemetry | **Conditional / Verification Required** | Not currently installed. Conditional upon distributed APM requirements in future hosting topology. |
+| **Backend Testing** | xUnit, Moq, FluentAssertions | **Existing and Retained** | 1,967 cataloged tests across `Application.UnitTests`, `Infrastructure.IntegrationTests`, and `API.IntegrationTests`. |
+| **Frontend Unit Testing** | Vitest + React Testing Library | **Approved Target** | Roadmap candidate `FE-TEST` (Phase 12.4); requires npm approval before install. |
+| **End-to-End (E2E) Testing** | Playwright | **Conditional / Verification Required** | Not currently installed. Conditional upon full-stack regression automation needs post-Phase 12.4. |
+| **CI/CD Platform** | Azure Pipelines (`azure-pipelines.yml`) | **Existing and Retained** | Automated multi-stage build and test execution pipeline (`OBS-02`). |
+| **Source Control** | Git + GitHub | **Existing and Retained** | Distributed version control governed by strict safety rules. |
 
 ---
 
@@ -138,6 +205,8 @@ The canonical remediation backlog (`ENGINEERING-ROADMAP.md`) tracks 22 prioritiz
 
 ### 4.4 Tier P3: Architecture Cleanup & CI Hardening
 - **`ARCH-01` (Layer Separation & Inappropriate Direct Dependencies):** Remove any leaky cross-layer references. **Unauthorized (Phase 12.5).**
+- **`ARCH-02` (Monolithic Repository Interface Segregation):** Refactor monolithic `ILicenseRepository` (25 methods) into cohesive role interfaces (`ILicenseRepository`, `ILicenseExpirationMaintenanceRepository`, `ILicenseReportingRepository`). **Unauthorized (Phase 12.5).**
+- **`ARCH-03` (UserService Responsibility Decomposition):** Assess decomposing `UserService` (590 lines) into focused credential and profile orchestration services. **Unauthorized (Phase 12.5).**
 - **`SEC-03` (Login Rate Limiting):** IP and username rate limiting for authentication endpoints. Blocked on Redis / in-memory rate limiting ADR. **Unauthorized (Phase 12.5).**
 - **`OBS-02` (CI/CD Pipeline Hardening):** Publish `.trx` test results and capture execution artifacts in Azure Pipelines. **Unauthorized (Phase 12.5).**
 - **`API-02` (Static Lookup Caching):** In-memory caching for immutable lookup tables (`ApplicationTypes`, `TestTypes`, `LicenseClasses`, `Countries`). **Unauthorized (Phase 12.5).**
@@ -424,15 +493,26 @@ Implementation cannot commence on gated items until the following human stakehol
 
 ---
 
-## 17. Production Readiness and Release Criteria
+## 17. Definition of Done — Project Completion Criteria across 14 Dimensions
 
-Final production cutover requires satisfying all criteria below:
-1. **Zero High-Severity Defects:** All P0 and P1 integrity and concurrency defects remediated and verified.
-2. **Database Integrity:** All EF Core migrations reviewed and approved by DBA; verified against test databases.
-3. **Automated Verification:** 100% of discovered backend tests (1,967 tests) execute and pass with code 0; frontend Vitest suite operational.
-4. **Security & Auditability:** Transactional audit logging active for all credential lifecycle workflows; account lockout active.
-5. **Observability:** Structured logging with correlation IDs operational; health check endpoints responding.
-6. **Regulatory Compliance:** Written legal sign-off recorded under Gate 8 (`RSK-11`) and licensing policy sign-off under Gate 3 (`DEC-POL-01`).
+A task or release milestone is not complete because documentation asserts completion. Completion requires passing targeted verification, verified git diffs, and evidence-backed runtime artifacts across all 14 project dimensions:
+
+| Dimension | Measurable Completion Criteria & Acceptance Gate |
+|---|---|
+| **1. Architecture & SOLID** | Clean Architecture dependency rules strictly verified (`Domain` $\leftarrow$ `Application` $\leftarrow$ `Infrastructure` / `DVLD.Api`). IoC container bindings verified. No circular dependencies. Monolithic repositories segregated (`ARCH-02`). |
+| **2. Functional Business Workflows** | 100% of civic workflows (Applications, 3-tier sequential tests, License Issuance, Renewals, Replacements, Detain/Release) execute with zero uncaught exceptions and conform to [`LICENSING-DOMAIN-SPECIFICATION.md`](./domain/LICENSING-DOMAIN-SPECIFICATION.md). |
+| **3. Authentication & Authorization** | JWT authentication operational with short-lived tokens and verified revocation mechanism (`DEC-AUTH-01/02`). Role-based policies (`StaffOnly`, `AdminOnly`) enforced on all mutating endpoints. Zero anonymous access to sensitive routes. |
+| **4. Security Engineering** | Account lockout operational (`SEC-PKG-11`). Rate limiting enforced on authentication (`SEC-03`). ImagePath parameter stripped from person contracts (`SEC-PKG-02`). Automated dependency audit (`SEC-PKG-14`) passes with zero critical/high CVEs. |
+| **5. Database Integrity** | All EF Core migrations reviewed and authorized under Schema Gate 5. Unique constraints and foreign keys validated. Unit of Work transaction boundaries protect multi-aggregate operations. Zero migrations execute against `DVLDf`. |
+| **6. API Contract Consistency** | 10 RESTful controllers strictly return typed `Result<T>` envelopes mapped to standard HTTP status codes via `ResultHttpMapper`. RFC 7807 `ProblemDetails` formatted for all errors. Direct bypass endpoint `POST /api/applications/{id}/complete` remediated (`INT-01`). |
+| **7. Frontend Functionality & UX** | React 19 SPA compiles with zero TypeScript errors (`tsc -b`). Responsive layout renders across desktop, tablet, and mobile viewports. Global React Error Boundary (`FE-ERR`) prevents blank-screen unmounts. |
+| **8. Unit & Integration Testing** | 100% of discovered backend tests (1,967 tests) execute and pass with exit code 0. Frontend Vitest/RTL harness operational (`FE-TEST`). Zero flaky test runs under concurrency (`TEST-01`). Ephemeral test databases cleaned up. |
+| **9. Performance & Scalability** | License renewals eliminate sequential N+1 queries (`PERF-01`). Collection queries enforce pagination clamping ($PageSize \le 50$, `SEC-PKG-03`). Static lookup tables cached in memory (`API-02`). Database queries execute with sub-100ms p95 latency. |
+| **10. Logging & Observability** | Serilog structured logging operational (`OBS-03`). HTTP request correlation IDs (`TraceIdentifier` / `X-Correlation-ID`) propagated across logs and audit trails. Health check endpoints (`/health/live`, `/health/ready`, `OBS-01`) operational. |
+| **11. Backup & Disaster Recovery** | Database backup topology approved by Project Owner (`OPS-DR`). Recovery Point Objective (RPO) and Recovery Time Objective (RTO) validated via automated restore drill on non-production environment. |
+| **12. CI/CD & Deployment** | Azure Pipelines build and test stages execute automatically on PR. Test execution results published via `.trx` artifacts (`OBS-02`). Production configuration externalized to environment variables or secret vaults (`SEC-PKG-13`). |
+| **13. Documentation Integrity** | All roadmap tasks, decision records, risk mappings, and test matrices remain synchronized across canonical documents. Zero broken Markdown links. Changes documented in session and continuity logs. |
+| **14. Production Readiness Sign-Off** | Written legal counsel sign-off recorded under Gate 8 (`RSK-11` citizen PII and biometric retention). Regulatory licensing authority sign-off recorded under Gate 3 (`DEC-POL-01`). Final Project Owner cutover authorization granted. |
 
 ---
 
