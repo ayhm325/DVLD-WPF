@@ -17,6 +17,14 @@ The fundamental engineering philosophy is:
 - **Defensive Data Safety:** Guard databases and existing working-tree state with extreme caution.
 - **Honest Verification:** Report exact execution outputs, failure logs, and unverified assumptions without exaggeration.
 
+### Authoritative Governance References
+AI agents operationalize this engineering workflow in strict coordination with the authoritative governance suite:
+- [`ENGINEERING-ROADMAP.md`](./ENGINEERING-ROADMAP.md) — The sole prioritized engineering roadmap and remediation backlog.
+- [`ENGINEERING-DECISIONS.md`](./ENGINEERING-DECISIONS.md) — The sole authoritative decision register for architectural, security, and civic policy decisions.
+- [`ENGINEERING-STANDARDS.md`](./ENGINEERING-STANDARDS.md) — System architecture, Clean Architecture layering, UnitOfWork, and persistence standards.
+- [`TESTING-STANDARDS.md`](./TESTING-STANDARDS.md) — Testing standards, test isolation, 14 security test suites, and ephemeral database lifecycle.
+- [`SECURITY-STANDARDS.md`](./SECURITY-STANDARDS.md) — Mandatory security baseline, JWT authentication, and Segregation of Duties (SoD).
+
 ---
 
 ## 2. The 10-Step Mandatory Engineering Workflow
@@ -48,6 +56,7 @@ flowchart TD
 - Confirm the current branch and HEAD commit.
 - Locate and inspect relevant source files, contracts, tests, and database entities.
 - Verify whether previous session work or untracked audit documents exist.
+- Verify task authorization in [`ENGINEERING-ROADMAP.md`](./ENGINEERING-ROADMAP.md) and governing decisions in [`ENGINEERING-DECISIONS.md`](./ENGINEERING-DECISIONS.md).
 
 ### Step 3: Identify Root Cause Using Evidence
 - Trace code execution paths from controller entry points down through services, repositories, and SQL queries.
@@ -76,7 +85,7 @@ If the proposed change involves an **Approval Gate** (see Section 3), the agent 
 - Retain exact line ending conventions and formatting.
 
 ### Step 8: Run Appropriate Verification
-- Execute relevant unit tests or integration tests matching the modified scope.
+- Execute relevant unit tests or integration tests matching the modified scope, adhering to test isolation and ephemeral database protocols in [`TESTING-STANDARDS.md`](./TESTING-STANDARDS.md).
 - Use explicit project filtering (e.g., `--filter "FullyQualifiedName~PersonServiceTests"`).
 - Observe exact process exit codes and standard error streams.
 - **Honesty Rule:** Never claim a test passed unless the test runner ran and emitted a clean pass result. If a test was not run, report it as `Not Executed`.
@@ -106,7 +115,7 @@ Agents may proceed autonomously with standard tasks, but **must stop and obtain 
 | **Security & Auth** | Enforcing existing policies (`AdminOnly`, `StaffOnly`) or adding missing rate limiting. | Relaxing policies, modifying Segregation of Duties (SoD), or changing role definitions. |
 | **Testing** | Running existing unit/integration tests with test connection strings. | Modifying test database connection infrastructure, deleting tests, or altering test assertions. |
 | **Dependencies** | Inspecting `.csproj` and `package.json`. | Adding, upgrading, or removing NuGet or npm packages. |
-| **Roadmap Phase** | Completing authorized sub-tasks within the active phase. | Transitioning between engineering phases (e.g., Phase A -> Phase B -> Phase 12.2). |
+| **Roadmap Phase** | Completing authorized sub-tasks within the active phase. | Transitioning between engineering phases (e.g., Phase 11.5 -> Phase 12.1 -> Phase 12.2). |
 
 ---
 

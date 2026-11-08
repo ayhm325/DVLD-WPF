@@ -252,5 +252,5 @@ flowchart TD
 ## 7. Evidentiary Boundary & Governance Status
 
 1. **Foundational Historical Artifact:** This audit records static code inspection of the Phase A repository baseline (`29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`). It does not represent active runtime penetration test results.
-2. **Current Implementation Status:** The findings cataloged above represent the pre-remediation baseline. They are scheduled for remediation under the authoritative roadmap ([`ENGINEERING-ROADMAP.md`](file:///d:/DVLD-WPF/ENGINEERING-ROADMAP.md)). Zero vulnerabilities are declared resolved until verified by automated integration tests.
+2. **Current Implementation Status:** The findings cataloged above represent the pre-remediation baseline. They are scheduled for remediation under the authoritative roadmap ([`ENGINEERING-ROADMAP.md`](../../ENGINEERING-ROADMAP.md)). Zero vulnerabilities are declared resolved until verified by automated integration tests.
 3. **Preservation Guarantee:** This document is permanently cataloged under `docs/audits/` alongside `phase-a-repository-discovery.md` and `phase-a-supplementary-review.md`. It must not be deleted or modified during normal implementation tasks.

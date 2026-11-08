@@ -207,7 +207,7 @@ flowchart LR
    - Note on Daylight Saving Time: Jordan permanently abolished seasonal DST in October 2022. The kingdom observes UTC+3 year-round.
 3. **Clock Abstraction & DI Registration (`IJordanClock`):**
    - Direct invocation of `DateTime.Now`, `DateTime.Today`, or `DateTime.UtcNow` inside domain entities, repositories, or application services is prohibited.
-   - All components must inject [`IJordanClock`](file:///d:/DVLD-WPF/Application/Interfaces/IJordanClock.cs) (registered as a singleton in `API/DVLD.Api/Program.cs` line 250).
+   - All components must inject [`IJordanClock`](./Application/Interfaces/IJordanClock.cs) (registered as a singleton in `API/DVLD.Api/Program.cs` line 250).
    - The authoritative interface defines:
      ```csharp
      public interface IJordanClock
@@ -285,7 +285,7 @@ To prevent unapproved proposals from being mistaken for active code, every secur
   - Threshold ($N$ failures) and lockout duration ($M$ minutes) remain unresolved under `DEC-CRED-02`.
 - **Database Schema Migration `[OPERATIONAL APPROVAL GATE]` (Schema Gate 5):**
   - Adding `AccessFailedCount`, `LockoutEnd`, and `LockoutEnabled` to `Users` requires explicit human DBA review. Zero migrations are authorized.
-- **Denial-of-Service Risk Acceptance `[OPERATIONAL APPROVAL GATE]` (`RSK-11`):**
+- **Denial-of-Service Risk Acceptance `[OPERATIONAL APPROVAL GATE]` (`RSK-05`, `DEC-CRED-02`):**
   - Hard lockout exposes staff accounts to denial-of-service lockout attacks. Enabling lockout logic is conditioned on formal Risk Owner sign-off.
 
 ---

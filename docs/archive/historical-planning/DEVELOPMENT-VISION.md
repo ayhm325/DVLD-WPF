@@ -1,5 +1,13 @@
 # DVLD — Modernization Development Vision
 
+> [!NOTE]
+> **Historical Archival Notice:**
+> This document is preserved strictly as a historical planning source. It is **NOT** an active roadmap, decision register, or current implementation authority.
+> - **Current Execution Roadmap:** [`ENGINEERING-ROADMAP.md`](../../../ENGINEERING-ROADMAP.md)
+> - **Current Decision Register:** [`ENGINEERING-DECISIONS.md`](../../../ENGINEERING-DECISIONS.md)
+> - **Active Technical Standards:** [`ENGINEERING-STANDARDS.md`](../../../ENGINEERING-STANDARDS.md), [`TESTING-STANDARDS.md`](../../../TESTING-STANDARDS.md), and [`SECURITY-STANDARDS.md`](../../../SECURITY-STANDARDS.md).
+> All text and metadata below represent the original historical artifact.
+
 > **System Name:** Driver & Vehicle Licensing Department (DVLD) Management System  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Target Systems:** ASP.NET Core 8 Web API (`API/DVLD.Api`) & React 19 SPA (`ClientApp/`)  

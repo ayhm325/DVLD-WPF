@@ -1,5 +1,14 @@
 # DVLD — Target Technical Architecture
 
+> [!NOTE]
+> **Historical Archival Notice:**
+> This document is preserved strictly as a historical planning source. It is **NOT** an active technical architecture authority, roadmap, or decision register.
+> - **Current Technical Architecture Authority:** [`ENGINEERING-STANDARDS.md`](../../../ENGINEERING-STANDARDS.md)
+> - **Current Decision Register:** [`ENGINEERING-DECISIONS.md`](../../../ENGINEERING-DECISIONS.md)
+> - **Current Execution Roadmap:** [`ENGINEERING-ROADMAP.md`](../../../ENGINEERING-ROADMAP.md)
+> - **Active Testing Standards:** [`TESTING-STANDARDS.md`](../../../TESTING-STANDARDS.md)
+> All text and metadata below represent the original historical artifact.
+
 > **System Name:** Driver & Vehicle Licensing Department (DVLD) Management System  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Document Role:** Authoritative Technical Architecture, Component Boundaries & Design Patterns  

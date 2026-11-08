@@ -1,5 +1,14 @@
 # DVLD — Modernization Development Plan
 
+> [!NOTE]
+> **Historical Archival Notice:**
+> This document is preserved strictly as a historical planning source. It is **NOT** an active roadmap, decision register, or current implementation authority.
+> - **Current Execution Roadmap:** [`ENGINEERING-ROADMAP.md`](../../../ENGINEERING-ROADMAP.md)
+> - **Current Decision Register:** [`ENGINEERING-DECISIONS.md`](../../../ENGINEERING-DECISIONS.md)
+> - **Active Civic Domain Specification:** The core business rules originally in Section 2 were extracted and are maintained in [`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`](../../domain/LICENSING-DOMAIN-SPECIFICATION.md).
+> - **Active Technical Standards:** [`ENGINEERING-STANDARDS.md`](../../../ENGINEERING-STANDARDS.md), [`TESTING-STANDARDS.md`](../../../TESTING-STANDARDS.md), and [`SECURITY-STANDARDS.md`](../../../SECURITY-STANDARDS.md).
+> All text and metadata below represent the original historical artifact.
+
 > **System Name:** Driver & Vehicle Licensing Department (DVLD) Management System  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Document Role:** Master Development Roadmap, Workstreams, Licensing Constraints & Evidence Backlog  
