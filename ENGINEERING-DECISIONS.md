@@ -36,6 +36,9 @@ To maintain strict historical and semantic integrity, the decision accounting is
 - **DEFERRED:** Formally excluded from initial release milestones and postponed to a future roadmap phase.
 - **POLICY UNRESOLVED:** Multiple strategic alternatives submitted for Project Owner selection.
 
+> [!NOTE]
+> For comprehensive implementation stage mappings, open decision prerequisites, and subsystem maturity evaluations tied to these decision records, consult the standalone master plan [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md).
+
 ---
 
 ## 2. Master Decision Summary Matrix
@@ -386,3 +389,16 @@ flowchart LR
    - Regulatory confirmation remains pending. Code changes in `InternationalService.cs` remain strictly blocked on written confirmation from the Licensing Authority. Distinct from `INT-03`.
 6. **Session Modernization Track (`SEC-05`, `FE-01`, `TEST-02`, `SEC-PKG-17`):**
    - All session modernization work items remain deferred and strictly unauthorized.
+7. **Canonical Risk Register Mapping:**
+   - Active decisions reference risks by their unified two-digit identifiers (`RSK-01` through `RSK-20`), where foundational Phase A empirical findings (`RSK-S01`–`RSK-S13`) are remapped (`RSK-S08` maps to `RSK-03` Timing Side-Channel, `RSK-08` is exclusively Multi-Factor Authentication under `DEC-AUTH-03`, `RSK-05` governs Account Lockout / DoS under `DEC-CRED-02` / Schema Gate 5, and `RSK-11` governs Plaintext PII Exposure under Gate 8). The complete authoritative mapping ledger is maintained in [`SECURITY-STANDARDS.md`](./SECURITY-STANDARDS.md) §7.
+8. **System Architecture Style & Transactional Consistency Baseline:**
+   - The architectural baseline is confirmed as an enterprise **Modular Monolith** (`ADR-001`, `ADR-R03`). As a centralized single-database application, the CAP theorem does not apply as a blanket architectural label; rather, the core requirement is that all critical licensing, examination, and fee workflows must preserve **strong transactional consistency (ACID)**. If a distributed partition or external dependency failure prevents guaranteeing a business invariant, the operation must fail safely rather than commit inconsistent state. Microservices, distributed sagas, eventual consistency, and premature distributed infrastructure are rejected. The complete evaluation of the 17 system design concepts and horizontal readiness standards is maintained in [`ENGINEERING-STANDARDS.md`](./ENGINEERING-STANDARDS.md) §13.
+9. **Product Scope Decision — Single Organization Architecture (Rejection of Multi-Tenancy):**
+   - **Status:** `ACCEPTED ARCHITECTURAL DECISION` (Decision Date: 2026-11-08)
+   - **Authority:** Project Owner
+   - **Decision:** The DVLD platform is formally designated and designed as an enterprise production management system for a **single organization** (the civic licensing authority). It is explicitly **not** a multi-tenant SaaS platform.
+   - **Enforced Boundaries:**
+     1. Centralized relational SQL Server database serving all authorized departmental branches.
+     2. Multiple authorized users, operational counters, and role-based policies (`Staff`, `Admin`).
+     3. Zero tenant IDs, zero tenant isolation columns or filters, and zero tenant-partitioned infrastructure.
+     4. Speculative multi-tenant abstractions (e.g., tenant context middleware, dynamic schema switching, tenant resolvers) are strictly prohibited.

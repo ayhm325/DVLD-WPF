@@ -31,6 +31,7 @@ This document is the authoritative entry point. Detailed specifications are main
 | [`TESTING-STANDARDS.md`](./TESTING-STANDARDS.md) | Test isolation, test database lifecycle (`DVLD_IntegrationTests_<GUID>`), parallel migration throttling, and CI publishing. |
 | [`ENGINEERING-ROADMAP.md`](./ENGINEERING-ROADMAP.md) | Prioritized remediation backlog (P0, P1 provisional, P2, P3), evidence classifications, and action items. |
 | [`ENGINEERING-DECISIONS.md`](./ENGINEERING-DECISIONS.md) | Architectural Decision Records (ADRs) covering accepted decisions, constraints, proposals, rejections, and open business items. |
+| [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md) | Comprehensive implementation baseline, subsystem maturity assessments, and execution master plan. |
 | [`docs/domain/LICENSING-DOMAIN-SPECIFICATION.md`](./docs/domain/LICENSING-DOMAIN-SPECIFICATION.md) | Authoritative civic licensing domain business invariants, sequential examination progression, application lifecycle, and post-issuance workflows. |
 
 ---

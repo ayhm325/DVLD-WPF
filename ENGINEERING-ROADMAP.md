@@ -20,6 +20,7 @@ This document constitutes the sole authoritative engineering execution roadmap a
 5. **External Regulatory Approvals Are Independent Gates:** Legal and regulatory rulings from the Licensing Authority (such as `ADR-O02` / `DEC-POL-01` and `DEC-POL-02`) are external prerequisite gates under Gate 3. Engineering teams may not anticipate or assume statutory approval. No implementation code may be introduced until written regulatory confirmation is recorded.
 6. **Database Schema Changes Require Independent Approval:** Schema modifications, table alterations, and Entity Framework Core migrations (including Schema Gate 5 for user lockout columns) require separate human DBA review, explicit approval, and isolated verification against ephemeral test databases (`DVLD_IntegrationTests_<GUID>`). Migrations to `DVLDf` are strictly prohibited.
 7. **Documenting a Gate Does Not Satisfy It:** Logging an operational requirement, regulatory condition, or risk gate in documentation does not fulfill that gate. Gates remain unsatisfied until verifiable runtime evidence, DBA sign-off, or formal human authorization is executed.
+8. **Task Readiness vs Implementation Authorization:** Technical readiness (analysis complete, solution designed, zero schema changes) does **not** constitute authorization to begin coding. All Phase 12.2 through 12.5 tasks remain strictly **PROPOSED / UNAUTHORIZED** until explicit human authorization is granted. For comprehensive subsystem maturity evaluations and stage-by-stage dependency mappings, consult the standalone master plan [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md).
 
 ---
 
@@ -54,6 +55,8 @@ graph TD
     subgraph P3["P3: Architecture & Quality Cleanup"]
         SEC03["SEC-03: Add Rate Limiting to Password Change"]
         ARCH01["ARCH-01: Consolidate Duplicate Contracts DTOs"]
+        ARCH02["ARCH-02: Segregate Monolithic Repository Interfaces"]
+        ARCH03["ARCH-03: UserService Responsibility Decomposition"]
         OBS02["OBS-02: Pipeline Test Attachment Staging"]
     end
 
@@ -281,6 +284,30 @@ graph TD
 - **Current Status:** `Confirmed / Planned`
 - **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.5 Scope).**
 
+#### [ARCH-02] Segregate Monolithic Repository Interfaces (ILicenseRepository ISP Refinement)
+- **Finding ID:** `ARCH-02`
+- **Evidence Classification:** `CONFIRMED`
+- **Priority:** `P3`
+- **Affected Components:** `Application/Interfaces/ILicenseRepository.cs`, `Infrastructure/Repositories/LicenseRepository.cs`.
+- **Description:** `ILicenseRepository` has accumulated 25 methods coupling core CRUD operations, pagination filters, background scheduled sweeps (`DeactivateExpiredLicensesAsync`), and dashboard reporting aggregates (`GetRenewalSummaryAsync`), violating the Interface Segregation Principle (ISP) and complicating unit test doubles.
+- **Proposed Technical Remediation:** Segregate into cohesive role interfaces (`ILicenseRepository`, `ILicenseExpirationMaintenanceRepository`, `ILicenseReportingRepository`). Concrete `LicenseRepository` implements all interfaces preserving binary compatibility, while services depend strictly on their required role interface.
+- **Scope Boundary Enforcement:** Pure C# interface segregation refactoring. Zero database schema modifications, zero API contract changes, zero entity changes.
+- **Verification Requirements:** Solution build succeeds with zero errors; unit tests for `LicenseExpirationBackgroundService` compile and run using isolated maintenance interface mocks.
+- **Current Status:** `Proposed / Planned`
+- **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.5 Scope).**
+
+#### [ARCH-03] UserService Responsibility Decomposition Assessment (SRP Refinement)
+- **Finding ID:** `ARCH-03`
+- **Evidence Classification:** `CONFIRMED`
+- **Priority:** `P3`
+- **Affected Components:** `Application/Services/UserService.cs`, `Application/Interfaces/IUserService.cs`.
+- **Description:** `UserService` (590 lines) conflates user demographic CRUD with credential verification, BCrypt password hashing, and role authorization checks, concentrating multiple distinct responsibilities into a single service class.
+- **Proposed Technical Remediation:** Evaluate decomposing `UserService` into focused components—specifically extracting an `IUserCredentialService` or `IPasswordHashingService` for credential and password operations—while retaining user profile orchestration in `UserService`. Zero premature abstractions prior to Phase 12.5.
+- **Scope Boundary Enforcement:** Pure C# application service refactoring. Zero database schema modifications, zero API route or contract changes.
+- **Verification Requirements:** Solution build succeeds with zero compiler warnings; existing unit and integration tests for user creation, update, and password change pass with code 0.
+- **Current Status:** `Proposed / Planned`
+- **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.5 Scope).**
+
 #### [OBS-02] Pipeline Test Attachment Staging
 - **Finding ID:** `OBS-02`
 - **Evidence Classification:** `CONFIRMED`
@@ -353,7 +380,7 @@ graph TD
 
 ## 4. Security Package Specifications (All 17 Packages)
 
-The 17 security packages defined in [`docs/archive/security-sources/SECURITY-MASTER-PLAN.md`](./docs/archive/security-sources/SECURITY-MASTER-PLAN.md) are incorporated as technical specifications, acceptance criteria, or operational gates. No artificial task mappings are applied, and no new task IDs are created:
+The 17 security packages defined in [`docs/archive/security-sources/SECURITY-MASTER-PLAN.md`](./docs/archive/security-sources/SECURITY-MASTER-PLAN.md) are incorporated as technical specifications, acceptance criteria, or operational gates. The unified risk inventory associates each package with its canonical risk (where foundational Phase A findings `RSK-S01`–`RSK-S13` map to `RSK-01`–`RSK-14`, `RSK-16`, and 7 additional risk records `RSK-08`, `RSK-11`, `RSK-15`, `RSK-17`–`RSK-20` complete the 20-risk inventory; full canonical mapping is maintained in [`SECURITY-STANDARDS.md`](./SECURITY-STANDARDS.md) §7). No artificial task mappings are applied, and no new task IDs are created:
 
 | Package ID | Title & Technical Specification | Governance Classification | Attached Canonical Task / Gate | Governing Authority & Status |
 |:---|:---|:---|:---|:---:|
@@ -367,7 +394,7 @@ The 17 security packages defined in [`docs/archive/security-sources/SECURITY-MAS
 | **`SEC-PKG-08`** | Constant-Time Password Verification & Timing Defense | Unassigned Security Specification | `AuthService.AuthenticateAsync` | Application Architect / Wave 2 |
 | **`SEC-PKG-09`** | NIST SP 800-63B Credential Complexity Enforcement | Unassigned Security Specification / Phase Acceptance | `UserValidator.ValidatePassword` | Project Owner / `DEC-CRED-01` (Wave 2) |
 | **`SEC-PKG-10`** | Stateless JWT Lifetime Bounding & Unique `jti` | Deferred Architecture Specification / Proposal | [`SEC-05`](#sec-05-backend-refresh-token--multi-session-management) (Stateless JWT) | Project Owner / `DEC-AUTH-01`, `DEC-AUTH-02` |
-| **`SEC-PKG-11`** | Account-Level Lockout Defense & Brute-Force Counter | Schema-Dependent Security Specification | `Users` Table Schema Gate 5 | Project Owner / `DEC-CRED-02`, `RSK-11`, Gate 5 |
+| **`SEC-PKG-11`** | Account-Level Lockout Defense & Brute-Force Counter | Schema-Dependent Security Specification | `Users` Table Schema Gate 5 | Project Owner / `DEC-CRED-02`, `RSK-05`, Gate 5 |
 | **`SEC-PKG-12`** | HTTP Security Headers & Reverse Proxy Trust | Operational Release Gate | `Program.cs` Middleware Pipeline | System Architect / `DEC-DEP-01`, `DEC-DEP-02` |
 | **`SEC-PKG-13`** | Production Configuration Hardening & Secret Isolation | Operational Release Gate | `appsettings.Production.json` | DevOps Lead / `DEC-DEP-01` (Wave 3) |
 | **`SEC-PKG-14`** | Automated Dependency Vulnerability Scanning (SCA) | Unassigned Security Specification / Operational CI | CI/CD Pipeline Scanning | DevOps / Security Lead (Separate from `OBS-02`) |
@@ -391,7 +418,7 @@ The 17 security packages defined in [`docs/archive/security-sources/SECURITY-MAS
 | **Phase 12.2** | P0 & P1 Critical Integrity & Performance (`INT-01`, `INT-02`, `PERF-01`) | **PROPOSED / NOT AUTHORIZED** | Requires explicit human review and approval of Phase 12.2 scope; telemetry verification for `INT-01` (`DEC-APP-01`). |
 | **Phase 12.3** | P2 Observability, Reliability & Transactional Audit Logging (`OBS-01`, `OBS-03`, `SEC-04`, `AUD-01`, `REST-01`, `API-01`, `INT-03`, `TEST-01`) | **PLANNED / NOT AUTHORIZED** | Requires Phase 12.2 completion; NuGet approval for Serilog/HealthChecks; human DBA approval for `AuditLogs` migration; `DEC-POL-01` regulatory confirmation for `INT-03`; empirical validation of `TEST-01`. |
 | **Phase 12.4** | Frontend Alignment, Test Harness Setup & SoD Verification (`SEC-01` Client Guards, Vitest/RTL Setup) | **PLANNED / NOT AUTHORIZED** | Requires Phase 12.3 baseline; Vitest framework setup in `ClientApp/`; explicit human approval for frontend role guard changes. |
-| **Phase 12.5** | P3 Architecture Cleanup, Password Rate Limiting & CI Hardening (`ARCH-01`, `SEC-03`, `OBS-02`) | **PLANNED / NOT AUTHORIZED** | Scheduled following Phase 12.4 completion. |
+| **Phase 12.5** | P3 Architecture Cleanup, Password Rate Limiting & CI Hardening (`ARCH-01`, `ARCH-02`, `ARCH-03`, `SEC-03`, `OBS-02`) | **PLANNED / NOT AUTHORIZED** | Scheduled following Phase 12.4 completion. |
 | **Deferred Modernization Track** | Full-Stack Session Management (`SEC-05`, `FE-01`, `TEST-02`, `SEC-PKG-17`, `DEC-SEC05-01/02`) | **DEFERRED / STRICTLY UNAUTHORIZED** | Excluded from initial production milestones; requires formal Project Owner authorization and schema review for `UserSessions` and `RefreshTokens`. |
 
 ---

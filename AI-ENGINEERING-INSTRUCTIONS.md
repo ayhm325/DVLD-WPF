@@ -24,6 +24,7 @@ AI agents operationalize this engineering workflow in strict coordination with t
 - [`ENGINEERING-STANDARDS.md`](./ENGINEERING-STANDARDS.md) — System architecture, Clean Architecture layering, UnitOfWork, and persistence standards.
 - [`TESTING-STANDARDS.md`](./TESTING-STANDARDS.md) — Testing standards, test isolation, 14 security test suites, and ephemeral database lifecycle.
 - [`SECURITY-STANDARDS.md`](./SECURITY-STANDARDS.md) — Mandatory security baseline, JWT authentication, and Segregation of Duties (SoD).
+- [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md) — Comprehensive implementation master plan and completion strategy reference.
 
 ---
 
@@ -155,6 +156,19 @@ AI agents are prone to optimistic confirmation bias. The following rules are abs
    - *Executed & Passed:* Tests actually run in the session (e.g., 1 smoke test run and passed; 435 remained unexecuted).
 3. **Reporting Failures Honestly:**
    If a test or build fails, report the complete compiler error, stack trace, and failing assertion. Do not suppress or work around test failures by skipping, weakening, or deleting tests.
+4. **Audit & Traceability Classification Taxonomy:**
+   When performing audits, traceability reviews, or status reconciliations, findings must strictly adhere to the five canonical governance classifications:
+   - `Verified`: Statically confirmed in source code, configuration, or documented runtime output matching specification. (Must not imply dynamic runtime operational effectiveness when only static inspection was performed).
+   - `Partially Verified`: Partially implemented or adjacent coverage exists, but does not fulfill the full specification or lacks runtime validation.
+   - `Not Implemented`: Specified capability, endpoint, schema column, or test suite is absent from the codebase.
+   - `Contradiction`: Physical code or configuration contradicts the written specification or another active governance document.
+   - `Insufficient Evidence`: Ambiguous, unverified, or missing artifacts prevent an authoritative determination.
+5. **Task Readiness & Authorization Lifecycle Taxonomy:**
+   To prevent premature or unauthorized code execution, engineering tasks must strictly distinguish readiness from authorization across four unambiguous states:
+   - `Technically Analyzed`: Root cause, affected files, line numbers, and architectural boundaries are statically verified. (Does **not** grant permission to start implementation).
+   - `Implementation-Ready`: Detailed technical solution design is complete, prerequisites and boundaries are verified, impact on other components is understood, and no architectural ambiguity remains. (Does **not** grant permission to start implementation).
+   - `Authorized for Implementation`: Explicit, written human approval has been granted by the Project Owner for a specific phase, scope, and task set, satisfying all relevant Approval Gates and ADR sign-offs. **Only tasks in this state may be executed.**
+   - `Implemented and Verified`: Code changes have been made, targeted builds executed, automated tests run and passed (exit code 0), git diff inspected, and evidence recorded confirming the issue is remediated without regressions.
 
 ---
 

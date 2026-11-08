@@ -2,6 +2,7 @@
 
 > **Authority Level:** Mandatory Security Baseline  
 > **Parent Document:** [`AGENTS.md`](./AGENTS.md)  
+> **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Baseline Commit:** `29e43d6ce26ff6e7f516c45f4f475b10bdc2bfd3`  
 
@@ -128,3 +129,52 @@ Profile photo uploads undergo strict multi-stage validation and sanitization bef
 
 - High-impact events (failed logins, password changes, license revocations, administrative user deactivations) must be logged at `LogLevel.Warning` or `LogLevel.Information` with contextual metadata (User ID, IP address, timestamp).
 - Sensitive values (plain text passwords, JWT signing keys, credit card or banking details) must **never** be logged. Structured logging templates must sanitize user inputs.
+
+---
+
+## 7. Canonical Risk Register & Historical Inventory Mapping
+
+The DVLD platform security governance maintains complete traceability between the foundational empirical audit findings and the active governance risk inventory:
+
+### 7.1 Historical Baseline vs. Active Governance Inventories
+1. **Foundational Phase A Findings (`RSK-S01` through `RSK-S13`):**
+   Documented in [`docs/audits/phase-a-security-architecture-audit.md`](./docs/audits/phase-a-security-architecture-audit.md) §6 and preserved in [`docs/archive/security-sources/SECURITY-IMPLEMENTATION-READINESS.md`](./docs/archive/security-sources/SECURITY-IMPLEMENTATION-READINESS.md) §5.1. Represents the 13 empirical security defects and missing controls discovered in the legacy baseline.
+2. **Unified Risk Inventory (`RSK-01` through `RSK-20`):**
+   Codified in [`docs/archive/security-sources/SECURITY-MASTER-PLAN.md`](./docs/archive/security-sources/SECURITY-MASTER-PLAN.md) §3 and adopted across all active governance documents ([`ENGINEERING-STANDARDS.md`](./ENGINEERING-STANDARDS.md), [`ENGINEERING-DECISIONS.md`](./ENGINEERING-DECISIONS.md), [`TESTING-STANDARDS.md`](./TESTING-STANDARDS.md), and [`ENGINEERING-ROADMAP.md`](./ENGINEERING-ROADMAP.md)). Incorporates the 13 remapped original findings plus 7 additional architectural, threat scenario, and operational records ($13 + 7 = 20$).
+
+### 7.2 Authoritative 13-to-20 Mapping Ledger
+
+| Original Phase A ID | Unified Active Governance ID | Canonical Risk Title | Active Governance Source | Attached Security Package / Gate |
+|:---:|:---:|---|---|---|
+| **`RSK-S01`** | **`RSK-04`** | Stateless 4-Hour Access Token Without Revocation Capability | `ENGINEERING-STANDARDS.md` §9.1 | `SEC-PKG-10` / `DEC-AUTH-01` |
+| **`RSK-S02`** | **`RSK-01`** | Orphaned Application Completion Route Workflow Bypass | `ENGINEERING-ROADMAP.md` (`INT-01`) | `SEC-PKG-01` / `ADR-P03`, `DEC-APP-01` |
+| **`RSK-S03`** | **`RSK-05`** | Missing Account-Level Lockout Defense & Denial-of-Service Risk | `ENGINEERING-STANDARDS.md` §9.4 | `SEC-PKG-11` / `DEC-CRED-02`, Schema Gate 5 |
+| **`RSK-S04`** | **`RSK-06`** | Absence of Dedicated Security Audit Trail & Event Framework | `ENGINEERING-STANDARDS.md` §10.1 | `SEC-PKG-06` / `SEC-04`, `DEC-AUD-01/02` |
+| **`RSK-S05`** | **`RSK-13`** | Circumvention of License Detention in Replacement Workflow | `ENGINEERING-STANDARDS.md` §9.10 | `SEC-PKG-15` / `INT-03`, `ADR-O02`, Gate 3 |
+| **`RSK-S06`** | **`RSK-14`** | Circumvention of Detention in International Permit Issuance | `ENGINEERING-STANDARDS.md` §9.10 | `SEC-PKG-16` / `DEC-POL-02`, Gate 3 |
+| **`RSK-S07`** | **`RSK-02`** | ImagePath Cross-User Deletion within Storage Root | `ENGINEERING-STANDARDS.md` §9.6 | `SEC-PKG-02` / `DEC-FILE-01` |
+| **`RSK-S08`** | **`RSK-03`** | Credential Verification Latency Timing Side-Channel | `ENGINEERING-STANDARDS.md` §9.3 | `SEC-PKG-08` (Constant-Time Dummy Hash) |
+| **`RSK-S09`** | **`RSK-09`** | Hardcoded Administrator Protections & Single Points of Failure | `ENGINEERING-STANDARDS.md` §9.5 | `SEC-PKG-04` (Dynamic Admin Safety) |
+| **`RSK-S10`** | **`RSK-07`** | Weak Password Complexity Policy & Absence of Breached Checks | `ENGINEERING-STANDARDS.md` §9.3 | `SEC-PKG-09` / `DEC-CRED-01` (NIST SP 800-63B) |
+| **`RSK-S11`** | **`RSK-10`** | Unbounded Collection Retrieval via Dual-Behavior Endpoints | `ENGINEERING-STANDARDS.md` §9.7 | `SEC-PKG-03` (Pagination Clamping $\le 50$) |
+| **`RSK-S12`** | **`RSK-16`** | Missing HTTP Security Headers & Unconfigured Trusted Proxies | `ENGINEERING-STANDARDS.md` §9.8 | `SEC-PKG-12` / `DEC-DEP-01`, `DEC-DEP-02` |
+| **`RSK-S13`** | **`RSK-12`** | ADR-O01 Model B License History Authorization Mismatch | `ENGINEERING-STANDARDS.md` §9.2 | `SEC-PKG-05` / `DEC-RBAC-01` |
+
+### 7.3 The Seven Additional Risk Records
+
+| Active Governance ID | Canonical Title | Active Governance Source | Scope & Classification | Governance Status |
+|:---:|---|---|---|---|
+| **`RSK-08`** | Absence of Multi-Factor Authentication (MFA) for Administrative Roles | `ENGINEERING-DECISIONS.md` (`DEC-AUTH-03`) | Identity & Access Governance | **DEFERRED TO FUTURE PHASE** (`DEC-AUTH-03`) |
+| **`RSK-11`** | Plaintext PII Exposure in Citizen & User DTOs | `ENGINEERING-DECISIONS.md` §10.1, `ENGINEERING-ROADMAP.md` §6 | Data Minimization / Privacy | **DEFERRED RISK / PRODUCTION GATE 8 SIGN-OFF REQUIRED** |
+| **`RSK-15`** | ADR-O01 Model B Administrative Read Visibility Restriction | `TESTING-STANDARDS.md` §7.5 | Civic Policy Tension | Governed under `DEC-RBAC-01` (Model B Policy Preserved) |
+| **`RSK-17`** | Production Configuration & Plaintext Secret Exposure Hazards | `ENGINEERING-STANDARDS.md` §9.8 | Deployment & Infrastructure | Governed under `SEC-PKG-13` / `DEC-DEP-01` |
+| **`RSK-18`** | Absence of Automated Dependency Scanning in CI/CD Pipeline | `ENGINEERING-STANDARDS.md` §9.9 | Build & Pipeline Security | Governed under `SEC-PKG-14` (Separate from `OBS-02`) |
+| **`RSK-19`** | Unrepresented External Callers for CompleteApplication Endpoint | `ENGINEERING-STANDARDS.md` §9.11 | API Contract Deprecation | Governed under `DEC-APP-01` Telemetry Window (Gate 6) |
+| **`RSK-20`** | Authorized Insider Mass PII Harvesting via Unbounded Collections | `TESTING-STANDARDS.md` §7.13 | Threat Scenario | Mitigated under `SEC-PKG-03` (Clamping $\le 50$) |
+
+> [!IMPORTANT]
+> **Definitive Clarification on `RSK-08` & `RSK-11` (Gate 8):**
+> - Foundational empirical finding **`RSK-S08`** (Timing Side-Channel) remapped to **`RSK-03`** (`SEC-PKG-08` / `TST-AUTH-03`).
+> - Identifier **`RSK-08`** is exclusively assigned to **Multi-Factor Authentication (MFA) for Administrative Roles** (`DEC-AUTH-03`).
+> - Identifier **`RSK-11`** governs citizen PII and photograph/biometric exposure. Production Approval Gate 8 requires formal legal and regulatory review regarding data privacy and statutory compliance under the Jordan Personal Data Protection Law (Law No. 24 of 2023). Engineering data minimization and masking practices are distinguished from confirmed statutory obligations, and legal verification remains an outstanding project item.
+> - There is zero duplication across active or historical risk registers.

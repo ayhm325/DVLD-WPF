@@ -2,6 +2,7 @@
 
 > **Authority Level:** Mandatory Testing & Quality Assurance Standards  
 > **Parent Document:** [`AGENTS.md`](./AGENTS.md)  
+> **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./docs/PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
 > **Baseline Commit:** `baa356705c3b5c364a9c5aabf0cd62a5aa21e4b9`  
 > **Governance Status:** CONSOLIDATED & ENFORCED (Phase 2)  
@@ -28,6 +29,9 @@ The DVLD repository enforces a three-tiered testing strategy ensuring fast feedb
        │     Pure In-Memory Logic, Moq, Fast          │  Zero Database Access
        └──────────────────────────────────────────────┘
 ```
+
+### 1.1 Interface Segregation & Test Double Standards
+Unit test fixtures in `Application.UnitTests` must rely on cohesive, segregated role interfaces rather than monolithic interfaces. In accordance with the Interface Segregation Principle (ISP) and roadmap task `ARCH-02`, test doubles (mocks) must never be forced to supply dummy implementations for dozens of unrelated repository methods.
 
 ---
 
@@ -98,6 +102,7 @@ For baseline reference, historical execution metrics recorded during the Phase 1
 | **`Application.UnitTests`** | 919 | 919 | **919** | 0 | 100% pass rate in memory. |
 | **`API.IntegrationTests`** | 436 | 1 | **1** | 0 | Only 1 smoke test (`Swagger_EndpointReturnsSuccessAndCorrectContentType`) was executed and passed. **435 tests were cataloged but not executed.** |
 | **`Infrastructure.IntegrationTests`** | 612 | 612 | **611** | **1** | 611 passed. Exactly 1 test failed due to a transient SSL pre-login handshake timeout. |
+| **`ClientApp/` (Frontend)** | 0 | 0 | **0** | **0** | Zero automated tests in `ClientApp/` at current inspected baseline (`FE-TEST` candidate requirement). |
 | **Total Test Inventory** | **1,967** | **1,532** | **1,531** | **1** | Total cataloged test suite size: 1,967 tests. (1,967 is the cataloged inventory, NOT the passed count). |
 
 ---
@@ -157,7 +162,7 @@ graph TD
   3. Verify token expiration claim (`exp`) matches configured target lifetime (defaulting to 240 minutes; asserted against configured duration if amended under `DEC-AUTH-01`).
   4. Advance test clock beyond expiration instant; execute authenticated request against protected endpoint (`GET /api/users/current`).
 - **Expected Behavior:** Requests with expired tokens receive HTTP 401 Unauthorized with `Bearer error="invalid_token"`. Issued tokens always emit unique `jti` identifiers.
-- **Dependencies & Status:** Proposed test suite. Implementation of `jti` claim is pending Gate 2 authorization under `SEC-PKG-10`.
+- **Dependencies & Status:** Proposed test suite. Implementation of `jti` claim is pending Gate 2 authorization under `SEC-PKG-10`. Existing unit tests in `JwtTokenServiceClockTests.cs` verify clock time conversion and UTC kind anchoring, but do not assert `jti` claim generation or token invalidation.
 
 ---
 
@@ -242,7 +247,7 @@ graph TD
   2. Acting administrator attempts to change their own role from `Admin` to `Staff`.
   3. Two concurrent requests attempt to deactivate the last two remaining administrators simultaneously.
 - **Expected Behavior:** Scenarios 1 and 2 return `Result.Failure("Cannot demote or deactivate the active administrator account.")`. Scenario 3 succeeds for exactly one administrator and fails for the second, leaving at least one active administrator.
-- **Dependencies & Status:** Proposed test suite. Implementation pending Gate 2 approval under `SEC-PKG-04`.
+- **Dependencies & Status:** Proposed test suite. Implementation pending Gate 2 approval under `SEC-PKG-04`. Existing unit test `UserServiceTests.UpdateUserAsync_SelfDemotion_ReturnsForbidden` provides partial unit-level validation with Moq mocks, but does not provide dynamic, concurrency-safe integration verification against SQL Server.
 
 ---
 
@@ -257,7 +262,7 @@ graph TD
   1. Issue HTTP request: `POST /api/applications/{id}/complete`.
   2. Attempt to transition application to `Completed` via standard legitimate workflow (`LicenseIssuanceService.IssueFirstTimeLicenseAsync`) with prerequisite tests incomplete.
 - **Expected Behavior:** Scenario 1 returns HTTP 404 Not Found (following hard deletion under `ADR-P03`) or emits telemetry with deprecation notice (during observation window under `DEC-APP-01`). Scenario 2 returns `Result.Failure` with HTTP 400 Bad Request.
-- **Dependencies & Status:** Proposed test suite. Execution gated on telemetry observation under `DEC-APP-01`.
+- **Dependencies & Status:** Proposed test suite. Execution gated on telemetry observation under `DEC-APP-01`. Existing controller test `ApplicationsControllerTests.Complete_WhenSuccessful_ReturnsNoContent` tests the legacy 204 behavior of the bypass route, not the required 404 deletion / deprecation telemetry standard.
 
 ---
 
@@ -305,7 +310,7 @@ graph TD
   2. Upload HTML script (`<script>alert(1)</script>`) renamed to `avatar.png`.
   3. Upload valid JPEG binary (`FF D8 FF E0...`).
 - **Expected Behavior:** Scenarios 1 and 2 throw validation failure and reject upload with HTTP 400 Bad Request. Scenario 3 passes binary inspection and re-encodes successfully.
-- **Dependencies & Status:** Proposed test suite. Active SkiaSharp re-encoding exists; explicit magic-bytes verification pending Gate 2.
+- **Dependencies & Status:** Proposed test suite. Existing unit tests in `ImageProcessingServiceTests.cs` (`ProcessPersonPhoto_ExecutableSignatureMZ_ReturnsValidationFailure`, `SvgContent`, `HtmlContent`) provide partial matching coverage for binary validation, but the full canonical integration security suite remains unauthorized pending Gate 2 under `SEC-PKG-02`.
 
 ---
 
@@ -321,7 +326,7 @@ graph TD
   2. Request file resolution with null byte injection: `photo.jpg\0../../secret.txt`.
   3. Request file resolution with absolute drive root: `C:\inetpub\wwwroot\web.config`.
 - **Expected Behavior:** All scenarios throw `ArgumentException("Path traversal outside storage root is not permitted.")`.
-- **Dependencies & Status:** Active test standard. Core path check implemented in `PhysicalFileStorageService.cs:185-207`.
+- **Dependencies & Status:** Active test standard. Core path check implemented in `PhysicalFileStorageService.cs:185-207`. Matching unit test methods exist in `PhysicalFileStorageServiceTests.cs:105-131` (`GetAsync_PathTraversalKey_ReturnsNullOrThrows` and `DeleteAsync_PathTraversalKey_ReturnsFalse`) and were historically included in the Phase 12.1 unit test pass (919/919 passed); not executed during read-only audit passes.
 
 ---
 
@@ -373,27 +378,27 @@ graph TD
 
 ---
 
-### 7.15 Test Suite Authorization & Implementation Status Ledger
+### 7.15 Test Suite Multi-Dimensional Status & Authorization Ledger
 
 > [!IMPORTANT]
-> **Test Suite Implementation Non-Authorization Declaration:**  
-> Documenting a security test suite specification establishes the testing standard only. It does **not** indicate that the test suite has been implemented, executed, or passed. All 14 suites remain scheduled standards requiring formal phase authorization before execution.
+> **Test Suite Implementation Non-Authorization Declaration & Dimension Separation:**
+> Documenting a security test suite specification establishes the testing standard only. It does **not** indicate that the test suite has been authorized, implemented, executed, or passed. All 14 suites are governed across four independent dimensions: 1) Specification completeness; 2) Source-code presence; 3) Implementation authorization; and 4) Documented execution evidence.
 
-| Test Suite ID | Current Code Status | Test Execution Status | Blocking Dependency / Prerequisite | Implementation Authorization |
-|:---|:---:|:---:|:---|:---:|
-| **`TST-AUTH-01`** | Not Implemented | Unexecuted | `SEC-PKG-10` / `DEC-AUTH-01` (Gate 2) | **NOT AUTHORIZED** |
-| **`TST-AUTH-02`** | Not Implemented | Unexecuted | Schema Gate 5 (`Users` table) / `DEC-CRED-02` | **NOT AUTHORIZED** |
-| **`TST-AUTH-03`** | Not Implemented | Unexecuted | `SEC-PKG-08` / Gate 2 | **NOT AUTHORIZED** |
-| **`TST-AUTH-04`** | Not Implemented | Unexecuted | `SEC-PKG-09` / `DEC-CRED-01` (Gate 2) | **NOT AUTHORIZED** |
-| **`TST-RBAC-01`** | Not Implemented | Unexecuted | `SEC-PKG-05` / `ADR-O01` Model B Alignment | **NOT AUTHORIZED** |
-| **`TST-RBAC-02`** | Not Implemented | Unexecuted | `SEC-PKG-04` / Gate 2 | **NOT AUTHORIZED** |
-| **`TST-WORK-01`** | Not Implemented | Unexecuted | `INT-01` / `DEC-APP-01` Telemetry Window | **NOT AUTHORIZED** |
-| **`TST-WORK-02`** | Not Implemented | Unexecuted | **BLOCKED on Legal** (`DEC-POL-01`, `DEC-POL-02` Gate 3) | **NOT AUTHORIZED** |
-| **`TST-FILE-01`** | Not Implemented | Unexecuted | `SEC-PKG-02` / `DEC-FILE-01` (Gate 2) | **NOT AUTHORIZED** |
-| **`TST-FILE-02`** | Partially Implemented | Unexecuted | `SEC-PKG-02` Magic Bytes Inspection | **NOT AUTHORIZED** |
-| **`TST-FILE-03`** | Implemented in Code | Historical Validated | `PhysicalFileStorageService.cs:185-207` Check | Active Code Standard |
-| **`TST-AUD-01`** | Not Implemented | Unexecuted | `SEC-04` / `AUD-01` / `DEC-AUD-02` | **NOT AUTHORIZED** |
-| **`TST-PAG-01`** | Partially Implemented | Unexecuted | `SEC-PKG-03` Pagination Clamping (Phase 12.2) | **NOT AUTHORIZED** |
-| **`TST-OPS-01`** | Not Implemented | Unexecuted | `SEC-PKG-12` Middleware Configuration (Gate 7) | **NOT AUTHORIZED** |
-| **`TEST-01`** | Proposed Mitigation | **Needs Validation** | LocalDB Concurrency Runtime Proof | **NOT AUTHORIZED** |
-| **`TEST-02`** | Proposed Test Strategy | Unexecuted | `SEC-05` / `FE-01` Modernization Track | **DEFERRED / UNAUTHORIZED** |
+| Test Suite ID | Specification Exists | Dedicated Test Source | Matching Test Methods Present | Implementation Authorization | Historical Execution Evidence (Phase 12.1) | Current Audit Status |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **`TST-AUTH-01`** | Yes (§7.1) | No | No (Clock tests verify UTC anchoring, not `jti`) | **NOT AUTHORIZED** (`SEC-PKG-10` / Gate 2) | No documented execution | Unexecuted |
+| **`TST-AUTH-02`** | Yes (§7.2) | No | No | **BLOCKED** (Schema Gate 5 / `DEC-CRED-02`) | No documented execution | Unexecuted |
+| **`TST-AUTH-03`** | Yes (§7.3) | No | No | **NOT AUTHORIZED** (`SEC-PKG-08` / Gate 2) | No documented execution | Unexecuted |
+| **`TST-AUTH-04`** | Yes (§7.4) | No | No | **NOT AUTHORIZED** (`SEC-PKG-09` / `DEC-CRED-01`) | No documented execution | Unexecuted |
+| **`TST-RBAC-01`** | Yes (§7.5) | No | No | **NOT AUTHORIZED** (`SEC-PKG-05` / `ADR-O01`) | No documented execution | Unexecuted |
+| **`TST-RBAC-02`** | Yes (§7.6) | No | Partial (`UserServiceTests.cs` mocked self-demotion) | **NOT AUTHORIZED** (`SEC-PKG-04` / Gate 2) | Unit test executed in Phase 12.1; integration suite unexecuted | Unexecuted |
+| **`TST-WORK-01`** | Yes (§7.7) | No | Partial (`ApplicationsControllerTests.cs` legacy 204 test) | **NOT AUTHORIZED** (`INT-01` / `DEC-APP-01` Gate 6) | Unit test executed in Phase 12.1; deletion suite unexecuted | Unexecuted |
+| **`TST-WORK-02`** | Yes (§7.8) | No | No | **BLOCKED ON LEGAL** (Regulatory Gate 3) | No documented execution | Unexecuted |
+| **`TST-FILE-01`** | Yes (§7.9) | No | No | **NOT AUTHORIZED** (`SEC-PKG-02` / `DEC-FILE-01`) | No documented execution | Unexecuted |
+| **`TST-FILE-02`** | Yes (§7.10)| No | Partial (`ImageProcessingServiceTests.cs` MZ/SVG/HTML tests)| **NOT AUTHORIZED** (`SEC-PKG-02` / Gate 2) | Unit test executed in Phase 12.1; full endpoint suite unexecuted | Unexecuted |
+| **`TST-FILE-03`** | Yes (§7.11)| No (Co-located)| **Yes** (`PhysicalFileStorageServiceTests.cs:105-131`) | **Active Code Standard** | **Passed** in Phase 12.1 (919/919 unit tests passed) | Static Verified (Unexecuted) |
+| **`TST-AUD-01`** | Yes (§7.12)| No | No | **NOT AUTHORIZED** (`SEC-04` / `AUD-01` / Gate 2) | No documented execution | Unexecuted |
+| **`TST-PAG-01`** | Yes (§7.13)| No | No | **DEFERRED** (`SEC-PKG-03` / Phase 12.2) | No documented execution | Unexecuted |
+| **`TST-OPS-01`** | Yes (§7.14)| No | No | **NOT AUTHORIZED** (`SEC-PKG-12` / Gate 7) | No documented execution | Unexecuted |
+| **`TEST-01`** | Yes (§4.1) | N/A (Harness) | Semaphore Throttling in Test WebAppFactory | Proposed Mitigation (**Needs Validation**) | 1 SSL timeout observed in Phase 12.1 | Unexecuted |
+| **`TEST-02`** | Yes (Roadmap)| No | No | **DEFERRED / UNAUTHORIZED** (`SEC-05` Modernization) | No documented execution | Unexecuted |
