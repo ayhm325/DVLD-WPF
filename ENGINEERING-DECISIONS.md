@@ -52,9 +52,9 @@ To maintain strict historical and semantic integrity, the decision accounting is
 | **`ADR-005`** | Functional `Result<T>` Modeling over Domain Exceptions | **ACCEPTED** | Application Architect | `Application` Services | Implemented / Active |
 | **`ADR-C01`** | Exclusion and Freeze of Legacy WPF Desktop Client | **CONSTRAINT** | Governance Authority | `Presentation (WPF)/` | Enforced / Frozen |
 | **`ADR-C02`** | Isolation of Production Database (`DVLDf`) from Automated Testing | **CONSTRAINT** | Governance Authority | All Test Suites, CI | Enforced / Protected |
-| **`ADR-P01`** | Separation of Non-Locking Reads from Update-Locking Queries (`PERF-02`) | **PROPOSED** | Performance Architect | `PERF-02`, Phase 12.2 | **NOT AUTHORIZED** |
+| **`ADR-P01`** | Separation of Non-Locking Reads from Update-Locking Queries (`PERF-02`) | **ACCEPTED** | Performance Architect | `PERF-02`, Phase 12.2 | Implemented / Active |
 | **`ADR-P02`** | Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`) | **PROPOSED** | API Lead | `REST-01`, Phase 12.3 | **NOT AUTHORIZED** |
-| **`ADR-P03`** | Deletion of Orphaned Direct Completion Endpoint (`INT-01`) | **PROPOSED** | Software Architect | `INT-01`, Phase 12.2 | **NOT AUTHORIZED** |
+| **`ADR-P03`** | Deletion of Orphaned Direct Completion Endpoint (`INT-01`) | **ACCEPTED** | Software Architect | `INT-01`, Phase 12.2 | Implemented / Active |
 | **`ADR-R01`** | Rejection of `Task.Run` for In-Process CPU Work (`PERF-03`) | **REJECTED** | Application Architect | `Application Services` | Rejected / Inactive |
 | **`ADR-R02`** | Rejection of Multi-Tenant IDOR Claim on Citizen Photos (`SEC-02`) | **REJECTED** | Security Lead | `SEC-02`, `PeopleController` | Rejected / Inactive |
 | **`ADR-R03`** | Rejection of Pagination on Tiny Static Reference Tables (`API-02`) | **REJECTED** | API Lead | `API-02`, Reference Data | Rejected / Inactive |
@@ -67,7 +67,7 @@ To maintain strict historical and semantic integrity, the decision accounting is
 | **`DEC-CRED-02`** | Account Lockout Strategy & Thresholds (Hard Lockout vs Exponential Delay) | **POLICY UNRESOLVED** | Project Owner | `SEC-PKG-11`, `RSK-05`, Gate 5 | **NOT AUTHORIZED** |
 | **`DEC-AUD-01`** | Dedicated Security Audit Trail Storage Sink (Rolling JSON vs SQL Server) | **PROPOSAL (UNAPPROVED)** | Project Owner | `SEC-PKG-06`, `SEC-04` | **NOT AUTHORIZED** |
 | **`DEC-AUD-02`** | Audit Sink Failure Handling & In-Memory Ring Buffer Architecture | **PROPOSAL (UNAPPROVED)** | Software Architect | `SEC-PKG-06`, `SEC-04` | **NOT AUTHORIZED** |
-| **`DEC-APP-01`** | Deletion vs 30-Day Telemetry Window for `CompleteApplication` Endpoint | **PROPOSAL (UNAPPROVED)** | Project Owner / API Lead | `SEC-PKG-01`, `INT-01` | **NOT AUTHORIZED** |
+| **`DEC-APP-01`** | Deletion vs 30-Day Telemetry Window for `CompleteApplication` Endpoint | **ACCEPTED (OPTION 1)** | Project Owner / API Lead | `SEC-PKG-01`, `INT-01` | Implemented / Active |
 | **`DEC-RBAC-01`** | Administrative Read-Only Inspection Access under SoD Model B | **PROPOSAL (UNAPPROVED)** | Project Owner | `SEC-PKG-05`, `SEC-01` | **NOT AUTHORIZED** |
 | **`DEC-FILE-01`** | ImagePath Sanitization & Cross-User Deletion Defense Strategy | **PROPOSAL (UNAPPROVED)** | System Architect | `SEC-PKG-02`, `RSK-02` | **NOT AUTHORIZED** |
 | **`DEC-DEP-01`** | Production Hosting Topology & Reverse Proxy CIDR Trust Configuration | **PROPOSAL (UNAPPROVED)** | DevOps / Infrastructure | `SEC-PKG-12`, `SEC-PKG-13` | **NOT AUTHORIZED** |
@@ -178,10 +178,10 @@ flowchart LR
 ## 6. Proposed Architecture Decisions (Pending Phase 12 Execution)
 
 ### ADR-P01: Separation of Non-Locking Reads from Update-Locking Queries (`PERF-02`)
-- **Status:** `PROPOSED` (**NOT AUTHORIZED**)
-- **Context:** `LicenseRepository.GetLicenseByIdAsync` hardcodes `WITH (UPDLOCK, HOLDLOCK)`, serializing read-only queries against concurrent readers.
-- **Proposal:** Refactor `GetLicenseByIdAsync` to execute ordinary shared reads. Introduce a dedicated `GetForUpdateAsync` method exclusively for state-modifying write workflows.
-- **Consequences:** Eliminates unnecessary reader serialization. Requires Phase 12.2 authorization.
+- **Status:** `ACCEPTED` (Implemented & Verified in Phase 12.2)
+- **Context:** `LicenseRepository.GetLicenseByIdAsync` hardcoded `WITH (UPDLOCK, HOLDLOCK)`, serializing read-only queries against concurrent readers.
+- **Decision:** Refactor `GetLicenseByIdAsync` to execute ordinary shared reads. Introduce a dedicated `GetForUpdateAsync` method exclusively for state-modifying write workflows.
+- **Consequences:** Eliminates reader-reader and reader-writer serialization. Update locks preserved exclusively in transactional write operations.
 
 ### ADR-P02: Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`)
 - **Status:** `PROPOSED` (**NOT AUTHORIZED**)
@@ -190,10 +190,10 @@ flowchart LR
 - **Consequences:** Uniform client-side error handling in `ClientApp`. Requires Phase 12.3 authorization.
 
 ### ADR-P03: Deletion of Orphaned Direct Completion Endpoint (`INT-01`)
-- **Status:** `PROPOSED` (**NOT AUTHORIZED**)
-- **Context:** `POST /api/applications/{id}/complete` allows authenticated staff to complete applications directly, bypassing test and fee invariants.
-- **Proposal:** Delete endpoint and underlying service method following telemetry observation window (`DEC-APP-01`).
-- **Consequences:** Eliminates critical integrity defect. Breaking API contract change requiring Phase 12.2 authorization.
+- **Status:** `ACCEPTED` (Implemented & Verified in Phase 12.2)
+- **Context:** `POST /api/applications/{id}/complete` allowed authenticated staff to complete applications directly, bypassing test and fee invariants.
+- **Decision:** Permanently delete `POST /api/applications/{id}/complete` endpoint and underlying `CompleteApplicationAsync` service method per `DEC-APP-01` Option 1. Direct application completion is architecturally impossible; applications complete strictly via specialized domain issuance pipelines.
+- **Consequences:** Eliminates critical integrity defect. Calling `POST /api/applications/{id}/complete` returns HTTP 404 Not Found.
 
 ---
 
@@ -298,12 +298,12 @@ flowchart LR
 - **Authority:** Software Architect / Project Owner.
 
 ### DEC-APP-01: Application Completion Route Telemetry Window
-- **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)
+- **Status:** `ACCEPTED (OPTION 1: IMMEDIATE ROUTE DELETION)` (Decision Date: 2026-11-09)
 - **Domain:** Workflow Integrity (`INT-01`, `SEC-PKG-01`, `ADR-P03`)
 - **Strategic Question:** Can `POST /api/applications/{id}/complete` be deleted immediately without breaking external integrations?
 - **Options Evaluated:** Option 1: Immediate route deletion; Option 2: 30-day telemetry observation window with deprecation headers before removal; Option 3: Restrict route to `Admin`.
-- **Architectural Proposal:** Option 2 (Telemetry window) proposed to verify zero external consumers prior to hard deletion.
-- **Authority:** Project Owner / API Lead.
+- **Selected Decision:** Option 1 (Immediate route deletion) selected by Project Owner on 2026-11-09. Business invariant enforcement and data integrity take precedence over preserving an unsafe legacy bypass route. Route and underlying standalone method removed in Phase 12.2 under `INT-01`.
+- **Authority:** Project Owner.
 
 ### DEC-RBAC-01: Administrative Read-Only Inspection Access under Model B
 - **Status:** `PROPOSAL (UNAPPROVED)` (**NOT AUTHORIZED**)

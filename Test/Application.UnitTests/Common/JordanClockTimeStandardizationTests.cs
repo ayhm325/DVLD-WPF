@@ -323,7 +323,7 @@ public sealed class JordanClockTimeStandardizationTests
         clock.Advance(TimeSpan.FromMinutes(5));
         appRepo.Setup(x => x.GetApplicationForUpdateAsync(500)).ReturnsAsync(stored);
 
-        var completeResult = await sut.CompleteApplicationAsync(500);
+        var completeResult = await sut.CompleteApplicationStateAsync(500);
         Assert.True(completeResult.IsSuccess);
         Assert.Equal(new DateTime(2026, 11, 4, 0, 35, 0, DateTimeKind.Unspecified), stored.LastStatusDate);
         Assert.True(stored.LastStatusDate >= stored.ApplicationDate);

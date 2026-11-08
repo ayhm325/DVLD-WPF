@@ -1191,13 +1191,13 @@ public sealed class ApplicationServiceTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public async Task CompleteApplicationAsync_WhenIdIsInvalid_ReturnsValidation(
+    public async Task CompleteApplicationStateAsync_WhenIdIsInvalid_ReturnsValidation(
         int id)
     {
         var service = CreateService();
 
         var result =
-            await service.CompleteApplicationAsync(id);
+            await service.CompleteApplicationStateAsync(id);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
@@ -1212,7 +1212,7 @@ public sealed class ApplicationServiceTests
     }
 
     [Fact]
-    public async Task CompleteApplicationAsync_WhenApplicationDoesNotExist_ReturnsNotFound()
+    public async Task CompleteApplicationStateAsync_WhenApplicationDoesNotExist_ReturnsNotFound()
     {
         var service = CreateService();
 
@@ -1222,7 +1222,7 @@ public sealed class ApplicationServiceTests
             .ReturnsAsync((ApplicationD?)null);
 
         var result =
-            await service.CompleteApplicationAsync(1);
+            await service.CompleteApplicationStateAsync(1);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
@@ -1232,7 +1232,7 @@ public sealed class ApplicationServiceTests
     }
 
     [Fact]
-    public async Task CompleteApplicationAsync_WhenAlreadyCompleted_ReturnsConflict()
+    public async Task CompleteApplicationStateAsync_WhenAlreadyCompleted_ReturnsConflict()
     {
         var service = CreateService();
 
@@ -1244,7 +1244,7 @@ public sealed class ApplicationServiceTests
                     status: AppStatus.Completed));
 
         var result =
-            await service.CompleteApplicationAsync(1);
+            await service.CompleteApplicationStateAsync(1);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
@@ -1258,7 +1258,7 @@ public sealed class ApplicationServiceTests
     }
 
     [Fact]
-    public async Task CompleteApplicationAsync_WhenCancelled_ReturnsConflict()
+    public async Task CompleteApplicationStateAsync_WhenCancelled_ReturnsConflict()
     {
         var service = CreateService();
 
@@ -1270,7 +1270,7 @@ public sealed class ApplicationServiceTests
                     status: AppStatus.Cancelled));
 
         var result =
-            await service.CompleteApplicationAsync(1);
+            await service.CompleteApplicationStateAsync(1);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Conflict, result.ErrorType);
@@ -1280,7 +1280,7 @@ public sealed class ApplicationServiceTests
     }
 
     [Fact]
-    public async Task CompleteApplicationAsync_WhenValid_ChangesStatusAndSaves()
+    public async Task CompleteApplicationStateAsync_WhenValid_ChangesStatusToCompletedWithoutFlushing()
     {
         var service = CreateService();
 
@@ -1296,12 +1296,8 @@ public sealed class ApplicationServiceTests
                 x.GetApplicationForUpdateAsync(1))
             .ReturnsAsync(entity);
 
-        _unitOfWork
-            .Setup(x => x.SaveChangesAsync(CancellationToken.None))
-            .ReturnsAsync(1);
-
         var result =
-            await service.CompleteApplicationAsync(1);
+            await service.CompleteApplicationStateAsync(1);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(
@@ -1312,32 +1308,6 @@ public sealed class ApplicationServiceTests
 
         _unitOfWork.Verify(
             x => x.SaveChangesAsync(CancellationToken.None),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task CompleteApplicationAsync_WhenSaveFails_ReturnsFailure()
-    {
-        var service = CreateService();
-
-        var entity = CreateApplication();
-
-        _repository
-            .Setup(x =>
-                x.GetApplicationForUpdateAsync(1))
-            .ReturnsAsync(entity);
-
-        _unitOfWork
-            .Setup(x => x.SaveChangesAsync(CancellationToken.None))
-            .ReturnsAsync(0);
-
-        var result =
-            await service.CompleteApplicationAsync(1);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal(ErrorType.Failure, result.ErrorType);
-        Assert.Equal(
-            "Complete application failed.",
-            result.Error);
+            Times.Never);
     }
 }

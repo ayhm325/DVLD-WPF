@@ -85,12 +85,12 @@ graph TD
 - **Affected Components:** `API/DVLD.Api/Controllers/ApplicationsController.cs` (lines 85–90), `Application/Services/ApplicationService.cs` (`CompleteApplicationAsync`).
 - **Description:** `POST /api/applications/{id}/complete` allows authenticated staff to update an application's status directly to `Completed` (`EnApplicationStatus.Completed`), bypassing fee payment, test passage, and license issuance workflows. This corrupts applicant records and locks them out of ever receiving a license.
 - **Proposed Technical Remediation:** Delete the `CompleteApplicationAsync` endpoint from `ApplicationsController` and remove the underlying method from `IApplicationService` and `ApplicationService`.
-- **Governing Architectural Decisions:** `ADR-P03` (Permanent Endpoint Deletion) cross-referenced to `DEC-APP-01` (30-Day Telemetry Window Prerequisite).
+- **Governing Architectural Decisions:** `ADR-P03` (Permanent Endpoint Deletion) cross-referenced to `DEC-APP-01` (Option 1: Immediate route deletion selected by Project Owner).
 - **Associated Security Package:** `SEC-PKG-01` (CompleteApplication Route Deletion & Telemetry).
-- **Dependencies & Mandatory Approvals:** **Explicit Human Engineering Approval Required.** Removing or changing a public API endpoint represents a breaking contract change. Execution is gated on telemetry data confirming zero external callers under `DEC-APP-01`.
+- **Dependencies & Mandatory Approvals:** **Explicit Human Engineering Approval Required.** Removing or changing a public API endpoint represents a breaking contract change. Explicitly authorized by Project Owner selecting `DEC-APP-01` Option 1.
 - **Verification Requirements:** Execute API integration tests verifying endpoint returns HTTP 404 Not Found.
-- **Current Status:** `Confirmed / Planned`
-- **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.2 Scope).**
+- **Current Status:** `Verified`
+- **Implementation Authorization:** **AUTHORIZED (Phase 12.2 Scope).**
 
 ---
 

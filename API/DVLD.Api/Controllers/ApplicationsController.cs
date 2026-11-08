@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
@@ -79,13 +79,6 @@ public sealed class ApplicationsController(IApplicationService service) : Contro
     public async Task<IActionResult> Delete(int id)
     {
         var result = await service.DeleteApplicationAsync(id);
-        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
-    }
-
-    [HttpPost("{id:int}/complete")]
-    public async Task<IActionResult> Complete(int id)
-    {
-        var result = await service.CompleteApplicationAsync(id);
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 

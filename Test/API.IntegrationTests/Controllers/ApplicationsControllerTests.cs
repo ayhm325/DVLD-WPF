@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Domain.Enums;
@@ -429,35 +429,14 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
     }
 
     [Fact]
-    public async Task Complete_WhenSuccessful_ReturnsNoContent()
+    public async Task PostComplete_WhenCalled_ReturnsNotFoundBecauseRouteIsRemoved()
     {
-        _factory.ApplicationServiceMock
-            .Setup(x => x.CompleteApplicationAsync(100))
-            .ReturnsAsync(Result.Success());
-
+        // INT-01 / DEC-APP-01: Direct completion bypass endpoint POST /api/Applications/{id}/complete was removed
         var response = await SendAsync(
             HttpMethod.Post,
             "/api/Applications/100/complete");
 
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        _factory.ApplicationServiceMock.Verify(
-            x => x.CompleteApplicationAsync(100), Times.Once);
-    }
-
-    [Fact]
-    public async Task Complete_WhenConflictOccurs_ReturnsConflict()
-    {
-        _factory.ApplicationServiceMock
-            .Setup(x => x.CompleteApplicationAsync(100))
-            .ReturnsAsync(Result.Conflict("cannot complete application"));
-
-        await AssertFailureAsync(
-            await SendAsync(
-                HttpMethod.Post,
-                "/api/Applications/100/complete"),
-            HttpStatusCode.Conflict,
-            "Conflict",
-            "cannot complete application");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

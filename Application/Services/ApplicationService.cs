@@ -162,15 +162,6 @@ public sealed class ApplicationService(
         return await SaveAsync("Cancel application failed.");
     }
 
-    public async Task<Result> CompleteApplicationAsync(int applicationId)
-    {
-        var stateResult = await CompleteApplicationStateAsync(applicationId);
-        if (stateResult.IsFailure)
-            return stateResult;
-
-        return await SaveAsync("Complete application failed.");
-    }
-
     /// <summary>
     /// Mutates the application status to Completed without flushing to the database.
     /// Use this when called from within an outer Unit of Work transaction so that

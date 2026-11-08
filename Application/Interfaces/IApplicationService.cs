@@ -47,10 +47,6 @@ public interface IApplicationService
     // BUSINESS
     // =========================================================
 
-
-    Task<Result>
-        CompleteApplicationAsync(int id);
-
     Task<Result>
         CancelApplicationAsync(int id);
 
