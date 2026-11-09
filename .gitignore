@@ -6,3 +6,4 @@ obj/
 *.cache
 *.db
 *.vsidx
+/docs/baseline-screenshots/
