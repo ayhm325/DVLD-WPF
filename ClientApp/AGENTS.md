@@ -41,7 +41,7 @@ flowchart TD
 
 1. **Authentication Portal:**
    - Active production login is the **Simplified Light-Theme Portal** implemented in `src/components/Login.tsx` and `Login.css`.
-   - Authentication tokens are managed exclusively via `useAuth()` and persisted in `sessionStorage` under `dvld_auth_session`.
+   - The access token is held in memory by `authTokenStore.ts`; the refresh token is stored only in an HttpOnly cookie and is never readable from JavaScript. `localStorage` contains only the optional remembered username and the visual theme preference, never authentication tokens.
 2. **Authenticated Application Shell:**
    - Root application coordinator in `src/App.tsx`.
    - Page routing and RBAC access guards in `src/components/AppRouter.tsx`.

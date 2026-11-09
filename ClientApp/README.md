@@ -67,7 +67,7 @@ npm run preview
 
 | Feature / View | Status | Implementation Details |
 |---|---|---|
-| **Authentication & Login** | `Implemented` | Clean, high-contrast light-theme portal (`Login.tsx`, `Login.css`), JWT storage in `sessionStorage`, Remember Me in `localStorage`, error alerts, and password visibility toggle. |
+| **Authentication & Login** | `Implemented` | Login portal (`Login.tsx`, `Login.css`), in-memory access token with HttpOnly refresh-cookie session restoration, optional remembered username in `localStorage`, error alerts, and password visibility toggle. The independent theme preference is also stored in `localStorage`; authentication tokens are never stored there. |
 | **Session Lifecycle & 401 Auto-Logout** | `Implemented` | `AuthContext.tsx` validates token expiration on refresh; `apiClient.ts` intercepts HTTP 401 and triggers automated session termination. |
 | **Dashboard** | `Implemented` | Renders unified statistics cards (`GET /api/Dashboard/statistics`), recent people overview, and quick-action shortcuts. |
 | **People Management** | `Implemented` | Comprehensive 5-column paginated table (`PeopleTable.tsx`), search filtering by name and national number, and details modal. |
