@@ -149,12 +149,12 @@
 .local-app-page-size { display: flex; align-items: center; gap: 6px; margin-left: 6px; }
 .local-app-page-size select { padding: 5px 8px; border: 1px solid var(--dvld-border-strong); border-radius: 6px; background: var(--dvld-surface-soft); color: var(--dvld-heading); font-size: 11px; }
 
-@media (max-width: 1000px) {
+@media (max-width: 1023px) {
   .local-app-table th, .local-app-table td { padding-inline: 12px; }
   .local-app-table th:first-child, .local-app-table td:first-child { padding-left: 18px; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   .local-app-heading, .local-app-panel-header { align-items: flex-start; flex-direction: column; }
   .local-app-heading-mark { display: none; }
   .local-app-header-actions { width: 100%; justify-content: space-between; }

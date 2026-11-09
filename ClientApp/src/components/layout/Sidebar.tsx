@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useRef, type RefObject, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../context/useAuth";
 import { useNavigation } from "../../context/useNavigation";
@@ -34,6 +34,7 @@ type SidebarProps = {
   onNavigate?: (page: string) => void;
   isOpen?: boolean;
   onCloseMobile?: () => void;
+  mobileToggleRef?: RefObject<HTMLButtonElement | null>;
   onRequestLogout: () => void;
 };
 
@@ -48,11 +49,32 @@ export default function Sidebar({
   onNavigate: propOnNavigate,
   isOpen = false,
   onCloseMobile,
+  mobileToggleRef,
   onRequestLogout,
 }: SidebarProps) {
   const { user } = useAuth();
   const nav = useNavigation();
   const activePage = propActivePage ?? nav.activePage;
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousOpenRef = useRef(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (isMobileViewport && isOpen) {
+      closeButtonRef.current?.focus();
+    } else if (isMobileViewport && previousOpenRef.current) {
+      mobileToggleRef?.current?.focus();
+    }
+    previousOpenRef.current = isOpen;
+  }, [isOpen, isMobileViewport, mobileToggleRef]);
 
   const allMainNavItems: NavItemDef[] = [
     { page: "Dashboard", icon: <LayoutDashboard className="size-4.5" /> },
@@ -194,11 +216,12 @@ export default function Sidebar({
 
   return (
     <>
-      {isOpen && (
-        <div
+      {isOpen && isMobileViewport && (
+        <button
+          type="button"
           className="sidebar-backdrop"
           onClick={onCloseMobile}
-          aria-hidden="true"
+          aria-label="Close navigation menu"
         />
       )}
 
@@ -207,6 +230,10 @@ export default function Sidebar({
           "sidebar relative flex flex-col justify-between overflow-hidden",
           isOpen && "sidebar-open",
         )}
+        id="dvld-primary-sidebar"
+        aria-label="Primary navigation"
+        aria-hidden={isMobileViewport && !isOpen}
+        inert={isMobileViewport && !isOpen}
       >
         {/* Decorative futuristic glowing waves across the lower sidebar */}
         <div className="pointer-events-none absolute bottom-0 inset-x-0 h-95 w-full overflow-hidden select-none z-0">
@@ -436,7 +463,8 @@ export default function Sidebar({
             {onCloseMobile && (
               <button
                 type="button"
-                className="sidebar-close-btn md:hidden flex items-center justify-center size-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+                ref={closeButtonRef}
+                className="sidebar-close-btn lg:hidden flex items-center justify-center size-11 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
                 onClick={onCloseMobile}
                 aria-label="Close menu"
               >

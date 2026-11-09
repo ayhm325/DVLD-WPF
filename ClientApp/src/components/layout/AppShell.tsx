@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import Footer from "./Footer";
@@ -36,9 +36,37 @@ export default function AppShell({
   const { activePage, navigate } = useNavigation();
 
   const mobileSidebar = useModal();
+  const closeMobileSidebar = mobileSidebar.close;
+  const mobileSidebarToggleRef = useRef<HTMLButtonElement>(null);
   const logoutModal = useModal();
   const commandPalette = useModal();
   const { open: openCommandPalette } = commandPalette;
+
+  // Keep the page behind the mobile drawer still while it is open and allow
+  // keyboard users to dismiss it with Escape.
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const previousOverflow = document.body.style.overflow;
+
+    const syncMobileDrawer = () => {
+      document.body.style.overflow =
+        mediaQuery.matches && mobileSidebar.isOpen ? "hidden" : previousOverflow;
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && mediaQuery.matches) {
+        closeMobileSidebar();
+      }
+    };
+
+    syncMobileDrawer();
+    mediaQuery.addEventListener("change", syncMobileDrawer);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      mediaQuery.removeEventListener("change", syncMobileDrawer);
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileSidebar.isOpen, closeMobileSidebar]);
 
   // Listen for Ctrl+K / Cmd+K global shortcut
   useEffect(() => {
@@ -103,6 +131,7 @@ export default function AppShell({
         onNavigate={handleNavigate}
         isOpen={mobileSidebar.isOpen}
         onCloseMobile={mobileSidebar.close}
+        mobileToggleRef={mobileSidebarToggleRef}
         onRequestLogout={logoutModal.open}
       />
 
@@ -115,6 +144,9 @@ export default function AppShell({
           }
           onRequestLogout={logoutModal.open}
           onOpenCommandPalette={commandPalette.open}
+          onToggleSidebar={mobileSidebar.open}
+          isSidebarOpen={mobileSidebar.isOpen}
+          sidebarToggleRef={mobileSidebarToggleRef}
         />
 
         <PeopleProvider>

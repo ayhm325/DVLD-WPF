@@ -230,7 +230,7 @@ export default function AddUserModal({
       size="xl"
       title="Add New User Account"
       description="Create a new DVLD system account with an explicitly selected role (Admin or Staff) linked to a verified person record."
-      contentClassName="max-h-[75vh] overflow-y-auto pr-1"
+      contentClassName="pr-1"
       footer={
         <>
           <Button

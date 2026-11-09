@@ -77,7 +77,7 @@ export default function IssueDrivingLicenseModal({
       description="Authorize and officially issue the driving license following successful completion of all required examinations."
       size="lg"
     >
-      <div className="space-y-5 max-h-[75vh] overflow-y-auto pr-1">
+      <div className="space-y-5 pr-1">
         {issuedLicenseId ? (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-6 text-center space-y-4">
             <div className="size-14 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">

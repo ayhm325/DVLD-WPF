@@ -459,7 +459,7 @@
   }
 
   /* ---------- Responsive ---------- */
-  @media (max-width: 1024px) {
+  @media (max-width: 1023px) {
     :root {
       --page-padding: 20px;
     }
@@ -468,7 +468,7 @@
     }
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 639px) {
     :root {
       --page-padding: 16px;
       --space-8: 24px;

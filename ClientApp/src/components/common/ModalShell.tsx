@@ -139,7 +139,7 @@ export default function ModalShell({
           <DialogTitle className="sr-only">Dialog</DialogTitle>
         )}
 
-        <div className={cn('py-1 text-sm text-slate-200', contentClassName)}>
+        <div className={cn('min-h-0 overflow-y-auto overscroll-contain py-1 text-sm text-slate-200', contentClassName)}>
           {children}
         </div>
 

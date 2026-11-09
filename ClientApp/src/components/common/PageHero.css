@@ -10,7 +10,7 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .page-hero {
     padding: 20px 18px !important;
   }

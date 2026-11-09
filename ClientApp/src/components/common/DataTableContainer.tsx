@@ -31,6 +31,9 @@ export default function DataTableContainer({
       aria-label="Data table container"
       {...props}
     >
+      <div className="table-scroll-hint md:hidden">
+        Swipe horizontally to view all columns
+      </div>
       <div
         className={cn('w-full min-w-full', className)}
         style={{ minWidth: typeof minWidth === 'number' ? `${minWidth}px` : minWidth }}

@@ -430,7 +430,7 @@ export default function PeopleTable({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="size-8 p-0 text-slate-400 hover:text-white hover:bg-[#1a2c47] rounded-lg"
+                  className="size-11 p-0 text-slate-400 hover:text-white hover:bg-[#1a2c47] rounded-lg lg:size-8"
                   title="Person actions"
                   aria-label={`Actions for person ${person.fullName}`}
                 >

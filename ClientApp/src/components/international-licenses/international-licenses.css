@@ -96,13 +96,13 @@
 .intl-table-footer { display: flex; justify-content: space-between; gap: 12px; padding: 16px 25px; border-top: 1px solid var(--dvld-border); color: var(--dvld-muted); font-size: 11px; }
 .intl-table-footer strong { color: var(--dvld-heading); }
 
-@media (max-width: 900px) {
+@media (max-width: 1023px) {
   .intl-toolbar { flex-wrap: wrap; }
   .intl-search { flex-basis: 100%; }
   .intl-control { flex: 1; }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 639px) {
   .intl-page-heading { flex-direction: column; }
   .intl-summary-grid { grid-template-columns: 1fr; }
   .intl-toolbar { padding-inline: 16px; }

@@ -166,7 +166,7 @@ export default function LicenseDetailsModal({
       }
       size="xl"
     >
-      <div className="space-y-5 max-h-[75vh] overflow-y-auto pr-1">
+      <div className="space-y-5 pr-1">
         {/* Top Identity Banner */}
         <div className="relative overflow-hidden rounded-2xl border border-[#1e3458] bg-gradient-to-br from-[#0c1a33] via-[#09152b] to-[#060e1e] p-5 shadow-lg">
           <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-5">

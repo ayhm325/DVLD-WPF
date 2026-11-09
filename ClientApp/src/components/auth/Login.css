@@ -124,7 +124,7 @@
   overflow: hidden;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .dvld-login-card {
     grid-template-columns: 1.08fr 1.02fr;
   }
@@ -146,7 +146,7 @@
   justify-content: space-between;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .dvld-brand-column {
     border-bottom: none;
     border-right: 1px solid rgba(38, 62, 104, 0.65);
@@ -755,7 +755,7 @@
 /* =====================================================
    Responsive Design & Breakpoints
 ===================================================== */
-@media (max-width: 899px) {
+@media (max-width: 1023px) {
   .dvld-login-root {
     padding: 1.25rem 1rem;
   }
@@ -773,7 +773,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .dvld-login-root {
     padding: 1rem 0.75rem;
     align-items: flex-start;
