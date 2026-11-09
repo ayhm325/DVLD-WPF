@@ -88,12 +88,12 @@ Prior to `API-01`:
 | `ApplicationsController` | 7 | Updated & Verified (Bundle 1) |
 | `ApplicationTypesController` | 3 | Updated & Verified (Bundle 1) |
 | `AuthController` | 4 | Pending (Bundle 2) |
-| `CountriesController` | 1 | Pending (Bundle 1 remainder) |
-| `DashboardController` | 1 | Pending (Bundle 1 remainder) |
+| `CountriesController` | 1 | Updated & Verified (Bundle 1) |
+| `DashboardController` | 1 | Updated & Verified (Bundle 1) |
 | `DetainedLicensesController` | 6 | Pending (Bundle 5) |
 | `DriversController` | 7 | Pending (Bundle 3) |
 | `InternationalLicensesController` | 7 | Pending (Bundle 5) |
-| `LicenseClassesController` | 3 | Pending (Bundle 1 remainder) |
+| `LicenseClassesController` | 3 | Updated & Verified (Bundle 1) |
 | `LicenseIssuanceController` | 1 | Pending (Bundle 5) |
 | `LicenseRenewalController` | 1 | Pending (Bundle 5) |
 | `LicenseReplacementController` | 1 | Pending (Bundle 5) |
@@ -102,10 +102,10 @@ Prior to `API-01`:
 | `PeopleController` | 11 | Pending (Bundle 2) |
 | `TestAppointmentsController` | 18 | Pending (Bundle 4) |
 | `TestsController` | 5 | Pending (Bundle 4) |
-| `TestTypesController` | 3 | Pending (Bundle 1 remainder) |
+| `TestTypesController` | 3 | Updated & Verified (Bundle 1) |
 | `TestWorkflowController` | 3 | Pending (Bundle 4) |
 | `UsersController` | 8 | Pending (Bundle 2) |
-| **Total Controller Actions** | **111** | **10 updated; 101 pending** |
+| **Total Controller Actions** | **111** | **18 updated (Bundle 1 Complete); 93 pending** |
 
 ---
 
@@ -141,10 +141,9 @@ In Moq setups and verifies, passing `It.IsAny<CancellationToken>()` (or `Cancell
 To avoid cross-cutting compile failures and ensure steady verification, rollout proceeds across 5 cohesive domain bundles:
 
 1. **Bundle 1 (Core Licensing & Administrative Domains):**
-   - `Applications` & `ApplicationTypes` (*Implemented & Verified*).
-   - `Countries`, `Dashboard`, `LicenseClasses`, `TestTypes` (*Next*).
+   - `Applications`, `ApplicationTypes`, `Countries`, `Dashboard`, `LicenseClasses`, `TestTypes` (**100% Implemented & Verified** - 18 controller actions, 23 repository methods, 20 service methods).
 2. **Bundle 2 (Civic Registry & Security Domains):**
-   - `People`, `Users`, `Auth`.
+   - `People`, `Users`, `Auth` (*Next*).
 3. **Bundle 3 (Driver & Local Application Domains):**
    - `Drivers`, `LocalDrivingLicenseApplications`.
 4. **Bundle 4 (Examination & Testing Domains):**
