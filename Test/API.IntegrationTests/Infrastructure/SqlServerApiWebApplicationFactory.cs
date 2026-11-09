@@ -23,13 +23,54 @@ public sealed class SqlServerApiWebApplicationFactory
 
     private SqlServerTestTarget? _target;
     private SqlServerTestDatabaseLease? _databaseLease;
+    private readonly Func<
+        SqlServerTestDatabaseLease,
+        Task<SqlServerTestDatabaseCleanupOutcome>>? _dropOwnedDatabaseAsyncOverride;
+    private readonly SqlServerApiFactoryDisposal _disposal;
 
     public string ConnectionString { get; private set; } = string.Empty;
 
     public SqlServerApiWebApplicationFactory()
     {
+        _disposal = CreateDisposalCoordinator(
+            DisposeBaseAsync,
+            DisposeBaseSynchronously,
+            DropDatabaseAsync,
+            DropDatabase);
         InitializeDatabase();
     }
+
+    internal SqlServerApiWebApplicationFactory(
+        Func<Task> cleanupAsync,
+        Action cleanupSynchronously,
+        Func<ValueTask>? disposeBaseAsync = null,
+        Action? disposeBaseSynchronously = null)
+    {
+        _disposal = CreateDisposalCoordinator(
+            disposeBaseAsync ?? DisposeBaseAsync,
+            disposeBaseSynchronously ?? DisposeBaseSynchronously,
+            cleanupAsync,
+            cleanupSynchronously);
+    }
+
+    internal SqlServerApiWebApplicationFactory(
+        SqlServerTestDatabaseLease databaseLease,
+        Func<SqlServerTestDatabaseLease,
+            Task<SqlServerTestDatabaseCleanupOutcome>> dropOwnedDatabaseAsync,
+        Func<ValueTask>? disposeBaseAsync = null,
+        Action? disposeBaseSynchronously = null)
+    {
+        _databaseLease = databaseLease;
+        _dropOwnedDatabaseAsyncOverride = dropOwnedDatabaseAsync;
+        _disposal = CreateDisposalCoordinator(
+            disposeBaseAsync ?? DisposeBaseAsync,
+            disposeBaseSynchronously ?? DisposeBaseSynchronously,
+            DropDatabaseAsync,
+            DropDatabase);
+    }
+
+    internal SqlServerTestDatabaseLease? DatabaseLeaseForTesting =>
+        Volatile.Read(ref _databaseLease);
 
     protected override void ConfigureWebHost(
         IWebHostBuilder builder)
@@ -74,43 +115,7 @@ public sealed class SqlServerApiWebApplicationFactory
         return new DVLDDbContext(options);
     }
 
-    public override async ValueTask DisposeAsync()
-    {
-        Exception? disposalException = null;
-
-        try
-        {
-            await base.DisposeAsync();
-        }
-        catch (Exception ex)
-        {
-            disposalException = ex;
-        }
-
-        try
-        {
-            await DropDatabaseAsync();
-        }
-        catch (Exception cleanupException)
-        {
-            if (disposalException is not null)
-            {
-                SqlServerTestEnvironment.ReportCleanupFailureSafely(
-                    "API test database cleanup failed during disposal. Primary exception type={0}; cleanup exception type={1}.",
-                    disposalException,
-                    cleanupException);
-            }
-            else
-            {
-                throw;
-            }
-        }
-
-        if (disposalException is not null)
-        {
-            ExceptionDispatchInfo.Capture(disposalException).Throw();
-        }
-    }
+    public override ValueTask DisposeAsync() => _disposal.DisposeAsync();
 
     protected override void Dispose(bool disposing)
     {
@@ -120,41 +125,23 @@ public sealed class SqlServerApiWebApplicationFactory
             return;
         }
 
-        Exception? disposalException = null;
-
-        try
-        {
-            base.Dispose(true);
-        }
-        catch (Exception ex)
-        {
-            disposalException = ex;
-        }
-
-        try
-        {
-            DropDatabase();
-        }
-        catch (Exception cleanupException)
-        {
-            if (disposalException is not null)
-            {
-                SqlServerTestEnvironment.ReportCleanupFailureSafely(
-                    "API test database cleanup failed during synchronous disposal. Primary exception type={0}; cleanup exception type={1}.",
-                    disposalException,
-                    cleanupException);
-            }
-            else
-            {
-                throw;
-            }
-        }
-
-        if (disposalException is not null)
-        {
-            ExceptionDispatchInfo.Capture(disposalException).Throw();
-        }
+        _disposal.DisposeSynchronously();
     }
+
+    private ValueTask DisposeBaseAsync() => base.DisposeAsync();
+
+    private void DisposeBaseSynchronously() => base.Dispose(true);
+
+    private static SqlServerApiFactoryDisposal CreateDisposalCoordinator(
+        Func<ValueTask> disposeBaseAsync,
+        Action disposeBaseSynchronously,
+        Func<Task> cleanupAsync,
+        Action cleanupSynchronously) =>
+        new(
+            disposeBaseAsync,
+            disposeBaseSynchronously,
+            cleanupAsync,
+            cleanupSynchronously);
 
     private void InitializeDatabase()
     {
@@ -215,6 +202,20 @@ public sealed class SqlServerApiWebApplicationFactory
                     "API test database cleanup failed after migration failed. Primary exception type={0}; cleanup exception type={1}.",
                     migrationException,
                     cleanupException);
+
+                if (_databaseLease is not null && _target is not null)
+                {
+                    throw new SqlServerApiFactoryInitializationException(
+                        migrationException,
+                        cleanupException,
+                        _databaseLease,
+                        _target.ExpectedInstanceIdentity);
+                }
+
+                throw new AggregateException(
+                    "API test database migration and cleanup both failed.",
+                    migrationException,
+                    cleanupException);
             }
 
             ExceptionDispatchInfo.Capture(migrationException).Throw();
@@ -223,34 +224,91 @@ public sealed class SqlServerApiWebApplicationFactory
 
     private async Task DropDatabaseAsync()
     {
-        var lease = Interlocked.Exchange(ref _databaseLease, null);
+        var lease = Volatile.Read(ref _databaseLease);
         var target = _target;
-        if (lease is null || target is null)
+        if (lease is null)
         {
             return;
         }
 
-        ClearDatabaseConnectionPool();
-        await DatabaseLifecycleLock.WaitAsync();
+        if (_dropOwnedDatabaseAsyncOverride is not null)
+        {
+            var testOutcome = await _dropOwnedDatabaseAsyncOverride(lease)
+                .ConfigureAwait(false);
+            CompleteLeaseCleanup(lease, testOutcome);
+            return;
+        }
+
+        if (target is null)
+        {
+            var exception = new InvalidOperationException(
+                $"The target SQL Server configuration is unavailable for test database cleanup. Database={lease.DatabaseName}.");
+            RetainLeaseEvidence(exception, lease);
+            throw exception;
+        }
+
+        try
+        {
+            ClearDatabaseConnectionPool();
+            await DatabaseLifecycleLock.WaitAsync().ConfigureAwait(false);
+        }
+        catch (Exception cleanupException)
+        {
+            RetainLeaseEvidence(cleanupException, lease);
+            throw;
+        }
+
         try
         {
             await using var connection = new SqlConnection(
                 target.AdminConnectionString);
-            await connection.OpenAsync();
-            var dropped = await SqlServerTestEnvironment.DropOwnedDatabaseAsync(
+            await connection.OpenAsync().ConfigureAwait(false);
+            var outcome = await SqlServerTestEnvironment.DropOwnedDatabaseAsync(
                 connection,
                 target,
-                lease);
-            if (!dropped)
-            {
-                throw new InvalidOperationException(
-                    "The API test database was not dropped because ownership could not be confirmed.");
-            }
+                lease).ConfigureAwait(false);
+            CompleteLeaseCleanup(lease, outcome);
+        }
+        catch (Exception cleanupException)
+        {
+            RetainLeaseEvidence(cleanupException, lease);
+            throw;
         }
         finally
         {
             DatabaseLifecycleLock.Release();
         }
+    }
+
+    private void CompleteLeaseCleanup(
+        SqlServerTestDatabaseLease lease,
+        SqlServerTestDatabaseCleanupOutcome outcome)
+    {
+        if (outcome == SqlServerTestDatabaseCleanupOutcome.OwnershipMismatch)
+        {
+            var exception = new InvalidOperationException(
+                $"The API test database was not dropped because ownership could not be confirmed. The lease is retained for diagnosis and a later retry. Database={lease.DatabaseName}; database ID={lease.DatabaseId}; identity={lease.DatabaseIdentity}.");
+            RetainLeaseEvidence(exception, lease);
+            throw exception;
+        }
+
+        if (outcome is not SqlServerTestDatabaseCleanupOutcome.Dropped and
+            not SqlServerTestDatabaseCleanupOutcome.AlreadyAbsent)
+        {
+            var exception = new InvalidOperationException(
+                "The API test database cleanup returned an unknown outcome; the lease is retained.");
+            RetainLeaseEvidence(exception, lease);
+            throw exception;
+        }
+
+        Interlocked.CompareExchange(ref _databaseLease, null, lease);
+    }
+
+    private static void RetainLeaseEvidence(
+        Exception exception,
+        SqlServerTestDatabaseLease lease)
+    {
+        exception.Data["SqlServerTestDatabaseLease"] = lease;
     }
 
     private void DropDatabase() =>

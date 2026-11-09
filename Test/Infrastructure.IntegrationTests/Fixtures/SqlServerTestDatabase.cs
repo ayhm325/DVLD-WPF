@@ -63,25 +63,40 @@ public sealed class SqlServerTestDatabase : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        var lease = Interlocked.Exchange(ref _databaseLease, null);
+        var lease = Volatile.Read(ref _databaseLease);
         var target = _target;
-        if (lease is null || target is null)
+        if (lease is null)
         {
             return;
+        }
+
+        if (target is null)
+        {
+            throw new InvalidOperationException(
+                "The test database lease cannot be cleaned because its SQL Server target is unavailable.");
         }
 
         await using var connection = new SqlConnection(
             target.AdminConnectionString);
         await connection.OpenAsync();
-        var dropped = await SqlServerTestEnvironment.DropOwnedDatabaseAsync(
+        var outcome = await SqlServerTestEnvironment.DropOwnedDatabaseAsync(
             connection,
             target,
             lease);
-        if (!dropped)
+        if (outcome == SqlServerTestDatabaseCleanupOutcome.OwnershipMismatch)
         {
             throw new InvalidOperationException(
                 "The test database was not dropped because ownership could not be confirmed.");
         }
+
+        if (outcome is not SqlServerTestDatabaseCleanupOutcome.Dropped and
+            not SqlServerTestDatabaseCleanupOutcome.AlreadyAbsent)
+        {
+            throw new InvalidOperationException(
+                "The test database cleanup returned an unknown outcome; its lease is retained.");
+        }
+
+        Interlocked.CompareExchange(ref _databaseLease, null, lease);
     }
 
     public DVLDDbContext CreateContext()

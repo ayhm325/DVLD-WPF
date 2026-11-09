@@ -16,6 +16,13 @@ public sealed record SqlServerTestDatabaseLease(
     int DatabaseId,
     Guid DatabaseIdentity);
 
+public enum SqlServerTestDatabaseCleanupOutcome
+{
+    Dropped = 1,
+    AlreadyAbsent = 2,
+    OwnershipMismatch = 3
+}
+
 public static class SqlServerTestEnvironment
 {
     private const string RunTokenProperty = "DVLD_Test_Run_Token";
@@ -291,7 +298,7 @@ public static class SqlServerTestEnvironment
                     target,
                     CancellationToken.None);
 
-                var cleaned = await DropGeneratedDatabaseAsync(
+                var cleanupOutcome = await DropGeneratedDatabaseAsync(
                     cleanupConnection,
                     target,
                     databaseName,
@@ -299,7 +306,8 @@ public static class SqlServerTestEnvironment
                     databaseIdentity,
                     runToken: null,
                     CancellationToken.None);
-                if (!cleaned)
+                if (cleanupOutcome ==
+                    SqlServerTestDatabaseCleanupOutcome.OwnershipMismatch)
                 {
                     ReportFailureSafely(
                         "Test database cleanup was not confirmed after marker creation failed. Database={0}; primary exception type={1}.",
@@ -321,7 +329,8 @@ public static class SqlServerTestEnvironment
         }
     }
 
-    public static async Task<bool> DropOwnedDatabaseAsync(
+    public static async Task<SqlServerTestDatabaseCleanupOutcome>
+        DropOwnedDatabaseAsync(
         SqlConnection connection,
         SqlServerTestTarget target,
         SqlServerTestDatabaseLease? lease,
@@ -329,10 +338,10 @@ public static class SqlServerTestEnvironment
     {
         if (lease is null)
         {
-            return false;
+            throw new ArgumentNullException(nameof(lease));
         }
 
-        ValidateGeneratedDatabaseName(lease.DatabaseName);
+        ValidateOwnedDatabaseLease(lease);
         return await DropGeneratedDatabaseAsync(
             connection,
             target,
@@ -343,7 +352,31 @@ public static class SqlServerTestEnvironment
             cancellationToken);
     }
 
-    private static async Task<bool> DropGeneratedDatabaseAsync(
+    public static void ValidateOwnedDatabaseLease(
+        SqlServerTestDatabaseLease? lease)
+    {
+        if (lease is null)
+        {
+            throw new ArgumentNullException(nameof(lease));
+        }
+
+        ValidateGeneratedDatabaseName(lease.DatabaseName);
+        if (lease.DatabaseId <= 0 || lease.DatabaseIdentity == Guid.Empty)
+        {
+            throw new InvalidOperationException(
+                "Database cleanup requires a valid database identity lease.");
+        }
+
+        if (string.IsNullOrWhiteSpace(lease.RunToken) ||
+            !Guid.TryParseExact(lease.RunToken, "N", out _))
+        {
+            throw new InvalidOperationException(
+                "Database cleanup requires a valid run-token ownership marker.");
+        }
+    }
+
+    private static async Task<SqlServerTestDatabaseCleanupOutcome>
+        DropGeneratedDatabaseAsync(
         SqlConnection connection,
         SqlServerTestTarget target,
         string databaseName,
@@ -363,7 +396,25 @@ public static class SqlServerTestEnvironment
         command.CommandText =
             """
             DECLARE @databaseId int = DB_ID(@databaseName);
-            DECLARE @dropped bit = 0;
+            DECLARE @outcome int = 3;
+
+            IF @databaseId IS NULL
+            BEGIN
+                DECLARE @canConfirmAbsence bit = CASE
+                    WHEN HAS_PERMS_BY_NAME(NULL, NULL, N'VIEW ANY DATABASE') = 1
+                      OR HAS_PERMS_BY_NAME(DB_NAME(), N'DATABASE', N'CREATE DATABASE') = 1
+                    THEN 1 ELSE 0 END;
+
+                IF @canConfirmAbsence = 1
+                   AND NOT EXISTS
+                       (SELECT 1 FROM sys.databases WHERE name = @databaseName)
+                BEGIN
+                    SET @outcome = 2;
+                END;
+
+                SELECT @outcome;
+                RETURN;
+            END;
 
             DECLARE @isOwned bit = CASE WHEN @runToken IS NULL THEN 1 ELSE 0 END;
             DECLARE @actualDatabaseIdentity uniqueidentifier =
@@ -398,10 +449,10 @@ public static class SqlServerTestEnvironment
                     N' SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE ' +
                     QUOTENAME(@databaseName) + N';';
                 EXEC sys.sp_executesql @dropSql;
-                SET @dropped = 1;
+                SET @outcome = 1;
             END;
 
-            SELECT @dropped;
+            SELECT @outcome;
             """;
         command.Parameters.AddWithValue("@databaseName", databaseName);
         command.Parameters.AddWithValue("@markerName", RunTokenProperty);
@@ -414,7 +465,7 @@ public static class SqlServerTestEnvironment
             (object?)runToken ?? DBNull.Value);
 
         var result = await command.ExecuteScalarAsync(cancellationToken);
-        return result is true || result is byte value && value == 1;
+        return (SqlServerTestDatabaseCleanupOutcome)Convert.ToInt32(result);
     }
 
     public static void ValidateGeneratedDatabaseName(string databaseName)
