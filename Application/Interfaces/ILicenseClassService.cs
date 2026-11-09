@@ -7,10 +7,10 @@ namespace Application.Interfaces
 {
     public interface ILicenseClassService
     {
-        Task<Result<List<LicenseClassDto>>> GetAllLicenseClassesAsync();
+        Task<Result<List<LicenseClassDto>>> GetAllLicenseClassesAsync(CancellationToken cancellationToken = default);
 
-        Task<Result<LicenseClassDto>> GetLicenseClassByIdAsync(int id);
+        Task<Result<LicenseClassDto>> GetLicenseClassByIdAsync(int id, CancellationToken cancellationToken = default);
 
-        Task<Result> UpdateLicenseClassAsync(int id, LicenseClassDto dto);
+        Task<Result> UpdateLicenseClassAsync(int id, LicenseClassDto dto, CancellationToken cancellationToken = default);
     }
 }

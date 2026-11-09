@@ -11,9 +11,9 @@ namespace DVLD.Api.Controllers;
 public sealed class DashboardController(IDashboardService service) : ControllerBase
 {
     [HttpGet("statistics")]
-    public async Task<IActionResult> GetStatistics()
+    public async Task<IActionResult> GetStatistics(CancellationToken cancellationToken = default)
     {
-        var result = await service.GetStatisticsAsync();
+        var result = await service.GetStatisticsAsync(cancellationToken);
 
         return Ok(new DashboardResponse
         {

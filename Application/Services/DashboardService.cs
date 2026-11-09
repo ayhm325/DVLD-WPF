@@ -12,6 +12,6 @@ public sealed class DashboardService(
     private readonly IJordanClock _clock =
         clock ?? throw new ArgumentNullException(nameof(clock));
 
-    public Task<DashboardDto> GetStatisticsAsync() =>
-        _repository.GetStatisticsAsync(_clock.Today);
+    public Task<DashboardDto> GetStatisticsAsync(CancellationToken cancellationToken = default) =>
+        _repository.GetStatisticsAsync(_clock.Today, cancellationToken);
 }

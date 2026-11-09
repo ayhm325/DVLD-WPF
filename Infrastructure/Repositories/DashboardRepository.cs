@@ -10,7 +10,7 @@ public sealed class DashboardRepository(DVLDDbContext context)
     private readonly DVLDDbContext _context =
         context ?? throw new ArgumentNullException(nameof(context));
 
-    public async Task<DashboardDto> GetStatisticsAsync(DateOnly jordanToday)
+    public async Task<DashboardDto> GetStatisticsAsync(DateOnly jordanToday, CancellationToken cancellationToken = default)
     {
         var jordanTodayStart = jordanToday.ToDateTime(TimeOnly.MinValue);
 
@@ -26,7 +26,7 @@ public sealed class DashboardRepository(DVLDDbContext context)
                     (SELECT COUNT(*) FROM DetainedLicenses WHERE IsReleased = 0) AS DetainedLicenses,
                     (SELECT COUNT(*) FROM TestAppointments WHERE AppointmentDate >= {jordanTodayStart} AND (Status = 1 OR Status IS NULL) AND IsLocked = 0) AS UpcomingTests
                 """)
-            .SingleAsync();
+            .SingleAsync(cancellationToken);
 
         return new DashboardDto
         {

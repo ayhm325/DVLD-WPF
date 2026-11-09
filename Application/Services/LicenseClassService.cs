@@ -33,11 +33,11 @@ public sealed class LicenseClassService : ILicenseClassService
     }
 
     public async Task<Result<List<LicenseClassDto>>>
-        GetAllLicenseClassesAsync()
+        GetAllLicenseClassesAsync(CancellationToken cancellationToken = default)
     {
         var licenseClasses =
             await _licenseClassRepository
-                .GetAllLicenseClassAsync();
+                .GetAllLicenseClassAsync(cancellationToken);
 
         return Result<List<LicenseClassDto>>.Success(
             licenseClasses
@@ -46,7 +46,7 @@ public sealed class LicenseClassService : ILicenseClassService
     }
 
     public async Task<Result<LicenseClassDto>>
-        GetLicenseClassByIdAsync(int id)
+        GetLicenseClassByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var validation =
             LicenseClassValidator.ValidateId(id);
@@ -59,7 +59,7 @@ public sealed class LicenseClassService : ILicenseClassService
 
         var licenseClass =
             await _licenseClassRepository
-                .GetLicenseClassByIdAsync(id);
+                .GetLicenseClassByIdAsync(id, cancellationToken);
 
         return licenseClass is null
             ? Result<LicenseClassDto>.FromNotFound(
@@ -70,7 +70,8 @@ public sealed class LicenseClassService : ILicenseClassService
 
     public async Task<Result> UpdateLicenseClassAsync(
         int id,
-        LicenseClassDto dto)
+        LicenseClassDto dto,
+        CancellationToken cancellationToken = default)
     {
         var validation =
             LicenseClassValidator.ValidateUpdate(id, dto);
@@ -83,7 +84,7 @@ public sealed class LicenseClassService : ILicenseClassService
 
         var licenseClass =
             await _licenseClassRepository
-                .GetForUpdateAsync(id);
+                .GetForUpdateAsync(id, cancellationToken);
 
         if (licenseClass is null)
         {
@@ -114,7 +115,7 @@ public sealed class LicenseClassService : ILicenseClassService
             return Result.Failure("Unit of work is not configured.");
         }
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0
             ? Result.Success()

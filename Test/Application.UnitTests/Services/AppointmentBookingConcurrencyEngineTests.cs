@@ -1,4 +1,4 @@
-﻿using Application.Validators;
+using Application.Validators;
 using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
@@ -99,7 +99,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var slot = GetFutureJordanSlot(2, 8, 0);
         var service = CreateService();
 
-        _testTypeRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
+        _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
         _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
         _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100)).ReturnsAsync(true);
         _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(1);
@@ -187,7 +187,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var slot = GetFutureJordanSlot(3, 8, 0);
         var service = CreateService();
 
-        _testTypeRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
+        _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
         _workflowService.Setup(x => x.CanScheduleTestAsync(101, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
         _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(101)).ReturnsAsync(true);
         _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(101)).ReturnsAsync(2);
@@ -286,7 +286,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var slotWritten = GetFutureJordanSlot(4, 9, 20);
         var service = CreateService();
 
-        _testTypeRepository.Setup(x => x.GetByIdAsync(2)).ReturnsAsync(new TestType { TestTypeId = 2, TestTypeFees = 20m });
+        _testTypeRepository.Setup(x => x.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 2, TestTypeFees = 20m });
         _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Written)).ReturnsAsync(Result.Success());
         _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100)).ReturnsAsync(true);
         _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(77); // ApplicantPersonID = 77
@@ -313,7 +313,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var slot = GetFutureJordanSlot(5, 10, 0);
         var service = CreateService();
 
-        _testTypeRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
+        _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
         _workflowService.Setup(x => x.CanScheduleTestAsync(200, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
         _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(200)).ReturnsAsync(true);
         _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(200)).ReturnsAsync(77); // Resolves to same person 77
@@ -342,7 +342,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var slot = GetFutureJordanSlot(2, 8, 0);
         var service = CreateService();
 
-        _testTypeRepository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
+        _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
         _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
         _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100)).ReturnsAsync(true);
         _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(5);

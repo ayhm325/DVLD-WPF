@@ -28,7 +28,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestTypeServiceMock.Verify(
-            x => x.GetAllTestTypesAsync(), Times.Never);
+            x => x.GetAllTestTypesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
             TestTypeFees = 10m
         };
 
-        _factory.TestTypeServiceMock.Setup(x => x.GetAllTestTypesAsync())
+        _factory.TestTypeServiceMock.Setup(x => x.GetAllTestTypesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestTypeDto>>.Success([dto]));
 
         var response = await SendAsync(HttpMethod.Get, "/api/TestTypes");
@@ -59,7 +59,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
         Assert.Equal(dto.TestTypeFees, item.TestTypeFees);
 
         _factory.TestTypeServiceMock.Verify(
-            x => x.GetAllTestTypesAsync(), Times.Once);
+            x => x.GetAllTestTypesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -109,7 +109,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
             TestTypeFees = 15m
         };
 
-        _factory.TestTypeServiceMock.Setup(x => x.GetTestTypeByIdAsync(5))
+        _factory.TestTypeServiceMock.Setup(x => x.GetTestTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<TestTypeDto>.Success(dto));
 
         var response = await SendAsync(HttpMethod.Get, "/api/TestTypes/5");
@@ -125,7 +125,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
         Assert.Equal(dto.TestTypeFees, result.TestTypeFees);
 
         _factory.TestTypeServiceMock.Verify(
-            x => x.GetTestTypeByIdAsync(5), Times.Once);
+            x => x.GetTestTypeByIdAsync(5, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -139,7 +139,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
             : Result<TestTypeDto>.FromValidationFailure(detail);
 
         _factory.TestTypeServiceMock
-            .Setup(x => x.GetTestTypeByIdAsync(5))
+            .Setup(x => x.GetTestTypeByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await SendAsync(HttpMethod.Get, "/api/TestTypes/5");
@@ -156,7 +156,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestTypeServiceMock.Verify(
             x => x.UpdateTestTypeAsync(
-                It.IsAny<int>(), It.IsAny<TestTypeDto>()), Times.Never);
+                It.IsAny<int>(), It.IsAny<TestTypeDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         _factory.TestTypeServiceMock.Verify(
             x => x.UpdateTestTypeAsync(
-                It.IsAny<int>(), It.IsAny<TestTypeDto>()), Times.Never);
+                It.IsAny<int>(), It.IsAny<TestTypeDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -179,7 +179,8 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
                     d.TestTypeId == 5 &&
                     d.TestTypeTitle == "Updated Theory Test" &&
                     d.TestTypeDescription == "Updated description" &&
-                    d.TestTypeFees == 20m)))
+                    d.TestTypeFees == 20m),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendUpdateAsync(5, new UpdateTestTypeRequest
@@ -198,7 +199,8 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
                 d.TestTypeId == 5 &&
                 d.TestTypeTitle == "Updated Theory Test" &&
                 d.TestTypeDescription == "Updated description" &&
-                d.TestTypeFees == 20m)), Times.Once);
+                d.TestTypeFees == 20m),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -238,13 +240,13 @@ public sealed class TestTypesControllerTests : IClassFixture<ApiWebApplicationFa
     }
 
     private void SetupGetAll(Result<List<TestTypeDto>> result) =>
-        _factory.TestTypeServiceMock.Setup(x => x.GetAllTestTypesAsync())
+        _factory.TestTypeServiceMock.Setup(x => x.GetAllTestTypesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
     private void SetupUpdate(Result result) =>
         _factory.TestTypeServiceMock.Setup(x =>
                 x.UpdateTestTypeAsync(
-                    It.IsAny<int>(), It.IsAny<TestTypeDto>()))
+                    It.IsAny<int>(), It.IsAny<TestTypeDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
     private static UpdateTestTypeRequest ValidUpdateRequest() => new()

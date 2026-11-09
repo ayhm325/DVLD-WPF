@@ -471,7 +471,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
                 return entity;
             });
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(4))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(4, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 4 }));
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 4))
@@ -499,7 +499,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         _repository.Setup(x => x.GetForUpdateAsync(5))
             .ReturnsAsync(entity);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(4))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(4, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 4 }));
 
         _repository.Setup(x => x.HasDuplicateApplicationAsync(20, 4))
@@ -642,7 +642,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
@@ -675,7 +675,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
@@ -719,7 +719,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
@@ -762,7 +762,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
@@ -804,7 +804,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 3);
@@ -838,7 +838,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(25)).ReturnsAsync(leapDayPerson);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = (byte)minAllowedAge }));
 
         _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
@@ -886,7 +886,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(99))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.FromNotFound("License class not found."));
 
         var result = await CreateService().CreateLocalDrivingLicenseApplicationAsync(20, 99);
@@ -914,7 +914,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
@@ -967,7 +967,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))
@@ -1004,7 +1004,7 @@ public sealed class LocalDrivingLicenseApplicationServiceTests
         };
         _personRepository.Setup(x => x.GetPersonByIdAsync(20)).ReturnsAsync(person);
 
-        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3))
+        _licenseClassService.Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new LicenseClassDto { LicenseClassID = 3, MinAllowedAge = 18 }));
 
         _applicationTypeRepository.Setup(x => x.GetApplicationTypeByIdAsync(1, It.IsAny<CancellationToken>()))

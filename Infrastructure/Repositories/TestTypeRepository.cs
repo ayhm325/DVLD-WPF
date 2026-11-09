@@ -11,24 +11,26 @@ public sealed class TestTypeRepository(DVLDDbContext context)
         context
         ?? throw new ArgumentNullException(nameof(context));
 
-    public Task<List<TestType>> GetAllAsync() =>
+    public Task<List<TestType>> GetAllAsync(CancellationToken cancellationToken = default) =>
         _context.TestTypes
             .AsNoTracking()
             .OrderBy(t => t.TestTypeId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-    public Task<TestType?> GetByIdAsync(int id) =>
+    public Task<TestType?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<TestType?>(null)
             : _context.TestTypes
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    t => t.TestTypeId == id);
+                    t => t.TestTypeId == id,
+                    cancellationToken);
 
-    public Task<TestType?> GetForUpdateAsync(int id) =>
+    public Task<TestType?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<TestType?>(null)
             : _context.TestTypes
                 .FirstOrDefaultAsync(
-                    t => t.TestTypeId == id);
+                    t => t.TestTypeId == id,
+                    cancellationToken);
 }

@@ -26,24 +26,40 @@ public sealed class DashboardServiceTests
     {
         var expected = new DashboardDto();
 
-        _repository.Setup(x => x.GetStatisticsAsync(_clock.Today))
+        _repository.Setup(x => x.GetStatisticsAsync(_clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetStatisticsAsync();
 
         Assert.Same(expected, result);
-        _repository.Verify(x => x.GetStatisticsAsync(_clock.Today), Times.Once);
+        _repository.Verify(x => x.GetStatisticsAsync(_clock.Today, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetStatisticsAsync_WhenRepositoryThrows_PropagatesException()
     {
-        _repository.Setup(x => x.GetStatisticsAsync(_clock.Today))
+        _repository.Setup(x => x.GetStatisticsAsync(_clock.Today, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("dashboard failed"));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => CreateService().GetStatisticsAsync());
 
         Assert.Equal("dashboard failed", ex.Message);
+    }
+
+    [Fact]
+    public async Task GetStatisticsAsync_PassesCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        var token = cts.Token;
+        var expected = new DashboardDto();
+
+        _repository.Setup(x => x.GetStatisticsAsync(_clock.Today, token))
+            .ReturnsAsync(expected);
+
+        var result = await CreateService().GetStatisticsAsync(token);
+
+        Assert.Same(expected, result);
+        _repository.Verify(x => x.GetStatisticsAsync(_clock.Today, token), Times.Once);
     }
 }

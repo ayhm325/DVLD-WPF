@@ -223,7 +223,7 @@ public sealed class TestAppointmentServiceTests
     private void SetupBasicAddFlow()
     {
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -280,7 +280,7 @@ public sealed class TestAppointmentServiceTests
     private void SetupBasicScheduleFlow()
     {
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -827,7 +827,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestType?)null);
 
         var result =
@@ -842,7 +842,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 ValidTestType(
                     TestTypeEnum.Theory,
@@ -1079,7 +1079,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestType?)null);
 
         var result =
@@ -1110,7 +1110,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -1148,7 +1148,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -1186,7 +1186,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -1252,7 +1252,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -1566,7 +1566,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestType?)null);
 
         var result =
@@ -1592,7 +1592,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -1629,7 +1629,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -1671,7 +1671,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -1744,7 +1744,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService
@@ -2339,7 +2339,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _testTypeRepository
-            .Setup(x => x.GetByIdAsync(1))
+            .Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ValidTestType());
 
         _workflowService

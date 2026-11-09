@@ -14,9 +14,9 @@ namespace DVLD.Api.Controllers;
 public sealed class LicenseClassesController(ILicenseClassService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
-        var result = await service.GetAllLicenseClassesAsync();
+        var result = await service.GetAllLicenseClassesAsync(cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
 
         return result.Value is null
@@ -25,9 +25,9 @@ public sealed class LicenseClassesController(ILicenseClassService service) : Con
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetLicenseClassByIdAsync(id);
+        var result = await service.GetLicenseClassByIdAsync(id, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
 
         return result.Value is null
@@ -39,7 +39,8 @@ public sealed class LicenseClassesController(ILicenseClassService service) : Con
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] UpdateLicenseClassRequest request)
+        [FromBody] UpdateLicenseClassRequest request,
+        CancellationToken cancellationToken = default)
     {
         var dto = new LicenseClassDto
         {
@@ -51,7 +52,7 @@ public sealed class LicenseClassesController(ILicenseClassService service) : Con
             LicenseClassFees = request.LicenseClassFees
         };
 
-        var result = await service.UpdateLicenseClassAsync(id, dto);
+        var result = await service.UpdateLicenseClassAsync(id, dto, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

@@ -5,12 +5,14 @@ namespace Application.Interfaces;
 
 public interface ITestTypeService
 {
-    Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync();
+    Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync(CancellationToken cancellationToken = default);
 
     Task<Result<TestTypeDto>> GetTestTypeByIdAsync(
-        int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<Result> UpdateTestTypeAsync(
         int id,
-        TestTypeDto dto);
+        TestTypeDto dto,
+        CancellationToken cancellationToken = default);
 }

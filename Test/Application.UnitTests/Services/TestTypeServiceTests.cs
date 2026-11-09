@@ -53,7 +53,7 @@ public sealed class TestTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateEntity(
@@ -102,7 +102,7 @@ public sealed class TestTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var result =
@@ -139,7 +139,8 @@ public sealed class TestTypeServiceTests
 
         _repository.Verify(
             x => x.GetByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -149,7 +150,7 @@ public sealed class TestTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetByIdAsync(10))
+            .Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestType?)null);
 
         var result =
@@ -170,7 +171,7 @@ public sealed class TestTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetByIdAsync(10))
+            .Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 CreateEntity(
                     10,
@@ -225,7 +226,8 @@ public sealed class TestTypeServiceTests
 
         _repository.Verify(
             x => x.GetForUpdateAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -249,7 +251,8 @@ public sealed class TestTypeServiceTests
 
         _repository.Verify(
             x => x.GetForUpdateAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -394,7 +397,7 @@ public sealed class TestTypeServiceTests
         var title = new string('T', 100);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -426,7 +429,7 @@ public sealed class TestTypeServiceTests
             new string('D', 250);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -455,7 +458,7 @@ public sealed class TestTypeServiceTests
         var entity = CreateEntity();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -486,7 +489,7 @@ public sealed class TestTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestType?)null);
 
         var result =
@@ -525,7 +528,7 @@ public sealed class TestTypeServiceTests
                 20m);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -556,7 +559,7 @@ public sealed class TestTypeServiceTests
             entity.TestTypeFees);
 
         _repository.Verify(
-            x => x.GetForUpdateAsync(10),
+            x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWork.Verify(
@@ -573,7 +576,7 @@ public sealed class TestTypeServiceTests
         var entity = CreateEntity();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -610,7 +613,7 @@ public sealed class TestTypeServiceTests
         var entity = CreateEntity();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -641,7 +644,7 @@ public sealed class TestTypeServiceTests
         var entity = CreateEntity();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -674,7 +677,7 @@ public sealed class TestTypeServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database error"));

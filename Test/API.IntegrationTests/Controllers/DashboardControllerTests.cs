@@ -27,7 +27,7 @@ public sealed class DashboardControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.DashboardServiceMock.Verify(
-            x => x.GetStatisticsAsync(), Times.Never);
+            x => x.GetStatisticsAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class DashboardControllerTests
         Assert.Equal(dto.UpcomingTests, result.UpcomingTests);
 
         _factory.DashboardServiceMock.Verify(
-            x => x.GetStatisticsAsync(), Times.Once);
+            x => x.GetStatisticsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public sealed class DashboardControllerTests
 
     private void SetupStatistics(DashboardDto dto) =>
         _factory.DashboardServiceMock
-            .Setup(x => x.GetStatisticsAsync())
+            .Setup(x => x.GetStatisticsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(dto);
 
     private async Task<DashboardResponse?> GetStatisticsAsync()

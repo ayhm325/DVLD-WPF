@@ -284,7 +284,8 @@ public class LicenseIssuanceServiceTests
         _licenseClassServiceMock.Verify(
             service =>
                 service.GetLicenseClassByIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -318,7 +319,8 @@ public class LicenseIssuanceServiceTests
         _licenseClassServiceMock.Verify(
             service =>
                 service.GetLicenseClassByIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -339,7 +341,8 @@ public class LicenseIssuanceServiceTests
         _licenseClassServiceMock
             .Setup(service =>
                 service.GetLicenseClassByIdAsync(
-                    licenseClassId))
+                    licenseClassId,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseClassDto>.FromNotFound(
                     "License class was not found."));
@@ -378,7 +381,8 @@ public class LicenseIssuanceServiceTests
         _licenseClassServiceMock
             .Setup(service =>
                 service.GetLicenseClassByIdAsync(
-                    licenseClassId))
+                    licenseClassId,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseClassDto>.Success(
                     CreateLicenseClass(
@@ -419,7 +423,8 @@ public class LicenseIssuanceServiceTests
         _licenseClassServiceMock
             .Setup(service =>
                 service.GetLicenseClassByIdAsync(
-                    licenseClassId))
+                    licenseClassId,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseClassDto>.Success(
                     CreateLicenseClass(
@@ -1013,7 +1018,8 @@ public class LicenseIssuanceServiceTests
         _licenseClassServiceMock
             .Setup(service =>
                 service.GetLicenseClassByIdAsync(
-                    licenseClassId))
+                    licenseClassId,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseClassDto>.Success(
                     CreateLicenseClass(

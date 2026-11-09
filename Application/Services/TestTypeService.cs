@@ -17,10 +17,10 @@ public sealed class TestTypeService(
         unitOfWork
         ?? throw new ArgumentNullException(nameof(unitOfWork));
 
-    public async Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync()
+    public async Task<Result<List<TestTypeDto>>> GetAllTestTypesAsync(CancellationToken cancellationToken = default)
     {
         var testTypes =
-            await _repository.GetAllAsync();
+            await _repository.GetAllAsync(cancellationToken);
 
         return Result<List<TestTypeDto>>.Success(
             testTypes
@@ -29,7 +29,8 @@ public sealed class TestTypeService(
     }
 
     public async Task<Result<TestTypeDto>> GetTestTypeByIdAsync(
-        int id)
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var validation =
             TestTypeValidator.ValidateId(id);
@@ -41,7 +42,7 @@ public sealed class TestTypeService(
         }
 
         var testType =
-            await _repository.GetByIdAsync(id);
+            await _repository.GetByIdAsync(id, cancellationToken);
 
         return testType is null
             ? Result<TestTypeDto>.FromNotFound(
@@ -52,7 +53,8 @@ public sealed class TestTypeService(
 
     public async Task<Result> UpdateTestTypeAsync(
         int id,
-        TestTypeDto dto)
+        TestTypeDto dto,
+        CancellationToken cancellationToken = default)
     {
         var validation =
             TestTypeValidator.ValidateUpdate(id, dto);
@@ -64,7 +66,7 @@ public sealed class TestTypeService(
         }
 
         var testType =
-            await _repository.GetForUpdateAsync(id);
+            await _repository.GetForUpdateAsync(id, cancellationToken);
 
         if (testType is null)
         {
@@ -82,7 +84,7 @@ public sealed class TestTypeService(
             dto.TestTypeFees;
 
         var saved =
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0
             ? Result.Success()

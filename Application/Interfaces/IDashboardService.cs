@@ -2,5 +2,5 @@ using Application.DTOs;
 
 public interface IDashboardService
 {
-    Task<DashboardDto> GetStatisticsAsync();
+    Task<DashboardDto> GetStatisticsAsync(CancellationToken cancellationToken = default);
 }

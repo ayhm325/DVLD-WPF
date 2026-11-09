@@ -14,10 +14,10 @@ public sealed class TestTypesController(
     ITestTypeService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetAllTestTypesAsync();
+            await service.GetAllTestTypesAsync(cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -29,10 +29,10 @@ public sealed class TestTypesController(
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetTestTypeByIdAsync(id);
+            await service.GetTestTypeByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -45,7 +45,8 @@ public sealed class TestTypesController(
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] UpdateTestTypeRequest request)
+        [FromBody] UpdateTestTypeRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.UpdateTestTypeAsync(
@@ -59,7 +60,8 @@ public sealed class TestTypesController(
                         request.TestTypeDescription,
                     TestTypeFees =
                         request.TestTypeFees
-                });
+                },
+                cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

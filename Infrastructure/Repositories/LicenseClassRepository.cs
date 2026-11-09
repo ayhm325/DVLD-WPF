@@ -22,11 +22,11 @@ public class LicenseClassRepository : ILicenseClassRepository
     // =========================================================
 
     public async Task<List<LicenseClass>>
-        GetAllLicenseClassAsync()
+        GetAllLicenseClassAsync(CancellationToken cancellationToken = default)
     {
         return await _context.LicenseClasses
             .AsNoTracking()
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     // =========================================================
@@ -35,7 +35,8 @@ public class LicenseClassRepository : ILicenseClassRepository
 
     public async Task<LicenseClass?>
         GetLicenseClassByIdAsync(
-            int id)
+            int id,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return null;
@@ -44,7 +45,8 @@ public class LicenseClassRepository : ILicenseClassRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 x =>
-                    x.LicenseClassID == id);
+                    x.LicenseClassID == id,
+                cancellationToken);
     }
 
     // =========================================================
@@ -53,11 +55,13 @@ public class LicenseClassRepository : ILicenseClassRepository
 
     public Task<LicenseClass?>
         GetForUpdateAsync(
-            int id) =>
+            int id,
+            CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<LicenseClass?>(null)
             : _context.LicenseClasses
                 .FirstOrDefaultAsync(
                     x =>
-                        x.LicenseClassID == id);
+                        x.LicenseClassID == id,
+                    cancellationToken);
 }

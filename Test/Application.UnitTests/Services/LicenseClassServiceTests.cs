@@ -42,7 +42,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllLicenseClassAsync())
+            .Setup(x => x.GetAllLicenseClassAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateEntity(
@@ -98,7 +98,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllLicenseClassAsync())
+            .Setup(x => x.GetAllLicenseClassAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var result =
@@ -115,7 +115,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllLicenseClassAsync())
+            .Setup(x => x.GetAllLicenseClassAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateEntity(30, "C", "C", 21, 5, 30m),
@@ -164,7 +164,8 @@ public sealed class LicenseClassServiceTests
 
         _repository.Verify(
             x => x.GetLicenseClassByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -174,7 +175,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetLicenseClassByIdAsync(10))
+            .Setup(x => x.GetLicenseClassByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((LicenseClass?)null);
 
         var result =
@@ -195,7 +196,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetLicenseClassByIdAsync(10))
+            .Setup(x => x.GetLicenseClassByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 CreateEntity(
                     10,
@@ -246,7 +247,7 @@ public sealed class LicenseClassServiceTests
                 50m);
 
         _repository
-            .Setup(x => x.GetLicenseClassByIdAsync(7))
+            .Setup(x => x.GetLicenseClassByIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         var result =
@@ -290,7 +291,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllLicenseClassAsync())
+            .Setup(x => x.GetAllLicenseClassAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database error"));
@@ -310,7 +311,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetLicenseClassByIdAsync(1))
+            .Setup(x => x.GetLicenseClassByIdAsync(1, It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database error"));
@@ -334,7 +335,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetLicenseClassByIdAsync(1))
+            .Setup(x => x.GetLicenseClassByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 CreateEntity(
                     fees: 0m));
@@ -354,7 +355,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetLicenseClassByIdAsync(1))
+            .Setup(x => x.GetLicenseClassByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 CreateEntity(
                     description: string.Empty));
@@ -386,7 +387,7 @@ public sealed class LicenseClassServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal("Invalid license class ID.", result.Error);
-        _repository.Verify(x => x.GetForUpdateAsync(It.IsAny<int>()), Times.Never);
+        _repository.Verify(x => x.GetForUpdateAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -399,7 +400,7 @@ public sealed class LicenseClassServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal("License class data is required.", result.Error);
-        _repository.Verify(x => x.GetForUpdateAsync(It.IsAny<int>()), Times.Never);
+        _repository.Verify(x => x.GetForUpdateAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -408,7 +409,7 @@ public sealed class LicenseClassServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(99))
+            .Setup(x => x.GetForUpdateAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync((LicenseClass?)null);
 
         var result = await service.UpdateLicenseClassAsync(99, CreateDto(99));
@@ -425,7 +426,7 @@ public sealed class LicenseClassServiceTests
         var entity = CreateEntity();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         var result = await service.UpdateLicenseClassAsync(1, CreateDto(1));
@@ -441,7 +442,7 @@ public sealed class LicenseClassServiceTests
         var entity = CreateEntity();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork
@@ -461,7 +462,7 @@ public sealed class LicenseClassServiceTests
         var entity = CreateEntity();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _unitOfWork

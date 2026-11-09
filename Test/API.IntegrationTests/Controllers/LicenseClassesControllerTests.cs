@@ -20,7 +20,7 @@ public sealed class LicenseClassesControllerTests
         var response = await client.GetAsync("/api/LicenseClasses");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.LicenseClassServiceMock.Verify(x => x.GetAllLicenseClassesAsync(), Times.Never);
+        factory.LicenseClassServiceMock.Verify(x => x.GetAllLicenseClassesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetAllLicenseClassesAsync())
+            .Setup(x => x.GetAllLicenseClassesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseClassDto>>.Success(
             [
                 new()
@@ -83,7 +83,7 @@ public sealed class LicenseClassesControllerTests
             });
 
         factory.LicenseClassServiceMock.Verify(
-            x => x.GetAllLicenseClassesAsync(),
+            x => x.GetAllLicenseClassesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -93,7 +93,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetAllLicenseClassesAsync())
+            .Setup(x => x.GetAllLicenseClassesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseClassDto>>.FromFailure(
                 "Failed to load license classes."));
 
@@ -113,7 +113,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(3))
+            .Setup(x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(new()
             {
                 LicenseClassID = 3,
@@ -141,7 +141,7 @@ public sealed class LicenseClassesControllerTests
         Assert.Equal(25m, result.LicenseClassFees);
 
         factory.LicenseClassServiceMock.Verify(
-            x => x.GetLicenseClassByIdAsync(3),
+            x => x.GetLicenseClassByIdAsync(3, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -169,7 +169,7 @@ public sealed class LicenseClassesControllerTests
             : Result<LicenseClassDto>.FromValidationFailure(detail);
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(id))
+            .Setup(x => x.GetLicenseClassByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory);
@@ -188,7 +188,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(5))
+            .Setup(x => x.GetLicenseClassByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.FromFailure(
                 "Failed to load license class."));
 
@@ -208,7 +208,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(5))
+            .Setup(x => x.GetLicenseClassByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.Success(null!));
 
         using var client = CreateAuthenticatedClient(factory);
@@ -221,7 +221,7 @@ public sealed class LicenseClassesControllerTests
             "The server could not complete the request.");
 
         factory.LicenseClassServiceMock.Verify(
-            x => x.GetLicenseClassByIdAsync(5),
+            x => x.GetLicenseClassByIdAsync(5, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -231,7 +231,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(5))
+            .Setup(x => x.GetLicenseClassByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.FromConflict(
                 "License class conflict."));
 
@@ -251,7 +251,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.GetLicenseClassByIdAsync(5))
+            .Setup(x => x.GetLicenseClassByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseClassDto>.FromForbidden(
                 "Access denied."));
 
@@ -277,7 +277,7 @@ public sealed class LicenseClassesControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.LicenseClassServiceMock.Verify(
-            x => x.UpdateLicenseClassAsync(It.IsAny<int>(), It.IsAny<LicenseClassDto>()),
+            x => x.UpdateLicenseClassAsync(It.IsAny<int>(), It.IsAny<LicenseClassDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -293,7 +293,7 @@ public sealed class LicenseClassesControllerTests
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         factory.LicenseClassServiceMock.Verify(
-            x => x.UpdateLicenseClassAsync(It.IsAny<int>(), It.IsAny<LicenseClassDto>()),
+            x => x.UpdateLicenseClassAsync(It.IsAny<int>(), It.IsAny<LicenseClassDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -311,7 +311,8 @@ public sealed class LicenseClassesControllerTests
                     d.LicenseClassDescription == "Motorcycle up to 125cc" &&
                     d.MinAllowedAge == 18 &&
                     d.DefaultValidityLength == 10 &&
-                    d.LicenseClassFees == 20m)))
+                    d.LicenseClassFees == 20m),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         using var client = CreateAuthenticatedClient(factory, role: "Admin");
@@ -330,7 +331,8 @@ public sealed class LicenseClassesControllerTests
                     d.LicenseClassDescription == "Motorcycle up to 125cc" &&
                     d.MinAllowedAge == 18 &&
                     d.DefaultValidityLength == 10 &&
-                    d.LicenseClassFees == 20m)),
+                    d.LicenseClassFees == 20m),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -340,7 +342,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.UpdateLicenseClassAsync(99, It.IsAny<LicenseClassDto>()))
+            .Setup(x => x.UpdateLicenseClassAsync(99, It.IsAny<LicenseClassDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.NotFound("License class not found."));
 
         using var client = CreateAuthenticatedClient(factory, role: "Admin");
@@ -362,7 +364,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.UpdateLicenseClassAsync(1, It.IsAny<LicenseClassDto>()))
+            .Setup(x => x.UpdateLicenseClassAsync(1, It.IsAny<LicenseClassDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.ValidationFailure("License class name is required."));
 
         using var client = CreateAuthenticatedClient(factory, role: "Admin");
@@ -384,7 +386,7 @@ public sealed class LicenseClassesControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseClassServiceMock
-            .Setup(x => x.UpdateLicenseClassAsync(1, It.IsAny<LicenseClassDto>()))
+            .Setup(x => x.UpdateLicenseClassAsync(1, It.IsAny<LicenseClassDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure("Database write failed."));
 
         using var client = CreateAuthenticatedClient(factory, role: "Admin");
