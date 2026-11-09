@@ -1,9 +1,8 @@
-﻿using Application.DTOs.AuthDTO;
-using Application.DTOs.UserDTO;
+using Application.DTOs.AuthDTO;
 
 namespace Application.Interfaces;
 
 public interface IJwtTokenService
 {
-    JwtTokenResult GenerateToken(UserDto user);
+    JwtTokenResult GenerateToken(JwtTokenRequest request);
 }

@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using Application.Common.Time;
+using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Application.Options;
@@ -46,14 +47,14 @@ public sealed class JwtTokenServiceClockTests
         var clock = new FixedJordanClock(fixedUtc);
         var sut = new JwtTokenService(CreateJwtOptions(expirationMinutes: 60), clock);
 
-        var result = sut.GenerateToken(new UserDto
+        var result = sut.GenerateToken(new JwtTokenRequest
         {
             UserId = 42,
             PersonId = 100,
             UserName = "staff.jordan",
             FullName = "Jordan Staff",
             Role = UserRole.Staff,
-            IsActive = true
+            SecurityStamp = "stamp-clock"
         });
 
         var expectedExpiryUtc = new DateTime(2026, 11, 3, 22, 30, 0, DateTimeKind.Utc);

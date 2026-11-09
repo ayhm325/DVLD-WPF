@@ -35,8 +35,10 @@ export function getUserProfile(accessToken: string): Promise<UserProfileResponse
 export function changePassword(
   accessToken: string,
   request: ChangePasswordRequest,
-): Promise<void> {
-  return apiRequest<void>('/Auth/change-password', accessToken, {
+): Promise<LoginResponse> {
+  // A successful change revokes every session and returns a fresh access token
+  // plus a rotated refresh cookie for the current device.
+  return apiRequest<LoginResponse>('/Auth/change-password', accessToken, {
     method: 'POST',
     body: JSON.stringify(request),
   })

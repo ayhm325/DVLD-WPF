@@ -269,6 +269,19 @@ graph TD
 - **Current Status:** **`Verified`**.
 - **Implementation Authorization:** **AUTHORIZED (explicit REST-01 task) & COMPLETED.**
 
+#### [AUTH-01] Persisted Refresh-Token Sessions, Rotation & Revocation Lifecycle
+- **Finding ID:** `AUTH-01`
+- **Evidence Classification:** `CONFIRMED — REMEDIATED & VERIFIED`
+- **Priority:** `P0 (Security)`
+- **Affected Components:** `Domain/Entities/{User,UserSession}.cs`, `Application/Services/{AuthService,RefreshTokenService,UserService}.cs`, `Application/Interfaces/`, `Infrastructure/Repositories/UserSessionRepository.cs`, `Infrastructure/Configurations/`, `Infrastructure/Migrations/20261109163257_AuthSessions*`, `API/DVLD.Api/{Program.cs,Controllers/AuthController.cs,Security/JwtTokenService.cs}`, `ClientApp/src/{context,services,utils,components}`.
+- **Description:** 240-minute non-revocable bearer tokens, no refresh token, tokens persisted in web storage, and no invalidation on password/role/activation changes.
+- **Technical Remediation Implemented:** 15-minute access tokens with an `sst` security-stamp claim validated per request; SHA-256-hashed opaque refresh tokens in a persisted `UserSessions` family model with a 14-day absolute / 7-day idle lifetime; single-winner rotation via a conditional `UPDATE`; 30-second reuse grace with 409 retry, then family revocation on confirmed reuse; logout, logout-all, password-change, role-change and deactivation revocation; HttpOnly `SameSite=Lax` cookie transport with a CSRF header and credential-scoped CORS; React single-flight refresh, one retry per request, proactive renewal, cross-tab logout synchronization and removal of all token persistence.
+- **Verification Requirements:** Auth unit tests (login/refresh/rotation/reuse/expiry/idle/logout/stamp), service-level concurrency test, API contract tests for cookie attributes/CSRF/401-409 behavior, and full database-free regression.
+- **Evidence:** **945** Application unit tests passed (0 failed), **514** database-free API tests passed (0 failed); frontend lint/build exit 0.
+- **Current Status:** **`Verified`** (database-free scope).
+- **Implementation Authorization:** **AUTHORIZED & COMPLETED.**
+- **Known Limitation:** SQL-backed rotation/concurrency and session persistence were not executed because no safe test database is configured; the migration was generated and reviewed but not applied.
+
 #### [SEC-01] Segregation of Duties Model B Policy Alignment
 - **Finding ID:** `SEC-01`
 - **Evidence Classification:** `APPROVED POLICY RECORD — IMPLEMENTATION NOT AUTHORIZED`

@@ -25,6 +25,7 @@ import {
   Label,
 } from '../ui'
 import { changePassword } from '../../services/authService'
+import { useAuth } from '../../context/useAuth'
 import { cn } from '@/lib/utils'
 
 interface ChangePasswordPageProps {
@@ -42,6 +43,7 @@ export default function ChangePasswordPage({
   accessToken,
   onNavigate,
 }: ChangePasswordPageProps) {
+  const { login } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -111,10 +113,14 @@ export default function ChangePasswordPage({
     setSuccess(false)
 
     try {
-      await changePassword(accessToken, {
+      const refreshedSession = await changePassword(accessToken, {
         currentPassword,
         newPassword,
       })
+
+      // The password change revoked every session. Apply the fresh access token
+      // and rotated refresh cookie issued for this device.
+      login(refreshedSession)
 
       // Sensitive form state cleared on success
       setCurrentPassword('')

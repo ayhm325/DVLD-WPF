@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.Extensions.Options;
 
 namespace Application.Options;
@@ -30,8 +30,8 @@ public sealed class JwtOptionsValidator : IValidateOptions<JwtOptions>
         else if (Encoding.UTF8.GetByteCount(options.SecretKey) < 32)
             errors.Add("JWT SecretKey must be at least 32 bytes long.");
 
-        if (options.ExpirationMinutes <= 0)
-            errors.Add("JWT ExpirationMinutes must be greater than zero.");
+        if (options.ExpirationMinutes is < 5 or > 60)
+            errors.Add("JWT ExpirationMinutes must be between 5 and 60 minutes.");
 
         return errors.Count == 0
             ? ValidateOptionsResult.Success

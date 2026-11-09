@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -29,6 +29,11 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasConversion<int>()
             .HasDefaultValue(UserRole.Staff)
             .IsRequired();
+
+        builder.Property(u => u.SecurityStamp)
+            .HasMaxLength(64)
+            .IsRequired()
+            .HasDefaultValueSql("CONVERT(nvarchar(64), NEWID())");
 
         builder.HasOne(u => u.Person)
             .WithOne()

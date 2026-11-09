@@ -402,3 +402,15 @@ graph TD
 | **`TST-OPS-01`** | Yes (§7.14)| No | No | **NOT AUTHORIZED** (`SEC-PKG-12` / Gate 7) | No documented execution | Unexecuted |
 | **`TEST-01`** | Yes (§4.1) | N/A (Harness) | Semaphore Throttling in Test WebAppFactory | Proposed Mitigation (**Needs Validation**) | 1 SSL timeout observed in Phase 12.1 | Unexecuted |
 | **`TEST-02`** | Yes (Roadmap)| No | No | **DEFERRED / UNAUTHORIZED** (`SEC-05` Modernization) | No documented execution | Unexecuted |
+
+---
+
+## 9. AUTH-01 Authentication Test Standard
+
+Authentication changes must be covered at three levels:
+
+1. **Application unit tests** (database-free): login validation and generic failures; refresh rotation; hash-only persistence; absolute expiry; idle expiry; inactive account; reuse detection; grace-window conflict; revocation; security-stamp validation; logout/logout-all; service-level concurrency with an atomic store.
+2. **API contract tests** (database-free, mocked `IAuthService`): HttpOnly/SameSite/Path cookie attributes; refresh token never present in JSON; CSRF header enforcement; cookie clearing on 401; 409 concurrency retry; logout/logout-all; fresh-session response after password change; ProblemDetails consistency.
+3. **Database-backed integration tests** (only against a verified isolated `DVLD_IntegrationTests_<GUID>` database): actual `UserSessions` persistence, conditional-update single-winner behavior under real SQL concurrency, family revocation across instances, and migration application.
+
+Level 3 must not be reported as passed unless it was actually executed against an isolated database. A service-level concurrency test does **not** prove cross-instance safety; the database conditional `UPDATE` is the authoritative guarantee.

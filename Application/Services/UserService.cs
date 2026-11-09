@@ -4,6 +4,7 @@ using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Application.Mappings;
 using Application.Validators;
+using Domain.Entities;
 using Domain.Enums;
 
 namespace Application.Services;
@@ -12,19 +13,16 @@ public sealed class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserSessionRepository _sessionRepository;
+    private readonly IJordanClock _clock;
     private readonly ICurrentUserService? _currentUserService;
 
     public UserService(
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork)
-        : this(userRepository, unitOfWork, null)
-    {
-    }
-
-    public UserService(
-        IUserRepository userRepository,
         IUnitOfWork unitOfWork,
-        ICurrentUserService? currentUserService)
+        IUserSessionRepository sessionRepository,
+        IJordanClock clock,
+        ICurrentUserService? currentUserService = null)
     {
         _userRepository =
             userRepository
@@ -35,6 +33,16 @@ public sealed class UserService : IUserService
             unitOfWork
             ?? throw new ArgumentNullException(
                 nameof(unitOfWork));
+
+        _sessionRepository =
+            sessionRepository
+            ?? throw new ArgumentNullException(
+                nameof(sessionRepository));
+
+        _clock =
+            clock
+            ?? throw new ArgumentNullException(
+                nameof(clock));
 
         _currentUserService = currentUserService;
     }
@@ -458,6 +466,10 @@ public sealed class UserService : IUserService
             return Result.Success();
         }
 
+        var securityStateChanged =
+            isRoleChange ||
+            user.IsActive != dto.IsActive;
+
         user.UserName =
             username;
 
@@ -469,6 +481,19 @@ public sealed class UserService : IUserService
 
         user.Role =
             targetRole;
+
+        if (securityStateChanged)
+        {
+            // Fail closed: revoke sessions before the change is persisted. A rotated
+            // stamp also invalidates every access token issued with the old state.
+            user.SecurityStamp = Guid.NewGuid().ToString("N");
+
+            await _sessionRepository.RevokeAllForUserAsync(
+                id,
+                _clock.UtcNow,
+                SessionRevocationReasons.SecurityStateChanged,
+                cancellationToken);
+        }
 
         try
         {
@@ -547,6 +572,14 @@ public sealed class UserService : IUserService
         _userRepository
             .DeleteUser(user);
 
+        // The FK cascades, but revoke explicitly first so an in-flight refresh can
+        // never observe an active session during deletion.
+        await _sessionRepository.RevokeAllForUserAsync(
+            id,
+            _clock.UtcNow,
+            SessionRevocationReasons.SecurityStateChanged,
+            cancellationToken);
+
         var saved = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0
@@ -607,6 +640,16 @@ public sealed class UserService : IUserService
             BCrypt.Net.BCrypt
                 .HashPassword(
                     dto.NewPassword);
+
+        user.SecurityStamp = Guid.NewGuid().ToString("N");
+
+        // Every existing refresh token becomes unusable; the controller issues a
+        // fresh session for this device after the password change succeeds.
+        await _sessionRepository.RevokeAllForUserAsync(
+            userId,
+            _clock.UtcNow,
+            SessionRevocationReasons.PasswordChanged,
+            cancellationToken);
 
         var saved =
             await _unitOfWork

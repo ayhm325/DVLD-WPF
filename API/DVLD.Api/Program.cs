@@ -93,39 +93,51 @@ builder.Services
                 IssuerSigningKey = key,
 
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.FromSeconds(30)
             };
 
         options.Events = new JwtBearerEvents
         {
             OnTokenValidated = async context =>
             {
+                var principal = context.Principal;
+
                 var userIdClaim =
-                    context.Principal?
+                    principal?
                         .FindFirst(
                             System.Security.Claims.ClaimTypes.NameIdentifier)?
                         .Value;
 
+                var securityStampClaim =
+                    principal?
+                        .FindFirst("sst")?
+                        .Value;
+
                 if (!int.TryParse(userIdClaim, out var userId) ||
-                    userId <= 0)
+                    userId <= 0 ||
+                    string.IsNullOrWhiteSpace(securityStampClaim))
                 {
                     context.Fail("Invalid user identity.");
                     return;
                 }
 
-                var userService =
+                var authService =
                     context.HttpContext.RequestServices
-                        .GetRequiredService<IUserService>();
+                        .GetRequiredService<IAuthService>();
 
-                var userExistsAndActive =
-                    await userService.IsUserActiveAsync(
+                // Activation state and security stamp are read server-side on every
+                // request. Password, role, or activation changes rotate the stamp,
+                // which invalidates tokens carrying the previous value immediately.
+                var principalIsCurrent =
+                    await authService.IsPrincipalCurrentAsync(
                         userId,
+                        securityStampClaim,
                         context.HttpContext.RequestAborted);
 
-                if (!userExistsAndActive)
+                if (!principalIsCurrent)
                 {
                     context.Fail(
-                        "User account is inactive or no longer exists.");
+                        "User account is inactive or its security state has changed.");
                 }
             }
         };
@@ -161,6 +173,44 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy(
         "LoginRateLimit",
+        httpContext =>
+        {
+            var partitionKey =
+                httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        });
+
+    options.AddPolicy(
+        "RefreshRateLimit",
+        httpContext =>
+        {
+            var partitionKey =
+                httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 30,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        });
+
+    options.AddPolicy(
+        "ChangePasswordRateLimit",
         httpContext =>
         {
             var partitionKey =
@@ -237,6 +287,8 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<ITestRepository, TestRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+builder.Services.AddSingleton<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<ITestTypeRepository, TestTypeRepository>();
 builder.Services.AddScoped<IInternationalRepository, InternationalRepository>();
 
@@ -283,6 +335,19 @@ builder.Services.AddScoped<IInternationalService, InternationalService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+builder.Services.AddOptions<AuthSessionOptions>()
+    .Bind(builder.Configuration.GetSection(AuthSessionOptions.SectionName))
+    .Validate(
+        options =>
+            options.RefreshTokenLifetimeDays is >= 1 and <= 90 &&
+            options.IdleTimeoutDays is >= 1 and <= 30 &&
+            options.IdleTimeoutDays <= options.RefreshTokenLifetimeDays &&
+            options.RotationGraceSeconds is >= 0 and <= 300 &&
+            !string.IsNullOrWhiteSpace(options.RefreshCookieName) &&
+            options.RefreshCookiePath.StartsWith('/'),
+        "AuthSession configuration is invalid: refresh lifetime must be 1-90 days, idle timeout 1-30 days and not greater than the refresh lifetime, rotation grace 0-300 seconds, and the cookie name/path must be configured.")
+    .ValidateOnStart();
 
 builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.AddScoped<
@@ -347,7 +412,10 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            // Required for the HttpOnly refresh-token cookie. The origin is explicit,
+            // so credentials cannot be combined with a wildcard origin.
+            .AllowCredentials();
     });
 });
 

@@ -3,6 +3,7 @@ using Application.Common.Results;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Application.Services;
+using Application.UnitTests.Common;
 using Domain.Entities;
 using Domain.Enums;
 using Moq;
@@ -13,16 +14,22 @@ public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IUserSessionRepository> _sessionRepositoryMock;
+    private readonly FakeJordanClock _clock = FakeJordanClock.FromUtc(
+        new DateTime(2026, 11, 9, 12, 0, 0, DateTimeKind.Utc));
     private readonly UserService _sut;
 
     public UserServiceTests()
     {
         _userRepositoryMock = new Mock<IUserRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _sessionRepositoryMock = new Mock<IUserSessionRepository>();
 
         _sut = new UserService(
             _userRepositoryMock.Object,
-            _unitOfWorkMock.Object);
+            _unitOfWorkMock.Object,
+            _sessionRepositoryMock.Object,
+            _clock);
     }
 
     // =========================================================
@@ -1566,6 +1573,8 @@ public class UserServiceTests
         var service = new UserService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
+            _sessionRepositoryMock.Object,
+            _clock,
             currentUserServiceMock.Object);
 
         var dto = CreateValidUpdateUserDto();
@@ -1644,6 +1653,8 @@ public class UserServiceTests
         var service = new UserService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
+            _sessionRepositoryMock.Object,
+            _clock,
             currentUserServiceMock.Object);
 
         var user = CreateUser(userId, role: UserRole.Admin);
@@ -1723,6 +1734,8 @@ public class UserServiceTests
         var service = new UserService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
+            _sessionRepositoryMock.Object,
+            _clock,
             currentUserServiceMock.Object);
 
         var dto = new CreateUserDto
@@ -1779,6 +1792,8 @@ public class UserServiceTests
         var service = new UserService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
+            _sessionRepositoryMock.Object,
+            _clock,
             currentUserServiceMock.Object);
 
         User? addedUser = null;
@@ -1895,6 +1910,8 @@ public class UserServiceTests
         var service = new UserService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
+            _sessionRepositoryMock.Object,
+            _clock,
             currentUserServiceMock.Object);
 
         var user = CreateUser(userId, personId: 43, userName: "self_admin", role: UserRole.Admin);
@@ -1968,6 +1985,8 @@ public class UserServiceTests
         var service = new UserService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
+            _sessionRepositoryMock.Object,
+            _clock,
             currentUserServiceMock.Object);
 
         var dto = new UpdateUserDto { PersonId = 15, UserName = "staff_self", IsActive = true, Role = UserRole.Admin };

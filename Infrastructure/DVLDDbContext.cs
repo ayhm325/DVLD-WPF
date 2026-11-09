@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
@@ -29,6 +29,13 @@ public class DVLDDbContext : DbContext
     // =========================================================
 
     public DbSet<User> Users { get; set; } = null!;
+
+
+    // =========================================================
+    // USER SESSIONS (REFRESH TOKENS)
+    // =========================================================
+
+    public DbSet<UserSession> UserSessions { get; set; } = null!;
 
 
     // =========================================================

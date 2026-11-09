@@ -178,3 +178,18 @@ The DVLD platform security governance maintains complete traceability between th
 > - Identifier **`RSK-08`** is exclusively assigned to **Multi-Factor Authentication (MFA) for Administrative Roles** (`DEC-AUTH-03`).
 > - Identifier **`RSK-11`** governs citizen PII and photograph/biometric exposure. Production Approval Gate 8 requires formal legal and regulatory review regarding data privacy and statutory compliance under the Jordan Personal Data Protection Law (Law No. 24 of 2023). Engineering data minimization and masking practices are distinguished from confirmed statutory obligations, and legal verification remains an outstanding project item.
 > - There is zero duplication across active or historical risk registers.
+
+---
+
+## 12. AUTH-01 Session Management Standard
+
+1. **Access tokens:** 15-minute HS256 JWT with `sub`, `name`, `role`, `FullName`, `PersonId`, `sst` (security stamp), and `jti`. No secrets or sensitive personal data in claims.
+2. **Refresh tokens:** 256-bit CSPRNG values delivered only in an `HttpOnly`, `SameSite=Lax`, `Secure`-when-HTTPS cookie scoped to `/api/auth`. Only the Base64Url SHA-256 hash is stored (`UserSessions.RefreshTokenHash`, unique index).
+3. **Session model:** one row per issued refresh generation; `TokenFamilyId` groups a login and `ReplacedBySessionId` records rotation. Absolute lifetime 14 days (never extended); idle lifetime 7 days.
+4. **Rotation:** every refresh consumes the current generation through one conditional `UPDATE ... WHERE RevokedAtUtc IS NULL AND ExpiresAtUtc > now`. Exactly one concurrent caller may win; losers receive 409 and retry once.
+5. **Reuse detection:** a consumed token presented after a 30-second grace window revokes the whole family and returns a generic 401. Inside the grace window with a still-active family it returns 409 without revocation (multi-tab tolerance).
+6. **Immediate invalidation:** `User.SecurityStamp` rotates on password change, role change, and activation change. `OnTokenValidated` compares the `sst` claim with the persisted stamp on every request.
+7. **Revocation triggers:** logout (current session), logout-all (all user sessions), password change (all + fresh session for the current device), role/activation change (all + stamp rotation), deletion (all).
+8. **CSRF:** `SameSite=Lax` cookie + explicit credential-enabled CORS origin + mandatory `X-CSRF-Protection: 1` header on refresh/logout. Refresh and logout are anonymous because the cookie is the credential; the access token is not required.
+9. **Client storage:** access tokens are held in memory only. Refresh tokens are never readable by JavaScript and never stored in `localStorage`/`sessionStorage`. Legacy token keys are purged at startup.
+10. **Logging:** raw refresh tokens, JWTs, passwords, and signing keys must never be logged. Security events log user id and token-family id only.

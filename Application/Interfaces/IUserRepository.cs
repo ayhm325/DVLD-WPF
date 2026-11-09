@@ -1,3 +1,4 @@
+using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Domain.Entities;
 
@@ -46,6 +47,14 @@ public interface IUserRepository
         CancellationToken cancellationToken = default);
 
     Task<bool> IsUserActiveAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads the user's activation state and current security stamp. Used on every
+    /// authenticated request to reject tokens issued before a security change.
+    /// </summary>
+    Task<UserSecurityState?> GetSecurityStateAsync(
         int userId,
         CancellationToken cancellationToken = default);
 

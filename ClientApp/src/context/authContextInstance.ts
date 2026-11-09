@@ -9,6 +9,7 @@ export type AuthContextValue = {
   authMessage: string | null
   login: (response: LoginResponse) => void
   logout: (reason?: string) => void
+  logoutAll: () => void
   clearAuthMessage: () => void
   updateUser: (updatedUser: Partial<AuthUser>) => void
 }

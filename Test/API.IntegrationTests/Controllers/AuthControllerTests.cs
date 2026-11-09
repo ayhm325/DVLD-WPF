@@ -312,7 +312,7 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
-    public async Task ChangePassword_WhenServiceSucceeds_ReturnsNoContent()
+    public async Task ChangePassword_WhenServiceSucceeds_ReturnsFreshSession()
     {
         await using var factory = new ApiWebApplicationFactory();
         SetupCurrentUser(factory, 10);
@@ -323,6 +323,21 @@ public sealed class AuthControllerTests
                 It.IsAny<ChangePasswordDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
+        factory.AuthServiceMock
+            .Setup(x => x.StartSessionAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<LoginResponseDto>.Success(new LoginResponseDto
+            {
+                AccessToken = "fresh-access-token",
+                ExpiresAtUtc = DateTime.UtcNow.AddMinutes(15),
+                UserId = 10,
+                UserName = "testuser",
+                PersonId = 20,
+                FullName = "Test User",
+                Role = UserRole.Staff,
+                RefreshToken = "fresh-refresh-token",
+                RefreshTokenExpiresAtUtc = DateTime.UtcNow.AddDays(14)
+            }));
+
         var response = await Authenticated(factory, 10).PostAsJsonAsync(
             "/api/Auth/change-password",
             new
@@ -331,7 +346,13 @@ public sealed class AuthControllerTests
                 NewPassword = "NewPassword123"
             });
 
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content
+            .ReadFromJsonAsync<DVLD.Contracts.Auth.LoginResponse>();
+
+        Assert.NotNull(body);
+        Assert.Equal("fresh-access-token", body.AccessToken);
 
         factory.UserServiceMock.Verify(
             x => x.ChangePasswordAsync(
@@ -434,8 +455,9 @@ public sealed class AuthControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock
-            .Setup(x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()))
+        factory.AuthServiceMock
+            .Setup(x => x.IsPrincipalCurrentAsync(
+                10, "stamp-jwt", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         SetupCurrentUser(factory, 10, "jwtuser", "Jwt User", UserRole.Staff);
@@ -458,14 +480,14 @@ public sealed class AuthControllerTests
         var jwtTokenService =
             scope.ServiceProvider.GetRequiredService<Application.Interfaces.IJwtTokenService>();
 
-        var tokenResult = jwtTokenService.GenerateToken(new UserDto
+        var tokenResult = jwtTokenService.GenerateToken(new JwtTokenRequest
         {
             UserId = 10,
             PersonId = 20,
             UserName = "jwtuser",
             FullName = "Jwt User",
-            IsActive = true,
-            Role = UserRole.Staff
+            Role = UserRole.Staff,
+            SecurityStamp = "stamp-jwt"
         });
 
         var client = jwtFactory.CreateClient();
@@ -475,8 +497,9 @@ public sealed class AuthControllerTests
         var response = await client.GetAsync("/api/Auth/me");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        factory.UserServiceMock.Verify(
-            x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()),
+        factory.AuthServiceMock.Verify(
+            x => x.IsPrincipalCurrentAsync(
+                10, "stamp-jwt", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -485,8 +508,9 @@ public sealed class AuthControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock
-            .Setup(x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()))
+        factory.AuthServiceMock
+            .Setup(x => x.IsPrincipalCurrentAsync(
+                10, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         await using var jwtFactory = factory.WithWebHostBuilder(builder =>
@@ -507,14 +531,14 @@ public sealed class AuthControllerTests
         var jwtTokenService =
             scope.ServiceProvider.GetRequiredService<Application.Interfaces.IJwtTokenService>();
 
-        var tokenResult = jwtTokenService.GenerateToken(new UserDto
+        var tokenResult = jwtTokenService.GenerateToken(new JwtTokenRequest
         {
             UserId = 10,
             PersonId = 20,
             UserName = "inactiveuser",
             FullName = "Inactive User",
-            IsActive = true,
-            Role = UserRole.Staff
+            Role = UserRole.Staff,
+            SecurityStamp = "stamp-inactive"
         });
 
         var client = jwtFactory.CreateClient();
@@ -524,8 +548,9 @@ public sealed class AuthControllerTests
         var response = await client.GetAsync("/api/Auth/me");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.UserServiceMock.Verify(
-            x => x.IsUserActiveAsync(10, It.IsAny<CancellationToken>()),
+        factory.AuthServiceMock.Verify(
+            x => x.IsPrincipalCurrentAsync(
+                10, It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

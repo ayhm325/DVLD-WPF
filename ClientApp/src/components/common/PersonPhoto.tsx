@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { User } from 'lucide-react'
 import { getPersonPhotoBlob } from '../../services/peopleService'
+import { getAccessToken } from '../../utils/authTokenStore'
 import { cn } from '@/lib/utils'
 
 export type PersonPhotoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
@@ -55,21 +56,8 @@ export default function PersonPhoto({
     error: false,
   })
 
-  // Use token from props, localStorage, or sessionStorage (AuthSession)
-  const token =
-    accessToken ??
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('access_token') ||
-        localStorage.getItem('dvld_token') ||
-        (() => {
-          try {
-            const raw = sessionStorage.getItem('dvld_auth_session')
-            return raw ? (JSON.parse(raw) as { accessToken?: string }).accessToken ?? null : null
-          } catch {
-            return null
-          }
-        })()
-      : null)
+  // Access tokens are held in memory only; never read them from web storage.
+  const token = accessToken ?? getAccessToken()
 
   const shouldFetch = Boolean(token && personId && hasPhoto !== false && !localPreviewUrl)
   const isLoadedForCurrent =

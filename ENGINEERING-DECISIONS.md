@@ -56,6 +56,7 @@ To maintain strict historical and semantic integrity, the decision accounting is
 | **`ADR-P02`** | Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`) | **ACCEPTED** | API Lead | `REST-01`, Phase 12.3 | Implemented / Active |
 | **`ADR-P03`** | Deletion of Orphaned Direct Completion Endpoint (`INT-01`) | **ACCEPTED** | Software Architect | `INT-01`, Phase 12.2 | Implemented / Active |
 | **`ADR-P04`** | Test-Host Database Isolation & Removal of the Startup Expiration Sweep (`TEST-03`) | **ACCEPTED** | System Architect | `TEST-03`, Test Infrastructure | Implemented / Active |
+| **`ADR-006`** | Persisted Refresh-Token Sessions with Rotation, Reuse Detection & Security Stamps (`AUTH-01`) | **ACCEPTED** | Security Architect | `AUTH-01`, `DVLD.Api`, `ClientApp` | Implemented / Active |
 | **`ADR-R01`** | Rejection of `Task.Run` for In-Process CPU Work (`PERF-03`) | **REJECTED** | Application Architect | `Application Services` | Rejected / Inactive |
 | **`ADR-R02`** | Rejection of Multi-Tenant IDOR Claim on Citizen Photos (`SEC-02`) | **REJECTED** | Security Lead | `SEC-02`, `PeopleController` | Rejected / Inactive |
 | **`ADR-R03`** | Rejection of Pagination on Tiny Static Reference Tables (`API-02`) | **REJECTED** | API Lead | `API-02`, Reference Data | Rejected / Inactive |
@@ -211,6 +212,22 @@ flowchart LR
   2. Add `Infrastructure.Configuration.SqlServerConnectionSafety`, a connection-free validator. When a host is a test host (environment `Testing` or `DVLD_TEST_HOST=1`), it rejects `DVLD`, `DVLDf`, and any catalog that is not `DVLD_IntegrationTests_(Api_)?<GUID>` before any `DbContext` is used.
   3. `ApiWebApplicationFactory` now pins an isolated, non-existent test catalog, injects a test-only JWT signing key, and installs a `DbConnectionInterceptor` that records connection attempts so "no database access" is asserted, not assumed.
 - **Consequences:** Test hosts cannot reach the protected database. A misconfigured test host fails fast at startup with a diagnostic that names the rejected catalog but never echoes the connection string. Production and development hosts keep their legitimate configured target.
+
+### ADR-006: Persisted Refresh-Token Sessions with Rotation, Reuse Detection & Security Stamps (`AUTH-01`)
+- **Status:** `ACCEPTED` (Implemented & Verified — 2026-11-09)
+- **Context:** The API issued a single 240-minute HS256 bearer token. There was no refresh token, no server-side revocation, and no invalidation on password change, role change, or deactivation beyond a per-request `IsActive` check. The SPA persisted the access token in `sessionStorage` (and read legacy `localStorage` keys). A stolen token remained valid for four hours and could not be revoked.
+- **Decision:**
+  1. The access token is a 15-minute HS256 JWT carrying `sub`, `name`, `role`, `FullName`, `PersonId`, `sst` (security stamp), and `jti`.
+  2. Refresh tokens are 256-bit opaque values delivered only in an `HttpOnly`, `SameSite=Lax`, `Secure`-when-HTTPS cookie scoped to `/api/auth`. Only their SHA-256 hash is persisted.
+  3. A `UserSessions` row represents one issued refresh generation. `TokenFamilyId` groups a login; `ReplacedBySessionId` records the rotation chain. Absolute expiry is 14 days and is never extended; idle expiry is 7 days.
+  4. Every refresh consumes the current row through one conditional `UPDATE ... WHERE RevokedAtUtc IS NULL AND ExpiresAtUtc > now`; the database row lock guarantees exactly one winner across instances. A loser receives 409 and retries.
+  5. Presenting a consumed token after a 30-second grace window revokes the entire family (theft response) and returns a generic 401. Inside the window, a still-active family returns 409 without revocation (legitimate multi-tab race).
+  6. `User.SecurityStamp` is rotated on password change, role change, and activation change. `OnTokenValidated` compares the `sst` claim with the persisted stamp, so authorization changes take effect immediately.
+  7. Logout revokes the current session; logout-all revokes every active session; password change revokes all sessions and issues a fresh session for the current device.
+  8. CSRF is mitigated by `SameSite=Lax`, an explicit credential-enabled CORS origin, and a mandatory `X-CSRF-Protection: 1` header on cookie-authenticated endpoints.
+- **Consequences:** Stolen access tokens expire in 15 minutes; refresh tokens are unusable if the database is leaked; sensitive user changes revoke access immediately; the SPA holds no tokens in web storage. Rotation/concurrency guarantees depend on SQL Server conditional-update semantics, which were not exercised against a database in this environment.
+
+---
 
 ---
 

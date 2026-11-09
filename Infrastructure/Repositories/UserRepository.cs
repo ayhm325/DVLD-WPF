@@ -1,3 +1,4 @@
+using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Domain.Entities;
@@ -172,6 +173,24 @@ public sealed class UserRepository : IUserRepository
             .AnyAsync(
                 u => u.UserId == userId && u.IsActive,
                 cancellationToken);
+    }
+
+    public Task<UserSecurityState?> GetSecurityStateAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId <= 0)
+            return Task.FromResult<UserSecurityState?>(null);
+
+        return _context.Users
+            .AsNoTracking()
+            .Where(u => u.UserId == userId)
+            .Select(u => new UserSecurityState
+            {
+                IsActive = u.IsActive,
+                SecurityStamp = u.SecurityStamp
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public Task<int> GetActiveAdminCountAsync(

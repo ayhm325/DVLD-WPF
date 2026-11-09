@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — Tasks `API-01` and `REST-01` Verified; `TEST-03` completed (Zero Database Modifications)
+> **Current Tracking Status:** ACTIVE — Tasks `API-01`, `REST-01` and `AUTH-01` Verified; `TEST-03` completed (Zero Database Modifications)
 
 ---
 
@@ -787,6 +787,26 @@ flowchart TD
   - Defensive application-service "authenticated user required" guards still return 403; unreachable through HTTP because every controller uses `[Authorize]`.
   - `SqlServerApiWebApplicationFactory` was not modified because it contains uncommitted user work; it remains protected by generated isolated catalogs and ownership-verified cleanup.
 - **Current Task Status:** `TEST-03` **Verified**; `REST-01` **Verified**.
+
+### Session 14: Task AUTH-01 — Persisted Refresh-Token Sessions, Rotation & Revocation Lifecycle
+- **Date & Timestamp:** 2026-11-09 19:50:00 +03:00
+- **Session Goals:** Replace the single 240-minute bearer token with a persisted refresh-token session model: hash-only storage, rotation, reuse detection, cross-instance concurrency safety, immediate invalidation on security changes, HttpOnly cookie transport, and a single-flight React refresh flow.
+- **Baseline Verification:** `HEAD` was `ba22f65` with a clean working tree; all changes are AUTH-01 scoped. WPF untouched; `DVLDf` never accessed.
+- **Completed Work:**
+  1. **Phase A audit:** verified 240-minute token, no refresh/revocation, web-storage persistence, role staleness, and same-site cross-origin topology. Findings recorded in `docs/audits/auth-01-session-management.md`.
+  2. **Phase B:** added `UserSession` + `User.SecurityStamp`; EF configuration, indexes, repository, `RefreshTokenService` (256-bit CSPRNG + SHA-256 hash), `AuthSessionOptions` with startup validation, and migration `20261109163257_AuthSessions` (generated, not applied).
+  3. **Phase C:** `AuthService.LoginAsync` creates a family and stores only the hash; `RefreshAsync` validates format/hash/user/revocation/absolute/idle state, atomically consumes the generation via a conditional `UPDATE`, and inserts the next generation in one transaction. A 30-second grace window returns 409 for legitimate concurrent refreshes; confirmed reuse revokes the family.
+  4. **Phase D:** logout, logout-all, password change (revoke all + fresh session), role/activation change (stamp rotation + revoke all), deletion revocation; `OnTokenValidated` validates `sst` against the persisted security stamp.
+  5. **Phase E:** HttpOnly `SameSite=Lax` refresh cookie, CSRF header, credential-enabled CORS, refresh/change-password rate limits; React in-memory token store, single-flight refresh, one retry per request, proactive renewal, BroadcastChannel logout sync, legacy storage purge, startup restoration via the cookie.
+  6. **Phase F/G:** rewrote auth unit tests (including a service-level concurrency race), added API contract tests for cookies/CSRF/rotation/409, updated `UserService` tests, and documented all decisions and limitations.
+- **Verification Evidence:**
+  - `Application.UnitTests`: **945 passed, 0 failed, 0 skipped**.
+  - `API.IntegrationTests` database-free filter: **514 passed, 0 failed, 0 skipped**.
+  - Auth focus: 23 unit (incl. concurrency) and 31 API contract tests passed.
+  - Frontend `npm run lint` and `npm run build`: exit 0.
+- **Not Executed:** SQL-backed persistence, rotation and cross-instance concurrency tests (no `DVLD_TEST_CONNECTION`; fixtures fail fast). The migration was generated and reviewed but not applied to any database.
+- **Residual Risks:** reuse grace window trade-off; one DB read per authenticated request for the security stamp; production must be same-site (or configure `SameSite=None; Secure`); no session-listing endpoints (deliberate).
+- **Current Task Status:** `AUTH-01` **Verified for the database-free scope**; SQL-backed verification remains outstanding.
 
 ---
 
