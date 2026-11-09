@@ -414,3 +414,5 @@ Authentication changes must be covered at three levels:
 3. **Database-backed integration tests** (only against a verified isolated `DVLD_IntegrationTests_<GUID>` database): actual `UserSessions` persistence, conditional-update single-winner behavior under real SQL concurrency, family revocation across instances, and migration application.
 
 Level 3 must not be reported as passed unless it was actually executed against an isolated database. A service-level concurrency test does **not** prove cross-instance safety; the database conditional `UPDATE` is the authoritative guarantee.
+
+**AUTH-01-POST evidence:** `Test/Infrastructure.IntegrationTests/Auth/AuthSessionSqlVerificationTests.cs` and `AuthSessionRefreshSqlConcurrencyTests.cs` execute against the ownership-verified ephemeral database (12 tests). Cross-process concurrency remains an explicit gap and must be tested with two independent API processes before claiming full session-concurrency verification.

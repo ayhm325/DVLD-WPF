@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — Tasks `API-01`, `REST-01` and `AUTH-01` Verified; `TEST-03` completed (Zero Database Modifications)
+> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01` and `AUTH-01` Verified (AUTH-01 SQL persistence verified; cross-process concurrency outstanding)
 
 ---
 
@@ -807,6 +807,22 @@ flowchart TD
 - **Not Executed:** SQL-backed persistence, rotation and cross-instance concurrency tests (no `DVLD_TEST_CONNECTION`; fixtures fail fast). The migration was generated and reviewed but not applied to any database.
 - **Residual Risks:** reuse grace window trade-off; one DB read per authenticated request for the security stamp; production must be same-site (or configure `SameSite=None; Secure`); no session-listing endpoints (deliberate).
 - **Current Task Status:** `AUTH-01` **Verified for the database-free scope**; SQL-backed verification remains outstanding.
+
+### Session 15: Task AUTH-01-POST — SQL Persistence, Rotation & Reuse Verification
+- **Date & Timestamp:** 2026-11-09 20:05:00 +03:00
+- **Session Goals:** Close the AUTH-01 SQL verification gap without changing the implemented architecture.
+- **Baseline:** `HEAD` = `92028f3` (AUTH-01), clean working tree; no production source changes required.
+- **Environment:** isolated LocalDB instance identity verified from `master`; **0** databases named `DVLD`/`DVLDf` existed on the instance. All test databases were generated `DVLD_IntegrationTests_<GUID>` names and were created/dropped by the ownership-verified fixture.
+- **Completed Work:**
+  1. Reviewed the committed AUTH-01 implementation and the `AuthSessions` migration against source.
+  2. Added `AuthSessionSqlVerificationTests` (10 tests): schema/default/index/FK verification, hash-only round-trip, duplicate-hash rejection, atomic consume across two contexts, rotation chain/absolute expiry, family revocation, per-user revocation, logout-by-hash, cascade delete, security-stamp rotation, and rollback on failed replacement insert.
+  3. Added `AuthSessionRefreshSqlConcurrencyTests` (2 tests): two independent `AuthService` instances with separate DbContexts/UnitOfWork rotating the same token — exactly one success and one 409, one active generation, two-row family; post-grace replay revokes the family and kills the replacement.
+  4. Verified cleanup: zero `DVLD_IntegrationTests_%` databases remained.
+  5. Re-ran database-free regression: 945 unit and 514 API tests passed.
+- **Not Verified:** cross-process/two-API-instance concurrency (single test process); grace-window timing against a real clock; full `Infrastructure.IntegrationTests` suite; HTTP-host-level refresh.
+- **Defects:** none in production code; three test expectations were corrected during authoring (default-constraint name, hash length, family audit reason).
+- **Documentation:** `docs/audits/auth-01-post-sql-verification.md`, AUTH-01 audit addendum, roadmap status, this log.
+- **Current Task Status:** AUTH-01-POST **complete for the executable scope**; cross-process concurrency explicitly outstanding.
 
 ---
 

@@ -126,9 +126,11 @@ Refresh tokens are never present in JSON. Errors remain RFC 7807 `ProblemDetails
 **Residual:**
 - 30 s reuse grace permits a stolen consumed token to be retried without family revocation inside the window (it still yields no tokens; the legitimate winner remains active). Documented trade-off for multi-tab correctness.
 - Security stamp is checked with one DB read per request (existing pattern; performance consideration).
-- SQL-backed rotation/concurrency was **not executed** in this environment; the cross-instance guarantee rests on the single conditional `UPDATE` and was not empirically verified here.
+- Cross-process concurrency is **not yet verified**; SQL verification (see addendum) proves single-winner behavior across independent contexts and transactions, not separate OS processes.
 - No session-listing UI/endpoint (deliberate scope decision).
 - Production deployment must serve API+SPA from the same site (or configure `SameSite=None; Secure`) for the refresh cookie.
+
+> **Addendum (AUTH-01-POST):** SQL persistence, schema, rotation, atomic consume, reuse-after-grace, revocation and rollback were subsequently verified against an isolated LocalDB test database. See [`auth-01-post-sql-verification.md`](./auth-01-post-sql-verification.md). Cross-process concurrency remains unverified.
 
 ---
 
@@ -143,7 +145,7 @@ Refresh tokens are never present in JSON. Errors remain RFC 7807 `ProblemDetails
 | Frontend `npm run lint` | exit 0 |
 | Frontend `npm run build` | exit 0 |
 
-Not executed: all SQL-backed API workflow suites and `Infrastructure.IntegrationTests` (no `DVLD_TEST_CONNECTION`; fixtures fail fast). Concurrency is proven at service level with an atomic in-memory store; database-level atomicity is by construction, not empirically tested here.
+Not executed in the AUTH-01 pass: all SQL-backed API workflow suites and `Infrastructure.IntegrationTests`. **Subsequently executed under AUTH-01-POST:** migration application, SQL persistence, atomic rotation, reuse-after-grace, revocation and rollback against an isolated LocalDB database — 12 tests passed. Cross-process concurrency remains unverified. See [`auth-01-post-sql-verification.md`](./auth-01-post-sql-verification.md).
 
 ---
 
