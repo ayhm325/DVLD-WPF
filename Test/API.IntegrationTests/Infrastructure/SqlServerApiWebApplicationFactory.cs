@@ -76,17 +76,83 @@ public sealed class SqlServerApiWebApplicationFactory
 
     public override async ValueTask DisposeAsync()
     {
-        await base.DisposeAsync();
-        await DropDatabaseAsync();
+        Exception? disposalException = null;
+
+        try
+        {
+            await base.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            disposalException = ex;
+        }
+
+        try
+        {
+            await DropDatabaseAsync();
+        }
+        catch (Exception cleanupException)
+        {
+            if (disposalException is not null)
+            {
+                SqlServerTestEnvironment.ReportCleanupFailureSafely(
+                    "API test database cleanup failed during disposal. Primary exception type={0}; cleanup exception type={1}.",
+                    disposalException,
+                    cleanupException);
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        if (disposalException is not null)
+        {
+            ExceptionDispatchInfo.Capture(disposalException).Throw();
+        }
     }
 
     protected override void Dispose(bool disposing)
     {
-        base.Dispose(disposing);
+        if (!disposing)
+        {
+            base.Dispose(false);
+            return;
+        }
 
-        if (disposing)
+        Exception? disposalException = null;
+
+        try
+        {
+            base.Dispose(true);
+        }
+        catch (Exception ex)
+        {
+            disposalException = ex;
+        }
+
+        try
         {
             DropDatabase();
+        }
+        catch (Exception cleanupException)
+        {
+            if (disposalException is not null)
+            {
+                SqlServerTestEnvironment.ReportCleanupFailureSafely(
+                    "API test database cleanup failed during synchronous disposal. Primary exception type={0}; cleanup exception type={1}.",
+                    disposalException,
+                    cleanupException);
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        if (disposalException is not null)
+        {
+            ExceptionDispatchInfo.Capture(disposalException).Throw();
         }
     }
 
@@ -120,12 +186,24 @@ public sealed class SqlServerApiWebApplicationFactory
             .Options;
 
         DatabaseLifecycleLock.Wait();
+
+        Exception? migrationException = null;
+
         try
         {
             using var context = new DVLDDbContext(options);
             context.Database.Migrate();
         }
-        catch (Exception migrationException)
+        catch (Exception ex)
+        {
+            migrationException = ex;
+        }
+        finally
+        {
+            DatabaseLifecycleLock.Release();
+        }
+
+        if (migrationException is not null)
         {
             try
             {
@@ -140,11 +218,6 @@ public sealed class SqlServerApiWebApplicationFactory
             }
 
             ExceptionDispatchInfo.Capture(migrationException).Throw();
-            throw;
-        }
-        finally
-        {
-            DatabaseLifecycleLock.Release();
         }
     }
 

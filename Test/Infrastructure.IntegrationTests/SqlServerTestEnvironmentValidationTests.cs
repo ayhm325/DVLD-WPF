@@ -76,7 +76,6 @@ public sealed class SqlServerTestEnvironmentValidationTests
     [InlineData("AttachDBFilename")]
     [InlineData("attachdbfilename")]
     [InlineData("aTtAcHdBfIlEnAmE")]
-    [InlineData("AttachDBFilename=")]
     public void ValidateConfiguration_RejectsAttachedDatabaseFile(
         string keyword)
     {

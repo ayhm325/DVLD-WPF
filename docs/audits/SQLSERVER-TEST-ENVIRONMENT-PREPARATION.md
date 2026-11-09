@@ -201,3 +201,79 @@ Regression coverage now includes a normal SQL Server connection string without t
 - The earlier 21-test/16-pass/5-fail output remains the only prior summary provided. No new pass/fail summary is available.
 
 No database connection, integration test, migration, or lifecycle operation was attempted. SQL Server reachability remains a separate unresolved blocker. `DVLD` was not modified, `DVLDf` was not accessed, and no firewall, permission, commit, or push action occurred.
+
+## Least-privilege integration-test provisioning review (2026-11-09)
+
+### Scope and evidence boundary
+
+This is a read-only code review. The supplied instance identity (`Ayhm|MSSQLSERVER`) and test login (`AYHM\DVLD_TestRunner`) permissions are user-provided context; they were not independently verified because this review made no SQL connection. `DVLDf` was not accessed. No test or database lifecycle operation was run.
+
+### Current fixture lifecycle
+
+| Area | Infrastructure integration tests | API integration tests |
+|---|---|---|
+| Configuration and target | `SqlServerTestDatabase.InitializeAsync` reads only `DVLD_TEST_CONNECTION` and `DVLD_TEST_EXPECTED_INSTANCE`; shared validation normalizes the admin connection to `master`. | `SqlServerApiWebApplicationFactory` constructor calls `InitializeDatabase`, using the same shared validation. |
+| Create | Generates `DVLD_IntegrationTests_<GUID>` and calls `SqlServerTestEnvironment.CreateDatabaseAsync` from `master`; the helper verifies instance/name nonexistence, creates the DB, records database ID and service-broker GUID, then adds a random run marker. | Same flow with `DVLD_IntegrationTests_Api_<GUID>`. |
+| Migrate | Builds an EF `DVLDDbContext` against that generated database and calls `Database.MigrateAsync()`. A migration failure attempts owned-database cleanup while preserving the migration exception. | Builds the test context and calls `Database.Migrate()`; a static in-process `SemaphoreSlim(2,2)` limits concurrent API lifecycle work in this process. A migration failure invokes cleanup. |
+| Seed/use | Test classes compose `SqlServerTestDatabase` through class fixtures and create contexts. Seed rows are generally inserted by test setup/helpers with EF `Add`/`AddRange` and `SaveChanges`; the fixture itself does not populate a common baseline seed. | SQL-backed workflow tests instantiate the factory and seed scenario data through created contexts and `SaveChanges`. The separate `ApiWebApplicationFactory` used by mocked controller tests replaces services and does not use SQL. |
+| Drop | `DisposeAsync` calls `DropOwnedDatabaseAsync` with the lease. Shared cleanup requires approved generated name, matching database ID/identity, matching run token, and expected instance before dropping. | Both `DisposeAsync` and synchronous `Dispose(bool)` can invoke cleanup; the lease is exchanged once, the pool is cleared, and the shared ownership checks are applied. |
+
+The source does not use `EnsureDeleted`/`EnsureCreated` for this lifecycle. It uses EF migrations and per-test/per-class scenario seeding. The exact number of generated databases depends on which test classes/workflows run and their fixture scope.
+
+### Permission assessment
+
+The login already has the required `CONNECT SQL` server permission according to the supplied context. For the existing dynamic lifecycle, SQL Server documents `CREATE DATABASE` permission in `master` as the narrowest of the documented alternatives; `CREATE ANY DATABASE` and `ALTER ANY DATABASE` are broader alternatives and should not be used here. The principal that creates a database becomes its owner. That ownership is sufficient to run the EF migrations, seed and manipulate test data, and drop its own generated database; no `sysadmin`, `dbcreator`, `CONTROL SERVER`, or server-wide `ALTER ANY DATABASE` membership is required. Microsoft documents the create requirement in [Create a database](https://learn.microsoft.com/en-us/sql/relational-databases/databases/create-a-database) and that `db_owner` can drop a database in [Database-level roles](https://learn.microsoft.com/en-us/sql/relational-databases/security/authentication-access/database-level-roles?view=sql-server-ver17).
+
+Important limitation: `CREATE DATABASE` is not name-scoped. Granting it allows this login to attempt creation of databases beyond the fixture's approved prefixes. The application checks protect normal fixture use and prevent the fixture from targeting `DVLD`/`DVLDf`; they do not technically constrain a compromised or repurposed credential to a naming prefix. The permission does not itself grant access to existing `DVLD` or `DVLDf`; keep the test login absent from those databases and do not grant server-wide roles.
+
+For a pre-provisioned design, the login would need a database user and migration-capable rights in every test database. A practical simple grant is `db_owner` scoped only to those dedicated test databases, which supports migration and seeding but also lets the member drop those databases. A tighter custom role would require deriving and maintaining all permissions needed by the current EF migration history and test operations; no evidence currently establishes a smaller stable set. Do not map the test login as owner/member in either protected application database.
+
+### Pre-provisioned databases vs. controlled provisioning
+
+- **Fixed pre-provisioned DBs:** avoids giving the test login database-creation permission, but does not match the current fixtures' isolation contract. Infrastructure class fixtures and API workflow factories expect fresh GUID databases; reusing fixed databases risks stale rows, collisions, cross-test interference, and concurrent runs sharing mutable state. Adapting this safely requires a lease/pool model with one isolated database per concurrent fixture/run plus a proven reset strategy, along with fixture changes to stop creating/dropping and to validate the assigned database. A single shared `DVLD_Test` is not safe for the current parallel test patterns without serializing and reliably resetting every scenario.
+- **Administrator-controlled provisioner:** keeps create/drop rights out of the test login, but requires a separate trusted service, operator step, or carefully secured signed SQL module to allocate isolated per-run databases and return leases, then revoke/remove them. The fixtures must call that provisioning interface instead of directly creating/dropping databases. This has more operational components and failure modes than needed for one local development instance.
+- **Current ephemeral fixture lifecycle with narrow create grant:** preserves database-per-fixture isolation, current migration/seeding behavior, GUID ownership lease, and cleanup checks. Its tradeoff is the non-name-scoped ability to create databases. On this local instance, where the test login has no stated fixed server roles and must remain unprivileged in `DVLD`/`DVLDf`, this is the simplest practical option if the operator accepts that bounded provisioning capability.
+
+### Recommendation and implementation plan (not implemented)
+
+Recommend retaining the existing ephemeral database-per-fixture design and granting only `CREATE DATABASE` in `master` to `AYHM\DVLD_TestRunner`, in addition to its existing `CONNECT SQL`, after an authorized DBA reviews and approves the non-name-scoped creation risk. Do not grant `dbcreator`, `CREATE ANY DATABASE`, `ALTER ANY DATABASE`, `CONTROL SERVER`, or `sysadmin`. Do not add the login to `DVLD` or `DVLDf`. The creator-owned generated DB supplies the scoped authority required by the current migrations, seed operations, and teardown.
+
+Implementation sequence after explicit approval:
+
+1. DBA verifies the named Windows login and current effective permissions on the verified instance, confirms it has no user/role access to `DVLD` or `DVLDf`, and applies only the approved `CREATE DATABASE` permission in `master` (no changes are made by this review).
+2. Keep `SqlServerTestEnvironment` expected-instance validation, protected-catalog rejection, generated name validation, identity/run-token tracking, and ownership-checked cleanup. Add a preflight/read-only diagnostic that clearly reports whether the test principal can perform the required lifecycle without creating a database (permission metadata check where available); it must not fall back to application credentials.
+3. Review cleanup error propagation and the API lifecycle semaphore against expected local parallel test load; do not weaken lease checks or make fixture databases reusable. Consider a cross-process migration throttling/coordination mechanism only if concurrent execution profiling demonstrates a real conflict; the existing static semaphore coordinates one process only.
+4. With separate approval and a verified isolated endpoint, run a small isolated fixture smoke test and confirm it creates, migrates, seeds, and removes only its generated database. Do not run that validation as part of this read-only review.
+
+No implementation, permission change, SQL connection, integration test, migration, database create/drop, commit, or push was performed. The previously reported endpoint state is superseded only by the user's current claim of reachability; it has not been independently verified in this task.
+
+## API Integration Factory Cleanup and Build Verification (2026-11-09)
+
+### Code changes
+
+The API integration-test factory received the following lifecycle corrections:
+
+1. **Migration lock release:** `InitializeDatabase` now releases `DatabaseLifecycleLock` in a `finally` block before attempting database cleanup after a migration failure. This prevents concurrent migration failures from each holding a semaphore permit while waiting to acquire another permit for cleanup.
+2. **Asynchronous disposal:** `DisposeAsync` now attempts database cleanup even if `base.DisposeAsync()` throws. The original disposal exception is preserved and rethrown. If cleanup also fails, the cleanup failure is reported safely without replacing the primary exception.
+3. **Synchronous disposal:** `Dispose(bool)` applies equivalent cleanup handling when `disposing` is true. The finalizer path (`disposing == false`) delegates to the base implementation without attempting database cleanup.
+
+The existing database lease, connection-pool clearing, ownership validation, and shared cleanup mechanism remain in use.
+
+### Static verification
+
+- API integration-test project build using `dotnet build .\Test\API.IntegrationTests\API.IntegrationTests.csproj --no-restore`: **PASSED**.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check`: no whitespace errors reported.
+- Git emitted LF-to-CRLF normalization warnings for the three modified files. These are line-ending warnings, not whitespace-check failures.
+
+### Runtime verification status
+
+The changes have not been verified through runtime integration tests. In particular, synchronous and asynchronous disposal behavior, migration-failure cleanup, and concurrent lifecycle behavior remain untested.
+
+No integration tests were executed, no SQL connection was attempted, and no database lifecycle operation was performed during this verification.
+
+### Safety confirmation
+
+The changes are limited to test infrastructure, validation-test source, and audit documentation. No SQL Server permissions, firewall settings, application connection strings, or protected database configurations were changed.
+
+`DVLD` and `DVLDf` remain untouched. No commit or push was performed.
