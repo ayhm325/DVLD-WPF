@@ -1,9 +1,11 @@
+using System.Data;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 
 namespace Infrastructure.Repositories;
@@ -201,6 +203,63 @@ public sealed class UserRepository : IUserRepository
             .CountAsync(
                 u => u.Role == UserRole.Admin && u.IsActive,
                 cancellationToken);
+    }
+
+    public async Task<bool> AcquireAdminMutationLockAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var transaction = _context.Database.CurrentTransaction;
+
+        if (transaction is null)
+        {
+            // Fail closed: the lock is only meaningful for the lifetime of a
+            // transaction. Callers must open one before acquiring it.
+            return false;
+        }
+
+        var connection = _context.Database.GetDbConnection();
+
+        if (connection.State != ConnectionState.Open)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction.GetDbTransaction();
+        command.CommandText = "sp_getapplock";
+        command.CommandType = CommandType.StoredProcedure;
+        command.CommandTimeout = 30;
+
+        var resource = command.CreateParameter();
+        resource.ParameterName = "@Resource";
+        resource.Value = "DVLD_AdminMutation";
+        command.Parameters.Add(resource);
+
+        var mode = command.CreateParameter();
+        mode.ParameterName = "@LockMode";
+        mode.Value = "Exclusive";
+        command.Parameters.Add(mode);
+
+        var owner = command.CreateParameter();
+        owner.ParameterName = "@LockOwner";
+        owner.Value = "Transaction";
+        command.Parameters.Add(owner);
+
+        var timeout = command.CreateParameter();
+        timeout.ParameterName = "@LockTimeout";
+        timeout.Value = 5000;
+        command.Parameters.Add(timeout);
+
+        var result = command.CreateParameter();
+        result.ParameterName = "@Result";
+        result.Direction = ParameterDirection.ReturnValue;
+        command.Parameters.Add(result);
+
+        await command.ExecuteNonQueryAsync(cancellationToken);
+
+        var lockResult = result.Value is int value ? value : -999;
+
+        return lockResult >= 0;
     }
 
     public async Task AddUserAsync(

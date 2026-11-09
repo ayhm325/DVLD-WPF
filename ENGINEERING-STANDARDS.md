@@ -140,6 +140,7 @@ stateDiagram-v2
 3. **Automatic Rollback & Tracker Clearing:** If an operation returns a failure `Result` or throws an exception, `RollbackAsync()` must be invoked, and `ChangeTracker.Clear()` must be executed to prevent poisoned in-memory state from leaking into subsequent requests.
 4. **Ambiguous Commit Verification:** `UnitOfWork` implements post-exception verification probes. When an uncertain commit failure occurs, it queries SQL Server to verify whether the primary entity was committed before deciding to retry or fail.
 5. **Execution Strategies:** Multi-statement transactions must be wrapped inside `IExecutionStrategy.ExecuteAsync()` to enable SQL Server retry logic for transient network failures.
+6. **Global Invariants Across Rows:** Invariants expressed over a set of rows (for example, "at least one active administrator must exist") must be enforced inside a transaction with an explicit cross-process serialization mechanism (such as `sp_getapplock` with a transaction-owned lock) and an authoritative re-check after the lock is acquired. A count check performed outside the transaction is advisory only and must never be treated as the guarantee.
 
 ---
 

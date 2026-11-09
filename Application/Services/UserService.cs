@@ -1,3 +1,5 @@
+using System.Data;
+
 using Application.Common.Exceptions;
 using Application.Common.Results;
 using Application.DTOs.UserDTO;
@@ -484,19 +486,76 @@ public sealed class UserService : IUserService
 
         if (securityStateChanged)
         {
-            // Fail closed: revoke sessions before the change is persisted. A rotated
-            // stamp also invalidates every access token issued with the old state.
+            // A rotated stamp invalidates every access token issued with the old
+            // state. Session revocation happens inside the mutation boundary below.
             user.SecurityStamp = Guid.NewGuid().ToString("N");
-
-            await _sessionRepository.RevokeAllForUserAsync(
-                id,
-                _clock.UtcNow,
-                SessionRevocationReasons.SecurityStateChanged,
-                cancellationToken);
         }
 
         try
         {
+            if (removesActiveAdmin)
+            {
+                // The sequential count check above is only a fast path. The
+                // authoritative check runs under a cross-process application lock so
+                // two concurrent demotions cannot both observe two active admins.
+                return await _unitOfWork.ExecuteInTransactionAsync(
+                    async transaction =>
+                    {
+                        if (!await _userRepository.AcquireAdminMutationLockAsync(
+                                cancellationToken))
+                        {
+                            return Result.Conflict(
+                                "Another administrator change is in progress. Please retry.");
+                        }
+
+                        var activeAdminCount =
+                            await _userRepository.GetActiveAdminCountAsync(
+                                cancellationToken);
+
+                        if (activeAdminCount <= 1)
+                        {
+                            return Result.Conflict(
+                                !dto.IsActive
+                                    ? "Cannot deactivate the last active administrator."
+                                    : "Cannot change the role of the last active administrator.");
+                        }
+
+                        if (securityStateChanged)
+                        {
+                            await _sessionRepository.RevokeAllForUserAsync(
+                                id,
+                                _clock.UtcNow,
+                                SessionRevocationReasons.SecurityStateChanged,
+                                cancellationToken);
+                        }
+
+                        var savedInside =
+                            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                        if (savedInside <= 0)
+                        {
+                            return Result.Failure(
+                                "No user changes were saved.");
+                        }
+
+                        await transaction.CommitAsync(cancellationToken);
+
+                        return Result.Success();
+                    },
+                    IsolationLevel.ReadCommitted,
+                    cancellationToken);
+            }
+
+            if (securityStateChanged)
+            {
+                // Fail closed: revoke sessions before the change is persisted.
+                await _sessionRepository.RevokeAllForUserAsync(
+                    id,
+                    _clock.UtcNow,
+                    SessionRevocationReasons.SecurityStateChanged,
+                    cancellationToken);
+            }
+
             var saved =
                 await _unitOfWork
                     .SaveChangesAsync(cancellationToken);
@@ -561,30 +620,65 @@ public sealed class UserService : IUserService
 
         if (user.Role == UserRole.Admin)
         {
-            var activeAdminCount = await _userRepository.GetActiveAdminCountAsync(cancellationToken);
-            if (activeAdminCount <= 1)
-            {
-                return Result.Conflict(
-                    "Cannot delete the last administrator account.");
-            }
+            return await _unitOfWork.ExecuteInTransactionAsync(
+                async transaction =>
+                {
+                    if (!await _userRepository.AcquireAdminMutationLockAsync(
+                            cancellationToken))
+                    {
+                        return Result.Conflict(
+                            "Another administrator change is in progress. Please retry.");
+                    }
+
+                    var activeAdminCount =
+                        await _userRepository.GetActiveAdminCountAsync(
+                            cancellationToken);
+
+                    if (activeAdminCount <= 1)
+                    {
+                        return Result.Conflict(
+                            "Cannot delete the last administrator account.");
+                    }
+
+                    return await DeleteAndRevokeAsync(
+                        user, transaction, cancellationToken);
+                },
+                IsolationLevel.ReadCommitted,
+                cancellationToken);
         }
 
-        _userRepository
-            .DeleteUser(user);
+        return await DeleteAndRevokeAsync(
+            user, transaction: null, cancellationToken);
+    }
+
+    private async Task<Result> DeleteAndRevokeAsync(
+        User user,
+        IUnitOfWorkTransaction? transaction,
+        CancellationToken cancellationToken)
+    {
+        _userRepository.DeleteUser(user);
 
         // The FK cascades, but revoke explicitly first so an in-flight refresh can
         // never observe an active session during deletion.
         await _sessionRepository.RevokeAllForUserAsync(
-            id,
+            user.UserId,
             _clock.UtcNow,
             SessionRevocationReasons.SecurityStateChanged,
             cancellationToken);
 
         var saved = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return saved > 0
-            ? Result.Success()
-            : Result.Failure("Failed to save user deletion.");
+        if (saved <= 0)
+        {
+            return Result.Failure("Failed to save user deletion.");
+        }
+
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        return Result.Success();
     }
 
     public async Task<Result>

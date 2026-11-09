@@ -57,6 +57,7 @@ To maintain strict historical and semantic integrity, the decision accounting is
 | **`ADR-P03`** | Deletion of Orphaned Direct Completion Endpoint (`INT-01`) | **ACCEPTED** | Software Architect | `INT-01`, Phase 12.2 | Implemented / Active |
 | **`ADR-P04`** | Test-Host Database Isolation & Removal of the Startup Expiration Sweep (`TEST-03`) | **ACCEPTED** | System Architect | `TEST-03`, Test Infrastructure | Implemented / Active |
 | **`ADR-006`** | Persisted Refresh-Token Sessions with Rotation, Reuse Detection & Security Stamps (`AUTH-01`) | **ACCEPTED** | Security Architect | `AUTH-01`, `DVLD.Api`, `ClientApp` | Implemented / Active |
+| **`ADR-007`** | Cross-Process Serialization of Administrator Security-State Changes (`CONCURRENCY-01`) | **ACCEPTED** | Software Architect | `CONCURRENCY-01`, `UserService` | Implemented / Active |
 | **`ADR-R01`** | Rejection of `Task.Run` for In-Process CPU Work (`PERF-03`) | **REJECTED** | Application Architect | `Application Services` | Rejected / Inactive |
 | **`ADR-R02`** | Rejection of Multi-Tenant IDOR Claim on Citizen Photos (`SEC-02`) | **REJECTED** | Security Lead | `SEC-02`, `PeopleController` | Rejected / Inactive |
 | **`ADR-R03`** | Rejection of Pagination on Tiny Static Reference Tables (`API-02`) | **REJECTED** | API Lead | `API-02`, Reference Data | Rejected / Inactive |
@@ -226,6 +227,12 @@ flowchart LR
   7. Logout revokes the current session; logout-all revokes every active session; password change revokes all sessions and issues a fresh session for the current device.
   8. CSRF is mitigated by `SameSite=Lax`, an explicit credential-enabled CORS origin, and a mandatory `X-CSRF-Protection: 1` header on cookie-authenticated endpoints.
 - **Consequences:** Stolen access tokens expire in 15 minutes; refresh tokens are unusable if the database is leaked; sensitive user changes revoke access immediately; the SPA holds no tokens in web storage. Rotation/concurrency guarantees depend on SQL Server conditional-update semantics, which were not exercised against a database in this environment.
+
+### ADR-007: Cross-Process Serialization of Administrator Security-State Changes (`CONCURRENCY-01`)
+- **Status:** `ACCEPTED` (Implemented & Verified — 2026-11-09)
+- **Context:** `UserService.UpdateUserAsync`/`DeleteUserAsync` counted active administrators and then saved outside any transaction or lock. Two concurrent demotions could both observe two active admins and both commit, leaving zero active administrators (system lockout).
+- **Decision:** Serialize administrator security-state mutations with a SQL Server application lock (`sp_getapplock`, resource `DVLD_AdminMutation`, `Exclusive`, `Transaction` owner, 5 s timeout) acquired inside the mutation transaction. The authoritative `GetActiveAdminCountAsync` check runs after the lock is granted; the losing transaction returns a domain conflict (HTTP 409). The lock is database-scoped, so it holds across API processes.
+- **Consequences:** The last-active-administrator invariant is enforced across processes without a schema change. Administrator demotions/deletions serialize on a single global lock, which is acceptable because these operations are rare. No other workflow is affected.
 
 ---
 

@@ -1,3 +1,5 @@
+using System.Data;
+
 using Application.Common.Exceptions;
 using Application.Common.Results;
 using Application.DTOs.UserDTO;
@@ -15,6 +17,7 @@ public class UserServiceTests
     private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IUserSessionRepository> _sessionRepositoryMock;
+    private readonly Mock<IUnitOfWorkTransaction> _transactionMock = new();
     private readonly FakeJordanClock _clock = FakeJordanClock.FromUtc(
         new DateTime(2026, 11, 9, 12, 0, 0, DateTimeKind.Utc));
     private readonly UserService _sut;
@@ -24,6 +27,30 @@ public class UserServiceTests
         _userRepositoryMock = new Mock<IUserRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _sessionRepositoryMock = new Mock<IUserSessionRepository>();
+
+        _transactionMock
+            .Setup(transaction => transaction.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _transactionMock
+            .Setup(transaction => transaction.RollbackAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _userRepositoryMock
+            .Setup(repository => repository.AcquireAdminMutationLockAsync(
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _unitOfWorkMock
+            .Setup(unit => unit.ExecuteInTransactionAsync<Result>(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result>>>(),
+                It.IsAny<IsolationLevel>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(
+                (Func<IUnitOfWorkTransaction, Task<Result>> operation,
+                    IsolationLevel _,
+                    CancellationToken _) =>
+                    operation(_transactionMock.Object));
 
         _sut = new UserService(
             _userRepositoryMock.Object,

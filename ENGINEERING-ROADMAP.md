@@ -293,6 +293,17 @@ graph TD
 - **Current Status:** **`Implemented — Azure Pipeline runtime verification pending`**.
 - **Implementation Authorization:** **AUTHORIZED & IMPLEMENTED.**
 
+#### [CONCURRENCY-01] Business Workflow Concurrency & Transaction Safety
+- **Finding ID:** `CONCURRENCY-01`
+- **Evidence Classification:** `CONFIRMED — P0 REMEDIATED & VERIFIED; BROADER WORKFLOWS AUDITED`
+- **Priority:** `P0 (Integrity)`
+- **Affected Components:** `Application/Services/UserService.cs`, `Application/Interfaces/IUserRepository.cs`, `Infrastructure/Repositories/UserRepository.cs`, `Test/Infrastructure.IntegrationTests/Concurrency/LastAdministratorConcurrencyTests.cs`.
+- **Description:** The last-active-administrator invariant was enforced by a check-then-act sequence outside a transaction; concurrent demotions could leave the system without an active administrator. Repositories were verified to share the scoped DbContext (no `IDbContextFactory` split-context defect).
+- **Technical Remediation Implemented:** Administrator mutations acquire a transaction-owned `sp_getapplock('DVLD_AdminMutation')`; the active-admin count is re-checked under the lock inside the mutation transaction; the loser receives a 409 domain conflict. Deletion follows the same protocol.
+- **Verification Evidence:** Two concurrent demotions through independent contexts/UnitOfWork on real SQL: one success, one 409, one active administrator. Last-admin deactivation returns 409 with no mutation. **945** unit and **514** database-free API tests pass.
+- **Current Status:** **`Verified`** (P0 invariant). Other workflows audited with existing protections retained; no additional race tests executed in this pass.
+- **Implementation Authorization:** **AUTHORIZED & IMPLEMENTED.**
+
 #### [SEC-01] Segregation of Duties Model B Policy Alignment
 - **Finding ID:** `SEC-01`
 - **Evidence Classification:** `APPROVED POLICY RECORD — IMPLEMENTATION NOT AUTHORIZED`

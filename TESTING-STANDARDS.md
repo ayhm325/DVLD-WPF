@@ -426,3 +426,9 @@ Level 3 must not be reported as passed unless it was actually executed against a
 3. A dedicated validation step must fail the job when the identity was not published; a missing identity must never surface as hundreds of test-initialization failures.
 4. Cleanup must run with `condition: always()`; the cleanup script refuses deletion unless run ownership is positively verified, so this is safe on provisioning or test failure.
 5. SQL tests must never be filtered out to make the pipeline green; a skipped SQL suite is not a passing SQL suite.
+
+### 9.2 Business concurrency tests
+
+1. Cross-row invariants (for example, the last-active-administrator rule) require a real SQL race test with independent DbContexts, UnitsOfWork and transactions.
+2. Each test must assert both the operation outcome (success vs. 409) and the persisted final state.
+3. Application locks must be verified through SQL, not only through unit mocks; `CONCURRENCY-01` evidence is `LastAdministratorConcurrencyTests` (two concurrent demotions, one success, one conflict, one active administrator).

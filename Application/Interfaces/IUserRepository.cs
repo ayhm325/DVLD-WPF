@@ -61,6 +61,14 @@ public interface IUserRepository
     Task<int> GetActiveAdminCountAsync(
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Acquires the cross-process serialization lock for administrative security-state
+    /// changes. Must be called inside an active transaction; the lock is released when
+    /// that transaction commits or rolls back.
+    /// </summary>
+    Task<bool> AcquireAdminMutationLockAsync(
+        CancellationToken cancellationToken = default);
+
     Task AddUserAsync(
         User user,
         CancellationToken cancellationToken = default);

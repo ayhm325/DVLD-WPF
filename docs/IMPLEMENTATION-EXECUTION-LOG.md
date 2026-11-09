@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01`, `CI-SQL-01` implemented; `AUTH-01-CROSS-PROCESS` verified for rotation/reuse
+> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01`, `CI-SQL-01` implemented; `AUTH-01-CROSS-PROCESS` verified; `CONCURRENCY-01` P0 fixed
 
 ---
 
@@ -859,6 +859,18 @@ flowchart TD
 - **Not Verified:** lost HTTP response, process termination before/after commit, mid-transaction connection interruption.
 - **Docs:** `docs/audits/auth-01-cross-process-verification.md`, AUTH-01 addendum, roadmap, testing standards.
 - **Status:** Gate 2 **PARTIALLY VERIFIED** (core rotation/reuse proven; fault injection outstanding).
+
+### Session 18: Milestone CONCURRENCY-01 — Business Workflow Concurrency & Last-Administrator Fix
+- **Date & Timestamp:** 2026-11-09 20:45:00 +03:00
+- **Goals:** Verify DbContext/UnitOfWork boundaries, audit critical workflow invariants, and fix the P0 last-active-administrator race.
+- **Boundary verification:** Repositories inject the scoped `DVLDDbContext`; no `IDbContextFactory` exists in production code; UnitOfWork and repositories share one context per request. **PASS**.
+- **Workflow audit:** Licensing issuance/renewal/replacement/international/detention, applications, appointments/tests already use Serializable transactions, filtered unique indexes, `UPDLOCK`/`HOLDLOCK`, and appointment `sp_getapplock`; these were preserved unchanged.
+- **P0 fix:** `UpdateUserAsync`/`DeleteUserAsync` previously counted active administrators outside any transaction. Added `AcquireAdminMutationLockAsync` (`sp_getapplock('DVLD_AdminMutation')`, transaction-owned, 5 s timeout) and moved the authoritative count + mutation + revocation + save into one transaction. Losing operations return 409.
+- **Verification:**
+  - `LastAdministratorConcurrencyTests` on isolated SQL: **2 passed** — exactly one concurrent demotion succeeds (one 409), one active administrator remains; last-admin deactivation returns 409 with no mutation.
+  - `Application.UnitTests`: **945 passed**; database-free `API.IntegrationTests`: **514 passed**.
+- **Not executed:** additional SQL race tests for licensing/appointment workflows; deadlock/retry stress. Existing protections unchanged.
+- **Documentation:** `docs/audits/concurrency-01-business-workflow-concurrency.md`, ADR-007, standards, roadmap, this log.
 
 ---
 
