@@ -52,6 +52,19 @@ public sealed class GlobalExceptionHandler(
             return false;
         }
 
+        // The client is gone. Never attempt to write a response to a disconnected
+        // socket; suppress it and record the underlying exception for diagnosis.
+        if (context.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogWarning(
+                exception,
+                "The client disconnected before an error response could be written for {Method} {Path}; the response was suppressed.",
+                context.Request.Method,
+                context.Request.Path);
+
+            return true;
+        }
+
         var failure = Classify(exception);
 
         if (failure.LogAsError)

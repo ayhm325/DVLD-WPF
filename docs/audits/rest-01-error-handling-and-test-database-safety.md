@@ -85,7 +85,7 @@ The prior architecture report's "143 `Result.Failure` call sites" was a combined
 | Factory | Count |
 |---|---:|
 | `Result.Failure(...)` (direct, untyped) | **26** |
-| `Result<T>.FromFailure(...)` (typed) | **43** |
+| `.FromFailure(...)` (all forms, post-REST-01) | **42** (36 typed `Result<T>.FromFailure`, 6 non-generic `Result.FromFailure`) |
 | `Result.ValidationFailure(...)` / `FromValidationFailure(...)` | many (input validation) |
 | `Result.NotFound(...)` / `FromNotFound(...)` | many (missing resources) |
 | `Result.Conflict(...)` / `FromConflict(...)` | many (business state) |
@@ -208,6 +208,8 @@ Parsing order: `detail` → flattened `errors` → legacy `error`/`message` → 
 | Frontend | `npm run lint` | exit 0 |
 | Frontend | `npm run build` (`tsc -b && vite build`, temp outDir) | exit 0 |
 | Backend build | `DVLD.Api` + all test projects | 0 errors (NU1900 offline vulnerability-feed warnings only) |
+| Post-commit focused API | `GlobalExceptionHandlerTests` + `ResultHttpMapperTests` + `ProblemDetailsContractTests` | **26 passed, 0 failed** |
+| Post-commit focused unit | All service test classes asserting `ErrorType.Failure` + `AuthServiceTests` + cancellation tests | **676 passed, 0 failed** |
 
 ### Blocked (not executed) — SQL-dependent and therefore not safely runnable
 
@@ -237,3 +239,79 @@ See `ENGINEERING-ROADMAP.md` §7 (`CAND-01`…`CAND-11`) for the full list with 
 2. **`SqlServerApiWebApplicationFactory` was not modified** because it carries uncommitted user work. It remains protected by construction (generated isolated catalog, ownership-verified cleanup) and by the `DVLD_TEST_HOST` guard, but the guard's behavior for that factory was not exercised end-to-end here.
 3. **Defensive authentication guards in application services still return `Forbidden`** ("Authenticated user is required"). These paths are unreachable through HTTP because every controller is protected by `[Authorize]`; changing them to 401 would churn 16 service tests without changing observable API behavior. They are documented as defensive and can be revisited with `CAND-01`.
 4. **No deployment-time verification** was performed; build and tests only.
+
+---
+
+## 10. Post-commit focused verification (commit `a200062`, reviewed as `HEAD~1`)
+
+### 10.1 Cancellation and the 499 decision
+
+**Decision: retain 499.**
+
+Rationale, based on the actual execution path:
+
+- The 499 branch in `GlobalExceptionHandler.TryHandleAsync` only sets `Response.StatusCode` when the response has **not started**, and it writes **no body**. The status therefore cannot reach the disconnected client and cannot alter the API contract.
+- Its value is server-side observability: Kestrel/hosting and APM logs record 499, which separates client aborts from genuine 5xx responses and keeps error budgets and alerting accurate.
+- Replacing it with 500 would pollute server-error metrics; 408 would misstate a client-side close as a request timeout; 503 would misstate dependency unavailability; returning 200/204 would falsely report success. `Status499ClientClosedRequest` is a stable ASP.NET Core constant and the de-facto nginx convention.
+
+**Gap found and corrected:** for a **non-cancellation** exception that occurs after the client has already aborted, the handler fell through to `WriteProblemDetailsAsync` and attempted to write to the disconnected response. The write was caught (`OperationCanceledException`/`IOException`), but the attempt itself violated the "never write to a disconnected client" rule and could surface framework-level noise. `GlobalExceptionHandler` now checks `RequestAborted.IsCancellationRequested` after the `HasStarted` check, logs the underlying exception at **Warning**, and returns without writing.
+
+**Exact behavior matrix (post-fix):**
+
+| Situation | Handler result | HTTP effect |
+|---|---|---|
+| `OperationCanceledException` + `RequestAborted` cancelled | handled, `Information` log | status 499 if response not started; **no body** |
+| Non-cancellation exception + `RequestAborted` cancelled | handled, `Warning` log with exception | **no write attempt**, no body |
+| `OperationCanceledException` with `RequestAborted` **not** cancelled (application timeout token) | handled, `Error` log | 500 `ProblemDetails` (not swallowed) |
+| Response already started | returns `false` | framework aborts the connection |
+| Background service shutdown | handled inside the hosted service via `stoppingToken` | never enters the HTTP exception handler |
+
+**Middleware ordering verified:** `UseExceptionHandler` is the outermost handler (`Program.cs`), wrapping `UseStatusCodePages`, routing, authentication, authorization, and controllers. The status-code-pages writer already returns early when `RequestAborted` is cancelled, so a 499 set by the exception handler cannot trigger a second write.
+
+**Unrelated-request isolation:** the handler holds no mutable static state; only per-request `HttpContext` and the injected logger. Background services cancel on `stoppingToken`, not `HttpContext.RequestAborted`.
+
+### 10.2 Resolved Result-failure inventory
+
+Recursive scan of **156** `.cs` files under `Application/` (excluding `obj/` and `bin/`):
+
+| Measure | Count |
+|---|---:|
+| Direct `Result.Failure(` | **26** |
+| `.FromFailure(` total | **42** |
+| — typed `Result<T>.FromFailure(` | **36** (33 single-line + 3 nested/split constructors: `PersonService.cs:103`, `PersonService.cs:292`, `UserService.cs:301`) |
+| — non-generic `Result.FromFailure(` (propagation only) | **6** (`ApplicationService.cs:166,190`; `DetainedLicenseService.cs:211,238`; `LocalDrivingLicenseApplicationService.cs:341`; `TestWorkflowService.cs:217`) |
+| `Result<T>.FromResult(` propagation | **10** |
+| `PropagateFailure<T>` helper definitions | **4** (`LicenseIssuanceService.cs:288`, `LicenseRenewalService.cs:237`, `LicenseReplacementService.cs:210`, `InternationalService.cs:287`) |
+| `PropagateFailure` references (definitions + call sites) | **24** |
+| Test-only `Result.Failure(` | **13** |
+| Test-only `.FromFailure(` | **32** |
+
+**Reconciliation of the “43” figure:** at baseline `5ce6621` the repository had **43** `.FromFailure(` call sites. The reviewed commit changed `AuthService`’s invalid-credentials result from `FromFailure` to `FromUnauthorized`, so current `HEAD` has **42**. The earlier “143” was a combined regular expression over several different failure factories and was never a count of a single factory.
+
+**Direct `Result.Failure` sites (26):** `ApplicationService.cs:221`; `ApplicationTypeService.cs:108,117`; `DetainedLicenseService.cs:245,272,278`; `DriverService.cs:242,291`; `LicenseClassService.cs:115,122`; `LocalDrivingLicenseApplicationService.cs:332,396,402,406,481`; `PersonService.cs:375,418,428,583`; `TestAppointmentService.cs:268,521,572`; `TestTypeService.cs:91`; `UserService.cs:481,554,617`.
+
+**Classification outcome:** every one of the 26 direct sites is a persistence/consistency/configuration failure (zero rows affected after a genuine change, repository update returned false, missing parent aggregate, missing unit-of-work registration). All correctly map to **500** with a generic client detail; the internal reason is logged. No genuine client-correctable business error was found among them, so **no mapping was changed** in this review.
+
+The only business-condition misclassification found in the whole review was the login contract, and it was already corrected in the reviewed commit (`FromFailure` → `FromUnauthorized` → 401). No `Result.Failure` site was reclassified from 500 to 400/409.
+
+**Known residual (unchanged):** `ApplicationService.UpdateApplicationAsync` has no no-op guard, so an update that changes nothing can produce `SaveChanges == 0` and therefore a 500 from the shared `SaveAsync` helper. This is a pre-existing idempotency/semantics issue recorded as `CAND-04`, not an error-classification change; correcting it would change business behavior and was intentionally left out of this focused review.
+
+### 10.3 Tests executed
+
+| Command scope | Result |
+|---|---|
+| `API.IntegrationTests` filter: `GlobalExceptionHandlerTests`, `ResultHttpMapperTests`, `ProblemDetailsContractTests` | **26 passed, 0 failed, 0 skipped** |
+| `Application.UnitTests` filter: all service classes asserting `ErrorType.Failure` + `AuthServiceTests` + cancellation tests | **676 passed, 0 failed, 0 skipped** |
+
+New regression tests added with the cancellation correction:
+
+- `GlobalExceptionHandlerTests.ClientAborted_NonCancellationException_DoesNotWriteResponse`
+- `GlobalExceptionHandlerTests.ApplicationCancellation_WithLiveClient_IsNotSwallowed_AndReturnsSafe500`
+
+No SQL-backed test was executed.
+
+### 10.4 Remaining limitations
+
+- SQL integration suites remain unexecuted in this environment (`DVLD_TEST_CONNECTION`/`DVLD_TEST_EXPECTED_INSTANCE` unset); the fixtures fail fast.
+- The `ApplicationService.UpdateApplicationAsync` no-op case is documented, not corrected.
+- 499 observability depends on the hosting/APM layer recording the status; no application-level metric was added.

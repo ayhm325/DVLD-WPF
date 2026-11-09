@@ -54,6 +54,42 @@ public sealed class GlobalExceptionHandlerTests
     }
 
     [Fact]
+    public async Task ClientAborted_NonCancellationException_DoesNotWriteResponse()
+    {
+        var (handler, context) = CreateContext(clientAborted: true);
+
+        var handled = await handler.TryHandleAsync(
+            context,
+            new InvalidOperationException("late server failure"),
+            CancellationToken.None);
+
+        Assert.True(handled);
+        Assert.Equal(0, context.Response.Body.Length);
+        Assert.Null(context.Response.ContentType);
+    }
+
+    [Fact]
+    public async Task ApplicationCancellation_WithLiveClient_IsNotSwallowed_AndReturnsSafe500()
+    {
+        var (handler, context) = CreateContext();
+
+        var handled = await handler.TryHandleAsync(
+            context,
+            new OperationCanceledException("application-level timeout token"),
+            CancellationToken.None);
+
+        Assert.True(handled);
+        Assert.Equal(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
+
+        var body = await ReadBodyAsync(context);
+
+        Assert.DoesNotContain("application-level timeout token", body);
+
+        using var document = JsonDocument.Parse(body);
+        Assert.Equal(500, document.RootElement.GetProperty("status").GetInt32());
+    }
+
+    [Fact]
     public async Task MalformedRequest_Returns400_WithoutLeakingFrameworkMessage()
     {
         var (handler, context) = CreateContext();
