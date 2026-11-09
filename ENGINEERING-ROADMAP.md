@@ -219,6 +219,21 @@ graph TD
 - **Current Status:** **`NOT COMPLETED / RUNTIME VALIDATION REQUIRED`**
 - **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.3 Scope).**
 
+#### [TEST-03] Test-Host Database Isolation & Startup Write Removal
+- **Finding ID:** `TEST-03`
+- **Evidence Classification:** `CONFIRMED — REMEDIATED & VERIFIED`
+- **Priority:** `P0 (Data Safety)`
+- **Affected Components:** `API/DVLD.Api/Program.cs`, `Infrastructure/Configuration/SqlServerConnectionSafety.cs`, `Test/API.IntegrationTests/Infrastructure/ApiWebApplicationFactory.cs`, `Test/API.IntegrationTests/Infrastructure/TestHostDatabaseSafety.cs`, `Test/API.IntegrationTests/Infrastructure/TestHostEnvironment.cs`, `Test/API.IntegrationTests/Infrastructure/ConnectionAttemptRecorder.cs`.
+- **Description:** `Program.cs` executed a license-expiration database write before `app.Run()`. Because `WebApplicationFactory` runs the entry point up to `app.Run()`, every controller-test host performed that write. `ApiWebApplicationFactory` replaced application services but did not override `ConnectionStrings:DVLDConnection`, so the host inherited `Server=.;Database=DVLDf` from `appsettings.json`. On a developer machine with that instance reachable, running the API test suite could deactivate licenses in the protected database.
+- **Technical Remediation Implemented:**
+  1. Removed the inline startup sweep. `LicenseExpirationBackgroundService` already performs its first sweep immediately at startup and then on its polling interval, so production expiration processing is unchanged while host construction performs no database work.
+  2. Added `SqlServerConnectionSafety.EnsureSafeForHost`, a pure connection-string guard (it never opens a connection). Test hosts — environment `Testing` or `DVLD_TEST_HOST=1` — may only target `DVLD_IntegrationTests_(Api_)?<GUID>`; `DVLD`, `DVLDf`, `master`, and unapproved catalogs are rejected at startup.
+  3. `ApiWebApplicationFactory` pins an isolated, non-existent test catalog, supplies a test-only JWT signing key, and installs a `DbConnectionInterceptor` that counts connection attempts.
+  4. Test assemblies set `DVLD_TEST_HOST=1` through a module initializer, so every host they create is validated, including factories that do not set `Testing` explicitly.
+- **Verification Requirements:** Safety tests proving the guard rejects `DVLD`/`DVLDf`/unapproved catalogs, that a test host configured with `DVLDf` fails fast without connecting, that the mock host opens zero connections while serving requests, that the resolved `DbContext` catalog is an isolated test database, and that cleanup naming/configuration validators reject application databases.
+- **Current Status:** **`Verified`** (17 safety test cases across guard, host, and cleanup suites).
+- **Implementation Authorization:** **AUTHORIZED (explicit REST-01 task Part A) & COMPLETED.**
+
 #### [API-01] Propagate CancellationToken Across Endpoints
 - **Finding ID:** `API-01`
 - **Evidence Classification:** `CONFIRMED — REMEDIATED & VERIFIED`
@@ -232,16 +247,27 @@ graph TD
 
 #### [REST-01] Standardize Error Payloads on RFC 7807 ProblemDetails
 - **Finding ID:** `REST-01`
-- **Evidence Classification:** `CONFIRMED`
+- **Evidence Classification:** `CONFIRMED — REMEDIATED & VERIFIED`
 - **Priority:** `P2`
-- **Affected Components:** `API/DVLD.Api/Controllers/AuthController.cs`, `GlobalExceptionHandler.cs`.
-- **Description:** `AuthController` returns custom `{ error = "..." }` schemas, while `GlobalExceptionHandler` returns standard RFC 7807 `ProblemDetails`.
-- **Proposed Technical Remediation:** Standardize all controller failure responses on RFC 7807 `ProblemDetails` (`Content-Type: application/problem+json`). Coordinate minimal JSON parser alignment in `ClientApp/src/services/apiClient.ts`.
+- **Affected Components:** `API/DVLD.Api/Results/ResultHttpMapper.cs`, `API/DVLD.Api/Results/ApiProblemDetails.cs`, `API/DVLD.Api/Security/GlobalExceptionHandler.cs`, `API/DVLD.Api/Controllers/AuthController.cs`, `API/DVLD.Api/Controllers/PeopleController.cs`, `API/DVLD.Api/Program.cs`, `Application/Common/Results/`, `ClientApp/src/services/apiClient.ts`.
+- **Description:** `AuthController` returned custom `{ error = "..." }` schemas, `PeopleController` returned a custom upload envelope, and `GlobalExceptionHandler` returned standard `ProblemDetails`. Middleware-generated failures (401 challenge, 403 forbidden, unmatched-route 404, rate-limiter 429) had empty bodies, malformed JSON surfaced as 500, and every `Result` failure without an explicit category surfaced as 500.
+- **Error Catalog Outcome:** All failure factories in `Application/Services` were audited. The earlier report's "143 `Result.Failure` call sites" was a combined regular expression over every failure factory; measured counts are **26 `Result.Failure(...)`** and **43 `Result<T>.FromFailure(...)`**. The 26 direct sites are persistence/consistency failures (zero rows affected, repository update returned false, missing parent aggregate) and correctly remain HTTP 500. The genuine misclassifications were the login contract (401 encoded as an ad-hoc body) and the absence of an authentication category in `ErrorType`. Full catalog in `docs/audits/rest-01-error-handling-and-test-database-safety.md`.
+- **Technical Remediation Implemented:**
+  1. `ErrorType.Unauthorized` added and propagated by all `PropagateFailure<T>` translators; `AuthService` returns it for invalid credentials.
+  2. `ResultHttpMapper` rewritten as the single deterministic `ErrorType` → HTTP translator, with `ValidationProblemDetails` for validation (aggregated `detail` plus structured `errors`), and explicit 401/403/404/409/500 mappings.
+  3. A successful `Result` passed to the failure mapper no longer throws; it logs a programming error and fails closed with a generic 500.
+  4. `ApiProblemDetails` centralizes payload construction (`status`, `title`, `detail`, `type`, `instance`, `traceId`, `application/problem+json`).
+  5. `ApiBehaviorOptions.InvalidModelStateResponseFactory` produces `ValidationProblemDetails` for model-binding and malformed-body failures.
+  6. `UseStatusCodePages` renders ProblemDetails for responses produced outside MVC (401, 403, 404, 405, 429).
+  7. `GlobalExceptionHandler` maps client cancellation to 499, malformed requests to 400, curated duplicate conflicts to 409, and unexpected failures to a generic 500 with no internal detail.
+  8. `AuthController` and `PeopleController` custom envelopes were removed.
+  9. The React transport parses ProblemDetails into a typed `ApiError`/`UnauthorizedError`/`ForbiddenError` with field errors and trace id.
+- **HTTP Mapping Rules:** Validation → 400 (`ValidationProblemDetails`); authentication failure → 401; authorization failure → 403; missing resource → 404; current-state conflict → 409; unexpected infrastructure/application failure → 500. No 200 is returned for a failed operation.
 - **Scope Boundary Enforcement:** `REST-01` is strictly a backend response standardization and client parser alignment task. It does **not** include React Error Boundaries, frontend error component trees, or client recovery logic (which remain candidate requirements under `FE-ERR`).
 - **Governing Architectural Decisions:** `ADR-P02` (Standardized RFC 7807 ProblemDetails across All Endpoints).
-- **Verification Requirements:** Integration tests verifying response `Content-Type: application/problem+json` and standard error payload schema across all controllers.
-- **Current Status:** `Confirmed / Planned`
-- **Implementation Authorization:** **NOT AUTHORIZED (Phase 12.3 Scope).**
+- **Verification Requirements:** Integration tests verifying `Content-Type: application/problem+json`, standard payload schema, per-request `traceId`, 401/403/404/405/409/500 behavior, malformed JSON handling, safe 500 responses, and unchanged success contracts. Result-mapping unit tests cover every `ErrorType`.
+- **Current Status:** **`Verified`**.
+- **Implementation Authorization:** **AUTHORIZED (explicit REST-01 task) & COMPLETED.**
 
 #### [SEC-01] Segregation of Duties Model B Policy Alignment
 - **Finding ID:** `SEC-01`
@@ -421,6 +447,9 @@ The 17 security packages defined in [`docs/archive/security-sources/SECURITY-MAS
 | **Phase 12.5** | P3 Architecture Cleanup, Password Rate Limiting & CI Hardening (`ARCH-01`, `ARCH-02`, `ARCH-03`, `SEC-03`, `OBS-02`) | **PLANNED / NOT AUTHORIZED** | Scheduled following Phase 12.4 completion. |
 | **Deferred Modernization Track** | Full-Stack Session Management (`SEC-05`, `FE-01`, `TEST-02`, `SEC-PKG-17`, `DEC-SEC05-01/02`) | **DEFERRED / STRICTLY UNAUTHORIZED** | Excluded from initial production milestones; requires formal Project Owner authorization and schema review for `UserSessions` and `RefreshTokens`. |
 
+> [!NOTE]
+> **Targeted authorization recorded (2026-11-09):** `REST-01` (RFC 7807 ProblemDetails standardization) and its prerequisite `TEST-03` (test-host database isolation and removal of the startup expiration sweep) were explicitly authorized as a dedicated engineering task and are **Verified**. All other Phase 12.3 items and every other phase remain unauthorized exactly as stated above.
+
 ---
 
 ## 6. Multi-Dimensional Verification Gates & Test Evidence Baseline
@@ -441,3 +470,23 @@ The test metrics recorded below originate exclusively from the Phase A repositor
 - **`Test/Application.UnitTests/Application.UnitTests.csproj`:** 919 passed, 0 failed, 0 skipped (duration: ~14s).
 - **`Test/Infrastructure.IntegrationTests/Infrastructure.IntegrationTests.csproj`:** 612 tests cataloged; 611 passed, 1 failed with transient SSL handshake timeout in `SqlServerTestDatabase.cs:40-48` (`TEST-01`, duration: 4m 21s).
 - **`Test/API.IntegrationTests/API.IntegrationTests.csproj`:** 1 passed (`ApplicationsSmokeTests`), 435 skipped / unexecuted.
+
+---
+
+## 7. Deferred Architecture Findings & Candidate Tasks
+
+The following findings were identified during the REST-01 review but are **explicitly out of scope**. They are recorded as candidates only; none is authorized, scheduled, or implemented. Candidate IDs use the non-canonical `CAND-` prefix so they cannot collide with governed task identifiers.
+
+| Candidate ID | Finding | Severity | Prerequisites / Dependencies | Suggested Scope |
+|:---|:---|:---:|:---|:---|
+| `CAND-01` | JWT role/password staleness: role is embedded at issue time for 240 minutes; password changes do not invalidate existing tokens; no `jti`/security stamp. | **P0 (Security)** | ADR for token revocation strategy; possible `Users` security-stamp column (Gate 5 schema review). | `SEC-05` / `SEC-PKG-10` |
+| `CAND-02` | Last-administrator invariant uses check-then-act without a transaction or lock; concurrent demotions can leave zero active administrators. | **P0 (Availability/Security)** | Transactional fix inside `UserService`; no schema change. | `SEC-PKG-04` |
+| `CAND-03` | `GetUserForUpdateAsync`, `GetPersonForUpdateAsync`, and `ApplicationRepository.GetApplicationForUpdateAsync` perform plain reads despite their names; read-modify-write paths have lost-update exposure. | **P1 (Integrity)** | Introduce real `UPDLOCK` reads inside transactions or rename the methods and add optimistic concurrency. | Repository concurrency hardening |
+| `CAND-04` | `Result.Failure` is used for persistence anomalies that also occur on legitimate no-op updates; zero-row updates surface as HTTP 500. | **P2 (API Semantics)** | Requires business sign-off on no-op update semantics. | Application service cleanup |
+| `CAND-05` | BCrypt hashing and SkiaSharp image processing are implemented inside the `Application` layer instead of behind infrastructure ports. | **P3 (Architecture)** | Move implementations to `Infrastructure`; introduce `IPasswordHasher`. | `ARCH-01` follow-up |
+| `CAND-06` | The backend has no solution of its own; the only `.sln` lives under the frozen `Presentation (WPF)/` folder and couples backend CI to WPF. | **P2 (Build/CI)** | Create a backend solution and update `azure-pipelines.yml`. | CI/CD redesign |
+| `CAND-07` | No central package management; EF Core, Microsoft.Extensions.*, xunit, and Test SDK versions drift across projects (including 10.x Microsoft.Extensions packages on `net8.0`). | **P2 (Supply Chain)** | `Directory.Packages.props` and framework alignment; NuGet approval. | Package governance |
+| `CAND-08` | `DVLDDbContextFactory` hardcodes `Database=DVLDf`, so design-time migration commands target the protected database. | **P1 (Data Safety)** | Requires human DBA approval and migration tooling review. | Migration safety |
+| `CAND-09` | Unpaged list endpoints (`PeopleController.GetAll` fallback, `ApplicationService.GetAllApplicationsAsync`) bypass the 100-row page clamp. | **P2 (Performance)** | Pagination contract change; client alignment. | `PERF` follow-up |
+| `CAND-10` | The domain model is anemic: entities expose public setters and the appointment state machine is enforceable only in services. | **P3 (Architecture)** | Domain redesign; no schema change required. | `ARCH` follow-up |
+| `CAND-11` | `UnitOfWork` is ~690 lines with a hand-rolled commit-verification tracker and limited focused coverage; `BeginTransactionAsync` overloads bypass the retry execution strategy. | **P3 (Maintainability)** | Remove non-strategy overloads from `IUnitOfWork`; add focused tests. | Transaction hardening |

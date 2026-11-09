@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Results;
+namespace Application.Common.Results;
 
 public sealed class Result<T> : Result
 {
@@ -73,4 +73,11 @@ public sealed class Result<T> : Result
             default,
             error,
             ErrorType.Forbidden);
+
+    public static Result<T> FromUnauthorized(string error)
+        => new(
+            false,
+            default,
+            error,
+            ErrorType.Unauthorized);
 }

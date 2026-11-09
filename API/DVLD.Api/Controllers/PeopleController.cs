@@ -229,7 +229,17 @@ public sealed class PeopleController(
     {
         if (file is null || file.Length == 0)
         {
-            return BadRequest(new { error = "An image file is required." });
+            var problemDetails = ApiProblemDetails.CreateValidation(
+                HttpContext,
+                new Dictionary<string, string[]>(StringComparer.Ordinal)
+                {
+                    ["file"] = ["An image file is required."]
+                },
+                title: "Validation error");
+
+            problemDetails.Detail = "An image file is required.";
+
+            return ApiProblemDetails.ToActionResult(HttpContext, problemDetails);
         }
 
         await using var stream = file.OpenReadStream();

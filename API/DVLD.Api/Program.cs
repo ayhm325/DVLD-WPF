@@ -5,14 +5,19 @@ using Application.Interfaces;
 using Application.Options;
 using Application.Services;
 
+using DVLD.Api.Results;
 using DVLD.Api.Security;
 
 using Infrastructure;
+using Infrastructure.Configuration;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -189,6 +194,13 @@ var connectionString =
     ?? throw new InvalidOperationException(
         "Connection string 'DVLDConnection' was not found.");
 
+// Fail-fast test-host safety gate. A host running with the "Testing" environment
+// may only target an isolated, generated test database; DVLD and DVLDf are rejected
+// outright. This validates the connection string only and never opens a connection.
+SqlServerConnectionSafety.EnsureSafeForHost(
+    connectionString,
+    builder.Environment.EnvironmentName);
+
 builder.Services.AddDbContext<DVLDDbContext>(
     options =>
         options.UseSqlServer(
@@ -303,6 +315,31 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new Application.Serialization.JordanFacilityDateTimeOffsetConverter());
     });
 
+// Model-binding and data-annotation failures must use the same RFC 7807 envelope
+// (and the same trace id) as every other error the API returns.
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var problemDetailsFactory = context.HttpContext.RequestServices
+            .GetRequiredService<ProblemDetailsFactory>();
+
+        var problemDetails = problemDetailsFactory.CreateValidationProblemDetails(
+            context.HttpContext,
+            context.ModelState);
+
+        problemDetails.Type = ProblemTypes.Validation;
+        problemDetails.Instance = context.HttpContext.Request.Path;
+        problemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+        return new ObjectResult(problemDetails)
+        {
+            StatusCode = StatusCodes.Status400BadRequest,
+            ContentTypes = { ApiProblemDetails.ContentType }
+        };
+    };
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policy =>
@@ -390,6 +427,34 @@ if (app.Environment.IsDevelopment())
 
 app.UseExceptionHandler();
 
+// Responses produced outside MVC (401 challenge, 403 forbidden, unmatched-route 404,
+// rate-limiter 429) carry no body of their own. Render them with the same RFC 7807
+// envelope so clients never receive an empty or differently shaped failure.
+app.UseStatusCodePages(async statusCodeContext =>
+{
+    var httpContext = statusCodeContext.HttpContext;
+
+    if (httpContext.Response.HasStarted ||
+        httpContext.RequestAborted.IsCancellationRequested)
+    {
+        return;
+    }
+
+    var statusCode = httpContext.Response.StatusCode;
+
+    var problemDetails = ApiProblemDetails.Create(
+        httpContext,
+        statusCode,
+        ReasonPhrases.GetReasonPhrase(statusCode),
+        ApiProblemDetails.DefaultDetailForStatusCode(statusCode));
+
+    await httpContext.Response.WriteAsJsonAsync(
+        problemDetails,
+        options: null,
+        contentType: ApiProblemDetails.ContentType,
+        cancellationToken: httpContext.RequestAborted);
+});
+
 app.UseHttpsRedirection();
 
 app.UseRouting();
@@ -405,25 +470,15 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ============================================================
-// STARTUP LIFECYCLE SYNC
-// ============================================================
-
-try
-{
-    using var scope = app.Services.CreateScope();
-    var licenseRepo = scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
-    var clock = scope.ServiceProvider.GetRequiredService<IJordanClock>();
-    await licenseRepo.DeactivateExpiredLicensesAsync(clock.Today);
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "Failed to run startup license expiration sync.");
-}
-
-// ============================================================
 // PROGRAM ENTRY POINT
 // ============================================================
+//
+// License expiration is processed exclusively by LicenseExpirationBackgroundService,
+// which performs its first sweep immediately at startup and then on its polling
+// interval. The former inline startup sweep was removed: it duplicated that hosted
+// service and performed a database write whenever a host was constructed — including
+// test hosts — before the pipeline even existed. Tests disable the hosted service
+// through LicenseExpirationOptions.
 
 app.Run();
 

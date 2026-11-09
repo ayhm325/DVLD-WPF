@@ -1,4 +1,4 @@
-﻿namespace Application.Common.Results;
+namespace Application.Common.Results;
 
 public class Result
 {
@@ -55,6 +55,12 @@ public class Result
             false,
             error,
             ErrorType.Forbidden);
+
+    public static Result Unauthorized(string error) =>
+        new(
+            false,
+            error,
+            ErrorType.Unauthorized);
 
     public static Result FromFailure(Result result)
     {

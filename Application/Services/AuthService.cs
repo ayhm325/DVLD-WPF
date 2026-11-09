@@ -48,7 +48,7 @@ public sealed class AuthService(
                 user.Password))
         {
             return Result<LoginResponseDto>
-                .FromFailure(
+                .FromUnauthorized(
                     "Invalid username or password.");
         }
 

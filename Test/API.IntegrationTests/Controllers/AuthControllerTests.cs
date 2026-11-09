@@ -125,9 +125,8 @@ public sealed class AuthControllerTests
         Assert.Equal("Staff", body.Role);
     }
 
-    // Login intentionally keeps its specialized error contract.
     [Fact]
-    public async Task Login_WhenAuthServiceReturnsValidationFailure_ReturnsBadRequest()
+    public async Task Login_WhenAuthServiceReturnsValidationFailure_ReturnsValidationProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
         const string error = "Username is required.\nPassword is required.";
@@ -142,26 +141,47 @@ public sealed class AuthControllerTests
             new { UserName = "", Password = "" });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await AssertLoginErrorAsync(response, error);
+        Assert.Equal(
+            "application/problem+json",
+            response.Content.Headers.ContentType?.MediaType);
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync());
+
+        var body = document.RootElement;
+
+        Assert.Equal(400, body.GetProperty("status").GetInt32());
+        Assert.Equal("Validation error", body.GetProperty("title").GetString());
+        Assert.Equal(error, body.GetProperty("detail").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("instance").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("traceId").GetString()));
+
+        var errors = body.GetProperty("errors").GetProperty("request");
+        var messages = errors.EnumerateArray().Select(e => e.GetString()).ToList();
+
+        Assert.Equal(2, messages.Count);
+        Assert.Contains("Username is required.", messages);
+        Assert.Contains("Password is required.", messages);
     }
 
     [Fact]
-    public async Task Login_WhenAuthServiceReturnsFailure_ReturnsUnauthorized()
+    public async Task Login_WhenCredentialsAreInvalid_ReturnsUnauthorizedProblemDetails()
     {
         await using var factory = new ApiWebApplicationFactory();
 
         factory.AuthServiceMock
             .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
-                Result<LoginResponseDto>.FromFailure("internal failure"));
+                Result<LoginResponseDto>.FromUnauthorized("Invalid username or password."));
 
         var response = await factory.CreateClient().PostAsJsonAsync(
             "/api/Auth/login",
             new { UserName = "wronguser", Password = "wrongpassword" });
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        await AssertLoginErrorAsync(
+        await AssertProblemDetailsAsync(
             response,
+            HttpStatusCode.Unauthorized,
+            "Unauthorized",
             "Invalid username or password.");
     }
 
@@ -215,7 +235,7 @@ public sealed class AuthControllerTests
         var client = factory.CreateClient();
         factory.AuthServiceMock
             .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<LoginResponseDto>.FromFailure("Invalid username or password."));
+            .ReturnsAsync(Result<LoginResponseDto>.FromUnauthorized("Invalid username or password."));
 
         for (var attempt = 1; attempt <= 5; attempt++)
         {
@@ -545,17 +565,6 @@ public sealed class AuthControllerTests
         return client;
     }
 
-    private static async Task AssertLoginErrorAsync(
-        HttpResponseMessage response,
-        string expected)
-    {
-        var body = await response.Content
-            .ReadFromJsonAsync<ErrorResponse>();
-
-        Assert.NotNull(body);
-        Assert.Equal(expected, body.Error);
-    }
-
     private static async Task AssertProblemDetailsAsync(
         HttpResponseMessage response,
         HttpStatusCode expectedStatus,
@@ -594,11 +603,6 @@ public sealed class AuthControllerTests
 
         Assert.False(
             string.IsNullOrWhiteSpace(traceId.GetString()));
-    }
-
-    private sealed class ErrorResponse
-    {
-        public string Error { get; init; } = string.Empty;
     }
 
     private sealed class MeResponse

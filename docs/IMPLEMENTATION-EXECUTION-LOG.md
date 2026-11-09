@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — Task API-01 Verified (Zero Database Modifications)
+> **Current Tracking Status:** ACTIVE — Tasks `API-01` and `REST-01` Verified; `TEST-03` completed (Zero Database Modifications)
 
 ---
 
@@ -28,14 +28,15 @@
 - **CI/CD:** Azure Pipelines (`azure-pipelines.yml`).
 
 ### 1.3 Execution State & Phase Status
-- **Active Implementation Phase:** Phase 12.2 (Backend Integrity & Performance) — **100% COMPLETE & VERIFIED**; Phase 12.3 (`API-01` — **100% COMPLETE & VERIFIED**).
-- **Current Task:** `API-01` (Verified).
+- **Active Implementation Phase:** Phase 12.2 (Backend Integrity & Performance) — **100% COMPLETE & VERIFIED**; Phase 12.3 targeted authorization (`API-01` — **100% COMPLETE & VERIFIED**; `REST-01` + `TEST-03` — **COMPLETE & VERIFIED**).
+- **Current Task:** `REST-01` (Verified) with prerequisite `TEST-03` (Verified).
 - **Completed & Verified Implementation Tasks:**
   - `INT-02`: User Creation Persistence Boundary Exception Translation (`UserService.cs` & `UnitOfWork.cs`). Verified by 68 unit tests, 9 constraint translation tests, and 37 controller tests. Committed in `4191f09`.
   - `PERF-01`: LicenseQueryService N+1 Query Remediation (`LicenseQueryService.cs` & `LicenseRepository.cs`). Batched newer license lookups via `GetNewerLicensesBatchAsync`. Verified by 927 unit tests, 5 isolated DB repository batch tests, and 83 controller tests. Committed in `60a0751`.
   - `PERF-02`: Pessimistic Lock on Read-Only License Queries in `LicenseRepository.cs` (concurrency optimization). Separated shared non-locking read queries (`GetLicenseByIdAsync`) from state-modifying update locks (`GetForUpdateAsync` with `WITH (UPDLOCK, HOLDLOCK)`). Verified by 927 unit tests, 26 isolated DB repository tests (including concurrent reader tests), and 83 controller tests. Committed in `77325a1`.
   - `INT-01`: Direct Application Completion Endpoint Removal (`ApplicationsController.cs`, `IApplicationService.cs`, `ApplicationService.cs`). Permanently removed unsafe completion bypass route and standalone service method per `DEC-APP-01` Option 1 and `ADR-P03`. Verified by 926 Application unit tests and 53 API integration tests asserting HTTP 404 on `POST /api/applications/{id}/complete`. Committed in `256df5b`.
   - `API-01`: Propagate `CancellationToken` Across Endpoints (20 API Controllers, 26 Application Services, 15 Repositories, EF Core async queries, `UnitOfWork` transactions, and `LicenseExpirationBackgroundService` across all 5 domain bundles). Verified by 932 Application unit tests and 460 API integration tests (all 20 controllers + background services).
+  - `TEST-03` + `REST-01`: Test-host database isolation and RFC 7807 ProblemDetails standardization. Removed the unsafe startup license-expiration write, added a connection-free test-host database guard, isolated the mock API host, and replaced every custom error envelope with centralized `ProblemDetails`/`ValidationProblemDetails`. Verified by 935 Application unit tests and 505 database-free API tests; frontend lint and production build exit 0.
 - **Blocked Tasks & External Gates (Phase 12.3 & Future):**
   - `INT-03` (Phase 12.3): Blocked on Licensing Authority statutory confirmation under Gate 3 (`DEC-POL-01`).
   - `AUD-01` (Phase 12.3): Blocked on Schema Gate 5 (DBA approval) and `DEC-AUD-01` (storage sink / redaction specification).
@@ -744,6 +745,48 @@ flowchart TD
      - Verified only 3 occurrences of `CancellationToken.None` exist across `API/`, `Application/`, and `Infrastructure/`, all in `Infrastructure/UnitOfWork.cs` (`RollbackPhysicalAsync(CancellationToken.None)` at line 196 and post-commit outcome verification at lines 235 & 240).
      - Verified 0 EF Core async calls in `Infrastructure/` omit `cancellationToken`.
      - Added focused cancellation behavior tests in `PersonServiceTests`, `LicenseRenewalServiceTests`, `ApplicationsControllerTests`, and `UnitOfWorkTests` proving exact token forwarding, non-swallowing of `OperationCanceledException`, and rollback without partial save (`Application.UnitTests`: **935 passed, 0 failed**; `API.IntegrationTests` controllers/background services: **461 passed, 0 failed**).
+
+### Session 13: Task REST-01 — Test-Host Database Safety Gate & RFC 7807 Error Standardization
+- **Date & Timestamp:** 2026-11-09 19:15:00 +03:00
+- **Session Goals:** Eliminate the identified test-host path to the protected `DVLDf` database, then implement REST-01 (RFC 7807 `ProblemDetails`) across every API failure path without introducing a competing error-handling architecture.
+- **Baseline Verification:**
+  - Task-supplied commit `d52098488eb25cbf5888b58fadb394c0028d9d27` verified as an ancestor of `HEAD` (`5ce6621`). The repository had advanced by one test-infrastructure hardening commit, and the working tree contained pre-existing uncommitted user work in the SQL test infrastructure.
+  - All pre-existing user changes were preserved untouched and excluded from the commit; no WPF, schema, or migration changes were made.
+- **Part A — Database Safety (TEST-03):**
+  - Confirmed two independent causes: the inline startup expiration write in `Program.cs` (executed by every `WebApplicationFactory` host) and `ApiWebApplicationFactory` inheriting `Server=.;Database=DVLDf` from `appsettings.json`.
+  - Removed the inline startup sweep; `LicenseExpirationBackgroundService` already performs the first sweep immediately at startup.
+  - Added `Infrastructure/Configuration/SqlServerConnectionSafety` — a connection-free validator that rejects `DVLD`, `DVLDf`, `master`, and any non-`DVLD_IntegrationTests_<GUID>` catalog for test hosts (`Testing` environment or `DVLD_TEST_HOST=1`, set by a module initializer in the API test assembly).
+  - `ApiWebApplicationFactory` now pins an isolated, non-existent LocalDB catalog, supplies a test-only JWT signing key, and installs a `DbConnectionInterceptor` (`ConnectionAttemptRecorder`) that asserts zero connection attempts.
+  - Added 17 safety assertions covering guard rejection, fail-fast startup, zero-connection host operation, resolved `DbContext` catalog, and cleanup naming/configuration validators.
+- **Part B — REST-01:**
+  - Measured the failure inventory: **26** direct `Result.Failure(...)` and **43** `Result<T>.FromFailure(...)` call sites (the earlier "143" figure was a combined regex). All 26 direct sites are persistence/consistency failures and correctly remain HTTP 500.
+  - Added `ErrorType.Unauthorized`; `AuthService` now returns it for invalid credentials, and all `PropagateFailure<T>` translators forward it.
+  - Rewrote `ResultHttpMapper` as the single deterministic mapping authority: `Validation → 400 ValidationProblemDetails`, `Unauthorized → 401`, `Forbidden → 403`, `NotFound → 404`, `Conflict → 409`, `Failure/undefined → 500` (generic detail; internal reason logged).
+  - A successful `Result` passed to the failure mapper now logs a programming error and returns a generic 500 instead of throwing.
+  - Added `ApiProblemDetails`/`ProblemTypes` (stable `urn:dvld:error:*` type URIs, `instance`, `traceId`, `application/problem+json`).
+  - Added `ApiBehaviorOptions.InvalidModelStateResponseFactory` for model-binding and malformed-body failures, and a `UseStatusCodePages` writer for 401/403/404/405/429 produced outside MVC.
+  - Reworked `GlobalExceptionHandler`: 499 for client cancellation, 400 for malformed requests, 409 for curated duplicate conflicts, generic 500 for unexpected exceptions (no internal disclosure).
+  - Removed the custom `{ error }` envelopes from `AuthController` and `PeopleController`.
+  - Replaced the React transport's ad-hoc parsing with a typed `ApiError`/`UnauthorizedError`/`ForbiddenError`, including field errors and `traceId`.
+- **Files Changed:**
+  - Added: `Infrastructure/Configuration/SqlServerConnectionSafety.cs`, `API/DVLD.Api/Results/ApiProblemDetails.cs`, `docs/audits/rest-01-error-handling-and-test-database-safety.md`.
+  - Modified: `API/DVLD.Api/Program.cs`, `API/DVLD.Api/Results/ResultHttpMapper.cs`, `API/DVLD.Api/Security/GlobalExceptionHandler.cs`, `API/DVLD.Api/Controllers/AuthController.cs`, `API/DVLD.Api/Controllers/PeopleController.cs`, `Application/Common/Results/Result.cs`, `Application/Common/Results/ResultT.cs`, `Application/Common/Results/ErrorType.cs`, `Application/Services/AuthService.cs`, four `PropagateFailure` translators, `ClientApp/src/services/apiClient.ts`.
+  - Tests added: `TestHostDatabaseSafetyTests`, `TestHostDatabaseSafety`, `TestHostEnvironment`, `ConnectionAttemptRecorder`, `ResultHttpMapperTests`, `GlobalExceptionHandlerTests`, `ProblemDetailsContractTests`. Tests updated: `AuthControllerTests`, `AuthServiceTests`.
+  - Documentation: `ENGINEERING-ROADMAP.md` (`REST-01`, new `TEST-03`, deferred candidates `CAND-01`…`CAND-11`), `ENGINEERING-DECISIONS.md` (`ADR-P02` accepted, `ADR-P04` added), `ENGINEERING-STANDARDS.md` §3.1 mapping, this log.
+- **Verification Evidence:**
+  - `Application.UnitTests`: **935 passed, 0 failed, 0 skipped**.
+  - `API.IntegrationTests` database-free filter (20 controllers + background service + smoke + JWT clock + 4 new suites): **505 passed, 0 failed, 0 skipped**.
+  - New suites: `ResultHttpMapperTests` 10, `GlobalExceptionHandlerTests` 6, `ProblemDetailsContractTests` 8, `TestHostDatabaseSafetyTests` 17.
+  - Frontend: `npm run lint` exit 0; `npm run build` (`tsc -b && vite build`) exit 0.
+  - Backend build: 0 errors (NU1900 offline vulnerability-feed warnings only).
+  - `DVLDf` was never accessed. No database was created, migrated, or connected to.
+- **Blocked / Not Executed:**
+  - All SQL-dependent suites (`Test/Infrastructure.IntegrationTests` — 26 files / 656 statically inventoried cases; 12 SQL API classes — 96 statically inventoried cases) because `DVLD_TEST_CONNECTION` and `DVLD_TEST_EXPECTED_INSTANCE` are unset. The fixtures fail fast by design; no alternative configuration was attempted.
+- **Residual Risks:**
+  - SQL workflow suites are unverified in this environment.
+  - Defensive application-service "authenticated user required" guards still return 403; unreachable through HTTP because every controller uses `[Authorize]`.
+  - `SqlServerApiWebApplicationFactory` was not modified because it contains uncommitted user work; it remains protected by generated isolated catalogs and ownership-verified cleanup.
+- **Current Task Status:** `TEST-03` **Verified**; `REST-01` **Verified**.
 
 ---
 

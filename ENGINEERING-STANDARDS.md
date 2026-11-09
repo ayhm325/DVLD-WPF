@@ -96,14 +96,19 @@ public class Result<T> : Result
    - `Application` owns use-case execution and communicates application-level outcomes expressed via `Result` / `Result<T>`.
    - `API` maps application outcomes to appropriate HTTP responses.
    - For remediation of constraint violations (such as duplicate user creation INT-02), the architectural remediation direction must translate persistence conflicts at the infrastructure boundary into an application-level failure result without coupling `Application` to EF Core.
-3. **Controller Status Code Mapping:**
+3. **Controller Status Code Mapping (single mapping authority: `API/DVLD.Api/Results/ResultHttpMapper.cs`):**
    - `Result.IsSuccess == true` -> Return `Ok(result.Value)`, `Created(...)`, or `NoContent()`.
-   - `Result.IsSuccess == false` -> Map to appropriate client error:
-     - Entity missing -> HTTP 404 (Not Found).
-     - Validation/Business rule failure -> HTTP 400 (Bad Request).
-     - Concurrent state conflict -> HTTP 409 (Conflict).
+   - `Result.IsSuccess == false` -> Map by `ErrorType`:
+     - `Validation` -> HTTP 400 `ValidationProblemDetails` (aggregated `detail` plus structured `errors`).
+     - `Unauthorized` (caller not authenticated) -> HTTP 401.
+     - `Forbidden` (authenticated but not permitted) -> HTTP 403.
+     - `NotFound` -> HTTP 404.
+     - `Conflict` (current resource state prevents the operation) -> HTTP 409.
+     - `Failure` (or an undefined value) -> HTTP 500 with a generic message; internal detail is never echoed.
+   - A successful `Result` must never be converted into a failure response, and the mapper must never throw because a controller passed a success value.
 4. **API Schema Standardization (REST-01):**
-   - All error responses must adhere to **RFC 7807 `ProblemDetails`**.
+   - All error responses must adhere to **RFC 7807 `ProblemDetails`** with `Content-Type: application/problem+json` and the fields `status`, `title`, `detail`, `type`, `instance`, and `traceId`.
+   - Middleware-generated failures (401 challenge, 403 forbidden, unmatched-route 404, method-not-allowed 405, rate-limiter 429), model-binding failures, and unhandled exceptions use the same envelope.
    - Custom anonymous error envelopes (`return BadRequest(new { error = "..." })`) are prohibited in new and refactored code.
 
 ---

@@ -1,18 +1,76 @@
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5260/api').replace(/\/$/, '')
 
+export type ApiFieldErrors = Record<string, string[]>
+
 type ApiErrorBody = {
-  message?: string
+  type?: string
   title?: string
+  status?: number
   detail?: string
-  errors?: Record<string, string[]>
+  instance?: string
+  traceId?: string
+  errors?: Record<string, string[] | string>
+  message?: string
   error?: string
 }
 
 type UnauthorizedHandler = (message: string) => void
 
-export class ForbiddenError extends Error {
-  constructor(message = 'You do not have permission to access this page.') {
-    super(message)
+/**
+ * Normalized RFC 7807 failure. Every non-success response from the API is surfaced
+ * as an ApiError (or a more specific subclass) so callers can branch on `status`
+ * without re-parsing the response body.
+ */
+export class ApiError extends Error {
+  readonly status: number
+  readonly title: string
+  readonly detail: string
+  readonly fieldErrors: ApiFieldErrors
+  readonly traceId?: string
+
+  constructor(
+    status: number,
+    title: string,
+    detail: string,
+    fieldErrors: ApiFieldErrors = {},
+    traceId?: string,
+  ) {
+    super(detail || title || `Request failed (${status})`)
+    this.name = 'ApiError'
+    this.status = status
+    this.title = title
+    this.detail = detail
+    this.fieldErrors = fieldErrors
+    this.traceId = traceId
+  }
+
+  get hasFieldErrors(): boolean {
+    return Object.keys(this.fieldErrors).length > 0
+  }
+
+  get fieldMessages(): string[] {
+    return Object.values(this.fieldErrors).flat()
+  }
+}
+
+export class UnauthorizedError extends ApiError {
+  constructor(
+    message = 'Your session has expired. Please log in again.',
+    fieldErrors: ApiFieldErrors = {},
+    traceId?: string,
+  ) {
+    super(401, 'Unauthorized', message, fieldErrors, traceId)
+    this.name = 'UnauthorizedError'
+  }
+}
+
+export class ForbiddenError extends ApiError {
+  constructor(
+    message = 'You do not have permission to access this page.',
+    fieldErrors: ApiFieldErrors = {},
+    traceId?: string,
+  ) {
+    super(403, 'Forbidden', message, fieldErrors, traceId)
     this.name = 'ForbiddenError'
   }
 }
@@ -23,27 +81,94 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
   unauthorizedHandler = handler
 }
 
-async function readError(response: Response): Promise<string> {
+function normalizeFieldErrors(
+  errors: ApiErrorBody['errors'],
+): ApiFieldErrors {
+  if (!errors) return {}
+
+  const normalized: ApiFieldErrors = {}
+
+  for (const [key, value] of Object.entries(errors)) {
+    const messages = (Array.isArray(value) ? value : [value]).filter(
+      (message): message is string =>
+        typeof message === 'string' && message.trim().length > 0,
+    )
+
+    if (messages.length > 0) {
+      normalized[key] = messages
+    }
+  }
+
+  return normalized
+}
+
+/**
+ * Reads an RFC 7807 ProblemDetails payload (with a fallback for any legacy or
+ * non-JSON response) into a normalized ApiError.
+ */
+async function readApiError(response: Response): Promise<ApiError> {
   const fallback = `Request failed (${response.status})`
   const text = await response.text()
-  if (!text) return fallback
+
+  if (!text) {
+    return new ApiError(response.status, fallback, fallback)
+  }
+
+  let body: ApiErrorBody
 
   try {
-    const body = JSON.parse(text) as ApiErrorBody
-    const validationMessage = body.errors
-      ? Object.values(body.errors).flat().join(' ')
-      : ''
-    return (
-      body.error ||
-      body.message ||
-      body.detail ||
-      validationMessage ||
-      body.title ||
-      fallback
-    )
+    body = JSON.parse(text) as ApiErrorBody
   } catch {
-    return text
+    return new ApiError(response.status, fallback, text.trim() || fallback)
   }
+
+  const fieldErrors = normalizeFieldErrors(body.errors)
+  const detail = typeof body.detail === 'string' ? body.detail.trim() : ''
+  const title = typeof body.title === 'string' ? body.title.trim() : ''
+  const legacyMessage =
+    typeof body.error === 'string'
+      ? body.error
+      : typeof body.message === 'string'
+        ? body.message
+        : ''
+  const fieldMessage = Object.values(fieldErrors).flat().join(' ')
+  const traceId = typeof body.traceId === 'string' ? body.traceId : undefined
+
+  const message = detail || fieldMessage || legacyMessage || title || fallback
+
+  return new ApiError(
+    response.status,
+    title || fallback,
+    message,
+    fieldErrors,
+    traceId,
+  )
+}
+
+async function throwApiError(response: Response): Promise<never> {
+  const apiError = await readApiError(response)
+
+  if (response.status === 401) {
+    if (unauthorizedHandler) {
+      unauthorizedHandler(apiError.message)
+    }
+
+    throw new UnauthorizedError(
+      apiError.message,
+      apiError.fieldErrors,
+      apiError.traceId,
+    )
+  }
+
+  if (response.status === 403) {
+    throw new ForbiddenError(
+      apiError.message,
+      apiError.fieldErrors,
+      apiError.traceId,
+    )
+  }
+
+  throw apiError
 }
 
 export async function apiRequest<T>(
@@ -86,30 +211,15 @@ export async function apiRequest<T>(
       headers,
     })
   } catch {
-    throw new Error(
+    throw new ApiError(
+      0,
+      'Network error',
       'Unable to connect to the DVLD API. Check that the API is running and the base URL is correct.',
     )
   }
 
-  if (response.status === 401) {
-    const errorMessage = await readError(response)
-    if (unauthorizedHandler) {
-      unauthorizedHandler(errorMessage || 'Session expired. Please log in again.')
-    }
-    throw new Error(errorMessage || 'Unauthorized. Please log in again.')
-  }
-
-  if (response.status === 403) {
-    const errorDetail = await readError(response)
-    const message =
-      errorDetail && errorDetail !== `Request failed (403)`
-        ? errorDetail
-        : 'You do not have permission to access this page.'
-    throw new ForbiddenError(message)
-  }
-
   if (!response.ok) {
-    throw new Error(await readError(response))
+    await throwApiError(response)
   }
 
   if (response.status === 204) {
@@ -158,30 +268,15 @@ export async function apiBlobRequest(
       headers,
     })
   } catch {
-    throw new Error(
+    throw new ApiError(
+      0,
+      'Network error',
       'Unable to connect to the DVLD API. Check that the API is running and the base URL is correct.',
     )
   }
 
-  if (response.status === 401) {
-    const errorMessage = await readError(response)
-    if (unauthorizedHandler) {
-      unauthorizedHandler(errorMessage || 'Session expired. Please log in again.')
-    }
-    throw new Error(errorMessage || 'Unauthorized. Please log in again.')
-  }
-
-  if (response.status === 403) {
-    const errorDetail = await readError(response)
-    const message =
-      errorDetail && errorDetail !== `Request failed (403)`
-        ? errorDetail
-        : 'You do not have permission to access this resource.'
-    throw new ForbiddenError(message)
-  }
-
   if (!response.ok) {
-    throw new Error(await readError(response))
+    await throwApiError(response)
   }
 
   return await response.blob()

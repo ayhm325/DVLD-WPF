@@ -53,8 +53,9 @@ To maintain strict historical and semantic integrity, the decision accounting is
 | **`ADR-C01`** | Exclusion and Freeze of Legacy WPF Desktop Client | **CONSTRAINT** | Governance Authority | `Presentation (WPF)/` | Enforced / Frozen |
 | **`ADR-C02`** | Isolation of Production Database (`DVLDf`) from Automated Testing | **CONSTRAINT** | Governance Authority | All Test Suites, CI | Enforced / Protected |
 | **`ADR-P01`** | Separation of Non-Locking Reads from Update-Locking Queries (`PERF-02`) | **ACCEPTED** | Performance Architect | `PERF-02`, Phase 12.2 | Implemented / Active |
-| **`ADR-P02`** | Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`) | **PROPOSED** | API Lead | `REST-01`, Phase 12.3 | **NOT AUTHORIZED** |
+| **`ADR-P02`** | Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`) | **ACCEPTED** | API Lead | `REST-01`, Phase 12.3 | Implemented / Active |
 | **`ADR-P03`** | Deletion of Orphaned Direct Completion Endpoint (`INT-01`) | **ACCEPTED** | Software Architect | `INT-01`, Phase 12.2 | Implemented / Active |
+| **`ADR-P04`** | Test-Host Database Isolation & Removal of the Startup Expiration Sweep (`TEST-03`) | **ACCEPTED** | System Architect | `TEST-03`, Test Infrastructure | Implemented / Active |
 | **`ADR-R01`** | Rejection of `Task.Run` for In-Process CPU Work (`PERF-03`) | **REJECTED** | Application Architect | `Application Services` | Rejected / Inactive |
 | **`ADR-R02`** | Rejection of Multi-Tenant IDOR Claim on Citizen Photos (`SEC-02`) | **REJECTED** | Security Lead | `SEC-02`, `PeopleController` | Rejected / Inactive |
 | **`ADR-R03`** | Rejection of Pagination on Tiny Static Reference Tables (`API-02`) | **REJECTED** | API Lead | `API-02`, Reference Data | Rejected / Inactive |
@@ -184,16 +185,32 @@ flowchart LR
 - **Consequences:** Eliminates reader-reader and reader-writer serialization. Update locks preserved exclusively in transactional write operations.
 
 ### ADR-P02: Standardized RFC 7807 ProblemDetails across All Endpoints (`REST-01`)
-- **Status:** `PROPOSED` (**NOT AUTHORIZED**)
-- **Context:** `AuthController` returns custom `{ error = "..." }` schemas, while `GlobalExceptionHandler` returns standard `ProblemDetails`.
-- **Proposal:** Standardize all controller failure responses on RFC 7807 `ProblemDetails` (`Content-Type: application/problem+json`).
-- **Consequences:** Uniform client-side error handling in `ClientApp`. Requires Phase 12.3 authorization.
+- **Status:** `ACCEPTED` (Implemented & Verified — 2026-11-09)
+- **Context:** `AuthController` returned custom `{ error = "..." }` schemas and `GlobalExceptionHandler` returned standard `ProblemDetails`, so clients had to parse two incompatible failure shapes. Middleware-generated failures (401 challenge, 403 forbidden, unmatched-route 404, rate-limiter 429) had no body at all.
+- **Decision:** Adopt RFC 7807 as the single failure envelope for every response path:
+  - `ResultHttpMapper` is the only translator from `ErrorType` to HTTP status. Mapping is `Validation → 400` (`ValidationProblemDetails`), `Unauthorized → 401`, `Forbidden → 403`, `NotFound → 404`, `Conflict → 409`, `Failure/undefined → 500`.
+  - `ErrorType.Unauthorized` is added for genuine authentication failures (login) and propagated by the existing `PropagateFailure` translators.
+  - MVC model-binding failures use `ValidationProblemDetails` through `ApiBehaviorOptions.InvalidModelStateResponseFactory`.
+  - Responses produced outside MVC are rendered by a `UseStatusCodePages` ProblemDetails writer.
+  - `GlobalExceptionHandler` maps client cancellation to 499, malformed requests to 400, curated duplicate conflicts to 409, and everything else to a generic 500 that never echoes internals.
+  - Every payload carries `status`, `title`, `detail`, `type`, `instance`, and a per-request `traceId`.
+  - The React transport parses ProblemDetails into a typed `ApiError` (`status`, `title`, `detail`, `fieldErrors`, `traceId`).
+- **Consequences:** One machine-readable error contract across controllers, middleware, and model binding. Internal exception text, SQL messages, and connection strings are never disclosed. Existing success contracts are unchanged.
 
 ### ADR-P03: Deletion of Orphaned Direct Completion Endpoint (`INT-01`)
 - **Status:** `ACCEPTED` (Implemented & Verified in Phase 12.2)
 - **Context:** `POST /api/applications/{id}/complete` allowed authenticated staff to complete applications directly, bypassing test and fee invariants.
 - **Decision:** Permanently delete `POST /api/applications/{id}/complete` endpoint and underlying `CompleteApplicationAsync` service method per `DEC-APP-01` Option 1. Direct application completion is architecturally impossible; applications complete strictly via specialized domain issuance pipelines.
 - **Consequences:** Eliminates critical integrity defect. Calling `POST /api/applications/{id}/complete` returns HTTP 404 Not Found.
+
+### ADR-P04: Test-Host Database Isolation & Removal of the Startup Expiration Sweep (`TEST-03`)
+- **Status:** `ACCEPTED` (Implemented & Verified — 2026-11-09)
+- **Context:** `Program.cs` executed `ILicenseRepository.DeactivateExpiredLicensesAsync` before `app.Run()`. Because `WebApplicationFactory` executes the entry point up to `app.Run()`, every controller-test host performed that database write. `ApiWebApplicationFactory` replaced application services but never overrode `ConnectionStrings:DVLDConnection`, which resolves to `Server=.;Database=DVLDf` from `appsettings.json`. On a developer machine with that instance reachable, the test suite could mutate the protected application database.
+- **Decision:**
+  1. Remove the inline startup sweep. `LicenseExpirationBackgroundService` already performs its first sweep immediately at startup and then on its configured interval, so production processing is preserved without a write in the host-construction path.
+  2. Add `Infrastructure.Configuration.SqlServerConnectionSafety`, a connection-free validator. When a host is a test host (environment `Testing` or `DVLD_TEST_HOST=1`), it rejects `DVLD`, `DVLDf`, and any catalog that is not `DVLD_IntegrationTests_(Api_)?<GUID>` before any `DbContext` is used.
+  3. `ApiWebApplicationFactory` now pins an isolated, non-existent test catalog, injects a test-only JWT signing key, and installs a `DbConnectionInterceptor` that records connection attempts so "no database access" is asserted, not assumed.
+- **Consequences:** Test hosts cannot reach the protected database. A misconfigured test host fails fast at startup with a diagnostic that names the rejected catalog but never echoes the connection string. Production and development hosts keep their legitimate configured target.
 
 ---
 

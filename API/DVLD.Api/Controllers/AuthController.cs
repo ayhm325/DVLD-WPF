@@ -1,4 +1,3 @@
-using Application.Common.Results;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
@@ -8,6 +7,7 @@ using DVLD.Api.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 
 using ContractAuth = DVLD.Contracts.Auth;
 
@@ -27,11 +27,6 @@ public sealed class AuthController(
     public async Task<IActionResult> Login(
         [FromBody] ContractAuth.LoginRequest request, CancellationToken cancellationToken = default)
     {
-        if (request is null)
-        {
-            return BadRequest(new { error = "Login data is required." });
-        }
-
         var result = await authService.LoginAsync(
             new LoginRequestDto
             {
@@ -41,19 +36,15 @@ public sealed class AuthController(
 
         if (result is null)
         {
-            return StatusCode(
-                StatusCodes.Status500InternalServerError,
-                new { error = "An unexpected error occurred." });
+            return UnexpectedResult(
+                "The authentication service returned a null result.");
         }
 
         if (result.IsFailure)
         {
-            return result.ErrorType == ErrorType.Validation
-                ? BadRequest(new { error = result.Error })
-                : Unauthorized(new
-                {
-                    error = "Invalid username or password."
-                });
+            // Validation -> 400 ValidationProblemDetails; invalid credentials ->
+            // 401 ProblemDetails. Mapping is centralized in ResultHttpMapper.
+            return result.ToActionResult(this);
         }
 
         var response = result.Value!;
@@ -131,5 +122,24 @@ public sealed class AuthController(
         return result.IsSuccess
             ? NoContent()
             : result.ToActionResult(this);
+    }
+
+    private IActionResult UnexpectedResult(string diagnosticMessage)
+    {
+        HttpContext.RequestServices
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger<AuthController>()
+            .LogError(
+                "Authentication endpoint failed unexpectedly: {DiagnosticMessage}",
+                diagnosticMessage);
+
+        return ApiProblemDetails.ToActionResult(
+            HttpContext,
+            ApiProblemDetails.Create(
+                HttpContext,
+                StatusCodes.Status500InternalServerError,
+                "An unexpected error occurred.",
+                "The server could not complete the request.",
+                ProblemTypes.Internal));
     }
 }

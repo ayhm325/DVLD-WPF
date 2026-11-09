@@ -88,7 +88,7 @@ public sealed class AuthServiceTests
 
         var result = await CreateService().LoginAsync(Request("  admin  "));
 
-        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
         Assert.Equal("Invalid username or password.", result.Error);
         _userRepository.Verify(
             x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()), Times.Once);
@@ -102,7 +102,7 @@ public sealed class AuthServiceTests
 
         var result = await CreateService().LoginAsync(Request());
 
-        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
         Assert.Equal("Invalid username or password.", result.Error);
         _jwtTokenService.Verify(
             x => x.GenerateToken(It.IsAny<UserDto>()), Times.Never);
@@ -116,7 +116,7 @@ public sealed class AuthServiceTests
 
         var result = await CreateService().LoginAsync(Request());
 
-        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
         Assert.Equal("Invalid username or password.", result.Error);
         _jwtTokenService.Verify(
             x => x.GenerateToken(It.IsAny<UserDto>()), Times.Never);
@@ -131,7 +131,7 @@ public sealed class AuthServiceTests
         var result = await CreateService().LoginAsync(
             Request(password: "WrongPassword"));
 
-        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal(ErrorType.Unauthorized, result.ErrorType);
         Assert.Equal("Invalid username or password.", result.Error);
         _jwtTokenService.Verify(
             x => x.GenerateToken(It.IsAny<UserDto>()), Times.Never);

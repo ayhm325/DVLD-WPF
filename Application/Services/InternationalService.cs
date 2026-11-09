@@ -291,6 +291,7 @@ public sealed class InternationalService(
             ErrorType.NotFound => Result<T>.FromNotFound(source.Error),
             ErrorType.Conflict => Result<T>.FromConflict(source.Error),
             ErrorType.Forbidden => Result<T>.FromForbidden(source.Error),
+            ErrorType.Unauthorized => Result<T>.FromUnauthorized(source.Error),
             _ => Result<T>.FromFailure(source.Error)
         };
 }
