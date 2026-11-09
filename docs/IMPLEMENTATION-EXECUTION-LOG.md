@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01` verified; `CI-SQL-01` implemented (Azure runtime run pending)
+> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01`, `CI-SQL-01` implemented; `AUTH-01-CROSS-PROCESS` verified for rotation/reuse
 
 ---
 
@@ -843,6 +843,22 @@ flowchart TD
 - **Not Verified:** Azure-hosted pipeline execution (cannot be triggered from this environment). The configuration is committed; runtime CI verification remains pending.
 - **Safety:** No SQL validation, ownership, or cleanup safeguard was weakened; `DVLDf` and WPF were untouched.
 - **Documentation:** `docs/audits/ci-sql-01-azure-pipelines-sql-reliability.md`, `TESTING-STANDARDS.md` §9.1, roadmap, this log.
+
+### Session 17: Milestone AUTH-01-CROSS-PROCESS — Two-Process Refresh Rotation Verification
+- **Date & Timestamp:** 2026-11-09 20:35:00 +03:00
+- **Goals:** Prove refresh rotation and family revocation with two independent API OS processes sharing one isolated SQL database.
+- **Baseline:** `HEAD` = `ac4c4be`; clean tree. CI-SQL-01 Azure runtime still pending; the locally verified provisioning path was used.
+- **Implementation:** Added `Test/API.IntegrationTests/Auth/CrossProcessRefreshTests.cs` and `SharedSqlDatabaseFixture`:
+  - starts two real `dotnet exec DVLD.Api.dll` processes on separate ports with `Testing` environment and the shared connection string;
+  - seeds user/session directly in the isolated database;
+  - synchronization gate sends simultaneous refresh requests with the same cookie.
+- **Results:**
+  - `ConcurrentRefresh_AcrossTwoApiProcesses_ExactlyOneRotationWins`: **PASS** — one 200, one 409, 2 family rows, one active, absolute expiry preserved.
+  - `ReuseAfterGrace_AcrossProcesses_RevokesFamilyForBothHosts`: **PASS** — replay via the other process returns 401 and the legitimate replacement is also revoked.
+  - Environment identity re-read at runtime (`...LOCALDB#224BCC1F...`); the hash changed since the previous session, confirming the CI identity must be queried.
+- **Not Verified:** lost HTTP response, process termination before/after commit, mid-transaction connection interruption.
+- **Docs:** `docs/audits/auth-01-cross-process-verification.md`, AUTH-01 addendum, roadmap, testing standards.
+- **Status:** Gate 2 **PARTIALLY VERIFIED** (core rotation/reuse proven; fault injection outstanding).
 
 ---
 

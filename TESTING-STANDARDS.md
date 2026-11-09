@@ -415,7 +415,9 @@ Authentication changes must be covered at three levels:
 
 Level 3 must not be reported as passed unless it was actually executed against an isolated database. A service-level concurrency test does **not** prove cross-instance safety; the database conditional `UPDATE` is the authoritative guarantee.
 
-**AUTH-01-POST evidence:** `Test/Infrastructure.IntegrationTests/Auth/AuthSessionSqlVerificationTests.cs` and `AuthSessionRefreshSqlConcurrencyTests.cs` execute against the ownership-verified ephemeral database (12 tests). Cross-process concurrency remains an explicit gap and must be tested with two independent API processes before claiming full session-concurrency verification.
+**AUTH-01-POST evidence:** `Test/Infrastructure.IntegrationTests/Auth/AuthSessionSqlVerificationTests.cs` and `AuthSessionRefreshSqlConcurrencyTests.cs` execute against the ownership-verified ephemeral database (12 tests).
+
+**AUTH-01-CROSS-PROCESS evidence:** `Test/API.IntegrationTests/Auth/CrossProcessRefreshTests.cs` starts **two independent `DVLD.Api` OS processes** against one shared isolated database and proves one 200 / one 409 for the same refresh token plus cross-process family revocation (`ReuseAfterGrace_AcrossProcesses_RevokesFamilyForBothHosts`). Lost-response and process-termination scenarios remain an explicit gap.
 
 ### 9.1 Azure Pipelines SQL contract
 

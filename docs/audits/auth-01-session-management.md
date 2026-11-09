@@ -130,7 +130,9 @@ Refresh tokens are never present in JSON. Errors remain RFC 7807 `ProblemDetails
 - No session-listing UI/endpoint (deliberate scope decision).
 - Production deployment must serve API+SPA from the same site (or configure `SameSite=None; Secure`) for the refresh cookie.
 
-> **Addendum (AUTH-01-POST):** SQL persistence, schema, rotation, atomic consume, reuse-after-grace, revocation and rollback were subsequently verified against an isolated LocalDB test database. See [`auth-01-post-sql-verification.md`](./auth-01-post-sql-verification.md). Cross-process concurrency remains unverified.
+> **Addendum (AUTH-01-POST):** SQL persistence, schema, rotation, atomic consume, reuse-after-grace, revocation and rollback were subsequently verified against an isolated LocalDB test database. See [`auth-01-post-sql-verification.md`](./auth-01-post-sql-verification.md).
+>
+> **Addendum (AUTH-01-CROSS-PROCESS):** Two independent API OS processes sharing one isolated SQL database produced exactly one 200 and one 409 for the same refresh token; reuse-after-grace revoked the family for both processes. See [`auth-01-cross-process-verification.md`](./auth-01-cross-process-verification.md). Lost-response/termination fault injection remains outstanding.
 
 ---
 
