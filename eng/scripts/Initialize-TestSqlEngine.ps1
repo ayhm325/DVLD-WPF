@@ -334,6 +334,7 @@ catch {
 }
 
 $runOwnershipToken = ''
+$instanceIdentity = ''
 
 try {
     $connection = [System.Data.SqlClient.SqlConnection]::new($probeConnectionString)
@@ -362,6 +363,23 @@ try {
         }
 
         Write-Host "SQL Server test engine verified on '$connectedDb': Version=$productVersion, Edition=$edition"
+
+        # The identity contract consumed by the test fixtures is
+        # "<SERVERPROPERTY('ServerName')>|<@@SERVICENAME>". It is queried from the
+        # running engine rather than derived from the connection alias, because
+        # LocalDB reports an internal machine\LOCALDB#<hash> identity that cannot be
+        # predicted from the instance name.
+        $identityCmd = $connection.CreateCommand()
+        $identityCmd.CommandTimeout = 30
+        $identityCmd.CommandText = "SELECT CONVERT(nvarchar(128), SERVERPROPERTY('ServerName')) + N'|' + CONVERT(nvarchar(128), @@SERVICENAME);"
+        $instanceIdentity = [string]$identityCmd.ExecuteScalar()
+
+        if ([string]::IsNullOrWhiteSpace($instanceIdentity) -or
+            $instanceIdentity -notmatch '^[^|]+\|[^|]+$') {
+            throw 'SQL Server did not return a usable "<ServerName>|<ServiceName>" instance identity required by DVLD_TEST_EXPECTED_INSTANCE.'
+        }
+
+        Write-Host "Verified SQL Server instance identity contract: $instanceIdentity"
 
         if ($createdFreshOwnedInstance) {
             $runOwnershipToken = [guid]::NewGuid().ToString('N')
@@ -408,4 +426,5 @@ else {
 }
 
 Write-Host "##vso[task.setvariable variable=SqlProbeDataSource]$probeDataSource"
+Write-Host "##vso[task.setvariable variable=SqlExpectedInstance]$instanceIdentity"
 Write-Host '##vso[task.setvariable variable=SqlServerReady]true'

@@ -282,6 +282,17 @@ graph TD
 - **Implementation Authorization:** **AUTHORIZED & COMPLETED.**
 - **Known Limitation:** SQL persistence and single-winner rotation are verified across independent contexts/transactions in one process (`AUTH-01-POST`, 12 SQL tests). Cross-process/two-API-instance concurrency remains unverified; grace-window timing is covered by injected-clock unit tests only.
 
+#### [CI-SQL-01] Azure Pipelines SQL Server Test Environment Reliability
+- **Finding ID:** `CI-SQL-01`
+- **Evidence Classification:** `CONFIRMED — IMPLEMENTED (Azure runtime run pending)`
+- **Priority:** `P1 (CI Reliability)`
+- **Affected Components:** `azure-pipelines.yml`, `eng/scripts/Initialize-TestSqlEngine.ps1`, `Test/API.IntegrationTests/Security/ProblemDetailsContractTests.cs`.
+- **Description:** Both SQL suites failed at fixture initialization with `DVLD_TEST_EXPECTED_INSTANCE must identify the approved SQL Server instance.` because the pipeline never produced or passed the expected instance identity; LocalDB itself was available.
+- **Technical Remediation Implemented:** The initialization script now queries `<SERVERPROPERTY('ServerName')>|<@@SERVICENAME>` from the running engine and publishes `SqlExpectedInstance`; both SQL test tasks receive `DVLD_TEST_EXPECTED_INSTANCE`; a fail-fast contract validation step precedes the suites; cleanup runs with `always()` while retaining ownership checks; a `dotnet --info` diagnostic records the effective SDK. SQL safety validation was not weakened. The xUnit2013 assertion in `ProblemDetailsContractTests` was corrected to `Assert.NotEmpty`.
+- **Verification Evidence:** Provisioning + cleanup scripts validated end-to-end on a temporary LocalDB instance; the SQL auth fixtures passed **10/10** against that instance using the published identity; YAML parses; **945** unit and **514** database-free API tests pass.
+- **Current Status:** **`Implemented — Azure Pipeline runtime verification pending`**.
+- **Implementation Authorization:** **AUTHORIZED & IMPLEMENTED.**
+
 #### [SEC-01] Segregation of Duties Model B Policy Alignment
 - **Finding ID:** `SEC-01`
 - **Evidence Classification:** `APPROVED POLICY RECORD — IMPLEMENTATION NOT AUTHORIZED`

@@ -416,3 +416,11 @@ Authentication changes must be covered at three levels:
 Level 3 must not be reported as passed unless it was actually executed against an isolated database. A service-level concurrency test does **not** prove cross-instance safety; the database conditional `UPDATE` is the authoritative guarantee.
 
 **AUTH-01-POST evidence:** `Test/Infrastructure.IntegrationTests/Auth/AuthSessionSqlVerificationTests.cs` and `AuthSessionRefreshSqlConcurrencyTests.cs` execute against the ownership-verified ephemeral database (12 tests). Cross-process concurrency remains an explicit gap and must be tested with two independent API processes before claiming full session-concurrency verification.
+
+### 9.1 Azure Pipelines SQL contract
+
+1. The pipeline must provide **both** `DVLD_TEST_CONNECTION` and `DVLD_TEST_EXPECTED_INSTANCE` to **both** SQL test tasks.
+2. `DVLD_TEST_EXPECTED_INSTANCE` is generated at runtime by `eng/scripts/Initialize-TestSqlEngine.ps1` as `<SERVERPROPERTY('ServerName')>|<@@SERVICENAME>` and published as `SqlExpectedInstance`. It must never be hardcoded or derived from the LocalDB alias.
+3. A dedicated validation step must fail the job when the identity was not published; a missing identity must never surface as hundreds of test-initialization failures.
+4. Cleanup must run with `condition: always()`; the cleanup script refuses deletion unless run ownership is positively verified, so this is safe on provisioning or test failure.
+5. SQL tests must never be filtered out to make the pipeline green; a skipped SQL suite is not a passing SQL suite.

@@ -315,6 +315,17 @@ stages:
               useGlobalJson: true
               workingDirectory: '$(Build.SourcesDirectory)'
 
+          # Makes the SDK/NuGet version actually used by restore visible in the log.
+          # The historical "NET 5 / older NuGet" message is informational on the
+          # hosted image; this step proves the selected SDK is the pinned .NET 8 one.
+          - task: PowerShell@2
+            displayName: 'Report .NET SDK Environment'
+            inputs:
+              targetType: 'inline'
+              script: |
+                dotnet --info
+              failOnStderr: false
+
           - task: Cache@2
             displayName: 'Cache NuGet Packages'
             inputs:
@@ -390,6 +401,29 @@ stages:
               filePath: 'eng/scripts/Initialize-TestSqlEngine.ps1'
               failOnStderr: false
 
+          # Fail fast if the initialization did not publish the identity contract.
+          # Without this, hundreds of tests fail with an unhelpful configuration
+          # error instead of one clear provisioning diagnostic.
+          - task: PowerShell@2
+            displayName: 'Validate SQL Test Environment Contract'
+            condition: and(succeeded(), eq(variables['SqlServerReady'], 'true'))
+            env:
+              SQL_EXPECTED_INSTANCE: '$(SqlExpectedInstance)'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $ErrorActionPreference = 'Stop'
+
+                if ([string]::IsNullOrWhiteSpace($env:SQL_EXPECTED_INSTANCE) -or
+                    $env:SQL_EXPECTED_INSTANCE -match '^\$' -or
+                    $env:SQL_EXPECTED_INSTANCE -notmatch '^[^|]+\|[^|]+$') {
+                  Write-Host "##vso[task.logissue type=error]SQL test environment contract is incomplete: SqlExpectedInstance was not published by initialization. Both integration suites require DVLD_TEST_EXPECTED_INSTANCE."
+                  exit 1
+                }
+
+                Write-Host 'SQL test instance identity contract verified for both integration suites.'
+              failOnStderr: false
+
           - task: PowerShell@2
             displayName: 'Validate API Integration Test Secrets'
             condition: and(succeededOrFailed(), eq(variables['SolutionBuilt'], 'true'))
@@ -414,6 +448,7 @@ stages:
               )
             env:
               DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+              DVLD_TEST_EXPECTED_INSTANCE: '$(SqlExpectedInstance)'
               Jwt__SecretKey: '$(Jwt__SecretKey)'
             inputs:
               command: 'test'
@@ -457,6 +492,7 @@ stages:
               )
             env:
               DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
+              DVLD_TEST_EXPECTED_INSTANCE: '$(SqlExpectedInstance)'
             inputs:
               command: 'test'
               projects: '$(infraIntegrationTestProject)'
@@ -490,7 +526,10 @@ stages:
           # -------------------------------------------------------------------
           - task: PowerShell@2
             displayName: 'Clean Up Run-Owned SQL Test Databases & LocalDB Instance'
-            condition: and(always(), eq(variables['SqlServerReady'], 'true'))
+            # Always attempt cleanup. The script itself refuses to delete anything
+            # unless run ownership is positively verified, so this is safe even when
+            # provisioning or tests fail before readiness.
+            condition: always()
             env:
               DVLD_TEST_CONNECTION: '$(DVLD_TEST_CONNECTION)'
               SQL_PROBE_DATA_SOURCE: '$(SqlProbeDataSource)'

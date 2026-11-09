@@ -101,7 +101,7 @@ public sealed class ProblemDetailsContractTests
 
         Assert.Equal(400, problem.GetProperty("status").GetInt32());
         Assert.True(problem.TryGetProperty("errors", out var errors));
-        Assert.NotEqual(0, errors.EnumerateObject().Count());
+        Assert.NotEmpty(errors.EnumerateObject());
         Assert.False(string.IsNullOrWhiteSpace(problem.GetProperty("traceId").GetString()));
     }
 

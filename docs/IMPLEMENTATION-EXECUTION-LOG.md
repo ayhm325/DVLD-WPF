@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01` and `AUTH-01` Verified (AUTH-01 SQL persistence verified; cross-process concurrency outstanding)
+> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01` verified; `CI-SQL-01` implemented (Azure runtime run pending)
 
 ---
 
@@ -823,6 +823,26 @@ flowchart TD
 - **Defects:** none in production code; three test expectations were corrected during authoring (default-constraint name, hash length, family audit reason).
 - **Documentation:** `docs/audits/auth-01-post-sql-verification.md`, AUTH-01 audit addendum, roadmap status, this log.
 - **Current Task Status:** AUTH-01-POST **complete for the executable scope**; cross-process concurrency explicitly outstanding.
+
+### Session 16: Task CI-SQL-01 — Azure Pipelines SQL Server Test Reliability
+- **Date & Timestamp:** 2026-11-09 20:20:00 +03:00
+- **Session Goals:** Fix the Azure Pipelines failure in which every SQL-backed integration test failed at fixture initialization with `DVLD_TEST_EXPECTED_INSTANCE must identify the approved SQL Server instance.` without weakening SQL safety validation.
+- **Root Cause:** The pipeline supplied `DVLD_TEST_CONNECTION` but **never** supplied `DVLD_TEST_EXPECTED_INSTANCE`. The initialization script started the run-specific LocalDB instance and verified `master`, but never queried or published the identity contract (`<ServerName>|<ServiceName>`). Both SQL test tasks passed only the connection string. LocalDB itself was available.
+- **Completed Work:**
+  1. `Initialize-TestSqlEngine.ps1` now queries the running engine identity after the verified `master` probe, rejects empty/malformed values, and publishes `SqlExpectedInstance`.
+  2. Added a fail-fast **Validate SQL Test Environment Contract** pipeline step before both suites.
+  3. API and Infrastructure test tasks now receive `DVLD_TEST_EXPECTED_INSTANCE: $(SqlExpectedInstance)`.
+  4. Cleanup condition changed to `always()`; the script's ownership verification remains the deletion gate.
+  5. Added a `dotnet --info` diagnostic step (NuGet/SDK warning investigation).
+  6. Corrected the xUnit2013 assertion in `ProblemDetailsContractTests` to `Assert.NotEmpty`.
+- **Verification Evidence:**
+   - YAML parsed successfully; env wiring confirmed from the parsed model.
+   - Real `Initialize-TestSqlEngine.ps1` run created a temporary LocalDB instance and published `SqlExpectedInstance`; the SQL auth fixture then passed **10/10** against it; `Cleanup-TestSqlEngine.ps1` removed all databases and deleted the instance.
+   - `Application.UnitTests`: **945 passed**; `API.IntegrationTests` database-free: **514 passed**; `ProblemDetailsContractTests`: **8 passed**.
+   - `dotnet restore` on SDK 8.0.427 produced no NET 5/NuGet warning.
+- **Not Verified:** Azure-hosted pipeline execution (cannot be triggered from this environment). The configuration is committed; runtime CI verification remains pending.
+- **Safety:** No SQL validation, ownership, or cleanup safeguard was weakened; `DVLDf` and WPF were untouched.
+- **Documentation:** `docs/audits/ci-sql-01-azure-pipelines-sql-reliability.md`, `TESTING-STANDARDS.md` §9.1, roadmap, this log.
 
 ---
 
