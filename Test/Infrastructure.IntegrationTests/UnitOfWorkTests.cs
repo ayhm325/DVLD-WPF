@@ -379,6 +379,43 @@ public sealed class UnitOfWorkTests
     }
 
     [Fact]
+    public async Task ExecuteInTransactionAsync_WhenOperationCanceledAfterFirstSave_ShouldRollbackWithCancellationTokenNoneAndRethrow()
+    {
+        var uniqueId = Guid.NewGuid().ToString("N");
+        var countryName = $"TxCanceledCountry_{uniqueId}";
+        using var cts = new CancellationTokenSource();
+
+        await using (var context = _database.CreateContext())
+        {
+            var unitOfWork = new UnitOfWork(context);
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                unitOfWork.ExecuteInTransactionAsync<Result>(
+                    async _ =>
+                    {
+                        context.Countries.Add(new Country { CountryName = countryName });
+                        await unitOfWork.SaveChangesAsync(cts.Token);
+
+                        cts.Cancel();
+                        cts.Token.ThrowIfCancellationRequested();
+
+                        return Result.Success();
+                    },
+                    IsolationLevel.Serializable,
+                    cts.Token));
+
+            Assert.Empty(context.ChangeTracker.Entries());
+        }
+
+        await using var verificationContext = _database.CreateContext();
+
+        Assert.False(
+            await verificationContext.Countries
+                .AsNoTracking()
+                .AnyAsync(c => c.CountryName == countryName));
+    }
+
+    [Fact]
     public async Task BeginTransactionAsync_WhenTransactionAlreadyActive_ShouldThrowInvalidOperationException()
     {
         await using var context = _database.CreateContext();

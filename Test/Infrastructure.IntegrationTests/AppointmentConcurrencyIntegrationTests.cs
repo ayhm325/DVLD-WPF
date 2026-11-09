@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
 using Application.Interfaces;
@@ -841,34 +841,34 @@ public sealed class AppointmentConcurrencyIntegrationTests : IAsyncLifetime
 
     private sealed class RollbackTriggerAppointmentRepository(ITestAppointmentRepository inner) : ITestAppointmentRepository
     {
-        public Task<TestAppointment?> GetByIdAsync(int id) => inner.GetByIdAsync(id);
-        public Task<TestAppointment?> GetForUpdateAsync(int id) => inner.GetForUpdateAsync(id);
-        public Task<List<TestAppointment>> GetAllAsync() => inner.GetAllAsync();
-        public Task<List<TestAppointment>> GetByLocalDrivingLicenseApplicationIdAsync(int localAppId) => inner.GetByLocalDrivingLicenseApplicationIdAsync(localAppId);
-        public Task<List<TestAppointment>> GetByTestTypeIdAsync(TestTypeEnum testType) => inner.GetByTestTypeIdAsync(testType);
-        public Task<List<TestAppointment>> GetByCreatedUserIdAsync(int userId) => inner.GetByCreatedUserIdAsync(userId);
-        public Task<TestAppointment?> GetScheduleInfoAsync(int appointmentId) => inner.GetScheduleInfoAsync(appointmentId);
-        public Task<HashSet<int>> GetPassedTestTypeIdsAsync(int localAppId) => inner.GetPassedTestTypeIdsAsync(localAppId);
-        public Task<bool> HasUserConflictAsync(int userId, DateTime dateTime, int? excludeAppointmentId = null) => inner.HasUserConflictAsync(userId, dateTime, excludeAppointmentId);
-        public Task<bool> HasLocalApplicationConflictAsync(int localAppId, DateTime dateTime, int? excludeAppointmentId = null) => inner.HasLocalApplicationConflictAsync(localAppId, dateTime, excludeAppointmentId);
-        public Task<bool> IsSlotOccupiedAsync(int testTypeId, DateTime appointmentDate, int? excludeAppointmentId = null) => inner.IsSlotOccupiedAsync(testTypeId, appointmentDate, excludeAppointmentId);
-        public Task<bool> HasApplicantSameDayConflictAsync(int applicantPersonId, DateTime appointmentDate, int? excludeAppointmentId = null) => inner.HasApplicantSameDayConflictAsync(applicantPersonId, appointmentDate, excludeAppointmentId);
-        public Task<int?> GetApplicantPersonIdByLocalAppIdAsync(int localAppId) => inner.GetApplicantPersonIdByLocalAppIdAsync(localAppId);
+        public Task<TestAppointment?> GetByIdAsync(int id, CancellationToken cancellationToken = default) => inner.GetByIdAsync(id, cancellationToken);
+        public Task<TestAppointment?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default) => inner.GetForUpdateAsync(id, cancellationToken);
+        public Task<List<TestAppointment>> GetAllAsync(CancellationToken cancellationToken = default) => inner.GetAllAsync(cancellationToken);
+        public Task<List<TestAppointment>> GetByLocalDrivingLicenseApplicationIdAsync(int localAppId, CancellationToken cancellationToken = default) => inner.GetByLocalDrivingLicenseApplicationIdAsync(localAppId, cancellationToken);
+        public Task<List<TestAppointment>> GetByTestTypeIdAsync(TestTypeEnum testType, CancellationToken cancellationToken = default) => inner.GetByTestTypeIdAsync(testType, cancellationToken);
+        public Task<List<TestAppointment>> GetByCreatedUserIdAsync(int userId, CancellationToken cancellationToken = default) => inner.GetByCreatedUserIdAsync(userId, cancellationToken);
+        public Task<TestAppointment?> GetScheduleInfoAsync(int appointmentId, CancellationToken cancellationToken = default) => inner.GetScheduleInfoAsync(appointmentId, cancellationToken);
+        public Task<HashSet<int>> GetPassedTestTypeIdsAsync(int localAppId, CancellationToken cancellationToken = default) => inner.GetPassedTestTypeIdsAsync(localAppId, cancellationToken);
+        public Task<bool> HasUserConflictAsync(int userId, DateTime dateTime, int? excludeAppointmentId = null, CancellationToken cancellationToken = default) => inner.HasUserConflictAsync(userId, dateTime, excludeAppointmentId, cancellationToken);
+        public Task<bool> HasLocalApplicationConflictAsync(int localAppId, DateTime dateTime, int? excludeAppointmentId = null, CancellationToken cancellationToken = default) => inner.HasLocalApplicationConflictAsync(localAppId, dateTime, excludeAppointmentId, cancellationToken);
+        public Task<bool> IsSlotOccupiedAsync(int testTypeId, DateTime appointmentDate, int? excludeAppointmentId = null, CancellationToken cancellationToken = default) => inner.IsSlotOccupiedAsync(testTypeId, appointmentDate, excludeAppointmentId, cancellationToken);
+        public Task<bool> HasApplicantSameDayConflictAsync(int applicantPersonId, DateTime appointmentDate, int? excludeAppointmentId = null, CancellationToken cancellationToken = default) => inner.HasApplicantSameDayConflictAsync(applicantPersonId, appointmentDate, excludeAppointmentId, cancellationToken);
+        public Task<int?> GetApplicantPersonIdByLocalAppIdAsync(int localAppId, CancellationToken cancellationToken = default) => inner.GetApplicantPersonIdByLocalAppIdAsync(localAppId, cancellationToken);
         public Task<bool> AcquireSchedulingLocksAsync(int applicantPersonId, int testTypeId, DateTime appointmentDate, int timeoutMs = 5000, CancellationToken cancellationToken = default) => inner.AcquireSchedulingLocksAsync(applicantPersonId, testTypeId, appointmentDate, timeoutMs, cancellationToken);
-        public Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId) => inner.IsAppointmentAlreadyScheduledAsync(localAppId, testTypeId);
-        public Task<AppStatus?> GetApplicationStatusAsync(int localAppId) => inner.GetApplicationStatusAsync(localAppId);
-        public Task<int> GetTrialCountAsync(int localAppId, int testTypeId) => inner.GetTrialCountAsync(localAppId, testTypeId);
-        public Task<bool> LockLocalApplicationForSchedulingAsync(int localAppId) => inner.LockLocalApplicationForSchedulingAsync(localAppId);
+        public Task<bool> IsAppointmentAlreadyScheduledAsync(int localAppId, int testTypeId, CancellationToken cancellationToken = default) => inner.IsAppointmentAlreadyScheduledAsync(localAppId, testTypeId, cancellationToken);
+        public Task<AppStatus?> GetApplicationStatusAsync(int localAppId, CancellationToken cancellationToken = default) => inner.GetApplicationStatusAsync(localAppId, cancellationToken);
+        public Task<int> GetTrialCountAsync(int localAppId, int testTypeId, CancellationToken cancellationToken = default) => inner.GetTrialCountAsync(localAppId, testTypeId, cancellationToken);
+        public Task<bool> LockLocalApplicationForSchedulingAsync(int localAppId, CancellationToken cancellationToken = default) => inner.LockLocalApplicationForSchedulingAsync(localAppId, cancellationToken);
         public void Delete(TestAppointment appointment) => inner.Delete(appointment);
-        public Task<(HashSet<DateTime> OccupiedSlots, HashSet<DateTime> ApplicantAppointmentDates, DateTime? LastTestDate)> GetAvailabilityDataAsync(int testTypeId, int applicantPersonId, int localAppId, DateTime rangeStart, DateTime rangeEnd) => inner.GetAvailabilityDataAsync(testTypeId, applicantPersonId, localAppId, rangeStart, rangeEnd);
+        public Task<(HashSet<DateTime> OccupiedSlots, HashSet<DateTime> ApplicantAppointmentDates, DateTime? LastTestDate)> GetAvailabilityDataAsync(int testTypeId, int applicantPersonId, int localAppId, DateTime rangeStart, DateTime rangeEnd, CancellationToken cancellationToken = default) => inner.GetAvailabilityDataAsync(testTypeId, applicantPersonId, localAppId, rangeStart, rangeEnd, cancellationToken);
         public Task<List<int>> GetPendingNoShowAppointmentIdsAsync(DateTime cutoffJordanTime, int batchSize, CancellationToken cancellationToken = default) => inner.GetPendingNoShowAppointmentIdsAsync(cutoffJordanTime, batchSize, cancellationToken);
         public Task<bool> AcquireAppointmentLockAsync(int appointmentId, int timeoutMs = 5000, CancellationToken cancellationToken = default) => inner.AcquireAppointmentLockAsync(appointmentId, timeoutMs, cancellationToken);
         public Task<Application.DTOs.TestAppointmentDTO.ExaminationAttemptStats> GetAttemptStatsAsync(int localAppId, int testTypeId, CancellationToken cancellationToken = default) => inner.GetAttemptStatsAsync(localAppId, testTypeId, cancellationToken);
         public Task<List<TestAppointment>> GetActiveScheduledByLocalAppIdForUpdateAsync(int localAppId, CancellationToken cancellationToken = default) => inner.GetActiveScheduledByLocalAppIdForUpdateAsync(localAppId, cancellationToken);
 
-        public async Task AddAsync(TestAppointment appointment)
+        public async Task AddAsync(TestAppointment appointment, CancellationToken cancellationToken = default)
         {
-            await inner.AddAsync(appointment);
+            await inner.AddAsync(appointment, cancellationToken);
             throw new InvalidOperationException("Deliberate failure triggered after retake application creation.");
         }
     }

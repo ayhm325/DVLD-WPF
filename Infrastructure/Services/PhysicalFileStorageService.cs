@@ -86,6 +86,7 @@ public sealed class PhysicalFileStorageService : IFileStorageService
             useAsync: true))
         {
             await contentStream.CopyToAsync(fileStream, cancellationToken);
+            await fileStream.FlushAsync(cancellationToken);
         }
 
         return relativeKey;

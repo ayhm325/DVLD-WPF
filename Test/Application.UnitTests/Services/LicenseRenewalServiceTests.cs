@@ -765,6 +765,54 @@ public class LicenseRenewalServiceTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task RenewLicenseAsync_WhenCanceledMidTransaction_PropagatesOperationCanceledExceptionAndRollsBackWithoutPartialCommit()
+    {
+        using var cts = new CancellationTokenSource();
+        SetupAuthenticatedUser();
+        SetupValidApplicationType();
+        var transaction = CreateTransactionMock();
+        SetupTransaction(transaction);
+
+        var oldLicense = CreateExpiredLicense();
+        _licenseRepository
+            .Setup(x => x.GetForUpdateAsync(10, cts.Token))
+            .ReturnsAsync(oldLicense);
+        _detainedLicenseRepository
+            .Setup(x => x.IsLicenseDetainedAsync(10, cts.Token))
+            .ReturnsAsync(false);
+        _licenseRepository
+            .Setup(x => x.DeactivateLicenseAsync(10, cts.Token))
+            .ReturnsAsync(true);
+        _applicationService
+            .Setup(x => x.AddNewApplicationAsync(It.IsAny<CreateApplicationDto>(), cts.Token))
+            .ReturnsAsync(Result<int>.Success(100));
+        _licenseRepository
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>(), cts.Token))
+            .Returns(Task.CompletedTask);
+        _unitOfWork
+            .Setup(x => x.SaveChangesAsync(cts.Token))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        var sut = CreateSut();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => sut.RenewLicenseAsync(10, null, cts.Token));
+
+        _unitOfWork.Verify(
+            x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result<int>>>>(),
+                IsolationLevel.Serializable,
+                cts.Token),
+            Times.Once);
+        transaction.Verify(
+            x => x.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+        transaction.Verify(
+            x => x.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     private void SetupAuthenticatedUser()
     {
         _currentUserService.SetupGet(x => x.IsLoggedIn).Returns(true);

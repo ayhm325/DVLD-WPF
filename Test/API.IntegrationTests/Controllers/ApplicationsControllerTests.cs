@@ -471,6 +471,24 @@ public sealed class ApplicationsControllerTests : IClassFixture<ApiWebApplicatio
             "forbidden");
     }
 
+    [Fact]
+    public async Task GetAll_ForwardsExactCancellationTokenToApplicationService()
+    {
+        using var cts = new CancellationTokenSource();
+        _factory.ApplicationServiceMock
+            .Setup(x => x.GetAllApplicationsAsync(cts.Token))
+            .ReturnsAsync(Result<List<ApplicationDto>>.Success([]));
+
+        var controller = new DVLD.Api.Controllers.ApplicationsController(
+            _factory.ApplicationServiceMock.Object);
+
+        await controller.GetAll(cts.Token);
+
+        _factory.ApplicationServiceMock.Verify(
+            x => x.GetAllApplicationsAsync(cts.Token),
+            Times.Once);
+    }
+
     private void SetupGetAll(Result<List<ApplicationDto>> result) =>
         _factory.ApplicationServiceMock
             .Setup(x => x.GetAllApplicationsAsync(It.IsAny<CancellationToken>()))

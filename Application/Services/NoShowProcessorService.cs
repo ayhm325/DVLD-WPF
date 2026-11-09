@@ -98,6 +98,10 @@ public sealed class NoShowProcessorService : INoShowProcessorService
             candidateIds = await _appointmentRepository.GetPendingNoShowAppointmentIdsAsync(
                 cutoff, batchSize, cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to query pending No-Show candidates.");
@@ -204,6 +208,10 @@ public sealed class NoShowProcessorService : INoShowProcessorService
 
                 return new NoShowItemResult(appointmentId, NoShowProcessStatus.Processed);
             }, IsolationLevel.ReadCommitted, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {

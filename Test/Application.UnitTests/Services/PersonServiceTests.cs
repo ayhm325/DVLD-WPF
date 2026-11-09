@@ -1705,4 +1705,46 @@ public class PersonServiceTests
         Assert.True(result.IsSuccess);
         _personRepositoryMock.Verify(r => r.GetPersonByIdAsync(10, cts.Token), Times.Once);
     }
+
+    [Fact]
+    public async Task UploadPersonPhotoAsync_WhenFileStorageThrowsOperationCanceledException_PropagatesWithoutSwallowingOrSavingToDb()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var person = CreatePerson(10);
+        _personRepositoryMock
+            .Setup(r => r.GetPersonForUpdateAsync(10, cts.Token))
+            .ReturnsAsync(person);
+
+        var processed = new ProcessedImageResult(new MemoryStream([1, 2]), "image/webp", ".webp", 100, 100, 2);
+        _imageProcessingServiceMock
+            .Setup(i => i.ProcessPersonPhoto(It.IsAny<Stream>(), It.IsAny<long>(), It.IsAny<string?>()))
+            .Returns(Result<ProcessedImageResult>.Success(processed));
+
+        _fileStorageServiceMock
+            .Setup(s => s.SaveAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), cts.Token))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        using var stream = new MemoryStream([1, 2, 3]);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _sut.UploadPersonPhotoAsync(10, stream, 3, "image/jpeg", cts.Token));
+
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetStatisticsAsync_WhenRepositoryThrowsOperationCanceledException_PropagatesWithoutSwallowing()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        _personRepositoryMock
+            .Setup(r => r.GetStatisticsAsync(cts.Token))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _sut.GetStatisticsAsync(cts.Token));
+    }
 }

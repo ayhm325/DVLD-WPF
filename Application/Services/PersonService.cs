@@ -482,6 +482,10 @@ public sealed class PersonService : IPersonService
                 "people",
                 cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to persist processed image file for person {PersonId}", personId);
