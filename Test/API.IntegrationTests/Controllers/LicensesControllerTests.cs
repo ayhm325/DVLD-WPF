@@ -34,7 +34,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     public async Task GetAll_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto();
-        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync())
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Licenses");
@@ -65,7 +65,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
             _ => throw new ArgumentOutOfRangeException(nameof(statusCode))
         };
 
-        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         var response = await GetAsync("/api/Licenses");
 
@@ -75,7 +75,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetAll_WhenFailure_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync())
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.FromFailure("Database failure."));
 
         var response = await GetAsync("/api/Licenses");
@@ -90,7 +90,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetAll_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync())
+        _factory.LicenseServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
         var response = await GetAsync("/api/Licenses");
@@ -106,7 +106,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     public async Task GetById_WhenSuccessful_ReturnsMappedLicense()
     {
         var dto = CreateLicenseDto(10);
-        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(10))
+        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseDto>.Success(dto));
 
         var response = await GetAsync("/api/Licenses/10");
@@ -129,7 +129,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
             ? Result<LicenseDto>.FromNotFound(detail)
             : Result<LicenseDto>.FromValidationFailure(detail);
 
-        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(result);
+        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         var response = await GetAsync($"/api/Licenses/{id}");
 
@@ -139,7 +139,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetById_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(10))
+        _factory.LicenseServiceMock.Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LicenseDto>.Success(null!));
 
         var response = await GetAsync("/api/Licenses/10");
@@ -155,7 +155,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     public async Task GetByDriverId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(20);
-        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Licenses/driver/5");
@@ -175,7 +175,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     {
         const string detail = "Driver licenses not found.";
 
-        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.FromNotFound(detail));
 
         var response = await GetAsync("/api/Licenses/driver/5");
@@ -190,7 +190,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetByDriverId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+        _factory.LicenseServiceMock.Setup(x => x.GetByDriverIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
         var response = await GetAsync("/api/Licenses/driver/5");
@@ -206,7 +206,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     public async Task GetByApplicationId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(30);
-        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7))
+        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Licenses/application/7");
@@ -226,7 +226,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     {
         const string detail = "Invalid application ID.";
 
-        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7))
+        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.FromValidationFailure(detail));
 
         var response = await GetAsync("/api/Licenses/application/7");
@@ -241,7 +241,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetByApplicationId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7))
+        _factory.LicenseServiceMock.Setup(x => x.GetByApplicationIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
         var response = await GetAsync("/api/Licenses/application/7");
@@ -257,7 +257,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     public async Task GetByLicenseClassId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(40);
-        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2))
+        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Licenses/license-class/2");
@@ -277,7 +277,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     {
         const string detail = "License class conflict.";
 
-        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2))
+        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.FromConflict(detail));
 
         var response = await GetAsync("/api/Licenses/license-class/2");
@@ -292,7 +292,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetByLicenseClassId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2))
+        _factory.LicenseServiceMock.Setup(x => x.GetByLicenseClassIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
         var response = await GetAsync("/api/Licenses/license-class/2");
@@ -308,7 +308,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     public async Task GetByPersonId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateLicenseDto(50);
-        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15))
+        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Licenses/person/15");
@@ -328,7 +328,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     {
         const string detail = "Access denied.";
 
-        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15))
+        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.FromForbidden(detail));
 
         var response = await GetAsync("/api/Licenses/person/15");
@@ -343,7 +343,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetByPersonId_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15))
+        _factory.LicenseServiceMock.Setup(x => x.GetLicensesByPersonIdAsync(15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LicenseDto>>.Success(null!));
 
         var response = await GetAsync("/api/Licenses/person/15");
@@ -359,7 +359,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     public async Task GetDetails_WhenSuccessful_ReturnsMappedDetails()
     {
         var dto = CreateDriverLicenseInfoDto();
-        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100))
+        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(dto));
 
         var response = await GetAsync("/api/Licenses/local-application/100/details");
@@ -377,7 +377,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     {
         const string detail = "License details not found.";
 
-        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100))
+        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.FromNotFound(detail));
 
         var response = await GetAsync("/api/Licenses/local-application/100/details");
@@ -392,7 +392,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetDetails_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100))
+        _factory.LicenseServiceMock.Setup(x => x.GetDetailsAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(null!));
 
         var response = await GetAsync("/api/Licenses/local-application/100/details");
@@ -410,7 +410,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
         var dto = CreateDriverLicenseInfoDto();
         dto.LicenseId = 200;
 
-        _factory.LicenseServiceMock.Setup(x => x.GetLicenseDetailsByIdAsync(200))
+        _factory.LicenseServiceMock.Setup(x => x.GetLicenseDetailsByIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(dto));
 
         var response = await GetAsync("/api/Licenses/200/details");
@@ -434,7 +434,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
             : Result<DriverLicenseInfoDto>.FromValidationFailure(detail);
 
         _factory.LicenseServiceMock
-            .Setup(x => x.GetLicenseDetailsByIdAsync(id))
+            .Setup(x => x.GetLicenseDetailsByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await GetAsync($"/api/Licenses/{id}/details");
@@ -449,7 +449,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetDetailsById_WhenResultValueIsNull_Returns500ProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetLicenseDetailsByIdAsync(200))
+        _factory.LicenseServiceMock.Setup(x => x.GetLicenseDetailsByIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(null!));
 
         var response = await GetAsync("/api/Licenses/200/details");
@@ -505,7 +505,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
                 r.PageSize == 5 &&
                 r.SearchQuery == "123" &&
                 r.SearchBy == "licenseid" &&
-                r.StatusFilter == "active")))
+                r.StatusFilter == "active"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<LicenseDto>>.Success(pagedLicenses));
 
         var response = await GetAsync("/api/Licenses?pageNumber=2&pageSize=5&searchQuery=123&searchBy=licenseid&statusFilter=active");
@@ -544,14 +544,14 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
 
         _factory.LicenseServiceMock
             .Setup(x => x.GetAllAsync(It.Is<LicenseQueryRequest>(r =>
-                r.IsExpired == true)))
+                r.IsExpired == true), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<LicenseDto>>.Success(pagedLicenses));
 
         var response = await GetAsync("/api/Licenses?paged=true&isExpired=true");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         _factory.LicenseServiceMock.Verify(
-            x => x.GetAllAsync(It.Is<LicenseQueryRequest>(r => r.IsExpired == true)),
+            x => x.GetAllAsync(It.Is<LicenseQueryRequest>(r => r.IsExpired == true), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -574,7 +574,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
             IneligibleForRenewal = 3
         };
 
-        _factory.LicenseServiceMock.Setup(x => x.GetRenewalSummaryAsync())
+        _factory.LicenseServiceMock.Setup(x => x.GetRenewalSummaryAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<RenewalSummaryDto>.Success(summary));
 
         var response = await GetAsync("/api/Licenses/renewal-summary");
@@ -593,7 +593,7 @@ public sealed class LicensesControllerTests : IClassFixture<ApiWebApplicationFac
     [Fact]
     public async Task GetRenewalSummary_WhenServiceFails_ReturnsProblemDetails()
     {
-        _factory.LicenseServiceMock.Setup(x => x.GetRenewalSummaryAsync())
+        _factory.LicenseServiceMock.Setup(x => x.GetRenewalSummaryAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<RenewalSummaryDto>.FromFailure("Query failed"));
 
         var response = await GetAsync("/api/Licenses/renewal-summary");

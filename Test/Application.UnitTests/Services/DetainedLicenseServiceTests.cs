@@ -89,7 +89,7 @@ public sealed class DetainedLicenseServiceTests
         int personId = 30)
     {
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(licenseId))
+            .Setup(x => x.GetForUpdateAsync(licenseId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new License
                 {
@@ -109,7 +109,7 @@ public sealed class DetainedLicenseServiceTests
     private void SetupValidDetention(int detainId = 50)
     {
         _repository
-            .Setup(x => x.GetByIdAsync(detainId))
+            .Setup(x => x.GetByIdAsync(detainId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new DetainedLicense
                 {
@@ -124,7 +124,7 @@ public sealed class DetainedLicenseServiceTests
     private void SetupValidReleaseDetention(int detainId = 50)
     {
         _repository
-            .Setup(x => x.GetByIdForUpdateAsync(detainId))
+            .Setup(x => x.GetByIdForUpdateAsync(detainId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new DetainedLicense
                 {
@@ -164,7 +164,7 @@ public sealed class DetainedLicenseServiceTests
             }
         };
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(entities);
         var result = await CreateService().GetAllAsync();
         Assert.True(result.IsSuccess);
@@ -184,7 +184,7 @@ public sealed class DetainedLicenseServiceTests
     public async Task GetAllAsync_WhenRepositoryReturnsEmptyList_ReturnsEmptySuccess()
     {
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<DetainedLicense>());
         var result = await CreateService().GetAllAsync();
         Assert.True(result.IsSuccess);
@@ -203,14 +203,14 @@ public sealed class DetainedLicenseServiceTests
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal("Invalid detained license ID.", result.Error);
         _repository.Verify(
-            x => x.GetByIdAsync(It.IsAny<int>()),
+            x => x.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task GetByIdAsync_WhenDetentionDoesNotExist_ReturnsNotFound()
     {
         _repository
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((DetainedLicense?)null);
         var result = await CreateService().GetByIdAsync(100);
         Assert.True(result.IsFailure);
@@ -230,7 +230,7 @@ public sealed class DetainedLicenseServiceTests
             IsReleased = false
         };
         _repository
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
         var result = await CreateService().GetByIdAsync(100);
         Assert.True(result.IsSuccess);
@@ -254,14 +254,14 @@ public sealed class DetainedLicenseServiceTests
         Assert.Equal("Invalid license ID.", result.Error);
         _repository.Verify(
             x => x.GetActiveDetainByLicenseIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task GetActiveDetainByLicenseIdAsync_WhenNoActiveDetentionExists_ReturnsNotFound()
     {
         _repository
-            .Setup(x => x.GetActiveDetainByLicenseIdAsync(100))
+            .Setup(x => x.GetActiveDetainByLicenseIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((DetainedLicense?)null);
         var result = await CreateService().GetActiveDetainByLicenseIdAsync(100);
         Assert.True(result.IsFailure);
@@ -281,7 +281,7 @@ public sealed class DetainedLicenseServiceTests
             IsReleased = false
         };
         _repository
-            .Setup(x => x.GetActiveDetainByLicenseIdAsync(100))
+            .Setup(x => x.GetActiveDetainByLicenseIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
         var result = await CreateService().GetActiveDetainByLicenseIdAsync(100);
         Assert.True(result.IsSuccess);
@@ -299,14 +299,14 @@ public sealed class DetainedLicenseServiceTests
         Assert.False(result);
         _repository.Verify(
             x => x.IsLicenseDetainedAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task IsLicenseDetainedAsync_WhenRepositoryReturnsTrue_ReturnsTrue()
     {
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var result = await CreateService().IsLicenseDetainedAsync(100);
         Assert.True(result);
@@ -315,7 +315,7 @@ public sealed class DetainedLicenseServiceTests
     public async Task IsLicenseDetainedAsync_WhenRepositoryReturnsFalse_ReturnsFalse()
     {
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var result = await CreateService().IsLicenseDetainedAsync(100);
         Assert.False(result);
@@ -394,7 +394,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((License?)null);
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
         var result = await CreateService().AddAsync(dto);
@@ -413,7 +413,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new License
                 {
@@ -434,7 +434,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new License
                 {
@@ -457,7 +457,7 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidLicense();
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
         var result = await CreateService().AddAsync(dto);
@@ -466,7 +466,7 @@ public sealed class DetainedLicenseServiceTests
         Assert.Equal("License is already detained.", result.Error);
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<DetainedLicense>()),
+                It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -477,14 +477,14 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidLicense();
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<DetainedLicense>()))
+                It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(100))
+            .Setup(x => x.DeactivateLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 75 };
         var result = await CreateService().AddAsync(dto);
@@ -509,20 +509,20 @@ public sealed class DetainedLicenseServiceTests
         SetupCommit();
         SetupValidLicense();
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         DetainedLicense? createdEntity = null;
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<DetainedLicense>()))
-            .Callback<DetainedLicense>(entity =>
+                It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<DetainedLicense, CancellationToken>((entity, _) =>
             {
                 createdEntity = entity;
                 entity.DetainID = 500;
             })
             .Returns(Task.CompletedTask);
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(100))
+            .Setup(x => x.DeactivateLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -538,7 +538,7 @@ public sealed class DetainedLicenseServiceTests
             IsReleased = false
         };
         _repository
-            .Setup(x => x.GetByIdAsync(500))
+            .Setup(x => x.GetByIdAsync(500, It.IsAny<CancellationToken>()))
             .ReturnsAsync(savedEntity);
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 75 };
         var result = await CreateService().AddAsync(dto);
@@ -555,10 +555,10 @@ public sealed class DetainedLicenseServiceTests
         Assert.Null(entity.ReleaseApplicationID);
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<DetainedLicense>()),
+                It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _licenseRepository.Verify(
-            x => x.DeactivateLicenseAsync(100),
+            x => x.DeactivateLicenseAsync(100, It.IsAny<CancellationToken>()),
             Times.Once);
         _unitOfWork.Verify(
             x => x.SaveChangesAsync(
@@ -577,16 +577,16 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidLicense();
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<DetainedLicense>()))
-            .Callback<DetainedLicense>(entity =>
+                It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<DetainedLicense, CancellationToken>((entity, _) =>
                 entity.DetainID = 500)
             .Returns(Task.CompletedTask);
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(100))
+            .Setup(x => x.DeactivateLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -614,14 +614,14 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidLicense();
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<DetainedLicense>()))
+                It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(100))
+            .Setup(x => x.DeactivateLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -641,23 +641,23 @@ public sealed class DetainedLicenseServiceTests
         SetupCommit();
         SetupValidLicense();
         _repository
-            .Setup(x => x.IsLicenseDetainedAsync(100))
+            .Setup(x => x.IsLicenseDetainedAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<DetainedLicense>()))
-            .Callback<DetainedLicense>(entity =>
+                It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<DetainedLicense, CancellationToken>((entity, _) =>
                 entity.DetainID = 500)
             .Returns(Task.CompletedTask);
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(100))
+            .Setup(x => x.DeactivateLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
         _repository
-            .Setup(x => x.GetByIdAsync(500))
+            .Setup(x => x.GetByIdAsync(500, It.IsAny<CancellationToken>()))
             .ReturnsAsync((DetainedLicense?)null);
         var dto = new CreateDetainedLicenseDto { LicenseID = 100, FineFees = 50 };
         var result = await CreateService().AddAsync(dto);
@@ -676,7 +676,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database failure."));
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => CreateService().AddAsync(
@@ -728,7 +728,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _repository
-            .Setup(x => x.GetByIdForUpdateAsync(50))
+            .Setup(x => x.GetByIdForUpdateAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync((DetainedLicense?)null);
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
         var result = await CreateService().ReleaseAsync(dto);
@@ -747,7 +747,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _repository
-            .Setup(x => x.GetByIdForUpdateAsync(50))
+            .Setup(x => x.GetByIdForUpdateAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new DetainedLicense
                 {
@@ -769,7 +769,7 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidReleaseDetention();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((License?)null);
         var dto = new ReleaseDetainedLicenseDto { DetainID = 50 };
         var result = await CreateService().ReleaseAsync(dto);
@@ -821,7 +821,7 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidReleaseDetention();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new License
                 {
@@ -917,7 +917,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -960,7 +960,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -977,7 +977,7 @@ public sealed class DetainedLicenseServiceTests
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
             x => x.ActivateLicenseAsync(
-                It.IsAny<int>(), It.IsAny<DateOnly>()),
+                It.IsAny<int>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -988,7 +988,7 @@ public sealed class DetainedLicenseServiceTests
         SetupRollback();
         SetupValidReleaseDetention();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new License
                 {
@@ -1018,7 +1018,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -1035,7 +1035,7 @@ public sealed class DetainedLicenseServiceTests
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
             x => x.ActivateLicenseAsync(
-                It.IsAny<int>(), It.IsAny<DateOnly>()),
+                It.IsAny<int>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -1060,10 +1060,10 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _licenseRepository
-            .Setup(x => x.ActivateLicenseAsync(100, _clock.Object.Today))
+            .Setup(x => x.ActivateLicenseAsync(100, _clock.Object.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -1079,7 +1079,7 @@ public sealed class DetainedLicenseServiceTests
                     new ReleaseDetainedLicenseDto { DetainID = 50 });
         Assert.True(result.IsSuccess);
         _licenseRepository.Verify(
-            x => x.ActivateLicenseAsync(100, _clock.Object.Today),
+            x => x.ActivateLicenseAsync(100, _clock.Object.Today, It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -1104,10 +1104,10 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _licenseRepository
-            .Setup(x => x.ActivateLicenseAsync(100, _clock.Object.Today))
+            .Setup(x => x.ActivateLicenseAsync(100, _clock.Object.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var result =
             await CreateService()
@@ -1147,7 +1147,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -1192,7 +1192,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -1236,7 +1236,7 @@ public sealed class DetainedLicenseServiceTests
             IsReleased = false
         };
         _repository
-            .Setup(x => x.GetByIdForUpdateAsync(50))
+            .Setup(x => x.GetByIdForUpdateAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(detention);
         SetupValidLicense();
         _applicationTypeService
@@ -1253,7 +1253,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -1301,7 +1301,7 @@ public sealed class DetainedLicenseServiceTests
             .Setup(x => x.HasAnotherActiveLicenseAsync(
                 20,
                 3,
-                100))
+                100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -1338,7 +1338,7 @@ public sealed class DetainedLicenseServiceTests
         SetupTransaction();
         SetupRollback();
         _repository
-            .Setup(x => x.GetByIdForUpdateAsync(50))
+            .Setup(x => x.GetByIdForUpdateAsync(50, It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database failure."));

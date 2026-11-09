@@ -25,36 +25,38 @@ public sealed class PersonRepository : IPersonRepository
     }
 
     public Task<PagedResult<Person>> GetAllAsync(
-        PaginationRequest request)
+        PaginationRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (request is PersonQueryRequest queryRequest)
         {
-            return GetAllAsync(queryRequest);
+            return GetAllAsync(queryRequest, cancellationToken);
         }
 
         return GetAllAsync(new PersonQueryRequest
         {
             PageNumber = request.PageNumber,
             PageSize = request.PageSize
-        });
+        }, cancellationToken);
     }
 
     public async Task<PagedResult<Person>> GetAllAsync(
-        PersonQueryRequest request)
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         var query = ApplyPersonFilters(Query(), request);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
             .OrderBy(p => p.PersonId)
             .Skip(request.Skip)
             .Take(request.PageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<Person>
         {
@@ -66,7 +68,8 @@ public sealed class PersonRepository : IPersonRepository
     }
 
     public async Task<PagedResult<Person>> GetPeopleAvailableForUserAsync(
-        PersonQueryRequest request)
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -75,13 +78,13 @@ public sealed class PersonRepository : IPersonRepository
 
         query = ApplyPersonFilters(query, request);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
             .OrderBy(p => p.PersonId)
             .Skip(request.Skip)
             .Take(request.PageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<Person>
         {
@@ -170,28 +173,34 @@ public sealed class PersonRepository : IPersonRepository
         return query;
     }
 
-    public Task<Person?> GetPersonByIdAsync(int id)
+    public Task<Person?> GetPersonByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         return Query()
             .FirstOrDefaultAsync(
-                p => p.PersonId == id);
+                p => p.PersonId == id,
+                cancellationToken);
     }
 
     public Task<Person?> GetPersonByNationalNoAsync(
-        string nationalNo)
+        string nationalNo,
+        CancellationToken cancellationToken = default)
     {
         return Query()
             .FirstOrDefaultAsync(
-                p => p.NationalNo == nationalNo);
+                p => p.NationalNo == nationalNo,
+                cancellationToken);
     }
 
-    public async Task<PersonStatisticsDto> GetStatisticsAsync()
+    public async Task<PersonStatisticsDto> GetStatisticsAsync(
+        CancellationToken cancellationToken = default)
     {
         var genderCounts = await _context.People
             .AsNoTracking()
             .GroupBy(p => p.Gender)
             .Select(g => new { Gender = g.Key, Count = g.Count() })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var maleCount = genderCounts.FirstOrDefault(x => x.Gender == Gender.Male)?.Count ?? 0;
         var femaleCount = genderCounts.FirstOrDefault(x => x.Gender == Gender.Female)?.Count ?? 0;
@@ -205,61 +214,78 @@ public sealed class PersonRepository : IPersonRepository
         };
     }
 
-    public Task<List<Person>> GetAllPersonsAsync()
+    public Task<List<Person>> GetAllPersonsAsync(
+        CancellationToken cancellationToken = default)
     {
         return Query()
             .OrderBy(p => p.PersonId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public Task<Person?> GetPersonForUpdateAsync(int id)
+    public Task<Person?> GetPersonForUpdateAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         return _context.People
             .FirstOrDefaultAsync(
-                p => p.PersonId == id);
+                p => p.PersonId == id,
+                cancellationToken);
     }
 
-    public Task<bool> IsPersonExistsByIdAsync(int id)
+    public Task<bool> IsPersonExistsByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         return _context.People
             .AsNoTracking()
             .AnyAsync(
-                p => p.PersonId == id);
+                p => p.PersonId == id,
+                cancellationToken);
     }
 
     public Task<bool> IsNationalNoDuplicatedAsync(
         string nationalNo,
-        int personId)
+        int personId,
+        CancellationToken cancellationToken = default)
     {
         return _context.People
             .AsNoTracking()
             .AnyAsync(
                 p =>
                     p.NationalNo == nationalNo &&
-                    p.PersonId != personId);
+                    p.PersonId != personId,
+                cancellationToken);
     }
 
-    public Task<bool> HasApplicationsAsync(int personId)
+    public Task<bool> HasApplicationsAsync(
+        int personId,
+        CancellationToken cancellationToken = default)
     {
         return _context.Applications
             .AsNoTracking()
             .AnyAsync(
                 a =>
-                    a.ApplicantPersonID == personId);
+                    a.ApplicantPersonID == personId,
+                cancellationToken);
     }
 
-    public async Task AddPersonAsync(Person person)
+    public async Task AddPersonAsync(
+        Person person,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(person);
 
-        await _context.People.AddAsync(person);
+        await _context.People.AddAsync(person, cancellationToken);
     }
 
-    public async Task<bool> DeletePersonAsync(int id)
+    public async Task<bool> DeletePersonAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var person = await _context.People
             .FirstOrDefaultAsync(
-                p => p.PersonId == id);
+                p => p.PersonId == id,
+                cancellationToken);
 
         if (person is null)
             return false;

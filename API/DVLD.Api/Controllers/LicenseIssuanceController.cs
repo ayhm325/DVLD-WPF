@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using DVLD.Api.Results;
 using DVLD.Contracts.LicenseIssuance;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +14,14 @@ public sealed class LicenseIssuanceController(
 {
     [HttpPost("first-license")]
     public async Task<IActionResult> IssueFirstLicense(
-        [FromBody] IssueFirstLicenseRequest request)
+        [FromBody] IssueFirstLicenseRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.IssueFirstLicenseAsync(
                 request.LocalApplicationId,
-                request.Notes);
+                request.Notes,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);

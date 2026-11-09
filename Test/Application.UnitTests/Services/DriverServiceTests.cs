@@ -110,7 +110,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.GetByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -120,7 +120,7 @@ public sealed class DriverServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetByIdAsync(10))
+            .Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Driver?)null);
 
         var result =
@@ -170,7 +170,7 @@ public sealed class DriverServiceTests
             });
 
         _repository
-            .Setup(x => x.GetByIdAsync(10))
+            .Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(driver);
 
         var result =
@@ -220,7 +220,7 @@ public sealed class DriverServiceTests
         var second = CreateDriver(2, 200, 11);
 
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 first,
@@ -247,7 +247,7 @@ public sealed class DriverServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
         var result =
@@ -283,7 +283,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.GetByPersonIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -293,7 +293,7 @@ public sealed class DriverServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetByPersonIdAsync(100))
+            .Setup(x => x.GetByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Driver?)null);
 
         var result =
@@ -320,7 +320,7 @@ public sealed class DriverServiceTests
                 20);
 
         _repository
-            .Setup(x => x.GetByPersonIdAsync(100))
+            .Setup(x => x.GetByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(driver);
 
         var result =
@@ -356,7 +356,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.GetByCreatedUserIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -367,7 +367,7 @@ public sealed class DriverServiceTests
 
         _repository
             .Setup(x =>
-                x.GetByCreatedUserIdAsync(10))
+                x.GetByCreatedUserIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateDriver(1, 100, 10),
@@ -405,7 +405,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.ExistsByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -415,7 +415,7 @@ public sealed class DriverServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.ExistsByIdAsync(10))
+            .Setup(x => x.ExistsByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -430,7 +430,7 @@ public sealed class DriverServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.ExistsByIdAsync(10))
+            .Setup(x => x.ExistsByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result =
@@ -454,7 +454,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.ExistsByPersonIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -465,7 +465,7 @@ public sealed class DriverServiceTests
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(100))
+                x.ExistsByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -481,7 +481,7 @@ public sealed class DriverServiceTests
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(100))
+                x.ExistsByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result =
@@ -512,7 +512,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<Driver>()),
+                It.IsAny<Driver>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -538,7 +538,8 @@ public sealed class DriverServiceTests
 
         _personRepository.Verify(
             x => x.IsPersonExistsByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -569,7 +570,8 @@ public sealed class DriverServiceTests
 
         _personRepository.Verify(
             x => x.IsPersonExistsByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -608,7 +610,7 @@ public sealed class DriverServiceTests
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(100))
+                x.IsPersonExistsByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result =
@@ -625,7 +627,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.ExistsByPersonIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -638,12 +640,12 @@ public sealed class DriverServiceTests
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(100))
+                x.IsPersonExistsByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(100))
+                x.ExistsByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -660,7 +662,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<Driver>()),
+                It.IsAny<Driver>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -673,12 +675,12 @@ public sealed class DriverServiceTests
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(100))
+                x.IsPersonExistsByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(100))
+                x.ExistsByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         Driver? captured = null;
@@ -686,8 +688,8 @@ public sealed class DriverServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<Driver>()))
-            .Callback<Driver>(driver =>
+                    It.IsAny<Driver>(), It.IsAny<CancellationToken>()))
+            .Callback<Driver, CancellationToken>((driver, _) =>
             {
                 captured = driver;
                 driver.DriverID = 50;
@@ -716,7 +718,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<Driver>()),
+                It.IsAny<Driver>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWork.Verify(
@@ -734,19 +736,19 @@ public sealed class DriverServiceTests
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(100))
+                x.IsPersonExistsByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(100))
+                x.ExistsByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<Driver>()))
-            .Callback<Driver>(x =>
+                    It.IsAny<Driver>(), It.IsAny<CancellationToken>()))
+            .Callback<Driver, CancellationToken>((x, _) =>
                 x.DriverID = 50)
             .Returns(Task.CompletedTask);
 
@@ -778,18 +780,18 @@ public sealed class DriverServiceTests
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(100))
+                x.IsPersonExistsByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(100))
+                x.ExistsByPersonIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<Driver>()))
+                    It.IsAny<Driver>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _unitOfWork
@@ -833,7 +835,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.GetForUpdateAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -902,7 +904,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.GetForUpdateAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -914,7 +916,7 @@ public sealed class DriverServiceTests
         SetupAuthenticatedUser();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Driver?)null);
 
         var result =
@@ -931,7 +933,8 @@ public sealed class DriverServiceTests
 
         _personRepository.Verify(
             x => x.IsPersonExistsByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -943,13 +946,13 @@ public sealed class DriverServiceTests
         SetupAuthenticatedUser();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 CreateDriver(1, 100));
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(200))
+                x.IsPersonExistsByIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result =
@@ -968,7 +971,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.ExistsByPersonIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -980,18 +983,18 @@ public sealed class DriverServiceTests
         SetupAuthenticatedUser();
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 CreateDriver(1, 100));
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(200))
+                x.IsPersonExistsByIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(200))
+                x.ExistsByPersonIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1020,12 +1023,12 @@ public sealed class DriverServiceTests
             CreateDriver(1, 100);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(100))
+                x.IsPersonExistsByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _unitOfWork
@@ -1044,7 +1047,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.ExistsByPersonIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -1059,17 +1062,17 @@ public sealed class DriverServiceTests
             CreateDriver(1, 100);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(200))
+                x.IsPersonExistsByIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(200))
+                x.ExistsByPersonIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWork
@@ -1106,17 +1109,17 @@ public sealed class DriverServiceTests
             CreateDriver(1, 100);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(200))
+                x.IsPersonExistsByIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(200))
+                x.ExistsByPersonIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWork
@@ -1151,12 +1154,12 @@ public sealed class DriverServiceTests
             CreateDriver(1, 100);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(100))
+                x.IsPersonExistsByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1186,17 +1189,17 @@ public sealed class DriverServiceTests
             CreateDriver(1, 100);
 
         _repository
-            .Setup(x => x.GetForUpdateAsync(1))
+            .Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         _personRepository
             .Setup(x =>
-                x.IsPersonExistsByIdAsync(200))
+                x.IsPersonExistsByIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.ExistsByPersonIdAsync(200))
+                x.ExistsByPersonIdAsync(200, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWork
@@ -1239,7 +1242,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.GetForDeleteAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -1269,7 +1272,7 @@ public sealed class DriverServiceTests
 
         _repository.Verify(
             x => x.GetForDeleteAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -1281,7 +1284,7 @@ public sealed class DriverServiceTests
         SetupAuthenticatedUser();
 
         _repository
-            .Setup(x => x.GetForDeleteAsync(1))
+            .Setup(x => x.GetForDeleteAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Driver?)null);
 
         var result =
@@ -1314,7 +1317,7 @@ public sealed class DriverServiceTests
             });
 
         _repository
-            .Setup(x => x.GetForDeleteAsync(1))
+            .Setup(x => x.GetForDeleteAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(driver);
 
         var result =
@@ -1352,7 +1355,7 @@ public sealed class DriverServiceTests
             });
 
         _repository
-            .Setup(x => x.GetForDeleteAsync(1))
+            .Setup(x => x.GetForDeleteAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(driver);
 
         var result =
@@ -1383,7 +1386,7 @@ public sealed class DriverServiceTests
             CreateDriver(1, 100);
 
         _repository
-            .Setup(x => x.GetForDeleteAsync(1))
+            .Setup(x => x.GetForDeleteAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(driver);
 
         _unitOfWork
@@ -1418,7 +1421,7 @@ public sealed class DriverServiceTests
             CreateDriver(1, 100);
 
         _repository
-            .Setup(x => x.GetForDeleteAsync(1))
+            .Setup(x => x.GetForDeleteAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(driver);
 
         _unitOfWork
@@ -1466,7 +1469,7 @@ public sealed class DriverServiceTests
         };
 
         _repository
-            .Setup(r => r.GetAllAsync(request))
+            .Setup(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedDrivers);
 
         // Act
@@ -1482,7 +1485,7 @@ public sealed class DriverServiceTests
         Assert.Equal(1, result.Value.Items[0].DriverID);
         Assert.Equal(2, result.Value.Items[1].DriverID);
 
-        _repository.Verify(r => r.GetAllAsync(request), Times.Once);
+        _repository.Verify(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -1505,7 +1508,7 @@ public sealed class DriverServiceTests
         };
 
         _repository
-            .Setup(r => r.GetAllAsync(request))
+            .Setup(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedDrivers);
 
         // Act
@@ -1519,6 +1522,18 @@ public sealed class DriverServiceTests
         Assert.Equal(5, result.Value.PageSize);
         Assert.Empty(result.Value.Items);
 
-        _repository.Verify(r => r.GetAllAsync(request), Times.Once);
+        _repository.Verify(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_PassesCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        var service = CreateService();
+        _repository.Setup(r => r.GetByIdAsync(10, cts.Token)).ReturnsAsync((Driver?)null);
+
+        await service.GetByIdAsync(10, cts.Token);
+
+        _repository.Verify(r => r.GetByIdAsync(10, cts.Token), Times.Once);
     }
 }

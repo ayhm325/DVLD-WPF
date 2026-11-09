@@ -17,10 +17,11 @@ public sealed class UsersController(
     IUserService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetAllUsersAsync();
+            await service.GetAllUsersAsync(cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -32,10 +33,12 @@ public sealed class UsersController(
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetUserByIdAsync(id);
+            await service.GetUserByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -46,10 +49,11 @@ public sealed class UsersController(
 
     [HttpGet("person/{personId:int}")]
     public async Task<IActionResult> GetByPersonId(
-        int personId)
+        int personId,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetUserByPersonIdAsync(personId);
+            await service.GetUserByPersonIdAsync(personId, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -59,10 +63,12 @@ public sealed class UsersController(
     }
 
     [HttpGet("{id:int}/details")]
-    public async Task<IActionResult> GetDetails(int id)
+    public async Task<IActionResult> GetDetails(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetUserDetailsAsync(id);
+            await service.GetUserDetailsAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -94,10 +100,11 @@ public sealed class UsersController(
 
     [HttpGet("username/{username}")]
     public async Task<IActionResult> GetByUsername(
-        string username)
+        string username,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetUserByUsernameAsync(username);
+            await service.GetUserByUsernameAsync(username, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -108,7 +115,8 @@ public sealed class UsersController(
 
     [HttpPost]
     public async Task<IActionResult> Create(
-        [FromBody] CreateUserRequest request)
+        [FromBody] CreateUserRequest request,
+        CancellationToken cancellationToken = default)
     {
         UserRole targetRole = UserRole.Staff;
 
@@ -133,7 +141,8 @@ public sealed class UsersController(
                     Password = request.Password,
                     IsActive = request.IsActive,
                     Role = targetRole
-                });
+                },
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -147,7 +156,8 @@ public sealed class UsersController(
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] UpdateUserRequest request)
+        [FromBody] UpdateUserRequest request,
+        CancellationToken cancellationToken = default)
     {
         UserRole? targetRole = null;
 
@@ -172,7 +182,8 @@ public sealed class UsersController(
                     UserName = request.UserName,
                     IsActive = request.IsActive,
                     Role = targetRole
-                });
+                },
+                cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -180,10 +191,12 @@ public sealed class UsersController(
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.DeleteUserAsync(id);
+            await service.DeleteUserAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

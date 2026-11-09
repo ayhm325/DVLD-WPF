@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
@@ -59,7 +59,7 @@ public sealed class AuthServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         _userRepository.Verify(
-            x => x.GetUserByUsernameAsync(It.IsAny<string>()), Times.Never);
+            x => x.GetUserByUsernameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public sealed class AuthServiceTests
     [Fact]
     public async Task Login_TrimsUsernameBeforeRepositoryLookup()
     {
-        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin"))
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateService().LoginAsync(Request("  admin  "));
@@ -91,13 +91,13 @@ public sealed class AuthServiceTests
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal("Invalid username or password.", result.Error);
         _userRepository.Verify(
-            x => x.GetUserByUsernameAsync("admin"), Times.Once);
+            x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Login_WhenUserNotFound_ReturnsInvalidCredentials()
     {
-        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin"))
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         var result = await CreateService().LoginAsync(Request());
@@ -111,7 +111,7 @@ public sealed class AuthServiceTests
     [Fact]
     public async Task Login_WhenUserInactive_ReturnsInvalidCredentials()
     {
-        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin"))
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateUser(active: false));
 
         var result = await CreateService().LoginAsync(Request());
@@ -125,7 +125,7 @@ public sealed class AuthServiceTests
     [Fact]
     public async Task Login_WhenPasswordIsWrong_ReturnsInvalidCredentials()
     {
-        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin"))
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateUser());
 
         var result = await CreateService().LoginAsync(
@@ -143,7 +143,7 @@ public sealed class AuthServiceTests
         var user = CreateUser(id: 5, userName: "admin");
         var expires = DateTime.UtcNow.AddHours(1);
 
-        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin"))
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _jwtTokenService.Setup(x => x.GenerateToken(It.IsAny<UserDto>()))
@@ -171,7 +171,7 @@ public sealed class AuthServiceTests
     [Fact]
     public async Task Login_WhenRepositoryThrows_PropagatesException()
     {
-        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin"))
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("database error"));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -183,7 +183,7 @@ public sealed class AuthServiceTests
     [Fact]
     public async Task Login_WhenJwtServiceThrows_PropagatesException()
     {
-        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin"))
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateUser());
 
         _jwtTokenService.Setup(x => x.GenerateToken(It.IsAny<UserDto>()))
@@ -193,5 +193,18 @@ public sealed class AuthServiceTests
             () => CreateService().LoginAsync(Request()));
 
         Assert.Equal("token error", ex.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_PassesCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        _userRepository.Setup(x => x.GetUserByUsernameAsync("admin", cts.Token))
+            .ReturnsAsync((User?)null);
+
+        await CreateService().LoginAsync(Request(), cts.Token);
+
+        _userRepository.Verify(
+            x => x.GetUserByUsernameAsync("admin", cts.Token), Times.Once);
     }
 }

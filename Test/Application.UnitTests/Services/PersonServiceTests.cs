@@ -56,7 +56,7 @@ public class PersonServiceTests
         Assert.Equal("Invalid person ID.", result.Error);
 
         _personRepositoryMock.Verify(
-            repository => repository.GetPersonByIdAsync(It.IsAny<int>()),
+            repository => repository.GetPersonByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -67,7 +67,7 @@ public class PersonServiceTests
         const int personId = 10;
 
         _personRepositoryMock
-            .Setup(repository => repository.GetPersonByIdAsync(personId))
+            .Setup(repository => repository.GetPersonByIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Person?)null);
 
         // Act
@@ -80,7 +80,7 @@ public class PersonServiceTests
         Assert.Equal("Person not found.", result.Error);
 
         _personRepositoryMock.Verify(
-            repository => repository.GetPersonByIdAsync(personId),
+            repository => repository.GetPersonByIdAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -93,7 +93,7 @@ public class PersonServiceTests
         var person = CreatePerson(personId);
 
         _personRepositoryMock
-            .Setup(repository => repository.GetPersonByIdAsync(personId))
+            .Setup(repository => repository.GetPersonByIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         // Act
@@ -120,7 +120,7 @@ public class PersonServiceTests
             result.Value.NationalityCountryID);
 
         _personRepositoryMock.Verify(
-            repository => repository.GetPersonByIdAsync(personId),
+            repository => repository.GetPersonByIdAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -147,7 +147,8 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository => repository.GetPersonByNationalNoAsync(
-                It.IsAny<string>()),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -170,7 +171,8 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository => repository.GetPersonByNationalNoAsync(
-                It.IsAny<string>()),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -182,7 +184,7 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonByNationalNoAsync(nationalNo))
+                repository.GetPersonByNationalNoAsync(nationalNo, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Person?)null);
 
         // Act
@@ -196,7 +198,7 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.GetPersonByNationalNoAsync(nationalNo),
+                repository.GetPersonByNationalNoAsync(nationalNo, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -212,7 +214,7 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonByNationalNoAsync(nationalNo))
+                repository.GetPersonByNationalNoAsync(nationalNo, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         // Act
@@ -229,7 +231,7 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.GetPersonByNationalNoAsync(nationalNo),
+                repository.GetPersonByNationalNoAsync(nationalNo, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -246,7 +248,7 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonByNationalNoAsync(normalizedNationalNo))
+                repository.GetPersonByNationalNoAsync(normalizedNationalNo, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         // Act
@@ -263,7 +265,8 @@ public class PersonServiceTests
         _personRepositoryMock.Verify(
             repository =>
                 repository.GetPersonByNationalNoAsync(
-                    normalizedNationalNo),
+                    normalizedNationalNo,
+                    It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -287,7 +290,8 @@ public class PersonServiceTests
         _personRepositoryMock.Verify(
             repository =>
                 repository.IsPersonExistsByIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -299,7 +303,7 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.IsPersonExistsByIdAsync(personId))
+                repository.IsPersonExistsByIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -311,7 +315,7 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.IsPersonExistsByIdAsync(personId),
+                repository.IsPersonExistsByIdAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -330,7 +334,7 @@ public class PersonServiceTests
         };
 
         _personRepositoryMock
-            .Setup(repository => repository.GetAllPersonsAsync())
+            .Setup(repository => repository.GetAllPersonsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(people);
 
         // Act
@@ -361,7 +365,7 @@ public class PersonServiceTests
             result.Value[1].NationalNo);
 
         _personRepositoryMock.Verify(
-            repository => repository.GetAllPersonsAsync(),
+            repository => repository.GetAllPersonsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -391,7 +395,7 @@ public class PersonServiceTests
         };
 
         _personRepositoryMock
-            .Setup(r => r.GetAllAsync(request))
+            .Setup(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedPeople);
 
         // Act
@@ -407,7 +411,7 @@ public class PersonServiceTests
         Assert.Equal(1, result.Value.Items[0].PersonId);
         Assert.Equal(2, result.Value.Items[1].PersonId);
 
-        _personRepositoryMock.Verify(r => r.GetAllAsync(request), Times.Once);
+        _personRepositoryMock.Verify(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -429,7 +433,7 @@ public class PersonServiceTests
         };
 
         _personRepositoryMock
-            .Setup(r => r.GetAllAsync(request))
+            .Setup(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedPeople);
 
         // Act
@@ -443,7 +447,7 @@ public class PersonServiceTests
         Assert.Equal(5, result.Value.PageSize);
         Assert.Empty(result.Value.Items);
 
-        _personRepositoryMock.Verify(r => r.GetAllAsync(request), Times.Once);
+        _personRepositoryMock.Verify(r => r.GetAllAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -461,7 +465,7 @@ public class PersonServiceTests
     {
         // Arrange
         _personRepositoryMock
-            .Setup(repository => repository.GetAllPersonsAsync())
+            .Setup(repository => repository.GetAllPersonsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Person>());
 
         // Act
@@ -474,7 +478,7 @@ public class PersonServiceTests
         Assert.Empty(result.Value!);
 
         _personRepositoryMock.Verify(
-            repository => repository.GetAllPersonsAsync(),
+            repository => repository.GetAllPersonsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -513,12 +517,14 @@ public class PersonServiceTests
             repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     It.IsAny<string>(),
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
 
         _personRepositoryMock.Verify(
             repository => repository.AddPersonAsync(
-                It.IsAny<Person>()),
+                It.IsAny<Person>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -537,7 +543,8 @@ public class PersonServiceTests
             .Setup(repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    0))
+                    0,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -555,13 +562,15 @@ public class PersonServiceTests
             repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    0),
+                    0,
+                    It.IsAny<CancellationToken>()),
             Times.Once);
 
         _personRepositoryMock.Verify(
             repository =>
                 repository.AddPersonAsync(
-                    It.IsAny<Person>()),
+                    It.IsAny<Person>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -581,14 +590,16 @@ public class PersonServiceTests
             .Setup(repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    0))
+                    0,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _personRepositoryMock
             .Setup(repository =>
                 repository.AddPersonAsync(
-                    It.IsAny<Person>()))
-            .Callback<Person>(person =>
+                    It.IsAny<Person>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<Person, CancellationToken>((person, _) =>
                 person.PersonId = 1)
             .Returns(Task.CompletedTask);
 
@@ -612,7 +623,8 @@ public class PersonServiceTests
         _personRepositoryMock.Verify(
             repository =>
                 repository.AddPersonAsync(
-                    It.IsAny<Person>()),
+                    It.IsAny<Person>(),
+                    It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -632,14 +644,16 @@ public class PersonServiceTests
             .Setup(repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    0))
+                    0,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _personRepositoryMock
             .Setup(repository =>
                 repository.AddPersonAsync(
-                    It.IsAny<Person>()))
-            .Callback<Person>(person =>
+                    It.IsAny<Person>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<Person, CancellationToken>((person, _) =>
                 person.PersonId = 25)
             .Returns(Task.CompletedTask);
 
@@ -662,7 +676,8 @@ public class PersonServiceTests
             repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    0),
+                    0,
+                    It.IsAny<CancellationToken>()),
             Times.Once);
 
         _personRepositoryMock.Verify(
@@ -671,7 +686,8 @@ public class PersonServiceTests
                     It.Is<Person>(person =>
                         person.NationalNo == dto.NationalNo &&
                         person.FirstName == dto.FirstName &&
-                        person.LastName == dto.LastName)),
+                        person.LastName == dto.LastName),
+                    It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -708,7 +724,8 @@ public class PersonServiceTests
         _personRepositoryMock.Verify(
             repository =>
                 repository.GetPersonForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -745,7 +762,8 @@ public class PersonServiceTests
         _personRepositoryMock.Verify(
             repository =>
                 repository.GetPersonForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -764,7 +782,7 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Person?)null);
 
         // Act
@@ -782,7 +800,7 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.GetPersonForUpdateAsync(personId),
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -797,14 +815,15 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPerson);
 
         _personRepositoryMock
             .Setup(repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    personId))
+                    personId,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -824,7 +843,8 @@ public class PersonServiceTests
             repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    personId),
+                    personId,
+                    It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -845,14 +865,15 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPerson);
 
         _personRepositoryMock
             .Setup(repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    personId))
+                    personId,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -892,14 +913,15 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingPerson);
 
         _personRepositoryMock
             .Setup(repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    personId))
+                    personId,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -927,14 +949,15 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.GetPersonForUpdateAsync(personId),
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _personRepositoryMock.Verify(
             repository =>
                 repository.IsNationalNoDuplicatedAsync(
                     dto.NationalNo,
-                    personId),
+                    personId,
+                    It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -968,7 +991,8 @@ public class PersonServiceTests
         _personRepositoryMock.Verify(
             repository =>
                 repository.GetPersonForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -980,7 +1004,7 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Person?)null);
 
         // Act
@@ -996,7 +1020,7 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.GetPersonForUpdateAsync(personId),
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -1010,12 +1034,12 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.HasApplicationsAsync(personId))
+                repository.HasApplicationsAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -1032,7 +1056,8 @@ public class PersonServiceTests
         _personRepositoryMock.Verify(
             repository =>
                 repository.DeletePersonAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -1052,17 +1077,17 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.HasApplicationsAsync(personId))
+                repository.HasApplicationsAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.DeletePersonAsync(personId))
+                repository.DeletePersonAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -1093,17 +1118,17 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.HasApplicationsAsync(personId))
+                repository.HasApplicationsAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.DeletePersonAsync(personId))
+                repository.DeletePersonAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _unitOfWorkMock
@@ -1125,7 +1150,7 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.DeletePersonAsync(personId),
+                repository.DeletePersonAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -1145,17 +1170,17 @@ public class PersonServiceTests
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.GetPersonForUpdateAsync(personId))
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.HasApplicationsAsync(personId))
+                repository.HasApplicationsAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _personRepositoryMock
             .Setup(repository =>
-                repository.DeletePersonAsync(personId))
+                repository.DeletePersonAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _unitOfWorkMock
@@ -1174,17 +1199,17 @@ public class PersonServiceTests
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.GetPersonForUpdateAsync(personId),
+                repository.GetPersonForUpdateAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.HasApplicationsAsync(personId),
+                repository.HasApplicationsAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _personRepositoryMock.Verify(
             repository =>
-                repository.DeletePersonAsync(personId),
+                repository.DeletePersonAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -1225,7 +1250,7 @@ public class PersonServiceTests
         Assert.Contains("Invalid gender value.", result.Error);
 
         _personRepositoryMock.Verify(
-            repository => repository.AddPersonAsync(It.IsAny<Person>()),
+            repository => repository.AddPersonAsync(It.IsAny<Person>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -1310,7 +1335,7 @@ public class PersonServiceTests
     public async Task UploadPersonPhotoAsync_PersonNotFound_ReturnsNotFound()
     {
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(99))
+            .Setup(r => r.GetPersonForUpdateAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Person?)null);
 
         using var stream = new MemoryStream([1, 2, 3]);
@@ -1325,7 +1350,7 @@ public class PersonServiceTests
     {
         var person = CreatePerson(10);
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(10))
+            .Setup(r => r.GetPersonForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _imageProcessingServiceMock
@@ -1345,7 +1370,7 @@ public class PersonServiceTests
     {
         var person = CreatePerson(10);
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(10))
+            .Setup(r => r.GetPersonForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         var processed = new ProcessedImageResult(new MemoryStream([1, 2]), "image/webp", ".webp", 100, 100, 2);
@@ -1370,7 +1395,7 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = "people/old_photo.webp";
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(10))
+            .Setup(r => r.GetPersonForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         var processed = new ProcessedImageResult(new MemoryStream([1, 2]), "image/webp", ".webp", 100, 100, 2);
@@ -1401,7 +1426,7 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = "people/old_photo.webp";
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(10))
+            .Setup(r => r.GetPersonForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         var processed = new ProcessedImageResult(new MemoryStream([1, 2]), "image/webp", ".webp", 100, 100, 2);
@@ -1432,7 +1457,7 @@ public class PersonServiceTests
     public async Task GetPersonPhotoAsync_PersonNotFound_ReturnsNotFound()
     {
         _personRepositoryMock
-            .Setup(r => r.GetPersonByIdAsync(99))
+            .Setup(r => r.GetPersonByIdAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Person?)null);
 
         var result = await _sut.GetPersonPhotoAsync(99);
@@ -1447,7 +1472,7 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = null;
         _personRepositoryMock
-            .Setup(r => r.GetPersonByIdAsync(10))
+            .Setup(r => r.GetPersonByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         var result = await _sut.GetPersonPhotoAsync(10);
@@ -1462,7 +1487,7 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = "people/missing.webp";
         _personRepositoryMock
-            .Setup(r => r.GetPersonByIdAsync(10))
+            .Setup(r => r.GetPersonByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _fileStorageServiceMock
@@ -1481,7 +1506,7 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = "people/photo.webp";
         _personRepositoryMock
-            .Setup(r => r.GetPersonByIdAsync(10))
+            .Setup(r => r.GetPersonByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         var fakeStream = new MemoryStream([1, 2, 3]);
@@ -1501,7 +1526,7 @@ public class PersonServiceTests
     public async Task DeletePersonPhotoAsync_PersonNotFound_ReturnsNotFound()
     {
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(99))
+            .Setup(r => r.GetPersonForUpdateAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Person?)null);
 
         var result = await _sut.DeletePersonPhotoAsync(99);
@@ -1516,7 +1541,7 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = null;
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(10))
+            .Setup(r => r.GetPersonForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         var result = await _sut.DeletePersonPhotoAsync(10);
@@ -1530,7 +1555,7 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = "people/old_photo.webp";
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(10))
+            .Setup(r => r.GetPersonForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _unitOfWorkMock
@@ -1550,11 +1575,11 @@ public class PersonServiceTests
         var person = CreatePerson(10);
         person.ImagePath = "people/precious_photo.webp";
         _personRepositoryMock
-            .Setup(r => r.GetPersonForUpdateAsync(10))
+            .Setup(r => r.GetPersonForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(person);
 
         _personRepositoryMock
-            .Setup(r => r.IsNationalNoDuplicatedAsync(It.IsAny<string>(), 10))
+            .Setup(r => r.IsNationalNoDuplicatedAsync(It.IsAny<string>(), 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -1581,7 +1606,7 @@ public class PersonServiceTests
         };
 
         _personRepositoryMock
-            .Setup(r => r.GetStatisticsAsync())
+            .Setup(r => r.GetStatisticsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expectedStats);
 
         var result = await _sut.GetStatisticsAsync();
@@ -1597,7 +1622,7 @@ public class PersonServiceTests
     public async Task GetStatisticsAsync_WhenRepositoryThrows_ReturnsFailure()
     {
         _personRepositoryMock
-            .Setup(r => r.GetStatisticsAsync())
+            .Setup(r => r.GetStatisticsAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("DB error"));
 
         var result = await _sut.GetStatisticsAsync();
@@ -1629,7 +1654,7 @@ public class PersonServiceTests
         };
 
         _personRepositoryMock
-            .Setup(r => r.GetPeopleAvailableForUserAsync(request))
+            .Setup(r => r.GetPeopleAvailableForUserAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedPeople);
 
         var result = await _sut.GetPeopleAvailableForUserAsync(request);
@@ -1639,7 +1664,7 @@ public class PersonServiceTests
         Assert.Equal(1, result.Value!.TotalCount);
         Assert.Single(result.Value.Items);
         Assert.Equal(5, result.Value.Items[0].PersonId);
-        _personRepositoryMock.Verify(r => r.GetPeopleAvailableForUserAsync(request), Times.Once);
+        _personRepositoryMock.Verify(r => r.GetPeopleAvailableForUserAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -1655,7 +1680,7 @@ public class PersonServiceTests
         var request = new PersonQueryRequest { PageNumber = 1, PageSize = 10 };
 
         _personRepositoryMock
-            .Setup(r => r.GetPeopleAvailableForUserAsync(request))
+            .Setup(r => r.GetPeopleAvailableForUserAsync(request, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("DB error"));
 
         var result = await _sut.GetPeopleAvailableForUserAsync(request);
@@ -1663,5 +1688,21 @@ public class PersonServiceTests
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal("Failed to retrieve available people.", result.Error);
+    }
+
+    [Fact]
+    public async Task GetPersonByIdAsync_PassesCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        var person = CreatePerson(10);
+
+        _personRepositoryMock
+            .Setup(r => r.GetPersonByIdAsync(10, cts.Token))
+            .ReturnsAsync(person);
+
+        var result = await _sut.GetPersonByIdAsync(10, cts.Token);
+
+        Assert.True(result.IsSuccess);
+        _personRepositoryMock.Verify(r => r.GetPersonByIdAsync(10, cts.Token), Times.Once);
     }
 }

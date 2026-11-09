@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using DVLD.Contracts.LicenseReplacement;
 using Moq;
@@ -22,7 +22,7 @@ public sealed class LicenseReplacementControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.LicenseReplacementServiceMock.Verify(
-            x => x.ReplaceLicenseAsync(It.IsAny<int>(), It.IsAny<string>()),
+            x => x.ReplaceLicenseAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -37,7 +37,7 @@ public sealed class LicenseReplacementControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseReplacementServiceMock
-            .Setup(x => x.ReplaceLicenseAsync(licenseId, reason))
+            .Setup(x => x.ReplaceLicenseAsync(licenseId, reason, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(expectedLicenseId));
 
         using var client = CreateAuthenticatedClient(factory);
@@ -52,7 +52,7 @@ public sealed class LicenseReplacementControllerTests
         Assert.Equal(expectedLicenseId, result.LicenseId);
 
         factory.LicenseReplacementServiceMock.Verify(
-            x => x.ReplaceLicenseAsync(licenseId, reason),
+            x => x.ReplaceLicenseAsync(licenseId, reason, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -78,7 +78,7 @@ public sealed class LicenseReplacementControllerTests
         };
 
         factory.LicenseReplacementServiceMock
-            .Setup(x => x.ReplaceLicenseAsync(10, "Lost License"))
+            .Setup(x => x.ReplaceLicenseAsync(10, "Lost License", It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory);
@@ -93,7 +93,7 @@ public sealed class LicenseReplacementControllerTests
             detail);
 
         factory.LicenseReplacementServiceMock.Verify(
-            x => x.ReplaceLicenseAsync(10, "Lost License"),
+            x => x.ReplaceLicenseAsync(10, "Lost License", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -103,7 +103,7 @@ public sealed class LicenseReplacementControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseReplacementServiceMock
-            .Setup(x => x.ReplaceLicenseAsync(10, "Lost License"))
+            .Setup(x => x.ReplaceLicenseAsync(10, "Lost License", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromFailure(
                 "Unexpected replacement failure."));
 
@@ -119,7 +119,7 @@ public sealed class LicenseReplacementControllerTests
             "The server could not complete the request.");
 
         factory.LicenseReplacementServiceMock.Verify(
-            x => x.ReplaceLicenseAsync(10, "Lost License"),
+            x => x.ReplaceLicenseAsync(10, "Lost License", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

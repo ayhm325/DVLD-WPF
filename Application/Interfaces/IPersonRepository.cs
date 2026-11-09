@@ -7,34 +7,53 @@ namespace Application.Interfaces;
 public interface IPersonRepository
 {
     Task<PagedResult<Person>> GetAllAsync(
-        PersonQueryRequest request);
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default);
 
     Task<PagedResult<Person>> GetPeopleAvailableForUserAsync(
-        PersonQueryRequest request);
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default);
 
     Task<PagedResult<Person>> GetAllAsync(
-        PaginationRequest request);
+        PaginationRequest request,
+        CancellationToken cancellationToken = default);
 
-    Task<Person?> GetPersonByIdAsync(int id);
+    Task<Person?> GetPersonByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<Person?> GetPersonByNationalNoAsync(
-        string nationalNo);
+        string nationalNo,
+        CancellationToken cancellationToken = default);
 
-    Task<PersonStatisticsDto> GetStatisticsAsync();
+    Task<PersonStatisticsDto> GetStatisticsAsync(
+        CancellationToken cancellationToken = default);
 
-    Task<List<Person>> GetAllPersonsAsync();
+    Task<List<Person>> GetAllPersonsAsync(
+        CancellationToken cancellationToken = default);
 
-    Task<Person?> GetPersonForUpdateAsync(int id);
+    Task<Person?> GetPersonForUpdateAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 
-    Task<bool> IsPersonExistsByIdAsync(int id);
+    Task<bool> IsPersonExistsByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<bool> IsNationalNoDuplicatedAsync(
         string nationalNo,
-        int personId);
+        int personId,
+        CancellationToken cancellationToken = default);
 
-    Task<bool> HasApplicationsAsync(int personId);
+    Task<bool> HasApplicationsAsync(
+        int personId,
+        CancellationToken cancellationToken = default);
 
-    Task AddPersonAsync(Person person);
+    Task AddPersonAsync(
+        Person person,
+        CancellationToken cancellationToken = default);
 
-    Task<bool> DeletePersonAsync(int id);
+    Task<bool> DeletePersonAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 }

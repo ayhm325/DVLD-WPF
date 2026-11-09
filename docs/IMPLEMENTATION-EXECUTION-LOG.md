@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — Task INT-02 Verified (Zero Database Modifications)
+> **Current Tracking Status:** ACTIVE — Task API-01 Verified (Zero Database Modifications)
 
 ---
 
@@ -28,13 +28,14 @@
 - **CI/CD:** Azure Pipelines (`azure-pipelines.yml`).
 
 ### 1.3 Execution State & Phase Status
-- **Active Implementation Phase:** Phase 12.2 (Backend Integrity & Performance) — **100% COMPLETE & VERIFIED**.
-- **Current Task:** `INT-01` (Verified).
+- **Active Implementation Phase:** Phase 12.2 (Backend Integrity & Performance) — **100% COMPLETE & VERIFIED**; Phase 12.3 (`API-01` — **100% COMPLETE & VERIFIED**).
+- **Current Task:** `API-01` (Verified).
 - **Completed & Verified Implementation Tasks:**
   - `INT-02`: User Creation Persistence Boundary Exception Translation (`UserService.cs` & `UnitOfWork.cs`). Verified by 68 unit tests, 9 constraint translation tests, and 37 controller tests. Committed in `4191f09`.
   - `PERF-01`: LicenseQueryService N+1 Query Remediation (`LicenseQueryService.cs` & `LicenseRepository.cs`). Batched newer license lookups via `GetNewerLicensesBatchAsync`. Verified by 927 unit tests, 5 isolated DB repository batch tests, and 83 controller tests. Committed in `60a0751`.
   - `PERF-02`: Pessimistic Lock on Read-Only License Queries in `LicenseRepository.cs` (concurrency optimization). Separated shared non-locking read queries (`GetLicenseByIdAsync`) from state-modifying update locks (`GetForUpdateAsync` with `WITH (UPDLOCK, HOLDLOCK)`). Verified by 927 unit tests, 26 isolated DB repository tests (including concurrent reader tests), and 83 controller tests. Committed in `77325a1`.
-  - `INT-01`: Direct Application Completion Endpoint Removal (`ApplicationsController.cs`, `IApplicationService.cs`, `ApplicationService.cs`). Permanently removed unsafe completion bypass route and standalone service method per `DEC-APP-01` Option 1 and `ADR-P03`. Verified by 926 Application unit tests and 53 API integration tests asserting HTTP 404 on `POST /api/applications/{id}/complete`.
+  - `INT-01`: Direct Application Completion Endpoint Removal (`ApplicationsController.cs`, `IApplicationService.cs`, `ApplicationService.cs`). Permanently removed unsafe completion bypass route and standalone service method per `DEC-APP-01` Option 1 and `ADR-P03`. Verified by 926 Application unit tests and 53 API integration tests asserting HTTP 404 on `POST /api/applications/{id}/complete`. Committed in `256df5b`.
+  - `API-01`: Propagate `CancellationToken` Across Endpoints (20 API Controllers, 26 Application Services, 15 Repositories, EF Core async queries, `UnitOfWork` transactions, and `LicenseExpirationBackgroundService` across all 5 domain bundles). Verified by 932 Application unit tests and 460 API integration tests (all 20 controllers + background services).
 - **Blocked Tasks & External Gates (Phase 12.3 & Future):**
   - `INT-03` (Phase 12.3): Blocked on Licensing Authority statutory confirmation under Gate 3 (`DEC-POL-01`).
   - `AUD-01` (Phase 12.3): Blocked on Schema Gate 5 (DBA approval) and `DEC-AUD-01` (storage sink / redaction specification).
@@ -285,7 +286,54 @@ Every authorized implementation task must be recorded chronologically using the 
 15. **Manual Verification Results:** Verified via integration test that HTTP POST to `/api/applications/{id}/complete` returns HTTP 404 Not Found.
 16. **Code Review Findings:** Endpoint and unsafe standalone service method completely removed. Legitimate domain issuance pipelines continue functioning normally using `CompleteApplicationStateAsync`.
 17. **Known Limitations & Remaining Risks:** None. Legacy clients attempting to call the removed route will receive HTTP 404.
-18. **Final Git Commit Hash:** Pending human commit by Project Owner.
+18. **Final Git Commit Hash:** `256df5bca58838c86ad428c1f8a3a4c8ebc4875f`
+19. **Final Task Status:** `Verified`
+
+---
+
+### 2.6 [API-01] Propagate CancellationToken Across Endpoints
+
+1. **Task ID & Title:** `API-01` - Propagate `CancellationToken` Across Endpoints
+2. **Roadmap Phase & Priority:** Phase 12.3 (Reliability, Observability & Core Policy) | P2
+3. **Authorization & Governance Reference:** Authorized by Project Owner; tracked in [`ENGINEERING-ROADMAP.md`](../ENGINEERING-ROADMAP.md) §3.3 and [`docs/audits/api-01-cancellation-token-inventory.md`](./audits/api-01-cancellation-token-inventory.md).
+4. **Problem Statement & Root Cause:**
+   Controller actions across all 20 API controllers, 151 out of 153 async Application Service methods, and 139 out of 141 async Repository methods omitted `CancellationToken` parameters or failed to forward the token to EF Core async queries and `UnitOfWork` persistence operations. Consequently, when an HTTP client disconnected (`HttpContext.RequestAborted`), orphaned database queries and mutations continued executing on SQL Server. Additionally, `LicenseExpirationBackgroundService` invoked `DeactivateExpiredLicensesAsync` without forwarding its `stoppingToken`.
+5. **Engineering Decision & Selected Approach:**
+   Implemented end-to-end vertical-slice `CancellationToken` propagation across all 5 cohesive domain bundles:
+   - **Repositories (15 interfaces & implementations):** Added `CancellationToken cancellationToken = default` to all async signatures and forwarded `cancellationToken` to all EF Core async methods (`ToListAsync`, `FirstOrDefaultAsync`, `SingleOrDefaultAsync`, `SingleAsync`, `AnyAsync`, `CountAsync`, `AddAsync`, `ToDictionaryAsync`, `ExecuteUpdateAsync`, `ExecuteSqlInterpolatedAsync`).
+   - **Application Services (26 interfaces & implementations):** Added `CancellationToken cancellationToken = default` to all async service methods and forwarded `cancellationToken` to repository calls, cross-service calls, `_unitOfWork.SaveChangesAsync(cancellationToken)`, `_unitOfWork.BeginTransactionAsync(cancellationToken)`, `_unitOfWork.ExecuteInTransactionAsync(..., cancellationToken)`, and `transaction.CommitAsync(cancellationToken)`.
+   - **Controllers (20 controllers, 111 actions):** Added `CancellationToken cancellationToken = default` to all async action methods, allowing ASP.NET Core model binding to automatically bind `HttpContext.RequestAborted` and forward it to Application Services.
+   - **Background Services:** Updated `LicenseExpirationBackgroundService` to pass `stoppingToken` to `DeactivateExpiredLicensesAsync(clock.Today, stoppingToken)`.
+   - **Rollback Safety:** Preserved `CancellationToken.None` on physical rollback paths (`RollbackPhysicalAsync`) inside `UnitOfWork` and catch blocks so that transaction abort is never skipped when a caller token is already canceled.
+6. **Affected Layers & Files:**
+   - **API Layer:** All 20 controllers in `API/DVLD.Api/Controllers/` and `API/DVLD.Api/BackgroundServices/LicenseExpirationBackgroundService.cs`.
+   - **Application Layer:** All 15 repository interfaces and 22 async service interfaces in `Application/Interfaces/`, and all corresponding service implementations in `Application/Services/`.
+   - **Infrastructure Layer:** All 15 repository implementations in `Infrastructure/Repositories/`.
+   - **Test Layer:** Updated Moq expression trees (`It.IsAny<CancellationToken>()`) and multi-parameter `.Callback<T, CancellationToken>` delegates across `Test/Application.UnitTests/` and `Test/API.IntegrationTests/`, plus added dedicated `CancellationToken` propagation unit tests.
+7. **Database / Migration Impact:** None. Zero schema changes, zero migrations, zero contact with `DVLDf`.
+8. **API Contract / Frontend Impact:** None. `CancellationToken` parameters in ASP.NET Core controllers are bound from `HttpContext.RequestAborted` and do not alter HTTP route signatures, query parameters, or JSON request/response payloads.
+9. **Security & Authorization Impact:** None. All `[Authorize]` policies and Segregation of Duties (SoD) checks remain unchanged.
+10. **Transaction & Concurrency Impact:** Positive. In-flight reads and uncommitted transactions abort promptly upon client disconnection while physical rollbacks remain guaranteed via `CancellationToken.None`.
+11. **Implementation Steps Executed:**
+    - **Bundle 1:** `Applications`, `ApplicationTypes`, `Countries`, `Dashboard`, `LicenseClasses`, `TestTypes` (Committed in `87c9979` & `58c669f`).
+    - **Bundle 2:** `People`, `Users`, `Auth`.
+    - **Bundle 3:** `Drivers`, `LocalDrivingLicenseApplications`.
+    - **Bundle 4:** `TestAppointments`, `Tests`, `TestWorkflow`, `NoShowProcessorService`.
+    - **Bundle 5:** `Licenses`, `LicenseQuery`, `LicenseIssuance`, `LicenseRenewal`, `LicenseReplacement`, `DetainedLicenses`, `InternationalLicenses`, `LicenseExpirationBackgroundService`.
+12. **Verification Commands Executed:**
+    - `dotnet build Test/Application.UnitTests/Application.UnitTests.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`
+    - `dotnet build Test/API.IntegrationTests/API.IntegrationTests.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`
+    - `dotnet test Test/Application.UnitTests/Application.UnitTests.csproj --no-build -m:1 /nr:false /p:UseSharedCompilation=false`
+    - `dotnet test Test/API.IntegrationTests/API.IntegrationTests.csproj --no-build --filter "FullyQualifiedName~Controllers.|FullyQualifiedName~BackgroundServices." -m:1 /nr:false /p:UseSharedCompilation=false`
+13. **Build Results:**
+    `dotnet build` succeeded across all projects (`Domain`, `Application`, `DVLD.Contracts`, `Infrastructure`, `DVLD.Api`, `Application.UnitTests`, `API.IntegrationTests`) with `0 Warning(s)`, `0 Error(s)`.
+14. **Test Execution Results:**
+    - `Test/Application.UnitTests/Application.UnitTests.csproj`: **Passed: 932, Failed: 0, Skipped: 0, Total: 932** (Duration: 6 s, Exit code 0).
+    - `Test/API.IntegrationTests/API.IntegrationTests.csproj` (All 20 Controllers + Background Services): **Passed: 460, Failed: 0, Skipped: 0, Total: 460** (Duration: 48 s, Exit code 0).
+15. **Manual Verification Results:** Verified via unit tests (`PassesCancellationTokenToRepository`) that custom `CancellationTokenSource` tokens flow untouched from service entry points down to repository calls.
+16. **Code Review Findings:** All 111 controller actions, 153 service async methods, 141 repository async methods, and both background services (`NoShowBackgroundService` and `LicenseExpirationBackgroundService`) propagate `CancellationToken` end-to-end. Zero unintended line-ending changes or out-of-scope edits.
+17. **Known Limitations & Remaining Risks:** None.
+18. **Final Git Commit Hash:** Pending human review / commit authorization.
 19. **Final Task Status:** `Verified`
 
 ---
@@ -325,7 +373,7 @@ All **24 active roadmap tasks** from [`ENGINEERING-ROADMAP.md`](../ENGINEERING-R
 | **`AUD-01`** | Transactional SQL Server Audit Logging for Core Business Mutations | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Schema Gate 5 (DBA) & `DEC-AUD-01` |
 | **`INT-03`** | Detained License Replacement Validation (`LicenseReplacementService.cs`) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Blocked on Licensing Authority Gate 3 (`DEC-POL-01`) |
 | **`TEST-01`** | Throttled Integration Test Migrations (LocalDB SSL Workaround) | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Needs runtime validation against LocalDB concurrency |
-| **`API-01`** | Propagate `CancellationToken` Across Endpoints | **Phase 12.3** | **P2** | **In Progress** | **AUTHORIZED** | Active implementation across 5 domain bundles; Bundle 1 in progress |
+| **`API-01`** | Propagate `CancellationToken` Across Endpoints | **Phase 12.3** | **P2** | **Verified** | **AUTHORIZED** | **COMPLETED** (Propagated `CancellationToken` across all 20 controllers, 26 services, 15 repositories, EF Core queries, and background services across all 5 bundles) |
 | **`REST-01`** | Standardize Error Payloads on RFC 7807 `ProblemDetails` | **Phase 12.3** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Aligns with `ADR-P02` across all controllers |
 | **`SEC-01`** | Segregation of Duties Model B Policy Alignment (`ClientApp/` & API) | **Phase 12.4** | **P2** | **Technically Analyzed** | **UNAUTHORIZED** | Aligns with `ADR-O01` / `DEC-RBAC-01`; frontend role guards |
 | **`SEC-03`** | Rate Limiting on Password Change (`AuthController.cs`) | **Phase 12.5** | **P3** | **Technically Analyzed** | **UNAUTHORIZED** | Phase 12.5 Scope; endpoint rate limiting |
@@ -586,6 +634,89 @@ flowchart TD
   - 23 Repository async methods updated with token forwarded to EF Core.
   - 20 Service async methods updated with token forwarded to repositories and `SaveChangesAsync`.
 - **Next Authorized Action:** Proceed immediately to **Bundle 2** (`People`, `Users`, `Auth`).
+
+### Session 10: Task API-01 Bundle 2 & Bundle 3 Full Completion & Verification
+- **Date & Timestamp:** 2026-11-09 14:12:00 +03:00
+- **Session Goals:** Implement and verify full vertical slices for **Bundle 2** (`People`, `Users`, `Auth`) and **Bundle 3** (`Drivers`, `LocalDrivingLicenseApplications`), ensuring end-to-end `CancellationToken` propagation through Controllers, Services, Repositories, EF Core, and UnitOfWork.
+- **Completed Work (Bundle 2: `People`, `Users`, `Auth` — 100% Complete):**
+  1. **People Domain:**
+     - `IPersonRepository` & `PersonRepository`: Added `CancellationToken cancellationToken = default` across all 13 async methods; passed token to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `AnyAsync`, `CountAsync`, `AddAsync`.
+     - `IPersonService` & `PersonService`: Added `cancellationToken` across all 12 async methods; forwarded to repository and `_unitOfWork.SaveChangesAsync(cancellationToken)`.
+     - `PeopleController`: Added `CancellationToken cancellationToken = default` across all 11 actions and passed to `_personService`.
+     - Updated Moq setups/verifies and `.Callback<Person, CancellationToken>` in `PersonServiceTests` and `PeopleControllerTests`.
+  2. **Users & Auth Domains:**
+     - `IUserRepository` & `UserRepository`: Added `CancellationToken cancellationToken = default` across all 13 async methods; passed token to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `AnyAsync`, `AddAsync`.
+     - `IUserService` & `UserService`: Added `cancellationToken` across all 12 async methods; forwarded to repository and `_unitOfWork.SaveChangesAsync(cancellationToken)` (including duplicate index resolution path).
+     - `UsersController`: Added `CancellationToken cancellationToken = default` across all 8 actions and passed to `_userService`.
+     - `IAuthService` & `AuthService`: Added `CancellationToken cancellationToken = default` to `LoginAsync` and passed to `_userRepository.GetByUsernameWithDetailsAsync(username, cancellationToken)`.
+     - `AuthController`: Added `CancellationToken cancellationToken = default` to `Login`, `Logout`, `GetCurrentUser`, and `ChangePassword` actions.
+     - Updated Moq setups/verifies and `.Callback<User, CancellationToken>` in `UserServiceTests`, `AuthServiceTests`, `UsersControllerTests`, `AuthControllerTests`, and `ApiWebApplicationFactory`.
+- **Completed Work (Bundle 3: `Drivers`, `LocalDrivingLicenseApplications` — 100% Complete):**
+  1. **Drivers Domain:**
+     - `IDriverRepository` & `DriverRepository`: Added `CancellationToken cancellationToken = default` across all 11 async methods; passed token to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `AnyAsync`, `CountAsync`, `AddAsync`, and `ToDictionaryAsync`.
+     - `IDriverService` & `DriverService`: Added `cancellationToken` across all 11 async methods; forwarded to repository and `_unitOfWork.SaveChangesAsync(cancellationToken)`.
+     - `DriversController`: Added `CancellationToken cancellationToken = default` across all 7 actions and passed to `_driverService`.
+     - Updated Moq setups/verifies and `.Callback<Driver, CancellationToken>` in `DriverServiceTests`, `LicenseIssuanceServiceTests`, and `DriversControllerTests`.
+  2. **LocalDrivingLicenseApplications Domain:**
+     - `ILocalDrivingLicenseApplicationRepository` & `LocalDrivingLicenseApplicationRepository`: Added `CancellationToken cancellationToken = default` across all 14 async methods; passed token to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `AnyAsync`, `CountAsync`, `AddAsync`, and `ToDictionaryAsync`.
+     - `ILocalDrivingLicenseApplicationService` & `LocalDrivingLicenseApplicationService`: Added `cancellationToken` across all 16 async methods; forwarded to repositories, `_applicationService`, `_unitOfWork.BeginTransactionAsync(cancellationToken)`, `_unitOfWork.SaveChangesAsync(cancellationToken)`, and `transaction.CommitAsync(cancellationToken)`.
+     - `LocalDrivingLicenseApplicationsController`: Added `CancellationToken cancellationToken = default` across all 12 actions and passed to `_localApplicationService`.
+     - Updated Moq setups/verifies and `.Callback<LocalDrivingLicenseApplication, CancellationToken>` in `LocalDrivingLicenseApplicationServiceTests`, `LicenseIssuanceServiceTests`, `LicenseQueryServiceTests`, `TestAppointmentServiceTests`, and `LocalDrivingLicenseApplicationsControllerTests`.
+- **Verified Test Executions (Bundles 2 & 3):**
+  - `PersonServiceTests`: **54 passed, 0 failed** (Duration: 136 ms, exit code 0).
+  - `PeopleControllerTests`: **36 passed, 0 failed** (Duration: 2 s, exit code 0).
+  - `UserServiceTests` + `AuthServiceTests`: **82 passed, 0 failed** (Duration: 6 s, exit code 0).
+  - `UsersControllerTests` + `AuthControllerTests`: **59 passed, 0 failed** (Duration: 3 s, exit code 0).
+  - `DriverServiceTests`: **54 passed, 0 failed** (Duration: 74 ms, exit code 0).
+  - `DriversControllerTests`: **25 passed, 0 failed** (Duration: 1 s, exit code 0).
+  - `LocalDrivingLicenseApplicationServiceTests`: **47 passed, 0 failed** (Duration: 84 ms, exit code 0).
+  - `LocalDrivingLicenseApplicationsControllerTests`: **30 passed, 0 failed** (Duration: 194 ms, exit code 0).
+- **Next Authorized Action:** Proceed immediately to **Bundle 4** (`TestAppointments`, `Tests`, `TestWorkflow`).
+
+### Session 11: Task API-01 Bundle 4 & Bundle 5 Full Completion & Final Verification
+- **Date & Timestamp:** 2026-11-09 14:55:00 +03:00
+- **Session Goals:** Implement and verify full vertical slices for **Bundle 4** (`TestAppointments`, `Tests`, `TestWorkflow`, `NoShowProcessorService`) and **Bundle 5** (`Licenses`, `LicenseQuery`, `LicenseIssuance`, `LicenseRenewal`, `LicenseReplacement`, `DetainedLicenses`, `InternationalLicenses`, `LicenseExpirationBackgroundService`), run full unit and integration test suites across the entire solution, and complete official documentation closure for `API-01`.
+- **Completed Work (Bundle 4: `TestAppointments`, `Tests`, `TestWorkflow` — 100% Complete):**
+  1. **TestAppointments & NoShowProcessor Domain:**
+     - `ITestAppointmentRepository` & `TestAppointmentRepository`: Added `CancellationToken cancellationToken = default` to all remaining 22 async methods (all 24 async methods now accept and forward `cancellationToken` to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `SingleOrDefaultAsync`, `AnyAsync`, `CountAsync`, `AddAsync`, and `ExecuteUpdateAsync`).
+     - `ITestAppointmentService` & `TestAppointmentService`: Added `cancellationToken` across all 17 async methods; forwarded to repositories, `_unitOfWork.ExecuteInTransactionAsync(..., cancellationToken)`, `_unitOfWork.SaveChangesAsync(cancellationToken)`, and `transaction.CommitAsync(cancellationToken)`.
+     - `NoShowProcessorService`: Forwarded `cancellationToken` to `_appointmentRepository.GetExpiredScheduledCandidateIdsAsync` and `MarkNoShowIfScheduledAndExpiredAsync`.
+     - `TestAppointmentsController`: Added `CancellationToken cancellationToken = default` across all 18 actions and forwarded to `_testAppointmentService`.
+  2. **Tests & TestWorkflow Domains:**
+     - `ITestRepository` & `TestRepository`: Added `CancellationToken cancellationToken = default` across all 6 async methods; passed token to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `AnyAsync`, `CountAsync`, `AddAsync`.
+     - `ITestService` & `TestService`: Added `cancellationToken` across all 5 async methods and forwarded to `_testRepository`.
+     - `TestsController`: Added `CancellationToken cancellationToken = default` across all 5 actions and forwarded to `_testService`.
+     - `ITestWorkflowService` & `TestWorkflowService`: Added `CancellationToken cancellationToken = default` across all 5 async methods; forwarded to repositories, `_unitOfWork.BeginTransactionAsync(cancellationToken)`, `_unitOfWork.SaveChangesAsync(cancellationToken)`, and `transaction.CommitAsync(cancellationToken)`.
+     - `TestWorkflowController`: Added `CancellationToken cancellationToken = default` across all 3 actions and forwarded to `_testWorkflowService`.
+  3. **Bundle 4 Tests Updated & Verified:**
+     - Updated Moq setups/verifies and `.Callback` delegates in `TestAppointmentServiceTests`, `AppointmentBookingConcurrencyEngineTests`, `AppointmentAvailabilityUnitTests`, `TestServiceTests`, `TestWorkflowServiceTests`, `TestAppointmentsControllerTests`, `TestsControllerTests`, `TestWorkflowControllerTests`, and `NoShowBackgroundServiceTests`.
+     - Added dedicated `CancellationToken` propagation unit tests in `TestAppointmentServiceTests`, `TestServiceTests`, and `TestWorkflowServiceTests`.
+- **Completed Work (Bundle 5: `Licenses`, `LicenseQuery`, `LicenseIssuance`, `LicenseRenewal`, `LicenseReplacement`, `DetainedLicenses`, `InternationalLicenses`, `LicenseExpirationBackgroundService` — 100% Complete):**
+  1. **Licenses & LicenseQuery Domains:**
+     - `ILicenseRepository` & `LicenseRepository`: Added `CancellationToken cancellationToken = default` across all 24 async methods; passed token to EF Core `ToListAsync`, `FirstOrDefaultAsync`, `SingleOrDefaultAsync`, `AnyAsync`, `CountAsync`, `AddAsync`, and `ExecuteSqlInterpolatedAsync`.
+     - `ILicenseQueryService` & `LicenseQueryService`: Added `CancellationToken cancellationToken = default` across all 15 async methods and internal batched mapping helpers (`MapToDtosBatchAsync`); forwarded to `_licenseRepository`, `_detainedLicenseRepository`, and `_localApplicationService`.
+     - `ILicenseService` & `LicenseService`: Added `CancellationToken cancellationToken = default` across all 15 async methods and forwarded to `_queryService`.
+     - `LicensesController`: Added `CancellationToken cancellationToken = default` across all 9 actions and forwarded to `_licenseService`.
+     - Also updated `LocalDrivingLicenseApplicationService.cs` lines 106 and 533 to pass `cancellationToken` to `_licenseRepository.GetApplicationIdsWithLicensesAsync(..., cancellationToken)`.
+  2. **LicenseIssuance, LicenseRenewal & LicenseReplacement Domains:**
+     - `ILicenseIssuanceService`, `LicenseIssuanceService`, `LicenseIssuanceController`: Added `CancellationToken cancellationToken = default` and forwarded through `_unitOfWork.ExecuteInTransactionAsync`, repository checks, `_unitOfWork.SaveChangesAsync(cancellationToken)`, `_applicationService.CompleteApplicationStateAsync(..., cancellationToken)`, and `transaction.CommitAsync(cancellationToken)`.
+     - `ILicenseRenewalService`, `LicenseRenewalService`, `LicenseRenewalController`: Added `CancellationToken cancellationToken = default` and forwarded through all repository locking/deactivation/insertion calls, `_unitOfWork.ExecuteInTransactionAsync`, `_unitOfWork.SaveChangesAsync(cancellationToken)`, and `transaction.CommitAsync(cancellationToken)`.
+     - `ILicenseReplacementService`, `LicenseReplacementService`, `LicenseReplacementController`: Added `CancellationToken cancellationToken = default` and forwarded through all repository locking/deactivation/insertion calls, `_unitOfWork.ExecuteInTransactionAsync`, `_unitOfWork.SaveChangesAsync(cancellationToken)`, and `transaction.CommitAsync(cancellationToken)`.
+  3. **DetainedLicenses & InternationalLicenses Domains:**
+     - `IDetainedLicenseRepository`, `DetainedLicenseRepository`, `IDetainedLicenseService`, `DetainedLicenseService`, `DetainedLicensesController`: Added `CancellationToken cancellationToken = default` across all 7 repository methods, 6 service methods, and 6 controller actions; forwarded to EF Core and `UnitOfWork`.
+     - `IInternationalRepository`, `InternationalRepository`, `IInternationalService`, `InternationalService`, `InternationalLicensesController`: Added `CancellationToken cancellationToken = default` across all 8 repository methods, 8 service methods, and 7 controller actions; forwarded to EF Core and `UnitOfWork`.
+  4. **Background Service:**
+     - `LicenseExpirationBackgroundService`: Forwarded `stoppingToken` to `licenseRepo.DeactivateExpiredLicensesAsync(clock.Today, stoppingToken)`.
+  5. **Bundle 5 Tests Updated & Verified:**
+     - Updated Moq setups/verifies and `.Callback<T, CancellationToken>` delegates across `LicenseServiceTests`, `LicenseQueryServiceTests`, `LicenseQueryServiceRealLifecycleTests`, `LicenseIssuanceServiceTests`, `LicenseRenewalServiceTests`, `LicenseReplacementServiceTests`, `DetainedLicenseServiceTests`, `InternationalServiceTests`, `LicenseLifecycleTimeBoundaryTests`, `ApiDataEfficiencyOptimizationTests`, `ReadOperationsOptimizationTests`, `JordanClockTimeStandardizationTests`, `LocalDrivingLicenseApplicationServiceTests`, `LicensesControllerTests`, `LicenseIssuanceControllerTests`, `LicenseRenewalControllerTests`, `LicenseReplacementControllerTests`, `DetainedLicensesControllerTests`, `InternationalLicensesControllerTests`, and `LicenseExpirationBackgroundServiceTests`.
+- **Verified Test Executions (Bundles 4 & 5 + Final Full-Suite Verification):**
+  - Bundle 4 Unit Tests (`TestAppointmentServiceTests` | `AppointmentBookingConcurrencyEngineTests` | `AppointmentAvailabilityUnitTests` | `TestServiceTests` | `TestWorkflowServiceTests`): **181 passed, 0 failed** (Duration: 181 ms, exit code 0).
+  - Bundle 4 Integration Tests (`TestAppointmentsControllerTests` | `TestsControllerTests` | `TestWorkflowControllerTests`): **117 passed, 0 failed** (Duration: 344 ms, exit code 0).
+  - Bundle 5 Unit Tests (`LicenseServiceTests` | `LicenseQueryServiceTests` | `LicenseQueryServiceRealLifecycleTests` | `LicenseIssuanceServiceTests` | `LicenseRenewalServiceTests` | `LicenseReplacementServiceTests` | `DetainedLicenseServiceTests` | `InternationalServiceTests` | `LicenseLifecycleTimeBoundaryTests`): **250 passed, 0 failed** (Duration: 129 ms, exit code 0).
+  - Bundle 5 Integration Tests (`LicensesControllerTests` | `LicenseIssuanceControllerTests` | `LicenseRenewalControllerTests` | `LicenseReplacementControllerTests` | `DetainedLicensesControllerTests` | `InternationalLicensesControllerTests` | `LicenseExpirationBackgroundServiceTests`): **110 passed, 0 failed** (Duration: 17 s, exit code 0).
+  - **Full `Application.UnitTests` Suite:** **932 passed, 0 failed, 0 skipped** (Duration: 6 s, exit code 0).
+  - **Full Controller & Background Service `API.IntegrationTests` Suite (All 20 Controllers + Background Services):** **460 passed, 0 failed, 0 skipped** (Duration: 48 s, exit code 0).
+- **Current Task Status:** `API-01` is **100% Complete & Verified**. Awaiting Project Owner review and commit instruction.
 
 ---
 

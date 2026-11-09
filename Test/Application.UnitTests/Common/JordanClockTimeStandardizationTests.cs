@@ -173,8 +173,8 @@ public sealed class JordanClockTimeStandardizationTests
                 It.IsAny<CancellationToken>()))
             .Returns((Func<IUnitOfWorkTransaction, Task<Result<int>>> op, IsolationLevel _, CancellationToken __) =>
                 op(tx.Object));
-        repo.Setup(x => x.ExistsByLocalLicenseAsync(100)).ReturnsAsync(false);
-        repo.Setup(x => x.HasActiveInternationalLicenseAsync(20, It.IsAny<DateOnly>())).ReturnsAsync(false);
+        repo.Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        repo.Setup(x => x.HasActiveInternationalLicenseAsync(20, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Local license expiring on 2026-11-04 at 09:00:00 (morning timestamp)
         var localLicense = new LicenseDto
@@ -188,7 +188,7 @@ public sealed class JordanClockTimeStandardizationTests
             IsActive = true,
             Driver = new DriverDto { DriverID = 20, PersonID = 30, FullName = "Driver" }
         };
-        licenseQuery.Setup(x => x.GetByIdAsync(100)).ReturnsAsync(Result<LicenseDto>.Success(localLicense));
+        licenseQuery.Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(Result<LicenseDto>.Success(localLicense));
 
         // Case A: At 2026-11-04 23:59:59 Jordan (20:59:59Z UTC), license is STILL VALID despite 09:00 timestamp!
         var clock = FakeJordanClock.FromUtc(new DateTime(2026, 11, 4, 20, 59, 59, DateTimeKind.Utc));
@@ -254,8 +254,8 @@ public sealed class JordanClockTimeStandardizationTests
             Driver = new Driver { DriverID = 20, PersonID = 30 },
             LicenseClassInfo = new LicenseClass { LicenseClassID = 3, DefaultValidityLength = 10 }
         };
-        licenseRepo.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(expiredInactiveLicense);
-        licenseRepo.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(expiredInactiveLicense);
+        licenseRepo.Setup(x => x.GetLicenseByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(expiredInactiveLicense);
+        licenseRepo.Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(expiredInactiveLicense);
 
         // 2026-11-04 21:00:00Z = 2026-11-05 00:00:00 Jordan
         var clock = FakeJordanClock.FromUtc(new DateTime(2026, 11, 4, 21, 0, 0, DateTimeKind.Utc));

@@ -7,17 +7,17 @@ namespace Application.Interfaces;
 
 public interface IDriverService
 {
-    Task<Result<DriverDto>> GetByIdAsync(int id);
-    Task<Result<List<DriverDto>>> GetAllAsync();
-    Task<Result<PagedResult<DriverDto>>> GetAllAsync(PaginationRequest request);
-    Task<Result<PagedResult<DriverDto>>> GetAllAsync(DriverQueryRequest request);
-    Task<Result<DriverDto>> GetByPersonIdAsync(int personId);
-    Task<Result<List<DriverDto>>> GetByCreatedUserIdAsync(int userId);
+    Task<Result<DriverDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<List<DriverDto>>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<Result<PagedResult<DriverDto>>> GetAllAsync(PaginationRequest request, CancellationToken cancellationToken = default);
+    Task<Result<PagedResult<DriverDto>>> GetAllAsync(DriverQueryRequest request, CancellationToken cancellationToken = default);
+    Task<Result<DriverDto>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken = default);
+    Task<Result<List<DriverDto>>> GetByCreatedUserIdAsync(int userId, CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsByIdAsync(int driverId);
-    Task<bool> ExistsByPersonIdAsync(int personId);
+    Task<bool> ExistsByIdAsync(int driverId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByPersonIdAsync(int personId, CancellationToken cancellationToken = default);
 
-    Task<Result<int>> AddAsync(CreateDriverDto dto);
-    Task<Result> UpdateAsync(UpdateDriverDto dto);
-    Task<Result> DeleteAsync(int id);
+    Task<Result<int>> AddAsync(CreateDriverDto dto, CancellationToken cancellationToken = default);
+    Task<Result> UpdateAsync(UpdateDriverDto dto, CancellationToken cancellationToken = default);
+    Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

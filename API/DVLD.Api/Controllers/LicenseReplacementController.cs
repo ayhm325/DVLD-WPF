@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using DVLD.Api.Results;
 using DVLD.Contracts.LicenseReplacement;
 using Microsoft.AspNetCore.Authorization;
@@ -15,12 +15,14 @@ public sealed class LicenseReplacementController(
     [HttpPost]
     public async Task<IActionResult> Replace(
         [FromBody]
-        ReplaceLicenseRequest request)
+        ReplaceLicenseRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.ReplaceLicenseAsync(
                 request.OldLicenseId,
-                request.ReplacementReason);
+                request.ReplacementReason,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);

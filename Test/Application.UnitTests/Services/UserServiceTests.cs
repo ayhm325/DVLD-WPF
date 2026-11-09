@@ -47,7 +47,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserByUserIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -59,7 +59,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserByUserIdAsync(userId))
+                repository.GetUserByUserIdAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -73,7 +73,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserByUserIdAsync(userId),
+                repository.GetUserByUserIdAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -87,7 +87,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserByUserIdAsync(userId))
+                repository.GetUserByUserIdAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -107,7 +107,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserByUserIdAsync(userId),
+                repository.GetUserByUserIdAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -134,7 +134,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserByPersonIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -146,7 +146,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserByPersonIdAsync(personId))
+                repository.GetUserByPersonIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -162,7 +162,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserByPersonIdAsync(personId),
+                repository.GetUserByPersonIdAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -178,7 +178,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserByPersonIdAsync(personId))
+                repository.GetUserByPersonIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -192,7 +192,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserByPersonIdAsync(personId),
+                repository.GetUserByPersonIdAsync(personId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -218,7 +218,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserByUsernameAsync(
-                    It.IsAny<string>()),
+                    It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -230,7 +230,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserByUsernameAsync(username))
+                repository.GetUserByUsernameAsync(username, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -244,7 +244,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserByUsernameAsync(username),
+                repository.GetUserByUsernameAsync(username, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -262,7 +262,7 @@ public class UserServiceTests
         _userRepositoryMock
             .Setup(repository =>
                 repository.GetUserByUsernameAsync(
-                    normalizedUsername))
+                    normalizedUsername, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -280,7 +280,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserByUsernameAsync(
-                    normalizedUsername),
+                    normalizedUsername, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -296,7 +296,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserByUsernameAsync(username))
+                repository.GetUserByUsernameAsync(username, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -311,7 +311,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserByUsernameAsync(username),
+                repository.GetUserByUsernameAsync(username, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -338,7 +338,7 @@ public class UserServiceTests
             repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     It.IsAny<string>(),
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -353,7 +353,7 @@ public class UserServiceTests
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     username,
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -369,7 +369,7 @@ public class UserServiceTests
             repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     username,
-                    userId),
+                    userId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -385,7 +385,7 @@ public class UserServiceTests
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     normalizedUsername,
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -401,7 +401,7 @@ public class UserServiceTests
             repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     normalizedUsername,
-                    userId),
+                    userId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -421,7 +421,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetAllUsersAsync())
+                repository.GetAllUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(users);
 
         // Act
@@ -453,7 +453,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetAllUsersAsync(),
+                repository.GetAllUsersAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -463,7 +463,7 @@ public class UserServiceTests
         // Arrange
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetAllUsersAsync())
+                repository.GetAllUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<User>());
 
         // Act
@@ -477,7 +477,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetAllUsersAsync(),
+                repository.GetAllUsersAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -505,13 +505,13 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUsernameTakenAsync(
-                    It.IsAny<string>()),
+                    It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()),
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -544,13 +544,13 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUsernameTakenAsync(
-                    It.IsAny<string>()),
+                    It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()),
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -569,7 +569,7 @@ public class UserServiceTests
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenAsync(
-                    dto.UserName))
+                    dto.UserName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -586,19 +586,19 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUsernameTakenAsync(
-                    dto.UserName),
+                    dto.UserName, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()),
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -617,13 +617,13 @@ public class UserServiceTests
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenAsync(
-                    dto.UserName))
+                    dto.UserName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId))
+                    dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -640,19 +640,19 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUsernameTakenAsync(
-                    dto.UserName),
+                    dto.UserName, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId),
+                    dto.PersonId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()),
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -671,20 +671,20 @@ public class UserServiceTests
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenAsync(
-                    dto.UserName))
+                    dto.UserName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId))
+                    dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()))
-            .Callback<User>(user =>
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((user, _) =>
                 user.UserId = 1)
             .Returns(Task.CompletedTask);
 
@@ -708,7 +708,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()),
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -726,12 +726,12 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.IsUsernameTakenAsync(dto.UserName))
+                repository.IsUsernameTakenAsync(dto.UserName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.IsUserExistsByPersonIdAsync(dto.PersonId))
+                repository.IsUserExistsByPersonIdAsync(dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -748,7 +748,7 @@ public class UserServiceTests
         Assert.Equal("Username is already in use.", result.Error);
 
         _userRepositoryMock.Verify(
-            repository => repository.AddUserAsync(It.IsAny<User>()),
+            repository => repository.AddUserAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -764,12 +764,12 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.IsUsernameTakenAsync(dto.UserName))
+                repository.IsUsernameTakenAsync(dto.UserName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.IsUserExistsByPersonIdAsync(dto.PersonId))
+                repository.IsUserExistsByPersonIdAsync(dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -786,7 +786,7 @@ public class UserServiceTests
         Assert.Equal("This person is already associated with a user account.", result.Error);
 
         _userRepositoryMock.Verify(
-            repository => repository.AddUserAsync(It.IsAny<User>()),
+            repository => repository.AddUserAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -802,12 +802,12 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.IsUsernameTakenAsync(dto.UserName))
+                repository.IsUsernameTakenAsync(dto.UserName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.IsUserExistsByPersonIdAsync(dto.PersonId))
+                repository.IsUserExistsByPersonIdAsync(dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -820,7 +820,7 @@ public class UserServiceTests
             () => _sut.AddUserAsync(dto));
 
         _userRepositoryMock.Verify(
-            repository => repository.AddUserAsync(It.IsAny<User>()),
+            repository => repository.AddUserAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -839,20 +839,20 @@ public class UserServiceTests
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenAsync(
-                    dto.UserName))
+                    dto.UserName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId))
+                    dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()))
-            .Callback<User>(user =>
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((user, _) =>
             {
                 addedUser = user;
                 user.UserId = 25;
@@ -900,7 +900,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.AddUserAsync(
-                    It.IsAny<User>()),
+                    It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -937,7 +937,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -964,7 +964,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -994,7 +994,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -1013,7 +1013,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -1031,7 +1031,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserForUpdateAsync(userId),
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -1049,14 +1049,14 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     dto.UserName,
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -1076,13 +1076,13 @@ public class UserServiceTests
             repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     dto.UserName,
-                    userId),
+                    userId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -1107,20 +1107,20 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     dto.UserName,
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId))
+                    dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -1139,7 +1139,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId),
+                    dto.PersonId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -1163,14 +1163,14 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     dto.UserName,
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -1222,20 +1222,20 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     dto.UserName,
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId))
+                    dto.PersonId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -1268,20 +1268,20 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserForUpdateAsync(userId),
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     dto.UserName,
-                    userId),
+                    userId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
             repository =>
                 repository.IsUserExistsByPersonIdAsync(
-                    dto.PersonId),
+                    dto.PersonId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -1311,14 +1311,14 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     "ayhm",
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -1352,14 +1352,14 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.IsUsernameTakenForAnotherUserAsync(
                     dto.UserName,
-                    userId))
+                    userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWorkMock
@@ -1401,7 +1401,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -1413,7 +1413,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -1429,7 +1429,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserForUpdateAsync(userId),
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
@@ -1455,7 +1455,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _unitOfWorkMock
@@ -1497,7 +1497,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _unitOfWorkMock
@@ -1516,7 +1516,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserForUpdateAsync(userId),
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
@@ -1541,7 +1541,7 @@ public class UserServiceTests
         var user = CreateUser(userId, role: UserRole.Admin);
 
         _userRepositoryMock
-            .Setup(r => r.GetUserForUpdateAsync(userId))
+            .Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -1573,7 +1573,7 @@ public class UserServiceTests
         var user = CreateUser(userId, role: UserRole.Admin);
 
         _userRepositoryMock
-            .Setup(r => r.GetUserForUpdateAsync(userId))
+            .Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -1595,7 +1595,7 @@ public class UserServiceTests
         var user = CreateUser(userId, role: UserRole.Admin);
 
         _userRepositoryMock
-            .Setup(r => r.GetUserForUpdateAsync(userId))
+            .Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
@@ -1619,7 +1619,7 @@ public class UserServiceTests
         var user = CreateUser(userId, role: UserRole.Admin);
 
         _userRepositoryMock
-            .Setup(r => r.GetUserForUpdateAsync(userId))
+            .Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -1649,7 +1649,7 @@ public class UserServiceTests
         var user = CreateUser(userId, role: UserRole.Admin);
 
         _userRepositoryMock
-            .Setup(r => r.GetUserForUpdateAsync(userId))
+            .Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -1669,7 +1669,7 @@ public class UserServiceTests
         var user = CreateUser(userId, role: UserRole.Admin);
 
         _userRepositoryMock
-            .Setup(r => r.GetUserForUpdateAsync(userId))
+            .Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
@@ -1699,7 +1699,7 @@ public class UserServiceTests
         };
 
         _userRepositoryMock
-            .Setup(r => r.GetUserForUpdateAsync(userId))
+            .Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -1740,7 +1740,7 @@ public class UserServiceTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
-        _userRepositoryMock.Verify(r => r.AddUserAsync(It.IsAny<User>()), Times.Never);
+        _userRepositoryMock.Verify(r => r.AddUserAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -1784,8 +1784,8 @@ public class UserServiceTests
         User? addedUser = null;
 
         _userRepositoryMock
-            .Setup(r => r.AddUserAsync(It.IsAny<User>()))
-            .Callback<User>(u =>
+            .Setup(r => r.AddUserAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+            .Callback<User, CancellationToken>((u, _) =>
             {
                 u.UserId = 501;
                 addedUser = u;
@@ -1824,8 +1824,8 @@ public class UserServiceTests
         const int userId = 40;
         var user = CreateUser(userId, personId: 40, userName: "staff_one", role: UserRole.Staff);
 
-        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId)).ReturnsAsync(user);
-        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("staff_one", userId)).ReturnsAsync(false);
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("staff_one", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var dto = new UpdateUserDto { PersonId = 40, UserName = "staff_one", IsActive = true, Role = UserRole.Admin };
@@ -1845,9 +1845,9 @@ public class UserServiceTests
         const int userId = 41;
         var user = CreateUser(userId, personId: 41, userName: "second_admin", role: UserRole.Admin);
 
-        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _userRepositoryMock.Setup(r => r.GetActiveAdminCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
-        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("second_admin", userId)).ReturnsAsync(false);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("second_admin", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var dto = new UpdateUserDto { PersonId = 41, UserName = "second_admin", IsActive = true, Role = UserRole.Staff };
@@ -1867,8 +1867,8 @@ public class UserServiceTests
         const int userId = 42;
         var user = CreateUser(userId, personId: 42, userName: "keeps_role", role: UserRole.Admin);
 
-        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId)).ReturnsAsync(user);
-        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("renamed_keep", userId)).ReturnsAsync(false);
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("renamed_keep", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var dto = new UpdateUserDto { PersonId = 42, UserName = "renamed_keep", IsActive = true, Role = null };
@@ -1898,7 +1898,7 @@ public class UserServiceTests
             currentUserServiceMock.Object);
 
         var user = CreateUser(userId, personId: 43, userName: "self_admin", role: UserRole.Admin);
-        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _userRepositoryMock.Setup(r => r.GetActiveAdminCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(5);
 
         var dto = new UpdateUserDto { PersonId = 43, UserName = "self_admin", IsActive = true, Role = UserRole.Staff };
@@ -1921,7 +1921,7 @@ public class UserServiceTests
         const int userId = 44;
         var user = CreateUser(userId, personId: 44, userName: "only_admin", role: UserRole.Admin);
 
-        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _userRepositoryMock.Setup(r => r.GetActiveAdminCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var dto = new UpdateUserDto { PersonId = 44, UserName = "only_admin", IsActive = true, Role = UserRole.Staff };
@@ -1942,7 +1942,7 @@ public class UserServiceTests
         // Arrange
         const int userId = 2;
         var user = CreateUser(userId, personId: 100, userName: "ayhm", role: UserRole.Admin);
-        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var dto = new UpdateUserDto { PersonId = 100, UserName = "ayhm", IsActive = true, Role = UserRole.Staff };
 
@@ -1978,7 +1978,7 @@ public class UserServiceTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorType.Forbidden, result.ErrorType);
-        _userRepositoryMock.Verify(r => r.GetUserForUpdateAsync(It.IsAny<int>()), Times.Never);
+        _userRepositoryMock.Verify(r => r.GetUserForUpdateAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -2025,7 +2025,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -2052,7 +2052,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -2081,7 +2081,7 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository =>
                 repository.GetUserForUpdateAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _unitOfWorkMock.Verify(
@@ -2101,7 +2101,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -2119,7 +2119,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserForUpdateAsync(userId),
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -2145,7 +2145,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -2183,7 +2183,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _unitOfWorkMock
@@ -2237,7 +2237,7 @@ public class UserServiceTests
 
         _userRepositoryMock
             .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId))
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _unitOfWorkMock
@@ -2270,7 +2270,7 @@ public class UserServiceTests
 
         _userRepositoryMock.Verify(
             repository =>
-                repository.GetUserForUpdateAsync(userId),
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _unitOfWorkMock.Verify(
@@ -2389,5 +2389,20 @@ public class UserServiceTests
             CurrentPassword = "OldPassword123",
             NewPassword = "NewPassword123"
         };
+    }
+
+    [Fact]
+    public async Task GetAllUsersAsync_PassesCancellationTokenToRepository()
+    {
+        using var cts = new CancellationTokenSource();
+        _userRepositoryMock
+            .Setup(r => r.GetAllUsersAsync(cts.Token))
+            .ReturnsAsync(new List<User>());
+
+        await _sut.GetAllUsersAsync(cts.Token);
+
+        _userRepositoryMock.Verify(
+            r => r.GetAllUsersAsync(cts.Token),
+            Times.Once);
     }
 }

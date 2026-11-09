@@ -28,7 +28,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<LicenseDto>.FromNotFound("not found");
         _queryService
-            .Setup(x => x.GetByIdAsync(42))
+            .Setup(x => x.GetByIdAsync(42, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetByIdAsync(42);
@@ -36,7 +36,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetByIdAsync(42),
+            x => x.GetByIdAsync(42, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -45,7 +45,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<List<LicenseDto>>.FromFailure("failure");
         _queryService
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetAllAsync();
@@ -53,7 +53,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetAllAsync(),
+            x => x.GetAllAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -70,13 +70,13 @@ public sealed class LicenseServiceTests
         });
 
         _queryService
-            .Setup(x => x.GetAllAsync(request))
+            .Setup(x => x.GetAllAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetAllAsync(request);
 
         Assert.Same(expected, result);
-        _queryService.Verify(x => x.GetAllAsync(request), Times.Once);
+        _queryService.Verify(x => x.GetAllAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -92,13 +92,13 @@ public sealed class LicenseServiceTests
         });
 
         _queryService
-            .Setup(x => x.GetAllAsync(request))
+            .Setup(x => x.GetAllAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetAllAsync(request);
 
         Assert.Same(expected, result);
-        _queryService.Verify(x => x.GetAllAsync(request), Times.Once);
+        _queryService.Verify(x => x.GetAllAsync(request, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<List<LicenseDto>>.FromNotFound("not found");
         _queryService
-            .Setup(x => x.GetByDriverIdAsync(15))
+            .Setup(x => x.GetByDriverIdAsync(15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetByDriverIdAsync(15);
@@ -114,7 +114,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetByDriverIdAsync(15),
+            x => x.GetByDriverIdAsync(15, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -123,7 +123,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<List<LicenseDto>>.FromFailure("failure");
         _queryService
-            .Setup(x => x.GetByApplicationIdAsync(25))
+            .Setup(x => x.GetByApplicationIdAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetByApplicationIdAsync(25);
@@ -131,7 +131,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetByApplicationIdAsync(25),
+            x => x.GetByApplicationIdAsync(25, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -140,7 +140,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<List<LicenseDto>>.FromFailure("failure");
         _queryService
-            .Setup(x => x.GetByLicenseClassIdAsync(7))
+            .Setup(x => x.GetByLicenseClassIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetByLicenseClassIdAsync(7);
@@ -148,7 +148,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetByLicenseClassIdAsync(7),
+            x => x.GetByLicenseClassIdAsync(7, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -157,7 +157,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<List<LicenseDto>>.FromNotFound("not found");
         _queryService
-            .Setup(x => x.GetLicensesByPersonIdAsync(31))
+            .Setup(x => x.GetLicensesByPersonIdAsync(31, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetLicensesByPersonIdAsync(31);
@@ -165,7 +165,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetLicensesByPersonIdAsync(31),
+            x => x.GetLicensesByPersonIdAsync(31, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -174,7 +174,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<bool>.Success(true);
         _queryService
-            .Setup(x => x.IsLicenseExistsAsync(50))
+            .Setup(x => x.IsLicenseExistsAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().IsLicenseExistsAsync(50);
@@ -184,7 +184,7 @@ public sealed class LicenseServiceTests
         Assert.True(result.Value);
 
         _queryService.Verify(
-            x => x.IsLicenseExistsAsync(50),
+            x => x.IsLicenseExistsAsync(50, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -193,7 +193,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<bool>.Success(false);
         _queryService
-            .Setup(x => x.IsDriverHasLicenseAsync(60))
+            .Setup(x => x.IsDriverHasLicenseAsync(60, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().IsDriverHasLicenseAsync(60);
@@ -203,7 +203,7 @@ public sealed class LicenseServiceTests
         Assert.False(result.Value);
 
         _queryService.Verify(
-            x => x.IsDriverHasLicenseAsync(60),
+            x => x.IsDriverHasLicenseAsync(60, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -212,7 +212,7 @@ public sealed class LicenseServiceTests
     {
         var expected = Result<bool>.FromNotFound("application not found");
         _queryService
-            .Setup(x => x.IsApplicationHasLicenseAsync(70))
+            .Setup(x => x.IsApplicationHasLicenseAsync(70, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().IsApplicationHasLicenseAsync(70);
@@ -220,7 +220,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.IsApplicationHasLicenseAsync(70),
+            x => x.IsApplicationHasLicenseAsync(70, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -231,7 +231,7 @@ public sealed class LicenseServiceTests
             Result<DriverLicenseInfoDto>.FromNotFound("details not found");
 
         _queryService
-            .Setup(x => x.GetDetailsAsync(80))
+            .Setup(x => x.GetDetailsAsync(80, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result = await CreateService().GetDetailsAsync(80);
@@ -239,7 +239,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetDetailsAsync(80),
+            x => x.GetDetailsAsync(80, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -250,7 +250,7 @@ public sealed class LicenseServiceTests
             Result<DriverLicenseInfoDto>.FromNotFound("license details not found");
 
         _queryService
-            .Setup(x => x.GetLicenseDetailsByIdAsync(90))
+            .Setup(x => x.GetLicenseDetailsByIdAsync(90, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
         var result =
@@ -259,7 +259,7 @@ public sealed class LicenseServiceTests
         Assert.Same(expected, result);
 
         _queryService.Verify(
-            x => x.GetLicenseDetailsByIdAsync(90),
+            x => x.GetLicenseDetailsByIdAsync(90, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -267,7 +267,7 @@ public sealed class LicenseServiceTests
     public async Task GetByIdAsync_WhenQueryServiceThrows_PropagatesException()
     {
         _queryService
-            .Setup(x => x.GetByIdAsync(42))
+            .Setup(x => x.GetByIdAsync(42, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("query failed"));
 
         var exception =

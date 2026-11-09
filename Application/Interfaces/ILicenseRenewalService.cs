@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 
 namespace Application.Interfaces;
 
@@ -6,5 +6,6 @@ public interface ILicenseRenewalService
 {
     Task<Result<int>> RenewLicenseAsync(
     int oldLicenseId,
-    string? notes);
+    string? notes,
+    CancellationToken cancellationToken = default);
 }

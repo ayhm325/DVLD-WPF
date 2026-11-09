@@ -99,13 +99,13 @@ public sealed class LicenseQueryServiceTests
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal("Invalid license ID.", result.Error);
         _licenseRepository.Verify(
-            x => x.GetLicenseByIdAsync(It.IsAny<int>()), Times.Never);
+            x => x.GetLicenseByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task GetById_WhenNotFound_ReturnsNotFound()
     {
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5))
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync((License?)null);
 
         var result = await CreateService().GetByIdAsync(5);
@@ -117,7 +117,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetById_WhenFound_ReturnsSuccess()
     {
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5))
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateLicense(5));
 
         var result = await CreateService().GetByIdAsync(5);
@@ -130,7 +130,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetAll_WhenRepositoryReturnsLicenses_ReturnsMappedList()
     {
-        _licenseRepository.Setup(x => x.GetAllLicensesAsync())
+        _licenseRepository.Setup(x => x.GetAllLicensesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync([CreateLicense(1), CreateLicense(2)]);
 
         var result = await CreateService().GetAllAsync();
@@ -168,7 +168,7 @@ public sealed class LicenseQueryServiceTests
         };
 
         _licenseRepository
-            .Setup(x => x.GetAllLicensesAsync(It.Is<LicenseQueryRequest>(r => r.PageNumber == 2 && r.PageSize == 10), It.IsAny<DateOnly>()))
+            .Setup(x => x.GetAllLicensesAsync(It.Is<LicenseQueryRequest>(r => r.PageNumber == 2 && r.PageSize == 10), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paged);
 
         var result = await CreateService().GetAllAsync(request);
@@ -203,7 +203,7 @@ public sealed class LicenseQueryServiceTests
         };
 
         _licenseRepository
-            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paged);
 
         var result = await CreateService().GetAllAsync(request);
@@ -222,13 +222,13 @@ public sealed class LicenseQueryServiceTests
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal("Invalid driver ID.", result.Error);
         _licenseRepository.Verify(
-            x => x.GetLicensesByDriverIdAsync(It.IsAny<int>()), Times.Never);
+            x => x.GetLicensesByDriverIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task GetByDriverId_WhenValid_ReturnsLicenses()
     {
-        _licenseRepository.Setup(x => x.GetLicensesByDriverIdAsync(10))
+        _licenseRepository.Setup(x => x.GetLicensesByDriverIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync([CreateLicense(1, 10), CreateLicense(2, 10)]);
 
         var result = await CreateService().GetByDriverIdAsync(10);
@@ -249,7 +249,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetByApplicationId_WhenValid_ReturnsLicenses()
     {
-        _licenseRepository.Setup(x => x.GetLicensesByApplicationIdAsync(20))
+        _licenseRepository.Setup(x => x.GetLicensesByApplicationIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync([CreateLicense(1)]);
 
         var result = await CreateService().GetByApplicationIdAsync(20);
@@ -270,7 +270,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetByLicenseClassId_WhenValid_ReturnsLicenses()
     {
-        _licenseRepository.Setup(x => x.GetLicensesByLicenseClassIdAsync(3))
+        _licenseRepository.Setup(x => x.GetLicensesByLicenseClassIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync([CreateLicense(1, 10, 3)]);
 
         var result = await CreateService().GetByLicenseClassIdAsync(3);
@@ -291,7 +291,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetByPersonId_WhenValid_ReturnsLicenses()
     {
-        _licenseRepository.Setup(x => x.GetLicensesByPersonIdAsync(30))
+        _licenseRepository.Setup(x => x.GetLicensesByPersonIdAsync(30, It.IsAny<CancellationToken>()))
             .ReturnsAsync([CreateLicense(4)]);
 
         var result = await CreateService().GetLicensesByPersonIdAsync(30);
@@ -308,13 +308,13 @@ public sealed class LicenseQueryServiceTests
         Assert.Equal(ErrorType.Validation, result.ErrorType);
         Assert.Equal("Invalid license ID.", result.Error);
         _licenseRepository.Verify(
-            x => x.IsLicenseExistsAsync(It.IsAny<int>()), Times.Never);
+            x => x.IsLicenseExistsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task IsLicenseExists_WhenValid_ReturnsRepositoryValue()
     {
-        _licenseRepository.Setup(x => x.IsLicenseExistsAsync(10))
+        _licenseRepository.Setup(x => x.IsLicenseExistsAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await CreateService().IsLicenseExistsAsync(10);
@@ -326,7 +326,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task IsDriverHasLicense_WhenValid_ReturnsRepositoryValue()
     {
-        _licenseRepository.Setup(x => x.IsDriverHasLicenseAsync(10))
+        _licenseRepository.Setup(x => x.IsDriverHasLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await CreateService().IsDriverHasLicenseAsync(10);
@@ -347,7 +347,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task IsApplicationHasLicense_WhenValid_ReturnsRepositoryValue()
     {
-        _licenseRepository.Setup(x => x.IsApplicationHasLicenseAsync(20))
+        _licenseRepository.Setup(x => x.IsApplicationHasLicenseAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await CreateService().IsApplicationHasLicenseAsync(20);
@@ -368,7 +368,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetLicenseDetailsById_WhenNotFound_ReturnsNotFound()
     {
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5))
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync((License?)null);
 
         var result = await CreateService().GetLicenseDetailsByIdAsync(5);
@@ -380,7 +380,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetLicenseDetailsById_WhenDriverIdInvalid_ReturnsFailure()
     {
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5))
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateLicense(5, 0));
 
         var result = await CreateService().GetLicenseDetailsByIdAsync(5);
@@ -388,7 +388,7 @@ public sealed class LicenseQueryServiceTests
         Assert.Equal(ErrorType.Failure, result.ErrorType);
         Assert.Equal("License has an invalid driver.", result.Error);
         _detainedRepository.Verify(
-            x => x.IsLicenseDetainedAsync(It.IsAny<int>()), Times.Never);
+            x => x.IsLicenseDetainedAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -397,7 +397,7 @@ public sealed class LicenseQueryServiceTests
         var license = CreateLicense(5);
         license.Driver = null!;
 
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5))
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(license);
 
         var result = await CreateService().GetLicenseDetailsByIdAsync(5);
@@ -421,7 +421,7 @@ public sealed class LicenseQueryServiceTests
     public async Task GetDetails_WhenLocalApplicationFails_PropagatesFailure()
     {
         _localApplicationService
-            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(5))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>.FromNotFound(
                     "Local application not found."));
@@ -431,14 +431,14 @@ public sealed class LicenseQueryServiceTests
         Assert.Equal(ErrorType.NotFound, result.ErrorType);
         Assert.Equal("Local application not found.", result.Error);
         _licenseRepository.Verify(
-            x => x.GetLicensesByApplicationIdAsync(It.IsAny<int>()), Times.Never);
+            x => x.GetLicensesByApplicationIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task GetDetails_WhenLocalApplicationValueIsNull_ReturnsNotFound()
     {
         _localApplicationService
-            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(5))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>.Success(null!));
 
@@ -453,7 +453,7 @@ public sealed class LicenseQueryServiceTests
     [Fact]
     public async Task GetLicenseDetailsById_WhenRepositoryThrows_PropagatesException()
     {
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5))
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(5, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("query failed"));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -505,7 +505,7 @@ public sealed class LicenseQueryServiceTests
         };
 
         _licenseRepository
-            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paged);
 
         _detainedRepository
@@ -540,7 +540,8 @@ public sealed class LicenseQueryServiceTests
             x => x.GetNewerLicenseForDriverAndClassAsync(
                 It.IsAny<int>(),
                 It.IsAny<int>(),
-                It.IsAny<int>()),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
 
         // Mappings check
@@ -574,7 +575,7 @@ public sealed class LicenseQueryServiceTests
         };
 
         _licenseRepository
-            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paged);
 
         _detainedRepository
@@ -594,7 +595,7 @@ public sealed class LicenseQueryServiceTests
             Times.Never);
 
         _licenseRepository.Verify(
-            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         Assert.False(result.Value.Items[0].IsEligibleForRenewal);
@@ -624,7 +625,7 @@ public sealed class LicenseQueryServiceTests
         };
 
         _licenseRepository
-            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paged);
 
         _detainedRepository
@@ -643,7 +644,7 @@ public sealed class LicenseQueryServiceTests
             Times.Never);
 
         _licenseRepository.Verify(
-            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         var oldItem = result.Value!.Items.First(i => i.LicenseID == 10);
@@ -665,7 +666,7 @@ public sealed class LicenseQueryServiceTests
         };
 
         _licenseRepository
-            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>()))
+            .Setup(x => x.GetAllLicensesAsync(request, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(paged);
 
         // Act
@@ -689,7 +690,7 @@ public sealed class LicenseQueryServiceTests
         var lic2 = new License { LicenseID = 102, DriverID = 60, LicenseClass = 2, ExpirationDate = expiredDate, IsActive = false, IssueReason = Domain.Enums.IssueReason.FirstTime };
 
         _licenseRepository
-            .Setup(x => x.GetLicensesByApplicationIdAsync(55))
+            .Setup(x => x.GetLicensesByApplicationIdAsync(55, It.IsAny<CancellationToken>()))
             .ReturnsAsync([lic1, lic2]);
 
         _detainedRepository
@@ -714,7 +715,7 @@ public sealed class LicenseQueryServiceTests
             Times.Once);
 
         _licenseRepository.Verify(
-            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            x => x.GetNewerLicenseForDriverAndClassAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

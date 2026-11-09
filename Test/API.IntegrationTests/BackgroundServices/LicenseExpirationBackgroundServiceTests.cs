@@ -38,7 +38,7 @@ public sealed class LicenseExpirationBackgroundServiceTests
     {
         // Arrange
         _licenseRepository
-            .Setup(r => r.DeactivateExpiredLicensesAsync(new DateOnly(2026, 11, 4)))
+            .Setup(r => r.DeactivateExpiredLicensesAsync(new DateOnly(2026, 11, 4), It.IsAny<CancellationToken>()))
             .ReturnsAsync(3);
 
         var options = Options.Create(new LicenseExpirationOptions
@@ -62,7 +62,7 @@ public sealed class LicenseExpirationBackgroundServiceTests
 
         // Assert: Verification that deactivation ran independently of NoShowProcessorOptions
         _licenseRepository.Verify(
-            r => r.DeactivateExpiredLicensesAsync(new DateOnly(2026, 11, 4)),
+            r => r.DeactivateExpiredLicensesAsync(new DateOnly(2026, 11, 4), It.IsAny<CancellationToken>()),
             Times.AtLeastOnce);
     }
 
@@ -91,7 +91,7 @@ public sealed class LicenseExpirationBackgroundServiceTests
 
         // Assert: Never called when IsEnabled = false
         _licenseRepository.Verify(
-            r => r.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>()),
+            r => r.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -100,7 +100,7 @@ public sealed class LicenseExpirationBackgroundServiceTests
     {
         // Arrange
         _licenseRepository
-            .Setup(r => r.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>()))
+            .Setup(r => r.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Simulated database connection failure"));
 
         var options = Options.Create(new LicenseExpirationOptions

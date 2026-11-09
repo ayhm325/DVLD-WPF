@@ -15,7 +15,8 @@ public sealed class PeopleController(
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] PersonQueryRequest request)
+        [FromQuery] PersonQueryRequest request,
+        CancellationToken cancellationToken = default)
     {
         if (Request.Query.ContainsKey("pageNumber") ||
             Request.Query.ContainsKey("pageSize") ||
@@ -24,7 +25,7 @@ public sealed class PeopleController(
             Request.Query.ContainsKey("genderFilter") ||
             Request.Query.ContainsKey("paged"))
         {
-            var result = await personService.GetAllPeopleAsync(request);
+            var result = await personService.GetAllPeopleAsync(request, cancellationToken);
 
             if (result.IsFailure)
                 return result.ToActionResult(this);
@@ -45,7 +46,7 @@ public sealed class PeopleController(
             });
         }
 
-        var unpagedResult = await personService.GetAllPeopleAsync();
+        var unpagedResult = await personService.GetAllPeopleAsync(cancellationToken);
 
         if (unpagedResult.IsFailure)
             return unpagedResult.ToActionResult(this);
@@ -57,9 +58,10 @@ public sealed class PeopleController(
     }
 
     [HttpGet("statistics")]
-    public async Task<IActionResult> GetStatistics()
+    public async Task<IActionResult> GetStatistics(
+        CancellationToken cancellationToken = default)
     {
-        var result = await personService.GetStatisticsAsync();
+        var result = await personService.GetStatisticsAsync(cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -75,9 +77,10 @@ public sealed class PeopleController(
 
     [HttpGet("available-for-user")]
     public async Task<IActionResult> GetAvailableForUser(
-        [FromQuery] PersonQueryRequest request)
+        [FromQuery] PersonQueryRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var result = await personService.GetPeopleAvailableForUserAsync(request);
+        var result = await personService.GetPeopleAvailableForUserAsync(request, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -99,10 +102,12 @@ public sealed class PeopleController(
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await personService.GetPersonByIdAsync(id);
+            await personService.GetPersonByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -113,11 +118,13 @@ public sealed class PeopleController(
 
     [HttpGet("national/{nationalNo}")]
     public async Task<IActionResult> GetByNationalNo(
-        string nationalNo)
+        string nationalNo,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await personService.GetPersonByNationalNoAsync(
-                nationalNo);
+                nationalNo,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -129,7 +136,8 @@ public sealed class PeopleController(
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody]
-        ContractPerson.CreatePersonRequest request)
+        ContractPerson.CreatePersonRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await personService.AddPersonAsync(
@@ -148,7 +156,8 @@ public sealed class PeopleController(
                     NationalityCountryID =
                         request.NationalityCountryID,
                     ImagePath = request.ImagePath
-                });
+                },
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -169,7 +178,8 @@ public sealed class PeopleController(
     public async Task<IActionResult> Update(
         int id,
         [FromBody]
-        ContractPerson.UpdatePersonRequest request)
+        ContractPerson.UpdatePersonRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await personService.UpdatePersonAsync(
@@ -189,7 +199,8 @@ public sealed class PeopleController(
                     NationalityCountryID =
                         request.NationalityCountryID,
                     ImagePath = request.ImagePath
-                });
+                },
+                cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -197,10 +208,12 @@ public sealed class PeopleController(
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await personService.DeletePersonAsync(id);
+            await personService.DeletePersonAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -211,7 +224,8 @@ public sealed class PeopleController(
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadPhoto(
         int id,
-        IFormFile? file)
+        IFormFile? file,
+        CancellationToken cancellationToken = default)
     {
         if (file is null || file.Length == 0)
         {
@@ -224,7 +238,7 @@ public sealed class PeopleController(
             stream,
             file.Length,
             file.ContentType,
-            HttpContext.RequestAborted);
+            cancellationToken);
 
         if (result.IsFailure)
         {
@@ -239,11 +253,13 @@ public sealed class PeopleController(
     }
 
     [HttpGet("{id:int}/photo")]
-    public async Task<IActionResult> GetPhoto(int id)
+    public async Task<IActionResult> GetPhoto(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result = await personService.GetPersonPhotoAsync(
             id,
-            HttpContext.RequestAborted);
+            cancellationToken);
 
         if (result.IsFailure)
         {
@@ -262,11 +278,13 @@ public sealed class PeopleController(
     }
 
     [HttpDelete("{id:int}/photo")]
-    public async Task<IActionResult> DeletePhoto(int id)
+    public async Task<IActionResult> DeletePhoto(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result = await personService.DeletePersonPhotoAsync(
             id,
-            HttpContext.RequestAborted);
+            cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

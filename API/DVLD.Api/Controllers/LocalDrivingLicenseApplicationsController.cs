@@ -19,12 +19,12 @@ public sealed class LocalDrivingLicenseApplicationsController(
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] LocalDrivingLicenseApplicationQueryRequest request)
+        [FromQuery] LocalDrivingLicenseApplicationQueryRequest request, CancellationToken cancellationToken = default)
     {
         var result =
             await service
                 .GetAllLocalDrivingLicenseApplicationsAsync(
-                    request);
+                    request, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -47,11 +47,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
         var result =
             await service
-                .GetLocalDrivingLicenseApplicationByIdAsync(id);
+                .GetLocalDrivingLicenseApplicationByIdAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? Ok(Map(result.Value!))
@@ -60,11 +60,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
 
     [HttpGet("{localId:int}/application-basic-info")]
     public async Task<IActionResult> GetApplicationBasicInfo(
-        int localId)
+        int localId, CancellationToken cancellationToken = default)
     {
         var result =
             await service
-                .GetApplicationBasicInfoAsync(localId);
+                .GetApplicationBasicInfoAsync(localId, cancellationToken);
 
         return result.IsSuccess
             ? Ok(MapApplicationBasicInfo(result.Value!))
@@ -73,12 +73,12 @@ public sealed class LocalDrivingLicenseApplicationsController(
 
     [HttpGet("application/{applicationId:int}")]
     public async Task<IActionResult> GetByApplicationId(
-        int applicationId)
+        int applicationId, CancellationToken cancellationToken = default)
     {
         var result =
             await service
                 .GetLocalDrivingLicenseApplicationsByApplicationIdAsync(
-                    applicationId);
+                    applicationId, cancellationToken);
 
         return result.IsSuccess
             ? Ok(
@@ -90,12 +90,12 @@ public sealed class LocalDrivingLicenseApplicationsController(
 
     [HttpGet("license-class/{licenseClassId:int}")]
     public async Task<IActionResult> GetByLicenseClassId(
-        int licenseClassId)
+        int licenseClassId, CancellationToken cancellationToken = default)
     {
         var result =
             await service
                 .GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(
-                    licenseClassId);
+                    licenseClassId, cancellationToken);
 
         return result.IsSuccess
             ? Ok(
@@ -107,12 +107,12 @@ public sealed class LocalDrivingLicenseApplicationsController(
 
     [HttpGet("person/{personId:int}")]
     public async Task<IActionResult> GetByApplicantPersonId(
-        int personId)
+        int personId, CancellationToken cancellationToken = default)
     {
         var result =
             await service
                 .GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(
-                    personId);
+                    personId, cancellationToken);
 
         return result.IsSuccess
             ? Ok(
@@ -123,11 +123,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
     }
 
     [HttpGet("create-info")]
-    public async Task<IActionResult> GetCreateInfo()
+    public async Task<IActionResult> GetCreateInfo(CancellationToken cancellationToken = default)
     {
         var result =
             await service
-                .GetNewLocalDrivingLicenseApplicationFeesAsync();
+                .GetNewLocalDrivingLicenseApplicationFeesAsync(cancellationToken);
 
         return result.IsSuccess
             ? Ok(
@@ -140,11 +140,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
 
     [HttpGet("{localId:int}/application-id")]
     public async Task<IActionResult> GetApplicationId(
-        int localId)
+        int localId, CancellationToken cancellationToken = default)
     {
         var result =
             await service
-                .GetApplicationIdByLocalIdAsync(localId);
+                .GetApplicationIdByLocalIdAsync(localId, cancellationToken);
 
         return result.IsSuccess
             ? Ok(new
@@ -157,13 +157,13 @@ public sealed class LocalDrivingLicenseApplicationsController(
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody]
-        CreateLocalDrivingLicenseApplicationRequest request)
+        CreateLocalDrivingLicenseApplicationRequest request, CancellationToken cancellationToken = default)
     {
         var result =
             await service
                 .CreateLocalDrivingLicenseApplicationAsync(
                     request.ApplicantPersonId,
-                    request.LicenseClassId);
+                    request.LicenseClassId, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -185,7 +185,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
     public async Task<IActionResult> Update(
         int id,
         [FromBody]
-        UpdateLocalDrivingLicenseApplicationRequest request)
+        UpdateLocalDrivingLicenseApplicationRequest request, CancellationToken cancellationToken = default)
     {
         var result =
             await service
@@ -195,7 +195,7 @@ public sealed class LocalDrivingLicenseApplicationsController(
                     {
                         LicenseClassID =
                             request.LicenseClassId
-                    });
+                    }, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -203,11 +203,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
         var result =
             await service
-                .DeleteLocalDrivingLicenseApplicationAsync(id);
+                .DeleteLocalDrivingLicenseApplicationAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -215,11 +215,11 @@ public sealed class LocalDrivingLicenseApplicationsController(
     }
 
     [HttpPost("{id:int}/cancel")]
-    public async Task<IActionResult> Cancel(int id)
+    public async Task<IActionResult> Cancel(int id, CancellationToken cancellationToken = default)
     {
         var result =
             await service
-                .CancelLocalDrivingLicenseApplicationAsync(id);
+                .CancelLocalDrivingLicenseApplicationAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

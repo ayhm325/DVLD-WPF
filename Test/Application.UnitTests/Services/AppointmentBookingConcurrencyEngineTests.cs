@@ -100,21 +100,21 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var service = CreateService();
 
         _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
-        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
-        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100)).ReturnsAsync(true);
-        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(1);
+        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
+        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(1);
         _repository.Setup(x => x.AcquireSchedulingLocksAsync(1, 1, slot, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(100, 1)).ReturnsAsync(false);
-        _repository.Setup(x => x.IsSlotOccupiedAsync(1, slot, null)).ReturnsAsync(false);
-        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(1, slot, null)).ReturnsAsync(false);
-        _repository.Setup(x => x.GetTrialCountAsync(100, 1)).ReturnsAsync(0);
+        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(100, 1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.IsSlotOccupiedAsync(1, slot, null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(1, slot, null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
         TestAppointment? captured = null;
-        _repository.Setup(x => x.AddAsync(It.IsAny<TestAppointment>()))
-            .Callback<TestAppointment>(a => { a.TestAppointmentID = 501; captured = a; })
+        _repository.Setup(x => x.AddAsync(It.IsAny<TestAppointment>(), It.IsAny<CancellationToken>()))
+            .Callback<TestAppointment, CancellationToken>((a, _) => { a.TestAppointmentID = 501; captured = a; })
             .Returns(Task.CompletedTask);
 
-        _repository.Setup(x => x.GetScheduleInfoAsync(501)).ReturnsAsync(new TestAppointment
+        _repository.Setup(x => x.GetScheduleInfoAsync(501, It.IsAny<CancellationToken>())).ReturnsAsync(new TestAppointment
         {
             TestAppointmentID = 501,
             AppointmentDate = slot,
@@ -156,12 +156,12 @@ public sealed class AppointmentBookingConcurrencyEngineTests
             IsLocked = false
         };
 
-        _repository.Setup(x => x.GetForUpdateAsync(42)).ReturnsAsync(existing);
-        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
-        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(5);
+        _repository.Setup(x => x.GetForUpdateAsync(42, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
+        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(5);
         _repository.Setup(x => x.AcquireSchedulingLocksAsync(5, 1, newSlot, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _repository.Setup(x => x.IsSlotOccupiedAsync(1, newSlot, 42)).ReturnsAsync(false);
-        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(5, newSlot, 42)).ReturnsAsync(false);
+        _repository.Setup(x => x.IsSlotOccupiedAsync(1, newSlot, 42, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(5, newSlot, 42, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         // Act
         var result = await service.UpdateAsync(new UpdateTestAppointmentDto
@@ -188,12 +188,12 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var service = CreateService();
 
         _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
-        _workflowService.Setup(x => x.CanScheduleTestAsync(101, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
-        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(101)).ReturnsAsync(true);
-        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(101)).ReturnsAsync(2);
+        _workflowService.Setup(x => x.CanScheduleTestAsync(101, TestTypeEnum.Theory, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
+        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(101, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(101, It.IsAny<CancellationToken>())).ReturnsAsync(2);
         _repository.Setup(x => x.AcquireSchedulingLocksAsync(2, 1, slot, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(101, 1)).ReturnsAsync(false);
-        _repository.Setup(x => x.IsSlotOccupiedAsync(1, slot, null)).ReturnsAsync(true); // Occupied!
+        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(101, 1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.IsSlotOccupiedAsync(1, slot, null, It.IsAny<CancellationToken>())).ReturnsAsync(true); // Occupied!
 
         // Act
         var result = await service.ScheduleAsync(101, 1, slot);
@@ -222,7 +222,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
             IsLocked = false
         };
 
-        _repository.Setup(x => x.GetForUpdateAsync(15)).ReturnsAsync(existing);
+        _repository.Setup(x => x.GetForUpdateAsync(15, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
 
         // Act
         var result = await service.UpdateAsync(new UpdateTestAppointmentDto
@@ -254,11 +254,11 @@ public sealed class AppointmentBookingConcurrencyEngineTests
             IsLocked = false
         };
 
-        _repository.Setup(x => x.GetForUpdateAsync(15)).ReturnsAsync(existing);
-        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
-        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(5);
+        _repository.Setup(x => x.GetForUpdateAsync(15, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
+        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(5);
         _repository.Setup(x => x.AcquireSchedulingLocksAsync(5, 1, occupiedSlot, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _repository.Setup(x => x.IsSlotOccupiedAsync(1, occupiedSlot, 15)).ReturnsAsync(true); // Occupied by someone else!
+        _repository.Setup(x => x.IsSlotOccupiedAsync(1, occupiedSlot, 15, It.IsAny<CancellationToken>())).ReturnsAsync(true); // Occupied by someone else!
 
         // Act
         var result = await service.UpdateAsync(new UpdateTestAppointmentDto
@@ -287,13 +287,13 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var service = CreateService();
 
         _testTypeRepository.Setup(x => x.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 2, TestTypeFees = 20m });
-        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Written)).ReturnsAsync(Result.Success());
-        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100)).ReturnsAsync(true);
-        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(77); // ApplicantPersonID = 77
+        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Written, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
+        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(77); // ApplicantPersonID = 77
         _repository.Setup(x => x.AcquireSchedulingLocksAsync(77, 2, slotWritten, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(100, 2)).ReturnsAsync(false);
-        _repository.Setup(x => x.IsSlotOccupiedAsync(2, slotWritten, null)).ReturnsAsync(false);
-        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(77, slotWritten, null)).ReturnsAsync(true); // Conflict on same day!
+        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(100, 2, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.IsSlotOccupiedAsync(2, slotWritten, null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(77, slotWritten, null, It.IsAny<CancellationToken>())).ReturnsAsync(true); // Conflict on same day!
 
         // Act
         var result = await service.ScheduleAsync(100, 2, slotWritten);
@@ -314,13 +314,13 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var service = CreateService();
 
         _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
-        _workflowService.Setup(x => x.CanScheduleTestAsync(200, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
-        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(200)).ReturnsAsync(true);
-        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(200)).ReturnsAsync(77); // Resolves to same person 77
+        _workflowService.Setup(x => x.CanScheduleTestAsync(200, TestTypeEnum.Theory, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
+        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(200, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(200, It.IsAny<CancellationToken>())).ReturnsAsync(77); // Resolves to same person 77
         _repository.Setup(x => x.AcquireSchedulingLocksAsync(77, 1, slot, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(200, 1)).ReturnsAsync(false);
-        _repository.Setup(x => x.IsSlotOccupiedAsync(1, slot, null)).ReturnsAsync(false);
-        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(77, slot, null)).ReturnsAsync(true); // Found appointment under LocalApp 100
+        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(200, 1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.IsSlotOccupiedAsync(1, slot, null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _repository.Setup(x => x.HasApplicantSameDayConflictAsync(77, slot, null, It.IsAny<CancellationToken>())).ReturnsAsync(true); // Found appointment under LocalApp 100
 
         // Act
         var result = await service.ScheduleAsync(200, 1, slot);
@@ -343,10 +343,10 @@ public sealed class AppointmentBookingConcurrencyEngineTests
         var service = CreateService();
 
         _testTypeRepository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new TestType { TestTypeId = 1, TestTypeFees = 20m });
-        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory)).ReturnsAsync(Result.Success());
-        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100)).ReturnsAsync(true);
-        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100)).ReturnsAsync(5);
-        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(100, 1)).ReturnsAsync(false);
+        _workflowService.Setup(x => x.CanScheduleTestAsync(100, TestTypeEnum.Theory, It.IsAny<CancellationToken>())).ReturnsAsync(Result.Success());
+        _repository.Setup(x => x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _repository.Setup(x => x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(5);
+        _repository.Setup(x => x.IsAppointmentAlreadyScheduledAsync(100, 1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _repository.Setup(x => x.AcquireSchedulingLocksAsync(5, 1, slot, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(false); // Lock timeout!
 
         // Act
@@ -383,9 +383,9 @@ public sealed class AppointmentBookingConcurrencyEngineTests
             IsLocked = false
         };
 
-        mockRepo.Setup(x => x.GetByIdAsync(10)).ReturnsAsync(arrivedAppointment);
-        mockRepo.Setup(x => x.GetApplicationStatusAsync(100)).ReturnsAsync(AppStatus.New);
-        mockRepo.Setup(x => x.GetPassedTestTypeIdsAsync(100)).ReturnsAsync(new HashSet<int>());
+        mockRepo.Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(arrivedAppointment);
+        mockRepo.Setup(x => x.GetApplicationStatusAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(AppStatus.New);
+        mockRepo.Setup(x => x.GetPassedTestTypeIdsAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(new HashSet<int>());
 
         // Act
         var result = await workflowService.CanTakeTestAsync(10);
@@ -413,7 +413,7 @@ public sealed class AppointmentBookingConcurrencyEngineTests
             IsLocked = false
         };
 
-        mockRepo.Setup(x => x.GetByIdAsync(11)).ReturnsAsync(futureAppointment);
+        mockRepo.Setup(x => x.GetByIdAsync(11, It.IsAny<CancellationToken>())).ReturnsAsync(futureAppointment);
 
         // Act
         var result = await workflowService.CanTakeTestAsync(11);

@@ -1,4 +1,4 @@
-﻿using Application.DTOs.InternationalLicenseDTO;
+using Application.DTOs.InternationalLicenseDTO;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
@@ -15,60 +15,60 @@ namespace DVLD.Api.Controllers;
 public sealed class InternationalLicensesController(IInternationalService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
-        var result = await service.GetAllAsync();
+        var result = await service.GetAllAsync(cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
         return result.Value is null ? UnexpectedResult() : Ok(result.Value.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("{internationalLicenseId:int}")]
-    public async Task<IActionResult> GetById(int internationalLicenseId)
+    public async Task<IActionResult> GetById(int internationalLicenseId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByIdAsync(internationalLicenseId);
+        var result = await service.GetByIdAsync(internationalLicenseId, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
         return result.Value is null ? UnexpectedResult() : Ok(MapToResponse(result.Value));
     }
 
     [HttpGet("driver/{driverId:int}")]
-    public async Task<IActionResult> GetByDriverId(int driverId)
+    public async Task<IActionResult> GetByDriverId(int driverId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByDriverIdAsync(driverId);
+        var result = await service.GetByDriverIdAsync(driverId, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
         return result.Value is null ? UnexpectedResult() : Ok(result.Value.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("application/{applicationId:int}")]
-    public async Task<IActionResult> GetByApplicationId(int applicationId)
+    public async Task<IActionResult> GetByApplicationId(int applicationId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByApplicationIdAsync(applicationId);
+        var result = await service.GetByApplicationIdAsync(applicationId, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
         return result.Value is null ? UnexpectedResult() : Ok(MapToResponse(result.Value));
     }
 
     [HttpGet("license/{localLicenseId:int}")]
-    public async Task<IActionResult> GetByLocalLicenseId(int localLicenseId)
+    public async Task<IActionResult> GetByLocalLicenseId(int localLicenseId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByLocalLicenseIdAsync(localLicenseId);
+        var result = await service.GetByLocalLicenseIdAsync(localLicenseId, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
         return result.Value is null ? UnexpectedResult() : Ok(result.Value.Select(MapToListResponse).ToList());
     }
 
     [HttpGet("license/{licenseId:int}/info")]
-    public async Task<IActionResult> GetLocalLicenseInfo(int licenseId)
+    public async Task<IActionResult> GetLocalLicenseInfo(int licenseId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetLocalLicenseInfoAsync(licenseId);
+        var result = await service.GetLocalLicenseInfoAsync(licenseId, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
         return result.Value is null ? UnexpectedResult() : Ok(MapToResponse(result.Value));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Issue(IssueInternationalLicenseRequest request)
+    public async Task<IActionResult> Issue(IssueInternationalLicenseRequest request, CancellationToken cancellationToken = default)
     {
-        var result = await service.IssueInternationalLicenseAsync(request.LocalLicenseId);
+        var result = await service.IssueInternationalLicenseAsync(request.LocalLicenseId, cancellationToken);
         if (result.IsFailure) return result.ToActionResult(this);
 
-        var licenseResult = await service.GetByIdAsync(result.Value);
+        var licenseResult = await service.GetByIdAsync(result.Value, cancellationToken);
         if (licenseResult.IsFailure) return licenseResult.ToActionResult(this);
 
         return licenseResult.Value is null

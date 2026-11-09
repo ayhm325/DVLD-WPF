@@ -1,4 +1,4 @@
-﻿using Application.DTOs.TestAppointmentDTO;
+using Application.DTOs.TestAppointmentDTO;
 using Application.DTOs.TestDTO;
 using Application.Interfaces;
 using DVLD.Api.Results;
@@ -15,9 +15,9 @@ public sealed class TestsController(
     ITestService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
-        var result = await service.GetAllAsync();
+        var result = await service.GetAllAsync(cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -29,9 +29,9 @@ public sealed class TestsController(
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByIdAsync(id);
+        var result = await service.GetByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -42,11 +42,13 @@ public sealed class TestsController(
 
     [HttpGet("appointment/{appointmentId:int}")]
     public async Task<IActionResult> GetByAppointmentId(
-        int appointmentId)
+        int appointmentId,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.GetByTestAppointmentIdAsync(
-                appointmentId);
+                appointmentId,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -58,10 +60,10 @@ public sealed class TestsController(
     }
 
     [HttpGet("created-by/{userId:int}")]
-    public async Task<IActionResult> GetByUserId(int userId)
+    public async Task<IActionResult> GetByUserId(int userId, CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetByUserIdAsync(userId);
+            await service.GetByUserIdAsync(userId, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -74,7 +76,8 @@ public sealed class TestsController(
 
     [HttpPost]
     public async Task<IActionResult> AddResult(
-        [FromBody] SaveTestResultRequest request)
+        [FromBody] SaveTestResultRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result = await service.AddAsync(
             new SaveTestResultDto
@@ -87,7 +90,8 @@ public sealed class TestsController(
 
                 Notes =
                     request.Notes
-            });
+            },
+            cancellationToken);
 
         return result.IsSuccess
             ? Ok(result.Value)

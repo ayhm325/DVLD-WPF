@@ -21,7 +21,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .Include(l => l.LicenseClassInfo)
             .Include(l => l.CreatedByUser);
 
-    public Task<License?> GetLicenseByIdAsync(int id)
+    public Task<License?> GetLicenseByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult<License?>(null);
@@ -29,10 +29,10 @@ public sealed class LicenseRepository(DVLDDbContext context)
         return Query()
             .AsNoTracking()
             .AsSplitQuery()
-            .FirstOrDefaultAsync(l => l.LicenseID == id);
+            .FirstOrDefaultAsync(l => l.LicenseID == id, cancellationToken);
     }
 
-    public Task<License?> GetForUpdateAsync(int id)
+    public Task<License?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult<License?>(null);
@@ -49,10 +49,10 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .Include(l => l.CreatedByUser)
             .AsNoTracking()
             .AsSplitQuery()
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task<License?> GetByDriverIdAsync(int driverId) =>
+    public Task<License?> GetByDriverIdAsync(int driverId, CancellationToken cancellationToken = default) =>
         driverId <= 0
             ? Task.FromResult<License?>(null)
             : Query()
@@ -60,12 +60,12 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .AsSplitQuery()
                 .Where(l => l.DriverID == driverId)
                 .OrderByDescending(l => l.IssueDate)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
-    public Task<List<License>> GetAllLicensesAsync() =>
-        GetAllLicensesAsync((bool?)null, null);
+    public Task<List<License>> GetAllLicensesAsync(CancellationToken cancellationToken = default) =>
+        GetAllLicensesAsync((bool?)null, null, cancellationToken);
 
-    public Task<List<License>> GetAllLicensesAsync(bool? isExpired, DateOnly? jordanToday = null)
+    public Task<List<License>> GetAllLicensesAsync(bool? isExpired, DateOnly? jordanToday = null, CancellationToken cancellationToken = default)
     {
         var query = Query().AsNoTracking().AsSplitQuery();
 
@@ -79,28 +79,29 @@ public sealed class LicenseRepository(DVLDDbContext context)
 
         return query
             .OrderByDescending(l => l.IssueDate)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public Task<PagedResult<License>> GetAllLicensesAsync(PaginationRequest request)
+    public Task<PagedResult<License>> GetAllLicensesAsync(PaginationRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (request is LicenseQueryRequest queryRequest)
         {
-            return GetAllLicensesAsync(queryRequest, null);
+            return GetAllLicensesAsync(queryRequest, null, cancellationToken);
         }
 
         return GetAllLicensesAsync(new LicenseQueryRequest
         {
             PageNumber = request.PageNumber,
             PageSize = request.PageSize
-        }, null);
+        }, null, cancellationToken);
     }
 
     public async Task<PagedResult<License>> GetAllLicensesAsync(
         LicenseQueryRequest request,
-        DateOnly? jordanToday = null)
+        DateOnly? jordanToday = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -195,14 +196,14 @@ public sealed class LicenseRepository(DVLDDbContext context)
             }
         }
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
             .OrderByDescending(l => l.IssueDate)
             .ThenByDescending(l => l.LicenseID)
             .Skip(request.Skip)
             .Take(request.PageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<License>
         {
@@ -213,7 +214,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
         };
     }
 
-    public Task<List<License>> GetLicensesByDriverIdAsync(int driverId) =>
+    public Task<List<License>> GetLicensesByDriverIdAsync(int driverId, CancellationToken cancellationToken = default) =>
         driverId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -221,9 +222,9 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .AsSplitQuery()
                 .Where(l => l.DriverID == driverId)
                 .OrderByDescending(l => l.IssueDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
-    public Task<List<License>> GetLicensesByApplicationIdAsync(int applicationId) =>
+    public Task<List<License>> GetLicensesByApplicationIdAsync(int applicationId, CancellationToken cancellationToken = default) =>
         applicationId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -231,9 +232,9 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .AsSplitQuery()
                 .Where(l => l.ApplicationID == applicationId)
                 .OrderByDescending(l => l.IssueDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
-    public Task<List<License>> GetLicensesByLicenseClassIdAsync(int licenseClassId) =>
+    public Task<List<License>> GetLicensesByLicenseClassIdAsync(int licenseClassId, CancellationToken cancellationToken = default) =>
         licenseClassId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -241,9 +242,9 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .AsSplitQuery()
                 .Where(l => l.LicenseClass == licenseClassId)
                 .OrderByDescending(l => l.IssueDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
-    public Task<List<License>> GetLicensesByPersonIdAsync(int personId) =>
+    public Task<List<License>> GetLicensesByPersonIdAsync(int personId, CancellationToken cancellationToken = default) =>
         personId <= 0
             ? Task.FromResult<List<License>>([])
             : Query()
@@ -251,32 +252,33 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .AsSplitQuery()
                 .Where(l => l.Driver.PersonID == personId)
                 .OrderByDescending(l => l.IssueDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
-    public Task<bool> IsLicenseExistsAsync(int id) =>
+    public Task<bool> IsLicenseExistsAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult(false)
             : _context.Licenses
                 .AsNoTracking()
-                .AnyAsync(l => l.LicenseID == id);
+                .AnyAsync(l => l.LicenseID == id, cancellationToken);
 
-    public Task<bool> IsDriverHasLicenseAsync(int driverId) =>
+    public Task<bool> IsDriverHasLicenseAsync(int driverId, CancellationToken cancellationToken = default) =>
         driverId <= 0
             ? Task.FromResult(false)
             : _context.Licenses
                 .AsNoTracking()
-                .AnyAsync(l => l.DriverID == driverId);
+                .AnyAsync(l => l.DriverID == driverId, cancellationToken);
 
-    public Task<bool> IsApplicationHasLicenseAsync(int applicationId) =>
+    public Task<bool> IsApplicationHasLicenseAsync(int applicationId, CancellationToken cancellationToken = default) =>
         applicationId <= 0
             ? Task.FromResult(false)
             : _context.Licenses
                 .AsNoTracking()
-                .AnyAsync(l => l.ApplicationID == applicationId);
+                .AnyAsync(l => l.ApplicationID == applicationId, cancellationToken);
 
     public Task<bool> IsActiveLicenseExistsAsync(
         int driverId,
-        int licenseClassId) =>
+        int licenseClassId,
+        CancellationToken cancellationToken = default) =>
         driverId <= 0 || licenseClassId <= 0
             ? Task.FromResult(false)
             : _context.Licenses
@@ -284,10 +286,12 @@ public sealed class LicenseRepository(DVLDDbContext context)
                 .AnyAsync(l =>
                     l.DriverID == driverId &&
                     l.LicenseClass == licenseClassId &&
-                    l.IsActive);
+                    l.IsActive,
+                    cancellationToken);
 
     public async Task<HashSet<int>> GetApplicationIdsWithLicensesAsync(
-        IEnumerable<int> applicationIds)
+        IEnumerable<int> applicationIds,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(applicationIds);
 
@@ -304,21 +308,21 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .Where(l => ids.Contains(l.ApplicationID))
             .Select(l => l.ApplicationID)
             .Distinct()
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return result.ToHashSet();
     }
 
-    public Task AddLicenseAsync(License license)
+    public Task AddLicenseAsync(License license, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(license);
 
         return _context.Licenses
-            .AddAsync(license)
+            .AddAsync(license, cancellationToken)
             .AsTask();
     }
 
-    public async Task<bool> DeactivateLicenseAsync(int licenseId)
+    public async Task<bool> DeactivateLicenseAsync(int licenseId, CancellationToken cancellationToken = default)
     {
         if (licenseId <= 0)
             return false;
@@ -330,7 +334,8 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .ExecuteUpdateAsync(setters =>
                 setters.SetProperty(
                     l => l.IsActive,
-                    false));
+                    false),
+                cancellationToken);
 
         if (affectedRows <= 0)
             return false;
@@ -342,7 +347,8 @@ public sealed class LicenseRepository(DVLDDbContext context)
     public Task<bool> HasAnotherActiveLicenseAsync(
         int driverId,
         int licenseClassId,
-        int excludedLicenseId) =>
+        int excludedLicenseId,
+        CancellationToken cancellationToken = default) =>
         driverId <= 0 ||
         licenseClassId <= 0 ||
         excludedLicenseId <= 0
@@ -353,9 +359,10 @@ public sealed class LicenseRepository(DVLDDbContext context)
                     l.DriverID == driverId &&
                     l.LicenseClass == licenseClassId &&
                     l.LicenseID != excludedLicenseId &&
-                    l.IsActive);
+                    l.IsActive,
+                    cancellationToken);
 
-    public async Task<bool> ActivateLicenseAsync(int licenseId, DateOnly jordanToday)
+    public async Task<bool> ActivateLicenseAsync(int licenseId, DateOnly jordanToday, CancellationToken cancellationToken = default)
     {
         if (licenseId <= 0)
             return false;
@@ -370,7 +377,8 @@ public sealed class LicenseRepository(DVLDDbContext context)
             .ExecuteUpdateAsync(setters =>
                 setters.SetProperty(
                     l => l.IsActive,
-                    true));
+                    true),
+                cancellationToken);
 
         if (affectedRows <= 0)
             return false;
@@ -379,13 +387,14 @@ public sealed class LicenseRepository(DVLDDbContext context)
         return true;
     }
 
-    public async Task<int> DeactivateExpiredLicensesAsync(DateOnly jordanToday)
+    public async Task<int> DeactivateExpiredLicensesAsync(DateOnly jordanToday, CancellationToken cancellationToken = default)
     {
         var cutoff = jordanToday.ToDateTime(TimeOnly.MinValue);
         var affected = await _context.Licenses
             .Where(l => l.IsActive && l.ExpirationDate < cutoff)
             .ExecuteUpdateAsync(setters =>
-                setters.SetProperty(l => l.IsActive, false));
+                setters.SetProperty(l => l.IsActive, false),
+                cancellationToken);
 
         if (affected > 0)
         {
@@ -406,7 +415,8 @@ public sealed class LicenseRepository(DVLDDbContext context)
     public Task<License?> GetNewerLicenseForDriverAndClassAsync(
         int driverId,
         int licenseClassId,
-        int licenseId) =>
+        int licenseId,
+        CancellationToken cancellationToken = default) =>
         driverId <= 0 || licenseClassId <= 0 || licenseId <= 0
             ? Task.FromResult<License?>(null)
             : _context.Licenses
@@ -415,7 +425,7 @@ public sealed class LicenseRepository(DVLDDbContext context)
                             l.LicenseClass == licenseClassId &&
                             l.LicenseID > licenseId)
                 .OrderByDescending(l => l.LicenseID)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<Dictionary<int, License>> GetNewerLicensesBatchAsync(
         IEnumerable<License> licenses,

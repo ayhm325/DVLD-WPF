@@ -31,7 +31,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>()),
+            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -43,7 +43,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         string testType, TestTypeEnum expectedType)
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.CanScheduleTestAsync(10, expectedType))
+            .Setup(x => x.CanScheduleTestAsync(10, expectedType, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(
@@ -60,7 +60,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Null(result.NextTestType);
 
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanScheduleTestAsync(10, expectedType), Times.Once);
+            x => x.CanScheduleTestAsync(10, expectedType, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -80,7 +80,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         };
 
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.CanScheduleTestAsync(10, TestTypeEnum.Theory))
+            .Setup(x => x.CanScheduleTestAsync(10, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await SendAsync(
@@ -95,7 +95,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
     public async Task CanSchedule_WhenFailureOccurs_Returns500ProblemDetails()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.CanScheduleTestAsync(10, TestTypeEnum.Theory))
+            .Setup(x => x.CanScheduleTestAsync(10, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure("Unexpected failure."));
 
         var response = await SendAsync(
@@ -118,7 +118,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.GetNextTestTypeAsync(It.IsAny<int>()), Times.Never);
+            x => x.GetNextTestTypeAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]
@@ -128,7 +128,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         TestTypeEnum expectedType)
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.GetNextTestTypeAsync(10))
+            .Setup(x => x.GetNextTestTypeAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<TestTypeEnum>.Success(expectedType));
 
         var response = await SendAsync(
@@ -145,7 +145,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Equal((int)expectedType, result.NextTestType);
 
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.GetNextTestTypeAsync(10), Times.Once);
+            x => x.GetNextTestTypeAsync(10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -165,7 +165,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         };
 
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.GetNextTestTypeAsync(10))
+            .Setup(x => x.GetNextTestTypeAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await SendAsync(
@@ -180,7 +180,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
     public async Task GetNextTest_WhenFailureOccurs_Returns500ProblemDetails()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.GetNextTestTypeAsync(10))
+            .Setup(x => x.GetNextTestTypeAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<TestTypeEnum>.FromFailure("Unexpected failure."));
 
         var response = await SendAsync(
@@ -203,14 +203,14 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanTakeTestAsync(It.IsAny<int>()), Times.Never);
+            x => x.CanTakeTestAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task CanTake_WhenSuccessful_ReturnsAllowed()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.CanTakeTestAsync(20))
+            .Setup(x => x.CanTakeTestAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(
@@ -227,7 +227,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         Assert.Null(result.NextTestType);
 
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanTakeTestAsync(20), Times.Once);
+            x => x.CanTakeTestAsync(20, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -247,7 +247,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
         };
 
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.CanTakeTestAsync(20))
+            .Setup(x => x.CanTakeTestAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await SendAsync(
@@ -262,7 +262,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
     public async Task CanTake_WhenFailureOccurs_Returns500ProblemDetails()
     {
         _factory.TestWorkflowServiceMock
-            .Setup(x => x.CanTakeTestAsync(20))
+            .Setup(x => x.CanTakeTestAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure("Unexpected failure."));
 
         var response = await SendAsync(
@@ -333,7 +333,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
             "Invalid test type.");
 
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>()),
+            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -354,7 +354,7 @@ public sealed class TestWorkflowControllerTests : IClassFixture<ApiWebApplicatio
             response.Content.Headers.ContentType?.MediaType);
 
         _factory.TestWorkflowServiceMock.Verify(
-            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>()),
+            x => x.CanScheduleTestAsync(It.IsAny<int>(), It.IsAny<TestTypeEnum>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

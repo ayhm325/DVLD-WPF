@@ -59,36 +59,39 @@ public sealed class PersonService : IPersonService
 
     public Task<Result<PagedResult<PersonDto>>>
     GetAllPeopleAsync(
-        PaginationRequest request)
+        PaginationRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (request is PersonQueryRequest queryRequest)
         {
-            return GetAllPeopleAsync(queryRequest);
+            return GetAllPeopleAsync(queryRequest, cancellationToken);
         }
 
-        return GetAllInternalAsync(() => _personRepository.GetAllAsync(request));
+        return GetAllInternalAsync(() => _personRepository.GetAllAsync(request, cancellationToken));
     }
 
     public Task<Result<PagedResult<PersonDto>>>
     GetAllPeopleAsync(
-        PersonQueryRequest request)
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        return GetAllInternalAsync(() => _personRepository.GetAllAsync(request));
+        return GetAllInternalAsync(() => _personRepository.GetAllAsync(request, cancellationToken));
     }
 
     public async Task<Result<PagedResult<PersonDto>>>
     GetPeopleAvailableForUserAsync(
-        PersonQueryRequest request)
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         try
         {
-            return await GetAllInternalAsync(() => _personRepository.GetPeopleAvailableForUserAsync(request));
+            return await GetAllInternalAsync(() => _personRepository.GetPeopleAvailableForUserAsync(request, cancellationToken));
         }
         catch (OperationCanceledException)
         {
@@ -123,11 +126,12 @@ public sealed class PersonService : IPersonService
     }
 
     public async Task<Result<List<PersonDto>>>
-        GetAllPeopleAsync()
+        GetAllPeopleAsync(
+            CancellationToken cancellationToken = default)
     {
         var people =
             await _personRepository
-                .GetAllPersonsAsync();
+                .GetAllPersonsAsync(cancellationToken);
 
         var peopleDto =
             people
@@ -138,12 +142,17 @@ public sealed class PersonService : IPersonService
             .Success(peopleDto);
     }
 
-    public async Task<Result<PersonStatisticsDto>> GetStatisticsAsync()
+    public async Task<Result<PersonStatisticsDto>> GetStatisticsAsync(
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var statistics = await _personRepository.GetStatisticsAsync();
+            var statistics = await _personRepository.GetStatisticsAsync(cancellationToken);
             return Result<PersonStatisticsDto>.Success(statistics);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -153,7 +162,9 @@ public sealed class PersonService : IPersonService
     }
 
     public async Task<Result<PersonDto>>
-        GetPersonByIdAsync(int id)
+        GetPersonByIdAsync(
+            int id,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
@@ -164,7 +175,7 @@ public sealed class PersonService : IPersonService
 
         var person =
             await _personRepository
-                .GetPersonByIdAsync(id);
+                .GetPersonByIdAsync(id, cancellationToken);
 
         if (person is null)
         {
@@ -180,7 +191,8 @@ public sealed class PersonService : IPersonService
 
     public async Task<Result<PersonDto>>
         GetPersonByNationalNoAsync(
-            string nationalNo)
+            string nationalNo,
+            CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(nationalNo))
         {
@@ -204,7 +216,8 @@ public sealed class PersonService : IPersonService
         var person =
             await _personRepository
                 .GetPersonByNationalNoAsync(
-                    normalizedNationalNo);
+                    normalizedNationalNo,
+                    cancellationToken);
 
         if (person is null)
         {
@@ -219,18 +232,21 @@ public sealed class PersonService : IPersonService
     }
 
     public Task<bool>
-        IsPersonExistsAsync(int id)
+        IsPersonExistsAsync(
+            int id,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult(false);
 
         return _personRepository
-            .IsPersonExistsByIdAsync(id);
+            .IsPersonExistsByIdAsync(id, cancellationToken);
     }
 
     public async Task<Result<int>>
         AddPersonAsync(
-            PersonCreateDto personDto)
+            PersonCreateDto personDto,
+            CancellationToken cancellationToken = default)
     {
         var validation =
             PersonValidator.Validate(
@@ -252,7 +268,8 @@ public sealed class PersonService : IPersonService
             await _personRepository
                 .IsNationalNoDuplicatedAsync(
                     person.NationalNo,
-                    0);
+                    0,
+                    cancellationToken);
 
         if (duplicated)
         {
@@ -262,11 +279,11 @@ public sealed class PersonService : IPersonService
         }
 
         await _personRepository
-            .AddPersonAsync(person);
+            .AddPersonAsync(person, cancellationToken);
 
         var saved =
             await _unitOfWork
-                .SaveChangesAsync();
+                .SaveChangesAsync(cancellationToken);
 
         if (saved <= 0 ||
             person.PersonId <= 0)
@@ -284,7 +301,8 @@ public sealed class PersonService : IPersonService
     public async Task<Result>
         UpdatePersonAsync(
             int id,
-            PersonUpdateDto personDto)
+            PersonUpdateDto personDto,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
@@ -302,7 +320,7 @@ public sealed class PersonService : IPersonService
 
         var existingPerson =
             await _personRepository
-                .GetPersonForUpdateAsync(id);
+                .GetPersonForUpdateAsync(id, cancellationToken);
 
         if (existingPerson is null)
         {
@@ -317,7 +335,8 @@ public sealed class PersonService : IPersonService
             await _personRepository
                 .IsNationalNoDuplicatedAsync(
                     normalizedNationalNo,
-                    id);
+                    id,
+                    cancellationToken);
 
         if (duplicated)
         {
@@ -349,7 +368,7 @@ public sealed class PersonService : IPersonService
 
         var saved =
             await _unitOfWork
-                .SaveChangesAsync();
+                .SaveChangesAsync(cancellationToken);
 
         if (saved <= 0)
         {
@@ -361,7 +380,9 @@ public sealed class PersonService : IPersonService
     }
 
     public async Task<Result>
-        DeletePersonAsync(int id)
+        DeletePersonAsync(
+            int id,
+            CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
@@ -371,7 +392,7 @@ public sealed class PersonService : IPersonService
 
         var person =
             await _personRepository
-                .GetPersonForUpdateAsync(id);
+                .GetPersonForUpdateAsync(id, cancellationToken);
 
         if (person is null)
         {
@@ -380,7 +401,7 @@ public sealed class PersonService : IPersonService
         }
 
         if (await _personRepository
-                .HasApplicationsAsync(id))
+                .HasApplicationsAsync(id, cancellationToken))
         {
             return Result.Conflict(
                 "Cannot delete this person because they have one or more applications.");
@@ -390,7 +411,7 @@ public sealed class PersonService : IPersonService
 
         var removed =
             await _personRepository
-                .DeletePersonAsync(id);
+                .DeletePersonAsync(id, cancellationToken);
 
         if (!removed)
         {
@@ -400,7 +421,7 @@ public sealed class PersonService : IPersonService
 
         var saved =
             await _unitOfWork
-                .SaveChangesAsync();
+                .SaveChangesAsync(cancellationToken);
 
         if (saved <= 0)
         {
@@ -412,7 +433,7 @@ public sealed class PersonService : IPersonService
         {
             try
             {
-                await _fileStorageService.DeleteAsync(imagePathToDelete);
+                await _fileStorageService.DeleteAsync(imagePathToDelete, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -435,7 +456,7 @@ public sealed class PersonService : IPersonService
             return Result<string>.FromValidationFailure("Invalid person ID.");
         }
 
-        var person = await _personRepository.GetPersonForUpdateAsync(personId);
+        var person = await _personRepository.GetPersonForUpdateAsync(personId, cancellationToken);
         if (person is null)
         {
             return Result<string>.FromNotFound("Person not found.");
@@ -470,7 +491,7 @@ public sealed class PersonService : IPersonService
         var oldImagePath = person.ImagePath;
         person.ImagePath = newStorageKey;
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (saved <= 0)
         {
             _logger.LogWarning("Database save failed for person {PersonId} photo update. Performing cleanup of {StorageKey}", personId, newStorageKey);
@@ -503,7 +524,7 @@ public sealed class PersonService : IPersonService
             return Result<(Stream, string, string)>.FromValidationFailure("Invalid person ID.");
         }
 
-        var person = await _personRepository.GetPersonByIdAsync(personId);
+        var person = await _personRepository.GetPersonByIdAsync(personId, cancellationToken);
         if (person is null)
         {
             return Result<(Stream, string, string)>.FromNotFound("Person not found.");
@@ -538,7 +559,7 @@ public sealed class PersonService : IPersonService
             return Result.ValidationFailure("Invalid person ID.");
         }
 
-        var person = await _personRepository.GetPersonForUpdateAsync(personId);
+        var person = await _personRepository.GetPersonForUpdateAsync(personId, cancellationToken);
         if (person is null)
         {
             return Result.NotFound("Person not found.");
@@ -552,7 +573,7 @@ public sealed class PersonService : IPersonService
         var oldImagePath = person.ImagePath;
         person.ImagePath = null;
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync(cancellationToken);
         if (saved <= 0)
         {
             return Result.Failure("Failed to remove photo reference from the database.");

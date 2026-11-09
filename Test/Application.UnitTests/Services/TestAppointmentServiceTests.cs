@@ -128,7 +128,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.LockLocalApplicationForSchedulingAsync(100))
+                x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         return new TestAppointmentService(
@@ -230,17 +230,18 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.LockLocalApplicationForSchedulingAsync(100))
+                x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -257,7 +258,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -265,7 +267,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    It.IsAny<int?>()))
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -273,7 +276,8 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    It.IsAny<int?>()))
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
     }
 
@@ -287,12 +291,13 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -309,7 +314,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -317,7 +323,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    It.IsAny<int?>()))
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -325,17 +332,18 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     It.IsAny<int>(),
                     It.IsAny<DateTime>(),
-                    It.IsAny<int?>()))
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
         _repository
             .Setup(x =>
-                x.LockLocalApplicationForSchedulingAsync(100))
+                x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
     }
 
@@ -531,7 +539,7 @@ public sealed class TestAppointmentServiceTests
             result.Error);
 
         _repository.Verify(
-            x => x.GetByIdAsync(It.IsAny<int>()),
+            x => x.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -541,7 +549,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetByIdAsync(99))
+            .Setup(x => x.GetByIdAsync(99, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestAppointment?)null);
 
         var result = await service.GetByIdAsync(99);
@@ -561,7 +569,7 @@ public sealed class TestAppointmentServiceTests
         var entity = ValidAppointment(5);
 
         _repository
-            .Setup(x => x.GetByIdAsync(5))
+            .Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         var result = await service.GetByIdAsync(5);
@@ -593,7 +601,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TestAppointment>());
 
         var result = await service.GetAllAsync();
@@ -609,7 +617,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 ValidAppointment(1),
@@ -647,7 +655,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetByLocalDrivingLicenseApplicationIdAsync(100))
+                x.GetByLocalDrivingLicenseApplicationIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 ValidAppointment(1),
@@ -691,7 +699,8 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.GetByTestTypeIdAsync(
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 ValidAppointment(1)
@@ -729,7 +738,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetByCreatedUserIdAsync(10))
+                x.GetByCreatedUserIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 ValidAppointment(1, 10),
@@ -765,7 +774,7 @@ public sealed class TestAppointmentServiceTests
         var service = CreateService();
 
         _repository
-            .Setup(x => x.GetScheduleInfoAsync(100))
+            .Setup(x => x.GetScheduleInfoAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestAppointment?)null);
 
         var result =
@@ -787,14 +796,15 @@ public sealed class TestAppointmentServiceTests
         entity.Status = AppointmentStatus.Completed;
 
         _repository
-            .Setup(x => x.GetScheduleInfoAsync(5))
+            .Setup(x => x.GetScheduleInfoAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
 
         _repository
             .Setup(x =>
                 x.GetTrialCountAsync(
                     100,
-                    (int)TestTypeEnum.Theory))
+                    (int)TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
         var result =
@@ -891,11 +901,11 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(3);
 
         var result =
-            await service.GetTrialCountAsync(100, 1);
+            await service.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>());
 
         Assert.Equal(3, result);
     }
@@ -911,7 +921,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.IsAppointmentAlreadyScheduledAsync(100, 1))
+                x.IsAppointmentAlreadyScheduledAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -923,7 +933,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository.Verify(
             x =>
-                x.IsAppointmentAlreadyScheduledAsync(100, 1),
+                x.IsAppointmentAlreadyScheduledAsync(100, 1, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -1117,7 +1127,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Conflict(
                     "Test cannot be scheduled."));
@@ -1134,7 +1145,8 @@ public sealed class TestAppointmentServiceTests
 
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<TestAppointment>()),
+                It.IsAny<TestAppointment>(),
+                It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -1155,14 +1167,16 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1193,17 +1207,18 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.LockLocalApplicationForSchedulingAsync(100))
+                x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -1220,7 +1235,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -1228,7 +1244,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     It.IsAny<DateTime>(),
-                    null))
+                    null,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1259,17 +1276,18 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.LockLocalApplicationForSchedulingAsync(100))
+                x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -1286,7 +1304,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -1294,7 +1313,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     It.IsAny<DateTime>(),
-                    null))
+                    null,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -1302,7 +1322,8 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     5,
                     It.IsAny<DateTime>(),
-                    null))
+                    null,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1332,9 +1353,10 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
-            .Callback<TestAppointment>(
-                entity =>
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<TestAppointment, CancellationToken>(
+                (entity, _) =>
                 {
                     captured = entity;
                     entity.TestAppointmentID = 500;
@@ -1391,9 +1413,10 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
-            .Callback<TestAppointment>(
-                x => x.TestAppointmentID = 500)
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<TestAppointment, CancellationToken>(
+                (x, _) => x.TestAppointmentID = 500)
             .Returns(Task.CompletedTask);
 
         _unitOfWork
@@ -1428,7 +1451,8 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var result =
@@ -1456,7 +1480,8 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database error"));
@@ -1599,7 +1624,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Conflict(
                     "Workflow rejected."));
@@ -1636,14 +1662,16 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1678,17 +1706,18 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.LockLocalApplicationForSchedulingAsync(100))
+                x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -1705,7 +1734,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -1713,7 +1743,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     It.IsAny<DateTime>(),
-                    null))
+                    null,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1751,17 +1782,18 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.LockLocalApplicationForSchedulingAsync(100))
+                x.LockLocalApplicationForSchedulingAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -1778,7 +1810,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -1786,7 +1819,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     It.IsAny<DateTime>(),
-                    null))
+                    null,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -1794,7 +1828,8 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     5,
                     It.IsAny<DateTime>(),
-                    null))
+                    null,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -1831,9 +1866,10 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
-            .Callback<TestAppointment>(
-                x =>
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<TestAppointment, CancellationToken>(
+                (x, _) =>
                 {
                     captured = x;
                     x.TestAppointmentID = 700;
@@ -1852,12 +1888,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetScheduleInfoAsync(700))
+                x.GetScheduleInfoAsync(700, It.IsAny<CancellationToken>()))
             .ReturnsAsync(scheduleInfo);
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
         var result =
@@ -1905,12 +1941,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         _localApplicationService
             .Setup(x =>
-                x.GetLocalDrivingLicenseApplicationByIdAsync(100))
+                x.GetLocalDrivingLicenseApplicationByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>
                     .Success(
@@ -1942,9 +1978,10 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
-            .Callback<TestAppointment>(
-                x =>
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<TestAppointment, CancellationToken>(
+                (x, _) =>
                 {
                     captured = x;
                     x.TestAppointmentID = 800;
@@ -1956,7 +1993,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetScheduleInfoAsync(800))
+                x.GetScheduleInfoAsync(800, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 ValidAppointment(
                     800,
@@ -2007,12 +2044,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         _localApplicationService
             .Setup(x =>
-                x.GetLocalDrivingLicenseApplicationByIdAsync(100))
+                x.GetLocalDrivingLicenseApplicationByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>
                     .FromNotFound(
@@ -2056,12 +2093,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         _localApplicationService
             .Setup(x =>
-                x.GetLocalDrivingLicenseApplicationByIdAsync(100))
+                x.GetLocalDrivingLicenseApplicationByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>
                     .Success(null!));
@@ -2100,12 +2137,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         _localApplicationService
             .Setup(x =>
-                x.GetLocalDrivingLicenseApplicationByIdAsync(100))
+                x.GetLocalDrivingLicenseApplicationByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>
                     .Success(
@@ -2137,9 +2174,10 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
-            .Callback<TestAppointment>(
-                x =>
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<TestAppointment, CancellationToken>(
+                (x, _) =>
                 {
                     captured = x;
                     x.TestAppointmentID = 800;
@@ -2151,7 +2189,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetScheduleInfoAsync(800))
+                x.GetScheduleInfoAsync(800, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 ValidAppointment(
                     800,
@@ -2192,12 +2230,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetTrialCountAsync(100, 1))
+                x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         _localApplicationService
             .Setup(x =>
-                x.GetLocalDrivingLicenseApplicationByIdAsync(100))
+                x.GetLocalDrivingLicenseApplicationByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>
                     .Success(
@@ -2245,7 +2283,8 @@ public sealed class TestAppointmentServiceTests
         _repository.Verify(
             x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()),
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -2263,9 +2302,10 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
-            .Callback<TestAppointment>(
-                x => x.TestAppointmentID = 700)
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
+            .Callback<TestAppointment, CancellationToken>(
+                (x, _) => x.TestAppointmentID = 700)
             .Returns(Task.CompletedTask);
 
         _unitOfWork
@@ -2310,7 +2350,8 @@ public sealed class TestAppointmentServiceTests
         _repository
             .Setup(x =>
                 x.AddAsync(
-                    It.IsAny<TestAppointment>()))
+                    It.IsAny<TestAppointment>(),
+                    It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var result =
@@ -2346,14 +2387,16 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
                 x.IsAppointmentAlreadyScheduledAsync(
                     100,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database error"));
@@ -2461,7 +2504,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 (TestAppointment?)null);
 
@@ -2493,12 +2536,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -2515,7 +2558,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
@@ -2523,7 +2567,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -2531,7 +2576,8 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     5,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result =
@@ -2558,7 +2604,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 ValidAppointment(
                     1,
@@ -2597,7 +2643,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         var dto = new UpdateTestAppointmentDto
@@ -2636,14 +2682,15 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _workflowService
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Conflict(
                     "Workflow rejected."));
@@ -2673,12 +2720,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -2695,7 +2742,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
@@ -2703,7 +2751,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -2738,12 +2787,12 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -2760,7 +2809,8 @@ public sealed class TestAppointmentServiceTests
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
@@ -2768,7 +2818,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -2776,7 +2827,8 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     5,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result =
@@ -2811,19 +2863,20 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _workflowService
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -2841,7 +2894,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -2849,7 +2903,8 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     5,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result =
@@ -2895,19 +2950,20 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _workflowService
             .Setup(x =>
                 x.CanScheduleTestAsync(
                     100,
-                    TestTypeEnum.Theory))
+                    TestTypeEnum.Theory,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
             .Setup(x =>
-                x.GetApplicantPersonIdByLocalAppIdAsync(100))
+                x.GetApplicantPersonIdByLocalAppIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         _repository
@@ -2925,7 +2981,8 @@ public sealed class TestAppointmentServiceTests
                 x.IsSlotOccupiedAsync(
                     1,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
@@ -2933,7 +2990,8 @@ public sealed class TestAppointmentServiceTests
                 x.HasApplicantSameDayConflictAsync(
                     5,
                     newDate,
-                    1))
+                    1,
+                    It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _unitOfWork
@@ -2968,7 +3026,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database error"));
@@ -3043,7 +3101,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 (TestAppointment?)null);
 
@@ -3071,7 +3129,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _unitOfWork
@@ -3104,7 +3162,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 ValidAppointment(
                     1,
@@ -3135,7 +3193,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         var result =
@@ -3172,7 +3230,7 @@ public sealed class TestAppointmentServiceTests
 
         _repository
             .Setup(x =>
-                x.GetForUpdateAsync(1))
+                x.GetForUpdateAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _unitOfWork
@@ -3202,7 +3260,7 @@ public sealed class TestAppointmentServiceTests
         var appointment = ValidAppointment(1);
         appointment.Status = AppointmentStatus.Cancelled;
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.CancelAsync(1);
 
@@ -3218,7 +3276,7 @@ public sealed class TestAppointmentServiceTests
         var appointment = ValidAppointment(1);
         appointment.Status = AppointmentStatus.Completed;
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.CancelAsync(1);
 
@@ -3234,7 +3292,7 @@ public sealed class TestAppointmentServiceTests
         var appointment = ValidAppointment(1);
         appointment.Status = AppointmentStatus.NoShow;
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.CancelAsync(1);
 
@@ -3250,7 +3308,7 @@ public sealed class TestAppointmentServiceTests
         var appointment = ValidAppointment(1);
         appointment.Status = null;
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.CancelAsync(1);
 
@@ -3267,7 +3325,7 @@ public sealed class TestAppointmentServiceTests
         var jordanNow = _clock.Now;
         var appointment = ValidAppointment(1, date: jordanNow.Date.AddDays(1).AddHours(9));
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.CancelAsync(1);
 
@@ -3284,7 +3342,7 @@ public sealed class TestAppointmentServiceTests
         var jordanNow = _clock.Now;
         var appointment = ValidAppointment(1, date: jordanNow.Date.AddDays(1).AddHours(9));
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.UpdateAsync(ValidUpdateDto(1));
 
@@ -3300,7 +3358,7 @@ public sealed class TestAppointmentServiceTests
         var appointment = ValidAppointment(1);
         appointment.Status = AppointmentStatus.Cancelled;
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.UpdateAsync(ValidUpdateDto(1));
 
@@ -3316,7 +3374,7 @@ public sealed class TestAppointmentServiceTests
         var appointment = ValidAppointment(1);
         appointment.Status = null;
 
-        _repository.Setup(x => x.GetForUpdateAsync(1)).ReturnsAsync(appointment);
+        _repository.Setup(x => x.GetForUpdateAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await service.UpdateAsync(ValidUpdateDto(1));
 

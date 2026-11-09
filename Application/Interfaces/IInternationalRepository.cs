@@ -4,27 +4,34 @@ namespace Application.Interfaces;
 
 public interface IInternationalRepository
 {
-    Task<List<InternationalLicense>> GetAllAsync();
+    Task<List<InternationalLicense>> GetAllAsync(CancellationToken cancellationToken = default);
 
     Task<InternationalLicense?> GetByIdAsync(
-        int internationalLicenseId);
+        int internationalLicenseId,
+        CancellationToken cancellationToken = default);
 
     Task<List<InternationalLicense>> GetByDriverIdAsync(
-        int driverId);
+        int driverId,
+        CancellationToken cancellationToken = default);
 
     Task<InternationalLicense?> GetByApplicationIdAsync(
-        int applicationId);
+        int applicationId,
+        CancellationToken cancellationToken = default);
 
     Task<List<InternationalLicense>> GetByLocalLicenseIdAsync(
-        int localLicenseId);
+        int localLicenseId,
+        CancellationToken cancellationToken = default);
 
     Task<bool> ExistsByLocalLicenseAsync(
-        int localLicenseId);
+        int localLicenseId,
+        CancellationToken cancellationToken = default);
 
     Task<bool> HasActiveInternationalLicenseAsync(
         int driverId,
-        DateOnly jordanToday);
+        DateOnly jordanToday,
+        CancellationToken cancellationToken = default);
 
     Task AddAsync(
-        InternationalLicense entity);
+        InternationalLicense entity,
+        CancellationToken cancellationToken = default);
 }

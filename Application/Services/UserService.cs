@@ -40,7 +40,7 @@ public sealed class UserService : IUserService
     }
 
     public async Task<Result<List<UserDto>>>
-        GetAllUsersAsync()
+        GetAllUsersAsync(CancellationToken cancellationToken = default)
     {
         if (IsNonAdminAuthenticatedCaller())
         {
@@ -50,7 +50,7 @@ public sealed class UserService : IUserService
 
         var users =
             await _userRepository
-                .GetAllUsersAsync();
+                .GetAllUsersAsync(cancellationToken);
 
         var dtos =
             users
@@ -62,7 +62,7 @@ public sealed class UserService : IUserService
     }
 
     public async Task<Result<UserDto>>
-        GetUserByIdAsync(int id)
+        GetUserByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         if (id <= 0)
         {
@@ -73,7 +73,7 @@ public sealed class UserService : IUserService
 
         var user =
             await _userRepository
-                .GetUserByUserIdAsync(id);
+                .GetUserByUserIdAsync(id, cancellationToken);
 
         if (user is null)
         {
@@ -87,7 +87,7 @@ public sealed class UserService : IUserService
                 UserMapper.ToDto(user));
     }
 
-    public async Task<Result<UserDetailsDto>> GetUserDetailsAsync(int userId)
+    public async Task<Result<UserDetailsDto>> GetUserDetailsAsync(int userId, CancellationToken cancellationToken = default)
     {
         if (IsNonAdminAuthenticatedCaller())
         {
@@ -102,7 +102,7 @@ public sealed class UserService : IUserService
         }
 
         var user = await _userRepository
-            .GetUserDetailsByIdAsync(userId);
+            .GetUserDetailsByIdAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -114,7 +114,7 @@ public sealed class UserService : IUserService
     }
 
     public async Task<Result<UserProfileDto>>
-    GetCurrentProfileAsync(int userId)
+    GetCurrentProfileAsync(int userId, CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
         {
@@ -125,7 +125,7 @@ public sealed class UserService : IUserService
 
         var user =
             await _userRepository
-                .GetUserProfileAsync(userId);
+                .GetUserProfileAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -140,7 +140,7 @@ public sealed class UserService : IUserService
     }
 
     public async Task<Result<UserDto>>
-        GetUserByPersonIdAsync(int personId)
+        GetUserByPersonIdAsync(int personId, CancellationToken cancellationToken = default)
     {
         if (personId <= 0)
         {
@@ -151,7 +151,7 @@ public sealed class UserService : IUserService
 
         var user =
             await _userRepository
-                .GetUserByPersonIdAsync(personId);
+                .GetUserByPersonIdAsync(personId, cancellationToken);
 
         if (user is null)
         {
@@ -166,7 +166,7 @@ public sealed class UserService : IUserService
     }
 
     public async Task<Result<UserDto>>
-        GetUserByUsernameAsync(string username)
+        GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(username))
         {
@@ -181,7 +181,8 @@ public sealed class UserService : IUserService
         var user =
             await _userRepository
                 .GetUserByUsernameAsync(
-                    normalizedUsername);
+                    normalizedUsername,
+                    cancellationToken);
 
         if (user is null)
         {
@@ -198,7 +199,8 @@ public sealed class UserService : IUserService
     public Task<bool>
         IsUsernameTakenForAnotherUserAsync(
             string username,
-            int userId)
+            int userId,
+            CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(username) ||
             userId <= 0)
@@ -209,7 +211,8 @@ public sealed class UserService : IUserService
         return _userRepository
             .IsUsernameTakenForAnotherUserAsync(
                 username.Trim(),
-                userId);
+                userId,
+                cancellationToken);
     }
 
     public Task<bool> IsUserActiveAsync(
@@ -225,7 +228,7 @@ public sealed class UserService : IUserService
     }
 
     public async Task<Result<int>>
-        AddUserAsync(CreateUserDto dto)
+        AddUserAsync(CreateUserDto dto, CancellationToken cancellationToken = default)
     {
         if (IsNonAdminAuthenticatedCaller())
         {
@@ -255,7 +258,7 @@ public sealed class UserService : IUserService
             dto.UserName.Trim();
 
         if (await _userRepository
-                .IsUsernameTakenAsync(username))
+                .IsUsernameTakenAsync(username, cancellationToken))
         {
             return Result<int>
                 .FromConflict(
@@ -264,7 +267,8 @@ public sealed class UserService : IUserService
 
         if (await _userRepository
                 .IsUserExistsByPersonIdAsync(
-                    dto.PersonId))
+                    dto.PersonId,
+                    cancellationToken))
         {
             return Result<int>
                 .FromConflict(
@@ -282,13 +286,13 @@ public sealed class UserService : IUserService
                 hashedPassword);
 
         await _userRepository
-            .AddUserAsync(user);
+            .AddUserAsync(user, cancellationToken);
 
         try
         {
             var saved =
                 await _unitOfWork
-                    .SaveChangesAsync();
+                    .SaveChangesAsync(cancellationToken);
 
             if (saved <= 0 ||
                 user.UserId <= 0)
@@ -319,7 +323,8 @@ public sealed class UserService : IUserService
     public async Task<Result>
         UpdateUserAsync(
             int id,
-            UpdateUserDto dto)
+            UpdateUserDto dto,
+            CancellationToken cancellationToken = default)
     {
         if (IsNonAdminAuthenticatedCaller())
         {
@@ -351,7 +356,7 @@ public sealed class UserService : IUserService
 
         var user =
             await _userRepository
-                .GetUserForUpdateAsync(id);
+                .GetUserForUpdateAsync(id, cancellationToken);
 
         if (user is null)
         {
@@ -409,7 +414,7 @@ public sealed class UserService : IUserService
 
         if (removesActiveAdmin)
         {
-            var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
+            var activeAdminCount = await _userRepository.GetActiveAdminCountAsync(cancellationToken);
             if (activeAdminCount <= 1)
             {
                 return Result.Conflict(
@@ -425,7 +430,8 @@ public sealed class UserService : IUserService
         if (await _userRepository
                 .IsUsernameTakenForAnotherUserAsync(
                     username,
-                    id))
+                    id,
+                    cancellationToken))
         {
             return Result.Conflict(
                 "Username is already in use by another user.");
@@ -434,7 +440,8 @@ public sealed class UserService : IUserService
         if (user.PersonId != dto.PersonId &&
             await _userRepository
                 .IsUserExistsByPersonIdAsync(
-                    dto.PersonId))
+                    dto.PersonId,
+                    cancellationToken))
         {
             return Result.Conflict(
                 "This person is already associated with another user account.");
@@ -467,7 +474,7 @@ public sealed class UserService : IUserService
         {
             var saved =
                 await _unitOfWork
-                    .SaveChangesAsync();
+                    .SaveChangesAsync(cancellationToken);
 
             if (saved <= 0)
             {
@@ -490,7 +497,7 @@ public sealed class UserService : IUserService
     }
 
     public async Task<Result>
-        DeleteUserAsync(int id)
+        DeleteUserAsync(int id, CancellationToken cancellationToken = default)
     {
         if (IsNonAdminAuthenticatedCaller())
         {
@@ -506,7 +513,7 @@ public sealed class UserService : IUserService
 
         var user =
             await _userRepository
-                .GetUserForUpdateAsync(id);
+                .GetUserForUpdateAsync(id, cancellationToken);
 
         if (user is null)
         {
@@ -529,7 +536,7 @@ public sealed class UserService : IUserService
 
         if (user.Role == UserRole.Admin)
         {
-            var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
+            var activeAdminCount = await _userRepository.GetActiveAdminCountAsync(cancellationToken);
             if (activeAdminCount <= 1)
             {
                 return Result.Conflict(
@@ -540,7 +547,7 @@ public sealed class UserService : IUserService
         _userRepository
             .DeleteUser(user);
 
-        var saved = await _unitOfWork.SaveChangesAsync();
+        var saved = await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0
             ? Result.Success()
@@ -550,7 +557,8 @@ public sealed class UserService : IUserService
     public async Task<Result>
         ChangePasswordAsync(
             int userId,
-            ChangePasswordDto dto)
+            ChangePasswordDto dto,
+            CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
         {
@@ -576,7 +584,7 @@ public sealed class UserService : IUserService
 
         var user =
             await _userRepository
-                .GetUserForUpdateAsync(userId);
+                .GetUserForUpdateAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -602,7 +610,7 @@ public sealed class UserService : IUserService
 
         var saved =
             await _unitOfWork
-                .SaveChangesAsync();
+                .SaveChangesAsync(cancellationToken);
 
         if (saved <= 0)
         {

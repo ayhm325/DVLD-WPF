@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Application.Common.Results;
 using Application.DTOs.AuthDTO;
@@ -39,7 +39,7 @@ public sealed class AuthControllerTests
         SetupCurrentUser(factory, 10);
 
         factory.UserServiceMock
-            .Setup(x => x.GetCurrentProfileAsync(10))
+            .Setup(x => x.GetCurrentProfileAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<UserProfileDto>.Success(new()
             {
                 UserId = 10,
@@ -81,7 +81,7 @@ public sealed class AuthControllerTests
         Assert.Equal("Jordan", body.CountryName);
 
         factory.UserServiceMock.Verify(
-            x => x.GetCurrentProfileAsync(10), Times.Once);
+            x => x.GetCurrentProfileAsync(10, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class AuthControllerTests
         SetupCurrentUser(factory, 10);
 
         factory.UserServiceMock
-            .Setup(x => x.GetCurrentProfileAsync(10))
+            .Setup(x => x.GetCurrentProfileAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<UserProfileDto>.FromNotFound("User was not found."));
 
@@ -133,7 +133,7 @@ public sealed class AuthControllerTests
         const string error = "Username is required.\nPassword is required.";
 
         factory.AuthServiceMock
-            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
+            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LoginResponseDto>.FromValidationFailure(error));
 
@@ -151,7 +151,7 @@ public sealed class AuthControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.AuthServiceMock
-            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
+            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LoginResponseDto>.FromFailure("internal failure"));
 
@@ -172,7 +172,7 @@ public sealed class AuthControllerTests
         var expiresAt = DateTime.UtcNow.AddHours(1);
 
         factory.AuthServiceMock
-            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
+            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LoginResponseDto>.Success(new()
             {
                 AccessToken = "test-access-token",
@@ -205,7 +205,7 @@ public sealed class AuthControllerTests
         factory.AuthServiceMock.Verify(
             x => x.LoginAsync(It.Is<LoginRequestDto>(d =>
                 d.UserName == "testuser" &&
-                d.Password == "Password123")), Times.Once);
+                d.Password == "Password123"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -214,7 +214,7 @@ public sealed class AuthControllerTests
         await using var factory = new ApiWebApplicationFactory();
         var client = factory.CreateClient();
         factory.AuthServiceMock
-            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
+            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LoginResponseDto>.FromFailure("Invalid username or password."));
 
         for (var attempt = 1; attempt <= 5; attempt++)
@@ -287,7 +287,7 @@ public sealed class AuthControllerTests
         factory.UserServiceMock.Verify(
             x => x.ChangePasswordAsync(
                 It.IsAny<int>(),
-                It.IsAny<ChangePasswordDto>()),
+                It.IsAny<ChangePasswordDto>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -300,7 +300,7 @@ public sealed class AuthControllerTests
         factory.UserServiceMock
             .Setup(x => x.ChangePasswordAsync(
                 10,
-                It.IsAny<ChangePasswordDto>()))
+                It.IsAny<ChangePasswordDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await Authenticated(factory, 10).PostAsJsonAsync(
@@ -318,7 +318,7 @@ public sealed class AuthControllerTests
                 10,
                 It.Is<ChangePasswordDto>(d =>
                     d.CurrentPassword == "OldPassword123" &&
-                    d.NewPassword == "NewPassword123")),
+                    d.NewPassword == "NewPassword123"), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -363,7 +363,7 @@ public sealed class AuthControllerTests
         factory.UserServiceMock
             .Setup(x => x.ChangePasswordAsync(
                 10,
-                It.IsAny<ChangePasswordDto>()))
+                It.IsAny<ChangePasswordDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await Authenticated(factory, 10).PostAsJsonAsync(
@@ -390,7 +390,7 @@ public sealed class AuthControllerTests
         factory.UserServiceMock
             .Setup(x => x.ChangePasswordAsync(
                 10,
-                It.IsAny<ChangePasswordDto>()))
+                It.IsAny<ChangePasswordDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result.Failure("Unexpected password change failure."));
 
@@ -614,7 +614,7 @@ public sealed class AuthControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
         factory.AuthServiceMock
-            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>()))
+            .Setup(x => x.LoginAsync(It.IsAny<LoginRequestDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Result<LoginResponseDto>)null! );
 
         var response = await factory.CreateClient().PostAsJsonAsync(

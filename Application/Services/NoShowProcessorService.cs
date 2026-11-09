@@ -173,7 +173,7 @@ public sealed class NoShowProcessorService : INoShowProcessorService
                     return new NoShowItemResult(appointmentId, NoShowProcessStatus.LockFailed, "Lock could not be acquired");
                 }
 
-                var appointment = await _appointmentRepository.GetForUpdateAsync(appointmentId);
+                var appointment = await _appointmentRepository.GetForUpdateAsync(appointmentId, cancellationToken);
                 if (appointment is null)
                 {
                     await tx.RollbackAsync(cancellationToken);
@@ -188,7 +188,7 @@ public sealed class NoShowProcessorService : INoShowProcessorService
                     return new NoShowItemResult(appointmentId, NoShowProcessStatus.Ineligible, "State or cutoff condition changed");
                 }
 
-                var testExists = await _testRepository.IsTestAlreadyTakenAsync(appointmentId);
+                var testExists = await _testRepository.IsTestAlreadyTakenAsync(appointmentId, cancellationToken);
                 if (testExists)
                 {
                     await tx.RollbackAsync(cancellationToken);

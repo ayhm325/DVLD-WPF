@@ -40,7 +40,7 @@ public sealed class LicenseRenewalService(
     private readonly IJordanClock _clock =
         clock ?? throw new ArgumentNullException(nameof(clock));
 
-    public async Task<Result<int>> RenewLicenseAsync(int oldLicenseId, string? notes)
+    public async Task<Result<int>> RenewLicenseAsync(int oldLicenseId, string? notes, CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateId(oldLicenseId);
         if (validation.IsFailure)
@@ -51,7 +51,8 @@ public sealed class LicenseRenewalService(
 
         var applicationTypeResult =
             await _applicationTypeService.GetApplicationTypeByIdAsync(
-                RenewalApplicationTypeId);
+                RenewalApplicationTypeId,
+                cancellationToken);
 
         if (applicationTypeResult.IsFailure)
             return PropagateFailure<int>(applicationTypeResult);
@@ -64,7 +65,7 @@ public sealed class LicenseRenewalService(
             async transaction =>
             {
                 var oldLicense =
-                    await _licenseRepository.GetForUpdateAsync(oldLicenseId);
+                    await _licenseRepository.GetForUpdateAsync(oldLicenseId, cancellationToken);
 
                 if (oldLicense is null)
                     return await RollbackAsync(
@@ -81,7 +82,7 @@ public sealed class LicenseRenewalService(
                         Result<int>.FromConflict(
                             "Cannot renew before expiration date."));
 
-                if (await _detainedLicenseRepository.IsLicenseDetainedAsync(oldLicenseId))
+                if (await _detainedLicenseRepository.IsLicenseDetainedAsync(oldLicenseId, cancellationToken))
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromConflict(
@@ -90,7 +91,8 @@ public sealed class LicenseRenewalService(
                 var newerLicense = await _licenseRepository.GetNewerLicenseForDriverAndClassAsync(
                     oldLicense.DriverID,
                     oldLicense.LicenseClass,
-                    oldLicense.LicenseID);
+                    oldLicense.LicenseID,
+                    cancellationToken);
 
                 if (newerLicense != null)
                 {
@@ -104,7 +106,8 @@ public sealed class LicenseRenewalService(
                 if (await _licenseRepository.HasAnotherActiveLicenseAsync(
                         oldLicense.DriverID,
                         oldLicense.LicenseClass,
-                        oldLicense.LicenseID))
+                        oldLicense.LicenseID,
+                        cancellationToken))
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromConflict(
@@ -142,7 +145,8 @@ public sealed class LicenseRenewalService(
                         {
                             ApplicantPersonID = oldLicense.Driver.PersonID,
                             ApplicationTypeID = RenewalApplicationTypeId
-                        });
+                        },
+                        cancellationToken);
 
                 if (applicationResult.IsFailure)
                     return await RollbackAsync(
@@ -183,7 +187,7 @@ public sealed class LicenseRenewalService(
 
                 if (oldLicense.IsActive)
                 {
-                    var deactivated = await _licenseRepository.DeactivateLicenseAsync(oldLicenseId);
+                    var deactivated = await _licenseRepository.DeactivateLicenseAsync(oldLicenseId, cancellationToken);
                     if (!deactivated)
                         return await RollbackAsync(
                             transaction,
@@ -194,9 +198,9 @@ public sealed class LicenseRenewalService(
                 var newLicense = LicenseMapper.ToEntity(createLicenseDto);
                 newLicense.CreatedByUserID = _currentUserService.UserId;
 
-                await _licenseRepository.AddLicenseAsync(newLicense);
+                await _licenseRepository.AddLicenseAsync(newLicense, cancellationToken);
 
-                if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0 ||
                     newLicense.LicenseID <= 0)
                     return await RollbackAsync(
                         transaction,
@@ -204,18 +208,19 @@ public sealed class LicenseRenewalService(
                             "Failed to save the renewed license."));
 
                 var completeResult =
-                    await _applicationService.CompleteApplicationStateAsync(applicationId);
+                    await _applicationService.CompleteApplicationStateAsync(applicationId, cancellationToken);
 
                 if (completeResult.IsFailure)
                     return await RollbackAsync(
                         transaction,
                         PropagateFailure<int>(completeResult));
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
 
                 return Result<int>.Success(newLicense.LicenseID);
             },
-            IsolationLevel.Serializable);
+            IsolationLevel.Serializable,
+            cancellationToken);
     }
 
     private bool IsAuthenticated() =>

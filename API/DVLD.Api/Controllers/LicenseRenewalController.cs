@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using DVLD.Api.Results;
 using DVLD.Contracts.LicenseRenewal;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +14,14 @@ public sealed class LicenseRenewalController(
 {
     [HttpPost]
     public async Task<IActionResult> Renew(
-        [FromBody] RenewLicenseRequest request)
+        [FromBody] RenewLicenseRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.RenewLicenseAsync(
                 request.OldLicenseId,
-                request.Notes);
+                request.Notes,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);

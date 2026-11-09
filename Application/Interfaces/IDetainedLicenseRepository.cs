@@ -4,20 +4,21 @@ namespace Application.Interfaces;
 
 public interface IDetainedLicenseRepository
 {
-    Task<List<DetainedLicense>> GetAllAsync();
+    Task<List<DetainedLicense>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task<DetainedLicense?> GetByIdAsync(int id);
+    Task<DetainedLicense?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(
-        int licenseId);
+        int licenseId,
+        CancellationToken cancellationToken = default);
 
-    Task<bool> IsLicenseDetainedAsync(int licenseId);
+    Task<bool> IsLicenseDetainedAsync(int licenseId, CancellationToken cancellationToken = default);
 
     Task<HashSet<int>> GetActiveDetainedLicenseIdsAsync(
         IEnumerable<int> licenseIds,
         CancellationToken cancellationToken = default);
 
-    Task AddAsync(DetainedLicense entity);
+    Task AddAsync(DetainedLicense entity, CancellationToken cancellationToken = default);
 
-    Task<DetainedLicense?> GetByIdForUpdateAsync(int id);
+    Task<DetainedLicense?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Domain.Enums;
@@ -29,7 +29,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetAllAsync(), Times.Never);
+            x => x.GetAllAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     {
         var dto = CreateTestAppointmentDto(10);
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetAllAsync())
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestAppointmentDto>>.Success([dto]));
 
         var response = await GetAsync("/api/TestAppointments");
@@ -50,7 +50,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         AssertTestAppointmentResponse(dto, result[0]);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetAllAsync(), Times.Once);
+            x => x.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -69,7 +69,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             _ => Result<List<TestAppointmentDto>>.FromForbidden(detail)
         };
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetAllAsync())
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await GetAsync("/api/TestAppointments");
@@ -81,7 +81,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     [Fact]
     public async Task GetAll_WhenFailure_Returns500ProblemDetails()
     {
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetAllAsync())
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestAppointmentDto>>.FromFailure("Database failure."));
 
         var response = await GetAsync("/api/TestAppointments");
@@ -98,7 +98,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     {
         var dto = CreateTestAppointmentDto(20);
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetByIdAsync(20))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetByIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<TestAppointmentDto>.Success(dto));
 
         var response = await GetAsync("/api/TestAppointments/20");
@@ -110,7 +110,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         AssertTestAppointmentResponse(dto, result);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetByIdAsync(20), Times.Once);
+            x => x.GetByIdAsync(20, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -123,7 +123,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             ? Result<TestAppointmentDto>.FromNotFound(detail)
             : Result<TestAppointmentDto>.FromValidationFailure(detail);
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetByIdAsync(id))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await GetAsync($"/api/TestAppointments/{id}");
@@ -138,7 +138,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         var dto = CreateTestAppointmentDto(30);
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetByLocalDrivingLicenseApplicationIdAsync(50))
+            .Setup(x => x.GetByLocalDrivingLicenseApplicationIdAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestAppointmentDto>>.Success([dto]));
 
         var response = await GetAsync("/api/TestAppointments/local-application/50");
@@ -151,7 +151,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         AssertTestAppointmentResponse(dto, result[0]);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetByLocalDrivingLicenseApplicationIdAsync(50), Times.Once);
+            x => x.GetByLocalDrivingLicenseApplicationIdAsync(50, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         const string detail = "Appointments not found.";
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetByLocalDrivingLicenseApplicationIdAsync(50))
+            .Setup(x => x.GetByLocalDrivingLicenseApplicationIdAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestAppointmentDto>>.FromNotFound(detail));
 
         var response = await GetAsync("/api/TestAppointments/local-application/50");
@@ -174,7 +174,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     {
         var dto = CreateTestAppointmentDto(40);
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetByTestTypeIdAsync(1))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetByTestTypeIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestAppointmentDto>>.Success([dto]));
 
         var response = await GetAsync("/api/TestAppointments/test-type/1");
@@ -187,7 +187,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         AssertTestAppointmentResponse(dto, result[0]);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetByTestTypeIdAsync(1), Times.Once);
+            x => x.GetByTestTypeIdAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     {
         const string detail = "Invalid test type.";
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetByTestTypeIdAsync(1))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetByTestTypeIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestAppointmentDto>>.FromValidationFailure(detail));
 
         var response = await GetAsync("/api/TestAppointments/test-type/1");
@@ -210,7 +210,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         var dto = CreateScheduleTestDto();
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetSchedulePreparationAsync(60, 1))
+            .Setup(x => x.GetSchedulePreparationAsync(60, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ScheduleTestDto>.Success(dto));
 
         var response = await GetAsync(
@@ -223,7 +223,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         AssertScheduleResponse(dto, result);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetSchedulePreparationAsync(60, 1), Times.Once);
+            x => x.GetSchedulePreparationAsync(60, 1, It.IsAny<CancellationToken>()), Times.Once);
     }
     [Fact]
     public async Task GetAttemptStats_WithoutAuthentication_ReturnsUnauthorized()
@@ -268,7 +268,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         const string detail = "Invalid schedule request.";
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetSchedulePreparationAsync(60, 1))
+            .Setup(x => x.GetSchedulePreparationAsync(60, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ScheduleTestDto>.FromValidationFailure(detail));
 
         var response = await GetAsync(
@@ -292,7 +292,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         var date = new DateTime(2026, 10, 1, 10, 30, 0);
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.ScheduleAsync(70, 1, date))
+            .Setup(x => x.ScheduleAsync(70, 1, date, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ScheduleTestDto>.Success(CreateScheduleTestDto()));
 
         var response = await PostAsync(
@@ -307,7 +307,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.ScheduleAsync(70, 1, date), Times.Once);
+            x => x.ScheduleAsync(70, 1, date, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -327,7 +327,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         };
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.ScheduleAsync(70, 1, date))
+            .Setup(x => x.ScheduleAsync(70, 1, date, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await PostAsync(
@@ -349,7 +349,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         var dto = CreateTestAppointmentDto(80);
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetByCreatedUserIdAsync(5))
+            .Setup(x => x.GetByCreatedUserIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestAppointmentDto>>.Success([dto]));
 
         var response = await GetAsync("/api/TestAppointments/created-by/5");
@@ -362,7 +362,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         AssertTestAppointmentResponse(dto, result[0]);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetByCreatedUserIdAsync(5), Times.Once);
+            x => x.GetByCreatedUserIdAsync(5, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -370,7 +370,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     {
         var dto = CreateScheduleTestDto();
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetScheduleInfoAsync(90))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetScheduleInfoAsync(90, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ScheduleTestDto>.Success(dto));
 
         var response = await GetAsync("/api/TestAppointments/90/schedule-info");
@@ -387,7 +387,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     {
         const string detail = "Schedule information not found.";
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetScheduleInfoAsync(90))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetScheduleInfoAsync(90, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ScheduleTestDto>.FromNotFound(detail));
 
         var response = await GetAsync("/api/TestAppointments/90/schedule-info");
@@ -399,7 +399,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     [Fact]
     public async Task GetFees_WhenCalled_ReturnsFees()
     {
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetTestTypeFeesAsync(1))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetTestTypeFeesAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(35m);
 
         var response = await GetAsync("/api/TestAppointments/fees/1");
@@ -411,13 +411,13 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(35m, result.Fees);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetTestTypeFeesAsync(1), Times.Once);
+            x => x.GetTestTypeFeesAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetTrialCount_WhenCalled_ReturnsTrialCount()
     {
-        _factory.TestAppointmentServiceMock.Setup(x => x.GetTrialCountAsync(100, 1))
+        _factory.TestAppointmentServiceMock.Setup(x => x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
         var response = await GetAsync(
@@ -430,7 +430,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(2, result.TrialCount);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetTrialCountAsync(100, 1), Times.Once);
+            x => x.GetTrialCountAsync(100, 1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -439,7 +439,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     public async Task IsScheduled_ReturnsExpectedValue(bool scheduled)
     {
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.IsAppointmentAlreadyScheduledAsync(110, 1))
+            .Setup(x => x.IsAppointmentAlreadyScheduledAsync(110, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(scheduled);
 
         var response = await GetAsync(
@@ -452,7 +452,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(scheduled, result.Scheduled);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.IsAppointmentAlreadyScheduledAsync(110, 1), Times.Once);
+            x => x.IsAppointmentAlreadyScheduledAsync(110, 1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -465,7 +465,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
                     dto.TestTypeID == 1 &&
                     dto.LocalDrivingLicenseApplicationID == 120 &&
                     dto.AppointmentDate == date &&
-                    dto.RetakeTestApplicationID == 500)))
+                    dto.RetakeTestApplicationID == 500), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await PostAsync("/api/TestAppointments",
@@ -484,7 +484,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
                 dto.TestTypeID == 1 &&
                 dto.LocalDrivingLicenseApplicationID == 120 &&
                 dto.AppointmentDate == date &&
-                dto.RetakeTestApplicationID == 500)), Times.Once);
+                dto.RetakeTestApplicationID == 500), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -502,7 +502,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         };
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.AddAsync(It.IsAny<CreateTestAppointmentDto>()))
+            .Setup(x => x.AddAsync(It.IsAny<CreateTestAppointmentDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await PostAsync("/api/TestAppointments",
@@ -525,7 +525,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         _factory.TestAppointmentServiceMock.Setup(x =>
                 x.UpdateAsync(It.Is<UpdateTestAppointmentDto>(dto =>
                     dto.TestAppointmentID == 130 &&
-                    dto.AppointmentDate == date)))
+                    dto.AppointmentDate == date), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await PutAsync("/api/TestAppointments/130",
@@ -540,7 +540,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         _factory.TestAppointmentServiceMock.Verify(x =>
             x.UpdateAsync(It.Is<UpdateTestAppointmentDto>(dto =>
                 dto.TestAppointmentID == 130 &&
-                dto.AppointmentDate == date)), Times.Once);
+                dto.AppointmentDate == date), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -554,7 +554,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             : Result.ValidationFailure(detail);
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.UpdateAsync(It.IsAny<UpdateTestAppointmentDto>()))
+            .Setup(x => x.UpdateAsync(It.IsAny<UpdateTestAppointmentDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await PutAsync("/api/TestAppointments/130",
@@ -571,7 +571,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     [Fact]
     public async Task Delete_WhenSuccessful_ReturnsNoContent()
     {
-        _factory.TestAppointmentServiceMock.Setup(x => x.DeleteAsync(140))
+        _factory.TestAppointmentServiceMock.Setup(x => x.DeleteAsync(140, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await DeleteAsync("/api/TestAppointments/140");
@@ -579,7 +579,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.DeleteAsync(140), Times.Once);
+            x => x.DeleteAsync(140, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -596,7 +596,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             _ => Result.ValidationFailure(detail)
         };
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.DeleteAsync(140))
+        _factory.TestAppointmentServiceMock.Setup(x => x.DeleteAsync(140, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await DeleteAsync("/api/TestAppointments/140");
@@ -605,7 +605,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             response, (HttpStatusCode)status, title, detail);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.DeleteAsync(140), Times.Once);
+            x => x.DeleteAsync(140, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -615,13 +615,13 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.CancelAsync(It.IsAny<int>()), Times.Never);
+            x => x.CancelAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
     public async Task Cancel_WhenSuccessful_ReturnsNoContent()
     {
-        _factory.TestAppointmentServiceMock.Setup(x => x.CancelAsync(140))
+        _factory.TestAppointmentServiceMock.Setup(x => x.CancelAsync(140, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await PutAsync("/api/TestAppointments/140/cancel");
@@ -629,7 +629,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.CancelAsync(140), Times.Once);
+            x => x.CancelAsync(140, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -647,7 +647,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             _ => Result.Conflict(detail)
         };
 
-        _factory.TestAppointmentServiceMock.Setup(x => x.CancelAsync(140))
+        _factory.TestAppointmentServiceMock.Setup(x => x.CancelAsync(140, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await PutAsync("/api/TestAppointments/140/cancel");
@@ -656,7 +656,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
             response, (HttpStatusCode)status, title, detail);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.CancelAsync(140), Times.Once);
+            x => x.CancelAsync(140, It.IsAny<CancellationToken>()), Times.Once);
     }
 
 
@@ -672,7 +672,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -684,7 +684,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -700,7 +700,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -726,7 +726,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         };
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.Success(expectedDto));
 
         var response = await GetAsync(
@@ -745,7 +745,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal("08:40", responseDto.AvailableDays[0].Slots[0].EndTime);
 
         _factory.TestAppointmentServiceMock.Verify(
-            x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()),
+            x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -763,7 +763,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         string queryString, string expectedDetail)
     {
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromValidationFailure(expectedDetail));
 
         var response = await GetAsync($"/api/TestAppointments/availability?{queryString}");
@@ -788,7 +788,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     public async Task GetAvailability_WhenApplicationNotFound_ReturnsNotFoundProblemDetails()
     {
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(999, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(999, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromNotFound("Local driving license application not found."));
 
         var response = await GetAsync(
@@ -805,7 +805,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     public async Task GetAvailability_WhenWorkflowIneligible_ReturnsConflictProblemDetails()
     {
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(10, 2, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(10, 2, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromConflict(
                 "The Written test cannot be scheduled yet. The next required test is Theory."));
 
@@ -823,7 +823,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     public async Task GetAvailability_WhenAppointmentAlreadyScheduled_ReturnsConflictProblemDetails()
     {
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromConflict(
                 "An appointment already exists for this test."));
 
@@ -841,7 +841,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
     public async Task GetAvailability_WhenServiceFails_Returns500ProblemDetails()
     {
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.FromFailure("Query execution timeout."));
 
         var response = await GetAsync(
@@ -865,7 +865,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         };
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.Success(emptyDto));
 
         var response = await GetAsync(
@@ -903,7 +903,7 @@ public sealed class TestAppointmentsControllerTests : IClassFixture<ApiWebApplic
         };
 
         _factory.TestAppointmentServiceMock
-            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(x => x.GetAvailabilityAsync(10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<AppointmentAvailabilityDto>.Success(sampleDto));
 
         var response = await GetAsync(

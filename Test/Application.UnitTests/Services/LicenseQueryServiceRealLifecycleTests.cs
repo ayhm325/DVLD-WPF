@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.LicenseDTO;
 using Application.Interfaces;
 using Application.Services;
@@ -42,9 +42,9 @@ public class LicenseQueryServiceRealLifecycleTests
             LicenseClassInfo = new LicenseClass { LicenseClassID = 3, ClassName = "Class 3", ClassFees = 50 }
         };
 
-        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(21)).ReturnsAsync(lic21);
-        _detainedRepo.Setup(x => x.IsLicenseDetainedAsync(21)).ReturnsAsync(false);
-        _licenseRepo.Setup(x => x.GetNewerLicenseForDriverAndClassAsync(13, 3, 21)).ReturnsAsync((License?)null);
+        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(21, It.IsAny<CancellationToken>())).ReturnsAsync(lic21);
+        _detainedRepo.Setup(x => x.IsLicenseDetainedAsync(21, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _licenseRepo.Setup(x => x.GetNewerLicenseForDriverAndClassAsync(13, 3, 21, It.IsAny<CancellationToken>())).ReturnsAsync((License?)null);
 
         var sut = CreateSut();
         var result = await sut.GetLicenseDetailsByIdAsync(21);
@@ -85,9 +85,9 @@ public class LicenseQueryServiceRealLifecycleTests
             IssueReason = IssueReason.Renew
         };
 
-        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(3)).ReturnsAsync(lic3);
-        _detainedRepo.Setup(x => x.IsLicenseDetainedAsync(3)).ReturnsAsync(false);
-        _licenseRepo.Setup(x => x.GetNewerLicenseForDriverAndClassAsync(3, 3, 3)).ReturnsAsync(lic4);
+        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(lic3);
+        _detainedRepo.Setup(x => x.IsLicenseDetainedAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _licenseRepo.Setup(x => x.GetNewerLicenseForDriverAndClassAsync(3, 3, 3, It.IsAny<CancellationToken>())).ReturnsAsync(lic4);
 
         var sut = CreateSut();
         var result = await sut.GetLicenseDetailsByIdAsync(3);
@@ -116,8 +116,8 @@ public class LicenseQueryServiceRealLifecycleTests
             LicenseClassInfo = new LicenseClass { LicenseClassID = 3, ClassName = "Class 3", ClassFees = 50 }
         };
 
-        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(99)).ReturnsAsync(lic);
-        _detainedRepo.Setup(x => x.IsLicenseDetainedAsync(99)).ReturnsAsync(true);
+        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(lic);
+        _detainedRepo.Setup(x => x.IsLicenseDetainedAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var sut = CreateSut();
         var result = await sut.GetLicenseDetailsByIdAsync(99);
@@ -144,7 +144,7 @@ public class LicenseQueryServiceRealLifecycleTests
             LicenseClassInfo = new LicenseClass { LicenseClassID = 3, ClassName = "Class 3", ClassFees = 50 }
         };
 
-        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(101)).ReturnsAsync(lic);
+        _licenseRepo.Setup(x => x.GetLicenseByIdAsync(101, It.IsAny<CancellationToken>())).ReturnsAsync(lic);
 
         var sut = CreateSut();
         var result = await sut.GetLicenseDetailsByIdAsync(101);

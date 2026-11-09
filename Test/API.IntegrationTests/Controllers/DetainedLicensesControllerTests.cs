@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.DetainedLicenseDTO;
 using DVLD.Contracts.DetainedLicense;
@@ -68,7 +68,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(50, item.ReleasedByUserId);
         Assert.Equal(60, item.ReleaseApplicationId);
 
-        _factory.DetainedLicenseServiceMock.Verify(x => x.GetAllAsync(), Times.Once);
+        _factory.DetainedLicenseServiceMock.Verify(x => x.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             IsReleased = false
         };
 
-        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(1))
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
         var response = await SendAsync(HttpMethod.Get, "/api/DetainedLicenses/1");
@@ -153,13 +153,13 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         Assert.Equal(100m, result.FineFees);
         Assert.False(result.IsReleased);
 
-        _factory.DetainedLicenseServiceMock.Verify(x => x.GetByIdAsync(1), Times.Once);
+        _factory.DetainedLicenseServiceMock.Verify(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetById_WhenServiceReturnsNullValue_ReturnsInternalServerError()
     {
-        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(7))
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(null!));
 
         await AssertProblemDetailsAsync(
@@ -172,7 +172,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     [Fact]
     public async Task GetById_WhenNotFound_ReturnsNotFound()
     {
-        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(7))
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.FromNotFound("not found"));
 
         await AssertProblemDetailsAsync(
@@ -198,7 +198,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         };
 
         _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetActiveDetainByLicenseIdAsync(20))
+            .Setup(x => x.GetActiveDetainByLicenseIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
         var response = await SendAsync(
@@ -215,14 +215,14 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         Assert.False(result.IsReleased);
 
         _factory.DetainedLicenseServiceMock.Verify(
-            x => x.GetActiveDetainByLicenseIdAsync(20), Times.Once);
+            x => x.GetActiveDetainByLicenseIdAsync(20, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetActiveByLicenseId_WhenNotFound_ReturnsNotFound()
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x => x.GetActiveDetainByLicenseIdAsync(20))
+            .Setup(x => x.GetActiveDetainByLicenseIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.FromNotFound("not found"));
 
         await AssertProblemDetailsAsync(
@@ -236,7 +236,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     public async Task IsDetained_ReturnsExpectedResult(bool detained)
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x => x.IsLicenseDetainedAsync(20)).ReturnsAsync(detained);
+            .Setup(x => x.IsLicenseDetainedAsync(20, It.IsAny<CancellationToken>())).ReturnsAsync(detained);
 
         var response = await SendAsync(
             HttpMethod.Get, "/api/DetainedLicenses/license/20/detained");
@@ -248,7 +248,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
         Assert.NotNull(result);
         Assert.Equal(detained, result.Detained);
         _factory.DetainedLicenseServiceMock.Verify(
-            x => x.IsLicenseDetainedAsync(20), Times.Once);
+            x => x.IsLicenseDetainedAsync(20, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -270,7 +270,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
 
         _factory.DetainedLicenseServiceMock
             .Setup(x => x.AddAsync(It.Is<CreateDetainedLicenseDto>(
-                d => d.LicenseID == 200 && d.FineFees == 250m)))
+                d => d.LicenseID == 200 && d.FineFees == 250m), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(dto));
 
         var response = await SendAsync(
@@ -288,14 +288,14 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
 
         _factory.DetainedLicenseServiceMock.Verify(
             x => x.AddAsync(It.Is<CreateDetainedLicenseDto>(
-                d => d.LicenseID == 200 && d.FineFees == 250m)), Times.Once);
+                d => d.LicenseID == 200 && d.FineFees == 250m), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Detain_WhenValidationFails_ReturnsBadRequest()
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x => x.AddAsync(It.IsAny<CreateDetainedLicenseDto>()))
+            .Setup(x => x.AddAsync(It.IsAny<CreateDetainedLicenseDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.FromValidationFailure("validation error"));
 
         await AssertProblemDetailsAsync(
@@ -308,7 +308,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     public async Task Detain_WhenServiceReturnsNullValue_ReturnsInternalServerError()
     {
         _factory.DetainedLicenseServiceMock
-            .Setup(x => x.AddAsync(It.IsAny<CreateDetainedLicenseDto>()))
+            .Setup(x => x.AddAsync(It.IsAny<CreateDetainedLicenseDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DetainedLicenseDto>.Success(null!));
 
         await AssertProblemDetailsAsync(
@@ -324,7 +324,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     {
         _factory.DetainedLicenseServiceMock
             .Setup(x => x.ReleaseAsync(It.Is<ReleaseDetainedLicenseDto>(
-                d => d.DetainID == 500)))
+                d => d.DetainID == 500), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await SendAsync(
@@ -335,7 +335,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
 
         _factory.DetainedLicenseServiceMock.Verify(
             x => x.ReleaseAsync(It.Is<ReleaseDetainedLicenseDto>(
-                d => d.DetainID == 500)), Times.Once);
+                d => d.DetainID == 500), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -349,7 +349,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
             : Result.Forbidden(detail);
 
         _factory.DetainedLicenseServiceMock
-            .Setup(x => x.ReleaseAsync(It.IsAny<ReleaseDetainedLicenseDto>()))
+            .Setup(x => x.ReleaseAsync(It.IsAny<ReleaseDetainedLicenseDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         await AssertProblemDetailsAsync(
@@ -359,7 +359,7 @@ public sealed class DetainedLicensesControllerTests : IClassFixture<ApiWebApplic
     }
 
     private void SetupGetAll(Result<List<DetainedLicenseDto>> result) =>
-        _factory.DetainedLicenseServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
+        _factory.DetainedLicenseServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
     private async Task<HttpResponseMessage> SendAsync(
         HttpMethod method, string url, object? content = null)

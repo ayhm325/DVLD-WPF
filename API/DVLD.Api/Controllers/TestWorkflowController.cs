@@ -18,7 +18,8 @@ public sealed class TestWorkflowController(
     [HttpGet("can-schedule")]
     public async Task<IActionResult> CanSchedule(
         [FromQuery] int localAppId,
-        [FromQuery] TestType testType)
+        [FromQuery] TestType testType,
+        CancellationToken cancellationToken = default)
     {
         if (!Enum.IsDefined(testType))
         {
@@ -29,7 +30,8 @@ public sealed class TestWorkflowController(
         var result =
             await service.CanScheduleTestAsync(
                 localAppId,
-                ToDomainTestType(testType));
+                ToDomainTestType(testType),
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -44,11 +46,13 @@ public sealed class TestWorkflowController(
 
     [HttpGet("next-test/{localAppId:int}")]
     public async Task<IActionResult> GetNextTest(
-        int localAppId)
+        int localAppId,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.GetNextTestTypeAsync(
-                localAppId);
+                localAppId,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -63,11 +67,13 @@ public sealed class TestWorkflowController(
 
     [HttpGet("can-take/{appointmentId:int}")]
     public async Task<IActionResult> CanTake(
-        int appointmentId)
+        int appointmentId,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.CanTakeTestAsync(
-                appointmentId);
+                appointmentId,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);

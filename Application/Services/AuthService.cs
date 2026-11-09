@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
@@ -22,7 +22,7 @@ public sealed class AuthService(
             nameof(jwtTokenService));
 
     public async Task<Result<LoginResponseDto>> LoginAsync(
-        LoginRequestDto dto)
+        LoginRequestDto dto, CancellationToken cancellationToken = default)
     {
         var validation =
             UserValidator.ValidateLogin(dto);
@@ -39,7 +39,7 @@ public sealed class AuthService(
 
         var user =
             await _userRepository
-                .GetUserByUsernameAsync(username);
+                .GetUserByUsernameAsync(username, cancellationToken);
 
         if (user is null ||
             !user.IsActive ||

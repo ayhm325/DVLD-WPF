@@ -153,7 +153,7 @@ public class LicenseRenewalServiceTests
         SetupTransaction(transaction);
 
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((License?)null);
 
         var sut = CreateSut();
@@ -180,11 +180,11 @@ public class LicenseRenewalServiceTests
         SetupSuccessfulRenewalApplication();
 
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
-            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(license =>
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -202,7 +202,7 @@ public class LicenseRenewalServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal(500, result.Value);
         _licenseRepository.Verify(
-            x => x.DeactivateLicenseAsync(10),
+            x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()),
             Times.Never);
         transaction.Verify(
             x => x.CommitAsync(It.IsAny<CancellationToken>()),
@@ -220,7 +220,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.ExpirationDate = Common.FakeJordanClock.DefaultJordanNow.AddDays(10);
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -247,10 +247,10 @@ public class LicenseRenewalServiceTests
 
         var oldLicense = CreateExpiredLicense();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
         _detainedLicenseRepository
-            .Setup(x => x.IsLicenseDetainedAsync(10))
+            .Setup(x => x.IsLicenseDetainedAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var sut = CreateSut();
@@ -275,13 +275,13 @@ public class LicenseRenewalServiceTests
 
         var oldLicense = CreateExpiredLicense();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
         _detainedLicenseRepository
-            .Setup(x => x.IsLicenseDetainedAsync(10))
+            .Setup(x => x.IsLicenseDetainedAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _licenseRepository
-            .Setup(x => x.GetNewerLicenseForDriverAndClassAsync(oldLicense.DriverID, oldLicense.LicenseClass, 10))
+            .Setup(x => x.GetNewerLicenseForDriverAndClassAsync(oldLicense.DriverID, oldLicense.LicenseClass, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new License { LicenseID = 15, IssueReason = IssueReason.Renew });
 
         var sut = CreateSut();
@@ -306,13 +306,13 @@ public class LicenseRenewalServiceTests
 
         var oldLicense = CreateExpiredLicense();
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
         _detainedLicenseRepository
-            .Setup(x => x.IsLicenseDetainedAsync(10))
+            .Setup(x => x.IsLicenseDetainedAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _licenseRepository
-            .Setup(x => x.GetNewerLicenseForDriverAndClassAsync(oldLicense.DriverID, oldLicense.LicenseClass, 10))
+            .Setup(x => x.GetNewerLicenseForDriverAndClassAsync(oldLicense.DriverID, oldLicense.LicenseClass, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new License { LicenseID = 18, IssueReason = IssueReason.ReplacementForDamaged });
 
         var sut = CreateSut();
@@ -338,7 +338,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.Driver = null!;
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -363,7 +363,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo = null!;
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -388,7 +388,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo.DefaultValidityLength = 0;
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -413,7 +413,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         oldLicense.LicenseClassInfo.ClassFees = -1;
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(oldLicense);
 
         var sut = CreateSut();
@@ -455,7 +455,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
         _licenseRepository.Verify(
-            x => x.DeactivateLicenseAsync(It.IsAny<int>()),
+            x => x.DeactivateLicenseAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -498,7 +498,7 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var sut = CreateSut();
@@ -511,7 +511,7 @@ public class LicenseRenewalServiceTests
             result.Error);
         VerifyRollback(transaction);
         _licenseRepository.Verify(
-            x => x.AddLicenseAsync(It.IsAny<License>()),
+            x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -527,11 +527,11 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
-            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(license =>
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -566,11 +566,11 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
-            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(license =>
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -610,11 +610,11 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
-            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(license =>
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -632,7 +632,7 @@ public class LicenseRenewalServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal(500, result.Value);
         _licenseRepository.Verify(
-            x => x.DeactivateLicenseAsync(10),
+            x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()),
             Times.Once);
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
@@ -642,7 +642,7 @@ public class LicenseRenewalServiceTests
                     license.PaidFees == oldLicense.LicenseClassInfo.ClassFees &&
                     license.IssueReason == IssueReason.Renew &&
                     license.CreatedByUserID == 1 &&
-                    license.Notes == null)),
+                    license.Notes == null), It.IsAny<CancellationToken>()),
             Times.Once);
         _applicationService.Verify(
             x => x.CompleteApplicationStateAsync(100, It.IsAny<CancellationToken>()),
@@ -667,11 +667,11 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
-            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(license =>
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -692,7 +692,7 @@ public class LicenseRenewalServiceTests
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
                 It.Is<License>(license =>
-                    license.Notes == "Renewal notes")),
+                    license.Notes == "Renewal notes"), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -708,11 +708,11 @@ public class LicenseRenewalServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulRenewalApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
-            .Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(license =>
+            .Setup(x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -733,7 +733,7 @@ public class LicenseRenewalServiceTests
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
                 It.Is<License>(license =>
-                    license.Notes == null)),
+                    license.Notes == null), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -748,7 +748,7 @@ public class LicenseRenewalServiceTests
         var oldLicense = CreateExpiredLicense();
         SetupOldLicense(oldLicense);
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException("Database failure."));
 
@@ -836,7 +836,7 @@ public class LicenseRenewalServiceTests
     }
 
     private void SetupOldLicense(License license) =>
-        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
 
     private void SetupSuccessfulRenewalApplication() =>
         _applicationService

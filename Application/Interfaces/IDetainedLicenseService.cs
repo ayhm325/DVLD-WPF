@@ -1,22 +1,25 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.DetainedLicenseDTO;
 
 namespace Application.Interfaces;
 
 public interface IDetainedLicenseService
 {
-    Task<Result<List<DetainedLicenseDto>>> GetAllAsync();
+    Task<Result<List<DetainedLicenseDto>>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task<Result<DetainedLicenseDto>> GetByIdAsync(int id);
+    Task<Result<DetainedLicenseDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     Task<Result<DetainedLicenseDto>> GetActiveDetainByLicenseIdAsync(
-        int licenseId);
+        int licenseId,
+        CancellationToken cancellationToken = default);
 
-    Task<bool> IsLicenseDetainedAsync(int licenseId);
+    Task<bool> IsLicenseDetainedAsync(int licenseId, CancellationToken cancellationToken = default);
 
     Task<Result<DetainedLicenseDto>> AddAsync(
-        CreateDetainedLicenseDto dto);
+        CreateDetainedLicenseDto dto,
+        CancellationToken cancellationToken = default);
 
     Task<Result> ReleaseAsync(
-        ReleaseDetainedLicenseDto dto);
+        ReleaseDetainedLicenseDto dto,
+        CancellationToken cancellationToken = default);
 }

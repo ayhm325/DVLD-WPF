@@ -7,34 +7,34 @@ namespace Application.Interfaces;
 public interface ILocalDrivingLicenseApplicationRepository
 {
     Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
-        LocalDrivingLicenseApplicationQueryRequest request);
+        LocalDrivingLicenseApplicationQueryRequest request, CancellationToken cancellationToken = default);
 
     Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
-        PaginationRequest request);
+        PaginationRequest request, CancellationToken cancellationToken = default);
 
-    Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id);
+    Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
-    Task<LocalDrivingLicenseApplication?> GetForUpdateAsync(int id);
+    Task<LocalDrivingLicenseApplication?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default);
 
     Task<List<LocalDrivingLicenseApplication>> GetByPersonIdAsync(
-        int personId);
+        int personId, CancellationToken cancellationToken = default);
 
     Task<List<LocalDrivingLicenseApplication>> GetByApplicationIdAsync(
-        int applicationId);
+        int applicationId, CancellationToken cancellationToken = default);
 
     Task<List<LocalDrivingLicenseApplication>> GetByLicenseClassIdAsync(
-        int licenseClassId);
+        int licenseClassId, CancellationToken cancellationToken = default);
 
     Task<Dictionary<int, int>> GetPassedTestCountsAsync(
-        IEnumerable<int> localApplicationIds);
+        IEnumerable<int> localApplicationIds, CancellationToken cancellationToken = default);
 
-    Task<int?> GetApplicationIdByLocalIdAsync(int localId);
+    Task<int?> GetApplicationIdByLocalIdAsync(int localId, CancellationToken cancellationToken = default);
 
     Task<int?> HasDuplicateApplicationAsync(
         int applicantPersonId,
-        int licenseClassId);
+        int licenseClassId, CancellationToken cancellationToken = default);
 
-    Task AddAsync(LocalDrivingLicenseApplication entity);
+    Task AddAsync(LocalDrivingLicenseApplication entity, CancellationToken cancellationToken = default);
 
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.InternationalLicenseDTO;
 using Application.DTOs.LicenseDTO;
 
@@ -6,26 +6,33 @@ namespace Application.Interfaces;
 
 public interface IInternationalService
 {
-    Task<Result<List<InternationalDto>>> GetAllAsync();
+    Task<Result<List<InternationalDto>>> GetAllAsync(CancellationToken cancellationToken = default);
 
     Task<Result<InternationalDto>> GetByIdAsync(
-    int internationalLicenseId);
+    int internationalLicenseId,
+    CancellationToken cancellationToken = default);
 
     Task<Result<List<InternationalDto>>> GetByDriverIdAsync(
-        int driverId);
+        int driverId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<InternationalDto>> GetByApplicationIdAsync(
-        int applicationId);
+        int applicationId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<List<InternationalDto>>> GetByLocalLicenseIdAsync(
-        int localLicenseId);
+        int localLicenseId,
+        CancellationToken cancellationToken = default);
 
     Task<bool> HasActiveInternationalLicenseAsync(
-        int driverId);
+        int driverId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<int>> IssueInternationalLicenseAsync(
-        int localLicenseId);
+        int localLicenseId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<DriverLicenseInfoDto>> GetLocalLicenseInfoAsync(
-        int licenseId);
+        int licenseId,
+        CancellationToken cancellationToken = default);
 }

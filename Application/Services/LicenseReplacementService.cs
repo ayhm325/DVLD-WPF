@@ -40,7 +40,8 @@ public sealed class LicenseReplacementService(
 
     public async Task<Result<int>> ReplaceLicenseAsync(
         int oldLicenseId,
-        string replacementReason)
+        string replacementReason,
+        CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateId(oldLicenseId);
         if (validation.IsFailure)
@@ -61,7 +62,8 @@ public sealed class LicenseReplacementService(
 
         var applicationTypeResult =
             await _applicationTypeService.GetApplicationTypeByIdAsync(
-                replacementInfo.Value.ApplicationTypeId);
+                replacementInfo.Value.ApplicationTypeId,
+                cancellationToken);
 
         if (applicationTypeResult.IsFailure)
             return PropagateFailure<int>(applicationTypeResult);
@@ -74,7 +76,7 @@ public sealed class LicenseReplacementService(
             async transaction =>
             {
                 var oldLicense =
-                    await _licenseRepository.GetForUpdateAsync(oldLicenseId);
+                    await _licenseRepository.GetForUpdateAsync(oldLicenseId, cancellationToken);
 
                 if (oldLicense is null)
                     return await RollbackAsync(
@@ -115,7 +117,8 @@ public sealed class LicenseReplacementService(
                             ApplicantPersonID = oldLicense.Driver.PersonID,
                             ApplicationTypeID =
                                 replacementInfo.Value.ApplicationTypeId
-                        });
+                        },
+                        cancellationToken);
 
                 if (applicationResult.IsFailure)
                     return await RollbackAsync(
@@ -151,7 +154,7 @@ public sealed class LicenseReplacementService(
                         Result<int>.FromValidationFailure(
                             licenseValidation.Error));
 
-                if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId))
+                if (!await _licenseRepository.DeactivateLicenseAsync(oldLicenseId, cancellationToken))
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromFailure(
@@ -160,9 +163,9 @@ public sealed class LicenseReplacementService(
                 var newLicense = LicenseMapper.ToEntity(createLicenseDto);
                 newLicense.CreatedByUserID = _currentUserService.UserId;
 
-                await _licenseRepository.AddLicenseAsync(newLicense);
+                await _licenseRepository.AddLicenseAsync(newLicense, cancellationToken);
 
-                if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0 ||
                     newLicense.LicenseID <= 0)
                     return await RollbackAsync(
                         transaction,
@@ -170,18 +173,19 @@ public sealed class LicenseReplacementService(
                             "Failed to save the replacement license."));
 
                 var completeResult =
-                    await _applicationService.CompleteApplicationStateAsync(applicationId);
+                    await _applicationService.CompleteApplicationStateAsync(applicationId, cancellationToken);
 
                 if (completeResult.IsFailure)
                     return await RollbackAsync(
                         transaction,
                         PropagateFailure<int>(completeResult));
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
 
                 return Result<int>.Success(newLicense.LicenseID);
             },
-            IsolationLevel.Serializable);
+            IsolationLevel.Serializable,
+            cancellationToken);
     }
 
     private bool IsAuthenticated() =>

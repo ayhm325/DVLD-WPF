@@ -221,14 +221,14 @@ graph TD
 
 #### [API-01] Propagate CancellationToken Across Endpoints
 - **Finding ID:** `API-01`
-- **Evidence Classification:** `CONFIRMED`
+- **Evidence Classification:** `CONFIRMED — REMEDIATED & VERIFIED`
 - **Priority:** `P2`
-- **Affected Components:** `API/DVLD.Api/Controllers/`, `Application/Services/`, `Infrastructure/Repositories/`.
-- **Description:** Controller actions, service methods, and repository queries omit `CancellationToken` parameters, allowing orphaned database queries to continue executing after client disconnection.
-- **Proposed Technical Remediation:** Pass `CancellationToken` from controller parameters through application services to all async EF Core queries across 5 domain bundles. See inventory in `docs/audits/api-01-cancellation-token-inventory.md`.
-- **Verification Requirements:** Unit and integration tests asserting cancellation propagates to EF Core queries.
-- **Current Status:** **`In Progress`** (Bundle 1: `Applications` & `ApplicationTypes` implemented and verified; remaining bundles pending).
-- **Implementation Authorization:** **AUTHORIZED (Phase 12.3 Scope).**
+- **Affected Components:** `API/DVLD.Api/Controllers/` (20 controllers), `API/DVLD.Api/BackgroundServices/LicenseExpirationBackgroundService.cs`, `Application/Interfaces/`, `Application/Services/` (26 services), `Infrastructure/Repositories/` (15 repositories).
+- **Description:** Controller actions, service methods, and repository queries omitted `CancellationToken` parameters, allowing orphaned database queries to continue executing after client disconnection.
+- **Technical Remediation Implemented:** Propagated `CancellationToken` from all 111 controller actions across 20 controllers through all async application service methods and repository queries to EF Core async operations (`ToListAsync`, `FirstOrDefaultAsync`, `SingleOrDefaultAsync`, `SingleAsync`, `AnyAsync`, `CountAsync`, `AddAsync`, `ToDictionaryAsync`, `ExecuteUpdateAsync`, `ExecuteSqlInterpolatedAsync`) and `UnitOfWork` transaction/save operations across all 5 domain bundles. Also propagated `stoppingToken` in `LicenseExpirationBackgroundService`. Full inventory recorded in `docs/audits/api-01-cancellation-token-inventory.md`.
+- **Verification Requirements:** Verified by 932 passing tests in `Application.UnitTests` (0 failed) and 460 passing controller and background service integration tests in `API.IntegrationTests` (0 failed).
+- **Current Status:** **`Verified`** (All 5 domain bundles 100% implemented and verified).
+- **Implementation Authorization:** **AUTHORIZED & COMPLETED (Phase 12.3 Scope).**
 
 #### [REST-01] Standardize Error Payloads on RFC 7807 ProblemDetails
 - **Finding ID:** `REST-01`

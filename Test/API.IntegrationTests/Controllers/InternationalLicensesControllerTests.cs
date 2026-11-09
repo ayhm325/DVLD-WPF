@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using Application.DTOs.InternationalLicenseDTO;
 using Application.DTOs.LicenseDTO;
@@ -33,7 +33,7 @@ public sealed class InternationalLicensesControllerTests
     public async Task GetAll_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateInternationalDto();
-        _factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
+        _factory.InternationalServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<InternationalDto>>.Success([dto]));
 
         var response = await _client.SendAsync(Auth("/api/InternationalLicenses"));
@@ -63,7 +63,7 @@ public sealed class InternationalLicensesControllerTests
             _ => throw new ArgumentOutOfRangeException(nameof(status))
         };
 
-        factory.InternationalServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
+        factory.InternationalServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         await AssertProblem(
             await Client(factory).GetAsync("/api/InternationalLicenses"),
@@ -75,7 +75,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetAllAsync())
+        factory.InternationalServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<InternationalDto>>.FromFailure("Database failure."));
 
         await AssertProblem(
@@ -89,7 +89,7 @@ public sealed class InternationalLicensesControllerTests
     public async Task GetById_WhenSuccessful_ReturnsMappedLicense()
     {
         var dto = CreateInternationalDto(10);
-        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10))
+        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.Success(dto));
 
         var response = await _client.SendAsync(Auth("/api/InternationalLicenses/10"));
@@ -112,7 +112,7 @@ public sealed class InternationalLicensesControllerTests
             ? Result<InternationalDto>.FromNotFound(detail)
             : Result<InternationalDto>.FromValidationFailure(detail);
 
-        factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(result);
+        factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         await AssertProblem(
             await Client(factory).GetAsync($"/api/InternationalLicenses/{id}"),
@@ -124,7 +124,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10))
+        factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.Success(null!));
 
         await AssertProblem(
@@ -138,7 +138,7 @@ public sealed class InternationalLicensesControllerTests
     public async Task GetByDriverId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateInternationalDto(20);
-        _factory.InternationalServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+        _factory.InternationalServiceMock.Setup(x => x.GetByDriverIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<InternationalDto>>.Success([dto]));
 
         var response = await _client.SendAsync(Auth("/api/InternationalLicenses/driver/5"));
@@ -154,7 +154,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetByDriverIdAsync(5))
+        factory.InternationalServiceMock.Setup(x => x.GetByDriverIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<InternationalDto>>.FromValidationFailure("Invalid driver ID."));
 
         await AssertProblem(
@@ -168,7 +168,7 @@ public sealed class InternationalLicensesControllerTests
     public async Task GetByApplicationId_WhenSuccessful_ReturnsMappedLicense()
     {
         var dto = CreateInternationalDto(applicationId: 30);
-        _factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
+        _factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.Success(dto));
 
         var response = await _client.SendAsync(
@@ -186,7 +186,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
+        factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.FromNotFound("International license not found."));
 
         await AssertProblem(
@@ -201,7 +201,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30))
+        factory.InternationalServiceMock.Setup(x => x.GetByApplicationIdAsync(30, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.Success(null!));
 
         await AssertProblem(
@@ -215,7 +215,7 @@ public sealed class InternationalLicensesControllerTests
     public async Task GetByLocalLicenseId_WhenSuccessful_ReturnsMappedLicenses()
     {
         var dto = CreateInternationalDto(issuedUsingLocalLicenseId: 40);
-        _factory.InternationalServiceMock.Setup(x => x.GetByLocalLicenseIdAsync(40))
+        _factory.InternationalServiceMock.Setup(x => x.GetByLocalLicenseIdAsync(40, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<InternationalDto>>.Success([dto]));
 
         var response = await _client.SendAsync(
@@ -233,7 +233,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetByLocalLicenseIdAsync(40))
+        factory.InternationalServiceMock.Setup(x => x.GetByLocalLicenseIdAsync(40, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<InternationalDto>>.FromConflict(
                 "International license conflict."));
 
@@ -249,7 +249,7 @@ public sealed class InternationalLicensesControllerTests
     {
         var dto = CreateDriverLicenseInfoDto();
 
-        _factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50))
+        _factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(dto));
 
         var response = await _client.SendAsync(
@@ -283,7 +283,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50))
+        factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.FromNotFound("License not found."));
 
         await AssertProblem(
@@ -298,7 +298,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50))
+        factory.InternationalServiceMock.Setup(x => x.GetLocalLicenseInfoAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverLicenseInfoDto>.Success(null!));
 
         await AssertProblem(
@@ -313,9 +313,9 @@ public sealed class InternationalLicensesControllerTests
     {
         var dto = CreateInternationalDto(100, issuedUsingLocalLicenseId: 25);
 
-        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
+        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(100));
-        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100))
+        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.Success(dto));
 
         var request = Auth("/api/InternationalLicenses", HttpMethod.Post);
@@ -329,9 +329,9 @@ public sealed class InternationalLicensesControllerTests
         AssertLicense(dto, result);
 
         _factory.InternationalServiceMock.Verify(
-            x => x.IssueInternationalLicenseAsync(25), Times.Once);
+            x => x.IssueInternationalLicenseAsync(25, It.IsAny<CancellationToken>()), Times.Once);
         _factory.InternationalServiceMock.Verify(
-            x => x.GetByIdAsync(100), Times.Once);
+            x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -339,7 +339,7 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
+        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromConflict(
                 "An international license already exists."));
 
@@ -353,7 +353,7 @@ public sealed class InternationalLicensesControllerTests
             "An international license already exists.");
 
         _factory.InternationalServiceMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<int>()), Times.Never);
+            x => x.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -361,9 +361,9 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
+        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(100));
-        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100))
+        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.Success(null!));
 
         var request = Auth("/api/InternationalLicenses", HttpMethod.Post);
@@ -381,9 +381,9 @@ public sealed class InternationalLicensesControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25))
+        _factory.InternationalServiceMock.Setup(x => x.IssueInternationalLicenseAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(100));
-        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100))
+        _factory.InternationalServiceMock.Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<InternationalDto>.FromFailure(
                 "Failed to retrieve international license."));
 

@@ -1,4 +1,6 @@
-﻿using Infrastructure;
+using Dvld.TestSupport;
+using Infrastructure;
+using System.Runtime.ExceptionServices;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -14,15 +16,13 @@ namespace API.IntegrationTests.Infrastructure;
 public sealed class SqlServerApiWebApplicationFactory
     : WebApplicationFactory<Program>
 {
-    private const string ConnectionEnvironmentVariable =
-        "DVLD_TEST_CONNECTION";
-
     private const int DatabaseLifecycleCommandTimeoutSeconds = 120;
 
     private static readonly SemaphoreSlim DatabaseLifecycleLock =
         new(2, 2);
 
-    private string? _databaseName;
+    private SqlServerTestTarget? _target;
+    private SqlServerTestDatabaseLease? _databaseLease;
 
     public string ConnectionString { get; private set; } = string.Empty;
 
@@ -67,10 +67,9 @@ public sealed class SqlServerApiWebApplicationFactory
                 "The test database has not been initialized.");
         }
 
-        var options =
-            new DbContextOptionsBuilder<DVLDDbContext>()
-                .UseSqlServer(ConnectionString)
-                .Options;
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(ConnectionString)
+            .Options;
 
         return new DVLDDbContext(options);
     }
@@ -81,8 +80,7 @@ public sealed class SqlServerApiWebApplicationFactory
         await DropDatabaseAsync();
     }
 
-    protected override void Dispose(
-        bool disposing)
+    protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
 
@@ -94,47 +92,55 @@ public sealed class SqlServerApiWebApplicationFactory
 
     private void InitializeDatabase()
     {
-        var baseConnectionString =
-            Environment.GetEnvironmentVariable(
-                ConnectionEnvironmentVariable);
+        _target = SqlServerTestEnvironment.ReadConfigurationFromEnvironment();
+        var databaseName = SqlServerTestEnvironment.BuildDatabaseName(
+            "DVLD_IntegrationTests_Api_");
 
-        if (string.IsNullOrWhiteSpace(baseConnectionString))
+        using (var adminConnection = new SqlConnection(
+                   _target.AdminConnectionString))
         {
-            throw new InvalidOperationException(
-                $"Environment variable " +
-                $"'{ConnectionEnvironmentVariable}' " +
-                "is required to run API integration tests.");
+            adminConnection.Open();
+            _databaseLease = SqlServerTestEnvironment.CreateDatabaseAsync(
+                    adminConnection,
+                    _target,
+                    databaseName)
+                .GetAwaiter()
+                .GetResult();
         }
 
-        var builder =
-            new SqlConnectionStringBuilder(
-                baseConnectionString);
+        ConnectionString = SqlServerTestEnvironment.BuildDatabaseConnectionString(
+            _target,
+            _databaseLease.DatabaseName);
 
-        _databaseName =
-            $"DVLD_IntegrationTests_Api_{Guid.NewGuid():N}";
-
-        builder.InitialCatalog =
-            _databaseName;
-
-        ConnectionString =
-            builder.ConnectionString;
-
-        var options =
-            new DbContextOptionsBuilder<DVLDDbContext>()
-                .UseSqlServer(
-                    ConnectionString,
-                    sqlOptions => sqlOptions.CommandTimeout(
-                        DatabaseLifecycleCommandTimeoutSeconds))
-                .Options;
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(
+                ConnectionString,
+                sqlOptions => sqlOptions.CommandTimeout(
+                    DatabaseLifecycleCommandTimeoutSeconds))
+            .Options;
 
         DatabaseLifecycleLock.Wait();
         try
         {
-            using var context =
-                new DVLDDbContext(options);
+            using var context = new DVLDDbContext(options);
+            context.Database.Migrate();
+        }
+        catch (Exception migrationException)
+        {
+            try
+            {
+                DropDatabase();
+            }
+            catch (Exception cleanupException)
+            {
+                SqlServerTestEnvironment.ReportCleanupFailureSafely(
+                    "API test database cleanup failed after migration failed. Primary exception type={0}; cleanup exception type={1}.",
+                    migrationException,
+                    cleanupException);
+            }
 
-            context.Database
-                .Migrate();
+            ExceptionDispatchInfo.Capture(migrationException).Throw();
+            throw;
         }
         finally
         {
@@ -144,83 +150,38 @@ public sealed class SqlServerApiWebApplicationFactory
 
     private async Task DropDatabaseAsync()
     {
-        var databaseName = Interlocked.Exchange(ref _databaseName, null);
-        if (string.IsNullOrWhiteSpace(databaseName))
+        var lease = Interlocked.Exchange(ref _databaseLease, null);
+        var target = _target;
+        if (lease is null || target is null)
         {
             return;
         }
 
         ClearDatabaseConnectionPool();
-
-        var builder =
-            new SqlConnectionStringBuilder(
-                ConnectionString)
-            {
-                InitialCatalog = "master"
-            };
-
         await DatabaseLifecycleLock.WaitAsync();
         try
         {
-            await using var connection =
-                new SqlConnection(
-                    builder.ConnectionString);
-
+            await using var connection = new SqlConnection(
+                target.AdminConnectionString);
             await connection.OpenAsync();
-
-            await using var command =
-                connection.CreateCommand();
-
-            command.CommandTimeout = DatabaseLifecycleCommandTimeoutSeconds;
-            command.CommandText = BuildDropDatabaseSql(databaseName);
-
-            await command.ExecuteNonQueryAsync();
-        }
-        finally
-        {
-            DatabaseLifecycleLock.Release();
-        }
-    }
-
-    private void DropDatabase()
-    {
-        var databaseName = Interlocked.Exchange(ref _databaseName, null);
-        if (string.IsNullOrWhiteSpace(databaseName))
-        {
-            return;
-        }
-
-        ClearDatabaseConnectionPool();
-
-        var builder =
-            new SqlConnectionStringBuilder(
-                ConnectionString)
+            var dropped = await SqlServerTestEnvironment.DropOwnedDatabaseAsync(
+                connection,
+                target,
+                lease);
+            if (!dropped)
             {
-                InitialCatalog = "master"
-            };
-
-        DatabaseLifecycleLock.Wait();
-        try
-        {
-            using var connection =
-                new SqlConnection(
-                    builder.ConnectionString);
-
-            connection.Open();
-
-            using var command =
-                connection.CreateCommand();
-
-            command.CommandTimeout = DatabaseLifecycleCommandTimeoutSeconds;
-            command.CommandText = BuildDropDatabaseSql(databaseName);
-
-            command.ExecuteNonQuery();
+                throw new InvalidOperationException(
+                    "The API test database was not dropped because ownership could not be confirmed.");
+            }
         }
         finally
         {
             DatabaseLifecycleLock.Release();
         }
     }
+
+    private void DropDatabase() =>
+        DropDatabaseAsync().GetAwaiter().GetResult();
 
     private void ClearDatabaseConnectionPool()
     {
@@ -232,15 +193,4 @@ public sealed class SqlServerApiWebApplicationFactory
         using var pooledConnection = new SqlConnection(ConnectionString);
         SqlConnection.ClearPool(pooledConnection);
     }
-
-    private static string BuildDropDatabaseSql(string databaseName) =>
-        $"""
-        IF DB_ID(N'{databaseName}') IS NOT NULL
-        BEGIN
-            ALTER DATABASE [{databaseName}]
-            SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-
-            DROP DATABASE [{databaseName}];
-        END
-        """;
 }

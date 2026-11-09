@@ -72,15 +72,15 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         _applicationService.Setup(x => x.CompleteApplicationStateAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
-        _licenseRepository.Setup(x => x.DeactivateLicenseAsync(It.IsAny<int>())).ReturnsAsync(true);
-        _licenseRepository.Setup(x => x.ActivateLicenseAsync(It.IsAny<int>(), It.IsAny<DateOnly>())).ReturnsAsync(true);
-        _licenseRepository.Setup(x => x.AddLicenseAsync(It.IsAny<License>()))
-            .Callback<License>(l => l.LicenseID = 101)
+        _licenseRepository.Setup(x => x.DeactivateLicenseAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _licenseRepository.Setup(x => x.ActivateLicenseAsync(It.IsAny<int>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _licenseRepository.Setup(x => x.AddLicenseAsync(It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((l, _) => l.LicenseID = 101)
             .Returns(Task.CompletedTask);
-        _detainedRepository.Setup(x => x.AddAsync(It.IsAny<DetainedLicense>()))
-            .Callback<DetainedLicense>(d => d.DetainID = 5)
+        _detainedRepository.Setup(x => x.AddAsync(It.IsAny<DetainedLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<DetainedLicense, CancellationToken>((d, _) => d.DetainID = 5)
             .Returns(Task.CompletedTask);
-        _detainedRepository.Setup(x => x.IsLicenseDetainedAsync(It.IsAny<int>())).ReturnsAsync(false);
+        _detainedRepository.Setup(x => x.IsLicenseDetainedAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
     }
 
     private LicenseRenewalService CreateRenewalService() =>
@@ -127,8 +127,8 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         _clock.SetupGet(x => x.Now).Returns(jordanNow);
 
         var license = CreateStandardLicense(isActive: true);
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
-        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
 
         // 1. Renewal must be prohibited (early renewal not allowed)
         var renewalService = CreateRenewalService();
@@ -143,7 +143,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         Assert.True(replacementResult.IsSuccess, $"Replacement should succeed for {scenarioDescription}");
 
         // 3. Detention must be allowed
-        _detainedRepository.Setup(x => x.GetByIdAsync(It.IsAny<int>()))
+        _detainedRepository.Setup(x => x.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DetainedLicense { DetainID = 1, LicenseID = 10, FineFees = 50m });
         var detainedService = CreateDetainedService();
         var detainResult = await detainedService.AddAsync(new CreateDetainedLicenseDto { LicenseID = 10, FineFees = 50m });
@@ -161,8 +161,8 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         _clock.SetupGet(x => x.Now).Returns(jordanNow);
 
         var license = CreateStandardLicense(isActive: true);
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
-        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
 
         // 1. Renewal must be allowed
         var renewalService = CreateRenewalService();
@@ -195,8 +195,8 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         _clock.SetupGet(x => x.Now).Returns(jordanNow);
 
         var license = CreateStandardLicense(isActive: true);
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
-        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
 
         // Renewal is allowed because it is Nov 4 in Jordan
         var renewalService = CreateRenewalService();
@@ -233,10 +233,10 @@ public sealed class LicenseLifecycleTimeBoundaryTests
             IsReleased = false
         };
 
-        _detainedRepository.Setup(x => x.GetByIdForUpdateAsync(5)).ReturnsAsync(detention);
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
-        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
-        _licenseRepository.Setup(x => x.HasAnotherActiveLicenseAsync(20, 3, 10)).ReturnsAsync(false);
+        _detainedRepository.Setup(x => x.GetByIdForUpdateAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(detention);
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.HasAnotherActiveLicenseAsync(20, 3, 10, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var detainedService = CreateDetainedService();
         var result = await detainedService.ReleaseAsync(new ReleaseDetainedLicenseDto { DetainID = 5 });
@@ -246,7 +246,7 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         Assert.Equal(jordanNow, detention.ReleaseDate);
 
         // Must reactivate since license has not expired
-        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10, DateOnly.FromDateTime(jordanNow)), Times.Once);
+        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10, DateOnly.FromDateTime(jordanNow), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -266,10 +266,10 @@ public sealed class LicenseLifecycleTimeBoundaryTests
             IsReleased = false
         };
 
-        _detainedRepository.Setup(x => x.GetByIdForUpdateAsync(5)).ReturnsAsync(detention);
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10)).ReturnsAsync(license);
-        _licenseRepository.Setup(x => x.GetForUpdateAsync(10)).ReturnsAsync(license);
-        _licenseRepository.Setup(x => x.HasAnotherActiveLicenseAsync(20, 3, 10)).ReturnsAsync(false);
+        _detainedRepository.Setup(x => x.GetByIdForUpdateAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(detention);
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>())).ReturnsAsync(license);
+        _licenseRepository.Setup(x => x.HasAnotherActiveLicenseAsync(20, 3, 10, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
         var detainedService = CreateDetainedService();
         var result = await detainedService.ReleaseAsync(new ReleaseDetainedLicenseDto { DetainID = 5 });
@@ -279,6 +279,6 @@ public sealed class LicenseLifecycleTimeBoundaryTests
         Assert.Equal(jordanNow, detention.ReleaseDate);
 
         // Must NOT reactivate since license expired while detained
-        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10, DateOnly.FromDateTime(jordanNow)), Times.Never);
+        _licenseRepository.Verify(x => x.ActivateLicenseAsync(10, DateOnly.FromDateTime(jordanNow), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

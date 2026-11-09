@@ -22,24 +22,24 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
             .Include(x => x.LicenseClass);
 
     public Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
-        PaginationRequest request)
+        PaginationRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (request is LocalDrivingLicenseApplicationQueryRequest queryRequest)
         {
-            return GetAllAsync(queryRequest);
+            return GetAllAsync(queryRequest, cancellationToken);
         }
 
         return GetAllAsync(new LocalDrivingLicenseApplicationQueryRequest
         {
             PageNumber = request.PageNumber,
             PageSize = request.PageSize
-        });
+        }, cancellationToken);
     }
 
     public async Task<PagedResult<LocalDrivingLicenseApplication>> GetAllAsync(
-        LocalDrivingLicenseApplicationQueryRequest request)
+        LocalDrivingLicenseApplicationQueryRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -112,13 +112,13 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
             }
         }
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
             .OrderBy(x => x.LocalDrivingLicenseApplicationID)
             .Skip(request.Skip)
             .Take(request.PageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<LocalDrivingLicenseApplication>
         {
@@ -129,56 +129,56 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
         };
     }
 
-    public Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id) =>
+    public Task<LocalDrivingLicenseApplication?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<LocalDrivingLicenseApplication?>(null)
             : Query()
                 .FirstOrDefaultAsync(
-                    x => x.LocalDrivingLicenseApplicationID == id);
+                    x => x.LocalDrivingLicenseApplicationID == id, cancellationToken);
 
-    public Task<LocalDrivingLicenseApplication?> GetForUpdateAsync(int id) =>
+    public Task<LocalDrivingLicenseApplication?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<LocalDrivingLicenseApplication?>(null)
             : _context.LocalDrivingLicenseApplications
                 .Include(x => x.Application)
                 .FirstOrDefaultAsync(
-                    x => x.LocalDrivingLicenseApplicationID == id);
+                    x => x.LocalDrivingLicenseApplicationID == id, cancellationToken);
 
     public Task<List<LocalDrivingLicenseApplication>> GetByPersonIdAsync(
-        int personId)
+        int personId, CancellationToken cancellationToken = default)
     {
         if (personId <= 0)
             return Task.FromResult<List<LocalDrivingLicenseApplication>>([]);
 
         return Query()
             .Where(x => x.Application.ApplicantPersonID == personId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     public Task<List<LocalDrivingLicenseApplication>> GetByApplicationIdAsync(
-        int applicationId)
+        int applicationId, CancellationToken cancellationToken = default)
     {
         if (applicationId <= 0)
             return Task.FromResult<List<LocalDrivingLicenseApplication>>([]);
 
         return Query()
             .Where(x => x.ApplicationID == applicationId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     public Task<List<LocalDrivingLicenseApplication>> GetByLicenseClassIdAsync(
-        int licenseClassId)
+        int licenseClassId, CancellationToken cancellationToken = default)
     {
         if (licenseClassId <= 0)
             return Task.FromResult<List<LocalDrivingLicenseApplication>>([]);
 
         return Query()
             .Where(x => x.LicenseClassID == licenseClassId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Dictionary<int, int>> GetPassedTestCountsAsync(
-        IEnumerable<int> localApplicationIds)
+        IEnumerable<int> localApplicationIds, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(localApplicationIds);
 
@@ -206,10 +206,11 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
             })
             .ToDictionaryAsync(
                 x => x.LocalApplicationId,
-                x => x.Count);
+                x => x.Count,
+                cancellationToken);
     }
 
-    public async Task<int?> GetApplicationIdByLocalIdAsync(int localId)
+    public async Task<int?> GetApplicationIdByLocalIdAsync(int localId, CancellationToken cancellationToken = default)
     {
         if (localId <= 0)
             return null;
@@ -219,12 +220,12 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
             .Where(x =>
                 x.LocalDrivingLicenseApplicationID == localId)
             .Select(x => (int?)x.ApplicationID)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<int?> HasDuplicateApplicationAsync(
         int applicantPersonId,
-        int licenseClassId)
+        int licenseClassId, CancellationToken cancellationToken = default)
     {
         if (applicantPersonId <= 0 || licenseClassId <= 0)
             return null;
@@ -237,19 +238,19 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
                 (x.Application.ApplicationStatus == AppStatus.New ||
                  x.Application.ApplicationStatus == AppStatus.Completed))
             .Select(x => (int?)x.ApplicationID)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task AddAsync(LocalDrivingLicenseApplication entity)
+    public Task AddAsync(LocalDrivingLicenseApplication entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
         return _context.LocalDrivingLicenseApplications
-            .AddAsync(entity)
+            .AddAsync(entity, cancellationToken)
             .AsTask();
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return false;
@@ -257,7 +258,7 @@ public sealed class LocalDrivingLicenseApplicationRepository : ILocalDrivingLice
         var existing =
             await _context.LocalDrivingLicenseApplications
                 .FirstOrDefaultAsync(
-                    x => x.LocalDrivingLicenseApplicationID == id);
+                    x => x.LocalDrivingLicenseApplicationID == id, cancellationToken);
 
         if (existing is null)
             return false;

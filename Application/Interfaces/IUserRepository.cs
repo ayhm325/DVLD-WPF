@@ -5,27 +5,45 @@ namespace Application.Interfaces;
 
 public interface IUserRepository
 {
-    Task<User?> GetUserByUserIdAsync(int id);
+    Task<User?> GetUserByUserIdAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 
-    Task<User?> GetUserProfileAsync(int userId);
+    Task<User?> GetUserProfileAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
 
-    Task<UserDetailsDto?> GetUserDetailsByIdAsync(int userId);
+    Task<UserDetailsDto?> GetUserDetailsByIdAsync(
+        int userId,
+        CancellationToken cancellationToken = default);
 
-    Task<User?> GetUserByPersonIdAsync(int personId);
+    Task<User?> GetUserByPersonIdAsync(
+        int personId,
+        CancellationToken cancellationToken = default);
 
-    Task<User?> GetUserByUsernameAsync(string username);
+    Task<User?> GetUserByUsernameAsync(
+        string username,
+        CancellationToken cancellationToken = default);
 
-    Task<List<User>> GetAllUsersAsync();
+    Task<List<User>> GetAllUsersAsync(
+        CancellationToken cancellationToken = default);
 
-    Task<User?> GetUserForUpdateAsync(int id);
+    Task<User?> GetUserForUpdateAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 
-    Task<bool> IsUsernameTakenAsync(string username);
+    Task<bool> IsUsernameTakenAsync(
+        string username,
+        CancellationToken cancellationToken = default);
 
     Task<bool> IsUsernameTakenForAnotherUserAsync(
         string username,
-        int userId);
+        int userId,
+        CancellationToken cancellationToken = default);
 
-    Task<bool> IsUserExistsByPersonIdAsync(int personId);
+    Task<bool> IsUserExistsByPersonIdAsync(
+        int personId,
+        CancellationToken cancellationToken = default);
 
     Task<bool> IsUserActiveAsync(
         int userId,
@@ -34,7 +52,9 @@ public interface IUserRepository
     Task<int> GetActiveAdminCountAsync(
         CancellationToken cancellationToken = default);
 
-    Task AddUserAsync(User user);
+    Task AddUserAsync(
+        User user,
+        CancellationToken cancellationToken = default);
 
     void DeleteUser(User user);
 }

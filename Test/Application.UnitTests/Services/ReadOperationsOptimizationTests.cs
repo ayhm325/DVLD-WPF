@@ -25,7 +25,7 @@ public sealed class ReadOperationsOptimizationTests
         _clock.SetupGet(x => x.Today).Returns(new DateOnly(2026, 11, 4));
         _detainedRepository.Setup(x => x.GetActiveDetainedLicenseIdsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<int>());
-        _detainedRepository.Setup(x => x.IsLicenseDetainedAsync(It.IsAny<int>()))
+        _detainedRepository.Setup(x => x.IsLicenseDetainedAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
     }
 
@@ -54,7 +54,7 @@ public sealed class ReadOperationsOptimizationTests
             ExpirationDate = new DateTime(2026, 11, 3) // Expired on 2026-11-03 Jordan cutoff
         };
 
-        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(101))
+        _licenseRepository.Setup(x => x.GetLicenseByIdAsync(101, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expiredLicense);
 
         var service = CreateQueryService();
@@ -69,7 +69,7 @@ public sealed class ReadOperationsOptimizationTests
         Assert.False(result.Value.IsActive, "Expired license must NEVER be presented as active.");
 
         // Crucial verification: GET request must NEVER execute write/deactivate operations
-        _licenseRepository.Verify(x => x.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>()), Times.Never);
+        _licenseRepository.Verify(x => x.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public sealed class ReadOperationsOptimizationTests
             }
         };
 
-        _licenseRepository.Setup(x => x.GetAllLicensesAsync())
+        _licenseRepository.Setup(x => x.GetAllLicensesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(licenses);
 
         var service = CreateQueryService();
@@ -119,7 +119,7 @@ public sealed class ReadOperationsOptimizationTests
         Assert.True(expiredDto.IsExpired, "Expired license must dynamically report IsExpired = true.");
 
         // Pure read: no DeactivateExpiredLicensesAsync call
-        _licenseRepository.Verify(x => x.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>()), Times.Never);
+        _licenseRepository.Verify(x => x.DeactivateExpiredLicensesAsync(It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

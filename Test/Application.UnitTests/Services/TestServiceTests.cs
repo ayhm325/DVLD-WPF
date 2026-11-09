@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.TestAppointmentDTO;
 using Application.DTOs.TestDTO;
 using Application.Interfaces;
@@ -114,15 +114,15 @@ public sealed class TestServiceTests
     private void SetupValidAddFlow()
     {
         _appointmentRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateAppointment());
 
         _repository
-            .Setup(x => x.IsTestAlreadyTakenAsync(100))
+            .Setup(x => x.IsTestAlreadyTakenAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _workflowService
-            .Setup(x => x.CanTakeTestAsync(100))
+            .Setup(x => x.CanTakeTestAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _unitOfWork
@@ -147,7 +147,7 @@ public sealed class TestServiceTests
     [Fact]
     public async Task GetByIdAsync_WhenNotFound_ReturnsNotFound()
     {
-        _repository.Setup(x => x.GetByIdAsync(1)).ReturnsAsync((Test?)null);
+        _repository.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Test?)null);
 
         var result = await CreateService().GetByIdAsync(1);
 
@@ -160,7 +160,7 @@ public sealed class TestServiceTests
     public async Task GetByIdAsync_WhenFound_ReturnsMappedTest()
     {
         _repository
-            .Setup(x => x.GetByIdAsync(5))
+            .Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateTest(5, 50, true, "  passed  "));
 
         var result = await CreateService().GetByIdAsync(5);
@@ -181,7 +181,7 @@ public sealed class TestServiceTests
     [Fact]
     public async Task GetAllAsync_WhenRepositoryReturnsTests_ReturnsMappedList()
     {
-        _repository.Setup(x => x.GetAllAsync()).ReturnsAsync(
+        _repository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(
         [
             CreateTest(1, 100, true, "Passed"),
             CreateTest(2, 101, false, "Failed")
@@ -200,7 +200,7 @@ public sealed class TestServiceTests
     [Fact]
     public async Task GetAllAsync_WhenRepositoryReturnsEmpty_ReturnsEmptyList()
     {
-        _repository.Setup(x => x.GetAllAsync()).ReturnsAsync([]);
+        _repository.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
         var result = await CreateService().GetAllAsync();
 
@@ -227,7 +227,7 @@ public sealed class TestServiceTests
     public async Task GetByTestAppointmentIdAsync_WhenValid_ReturnsMappedTests()
     {
         _repository
-            .Setup(x => x.GetByTestAppointmentIdAsync(100))
+            .Setup(x => x.GetByTestAppointmentIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateTest(1, 100),
@@ -259,7 +259,7 @@ public sealed class TestServiceTests
     public async Task GetByUserIdAsync_WhenValid_ReturnsMappedTests()
     {
         _repository
-            .Setup(x => x.GetByUserIdAsync(10))
+            .Setup(x => x.GetByUserIdAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
             [
                 CreateTest(1, 100),
@@ -315,8 +315,8 @@ public sealed class TestServiceTests
         Test? captured = null;
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
-            .Callback<Test>(x =>
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
+            .Callback<Test, CancellationToken>((x, _) =>
             {
                 captured = x;
                 x.TestID = 700;
@@ -375,7 +375,7 @@ public sealed class TestServiceTests
     public async Task AddAsync_WhenAppointmentNotFound_ReturnsNotFoundAndRollsBack()
     {
         _appointmentRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestAppointment?)null);
 
         var result = await CreateService().AddAsync(ValidDto());
@@ -393,7 +393,7 @@ public sealed class TestServiceTests
     public async Task AddAsync_WhenAppointmentLocked_ReturnsConflictAndRollsBack()
     {
         _appointmentRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateAppointment(locked: true));
 
         var result = await CreateService().AddAsync(ValidDto());
@@ -411,11 +411,11 @@ public sealed class TestServiceTests
     public async Task AddAsync_WhenResultAlreadyExists_ReturnsConflictAndRollsBack()
     {
         _appointmentRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateAppointment());
 
         _repository
-            .Setup(x => x.IsTestAlreadyTakenAsync(100))
+            .Setup(x => x.IsTestAlreadyTakenAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await CreateService().AddAsync(ValidDto());
@@ -431,7 +431,7 @@ public sealed class TestServiceTests
             Times.Once);
 
         _workflowService.Verify(
-            x => x.CanTakeTestAsync(100),
+            x => x.CanTakeTestAsync(100, It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -443,15 +443,15 @@ public sealed class TestServiceTests
     public async Task AddAsync_WhenWorkflowRejects_ReturnsWorkflowFailure()
     {
         _appointmentRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateAppointment());
 
         _repository
-            .Setup(x => x.IsTestAlreadyTakenAsync(100))
+            .Setup(x => x.IsTestAlreadyTakenAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _workflowService
-            .Setup(x => x.CanTakeTestAsync(100))
+            .Setup(x => x.CanTakeTestAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Conflict("Test cannot be taken."));
 
         var result = await CreateService().AddAsync(ValidDto());
@@ -461,7 +461,7 @@ public sealed class TestServiceTests
         Assert.Equal("Test cannot be taken.", result.Error);
 
         _repository.Verify(
-            x => x.AddAsync(It.IsAny<Test>()),
+            x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _transaction.Verify(
@@ -482,12 +482,12 @@ public sealed class TestServiceTests
         Test? captured = null;
 
         _appointmentRepository
-            .Setup(x => x.GetForUpdateAsync(100))
+            .Setup(x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
-            .Callback<Test>(x =>
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
+            .Callback<Test, CancellationToken>((x, _) =>
             {
                 captured = x;
                 x.TestID = 700;
@@ -527,8 +527,8 @@ public sealed class TestServiceTests
         Test? captured = null;
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
-            .Callback<Test>(x =>
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
+            .Callback<Test, CancellationToken>((x, _) =>
             {
                 captured = x;
                 x.TestID = 701;
@@ -544,7 +544,7 @@ public sealed class TestServiceTests
         Assert.False(captured!.TestResult);
 
         _appointmentRepository.Verify(
-            x => x.GetForUpdateAsync(100),
+            x => x.GetForUpdateAsync(100, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -558,8 +558,8 @@ public sealed class TestServiceTests
         SetupValidAddFlow();
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
-            .Callback<Test>(x => x.TestID = 700)
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
+            .Callback<Test, CancellationToken>((x, _) => x.TestID = 700)
             .Returns(Task.CompletedTask);
 
         var service = CreateService();
@@ -593,7 +593,7 @@ public sealed class TestServiceTests
         SetupValidAddFlow();
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var result = await CreateService().AddAsync(ValidDto());
@@ -617,7 +617,7 @@ public sealed class TestServiceTests
         SetupValidAddFlow();
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -646,8 +646,8 @@ public sealed class TestServiceTests
         Test? captured = null;
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
-            .Callback<Test>(x =>
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
+            .Callback<Test, CancellationToken>((x, _) =>
             {
                 captured = x;
                 x.TestID = 702;
@@ -670,8 +670,8 @@ public sealed class TestServiceTests
         Test? captured = null;
 
         _repository
-            .Setup(x => x.AddAsync(It.IsAny<Test>()))
-            .Callback<Test>(x =>
+            .Setup(x => x.AddAsync(It.IsAny<Test>(), It.IsAny<CancellationToken>()))
+            .Callback<Test, CancellationToken>((x, _) =>
             {
                 captured = x;
                 x.TestID = 703;

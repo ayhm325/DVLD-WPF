@@ -19,36 +19,39 @@ public sealed class DetainedLicenseRepository(
             .Include(d => d.ReleasedByUser)
             .Include(d => d.ReleaseApplication);
 
-    public Task<List<DetainedLicense>> GetAllAsync() =>
+    public Task<List<DetainedLicense>> GetAllAsync(CancellationToken cancellationToken = default) =>
         Query()
             .AsNoTracking()
             .OrderByDescending(d => d.DetainDate)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-    public Task<DetainedLicense?> GetByIdAsync(int id) =>
+    public Task<DetainedLicense?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<DetainedLicense?>(null)
             : Query()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.DetainID == id);
+                .FirstOrDefaultAsync(d => d.DetainID == id, cancellationToken);
 
     public Task<DetainedLicense?> GetActiveDetainByLicenseIdAsync(
-        int licenseId) =>
+        int licenseId,
+        CancellationToken cancellationToken = default) =>
         licenseId <= 0
             ? Task.FromResult<DetainedLicense?>(null)
             : Query()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d =>
                     d.LicenseID == licenseId &&
-                    !d.IsReleased);
+                    !d.IsReleased,
+                    cancellationToken);
 
-    public Task<bool> IsLicenseDetainedAsync(int licenseId) =>
+    public Task<bool> IsLicenseDetainedAsync(int licenseId, CancellationToken cancellationToken = default) =>
         licenseId > 0
             ? _context.DetainedLicenses
                 .AsNoTracking()
                 .AnyAsync(d =>
                     d.LicenseID == licenseId &&
-                    !d.IsReleased)
+                    !d.IsReleased,
+                    cancellationToken)
             : Task.FromResult(false);
 
     public async Task<HashSet<int>> GetActiveDetainedLicenseIdsAsync(
@@ -75,14 +78,14 @@ public sealed class DetainedLicenseRepository(
         return activeIds.ToHashSet();
     }
 
-    public async Task AddAsync(DetainedLicense entity)
+    public async Task AddAsync(DetainedLicense entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        await _context.DetainedLicenses.AddAsync(entity);
+        await _context.DetainedLicenses.AddAsync(entity, cancellationToken);
     }
 
-    public Task<DetainedLicense?> GetByIdForUpdateAsync(int id)
+    public Task<DetainedLicense?> GetByIdForUpdateAsync(int id, CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return Task.FromResult<DetainedLicense?>(null);
@@ -99,6 +102,6 @@ public sealed class DetainedLicenseRepository(
             .Include(d => d.CreatedByUser)
             .Include(d => d.ReleasedByUser)
             .Include(d => d.ReleaseApplication)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

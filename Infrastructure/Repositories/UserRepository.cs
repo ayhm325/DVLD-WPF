@@ -24,24 +24,32 @@ public sealed class UserRepository : IUserRepository
             .Include(u => u.Person);
     }
 
-    public Task<User?> GetUserByUserIdAsync(int id)
+    public Task<User?> GetUserByUserIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         return Query()
             .FirstOrDefaultAsync(
-                u => u.UserId == id);
+                u => u.UserId == id,
+                cancellationToken);
     }
 
-    public Task<User?> GetUserProfileAsync(int userId)
+    public Task<User?> GetUserProfileAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
     {
         return _context.Users
             .AsNoTracking()
             .Include(u => u.Person)
             .ThenInclude(p => p.Country)
             .FirstOrDefaultAsync(
-                u => u.UserId == userId);
+                u => u.UserId == userId,
+                cancellationToken);
     }
 
-    public async Task<UserDetailsDto?> GetUserDetailsByIdAsync(int userId)
+    public async Task<UserDetailsDto?> GetUserDetailsByIdAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
     {
         return await _context.Users
             .AsNoTracking()
@@ -75,66 +83,81 @@ public sealed class UserRepository : IUserRepository
 
                 ImagePath = u.Person.ImagePath
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task<User?> GetUserByPersonIdAsync(int personId)
+    public Task<User?> GetUserByPersonIdAsync(
+        int personId,
+        CancellationToken cancellationToken = default)
     {
         return Query()
             .FirstOrDefaultAsync(
-                u => u.PersonId == personId);
+                u => u.PersonId == personId,
+                cancellationToken);
     }
 
     public Task<User?> GetUserByUsernameAsync(
-        string username)
+        string username,
+        CancellationToken cancellationToken = default)
     {
         return Query()
             .FirstOrDefaultAsync(
-                u => u.UserName == username);
+                u => u.UserName == username,
+                cancellationToken);
     }
 
-    public Task<List<User>> GetAllUsersAsync()
+    public Task<List<User>> GetAllUsersAsync(
+        CancellationToken cancellationToken = default)
     {
         return Query()
             .OrderBy(u => u.UserId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public Task<User?> GetUserForUpdateAsync(int id)
+    public Task<User?> GetUserForUpdateAsync(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         return _context.Users
             .FirstOrDefaultAsync(
-                u => u.UserId == id);
+                u => u.UserId == id,
+                cancellationToken);
     }
 
     public Task<bool> IsUsernameTakenAsync(
-        string username)
+        string username,
+        CancellationToken cancellationToken = default)
     {
         return _context.Users
             .AsNoTracking()
             .AnyAsync(
-                u => u.UserName == username);
+                u => u.UserName == username,
+                cancellationToken);
     }
 
     public Task<bool> IsUsernameTakenForAnotherUserAsync(
         string username,
-        int userId)
+        int userId,
+        CancellationToken cancellationToken = default)
     {
         return _context.Users
             .AsNoTracking()
             .AnyAsync(
                 u =>
                     u.UserName == username &&
-                    u.UserId != userId);
+                    u.UserId != userId,
+                cancellationToken);
     }
 
     public Task<bool> IsUserExistsByPersonIdAsync(
-        int personId)
+        int personId,
+        CancellationToken cancellationToken = default)
     {
         return _context.Users
             .AsNoTracking()
             .AnyAsync(
-                u => u.PersonId == personId);
+                u => u.PersonId == personId,
+                cancellationToken);
     }
 
     public Task<bool> IsUserActiveAsync(
@@ -161,11 +184,13 @@ public sealed class UserRepository : IUserRepository
                 cancellationToken);
     }
 
-    public async Task AddUserAsync(User user)
+    public async Task AddUserAsync(
+        User user,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        await _context.Users.AddAsync(user);
+        await _context.Users.AddAsync(user, cancellationToken);
     }
 
     public void DeleteUser(User user)

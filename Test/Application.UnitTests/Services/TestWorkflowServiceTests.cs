@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.Interfaces;
 using Application.Services;
 using Domain.Entities;
@@ -46,7 +46,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetApplicationStatusAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -58,7 +58,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppStatus?)null);
 
         // Act
@@ -75,7 +75,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetPassedTestTypeIdsAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -90,7 +90,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(status);
 
         // Act
@@ -107,7 +107,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetPassedTestTypeIdsAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -119,12 +119,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<int>());
 
         // Act
@@ -138,7 +138,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock.Verify(
             repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId),
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -150,12 +150,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {
@@ -179,12 +179,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {
@@ -209,12 +209,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {
@@ -261,7 +261,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetApplicationStatusAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -288,7 +288,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetApplicationStatusAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -300,7 +300,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppStatus?)null);
 
         // Act
@@ -328,7 +328,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(status);
 
         // Act
@@ -353,12 +353,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {
@@ -388,12 +388,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<int>());
 
         // Act
@@ -415,12 +415,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {
@@ -467,7 +467,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetByIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -479,7 +479,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestAppointment?)null);
 
         // Act
@@ -506,7 +506,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         // Act
@@ -523,7 +523,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetApplicationStatusAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -539,7 +539,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         // Act
@@ -556,7 +556,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetApplicationStatusAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -569,7 +569,7 @@ public class TestWorkflowServiceTests
 
         var sut = new TestWorkflowService(_repositoryMock.Object, clockMock.Object);
         var appointment = CreateAppointment(appointmentId, appointmentDate: apptDate);
-        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await sut.CanTakeTestAsync(appointmentId);
 
@@ -588,10 +588,10 @@ public class TestWorkflowServiceTests
 
         var sut = new TestWorkflowService(_repositoryMock.Object, clockMock.Object);
         var appointment = CreateAppointment(appointmentId, appointmentDate: apptDate);
-        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
-        _repositoryMock.Setup(r => r.GetApplicationStatusAsync(appointment.LocalDrivingLicenseApplicationID))
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetApplicationStatusAsync(appointment.LocalDrivingLicenseApplicationID, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
-        _repositoryMock.Setup(r => r.GetPassedTestTypeIdsAsync(appointment.LocalDrivingLicenseApplicationID))
+        _repositoryMock.Setup(r => r.GetPassedTestTypeIdsAsync(appointment.LocalDrivingLicenseApplicationID, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<int>());
 
         var result = await sut.CanTakeTestAsync(appointmentId);
@@ -609,10 +609,10 @@ public class TestWorkflowServiceTests
 
         var sut = new TestWorkflowService(_repositoryMock.Object, clockMock.Object);
         var appointment = CreateAppointment(appointmentId, appointmentDate: apptDate);
-        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
-        _repositoryMock.Setup(r => r.GetApplicationStatusAsync(appointment.LocalDrivingLicenseApplicationID))
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetApplicationStatusAsync(appointment.LocalDrivingLicenseApplicationID, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
-        _repositoryMock.Setup(r => r.GetPassedTestTypeIdsAsync(appointment.LocalDrivingLicenseApplicationID))
+        _repositoryMock.Setup(r => r.GetPassedTestTypeIdsAsync(appointment.LocalDrivingLicenseApplicationID, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<int>());
 
         var result = await sut.CanTakeTestAsync(appointmentId);
@@ -625,7 +625,7 @@ public class TestWorkflowServiceTests
     {
         const int appointmentId = 10;
         var appointment = CreateAppointment(appointmentId, status: AppointmentStatus.Cancelled);
-        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await _sut.CanTakeTestAsync(appointmentId);
 
@@ -639,7 +639,7 @@ public class TestWorkflowServiceTests
     {
         const int appointmentId = 10;
         var appointment = CreateAppointment(appointmentId, status: AppointmentStatus.NoShow);
-        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await _sut.CanTakeTestAsync(appointmentId);
 
@@ -653,7 +653,7 @@ public class TestWorkflowServiceTests
     {
         const int appointmentId = 10;
         var appointment = CreateAppointment(appointmentId, status: AppointmentStatus.Completed);
-        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId)).ReturnsAsync(appointment);
+        _repositoryMock.Setup(r => r.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>())).ReturnsAsync(appointment);
 
         var result = await _sut.CanTakeTestAsync(appointmentId);
 
@@ -676,12 +676,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppStatus?)null);
 
         // Act
@@ -713,12 +713,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(status);
 
         // Act
@@ -748,12 +748,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         // Act
@@ -770,7 +770,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetPassedTestTypeIdsAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -789,17 +789,17 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {
@@ -833,17 +833,17 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetByIdAsync(appointmentId))
+                repository.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(appointment);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HashSet<int>());
 
         // Act
@@ -875,7 +875,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetApplicationStatusAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -887,7 +887,7 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((AppStatus?)null);
 
         // Act
@@ -900,7 +900,7 @@ public class TestWorkflowServiceTests
         _repositoryMock.Verify(
             repository =>
                 repository.GetPassedTestTypeIdsAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -912,12 +912,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {
@@ -941,12 +941,12 @@ public class TestWorkflowServiceTests
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetApplicationStatusAsync(localAppId))
+                repository.GetApplicationStatusAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(AppStatus.New);
 
         _repositoryMock
             .Setup(repository =>
-                repository.GetPassedTestTypeIdsAsync(localAppId))
+                repository.GetPassedTestTypeIdsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new HashSet<int>
                 {

@@ -95,7 +95,7 @@ public sealed class InternationalServiceTests
     private void SetupLicenseQuerySuccess(LicenseDto? license = null)
     {
         _licenseQueryService
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseDto>.Success(
                     license ?? CreateValidLocalLicense()));
@@ -103,7 +103,7 @@ public sealed class InternationalServiceTests
     private void SetupLicenseQueryForLocalInfo(LicenseDto license)
     {
         _licenseQueryService
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseDto>.Success(license));
     }
@@ -143,10 +143,10 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupLicenseQuerySuccess();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -156,8 +156,8 @@ public sealed class InternationalServiceTests
                 Result<int>.Success(700));
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<InternationalLicense>()))
-            .Callback<InternationalLicense>(entity =>
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<InternationalLicense, CancellationToken>((entity, _) =>
             {
                 entity.InternationalLicenseID = 900;
             })
@@ -201,7 +201,7 @@ public sealed class InternationalServiceTests
             }
         };
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(entities);
         var result = await CreateService().GetAllAsync();
         Assert.True(result.IsSuccess);
@@ -218,7 +218,7 @@ public sealed class InternationalServiceTests
     public async Task GetAllAsync_WhenRepositoryReturnsEmptyList_ReturnsEmptySuccess()
     {
         _repository
-            .Setup(x => x.GetAllAsync())
+            .Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<InternationalLicense>());
         var result = await CreateService().GetAllAsync();
         Assert.True(result.IsSuccess);
@@ -240,14 +240,14 @@ public sealed class InternationalServiceTests
             "Invalid international license ID.",
             result.Error);
         _repository.Verify(
-            x => x.GetByIdAsync(It.IsAny<int>()),
+            x => x.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task GetByIdAsync_WhenLicenseDoesNotExist_ReturnsNotFound()
     {
         _repository
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((InternationalLicense?)null);
         var result =
             await CreateService().GetByIdAsync(100);
@@ -272,7 +272,7 @@ public sealed class InternationalServiceTests
             CreatedByUserID = 50
         };
         _repository
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entity);
         var result =
             await CreateService().GetByIdAsync(100);
@@ -298,14 +298,14 @@ public sealed class InternationalServiceTests
             "Invalid driver ID.",
             result.Error);
         _repository.Verify(
-            x => x.GetByDriverIdAsync(It.IsAny<int>()),
+            x => x.GetByDriverIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task GetByDriverIdAsync_WhenRepositoryReturnsEntities_ReturnsMappedDtos()
     {
         _repository
-            .Setup(x => x.GetByDriverIdAsync(20))
+            .Setup(x => x.GetByDriverIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new List<InternationalLicense>
                 {
@@ -330,7 +330,7 @@ public sealed class InternationalServiceTests
     public async Task GetByDriverIdAsync_WhenRepositoryReturnsEmptyList_ReturnsEmptySuccess()
     {
         _repository
-            .Setup(x => x.GetByDriverIdAsync(20))
+            .Setup(x => x.GetByDriverIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new List<InternationalLicense>());
         var result =
@@ -353,14 +353,14 @@ public sealed class InternationalServiceTests
             "Invalid application ID.",
             result.Error);
         _repository.Verify(
-            x => x.GetByApplicationIdAsync(It.IsAny<int>()),
+            x => x.GetByApplicationIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task GetByApplicationIdAsync_WhenLicenseDoesNotExist_ReturnsNotFound()
     {
         _repository
-            .Setup(x => x.GetByApplicationIdAsync(100))
+            .Setup(x => x.GetByApplicationIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync((InternationalLicense?)null);
         var result =
             await CreateService().GetByApplicationIdAsync(100);
@@ -374,7 +374,7 @@ public sealed class InternationalServiceTests
     public async Task GetByApplicationIdAsync_WhenLicenseExists_ReturnsSuccess()
     {
         _repository
-            .Setup(x => x.GetByApplicationIdAsync(100))
+            .Setup(x => x.GetByApplicationIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new InternationalLicense
                 {
@@ -405,14 +405,14 @@ public sealed class InternationalServiceTests
             "Invalid local license ID.",
             result.Error);
         _repository.Verify(
-            x => x.GetByLocalLicenseIdAsync(It.IsAny<int>()),
+            x => x.GetByLocalLicenseIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task GetByLocalLicenseIdAsync_WhenRepositoryReturnsEntities_ReturnsSuccess()
     {
         _repository
-            .Setup(x => x.GetByLocalLicenseIdAsync(100))
+            .Setup(x => x.GetByLocalLicenseIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 new List<InternationalLicense>
                 {
@@ -438,12 +438,12 @@ public sealed class InternationalServiceTests
     public async Task HasActiveInternationalLicenseAsync_DelegatesToRepository()
     {
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var result = await CreateService().HasActiveInternationalLicenseAsync(20);
         Assert.True(result);
         _repository.Verify(
-            x => x.HasActiveInternationalLicenseAsync(20, _clock.Today),
+            x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()),
             Times.Once);
     }
     // =========================================================
@@ -555,7 +555,7 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupRollback();
         _licenseQueryService
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseDto>.FromNotFound("Local license not found."));
         var result = await CreateService().IssueInternationalLicenseAsync(100);
@@ -583,7 +583,7 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupRollback();
         _licenseQueryService
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseDto>.Success(null!));
         var result = await CreateService().IssueInternationalLicenseAsync(100);
@@ -708,7 +708,7 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
@@ -719,7 +719,7 @@ public sealed class InternationalServiceTests
             "An international license already exists for this local license.",
             result.Error);
         _repository.Verify(
-            x => x.HasActiveInternationalLicenseAsync(It.IsAny<int>(), It.IsAny<DateOnly>()),
+            x => x.HasActiveInternationalLicenseAsync(It.IsAny<int>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -731,10 +731,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var result = await CreateService().IssueInternationalLicenseAsync(100);
         Assert.True(result.IsFailure);
@@ -754,10 +754,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -776,7 +776,7 @@ public sealed class InternationalServiceTests
             result.Error);
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<InternationalLicense>()),
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _unitOfWork.Verify(
             x => x.SaveChangesAsync(
@@ -792,10 +792,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -813,7 +813,7 @@ public sealed class InternationalServiceTests
             result.Error);
         _repository.Verify(
             x => x.AddAsync(
-                It.IsAny<InternationalLicense>()),
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -825,10 +825,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -838,8 +838,8 @@ public sealed class InternationalServiceTests
                 Result<int>.Success(700));
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<InternationalLicense>()))
-            .Callback<InternationalLicense>(x =>
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<InternationalLicense, CancellationToken>((x, _) =>
                 x.InternationalLicenseID = 900)
             .Returns(Task.CompletedTask);
         _unitOfWork
@@ -869,10 +869,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -882,8 +882,8 @@ public sealed class InternationalServiceTests
                 Result<int>.Success(700));
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<InternationalLicense>()))
-            .Callback<InternationalLicense>(x =>
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<InternationalLicense, CancellationToken>((x, _) =>
                 x.InternationalLicenseID = 900)
             .Returns(Task.CompletedTask);
         _unitOfWork
@@ -917,10 +917,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -930,7 +930,7 @@ public sealed class InternationalServiceTests
                 Result<int>.Success(700));
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<InternationalLicense>()))
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -954,10 +954,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -968,8 +968,8 @@ public sealed class InternationalServiceTests
         InternationalLicense? createdEntity = null;
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<InternationalLicense>()))
-            .Callback<InternationalLicense>(x =>
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<InternationalLicense, CancellationToken>((x, _) =>
             {
                 createdEntity = x;
                 x.InternationalLicenseID = 900;
@@ -1013,10 +1013,10 @@ public sealed class InternationalServiceTests
         SetupLicenseQuerySuccess();
         SetupRollback();
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _repository
-            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today))
+            .Setup(x => x.HasActiveInternationalLicenseAsync(20, _clock.Today, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _applicationService
             .Setup(x => x.AddNewApplicationAsync(
@@ -1026,8 +1026,8 @@ public sealed class InternationalServiceTests
                 Result<int>.Success(700));
         _repository
             .Setup(x => x.AddAsync(
-                It.IsAny<InternationalLicense>()))
-            .Callback<InternationalLicense>(x =>
+                It.IsAny<InternationalLicense>(), It.IsAny<CancellationToken>()))
+            .Callback<InternationalLicense, CancellationToken>((x, _) =>
                 x.InternationalLicenseID = 900)
             .Returns(Task.CompletedTask);
         _unitOfWork
@@ -1070,7 +1070,7 @@ public sealed class InternationalServiceTests
                     license.DriverID == 20 &&
                     license.IssuedUsingLocalLicenseID == 100 &&
                     license.IsActive &&
-                    license.CreatedByUserID == 10)),
+                    license.CreatedByUserID == 10), It.IsAny<CancellationToken>()),
             Times.Once);
         _unitOfWork.Verify(
             x => x.SaveChangesAsync(
@@ -1096,7 +1096,7 @@ public sealed class InternationalServiceTests
         SetupApplicationTypeSuccess();
         SetupRollback();
         _licenseQueryService
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database failure."));
@@ -1128,14 +1128,14 @@ public sealed class InternationalServiceTests
             result.Error);
         _licenseQueryService.Verify(
             x => x.GetByIdAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
     public async Task GetLocalLicenseInfoAsync_WhenLicenseQueryFails_PropagatesFailure()
     {
         _licenseQueryService
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseDto>.FromNotFound("Local license not found."));
         var result = await CreateService().GetLocalLicenseInfoAsync(100);
@@ -1151,7 +1151,7 @@ public sealed class InternationalServiceTests
     public async Task GetLocalLicenseInfoAsync_WhenLicenseValueIsNull_ReturnsNotFound()
     {
         _licenseQueryService
-            .Setup(x => x.GetByIdAsync(100))
+            .Setup(x => x.GetByIdAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LicenseDto>.Success(null!));
         var result = await CreateService().GetLocalLicenseInfoAsync(100);
@@ -1225,7 +1225,7 @@ public sealed class InternationalServiceTests
             result.Error);
         _repository.Verify(
             x => x.ExistsByLocalLicenseAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -1234,7 +1234,7 @@ public sealed class InternationalServiceTests
         var license = CreateValidLocalLicense();
         SetupLicenseQueryForLocalInfo(license);
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsFailure);
@@ -1251,7 +1251,7 @@ public sealed class InternationalServiceTests
         var license = CreateValidLocalLicense();
         SetupLicenseQueryForLocalInfo(license);
         _repository
-            .Setup(x => x.ExistsByLocalLicenseAsync(100))
+            .Setup(x => x.ExistsByLocalLicenseAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var result = await CreateService().GetLocalLicenseInfoAsync(100);
         Assert.True(result.IsSuccess);

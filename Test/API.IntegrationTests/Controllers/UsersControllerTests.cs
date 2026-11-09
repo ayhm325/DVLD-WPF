@@ -21,7 +21,7 @@ public sealed class UsersControllerTests
         var response = await client.GetAsync("/api/Users");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.GetAllUsersAsync(), Times.Never);
+        factory.UserServiceMock.Verify(x => x.GetAllUsersAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public sealed class UsersControllerTests
         var response = await client.GetAsync("/api/Users");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.GetAllUsersAsync(), Times.Never);
+        factory.UserServiceMock.Verify(x => x.GetAllUsersAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class UsersControllerTests
             new() { UserId = 2, PersonId = 102, UserName = "staff", IsActive = true, FullName = "Staff User", Role = UserRole.Staff }
         };
 
-        factory.UserServiceMock.Setup(x => x.GetAllUsersAsync())
+        factory.UserServiceMock.Setup(x => x.GetAllUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<UserDto>>.Success(users));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -71,7 +71,7 @@ public sealed class UsersControllerTests
         Assert.True(body[1].IsActive);
         Assert.Equal("Staff User", body[1].PersonFullName);
 
-        factory.UserServiceMock.Verify(x => x.GetAllUsersAsync(), Times.Once);
+        factory.UserServiceMock.Verify(x => x.GetAllUsersAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.GetAllUsersAsync())
+        factory.UserServiceMock.Setup(x => x.GetAllUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<UserDto>>.FromFailure("Unexpected user retrieval failure."));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -106,7 +106,7 @@ public sealed class UsersControllerTests
             Role = UserRole.Staff
         };
 
-        factory.UserServiceMock.Setup(x => x.GetUserByIdAsync(25))
+        factory.UserServiceMock.Setup(x => x.GetUserByIdAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<UserDto>.Success(user));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -122,7 +122,7 @@ public sealed class UsersControllerTests
         Assert.Equal(user.IsActive, body.IsActive);
         Assert.Equal(user.FullName, body.PersonFullName);
 
-        factory.UserServiceMock.Verify(x => x.GetUserByIdAsync(25), Times.Once);
+        factory.UserServiceMock.Verify(x => x.GetUserByIdAsync(25, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -137,7 +137,7 @@ public sealed class UsersControllerTests
             ? Result<UserDto>.FromNotFound(detail)
             : Result<UserDto>.FromValidationFailure(detail);
 
-        factory.UserServiceMock.Setup(x => x.GetUserByIdAsync(id))
+        factory.UserServiceMock.Setup(x => x.GetUserByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -161,7 +161,7 @@ public sealed class UsersControllerTests
             Role = UserRole.Staff
         };
 
-        factory.UserServiceMock.Setup(x => x.GetUserByPersonIdAsync(300))
+        factory.UserServiceMock.Setup(x => x.GetUserByPersonIdAsync(300, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<UserDto>.Success(user));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -177,7 +177,7 @@ public sealed class UsersControllerTests
         Assert.Equal(user.IsActive, body.IsActive);
         Assert.Equal(user.FullName, body.PersonFullName);
 
-        factory.UserServiceMock.Verify(x => x.GetUserByPersonIdAsync(300), Times.Once);
+        factory.UserServiceMock.Verify(x => x.GetUserByPersonIdAsync(300, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public sealed class UsersControllerTests
         await using var factory = new ApiWebApplicationFactory();
         const string detail = "No user exists for this person.";
 
-        factory.UserServiceMock.Setup(x => x.GetUserByPersonIdAsync(500))
+        factory.UserServiceMock.Setup(x => x.GetUserByPersonIdAsync(500, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<UserDto>.FromNotFound(detail));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -195,7 +195,7 @@ public sealed class UsersControllerTests
         await AssertProblemDetailsAsync(
             response, HttpStatusCode.NotFound, "Resource not found", detail);
 
-        factory.UserServiceMock.Verify(x => x.GetUserByPersonIdAsync(500), Times.Once);
+        factory.UserServiceMock.Verify(x => x.GetUserByPersonIdAsync(500, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public sealed class UsersControllerTests
             Role = UserRole.Staff
         };
 
-        factory.UserServiceMock.Setup(x => x.GetUserByUsernameAsync("ayhm"))
+        factory.UserServiceMock.Setup(x => x.GetUserByUsernameAsync("ayhm", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<UserDto>.Success(user));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -229,7 +229,7 @@ public sealed class UsersControllerTests
         Assert.Equal(user.FullName, body.PersonFullName);
 
         factory.UserServiceMock.Verify(
-            x => x.GetUserByUsernameAsync("ayhm"), Times.Once);
+            x => x.GetUserByUsernameAsync("ayhm", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public sealed class UsersControllerTests
         await using var factory = new ApiWebApplicationFactory();
         const string detail = "User was not found.";
 
-        factory.UserServiceMock.Setup(x => x.GetUserByUsernameAsync("missing"))
+        factory.UserServiceMock.Setup(x => x.GetUserByUsernameAsync("missing", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<UserDto>.FromNotFound(detail));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -253,7 +253,7 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(77));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -276,7 +276,7 @@ public sealed class UsersControllerTests
                 d.PersonId == 700 &&
                 d.UserName == "newuser" &&
                 d.Password == "Password123" &&
-                d.IsActive)), Times.Once);
+                d.IsActive), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -291,7 +291,7 @@ public sealed class UsersControllerTests
             ? Result<int>.FromValidationFailure(detail)
             : Result<int>.FromConflict(detail);
 
-        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -314,7 +314,7 @@ public sealed class UsersControllerTests
         await using var factory = new ApiWebApplicationFactory();
         const string expectedDetail = "Username is already in use.";
 
-        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromConflict(expectedDetail));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -340,7 +340,7 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Simulated database failure."));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -362,7 +362,7 @@ public sealed class UsersControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.UserServiceMock.Setup(x =>
-                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>()))
+                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -381,7 +381,7 @@ public sealed class UsersControllerTests
             It.Is<UpdateUserDto>(d =>
                 d.PersonId == 555 &&
                 d.UserName == "updateduser" &&
-                !d.IsActive)), Times.Once);
+                !d.IsActive), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -397,7 +397,7 @@ public sealed class UsersControllerTests
             : Result.Conflict(detail);
 
         factory.UserServiceMock.Setup(x =>
-                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>()))
+                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -418,14 +418,14 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.DeleteUserAsync(66))
+        factory.UserServiceMock.Setup(x => x.DeleteUserAsync(66, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         using var client = CreateClient(factory, 10, "Admin");
         var response = await client.DeleteAsync("/api/Users/66");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.DeleteUserAsync(66), Times.Once);
+        factory.UserServiceMock.Verify(x => x.DeleteUserAsync(66, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -440,7 +440,7 @@ public sealed class UsersControllerTests
             ? Result.NotFound(detail)
             : Result.Forbidden(detail);
 
-        factory.UserServiceMock.Setup(x => x.DeleteUserAsync(66))
+        factory.UserServiceMock.Setup(x => x.DeleteUserAsync(66, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -449,7 +449,7 @@ public sealed class UsersControllerTests
         await AssertProblemDetailsAsync(
             response, (HttpStatusCode)status, title, detail);
 
-        factory.UserServiceMock.Verify(x => x.DeleteUserAsync(66), Times.Once);
+        factory.UserServiceMock.Verify(x => x.DeleteUserAsync(66, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -468,7 +468,7 @@ public sealed class UsersControllerTests
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.AddUserAsync(It.IsAny<CreateUserDto>()), Times.Never);
+        factory.UserServiceMock.Verify(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -485,7 +485,7 @@ public sealed class UsersControllerTests
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>()), Times.Never);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -497,7 +497,7 @@ public sealed class UsersControllerTests
         var response = await client.DeleteAsync("/api/Users/66");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.DeleteUserAsync(It.IsAny<int>()), Times.Never);
+        factory.UserServiceMock.Verify(x => x.DeleteUserAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -505,7 +505,7 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(88));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -528,7 +528,7 @@ public sealed class UsersControllerTests
                 d.UserName == "adminuser" &&
                 d.Password == "Password123" &&
                 d.IsActive &&
-                d.Role == UserRole.Admin)), Times.Once);
+                d.Role == UserRole.Admin), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -536,7 +536,7 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(91));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -558,7 +558,7 @@ public sealed class UsersControllerTests
                 d.PersonId == 701 &&
                 d.UserName == "new_staff" &&
                 d.IsActive &&
-                d.Role == UserRole.Staff)), Times.Once);
+                d.Role == UserRole.Staff), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -580,7 +580,7 @@ public sealed class UsersControllerTests
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.AddUserAsync(It.IsAny<CreateUserDto>()), Times.Never);
+        factory.UserServiceMock.Verify(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -588,7 +588,7 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>()))
+        factory.UserServiceMock.Setup(x => x.AddUserAsync(It.IsAny<CreateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(92));
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -603,7 +603,7 @@ public sealed class UsersControllerTests
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         factory.UserServiceMock.Verify(x => x.AddUserAsync(
-            It.Is<CreateUserDto>(d => d.Role == UserRole.Staff)), Times.Once);
+            It.Is<CreateUserDto>(d => d.Role == UserRole.Staff), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -612,7 +612,7 @@ public sealed class UsersControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.UserServiceMock.Setup(x =>
-                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>()))
+                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -628,7 +628,7 @@ public sealed class UsersControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         factory.UserServiceMock.Verify(x => x.UpdateUserAsync(
             55,
-            It.Is<UpdateUserDto>(d => d.Role == UserRole.Admin)), Times.Once);
+            It.Is<UpdateUserDto>(d => d.Role == UserRole.Admin), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -637,7 +637,7 @@ public sealed class UsersControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.UserServiceMock.Setup(x =>
-                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>()))
+                x.UpdateUserAsync(55, It.IsAny<UpdateUserDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         using var client = CreateClient(factory, 10, "Admin");
@@ -652,7 +652,7 @@ public sealed class UsersControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         factory.UserServiceMock.Verify(x => x.UpdateUserAsync(
             55,
-            It.Is<UpdateUserDto>(d => d.Role == null)), Times.Once);
+            It.Is<UpdateUserDto>(d => d.Role == null), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -670,7 +670,7 @@ public sealed class UsersControllerTests
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>()), Times.Never);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -688,7 +688,7 @@ public sealed class UsersControllerTests
         });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>()), Times.Never);
+        factory.UserServiceMock.Verify(x => x.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UpdateUserDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -700,7 +700,7 @@ public sealed class UsersControllerTests
         var response = await client.GetAsync("/api/Users/2/details");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        factory.UserServiceMock.Verify(x => x.GetUserDetailsAsync(It.IsAny<int>()), Times.Never);
+        factory.UserServiceMock.Verify(x => x.GetUserDetailsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -708,7 +708,7 @@ public sealed class UsersControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.UserServiceMock.Setup(x => x.GetAllUsersAsync())
+        factory.UserServiceMock.Setup(x => x.GetAllUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<UserDto>>.Success(
             [
                 new() { UserId = 2, PersonId = 2, UserName = "ayhm", IsActive = true, FullName = "Ayhm Admin", Role = UserRole.Admin }

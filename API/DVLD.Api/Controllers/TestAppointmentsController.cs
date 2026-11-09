@@ -14,10 +14,10 @@ public sealed class TestAppointmentsController(
     ITestAppointmentService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetAllAsync();
+            await service.GetAllAsync(cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -29,10 +29,10 @@ public sealed class TestAppointmentsController(
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetByIdAsync(id);
+            await service.GetByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -43,12 +43,14 @@ public sealed class TestAppointmentsController(
 
     [HttpGet("local-application/{localAppId:int}")]
     public async Task<IActionResult> GetByLocalApplication(
-        int localAppId)
+        int localAppId,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service
                 .GetByLocalDrivingLicenseApplicationIdAsync(
-                    localAppId);
+                    localAppId,
+                    cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -61,10 +63,11 @@ public sealed class TestAppointmentsController(
 
     [HttpGet("test-type/{testType:int}")]
     public async Task<IActionResult> GetByTestType(
-        int testType)
+        int testType,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetByTestTypeIdAsync(testType);
+            await service.GetByTestTypeIdAsync(testType, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -78,12 +81,14 @@ public sealed class TestAppointmentsController(
     [HttpGet("schedule-preparation/{localAppId:int}/{testTypeId:int}")]
     public async Task<IActionResult> GetSchedulePreparation(
         int localAppId,
-        int testTypeId)
+        int testTypeId,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.GetSchedulePreparationAsync(
                 localAppId,
-                testTypeId);
+                testTypeId,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -95,13 +100,15 @@ public sealed class TestAppointmentsController(
     [HttpPost("schedule")]
     public async Task<IActionResult> Schedule(
         [FromBody]
-        ScheduleTestRequest request)
+        ScheduleTestRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.ScheduleAsync(
                 request.LocalDrivingLicenseApplicationId,
                 request.TestTypeId,
-                Application.Validators.TestAppointmentValidator.ToFacilityTime(request.AppointmentDate));
+                Application.Validators.TestAppointmentValidator.ToFacilityTime(request.AppointmentDate),
+                cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -110,10 +117,11 @@ public sealed class TestAppointmentsController(
 
     [HttpGet("created-by/{userId:int}")]
     public async Task<IActionResult> GetByCreatedUser(
-        int userId)
+        int userId,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.GetByCreatedUserIdAsync(userId);
+            await service.GetByCreatedUserIdAsync(userId, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -126,11 +134,13 @@ public sealed class TestAppointmentsController(
 
     [HttpGet("{appointmentId:int}/schedule-info")]
     public async Task<IActionResult> GetScheduleInfo(
-        int appointmentId)
+        int appointmentId,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.GetScheduleInfoAsync(
-                appointmentId);
+                appointmentId,
+                cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -141,11 +151,13 @@ public sealed class TestAppointmentsController(
 
     [HttpGet("fees/{testTypeId:int}")]
     public async Task<IActionResult> GetFees(
-        int testTypeId)
+        int testTypeId,
+        CancellationToken cancellationToken = default)
     {
         var fees =
             await service.GetTestTypeFeesAsync(
-                testTypeId);
+                testTypeId,
+                cancellationToken);
 
         return Ok(
             new
@@ -157,12 +169,14 @@ public sealed class TestAppointmentsController(
     [HttpGet("trial-count")]
     public async Task<IActionResult> GetTrialCount(
         [FromQuery] int localAppId,
-        [FromQuery] int testTypeId)
+        [FromQuery] int testTypeId,
+        CancellationToken cancellationToken = default)
     {
         var count =
             await service.GetTrialCountAsync(
                 localAppId,
-                testTypeId);
+                testTypeId,
+                cancellationToken);
 
         return Ok(
             new
@@ -174,13 +188,15 @@ public sealed class TestAppointmentsController(
     [HttpGet("scheduled")]
     public async Task<IActionResult> IsScheduled(
         [FromQuery] int localAppId,
-        [FromQuery] int testTypeId)
+        [FromQuery] int testTypeId,
+        CancellationToken cancellationToken = default)
     {
         var exists =
             await service
                 .IsAppointmentAlreadyScheduledAsync(
                     localAppId,
-                    testTypeId);
+                    testTypeId,
+                    cancellationToken);
 
         return Ok(
             new
@@ -192,7 +208,8 @@ public sealed class TestAppointmentsController(
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromBody]
-        CreateTestAppointmentRequest request)
+        CreateTestAppointmentRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.AddAsync(
@@ -209,7 +226,8 @@ public sealed class TestAppointmentsController(
 
                     RetakeTestApplicationID =
                         request.RetakeTestApplicationId
-                });
+                },
+                cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -220,7 +238,8 @@ public sealed class TestAppointmentsController(
     public async Task<IActionResult> Update(
         int id,
         [FromBody]
-        UpdateTestAppointmentRequest request)
+        UpdateTestAppointmentRequest request,
+        CancellationToken cancellationToken = default)
     {
         var result =
             await service.UpdateAsync(
@@ -229,7 +248,8 @@ public sealed class TestAppointmentsController(
                     TestAppointmentID = id,
                     AppointmentDate =
                         Application.Validators.TestAppointmentValidator.ToFacilityTime(request.AppointmentDate)
-                });
+                },
+                cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -237,10 +257,12 @@ public sealed class TestAppointmentsController(
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.DeleteAsync(id);
+            await service.DeleteAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -249,10 +271,12 @@ public sealed class TestAppointmentsController(
 
     [HttpPost("{id:int}/cancel")]
     [HttpPut("{id:int}/cancel")]
-    public async Task<IActionResult> Cancel(int id)
+    public async Task<IActionResult> Cancel(
+        int id,
+        CancellationToken cancellationToken = default)
     {
         var result =
-            await service.CancelAsync(id);
+            await service.CancelAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -263,7 +287,7 @@ public sealed class TestAppointmentsController(
     public async Task<IActionResult> GetAttemptStats(
         int localAppId,
         int testTypeId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var stats = await service.GetAttemptStatsAsync(
             localAppId,
@@ -396,13 +420,15 @@ public sealed class TestAppointmentsController(
         [FromQuery] int localAppId,
         [FromQuery] int testTypeId,
         [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate)
+        [FromQuery] DateTime endDate,
+        CancellationToken cancellationToken = default)
     {
         var result = await service.GetAvailabilityAsync(
             localAppId,
             testTypeId,
             startDate,
-            endDate);
+            endDate,
+            cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using API.IntegrationTests.Infrastructure;
@@ -35,7 +35,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     {
         var dto = CreateTestDto(10);
 
-        _factory.TestServiceMock.Setup(x => x.GetAllAsync())
+        _factory.TestServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Tests");
@@ -47,7 +47,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
         Assert.Single(result);
         AssertTestResponse(dto, result[0]);
 
-        _factory.TestServiceMock.Verify(x => x.GetAllAsync(), Times.Once);
+        _factory.TestServiceMock.Verify(x => x.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -66,7 +66,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
             _ => Result<List<TestDto>>.FromForbidden(detail)
         };
 
-        _factory.TestServiceMock.Setup(x => x.GetAllAsync()).ReturnsAsync(result);
+        _factory.TestServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         var response = await GetAsync("/api/Tests");
 
@@ -77,7 +77,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     [Fact]
     public async Task GetAll_WhenFailure_Returns500ProblemDetails()
     {
-        _factory.TestServiceMock.Setup(x => x.GetAllAsync())
+        _factory.TestServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestDto>>.FromFailure("Database failure."));
 
         var response = await GetAsync("/api/Tests");
@@ -94,7 +94,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     {
         var dto = CreateTestDto(20);
 
-        _factory.TestServiceMock.Setup(x => x.GetByIdAsync(20))
+        _factory.TestServiceMock.Setup(x => x.GetByIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<TestDto>.Success(dto));
 
         var response = await GetAsync("/api/Tests/20");
@@ -105,7 +105,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
         Assert.NotNull(result);
         AssertTestResponse(dto, result);
 
-        _factory.TestServiceMock.Verify(x => x.GetByIdAsync(20), Times.Once);
+        _factory.TestServiceMock.Verify(x => x.GetByIdAsync(20, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -118,7 +118,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
             ? Result<TestDto>.FromNotFound(detail)
             : Result<TestDto>.FromValidationFailure(detail);
 
-        _factory.TestServiceMock.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(result);
+        _factory.TestServiceMock.Setup(x => x.GetByIdAsync(id, It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         var response = await GetAsync($"/api/Tests/{id}");
 
@@ -131,7 +131,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     {
         var dto = CreateTestDto(30);
 
-        _factory.TestServiceMock.Setup(x => x.GetByTestAppointmentIdAsync(50))
+        _factory.TestServiceMock.Setup(x => x.GetByTestAppointmentIdAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Tests/appointment/50");
@@ -144,7 +144,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
         AssertTestResponse(dto, result[0]);
 
         _factory.TestServiceMock.Verify(
-            x => x.GetByTestAppointmentIdAsync(50), Times.Once);
+            x => x.GetByTestAppointmentIdAsync(50, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     {
         const string detail = "Tests not found for appointment.";
 
-        _factory.TestServiceMock.Setup(x => x.GetByTestAppointmentIdAsync(50))
+        _factory.TestServiceMock.Setup(x => x.GetByTestAppointmentIdAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestDto>>.FromNotFound(detail));
 
         var response = await GetAsync("/api/Tests/appointment/50");
@@ -166,7 +166,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     {
         var dto = CreateTestDto(40);
 
-        _factory.TestServiceMock.Setup(x => x.GetByUserIdAsync(7))
+        _factory.TestServiceMock.Setup(x => x.GetByUserIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestDto>>.Success([dto]));
 
         var response = await GetAsync("/api/Tests/created-by/7");
@@ -179,7 +179,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
         AssertTestResponse(dto, result[0]);
 
         _factory.TestServiceMock.Verify(
-            x => x.GetByUserIdAsync(7), Times.Once);
+            x => x.GetByUserIdAsync(7, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     {
         const string detail = "Access denied.";
 
-        _factory.TestServiceMock.Setup(x => x.GetByUserIdAsync(7))
+        _factory.TestServiceMock.Setup(x => x.GetByUserIdAsync(7, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<TestDto>>.FromForbidden(detail));
 
         var response = await GetAsync("/api/Tests/created-by/7");
@@ -206,7 +206,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
                 x.AddAsync(It.Is<SaveTestResultDto>(dto =>
                     dto.TestAppointmentID == appointmentId &&
                     dto.TestResult == testResult &&
-                    dto.Notes == notes)))
+                    dto.Notes == notes), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(testId));
 
         var request = new SaveTestResultRequest(
@@ -221,7 +221,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
             x.AddAsync(It.Is<SaveTestResultDto>(dto =>
                 dto.TestAppointmentID == appointmentId &&
                 dto.TestResult == testResult &&
-                dto.Notes == notes)), Times.Once);
+                dto.Notes == notes), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -241,7 +241,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
         };
 
         _factory.TestServiceMock.Setup(x =>
-                x.AddAsync(It.IsAny<SaveTestResultDto>()))
+                x.AddAsync(It.IsAny<SaveTestResultDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await PostAsync(
@@ -256,7 +256,7 @@ public sealed class TestsControllerTests : IClassFixture<ApiWebApplicationFactor
     public async Task AddResult_WhenFailure_Returns500ProblemDetails()
     {
         _factory.TestServiceMock.Setup(x =>
-                x.AddAsync(It.IsAny<SaveTestResultDto>()))
+                x.AddAsync(It.IsAny<SaveTestResultDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromFailure("Failed to save test result."));
 
         var response = await PostAsync(

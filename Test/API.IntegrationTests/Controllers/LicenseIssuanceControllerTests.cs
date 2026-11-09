@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using DVLD.Contracts.LicenseIssuance;
 using Moq;
@@ -22,7 +22,7 @@ public sealed class LicenseIssuanceControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.LicenseIssuanceServiceMock.Verify(
-            x => x.IssueFirstLicenseAsync(It.IsAny<int>(), It.IsAny<string?>()),
+            x => x.IssueFirstLicenseAsync(It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -32,7 +32,7 @@ public sealed class LicenseIssuanceControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseIssuanceServiceMock
-            .Setup(x => x.IssueFirstLicenseAsync(10, "First license notes"))
+            .Setup(x => x.IssueFirstLicenseAsync(10, "First license notes", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(250));
 
         using var client = CreateAuthenticatedClient(factory);
@@ -47,7 +47,7 @@ public sealed class LicenseIssuanceControllerTests
         Assert.Equal(250, result.LicenseId);
 
         factory.LicenseIssuanceServiceMock.Verify(
-            x => x.IssueFirstLicenseAsync(10, "First license notes"),
+            x => x.IssueFirstLicenseAsync(10, "First license notes", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -57,7 +57,7 @@ public sealed class LicenseIssuanceControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseIssuanceServiceMock
-            .Setup(x => x.IssueFirstLicenseAsync(10, null))
+            .Setup(x => x.IssueFirstLicenseAsync(10, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(251));
 
         using var client = CreateAuthenticatedClient(factory);
@@ -72,7 +72,7 @@ public sealed class LicenseIssuanceControllerTests
         Assert.Equal(251, result.LicenseId);
 
         factory.LicenseIssuanceServiceMock.Verify(
-            x => x.IssueFirstLicenseAsync(10, null),
+            x => x.IssueFirstLicenseAsync(10, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -120,7 +120,7 @@ public sealed class LicenseIssuanceControllerTests
         };
 
         factory.LicenseIssuanceServiceMock
-            .Setup(x => x.IssueFirstLicenseAsync(applicationId, notes))
+            .Setup(x => x.IssueFirstLicenseAsync(applicationId, notes, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory);
@@ -141,7 +141,7 @@ public sealed class LicenseIssuanceControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseIssuanceServiceMock
-            .Setup(x => x.IssueFirstLicenseAsync(20, null))
+            .Setup(x => x.IssueFirstLicenseAsync(20, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromFailure(
                 "Failed to issue driving license."));
 

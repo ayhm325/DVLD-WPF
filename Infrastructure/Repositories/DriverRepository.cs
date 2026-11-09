@@ -22,7 +22,7 @@ public sealed class DriverRepository(DVLDDbContext context)
             .Include(d => d.Licenses)
             .Include(d => d.InternationalLicenses);
 
-    public async Task<Driver?> GetByIdAsync(int id)
+    public async Task<Driver?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         if (id <= 0)
             return null;
@@ -35,7 +35,7 @@ public sealed class DriverRepository(DVLDDbContext context)
                 Driver = d,
                 ActiveCount = d.Licenses.Count(l => l.IsActive)
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (result is null)
             return null;
@@ -44,20 +44,20 @@ public sealed class DriverRepository(DVLDDbContext context)
         return result.Driver;
     }
 
-    public Task<Driver?> GetForUpdateAsync(int id) =>
+    public Task<Driver?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<Driver?>(null)
             : _context.Drivers
-                .FirstOrDefaultAsync(d => d.DriverID == id);
+                .FirstOrDefaultAsync(d => d.DriverID == id, cancellationToken);
 
-    public Task<Driver?> GetForDeleteAsync(int id) =>
+    public Task<Driver?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<Driver?>(null)
             : QueryForDelete()
                 .FirstOrDefaultAsync(
-                    d => d.DriverID == id);
+                    d => d.DriverID == id, cancellationToken);
 
-    public async Task<List<Driver>> GetAllAsync()
+    public async Task<List<Driver>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var results = await QueryWithBasicInfo()
             .AsNoTracking()
@@ -67,7 +67,7 @@ public sealed class DriverRepository(DVLDDbContext context)
                 ActiveCount = d.Licenses.Count(l => l.IsActive)
             })
             .OrderBy(x => x.Driver.DriverID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         foreach (var item in results)
         {
@@ -77,23 +77,23 @@ public sealed class DriverRepository(DVLDDbContext context)
         return results.Select(x => x.Driver).ToList();
     }
 
-    public Task<PagedResult<Driver>> GetAllAsync(PaginationRequest request)
+    public Task<PagedResult<Driver>> GetAllAsync(PaginationRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (request is DriverQueryRequest queryRequest)
         {
-            return GetAllAsync(queryRequest);
+            return GetAllAsync(queryRequest, cancellationToken);
         }
 
         return GetAllAsync(new DriverQueryRequest
         {
             PageNumber = request.PageNumber,
             PageSize = request.PageSize
-        });
+        }, cancellationToken);
     }
 
-    public async Task<PagedResult<Driver>> GetAllAsync(DriverQueryRequest request)
+    public async Task<PagedResult<Driver>> GetAllAsync(DriverQueryRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -176,7 +176,7 @@ public sealed class DriverRepository(DVLDDbContext context)
             }
         }
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var pagedResults = await query
             .OrderBy(d => d.DriverID)
@@ -187,7 +187,7 @@ public sealed class DriverRepository(DVLDDbContext context)
                 Driver = d,
                 ActiveCount = d.Licenses.Count(l => l.IsActive)
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         foreach (var item in pagedResults)
         {
@@ -203,7 +203,7 @@ public sealed class DriverRepository(DVLDDbContext context)
         };
     }
 
-    public async Task<Driver?> GetByPersonIdAsync(int personId)
+    public async Task<Driver?> GetByPersonIdAsync(int personId, CancellationToken cancellationToken = default)
     {
         if (personId <= 0)
             return null;
@@ -216,7 +216,7 @@ public sealed class DriverRepository(DVLDDbContext context)
                 Driver = d,
                 ActiveCount = d.Licenses.Count(l => l.IsActive)
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (result is null)
             return null;
@@ -225,7 +225,7 @@ public sealed class DriverRepository(DVLDDbContext context)
         return result.Driver;
     }
 
-    public async Task<List<Driver>> GetByCreatedUserIdAsync(int userId)
+    public async Task<List<Driver>> GetByCreatedUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         if (userId <= 0)
             return [];
@@ -239,7 +239,7 @@ public sealed class DriverRepository(DVLDDbContext context)
                 ActiveCount = d.Licenses.Count(l => l.IsActive)
             })
             .OrderBy(x => x.Driver.DriverID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         foreach (var item in results)
         {
@@ -249,28 +249,28 @@ public sealed class DriverRepository(DVLDDbContext context)
         return results.Select(x => x.Driver).ToList();
     }
 
-    public Task<bool> ExistsByIdAsync(int driverId) =>
+    public Task<bool> ExistsByIdAsync(int driverId, CancellationToken cancellationToken = default) =>
         driverId <= 0
             ? Task.FromResult(false)
             : _context.Drivers
                 .AsNoTracking()
                 .AnyAsync(
-                    d => d.DriverID == driverId);
+                    d => d.DriverID == driverId, cancellationToken);
 
     public Task<bool> ExistsByPersonIdAsync(
-        int personId) =>
+        int personId, CancellationToken cancellationToken = default) =>
         personId <= 0
             ? Task.FromResult(false)
             : _context.Drivers
                 .AsNoTracking()
                 .AnyAsync(
-                    d => d.PersonID == personId);
+                    d => d.PersonID == personId, cancellationToken);
 
-    public async Task AddAsync(Driver driver)
+    public async Task AddAsync(Driver driver, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(driver);
 
-        await _context.Drivers.AddAsync(driver);
+        await _context.Drivers.AddAsync(driver, cancellationToken);
     }
 
     public void Delete(Driver driver)

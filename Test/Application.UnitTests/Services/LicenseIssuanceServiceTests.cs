@@ -81,7 +81,7 @@ public class LicenseIssuanceServiceTests
         _localApplicationServiceMock.Verify(
             service =>
                 service.GetLocalDrivingLicenseApplicationByIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -106,7 +106,7 @@ public class LicenseIssuanceServiceTests
         _localApplicationServiceMock.Verify(
             service =>
                 service.GetLocalDrivingLicenseApplicationByIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -117,7 +117,7 @@ public class LicenseIssuanceServiceTests
         _localApplicationServiceMock
             .Setup(service =>
                 service.GetLocalDrivingLicenseApplicationByIdAsync(
-                    localAppId))
+                    localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>
                     .FromNotFound("Local application not found."));
@@ -133,7 +133,7 @@ public class LicenseIssuanceServiceTests
         _localApplicationServiceMock.Verify(
             service =>
                 service.GetApplicationIdByLocalIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -144,7 +144,7 @@ public class LicenseIssuanceServiceTests
         SetupValidLocalApplication(localAppId);
         _localApplicationServiceMock
             .Setup(service =>
-                service.GetApplicationIdByLocalIdAsync(localAppId))
+                service.GetApplicationIdByLocalIdAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.FromNotFound(
                     "Application was not found."));
@@ -173,7 +173,7 @@ public class LicenseIssuanceServiceTests
         SetupValidLocalApplication(localAppId);
         _localApplicationServiceMock
             .Setup(service =>
-                service.GetApplicationIdByLocalIdAsync(localAppId))
+                service.GetApplicationIdByLocalIdAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(applicationId));
         _applicationServiceMock
@@ -246,7 +246,8 @@ public class LicenseIssuanceServiceTests
         _personServiceMock.Verify(
             service =>
                 service.GetPersonByIdAsync(
-                    It.IsAny<int>()),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -268,7 +269,7 @@ public class LicenseIssuanceServiceTests
                 Result<ApplicationDto>.Success(application));
         _personServiceMock
             .Setup(service =>
-                service.GetPersonByIdAsync(personId))
+                service.GetPersonByIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<PersonDto>.FromNotFound(
                     "Applicant person was not found."));
@@ -303,7 +304,7 @@ public class LicenseIssuanceServiceTests
             applicantPersonId: personId);
         _personServiceMock
             .Setup(service =>
-                service.GetPersonByIdAsync(personId))
+                service.GetPersonByIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<PersonDto>.Success(
                     CreatePerson(personId)));
@@ -512,7 +513,7 @@ public class LicenseIssuanceServiceTests
                         status: AppStatus.New)));
         _testWorkflowServiceMock
             .Setup(service =>
-                service.HasPassedAllTestsAsync(localAppId))
+                service.HasPassedAllTestsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
@@ -531,7 +532,7 @@ public class LicenseIssuanceServiceTests
         _licenseRepositoryMock.Verify(
             repository =>
                 repository.AddLicenseAsync(
-                    It.IsAny<Domain.Entities.License>()),
+                    It.IsAny<Domain.Entities.License>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -547,7 +548,7 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
@@ -577,11 +578,11 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _driverServiceMock
             .Setup(service =>
-                service.GetByPersonIdAsync(personId))
+                service.GetByPersonIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<DriverDto>.Success(
                     new DriverDto
@@ -617,11 +618,11 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _driverServiceMock
             .Setup(service =>
-                service.GetByPersonIdAsync(personId))
+                service.GetByPersonIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<DriverDto>.FromNotFound(
                     "Driver not found."));
@@ -629,14 +630,14 @@ public class LicenseIssuanceServiceTests
             .Setup(service =>
                 service.AddAsync(
                     It.Is<CreateDriverDto>(
-                        dto => dto.PersonID == personId)))
+                        dto => dto.PersonID == personId), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(500));
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.IsActiveLicenseExistsAsync(
                     500,
-                    3))
+                    3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         SetupSuccessfulLicenseSave();
         SetupSuccessfulCompletion(applicationId);
@@ -649,7 +650,7 @@ public class LicenseIssuanceServiceTests
             service =>
                 service.AddAsync(
                     It.Is<CreateDriverDto>(
-                        dto => dto.PersonID == personId)),
+                        dto => dto.PersonID == personId), It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -665,18 +666,18 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _driverServiceMock
             .Setup(service =>
-                service.GetByPersonIdAsync(personId))
+                service.GetByPersonIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<DriverDto>.FromNotFound(
                     "Driver not found."));
         _driverServiceMock
             .Setup(service =>
                 service.AddAsync(
-                    It.IsAny<CreateDriverDto>()))
+                    It.IsAny<CreateDriverDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.FromFailure(
                     "Failed to create driver."));
@@ -709,11 +710,11 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _driverServiceMock
             .Setup(service =>
-                service.GetByPersonIdAsync(personId))
+                service.GetByPersonIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<DriverDto>.Success(
                     new DriverDto
@@ -725,7 +726,7 @@ public class LicenseIssuanceServiceTests
             .Setup(repository =>
                 repository.IsActiveLicenseExistsAsync(
                     driverId,
-                    3))
+                    3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         Result<int> result =
             await _sut.IssueFirstLicenseAsync(
@@ -744,7 +745,7 @@ public class LicenseIssuanceServiceTests
         _licenseRepositoryMock.Verify(
             repository =>
                 repository.AddLicenseAsync(
-                    It.IsAny<Domain.Entities.License>()),
+                    It.IsAny<Domain.Entities.License>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -761,21 +762,21 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         SetupExistingDriver(personId, driverId);
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.IsActiveLicenseExistsAsync(
                     driverId,
-                    3))
+                    3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.AddLicenseAsync(
-                    It.IsAny<Domain.Entities.License>()))
-            .Callback<Domain.Entities.License>(
-                license => license.LicenseID = 1000)
+                    It.IsAny<Domain.Entities.License>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.Entities.License, CancellationToken>(
+                (license, _) => license.LicenseID = 1000)
             .Returns(Task.CompletedTask);
         _unitOfWorkMock
             .Setup(unitOfWork =>
@@ -816,21 +817,21 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         SetupExistingDriver(personId, driverId);
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.IsActiveLicenseExistsAsync(
                     driverId,
-                    3))
+                    3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.AddLicenseAsync(
-                    It.IsAny<Domain.Entities.License>()))
-            .Callback<Domain.Entities.License>(
-                license => license.LicenseID = 1000)
+                    It.IsAny<Domain.Entities.License>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.Entities.License, CancellationToken>(
+                (license, _) => license.LicenseID = 1000)
             .Returns(Task.CompletedTask);
         _unitOfWorkMock
             .Setup(unitOfWork =>
@@ -879,22 +880,22 @@ public class LicenseIssuanceServiceTests
         SetupTransaction();
         _licenseRepositoryMock
             .Setup(repository =>
-                repository.IsApplicationHasLicenseAsync(applicationId))
+                repository.IsApplicationHasLicenseAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         SetupExistingDriver(personId, driverId);
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.IsActiveLicenseExistsAsync(
                     driverId,
-                    licenseClassId))
+                    licenseClassId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         Domain.Entities.License? createdLicense = null;
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.AddLicenseAsync(
-                    It.IsAny<Domain.Entities.License>()))
-            .Callback<Domain.Entities.License>(
-                license =>
+                    It.IsAny<Domain.Entities.License>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.Entities.License, CancellationToken>(
+                (license, _) =>
                 {
                     createdLicense = license;
                     license.LicenseID = licenseId;
@@ -1028,7 +1029,7 @@ public class LicenseIssuanceServiceTests
             .Setup(service => service.GetApplicationForIssuanceAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationDto>.Success(CreateApplication(applicationId, personId)));
         _testWorkflowServiceMock
-            .Setup(service => service.HasPassedAllTestsAsync(localAppId))
+            .Setup(service => service.HasPassedAllTestsAsync(localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
     }
     private void SetupValidLocalApplication(
@@ -1038,7 +1039,7 @@ public class LicenseIssuanceServiceTests
         _localApplicationServiceMock
             .Setup(service =>
                 service.GetLocalDrivingLicenseApplicationByIdAsync(
-                    localAppId))
+                    localAppId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<LocalDrivingLicenseApplicationListDto>.Success(
                     new LocalDrivingLicenseApplicationListDto
@@ -1056,7 +1057,7 @@ public class LicenseIssuanceServiceTests
         _localApplicationServiceMock
             .Setup(service =>
                 service.GetApplicationIdByLocalIdAsync(
-                    It.IsAny<int>()))
+                    It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<int>.Success(applicationId));
         var application = CreateApplication(
@@ -1077,7 +1078,7 @@ public class LicenseIssuanceServiceTests
     {
         _personServiceMock
             .Setup(service =>
-                service.GetPersonByIdAsync(personId))
+                service.GetPersonByIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<PersonDto>.Success(
                     CreatePerson(personId)));
@@ -1088,7 +1089,7 @@ public class LicenseIssuanceServiceTests
     {
         _driverServiceMock
             .Setup(service =>
-                service.GetByPersonIdAsync(personId))
+                service.GetByPersonIdAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Result<DriverDto>.Success(
                     new DriverDto
@@ -1104,9 +1105,9 @@ public class LicenseIssuanceServiceTests
         _licenseRepositoryMock
             .Setup(repository =>
                 repository.AddLicenseAsync(
-                    It.IsAny<Domain.Entities.License>()))
-            .Callback<Domain.Entities.License>(
-                license => license.LicenseID = 1000)
+                    It.IsAny<Domain.Entities.License>(), It.IsAny<CancellationToken>()))
+            .Callback<Domain.Entities.License, CancellationToken>(
+                (license, _) => license.LicenseID = 1000)
             .Returns(Task.CompletedTask);
         _unitOfWorkMock
             .Setup(unitOfWork =>

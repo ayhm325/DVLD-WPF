@@ -21,7 +21,7 @@ public sealed class PeopleControllerTests
         var response = await client.GetAsync("/api/People");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(), Times.Never);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class PeopleControllerTests
                 "Ali", "Sara Mohammed Ali", (int)Gender.Female, "Jordan")
         };
 
-        factory.PersonServiceMock.Setup(x => x.GetAllPeopleAsync())
+        factory.PersonServiceMock.Setup(x => x.GetAllPeopleAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<PersonDto>>.Success(people));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -60,7 +60,7 @@ public sealed class PeopleControllerTests
         Assert.Equal("ahmad@example.com", root[0].GetProperty("email").GetString());
         Assert.Equal("Jordan", root[0].GetProperty("countryName").GetString());
 
-        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(), Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class PeopleControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.PersonServiceMock.Setup(x => x.GetAllPeopleAsync())
+        factory.PersonServiceMock.Setup(x => x.GetAllPeopleAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<PersonDto>>.FromFailure(
                 "Unexpected person retrieval failure."));
 
@@ -104,7 +104,7 @@ public sealed class PeopleControllerTests
                 r.PageSize == 5 &&
                 r.SearchQuery == "Ahmad" &&
                 r.SearchBy == "name" &&
-                r.GenderFilter == "0")))
+                r.GenderFilter == "0"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<PersonDto>>.Success(pagedPeople));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -130,8 +130,8 @@ public sealed class PeopleControllerTests
         Assert.Equal(1, items[0].GetProperty("personId").GetInt32());
         Assert.Equal("Ahmad Mohammed Ali Obeidat", items[0].GetProperty("fullName").GetString());
 
-        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<PersonQueryRequest>()), Times.Once);
-        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(), Times.Never);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<PersonQueryRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public sealed class PeopleControllerTests
         var response = await client.GetAsync("/api/People?pageNumber=1&pageSize=10");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<PersonQueryRequest>()), Times.Never);
+        factory.PersonServiceMock.Verify(x => x.GetAllPeopleAsync(It.IsAny<PersonQueryRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public sealed class PeopleControllerTests
             "Obeidat", "Ahmad Mohammed Ali Obeidat",
             (int)Gender.Male, "Jordan");
 
-        factory.PersonServiceMock.Setup(x => x.GetPersonByIdAsync(25))
+        factory.PersonServiceMock.Setup(x => x.GetPersonByIdAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PersonDto>.Success(person));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -174,7 +174,7 @@ public sealed class PeopleControllerTests
         Assert.Equal("Ahmad Mohammed Ali Obeidat", body.GetProperty("fullName").GetString());
         Assert.Equal("Jordan", body.GetProperty("countryName").GetString());
 
-        factory.PersonServiceMock.Verify(x => x.GetPersonByIdAsync(25), Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetPersonByIdAsync(25, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public sealed class PeopleControllerTests
 
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.PersonServiceMock.Setup(x => x.GetPersonByIdAsync(999))
+        factory.PersonServiceMock.Setup(x => x.GetPersonByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PersonDto>.FromNotFound(detail));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -196,7 +196,7 @@ public sealed class PeopleControllerTests
             "Resource not found",
             detail);
 
-        factory.PersonServiceMock.Verify(x => x.GetPersonByIdAsync(999), Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetPersonByIdAsync(999, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public sealed class PeopleControllerTests
             (int)Gender.Male, "Jordan");
 
         factory.PersonServiceMock.Setup(
-                x => x.GetPersonByNationalNoAsync(nationalNo))
+                x => x.GetPersonByNationalNoAsync(nationalNo, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PersonDto>.Success(person));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -230,7 +230,7 @@ public sealed class PeopleControllerTests
         Assert.Equal("Khaled Ali Omar", body.GetProperty("fullName").GetString());
 
         factory.PersonServiceMock.Verify(
-            x => x.GetPersonByNationalNoAsync(nationalNo), Times.Once);
+            x => x.GetPersonByNationalNoAsync(nationalNo, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -242,7 +242,7 @@ public sealed class PeopleControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock.Setup(
-                x => x.GetPersonByNationalNoAsync(nationalNo))
+                x => x.GetPersonByNationalNoAsync(nationalNo, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PersonDto>.FromNotFound(detail));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -262,7 +262,7 @@ public sealed class PeopleControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x => x.AddPersonAsync(It.IsAny<PersonCreateDto>()))
+            .Setup(x => x.AddPersonAsync(It.IsAny<PersonCreateDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(77));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -307,7 +307,8 @@ public sealed class PeopleControllerTests
                 dto.Phone == "0791234567" &&
                 dto.Email == "ahmad@example.com" &&
                 dto.NationalityCountryID == 1 &&
-                dto.ImagePath == "ahmad.jpg")),
+                dto.ImagePath == "ahmad.jpg"),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -326,7 +327,7 @@ public sealed class PeopleControllerTests
             : Result<int>.FromConflict(detail);
 
         factory.PersonServiceMock
-            .Setup(x => x.AddPersonAsync(It.IsAny<PersonCreateDto>()))
+            .Setup(x => x.AddPersonAsync(It.IsAny<PersonCreateDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -360,7 +361,7 @@ public sealed class PeopleControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x => x.UpdatePersonAsync(55, It.IsAny<PersonUpdateDto>()))
+            .Setup(x => x.UpdatePersonAsync(55, It.IsAny<PersonUpdateDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -382,7 +383,8 @@ public sealed class PeopleControllerTests
                 dto.Phone == "0781234567" &&
                 dto.Email == "updated@example.com" &&
                 dto.NationalityCountryID == 2 &&
-                dto.ImagePath == "updated.jpg")),
+                dto.ImagePath == "updated.jpg"),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -402,7 +404,7 @@ public sealed class PeopleControllerTests
             : Result.Conflict(detail);
 
         factory.PersonServiceMock
-            .Setup(x => x.UpdatePersonAsync(55, It.IsAny<PersonUpdateDto>()))
+            .Setup(x => x.UpdatePersonAsync(55, It.IsAny<PersonUpdateDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -423,7 +425,7 @@ public sealed class PeopleControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x => x.DeletePersonAsync(66))
+            .Setup(x => x.DeletePersonAsync(66, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -432,7 +434,7 @@ public sealed class PeopleControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         factory.PersonServiceMock.Verify(
-            x => x.DeletePersonAsync(66), Times.Once);
+            x => x.DeletePersonAsync(66, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -451,7 +453,7 @@ public sealed class PeopleControllerTests
             : Result.Conflict(detail);
 
         factory.PersonServiceMock
-            .Setup(x => x.DeletePersonAsync(66))
+            .Setup(x => x.DeletePersonAsync(66, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -464,7 +466,7 @@ public sealed class PeopleControllerTests
             detail);
 
         factory.PersonServiceMock.Verify(
-            x => x.DeletePersonAsync(66), Times.Once);
+            x => x.DeletePersonAsync(66, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -473,7 +475,7 @@ public sealed class PeopleControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.PersonServiceMock
-            .Setup(x => x.DeletePersonAsync(66))
+            .Setup(x => x.DeletePersonAsync(66, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure("Failed to delete person."));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -677,7 +679,7 @@ public sealed class PeopleControllerTests
         var response = await client.GetAsync("/api/People/statistics");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        factory.PersonServiceMock.Verify(x => x.GetStatisticsAsync(), Times.Never);
+        factory.PersonServiceMock.Verify(x => x.GetStatisticsAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -692,7 +694,7 @@ public sealed class PeopleControllerTests
             FemaleCount = 8
         };
 
-        factory.PersonServiceMock.Setup(x => x.GetStatisticsAsync())
+        factory.PersonServiceMock.Setup(x => x.GetStatisticsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PersonStatisticsDto>.Success(stats));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -708,7 +710,7 @@ public sealed class PeopleControllerTests
         Assert.Equal(12, root.GetProperty("maleCount").GetInt32());
         Assert.Equal(8, root.GetProperty("femaleCount").GetInt32());
 
-        factory.PersonServiceMock.Verify(x => x.GetStatisticsAsync(), Times.Once);
+        factory.PersonServiceMock.Verify(x => x.GetStatisticsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -716,7 +718,7 @@ public sealed class PeopleControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.PersonServiceMock.Setup(x => x.GetStatisticsAsync())
+        factory.PersonServiceMock.Setup(x => x.GetStatisticsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PersonStatisticsDto>.FromFailure("Failed to retrieve people statistics."));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -739,7 +741,7 @@ public sealed class PeopleControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.PersonServiceMock.Verify(
-            x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>()),
+            x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -759,7 +761,7 @@ public sealed class PeopleControllerTests
             TotalCount = 1
         };
 
-        factory.PersonServiceMock.Setup(x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>()))
+        factory.PersonServiceMock.Setup(x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<PersonDto>>.Success(pagedPeople));
 
         using var client = CreateAuthenticatedClient(factory, 10);
@@ -780,7 +782,7 @@ public sealed class PeopleControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.PersonServiceMock.Setup(x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>()))
+        factory.PersonServiceMock.Setup(x => x.GetPeopleAvailableForUserAsync(It.IsAny<PersonQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<PersonDto>>.FromFailure("Failed to retrieve available people."));
 
         using var client = CreateAuthenticatedClient(factory, 10);

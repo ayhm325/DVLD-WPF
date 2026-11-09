@@ -15,7 +15,8 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] LicenseQueryRequest request)
+        [FromQuery] LicenseQueryRequest request,
+        CancellationToken cancellationToken = default)
     {
         if (Request.Query.ContainsKey("pageNumber") ||
             Request.Query.ContainsKey("pageSize") ||
@@ -24,7 +25,7 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
             Request.Query.ContainsKey("statusFilter") ||
             Request.Query.ContainsKey("paged"))
         {
-            var result = await service.GetAllAsync(request);
+            var result = await service.GetAllAsync(request, cancellationToken);
 
             if (result.IsFailure)
                 return result.ToActionResult(this);
@@ -46,8 +47,8 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
         }
 
         var unpagedResult = request.IsExpired.HasValue
-            ? await service.GetAllAsync(request.IsExpired.Value)
-            : await service.GetAllAsync();
+            ? await service.GetAllAsync(request.IsExpired.Value, cancellationToken)
+            : await service.GetAllAsync(cancellationToken);
 
         return unpagedResult.IsFailure
             ? unpagedResult.ToActionResult(this)
@@ -57,9 +58,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("renewal-summary")]
-    public async Task<IActionResult> GetRenewalSummary()
+    public async Task<IActionResult> GetRenewalSummary(CancellationToken cancellationToken = default)
     {
-        var result = await service.GetRenewalSummaryAsync();
+        var result = await service.GetRenewalSummaryAsync(cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null
@@ -73,9 +74,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByIdAsync(id);
+        var result = await service.GetByIdAsync(id, cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null
@@ -84,9 +85,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("driver/{driverId:int}")]
-    public async Task<IActionResult> GetByDriverId(int driverId)
+    public async Task<IActionResult> GetByDriverId(int driverId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByDriverIdAsync(driverId);
+        var result = await service.GetByDriverIdAsync(driverId, cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null
@@ -95,9 +96,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("application/{applicationId:int}")]
-    public async Task<IActionResult> GetByApplicationId(int applicationId)
+    public async Task<IActionResult> GetByApplicationId(int applicationId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByApplicationIdAsync(applicationId);
+        var result = await service.GetByApplicationIdAsync(applicationId, cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null
@@ -106,9 +107,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("license-class/{licenseClassId:int}")]
-    public async Task<IActionResult> GetByLicenseClassId(int licenseClassId)
+    public async Task<IActionResult> GetByLicenseClassId(int licenseClassId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByLicenseClassIdAsync(licenseClassId);
+        var result = await service.GetByLicenseClassIdAsync(licenseClassId, cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null
@@ -117,9 +118,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("person/{personId:int}")]
-    public async Task<IActionResult> GetByPersonId(int personId)
+    public async Task<IActionResult> GetByPersonId(int personId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetLicensesByPersonIdAsync(personId);
+        var result = await service.GetLicensesByPersonIdAsync(personId, cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null
@@ -128,9 +129,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("local-application/{localAppId:int}/details")]
-    public async Task<IActionResult> GetDetails(int localAppId)
+    public async Task<IActionResult> GetDetails(int localAppId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetDetailsAsync(localAppId);
+        var result = await service.GetDetailsAsync(localAppId, cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null
@@ -139,9 +140,9 @@ public sealed class LicensesController(ILicenseService service) : ControllerBase
     }
 
     [HttpGet("{licenseId:int}/details")]
-    public async Task<IActionResult> GetDetailsById(int licenseId)
+    public async Task<IActionResult> GetDetailsById(int licenseId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetLicenseDetailsByIdAsync(licenseId);
+        var result = await service.GetLicenseDetailsByIdAsync(licenseId, cancellationToken);
         return result.IsFailure
             ? result.ToActionResult(this)
             : result.Value is null

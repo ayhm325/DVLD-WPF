@@ -9,57 +9,57 @@ public interface ILocalDrivingLicenseApplicationService
 {
     Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
     GetAllLocalDrivingLicenseApplicationsAsync(
-        LocalDrivingLicenseApplicationQueryRequest request);
+        LocalDrivingLicenseApplicationQueryRequest request, CancellationToken cancellationToken = default);
 
     Task<Result<PagedResult<LocalDrivingLicenseApplicationListDto>>>
     GetAllLocalDrivingLicenseApplicationsAsync(
-        PaginationRequest request);
+        PaginationRequest request, CancellationToken cancellationToken = default);
 
     Task<Result<LocalDrivingLicenseApplicationListDto>>
-        GetLocalDrivingLicenseApplicationByIdAsync(int id);
+        GetLocalDrivingLicenseApplicationByIdAsync(int id, CancellationToken cancellationToken = default);
 
     Task<Result<ApplicationBasicInfoDto>>
-        GetApplicationBasicInfoAsync(int localApplicationId);
+        GetApplicationBasicInfoAsync(int localApplicationId, CancellationToken cancellationToken = default);
 
     Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
         GetLocalDrivingLicenseApplicationsByApplicationIdAsync(
-            int applicationId);
+            int applicationId, CancellationToken cancellationToken = default);
 
     Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
         GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(
-            int licenseClassId);
+            int licenseClassId, CancellationToken cancellationToken = default);
 
     Task<Result<List<LocalDrivingLicenseApplicationListDto>>>
         GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(
-            int applicantPersonId);
+            int applicantPersonId, CancellationToken cancellationToken = default);
 
     Task<Result<decimal>>
-        GetNewLocalDrivingLicenseApplicationFeesAsync();
+        GetNewLocalDrivingLicenseApplicationFeesAsync(CancellationToken cancellationToken = default);
 
     Task<Result<int>>
         CreateLocalDrivingLicenseApplicationAsync(
             int applicantPersonId,
-            int licenseClassId);
+            int licenseClassId, CancellationToken cancellationToken = default);
 
     Task<Result<int>>
         AddLocalDrivingLicenseApplicationAsync(
-            CreateLocalDrivingLicenseApplicationDto dto);
+            CreateLocalDrivingLicenseApplicationDto dto, CancellationToken cancellationToken = default);
 
     Task<Result>
         UpdateLocalDrivingLicenseApplicationAsync(
             int id,
-            UpdateLocalDrivingLicenseApplicationDto dto);
+            UpdateLocalDrivingLicenseApplicationDto dto, CancellationToken cancellationToken = default);
 
     Task<Result>
-        DeleteLocalDrivingLicenseApplicationAsync(int id);
+        DeleteLocalDrivingLicenseApplicationAsync(int id, CancellationToken cancellationToken = default);
 
     Task<Result>
         CancelLocalDrivingLicenseApplicationAsync(
-            int localApplicationId);
+            int localApplicationId, CancellationToken cancellationToken = default);
 
     Task<Result<int>>
-        GetApplicationIdByLocalIdAsync(int localId);
+        GetApplicationIdByLocalIdAsync(int localId, CancellationToken cancellationToken = default);
 
     Task<bool>
-        IsLocalDrivingLicenseApplicationExistsAsync(int id);
+        IsLocalDrivingLicenseApplicationExistsAsync(int id, CancellationToken cancellationToken = default);
 }

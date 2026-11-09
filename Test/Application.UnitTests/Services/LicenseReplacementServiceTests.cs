@@ -180,7 +180,7 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -309,7 +309,7 @@ public class LicenseReplacementServiceTests
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((License?)null);
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -457,7 +457,7 @@ public class LicenseReplacementServiceTests
         VerifyRollback(transaction);
         _licenseRepository.Verify(
             x => x.DeactivateLicenseAsync(
-                It.IsAny<int>()),
+                It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -499,7 +499,7 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var sut = CreateSut();
         await sut.ReplaceLicenseAsync(
@@ -525,7 +525,7 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         var sut = CreateSut();
         var result = await sut.ReplaceLicenseAsync(
@@ -541,7 +541,7 @@ public class LicenseReplacementServiceTests
         VerifyRollback(transaction);
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
-                It.IsAny<License>()),
+                It.IsAny<License>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     [Fact]
@@ -555,11 +555,11 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -594,11 +594,11 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _unitOfWork
             .Setup(x => x.SaveChangesAsync(
@@ -628,12 +628,12 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
-            .Callback<License>(license =>
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -674,12 +674,12 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
-            .Callback<License>(license =>
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -714,12 +714,12 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
-            .Callback<License>(license =>
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 600;
             })
@@ -754,12 +754,12 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
-            .Callback<License>(license =>
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -779,7 +779,7 @@ public class LicenseReplacementServiceTests
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
                 It.Is<License>(license =>
-                    license.Notes == "Lost License")),
+                    license.Notes == "Lost License"), It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -793,12 +793,12 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
-            .Callback<License>(license =>
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -821,7 +821,7 @@ public class LicenseReplacementServiceTests
                     license.DriverID ==
                         oldLicense.DriverID &&
                     license.LicenseClass ==
-                        oldLicense.LicenseClass)),
+                        oldLicense.LicenseClass), It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -835,12 +835,12 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
-            .Callback<License>(license =>
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -861,7 +861,7 @@ public class LicenseReplacementServiceTests
             x => x.AddLicenseAsync(
                 It.Is<License>(license =>
                     license.ExpirationDate ==
-                        oldLicense.ExpirationDate)),
+                        oldLicense.ExpirationDate), It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -875,12 +875,12 @@ public class LicenseReplacementServiceTests
         SetupOldLicense(oldLicense);
         SetupSuccessfulReplacementApplication();
         _licenseRepository
-            .Setup(x => x.DeactivateLicenseAsync(10))
+            .Setup(x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _licenseRepository
             .Setup(x => x.AddLicenseAsync(
-                It.IsAny<License>()))
-            .Callback<License>(license =>
+                It.IsAny<License>(), It.IsAny<CancellationToken>()))
+            .Callback<License, CancellationToken>((license, _) =>
             {
                 license.LicenseID = 500;
             })
@@ -901,7 +901,7 @@ public class LicenseReplacementServiceTests
             x => x.AddLicenseAsync(
                 It.Is<License>(license =>
                     license.PaidFees ==
-                        oldLicense.LicenseClassInfo.ClassFees)),
+                        oldLicense.LicenseClassInfo.ClassFees), It.IsAny<CancellationToken>()),
             Times.Once);
     }
     [Fact]
@@ -912,7 +912,7 @@ public class LicenseReplacementServiceTests
         var transaction = CreateTransactionMock();
         SetupTransaction(transaction);
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 new InvalidOperationException(
                     "Database failure."));
@@ -1011,7 +1011,7 @@ public class LicenseReplacementServiceTests
         License license)
     {
         _licenseRepository
-            .Setup(x => x.GetForUpdateAsync(10))
+            .Setup(x => x.GetForUpdateAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(license);
     }
     private void SetupSuccessfulReplacementApplication()
@@ -1061,7 +1061,7 @@ public class LicenseReplacementServiceTests
         int expectedApplicationTypeId)
     {
         _licenseRepository.Verify(
-            x => x.DeactivateLicenseAsync(10),
+            x => x.DeactivateLicenseAsync(10, It.IsAny<CancellationToken>()),
             Times.Once);
         _licenseRepository.Verify(
             x => x.AddLicenseAsync(
@@ -1077,7 +1077,7 @@ public class LicenseReplacementServiceTests
                     license.IssueReason ==
                         expectedIssueReason &&
                     license.CreatedByUserID == 1 &&
-                    license.Notes != null)),
+                    license.Notes != null), It.IsAny<CancellationToken>()),
             Times.Once);
         _applicationService.Verify(
             x => x.AddNewApplicationAsync(

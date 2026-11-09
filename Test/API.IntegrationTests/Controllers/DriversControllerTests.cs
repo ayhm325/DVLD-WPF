@@ -39,7 +39,7 @@ public sealed class DriversControllerTests
             }
         };
 
-        factory.DriverServiceMock.Setup(x => x.GetAllAsync())
+        factory.DriverServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<DriverDto>>.Success(drivers));
 
         var response = await Authenticated(factory).GetAsync("/api/Drivers");
@@ -63,14 +63,14 @@ public sealed class DriversControllerTests
         Assert.DoesNotContain("\"imagePath\"", json);
         Assert.DoesNotContain("\"createdByUserId\"", json);
         Assert.DoesNotContain("\"createdByUserName\"", json);
-        factory.DriverServiceMock.Verify(x => x.GetAllAsync(), Times.Once);
+        factory.DriverServiceMock.Verify(x => x.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetAll_WhenServiceFails_ReturnsInternalServerError()
     {
         await using var factory = new ApiWebApplicationFactory();
-        factory.DriverServiceMock.Setup(x => x.GetAllAsync())
+        factory.DriverServiceMock.Setup(x => x.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<DriverDto>>.FromFailure("Failed to retrieve drivers."));
 
         await AssertProblemDetailsAsync(
@@ -85,7 +85,7 @@ public sealed class DriversControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.DriverServiceMock.Setup(x => x.GetByIdAsync(15))
+        factory.DriverServiceMock.Setup(x => x.GetByIdAsync(15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverDto>.Success(new()
             {
                 DriverID = 15,
@@ -118,7 +118,7 @@ public sealed class DriversControllerTests
     public async Task GetById_WhenDriverDoesNotExist_ReturnsNotFound()
     {
         await using var factory = new ApiWebApplicationFactory();
-        factory.DriverServiceMock.Setup(x => x.GetByIdAsync(999))
+        factory.DriverServiceMock.Setup(x => x.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverDto>.FromNotFound("Driver not found."));
 
         await AssertProblemDetailsAsync(
@@ -130,7 +130,7 @@ public sealed class DriversControllerTests
     public async Task GetById_WhenServiceReturnsValidationFailure_ReturnsBadRequest()
     {
         await using var factory = new ApiWebApplicationFactory();
-        factory.DriverServiceMock.Setup(x => x.GetByIdAsync(0))
+        factory.DriverServiceMock.Setup(x => x.GetByIdAsync(0, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverDto>.FromValidationFailure("Invalid driver ID."));
 
         await AssertProblemDetailsAsync(
@@ -143,7 +143,7 @@ public sealed class DriversControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.DriverServiceMock.Setup(x => x.GetByPersonIdAsync(40))
+        factory.DriverServiceMock.Setup(x => x.GetByPersonIdAsync(40, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverDto>.Success(new()
             {
                 DriverID = 30,
@@ -174,7 +174,7 @@ public sealed class DriversControllerTests
     public async Task GetByPersonId_WhenDriverDoesNotExist_ReturnsNotFound()
     {
         await using var factory = new ApiWebApplicationFactory();
-        factory.DriverServiceMock.Setup(x => x.GetByPersonIdAsync(404))
+        factory.DriverServiceMock.Setup(x => x.GetByPersonIdAsync(404, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<DriverDto>.FromNotFound("Driver not found."));
 
         await AssertProblemDetailsAsync(
@@ -187,7 +187,7 @@ public sealed class DriversControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.DriverServiceMock.Setup(x => x.GetByCreatedUserIdAsync(50))
+        factory.DriverServiceMock.Setup(x => x.GetByCreatedUserIdAsync(50, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<DriverDto>>.Success(
             [
                 new() { DriverID = 1, PersonID = 11, FullName = "First Driver", NationalNo = "111111111", Gender = Gender.Male, CreatedByUserID = 50, CreatedByUserName = "admin" },
@@ -213,7 +213,7 @@ public sealed class DriversControllerTests
     public async Task GetByCreatedUserId_WhenServiceReturnsValidationFailure_ReturnsBadRequest()
     {
         await using var factory = new ApiWebApplicationFactory();
-        factory.DriverServiceMock.Setup(x => x.GetByCreatedUserIdAsync(0))
+        factory.DriverServiceMock.Setup(x => x.GetByCreatedUserIdAsync(0, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<DriverDto>>.FromValidationFailure("Invalid created user ID."));
 
         await AssertProblemDetailsAsync(
@@ -226,7 +226,7 @@ public sealed class DriversControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.DriverServiceMock.Setup(x => x.AddAsync(It.Is<CreateDriverDto>(d => d.PersonID == 123)))
+        factory.DriverServiceMock.Setup(x => x.AddAsync(It.Is<CreateDriverDto>(d => d.PersonID == 123), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(77));
 
         var response = await Authenticated(factory)
@@ -239,7 +239,7 @@ public sealed class DriversControllerTests
         Assert.Equal(77, document.RootElement.GetProperty("driverId").GetInt32());
 
         factory.DriverServiceMock.Verify(
-            x => x.AddAsync(It.Is<CreateDriverDto>(d => d.PersonID == 123)), Times.Once);
+            x => x.AddAsync(It.Is<CreateDriverDto>(d => d.PersonID == 123), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -259,7 +259,7 @@ public sealed class DriversControllerTests
             _ => throw new ArgumentOutOfRangeException(nameof(status))
         };
 
-        factory.DriverServiceMock.Setup(x => x.AddAsync(It.IsAny<CreateDriverDto>()))
+        factory.DriverServiceMock.Setup(x => x.AddAsync(It.IsAny<CreateDriverDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await Authenticated(factory)
@@ -281,7 +281,7 @@ public sealed class DriversControllerTests
             "The route driver id does not match the request driver id.");
 
         factory.DriverServiceMock.Verify(
-            x => x.UpdateAsync(It.IsAny<UpdateDriverDto>()), Times.Never);
+            x => x.UpdateAsync(It.IsAny<UpdateDriverDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -290,7 +290,7 @@ public sealed class DriversControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.DriverServiceMock.Setup(x => x.UpdateAsync(It.Is<UpdateDriverDto>(
-            d => d.DriverID == 20 && d.PersonID == 50)))
+            d => d.DriverID == 20 && d.PersonID == 50), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await Authenticated(factory)
@@ -299,7 +299,7 @@ public sealed class DriversControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         factory.DriverServiceMock.Verify(
             x => x.UpdateAsync(It.Is<UpdateDriverDto>(
-                d => d.DriverID == 20 && d.PersonID == 50)), Times.Once);
+                d => d.DriverID == 20 && d.PersonID == 50), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -314,7 +314,7 @@ public sealed class DriversControllerTests
             ? Result.NotFound(detail)
             : Result.Conflict(detail);
 
-        factory.DriverServiceMock.Setup(x => x.UpdateAsync(It.IsAny<UpdateDriverDto>()))
+        factory.DriverServiceMock.Setup(x => x.UpdateAsync(It.IsAny<UpdateDriverDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await Authenticated(factory)
@@ -328,13 +328,13 @@ public sealed class DriversControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.DriverServiceMock.Setup(x => x.DeleteAsync(25))
+        factory.DriverServiceMock.Setup(x => x.DeleteAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await Authenticated(factory).DeleteAsync("/api/Drivers/25");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        factory.DriverServiceMock.Verify(x => x.DeleteAsync(25), Times.Once);
+        factory.DriverServiceMock.Verify(x => x.DeleteAsync(25, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -349,7 +349,7 @@ public sealed class DriversControllerTests
             ? Result.NotFound(detail)
             : Result.Conflict(detail);
 
-        factory.DriverServiceMock.Setup(x => x.DeleteAsync(25)).ReturnsAsync(result);
+        factory.DriverServiceMock.Setup(x => x.DeleteAsync(25, It.IsAny<CancellationToken>())).ReturnsAsync(result);
 
         await AssertProblemDetailsAsync(
             await Authenticated(factory).DeleteAsync("/api/Drivers/25"),
@@ -361,7 +361,7 @@ public sealed class DriversControllerTests
     {
         await using var factory = new ApiWebApplicationFactory();
 
-        factory.DriverServiceMock.Setup(x => x.DeleteAsync(25))
+        factory.DriverServiceMock.Setup(x => x.DeleteAsync(25, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure("Failed to delete driver."));
 
         await AssertProblemDetailsAsync(
@@ -438,7 +438,7 @@ public sealed class DriversControllerTests
                 r.PageSize == 5 &&
                 r.SearchQuery == "Ahmad" &&
                 r.SearchBy == "name" &&
-                r.LicenseFilter == "active")))
+                r.LicenseFilter == "active"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<DriverDto>>.Success(pagedDrivers));
 
         var response = await Authenticated(factory)
@@ -466,10 +466,10 @@ public sealed class DriversControllerTests
         Assert.Equal("123456789", items[0].GetProperty("nationalNo").GetString());
 
         factory.DriverServiceMock.Verify(
-            x => x.GetAllAsync(It.IsAny<DriverQueryRequest>()),
+            x => x.GetAllAsync(It.IsAny<DriverQueryRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
         factory.DriverServiceMock.Verify(
-            x => x.GetAllAsync(),
+            x => x.GetAllAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -483,7 +483,7 @@ public sealed class DriversControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.DriverServiceMock.Verify(
-            x => x.GetAllAsync(It.IsAny<DriverQueryRequest>()),
+            x => x.GetAllAsync(It.IsAny<DriverQueryRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

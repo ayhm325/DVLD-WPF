@@ -22,7 +22,8 @@ public sealed class TestWorkflowService(
 
     public async Task<Result> CanScheduleTestAsync(
         int localAppId,
-        TestTypeEnum testType)
+        TestTypeEnum testType,
+        CancellationToken cancellationToken = default)
     {
         var validation = ValidateTestRequest(localAppId, testType);
 
@@ -30,7 +31,7 @@ public sealed class TestWorkflowService(
             return validation;
 
         var status =
-            await _repository.GetApplicationStatusAsync(localAppId);
+            await _repository.GetApplicationStatusAsync(localAppId, cancellationToken);
 
         if (status is null)
             return Result.NotFound(
@@ -43,11 +44,13 @@ public sealed class TestWorkflowService(
         return await ValidateNextTestAsync(
             localAppId,
             testType,
-            "scheduled");
+            "scheduled",
+            cancellationToken);
     }
 
     public async Task<Result<TestTypeEnum>> GetNextTestTypeAsync(
-        int localAppId)
+        int localAppId,
+        CancellationToken cancellationToken = default)
     {
         if (localAppId <= 0)
         {
@@ -56,7 +59,7 @@ public sealed class TestWorkflowService(
         }
 
         var status =
-            await _repository.GetApplicationStatusAsync(localAppId);
+            await _repository.GetApplicationStatusAsync(localAppId, cancellationToken);
 
         if (status is null)
         {
@@ -71,7 +74,7 @@ public sealed class TestWorkflowService(
         }
 
         var passedTests =
-            await _repository.GetPassedTestTypeIdsAsync(localAppId);
+            await _repository.GetPassedTestTypeIdsAsync(localAppId, cancellationToken);
 
         foreach (var testType in RequiredTests)
         {
@@ -84,7 +87,8 @@ public sealed class TestWorkflowService(
     }
 
     public async Task<Result> CanTakeTestAsync(
-        int testAppointmentId)
+        int testAppointmentId,
+        CancellationToken cancellationToken = default)
     {
         if (testAppointmentId <= 0)
         {
@@ -93,7 +97,7 @@ public sealed class TestWorkflowService(
         }
 
         var appointment =
-            await _repository.GetByIdAsync(testAppointmentId);
+            await _repository.GetByIdAsync(testAppointmentId, cancellationToken);
 
         if (appointment is null)
         {
@@ -101,11 +105,12 @@ public sealed class TestWorkflowService(
                 "Test appointment not found.");
         }
 
-        return await CanTakeTestAsync(appointment);
+        return await CanTakeTestAsync(appointment, cancellationToken);
     }
 
     public async Task<Result> CanTakeTestAsync(
-        Domain.Entities.TestAppointment appointment)
+        Domain.Entities.TestAppointment appointment,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(appointment);
 
@@ -148,7 +153,8 @@ public sealed class TestWorkflowService(
 
         var status =
             await _repository.GetApplicationStatusAsync(
-                appointment.LocalDrivingLicenseApplicationID);
+                appointment.LocalDrivingLicenseApplicationID,
+                cancellationToken);
 
         if (status is null)
         {
@@ -173,23 +179,25 @@ public sealed class TestWorkflowService(
         return await ValidateNextTestAsync(
             appointment.LocalDrivingLicenseApplicationID,
             (TestTypeEnum)appointment.TestTypeID,
-            "taken");
+            "taken",
+            cancellationToken);
     }
 
     public async Task<bool> HasPassedAllTestsAsync(
-        int localAppId)
+        int localAppId,
+        CancellationToken cancellationToken = default)
     {
         if (localAppId <= 0)
             return false;
 
         var status =
-            await _repository.GetApplicationStatusAsync(localAppId);
+            await _repository.GetApplicationStatusAsync(localAppId, cancellationToken);
 
         if (status is null)
             return false;
 
         var passedTests =
-            await _repository.GetPassedTestTypeIdsAsync(localAppId);
+            await _repository.GetPassedTestTypeIdsAsync(localAppId, cancellationToken);
 
         return RequiredTests.All(
             testType =>
@@ -199,10 +207,11 @@ public sealed class TestWorkflowService(
     private async Task<Result> ValidateNextTestAsync(
         int localAppId,
         TestTypeEnum testType,
-        string action)
+        string action,
+        CancellationToken cancellationToken = default)
     {
         var nextTest =
-            await GetNextTestTypeAsync(localAppId);
+            await GetNextTestTypeAsync(localAppId, cancellationToken);
 
         if (nextTest.IsFailure)
             return Result.FromFailure(nextTest);

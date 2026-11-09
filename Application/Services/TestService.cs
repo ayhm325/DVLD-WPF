@@ -31,52 +31,52 @@ public sealed class TestService(
     private readonly ILogger<TestService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Result<TestDto>> GetByIdAsync(int id)
+    public async Task<Result<TestDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var validation = TestValidator.ValidateId(id);
         if (validation.IsFailure)
             return Result<TestDto>.FromValidationFailure(validation.Error);
 
-        var entity = await _repository.GetByIdAsync(id);
+        var entity = await _repository.GetByIdAsync(id, cancellationToken);
 
         return entity is null
             ? Result<TestDto>.FromNotFound("Test not found.")
             : Result<TestDto>.Success(TestMapper.ToDto(entity));
     }
 
-    public async Task<Result<List<TestDto>>> GetAllAsync()
+    public async Task<Result<List<TestDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var tests = await _repository.GetAllAsync();
+        var tests = await _repository.GetAllAsync(cancellationToken);
 
         return Result<List<TestDto>>.Success(
             tests.Select(TestMapper.ToDto).ToList());
     }
 
-    public async Task<Result<List<TestDto>>> GetByTestAppointmentIdAsync(int appointmentId)
+    public async Task<Result<List<TestDto>>> GetByTestAppointmentIdAsync(int appointmentId, CancellationToken cancellationToken = default)
     {
         var validation = TestValidator.ValidateAppointmentId(appointmentId);
         if (validation.IsFailure)
             return Result<List<TestDto>>.FromValidationFailure(validation.Error);
 
-        var tests = await _repository.GetByTestAppointmentIdAsync(appointmentId);
+        var tests = await _repository.GetByTestAppointmentIdAsync(appointmentId, cancellationToken);
 
         return Result<List<TestDto>>.Success(
             tests.Select(TestMapper.ToDto).ToList());
     }
 
-    public async Task<Result<List<TestDto>>> GetByUserIdAsync(int userId)
+    public async Task<Result<List<TestDto>>> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         var validation = TestValidator.ValidateUserId(userId);
         if (validation.IsFailure)
             return Result<List<TestDto>>.FromValidationFailure(validation.Error);
 
-        var tests = await _repository.GetByUserIdAsync(userId);
+        var tests = await _repository.GetByUserIdAsync(userId, cancellationToken);
 
         return Result<List<TestDto>>.Success(
             tests.Select(TestMapper.ToDto).ToList());
     }
 
-    public async Task<Result<int>> AddAsync(SaveTestResultDto dto)
+    public async Task<Result<int>> AddAsync(SaveTestResultDto dto, CancellationToken cancellationToken = default)
     {
         var validation = TestValidator.ValidateCreate(dto);
         if (validation.IsFailure)
@@ -89,7 +89,7 @@ public sealed class TestService(
             async transaction =>
             {
                 var appointment =
-                    await _appointmentRepository.GetForUpdateAsync(dto.TestAppointmentID);
+                    await _appointmentRepository.GetForUpdateAsync(dto.TestAppointmentID, cancellationToken);
 
                 if (appointment is null)
                     return await RollbackAsync(
@@ -101,14 +101,14 @@ public sealed class TestService(
                         transaction,
                         Result<int>.FromConflict("This appointment is already locked."));
 
-                if (await _repository.IsTestAlreadyTakenAsync(dto.TestAppointmentID))
+                if (await _repository.IsTestAlreadyTakenAsync(dto.TestAppointmentID, cancellationToken))
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromConflict(
                             "A result already exists for this appointment."));
 
                 var workflow =
-                    await _workflowService.CanTakeTestAsync(dto.TestAppointmentID);
+                    await _workflowService.CanTakeTestAsync(dto.TestAppointmentID, cancellationToken);
 
                 if (workflow.IsFailure)
                     return await RollbackAsync(
@@ -116,21 +116,22 @@ public sealed class TestService(
                         Result<int>.FromResult(workflow));
 
                 var entity = TestMapper.ToEntity(dto, _currentUserService.UserId);
-                await _repository.AddAsync(entity);
+                await _repository.AddAsync(entity, cancellationToken);
 
                 appointment.Status = Domain.Enums.AppointmentStatus.Completed;
                 appointment.IsLocked = true;
 
-                if (await _unitOfWork.SaveChangesAsync() <= 0 || entity.TestID <= 0)
+                if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0 || entity.TestID <= 0)
                     return await RollbackAsync(
                         transaction,
                         Result<int>.FromFailure("Failed to save test result."));
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
 
                 return Result<int>.Success(entity.TestID);
             },
-            IsolationLevel.Serializable);
+            IsolationLevel.Serializable,
+            cancellationToken);
     }
 
     private static async Task<T> RollbackAsync<T>(

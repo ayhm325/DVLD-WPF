@@ -48,7 +48,7 @@ public sealed class LicenseIssuanceService(
     private readonly IJordanClock _clock =
         clock ?? throw new ArgumentNullException(nameof(clock));
 
-    public async Task<Result<int>> IssueFirstLicenseAsync(int localAppId, string? notes)
+    public async Task<Result<int>> IssueFirstLicenseAsync(int localAppId, string? notes, CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateId(localAppId);
         if (validation.IsFailure)
@@ -58,7 +58,7 @@ public sealed class LicenseIssuanceService(
             return Result<int>.FromForbidden("Authenticated user is required.");
 
         var localResult = await _localApplicationService
-            .GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
+            .GetLocalDrivingLicenseApplicationByIdAsync(localAppId, cancellationToken);
 
         if (localResult.IsFailure)
             return PropagateFailure<int>(localResult);
@@ -70,7 +70,7 @@ public sealed class LicenseIssuanceService(
         var localApplication = localResult.Value;
 
         var applicationIdResult =
-            await _localApplicationService.GetApplicationIdByLocalIdAsync(localAppId);
+            await _localApplicationService.GetApplicationIdByLocalIdAsync(localAppId, cancellationToken);
 
         if (applicationIdResult.IsFailure)
             return PropagateFailure<int>(applicationIdResult);
@@ -85,7 +85,7 @@ public sealed class LicenseIssuanceService(
                 applicationIdValidation.Error);
 
         var applicationResult =
-            await _applicationService.GetApplicationByIdAsync(applicationId);
+            await _applicationService.GetApplicationByIdAsync(applicationId, cancellationToken);
 
         if (applicationResult.IsFailure)
             return PropagateFailure<int>(applicationResult);
@@ -104,7 +104,7 @@ public sealed class LicenseIssuanceService(
                 "The application does not have a valid applicant.");
 
         var personResult =
-            await _personService.GetPersonByIdAsync(application.ApplicantPersonID);
+            await _personService.GetPersonByIdAsync(application.ApplicantPersonID, cancellationToken);
 
         if (personResult.IsFailure)
             return PropagateFailure<int>(personResult);
@@ -122,7 +122,8 @@ public sealed class LicenseIssuanceService(
 
         var classResult =
             await _licenseClassService.GetLicenseClassByIdAsync(
-                localApplication.LicenseClassID);
+                localApplication.LicenseClassID,
+                cancellationToken);
 
         if (classResult.IsFailure)
             return PropagateFailure<int>(classResult);
@@ -143,7 +144,7 @@ public sealed class LicenseIssuanceService(
         return await ExecuteTransactionAsync(async transaction =>
         {
             var currentApplicationResult =
-                await _applicationService.GetApplicationForIssuanceAsync(applicationId);
+                await _applicationService.GetApplicationForIssuanceAsync(applicationId, cancellationToken);
 
             if (currentApplicationResult.IsFailure)
                 return PropagateFailure<int>(currentApplicationResult);
@@ -155,16 +156,16 @@ public sealed class LicenseIssuanceService(
                 return Result<int>.FromConflict(
                     "The application is not in a valid state for license issuance.");
 
-            if (!await _testWorkflowService.HasPassedAllTestsAsync(localAppId))
+            if (!await _testWorkflowService.HasPassedAllTestsAsync(localAppId, cancellationToken))
                 return Result<int>.FromConflict(
                     "The applicant has not passed all required tests.");
 
-            if (await _licenseRepository.IsApplicationHasLicenseAsync(applicationId))
+            if (await _licenseRepository.IsApplicationHasLicenseAsync(applicationId, cancellationToken))
                 return Result<int>.FromConflict(
                     "A license has already been issued for this application.");
 
             var driverResult =
-                await _driverService.GetByPersonIdAsync(person.PersonId);
+                await _driverService.GetByPersonIdAsync(person.PersonId, cancellationToken);
 
             int driverId;
 
@@ -182,7 +183,8 @@ public sealed class LicenseIssuanceService(
                     return PropagateFailure<int>(driverResult);
 
                 var createDriverResult = await _driverService.AddAsync(
-                    new CreateDriverDto { PersonID = person.PersonId });
+                    new CreateDriverDto { PersonID = person.PersonId },
+                    cancellationToken);
 
                 if (createDriverResult.IsFailure)
                     return PropagateFailure<int>(createDriverResult);
@@ -197,7 +199,8 @@ public sealed class LicenseIssuanceService(
 
             if (await _licenseRepository.IsActiveLicenseExistsAsync(
                     driverId,
-                    localApplication.LicenseClassID))
+                    localApplication.LicenseClassID,
+                    cancellationToken))
                 return Result<int>.FromConflict(
                     "The driver already has an active license for this license class.");
 
@@ -226,30 +229,32 @@ public sealed class LicenseIssuanceService(
             var license = LicenseMapper.ToEntity(createLicenseDto);
             license.CreatedByUserID = _currentUserService.UserId;
 
-            await _licenseRepository.AddLicenseAsync(license);
+            await _licenseRepository.AddLicenseAsync(license, cancellationToken);
 
-            if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+            if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0 ||
                 license.LicenseID <= 0)
                 return Result<int>.FromFailure(
                     "Failed to save the driving license.");
 
             var completeResult =
-                await _applicationService.CompleteApplicationStateAsync(applicationId);
+                await _applicationService.CompleteApplicationStateAsync(applicationId, cancellationToken);
 
             if (completeResult.IsFailure)
                 return PropagateFailure<int>(completeResult);
 
-            await transaction.CommitAsync();
+            await transaction.CommitAsync(cancellationToken);
 
             return Result<int>.Success(license.LicenseID);
-        });
+        }, cancellationToken);
     }
 
     private async Task<T> ExecuteTransactionAsync<T>(
-        Func<IUnitOfWorkTransaction, Task<T>> operation) =>
+        Func<IUnitOfWorkTransaction, Task<T>> operation,
+        CancellationToken cancellationToken = default) =>
         await _unitOfWork.ExecuteInTransactionAsync(
             operation,
-            IsolationLevel.Serializable);
+            IsolationLevel.Serializable,
+            cancellationToken);
 
     private bool IsAuthenticated() =>
         _currentUserService.IsLoggedIn && _currentUserService.UserId > 0;

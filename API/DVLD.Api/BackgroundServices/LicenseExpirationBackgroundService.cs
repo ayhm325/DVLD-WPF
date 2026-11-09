@@ -37,7 +37,7 @@ public sealed class LicenseExpirationBackgroundService : BackgroundService
                     var licenseRepo = scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
                     var clock = scope.ServiceProvider.GetRequiredService<IJordanClock>();
 
-                    var expiredCount = await licenseRepo.DeactivateExpiredLicensesAsync(clock.Today);
+                    var expiredCount = await licenseRepo.DeactivateExpiredLicensesAsync(clock.Today, stoppingToken);
                     if (expiredCount > 0)
                     {
                         _logger.LogInformation(

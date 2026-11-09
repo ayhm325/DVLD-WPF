@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,46 +17,49 @@ public sealed class TestRepository(DVLDDbContext context)
                 .ThenInclude(a => a.TestType)
             .Include(t => t.User);
 
-    public Task<Test?> GetByIdAsync(int id) =>
+    public Task<Test?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<Test?>(null)
             : Query()
-                .FirstOrDefaultAsync(t => t.TestID == id);
+                .FirstOrDefaultAsync(t => t.TestID == id, cancellationToken);
 
-    public Task<List<Test>> GetAllAsync() =>
+    public Task<List<Test>> GetAllAsync(CancellationToken cancellationToken = default) =>
         Query()
             .OrderByDescending(t => t.TestID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
     public Task<List<Test>> GetByTestAppointmentIdAsync(
-        int appointmentId) =>
+        int appointmentId,
+        CancellationToken cancellationToken = default) =>
         appointmentId <= 0
             ? Task.FromResult<List<Test>>([])
             : Query()
                 .Where(t => t.TestAppointmentID == appointmentId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
-    public Task<List<Test>> GetByUserIdAsync(int userId) =>
+    public Task<List<Test>> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default) =>
         userId <= 0
             ? Task.FromResult<List<Test>>([])
             : Query()
                 .Where(t => t.CreatedByUserID == userId)
                 .OrderByDescending(t => t.TestID)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
    
 
     public Task<bool> IsTestAlreadyTakenAsync(
-        int appointmentId) =>
+        int appointmentId,
+        CancellationToken cancellationToken = default) =>
         appointmentId <= 0
             ? Task.FromResult(false)
             : _context.Tests
                 .AsNoTracking()
                 .AnyAsync(t =>
-                    t.TestAppointmentID == appointmentId);
+                    t.TestAppointmentID == appointmentId,
+                    cancellationToken);
 
-    public Task AddAsync(Test test)
+    public Task AddAsync(Test test, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(test);
-        return _context.Tests.AddAsync(test).AsTask();
+        return _context.Tests.AddAsync(test, cancellationToken).AsTask();
     }
 }

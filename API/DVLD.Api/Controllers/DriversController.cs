@@ -19,7 +19,7 @@ public sealed class DriversController(IDriverService service) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] DriverQueryRequest request)
+        [FromQuery] DriverQueryRequest request, CancellationToken cancellationToken = default)
     {
         if (Request.Query.ContainsKey("pageNumber") ||
             Request.Query.ContainsKey("pageSize") ||
@@ -28,7 +28,7 @@ public sealed class DriversController(IDriverService service) : ControllerBase
             Request.Query.ContainsKey("licenseFilter") ||
             Request.Query.ContainsKey("paged"))
         {
-            var result = await service.GetAllAsync(request);
+            var result = await service.GetAllAsync(request, cancellationToken);
 
             if (result.IsFailure)
                 return result.ToActionResult(this);
@@ -49,7 +49,7 @@ public sealed class DriversController(IDriverService service) : ControllerBase
             });
         }
 
-        var unpagedResult = await service.GetAllAsync();
+        var unpagedResult = await service.GetAllAsync(cancellationToken);
 
         if (unpagedResult.IsFailure)
             return unpagedResult.ToActionResult(this);
@@ -60,9 +60,9 @@ public sealed class DriversController(IDriverService service) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByIdAsync(id);
+        var result = await service.GetByIdAsync(id, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -73,9 +73,9 @@ public sealed class DriversController(IDriverService service) : ControllerBase
     }
 
     [HttpGet("person/{personId:int}")]
-    public async Task<IActionResult> GetByPersonId(int personId)
+    public async Task<IActionResult> GetByPersonId(int personId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByPersonIdAsync(personId);
+        var result = await service.GetByPersonIdAsync(personId, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -86,9 +86,9 @@ public sealed class DriversController(IDriverService service) : ControllerBase
     }
 
     [HttpGet("created-by/{userId:int}")]
-    public async Task<IActionResult> GetByCreatedUserId(int userId)
+    public async Task<IActionResult> GetByCreatedUserId(int userId, CancellationToken cancellationToken = default)
     {
-        var result = await service.GetByCreatedUserIdAsync(userId);
+        var result = await service.GetByCreatedUserIdAsync(userId, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -99,12 +99,12 @@ public sealed class DriversController(IDriverService service) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateDriverRequest request)
+    public async Task<IActionResult> Create(CreateDriverRequest request, CancellationToken cancellationToken = default)
     {
         var result = await service.AddAsync(new CreateDriverDto
         {
             PersonID = request.PersonId
-        });
+        }, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -118,7 +118,8 @@ public sealed class DriversController(IDriverService service) : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
-        UpdateDriverRequest request)
+        UpdateDriverRequest request,
+        CancellationToken cancellationToken = default)
     {
         if (id != request.DriverId)
         {
@@ -131,7 +132,7 @@ public sealed class DriversController(IDriverService service) : ControllerBase
         {
             DriverID = request.DriverId,
             PersonID = request.PersonId
-        });
+        }, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()
@@ -139,9 +140,9 @@ public sealed class DriversController(IDriverService service) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
-        var result = await service.DeleteAsync(id);
+        var result = await service.DeleteAsync(id, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

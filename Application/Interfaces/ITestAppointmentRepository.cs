@@ -5,50 +5,62 @@ namespace Application.Interfaces;
 
 public interface ITestAppointmentRepository
 {
-    Task<TestAppointment?> GetByIdAsync(int id);
+    Task<TestAppointment?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
-    Task<TestAppointment?> GetForUpdateAsync(int id);
+    Task<TestAppointment?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default);
 
-    Task<List<TestAppointment>> GetAllAsync();
+    Task<List<TestAppointment>> GetAllAsync(CancellationToken cancellationToken = default);
 
     Task<List<TestAppointment>>
         GetByLocalDrivingLicenseApplicationIdAsync(
-            int localAppId);
+            int localAppId,
+            CancellationToken cancellationToken = default);
 
     Task<List<TestAppointment>>
-        GetByTestTypeIdAsync(TestTypeEnum testType);
+        GetByTestTypeIdAsync(
+            TestTypeEnum testType,
+            CancellationToken cancellationToken = default);
 
     Task<List<TestAppointment>>
-        GetByCreatedUserIdAsync(int userId);
+        GetByCreatedUserIdAsync(
+            int userId,
+            CancellationToken cancellationToken = default);
 
     Task<TestAppointment?> GetScheduleInfoAsync(
-        int appointmentId);
+        int appointmentId,
+        CancellationToken cancellationToken = default);
 
     Task<HashSet<int>> GetPassedTestTypeIdsAsync(
-        int localAppId);
+        int localAppId,
+        CancellationToken cancellationToken = default);
 
     Task<bool> HasUserConflictAsync(
         int userId,
         DateTime dateTime,
-        int? excludeAppointmentId = null);
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
 
     Task<bool> HasLocalApplicationConflictAsync(
         int localAppId,
         DateTime dateTime,
-        int? excludeAppointmentId = null);
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
 
     Task<bool> IsSlotOccupiedAsync(
         int testTypeId,
         DateTime appointmentDate,
-        int? excludeAppointmentId = null);
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
 
     Task<bool> HasApplicantSameDayConflictAsync(
         int applicantPersonId,
         DateTime appointmentDate,
-        int? excludeAppointmentId = null);
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default);
 
     Task<int?> GetApplicantPersonIdByLocalAppIdAsync(
-        int localAppId);
+        int localAppId,
+        CancellationToken cancellationToken = default);
 
     Task<bool> AcquireSchedulingLocksAsync(
         int applicantPersonId,
@@ -59,21 +71,27 @@ public interface ITestAppointmentRepository
 
     Task<bool> IsAppointmentAlreadyScheduledAsync(
         int localAppId,
-        int testTypeId);
+        int testTypeId,
+        CancellationToken cancellationToken = default);
 
     Task<AppStatus?> GetApplicationStatusAsync(
-        int localAppId);
+        int localAppId,
+        CancellationToken cancellationToken = default);
 
     Task<int> GetTrialCountAsync(
         int localAppId,
-        int testTypeId);
+        int testTypeId,
+        CancellationToken cancellationToken = default);
 
-    Task AddAsync(TestAppointment appointment);
+    Task AddAsync(
+        TestAppointment appointment,
+        CancellationToken cancellationToken = default);
 
     void Delete(TestAppointment appointment);
 
     Task<bool> LockLocalApplicationForSchedulingAsync(
-        int localAppId);
+        int localAppId,
+        CancellationToken cancellationToken = default);
 
     Task<(HashSet<DateTime> OccupiedSlots, HashSet<DateTime> ApplicantAppointmentDates, DateTime? LastTestDate)>
         GetAvailabilityDataAsync(
@@ -81,7 +99,8 @@ public interface ITestAppointmentRepository
             int applicantPersonId,
             int localAppId,
             DateTime rangeStart,
-            DateTime rangeEnd);
+            DateTime rangeEnd,
+            CancellationToken cancellationToken = default);
 
     Task<List<int>> GetPendingNoShowAppointmentIdsAsync(
         DateTime cutoffJordanTime,

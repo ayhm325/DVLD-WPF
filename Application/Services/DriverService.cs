@@ -30,7 +30,7 @@ public sealed class DriverService(
     private readonly IJordanClock _clock =
         clock ?? throw new ArgumentNullException(nameof(clock));
 
-    public async Task<Result<DriverDto>> GetByIdAsync(int id)
+    public async Task<Result<DriverDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var validation = DriverValidator.ValidateId(id);
 
@@ -40,7 +40,7 @@ public sealed class DriverService(
                 validation.Error);
         }
 
-        var entity = await _repository.GetByIdAsync(id);
+        var entity = await _repository.GetByIdAsync(id, cancellationToken);
 
         return entity is null
             ? Result<DriverDto>.FromNotFound("Driver not found.")
@@ -48,31 +48,31 @@ public sealed class DriverService(
                 DriverMapper.ToDto(entity));
     }
 
-    public async Task<Result<List<DriverDto>>> GetAllAsync()
+    public async Task<Result<List<DriverDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _repository.GetAllAsync();
+        var entities = await _repository.GetAllAsync(cancellationToken);
 
         return Result<List<DriverDto>>.Success(
             DriverMapper.ToDtoList(entities));
     }
 
-    public Task<Result<PagedResult<DriverDto>>> GetAllAsync(PaginationRequest request)
+    public Task<Result<PagedResult<DriverDto>>> GetAllAsync(PaginationRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (request is DriverQueryRequest queryRequest)
         {
-            return GetAllAsync(queryRequest);
+            return GetAllAsync(queryRequest, cancellationToken);
         }
 
-        return GetAllInternalAsync(() => _repository.GetAllAsync(request));
+        return GetAllInternalAsync(() => _repository.GetAllAsync(request, cancellationToken));
     }
 
-    public Task<Result<PagedResult<DriverDto>>> GetAllAsync(DriverQueryRequest request)
+    public Task<Result<PagedResult<DriverDto>>> GetAllAsync(DriverQueryRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        return GetAllInternalAsync(() => _repository.GetAllAsync(request));
+        return GetAllInternalAsync(() => _repository.GetAllAsync(request, cancellationToken));
     }
 
     private async Task<Result<PagedResult<DriverDto>>> GetAllInternalAsync(
@@ -93,7 +93,7 @@ public sealed class DriverService(
         });
     }
 
-    public async Task<Result<DriverDto>> GetByPersonIdAsync(int personId)
+    public async Task<Result<DriverDto>> GetByPersonIdAsync(int personId, CancellationToken cancellationToken = default)
     {
         var validation =
             DriverValidator.ValidatePersonId(personId);
@@ -105,7 +105,7 @@ public sealed class DriverService(
         }
 
         var entity =
-            await _repository.GetByPersonIdAsync(personId);
+            await _repository.GetByPersonIdAsync(personId, cancellationToken);
 
         return entity is null
             ? Result<DriverDto>.FromNotFound("Driver not found.")
@@ -114,7 +114,7 @@ public sealed class DriverService(
     }
 
     public async Task<Result<List<DriverDto>>> GetByCreatedUserIdAsync(
-        int userId)
+        int userId, CancellationToken cancellationToken = default)
     {
         var validation =
             DriverValidator.ValidateCreatedUserId(userId);
@@ -126,23 +126,23 @@ public sealed class DriverService(
         }
 
         var entities =
-            await _repository.GetByCreatedUserIdAsync(userId);
+            await _repository.GetByCreatedUserIdAsync(userId, cancellationToken);
 
         return Result<List<DriverDto>>.Success(
             DriverMapper.ToDtoList(entities));
     }
 
-    public Task<bool> ExistsByIdAsync(int driverId) =>
+    public Task<bool> ExistsByIdAsync(int driverId, CancellationToken cancellationToken = default) =>
         driverId > 0
-            ? _repository.ExistsByIdAsync(driverId)
+            ? _repository.ExistsByIdAsync(driverId, cancellationToken)
             : Task.FromResult(false);
 
-    public Task<bool> ExistsByPersonIdAsync(int personId) =>
+    public Task<bool> ExistsByPersonIdAsync(int personId, CancellationToken cancellationToken = default) =>
         personId > 0
-            ? _repository.ExistsByPersonIdAsync(personId)
+            ? _repository.ExistsByPersonIdAsync(personId, cancellationToken)
             : Task.FromResult(false);
 
-    public async Task<Result<int>> AddAsync(CreateDriverDto dto)
+    public async Task<Result<int>> AddAsync(CreateDriverDto dto, CancellationToken cancellationToken = default)
     {
         var validation =
             DriverValidator.ValidateCreate(dto);
@@ -159,13 +159,13 @@ public sealed class DriverService(
                 "Authenticated user is required.");
         }
 
-        if (!await _personRepository.IsPersonExistsByIdAsync(dto.PersonID))
+        if (!await _personRepository.IsPersonExistsByIdAsync(dto.PersonID, cancellationToken))
         {
             return Result<int>.FromNotFound(
                 "Person not found.");
         }
 
-        if (await _repository.ExistsByPersonIdAsync(dto.PersonID))
+        if (await _repository.ExistsByPersonIdAsync(dto.PersonID, cancellationToken))
         {
             return Result<int>.FromConflict(
                 "This person is already registered as a driver.");
@@ -176,10 +176,10 @@ public sealed class DriverService(
         entity.CreatedByUserID =
             _currentUserService.UserId;
 
-        await _repository.AddAsync(entity);
+        await _repository.AddAsync(entity, cancellationToken);
 
         var saved =
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0 && entity.DriverID > 0
             ? Result<int>.Success(entity.DriverID)
@@ -187,7 +187,7 @@ public sealed class DriverService(
                 "Failed to create driver.");
     }
 
-    public async Task<Result> UpdateAsync(UpdateDriverDto dto)
+    public async Task<Result> UpdateAsync(UpdateDriverDto dto, CancellationToken cancellationToken = default)
     {
         var validation =
             DriverValidator.ValidateUpdate(dto);
@@ -205,7 +205,7 @@ public sealed class DriverService(
         }
 
         var existing =
-            await _repository.GetForUpdateAsync(dto.DriverID);
+            await _repository.GetForUpdateAsync(dto.DriverID, cancellationToken);
 
         if (existing is null)
         {
@@ -213,14 +213,14 @@ public sealed class DriverService(
                 "Driver not found.");
         }
 
-        if (!await _personRepository.IsPersonExistsByIdAsync(dto.PersonID))
+        if (!await _personRepository.IsPersonExistsByIdAsync(dto.PersonID, cancellationToken))
         {
             return Result.NotFound(
                 "Person not found.");
         }
 
         if (existing.PersonID != dto.PersonID &&
-            await _repository.ExistsByPersonIdAsync(dto.PersonID))
+            await _repository.ExistsByPersonIdAsync(dto.PersonID, cancellationToken))
         {
             return Result.Conflict(
                 "This person is already registered as another driver.");
@@ -235,7 +235,7 @@ public sealed class DriverService(
         DriverMapper.UpdateEntity(existing, dto);
 
         var saved =
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0
             ? Result.Success()
@@ -243,7 +243,7 @@ public sealed class DriverService(
                 "No driver changes were saved.");
     }
 
-    public async Task<Result> DeleteAsync(int id)
+    public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var validation =
             DriverValidator.ValidateId(id);
@@ -261,7 +261,7 @@ public sealed class DriverService(
         }
 
         var driver =
-            await _repository.GetForDeleteAsync(id);
+            await _repository.GetForDeleteAsync(id, cancellationToken);
 
         if (driver is null)
         {
@@ -284,7 +284,7 @@ public sealed class DriverService(
         _repository.Delete(driver);
 
         var saved =
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return saved > 0
             ? Result.Success()

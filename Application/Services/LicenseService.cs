@@ -14,57 +14,67 @@ public sealed class LicenseService(
         ?? throw new ArgumentNullException(nameof(queryService));
 
     public Task<Result<LicenseDto>> GetByIdAsync(
-        int licenseId) =>
-        _queryService.GetByIdAsync(licenseId);
+        int licenseId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.GetByIdAsync(licenseId, cancellationToken);
 
-    public Task<Result<List<LicenseDto>>> GetAllAsync() =>
-        _queryService.GetAllAsync();
+    public Task<Result<List<LicenseDto>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        _queryService.GetAllAsync(cancellationToken);
 
-    public Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired) =>
-        _queryService.GetAllAsync(isExpired);
+    public Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired, CancellationToken cancellationToken = default) =>
+        _queryService.GetAllAsync(isExpired, cancellationToken);
 
-    public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request) =>
-        _queryService.GetAllAsync(request);
+    public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request, CancellationToken cancellationToken = default) =>
+        _queryService.GetAllAsync(request, cancellationToken);
 
-    public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request) =>
-        _queryService.GetAllAsync(request);
+    public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request, CancellationToken cancellationToken = default) =>
+        _queryService.GetAllAsync(request, cancellationToken);
 
-    public Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync() =>
-        _queryService.GetRenewalSummaryAsync();
+    public Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync(CancellationToken cancellationToken = default) =>
+        _queryService.GetRenewalSummaryAsync(cancellationToken);
 
     public Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
-        int driverId) =>
-        _queryService.GetByDriverIdAsync(driverId);
+        int driverId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.GetByDriverIdAsync(driverId, cancellationToken);
 
     public Task<Result<List<LicenseDto>>> GetByApplicationIdAsync(
-        int applicationId) =>
-        _queryService.GetByApplicationIdAsync(applicationId);
+        int applicationId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.GetByApplicationIdAsync(applicationId, cancellationToken);
 
     public Task<Result<List<LicenseDto>>> GetByLicenseClassIdAsync(
-        int licenseClassId) =>
-        _queryService.GetByLicenseClassIdAsync(licenseClassId);
+        int licenseClassId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.GetByLicenseClassIdAsync(licenseClassId, cancellationToken);
 
     public Task<Result<List<LicenseDto>>> GetLicensesByPersonIdAsync(
-        int personId) =>
-        _queryService.GetLicensesByPersonIdAsync(personId);
+        int personId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.GetLicensesByPersonIdAsync(personId, cancellationToken);
 
     public Task<Result<bool>> IsLicenseExistsAsync(
-        int licenseId) =>
-        _queryService.IsLicenseExistsAsync(licenseId);
+        int licenseId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.IsLicenseExistsAsync(licenseId, cancellationToken);
 
     public Task<Result<bool>> IsDriverHasLicenseAsync(
-        int driverId) =>
-        _queryService.IsDriverHasLicenseAsync(driverId);
+        int driverId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.IsDriverHasLicenseAsync(driverId, cancellationToken);
 
     public Task<Result<bool>> IsApplicationHasLicenseAsync(
-        int applicationId) =>
-        _queryService.IsApplicationHasLicenseAsync(applicationId);
+        int applicationId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.IsApplicationHasLicenseAsync(applicationId, cancellationToken);
 
     public Task<Result<DriverLicenseInfoDto>> GetDetailsAsync(
-        int localAppId) =>
-        _queryService.GetDetailsAsync(localAppId);
+        int localAppId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.GetDetailsAsync(localAppId, cancellationToken);
 
     public Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(
-        int licenseId) =>
-        _queryService.GetLicenseDetailsByIdAsync(licenseId);
+        int licenseId,
+        CancellationToken cancellationToken = default) =>
+        _queryService.GetLicenseDetailsByIdAsync(licenseId, cancellationToken);
 }

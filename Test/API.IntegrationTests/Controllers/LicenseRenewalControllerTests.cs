@@ -1,4 +1,4 @@
-﻿using API.IntegrationTests.Infrastructure;
+using API.IntegrationTests.Infrastructure;
 using Application.Common.Results;
 using DVLD.Contracts.LicenseRenewal;
 using Moq;
@@ -22,7 +22,7 @@ public sealed class LicenseRenewalControllerTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         factory.LicenseRenewalServiceMock.Verify(
-            x => x.RenewLicenseAsync(It.IsAny<int>(), It.IsAny<string?>()),
+            x => x.RenewLicenseAsync(It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -32,7 +32,7 @@ public sealed class LicenseRenewalControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseRenewalServiceMock
-            .Setup(x => x.RenewLicenseAsync(10, "Renewal notes"))
+            .Setup(x => x.RenewLicenseAsync(10, "Renewal notes", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(300));
 
         using var client = CreateAuthenticatedClient(factory);
@@ -47,7 +47,7 @@ public sealed class LicenseRenewalControllerTests
         Assert.Equal(300, result.LicenseId);
 
         factory.LicenseRenewalServiceMock.Verify(
-            x => x.RenewLicenseAsync(10, "Renewal notes"),
+            x => x.RenewLicenseAsync(10, "Renewal notes", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -57,7 +57,7 @@ public sealed class LicenseRenewalControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseRenewalServiceMock
-            .Setup(x => x.RenewLicenseAsync(10, null))
+            .Setup(x => x.RenewLicenseAsync(10, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(301));
 
         using var client = CreateAuthenticatedClient(factory);
@@ -72,7 +72,7 @@ public sealed class LicenseRenewalControllerTests
         Assert.Equal(301, result.LicenseId);
 
         factory.LicenseRenewalServiceMock.Verify(
-            x => x.RenewLicenseAsync(10, null),
+            x => x.RenewLicenseAsync(10, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -100,7 +100,7 @@ public sealed class LicenseRenewalControllerTests
         };
 
         factory.LicenseRenewalServiceMock
-            .Setup(x => x.RenewLicenseAsync(licenseId, notes))
+            .Setup(x => x.RenewLicenseAsync(licenseId, notes, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         using var client = CreateAuthenticatedClient(factory);
@@ -121,7 +121,7 @@ public sealed class LicenseRenewalControllerTests
         await using var factory = new ApiWebApplicationFactory();
 
         factory.LicenseRenewalServiceMock
-            .Setup(x => x.RenewLicenseAsync(20, null))
+            .Setup(x => x.RenewLicenseAsync(20, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromFailure(
                 "Failed to renew license."));
 

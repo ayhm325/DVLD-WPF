@@ -51,7 +51,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
 
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
                 .Success(paged));
 
@@ -78,7 +78,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
             x => x.GetAllLocalDrivingLicenseApplicationsAsync(
                 It.Is<LocalDrivingLicenseApplicationQueryRequest>(p =>
-                    p.PageNumber == 1 && p.PageSize == 10)),
+                    p.PageNumber == 1 && p.PageSize == 10), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -94,7 +94,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
 
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await GetAuthenticatedAsync(
@@ -112,7 +112,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
                 .FromFailure("Database failure."));
 
@@ -132,7 +132,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         var dto = CreateApplicationDto(20);
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(20))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(20, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<LocalDrivingLicenseApplicationListDto>.Success(dto));
 
         var response = await GetAuthenticatedAsync(
@@ -147,7 +147,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         AssertApplicationResponse(dto, result);
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
-            x => x.GetLocalDrivingLicenseApplicationByIdAsync(20),
+            x => x.GetLocalDrivingLicenseApplicationByIdAsync(20, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -167,7 +167,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
             : Result<LocalDrivingLicenseApplicationListDto>.FromValidationFailure(detail);
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(id))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await GetAuthenticatedAsync(
@@ -186,7 +186,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         var dto = CreateApplicationBasicInfoDto();
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetApplicationBasicInfoAsync(30))
+            .Setup(x => x.GetApplicationBasicInfoAsync(30, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationBasicInfoDto>.Success(dto));
 
         var response = await GetAuthenticatedAsync(
@@ -210,7 +210,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         Assert.Equal(dto.CreatedByUserName, result.CreatedByUserName);
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
-            x => x.GetApplicationBasicInfoAsync(30), Times.Once);
+            x => x.GetApplicationBasicInfoAsync(30, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         const string detail = "Application information not found.";
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetApplicationBasicInfoAsync(30))
+            .Setup(x => x.GetApplicationBasicInfoAsync(30, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ApplicationBasicInfoDto>.FromNotFound(detail));
 
         var response = await GetAuthenticatedAsync(
@@ -238,7 +238,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         var dto = CreateApplicationDto(40);
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicationIdAsync(40))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicationIdAsync(40, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LocalDrivingLicenseApplicationListDto>>
                 .Success([dto]));
 
@@ -254,7 +254,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         AssertApplicationResponse(dto, Assert.Single(result));
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
-            x => x.GetLocalDrivingLicenseApplicationsByApplicationIdAsync(40),
+            x => x.GetLocalDrivingLicenseApplicationsByApplicationIdAsync(40, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -264,7 +264,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         const string detail = "Application conflict.";
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicationIdAsync(40))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicationIdAsync(40, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LocalDrivingLicenseApplicationListDto>>
                 .FromConflict(detail));
 
@@ -284,7 +284,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         var dto = CreateApplicationDto(50);
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(3))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LocalDrivingLicenseApplicationListDto>>
                 .Success([dto]));
 
@@ -306,7 +306,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         const string detail = "Invalid license class ID.";
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(0))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationsByLicenseClassIdAsync(0, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LocalDrivingLicenseApplicationListDto>>
                 .FromValidationFailure(detail));
 
@@ -326,7 +326,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         var dto = CreateApplicationDto(60);
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(15))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LocalDrivingLicenseApplicationListDto>>
                 .Success([dto]));
 
@@ -348,7 +348,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         const string detail = "Applications not found.";
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(15))
+            .Setup(x => x.GetLocalDrivingLicenseApplicationsByApplicantPersonIdAsync(15, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<List<LocalDrivingLicenseApplicationListDto>>
                 .FromNotFound(detail));
 
@@ -366,7 +366,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     public async Task GetCreateInfo_WhenSuccessful_ReturnsApplicationFees()
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetNewLocalDrivingLicenseApplicationFeesAsync())
+            .Setup(x => x.GetNewLocalDrivingLicenseApplicationFeesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<decimal>.Success(75m));
 
         var response = await GetAuthenticatedAsync(
@@ -381,14 +381,14 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         Assert.Equal(75m, result.ApplicationFees);
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
-            x => x.GetNewLocalDrivingLicenseApplicationFeesAsync(), Times.Once);
+            x => x.GetNewLocalDrivingLicenseApplicationFeesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetCreateInfo_WhenFailure_Returns500ProblemDetails()
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetNewLocalDrivingLicenseApplicationFeesAsync())
+            .Setup(x => x.GetNewLocalDrivingLicenseApplicationFeesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<decimal>.FromFailure(
                 "Application type lookup failed."));
 
@@ -406,7 +406,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     public async Task GetApplicationId_WhenSuccessful_ReturnsApplicationId()
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetApplicationIdByLocalIdAsync(70))
+            .Setup(x => x.GetApplicationIdByLocalIdAsync(70, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(700));
 
         var response = await GetAuthenticatedAsync(
@@ -428,7 +428,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
             "Main application not found for this local application.";
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.GetApplicationIdByLocalIdAsync(70))
+            .Setup(x => x.GetApplicationIdByLocalIdAsync(70, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.FromNotFound(detail));
 
         var response = await GetAuthenticatedAsync(
@@ -445,7 +445,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     public async Task Create_WhenSuccessful_Returns201WithNewId()
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.CreateLocalDrivingLicenseApplicationAsync(15, 3))
+            .Setup(x => x.CreateLocalDrivingLicenseApplicationAsync(15, 3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<int>.Success(100));
 
         var response = await PostAuthenticatedAsync(
@@ -466,7 +466,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         Assert.NotNull(response.Headers.Location);
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
-            x => x.CreateLocalDrivingLicenseApplicationAsync(15, 3),
+            x => x.CreateLocalDrivingLicenseApplicationAsync(15, 3, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -484,7 +484,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
             : Result<int>.FromConflict(detail);
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.CreateLocalDrivingLicenseApplicationAsync(15, 3))
+            .Setup(x => x.CreateLocalDrivingLicenseApplicationAsync(15, 3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
         var response = await PostAuthenticatedAsync(
@@ -509,7 +509,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
             .Setup(x => x.UpdateLocalDrivingLicenseApplicationAsync(
                 80,
                 It.Is<UpdateLocalDrivingLicenseApplicationDto>(
-                    dto => dto.LicenseClassID == 4)))
+                    dto => dto.LicenseClassID == 4), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await PutAuthenticatedAsync(
@@ -525,7 +525,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
             x => x.UpdateLocalDrivingLicenseApplicationAsync(
                 80,
                 It.Is<UpdateLocalDrivingLicenseApplicationDto>(
-                    dto => dto.LicenseClassID == 4)),
+                    dto => dto.LicenseClassID == 4), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -538,7 +538,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.UpdateLocalDrivingLicenseApplicationAsync(
                 80,
-                It.IsAny<UpdateLocalDrivingLicenseApplicationDto>()))
+                It.IsAny<UpdateLocalDrivingLicenseApplicationDto>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.NotFound(detail));
 
         var response = await PutAuthenticatedAsync(
@@ -559,7 +559,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     public async Task Delete_WhenSuccessful_Returns204()
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.DeleteLocalDrivingLicenseApplicationAsync(90))
+            .Setup(x => x.DeleteLocalDrivingLicenseApplicationAsync(90, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await DeleteAuthenticatedAsync(
@@ -568,7 +568,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
-            x => x.DeleteLocalDrivingLicenseApplicationAsync(90),
+            x => x.DeleteLocalDrivingLicenseApplicationAsync(90, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -578,7 +578,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         const string detail = "Application cannot be deleted.";
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.DeleteLocalDrivingLicenseApplicationAsync(90))
+            .Setup(x => x.DeleteLocalDrivingLicenseApplicationAsync(90, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Conflict(detail));
 
         var response = await DeleteAuthenticatedAsync(
@@ -595,7 +595,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     public async Task Cancel_WhenSuccessful_Returns204()
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.CancelLocalDrivingLicenseApplicationAsync(100))
+            .Setup(x => x.CancelLocalDrivingLicenseApplicationAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         var response = await PostAuthenticatedAsync(
@@ -604,7 +604,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         _factory.LocalDrivingLicenseApplicationServiceMock.Verify(
-            x => x.CancelLocalDrivingLicenseApplicationAsync(100),
+            x => x.CancelLocalDrivingLicenseApplicationAsync(100, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -615,7 +615,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
             "Local driving license application not found.";
 
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.CancelLocalDrivingLicenseApplicationAsync(100))
+            .Setup(x => x.CancelLocalDrivingLicenseApplicationAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.NotFound(detail));
 
         var response = await PostAuthenticatedAsync(
@@ -632,7 +632,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
     public async Task Cancel_WhenForbidden_Returns403()
     {
         _factory.LocalDrivingLicenseApplicationServiceMock
-            .Setup(x => x.CancelLocalDrivingLicenseApplicationAsync(100))
+            .Setup(x => x.CancelLocalDrivingLicenseApplicationAsync(100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Forbidden("Access denied."));
 
         var response = await PostAuthenticatedAsync(
@@ -747,7 +747,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
 
         _factory.LocalDrivingLicenseApplicationServiceMock
             .Setup(x => x.GetAllLocalDrivingLicenseApplicationsAsync(
-                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>()))
+                It.IsAny<LocalDrivingLicenseApplicationQueryRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<PagedResult<LocalDrivingLicenseApplicationListDto>>
                 .Success(paged));
 
@@ -764,7 +764,7 @@ public sealed class LocalDrivingLicenseApplicationsControllerTests
                     p.SearchQuery == "N123" &&
                     p.SearchBy == "nationalno" &&
                     p.StatusFilter == "New" &&
-                    p.LicenseClassId == 3)),
+                    p.LicenseClassId == 3), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

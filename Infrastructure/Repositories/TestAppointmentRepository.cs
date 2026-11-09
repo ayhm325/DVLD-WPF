@@ -39,15 +39,16 @@ public sealed class TestAppointmentRepository(
             .Include(x => x.LocalDrivingLicenseApplication)
                 .ThenInclude(x => x.LicenseClass);
 
-    public Task<TestAppointment?> GetByIdAsync(int id) =>
+    public Task<TestAppointment?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         id <= 0
             ? Task.FromResult<TestAppointment?>(null)
             : Query()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    x => x.TestAppointmentID == id);
+                    x => x.TestAppointmentID == id,
+                    cancellationToken);
 
-    public Task<TestAppointment?> GetForUpdateAsync(int id) =>
+    public Task<TestAppointment?> GetForUpdateAsync(int id, CancellationToken cancellationToken = default) =>
     id <= 0
         ? Task.FromResult<TestAppointment?>(null)
         : _context.TestAppointments
@@ -57,17 +58,18 @@ public sealed class TestAppointmentRepository(
                 WHERE TestAppointmentID = {id}
                 """)
             .Include(x => x.Test)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
-    public Task<List<TestAppointment>> GetAllAsync() =>
+    public Task<List<TestAppointment>> GetAllAsync(CancellationToken cancellationToken = default) =>
         Query()
             .AsNoTracking()
             .OrderByDescending(x => x.AppointmentDate)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
     public Task<List<TestAppointment>>
         GetByLocalDrivingLicenseApplicationIdAsync(
-            int localAppId) =>
+            int localAppId,
+            CancellationToken cancellationToken = default) =>
         localAppId <= 0
             ? Task.FromResult<List<TestAppointment>>([])
             : Query()
@@ -76,10 +78,12 @@ public sealed class TestAppointmentRepository(
                     x.LocalDrivingLicenseApplicationID ==
                     localAppId)
                 .OrderBy(x => x.AppointmentDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
     public Task<List<TestAppointment>>
-        GetByTestTypeIdAsync(TestTypeEnum testType) =>
+        GetByTestTypeIdAsync(
+            TestTypeEnum testType,
+            CancellationToken cancellationToken = default) =>
         !Enum.IsDefined(testType)
             ? Task.FromResult<List<TestAppointment>>([])
             : Query()
@@ -87,10 +91,12 @@ public sealed class TestAppointmentRepository(
                 .Where(x =>
                     x.TestTypeID == (int)testType)
                 .OrderByDescending(x => x.AppointmentDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
     public Task<List<TestAppointment>>
-        GetByCreatedUserIdAsync(int userId) =>
+        GetByCreatedUserIdAsync(
+            int userId,
+            CancellationToken cancellationToken = default) =>
         userId <= 0
             ? Task.FromResult<List<TestAppointment>>([])
             : Query()
@@ -98,21 +104,24 @@ public sealed class TestAppointmentRepository(
                 .Where(x =>
                     x.CreatedByUserID == userId)
                 .OrderByDescending(x => x.AppointmentDate)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
     public Task<TestAppointment?> GetScheduleInfoAsync(
-        int appointmentId) =>
+        int appointmentId,
+        CancellationToken cancellationToken = default) =>
         appointmentId <= 0
             ? Task.FromResult<TestAppointment?>(null)
             : ScheduleInfoQuery()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    x => x.TestAppointmentID == appointmentId);
+                    x => x.TestAppointmentID == appointmentId,
+                    cancellationToken);
 
     public Task<bool> HasUserConflictAsync(
         int userId,
         DateTime dateTime,
-        int? excludeAppointmentId = null) =>
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default) =>
         userId <= 0
             ? Task.FromResult(false)
             : _context.TestAppointments
@@ -125,12 +134,14 @@ public sealed class TestAppointmentRepository(
                     !x.IsLocked &&
                     (!excludeAppointmentId.HasValue ||
                      x.TestAppointmentID !=
-                     excludeAppointmentId.Value));
+                     excludeAppointmentId.Value),
+                    cancellationToken);
 
     public Task<bool> HasLocalApplicationConflictAsync(
         int localAppId,
         DateTime dateTime,
-        int? excludeAppointmentId = null) =>
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default) =>
         localAppId <= 0
             ? Task.FromResult(false)
             : _context.TestAppointments
@@ -144,21 +155,25 @@ public sealed class TestAppointmentRepository(
                     !x.IsLocked &&
                     (!excludeAppointmentId.HasValue ||
                      x.TestAppointmentID !=
-                     excludeAppointmentId.Value));
+                     excludeAppointmentId.Value),
+                    cancellationToken);
 
-    public Task<int?> GetApplicantPersonIdByLocalAppIdAsync(int localAppId) =>
+    public Task<int?> GetApplicantPersonIdByLocalAppIdAsync(
+        int localAppId,
+        CancellationToken cancellationToken = default) =>
         localAppId <= 0
             ? Task.FromResult<int?>(null)
             : _context.LocalDrivingLicenseApplications
                 .AsNoTracking()
                 .Where(x => x.LocalDrivingLicenseApplicationID == localAppId)
                 .Select(x => (int?)x.Application.ApplicantPersonID)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
     public Task<bool> IsSlotOccupiedAsync(
         int testTypeId,
         DateTime appointmentDate,
-        int? excludeAppointmentId = null) =>
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default) =>
         testTypeId <= 0
             ? Task.FromResult(false)
             : _context.TestAppointments
@@ -170,12 +185,14 @@ public sealed class TestAppointmentRepository(
                     x.Status != AppointmentStatus.NoShow &&
                     x.Status != null &&
                     (!excludeAppointmentId.HasValue ||
-                     x.TestAppointmentID != excludeAppointmentId.Value));
+                     x.TestAppointmentID != excludeAppointmentId.Value),
+                    cancellationToken);
 
     public Task<bool> HasApplicantSameDayConflictAsync(
         int applicantPersonId,
         DateTime appointmentDate,
-        int? excludeAppointmentId = null)
+        int? excludeAppointmentId = null,
+        CancellationToken cancellationToken = default)
     {
         if (applicantPersonId <= 0)
             return Task.FromResult(false);
@@ -192,7 +209,8 @@ public sealed class TestAppointmentRepository(
                 x.Status != AppointmentStatus.Cancelled &&
                 x.Status != null &&
                 (!excludeAppointmentId.HasValue ||
-                 x.TestAppointmentID != excludeAppointmentId.Value));
+                 x.TestAppointmentID != excludeAppointmentId.Value),
+                cancellationToken);
     }
 
     public async Task<bool> AcquireSchedulingLocksAsync(
@@ -264,7 +282,8 @@ public sealed class TestAppointmentRepository(
 
     public Task<bool> IsAppointmentAlreadyScheduledAsync(
         int localAppId,
-        int testTypeId) =>
+        int testTypeId,
+        CancellationToken cancellationToken = default) =>
         localAppId <= 0 || testTypeId <= 0
             ? Task.FromResult(false)
             : _context.TestAppointments
@@ -274,10 +293,12 @@ public sealed class TestAppointmentRepository(
                     localAppId &&
                     x.TestTypeID == testTypeId &&
                     x.Status == AppointmentStatus.Scheduled &&
-                    !x.IsLocked);
+                    !x.IsLocked,
+                    cancellationToken);
 
     public Task<AppStatus?> GetApplicationStatusAsync(
-        int localAppId) =>
+        int localAppId,
+        CancellationToken cancellationToken = default) =>
         localAppId <= 0
             ? Task.FromResult<AppStatus?>(null)
             : _context.LocalDrivingLicenseApplications
@@ -287,10 +308,11 @@ public sealed class TestAppointmentRepository(
                     localAppId)
                 .Select(x =>
                     (AppStatus?)x.Application.ApplicationStatus)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<HashSet<int>> GetPassedTestTypeIdsAsync(
-        int localAppId)
+        int localAppId,
+        CancellationToken cancellationToken = default)
     {
         if (localAppId <= 0)
             return [];
@@ -306,14 +328,15 @@ public sealed class TestAppointmentRepository(
                 .Select(t =>
                     t.TestAppointment.TestTypeID)
                 .Distinct()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
         return testTypeIds.ToHashSet();
     }
 
     public Task<int> GetTrialCountAsync(
         int localAppId,
-        int testTypeId) =>
+        int testTypeId,
+        CancellationToken cancellationToken = default) =>
         localAppId <= 0 || testTypeId <= 0
             ? Task.FromResult(0)
             : _context.TestAppointments
@@ -323,15 +346,18 @@ public sealed class TestAppointmentRepository(
                     x.TestTypeID == testTypeId &&
                     (x.Status == AppointmentStatus.Completed ||
                      x.Status == AppointmentStatus.NoShow ||
-                     (x.Status == null && x.Test != null)));
+                     (x.Status == null && x.Test != null)),
+                    cancellationToken);
 
     public async Task AddAsync(
-        TestAppointment appointment)
+        TestAppointment appointment,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(appointment);
 
         await _context.TestAppointments.AddAsync(
-            appointment);
+            appointment,
+            cancellationToken);
     }
 
     public void Delete(TestAppointment appointment)
@@ -342,7 +368,8 @@ public sealed class TestAppointmentRepository(
     }
 
     public async Task<bool> LockLocalApplicationForSchedulingAsync(
-    int localAppId)
+        int localAppId,
+        CancellationToken cancellationToken = default)
     {
         if (localAppId <= 0)
             return false;
@@ -353,7 +380,7 @@ public sealed class TestAppointmentRepository(
             FROM LocalDrivingLicenseApplications WITH (UPDLOCK, HOLDLOCK)
             WHERE LocalDrivingLicenseApplicationID = {localAppId}
             """)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         return application is not null;
     }
@@ -364,7 +391,8 @@ public sealed class TestAppointmentRepository(
             int applicantPersonId,
             int localAppId,
             DateTime rangeStart,
-            DateTime rangeEnd)
+            DateTime rangeEnd,
+            CancellationToken cancellationToken = default)
     {
         var occupiedSlots = (await _context.TestAppointments
             .AsNoTracking()
@@ -375,7 +403,7 @@ public sealed class TestAppointmentRepository(
                         x.Status != AppointmentStatus.NoShow &&
                         x.Status != null)
             .Select(x => x.AppointmentDate)
-            .ToListAsync())
+            .ToListAsync(cancellationToken))
             .ToHashSet();
 
         var applicantAppointmentDates = (await _context.TestAppointments
@@ -387,7 +415,7 @@ public sealed class TestAppointmentRepository(
                         x.Status != null)
             .Select(x => x.AppointmentDate.Date)
             .Distinct()
-            .ToListAsync())
+            .ToListAsync(cancellationToken))
             .ToHashSet();
 
         var lastTestDate = await _context.TestAppointments
@@ -398,7 +426,7 @@ public sealed class TestAppointmentRepository(
                         x.Status != null)
             .OrderByDescending(x => x.AppointmentDate)
             .Select(x => (DateTime?)x.AppointmentDate)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         return (occupiedSlots, applicantAppointmentDates, lastTestDate);
     }

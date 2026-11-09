@@ -156,7 +156,7 @@ public sealed class ApiDataEfficiencyOptimizationTests
         var testToday = new DateOnly(2026, 11, 7);
         mockClock.SetupGet(c => c.Today).Returns(testToday);
 
-        mockRepo.Setup(r => r.GetAllLicensesAsync(true, testToday))
+        mockRepo.Setup(r => r.GetAllLicensesAsync(true, testToday, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<License>());
 
         var service = new LicenseQueryService(
@@ -170,8 +170,8 @@ public sealed class ApiDataEfficiencyOptimizationTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        mockRepo.Verify(r => r.GetAllLicensesAsync(true, testToday), Times.Once);
-        mockRepo.Verify(r => r.GetAllLicensesAsync(), Times.Never);
+        mockRepo.Verify(r => r.GetAllLicensesAsync(true, testToday, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepo.Verify(r => r.GetAllLicensesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public sealed class ApiDataEfficiencyOptimizationTests
         var testToday = new DateOnly(2026, 11, 7);
         mockClock.SetupGet(c => c.Today).Returns(testToday);
 
-        mockRepo.Setup(r => r.GetAllLicensesAsync(false, testToday))
+        mockRepo.Setup(r => r.GetAllLicensesAsync(false, testToday, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<License>());
 
         var service = new LicenseQueryService(
@@ -200,8 +200,8 @@ public sealed class ApiDataEfficiencyOptimizationTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        mockRepo.Verify(r => r.GetAllLicensesAsync(false, testToday), Times.Once);
-        mockRepo.Verify(r => r.GetAllLicensesAsync(), Times.Never);
+        mockRepo.Verify(r => r.GetAllLicensesAsync(false, testToday, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepo.Verify(r => r.GetAllLicensesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public sealed class ApiDataEfficiencyOptimizationTests
         var testToday = new DateOnly(2026, 11, 7);
         mockClock.SetupGet(c => c.Today).Returns(testToday);
 
-        mockRepo.Setup(r => r.GetAllLicensesAsync())
+        mockRepo.Setup(r => r.GetAllLicensesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<License>());
 
         var service = new LicenseQueryService(
@@ -230,7 +230,7 @@ public sealed class ApiDataEfficiencyOptimizationTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        mockRepo.Verify(r => r.GetAllLicensesAsync(), Times.Once);
-        mockRepo.Verify(r => r.GetAllLicensesAsync(It.IsAny<bool?>(), It.IsAny<DateOnly?>()), Times.Never);
+        mockRepo.Verify(r => r.GetAllLicensesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepo.Verify(r => r.GetAllLicensesAsync(It.IsAny<bool?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

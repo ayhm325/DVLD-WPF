@@ -39,21 +39,21 @@ public sealed class DetainedLicenseService(
     private readonly IJordanClock _clock =
         clock ?? throw new ArgumentNullException(nameof(clock));
 
-    public async Task<Result<List<DetainedLicenseDto>>> GetAllAsync()
+    public async Task<Result<List<DetainedLicenseDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var entities = await _repository.GetAllAsync();
+        var entities = await _repository.GetAllAsync(cancellationToken);
 
         return Result<List<DetainedLicenseDto>>.Success(
             entities.Select(DetainedLicenseMapper.ToDto).ToList());
     }
 
-    public async Task<Result<DetainedLicenseDto>> GetByIdAsync(int id)
+    public async Task<Result<DetainedLicenseDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var validation = DetainedLicenseValidator.ValidateId(id);
         if (validation.IsFailure)
             return Result<DetainedLicenseDto>.FromValidationFailure(validation.Error);
 
-        var entity = await _repository.GetByIdAsync(id);
+        var entity = await _repository.GetByIdAsync(id, cancellationToken);
 
         return entity is null
             ? Result<DetainedLicenseDto>.FromNotFound(
@@ -63,14 +63,15 @@ public sealed class DetainedLicenseService(
     }
 
     public async Task<Result<DetainedLicenseDto>> GetActiveDetainByLicenseIdAsync(
-        int licenseId)
+        int licenseId,
+        CancellationToken cancellationToken = default)
     {
         var validation = DetainedLicenseValidator.ValidateLicenseId(licenseId);
         if (validation.IsFailure)
             return Result<DetainedLicenseDto>.FromValidationFailure(validation.Error);
 
         var entity =
-            await _repository.GetActiveDetainByLicenseIdAsync(licenseId);
+            await _repository.GetActiveDetainByLicenseIdAsync(licenseId, cancellationToken);
 
         return entity is null
             ? Result<DetainedLicenseDto>.FromNotFound(
@@ -79,11 +80,12 @@ public sealed class DetainedLicenseService(
                 DetainedLicenseMapper.ToDto(entity));
     }
 
-    public async Task<bool> IsLicenseDetainedAsync(int licenseId) =>
-        licenseId > 0 && await _repository.IsLicenseDetainedAsync(licenseId);
+    public async Task<bool> IsLicenseDetainedAsync(int licenseId, CancellationToken cancellationToken = default) =>
+        licenseId > 0 && await _repository.IsLicenseDetainedAsync(licenseId, cancellationToken);
 
     public async Task<Result<DetainedLicenseDto>> AddAsync(
-        CreateDetainedLicenseDto dto)
+        CreateDetainedLicenseDto dto,
+        CancellationToken cancellationToken = default)
     {
         var validation = DetainedLicenseValidator.ValidateCreate(dto);
         if (validation.IsFailure)
@@ -98,7 +100,7 @@ public sealed class DetainedLicenseService(
             async transaction =>
             {
                 var license =
-                    await _licenseRepository.GetForUpdateAsync(dto.LicenseID);
+                    await _licenseRepository.GetForUpdateAsync(dto.LicenseID, cancellationToken);
 
                 if (license is null)
                     return await RollbackAsync(
@@ -121,7 +123,7 @@ public sealed class DetainedLicenseService(
                         Result<DetainedLicenseDto>.FromConflict(
                             "Only an active license can be detained."));
 
-                if (await _repository.IsLicenseDetainedAsync(dto.LicenseID))
+                if (await _repository.IsLicenseDetainedAsync(dto.LicenseID, cancellationToken))
                     return await RollbackAsync(
                         transaction,
                         Result<DetainedLicenseDto>.FromConflict(
@@ -132,25 +134,26 @@ public sealed class DetainedLicenseService(
                     _currentUserService.UserId,
                     now);
 
-                await _repository.AddAsync(entity);
+                await _repository.AddAsync(entity, cancellationToken);
 
                 if (!await _licenseRepository.DeactivateLicenseAsync(
-                        license.LicenseID))
+                        license.LicenseID,
+                        cancellationToken))
                     return await RollbackAsync(
                         transaction,
                         Result<DetainedLicenseDto>.FromFailure(
                             "Failed to deactivate the license."));
 
-                if (await _unitOfWork.SaveChangesAsync() <= 0 ||
+                if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0 ||
                     entity.DetainID <= 0)
                     return await RollbackAsync(
                         transaction,
                         Result<DetainedLicenseDto>.FromFailure(
                             "Failed to save detained license."));
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
 
-                var savedEntity = await _repository.GetByIdAsync(entity.DetainID);
+                var savedEntity = await _repository.GetByIdAsync(entity.DetainID, cancellationToken);
 
                 return savedEntity is null
                     ? Result<DetainedLicenseDto>.FromFailure(
@@ -158,10 +161,11 @@ public sealed class DetainedLicenseService(
                     : Result<DetainedLicenseDto>.Success(
                         DetainedLicenseMapper.ToDto(savedEntity));
             },
-            IsolationLevel.Serializable);
+            IsolationLevel.Serializable,
+            cancellationToken);
     }
 
-    public async Task<Result> ReleaseAsync(ReleaseDetainedLicenseDto dto)
+    public async Task<Result> ReleaseAsync(ReleaseDetainedLicenseDto dto, CancellationToken cancellationToken = default)
     {
         var validation = DetainedLicenseValidator.ValidateRelease(dto);
         if (validation.IsFailure)
@@ -174,7 +178,7 @@ public sealed class DetainedLicenseService(
             async transaction =>
             {
                 var detention =
-                    await _repository.GetByIdForUpdateAsync(dto.DetainID);
+                    await _repository.GetByIdForUpdateAsync(dto.DetainID, cancellationToken);
 
                 if (detention is null)
                     return await RollbackAsync(
@@ -188,7 +192,8 @@ public sealed class DetainedLicenseService(
 
                 var license =
                     await _licenseRepository.GetForUpdateAsync(
-                        detention.LicenseID);
+                        detention.LicenseID,
+                        cancellationToken);
 
                 if (license is null)
                     return await RollbackAsync(
@@ -197,7 +202,8 @@ public sealed class DetainedLicenseService(
 
                 var applicationType =
                     await _applicationTypeService.GetApplicationTypeByIdAsync(
-                        ReleaseDetainedApplicationTypeId);
+                        ReleaseDetainedApplicationTypeId,
+                        cancellationToken);
 
                 if (applicationType.IsFailure)
                     return await RollbackAsync(
@@ -223,7 +229,8 @@ public sealed class DetainedLicenseService(
                             ApplicantPersonID = license.Driver.PersonID,
                             ApplicationTypeID =
                                 ReleaseDetainedApplicationTypeId
-                        });
+                        },
+                        cancellationToken);
 
                 if (applicationResult.IsFailure)
                     return await RollbackAsync(
@@ -251,37 +258,40 @@ public sealed class DetainedLicenseService(
                     await _licenseRepository.HasAnotherActiveLicenseAsync(
                         license.DriverID,
                         license.LicenseClass,
-                        license.LicenseID);
+                        license.LicenseID,
+                        cancellationToken);
 
                 if (!hasAnotherActiveLicense &&
                     !isExpired &&
                     !await _licenseRepository.ActivateLicenseAsync(
                         license.LicenseID,
-                        today))
+                        today,
+                        cancellationToken))
                     return await RollbackAsync(
                         transaction,
                         Result.Failure(
                             "Failed to restore the license state."));
 
-                if (await _unitOfWork.SaveChangesAsync() <= 0)
+                if (await _unitOfWork.SaveChangesAsync(cancellationToken) <= 0)
                     return await RollbackAsync(
                         transaction,
                         Result.Failure(
                             "Failed to save license release."));
 
                 var completeResult =
-                    await _applicationService.CompleteApplicationStateAsync(applicationId);
+                    await _applicationService.CompleteApplicationStateAsync(applicationId, cancellationToken);
 
                 if (completeResult.IsFailure)
                     return await RollbackAsync(
                         transaction,
                         completeResult);
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
 
                 return Result.Success();
             },
-            IsolationLevel.Serializable);
+            IsolationLevel.Serializable,
+            cancellationToken);
     }
 
     private bool IsAuthenticated() =>

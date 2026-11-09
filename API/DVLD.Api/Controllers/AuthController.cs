@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.AuthDTO;
 using Application.DTOs.UserDTO;
 using Application.Interfaces;
@@ -25,7 +25,7 @@ public sealed class AuthController(
     [AllowAnonymous]
     [EnableRateLimiting("LoginRateLimit")]
     public async Task<IActionResult> Login(
-        [FromBody] ContractAuth.LoginRequest request)
+        [FromBody] ContractAuth.LoginRequest request, CancellationToken cancellationToken = default)
     {
         if (request is null)
         {
@@ -37,7 +37,7 @@ public sealed class AuthController(
             {
                 UserName = request.UserName,
                 Password = request.Password
-            });
+            }, cancellationToken);
 
         if (result is null)
         {
@@ -81,11 +81,11 @@ public sealed class AuthController(
         });
 
     [HttpGet("profile")]
-    public async Task<IActionResult> Profile()
+    public async Task<IActionResult> Profile(CancellationToken cancellationToken = default)
     {
         var result =
             await userService.GetCurrentProfileAsync(
-                currentUserService.UserId);
+                currentUserService.UserId, cancellationToken);
 
         if (result.IsFailure)
             return result.ToActionResult(this);
@@ -117,7 +117,7 @@ public sealed class AuthController(
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword(
         [FromBody]
-        ContractAuth.ChangePasswordRequest request)
+        ContractAuth.ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
         var result =
             await userService.ChangePasswordAsync(
@@ -126,7 +126,7 @@ public sealed class AuthController(
                 {
                     CurrentPassword = request.CurrentPassword,
                     NewPassword = request.NewPassword
-                });
+                }, cancellationToken);
 
         return result.IsSuccess
             ? NoContent()

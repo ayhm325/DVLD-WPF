@@ -25,57 +25,57 @@ public sealed class LicenseQueryService(
     private readonly IJordanClock _clock =
         clock ?? throw new ArgumentNullException(nameof(clock));
 
-    public async Task<Result<LicenseDto>> GetByIdAsync(int licenseId)
+    public async Task<Result<LicenseDto>> GetByIdAsync(int licenseId, CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateId(licenseId);
         if (validation.IsFailure)
             return Result<LicenseDto>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        var license = await _licenseRepository.GetLicenseByIdAsync(licenseId);
+        var license = await _licenseRepository.GetLicenseByIdAsync(licenseId, cancellationToken);
         if (license is null)
             return Result<LicenseDto>.FromNotFound("License not found.");
 
-        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license, today);
+        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license, today, cancellationToken: cancellationToken);
         return Result<LicenseDto>.Success(LicenseMapper.ToDto(license, isExpired, isEligible, reason));
     }
 
-    public Task<Result<List<LicenseDto>>> GetAllAsync() =>
-        GetAllAsync((bool?)null);
+    public Task<Result<List<LicenseDto>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        GetAllAsync((bool?)null, cancellationToken);
 
-    public async Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired)
+    public async Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired, CancellationToken cancellationToken = default)
     {
         var today = _clock.Today;
         var licenses = isExpired.HasValue
-            ? await _licenseRepository.GetAllLicensesAsync(isExpired.Value, today)
-            : await _licenseRepository.GetAllLicensesAsync();
-        var dtos = await MapToDtosBatchAsync(licenses ?? [], today, checkExternalNewerIfMissing: false);
+            ? await _licenseRepository.GetAllLicensesAsync(isExpired.Value, today, cancellationToken)
+            : await _licenseRepository.GetAllLicensesAsync(cancellationToken);
+        var dtos = await MapToDtosBatchAsync(licenses ?? [], today, checkExternalNewerIfMissing: false, cancellationToken);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
-    public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request)
+    public Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         if (request is LicenseQueryRequest queryRequest)
         {
-            return GetAllAsync(queryRequest);
+            return GetAllAsync(queryRequest, cancellationToken);
         }
 
         return GetAllAsync(new LicenseQueryRequest
         {
             PageNumber = request.PageNumber,
             PageSize = request.PageSize
-        });
+        }, cancellationToken);
     }
 
-    public async Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request)
+    public async Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         var today = _clock.Today;
-        var pagedLicenses = await _licenseRepository.GetAllLicensesAsync(request, today);
-        var dtos = await MapToDtosBatchAsync(pagedLicenses.Items, today, checkExternalNewerIfMissing: true);
+        var pagedLicenses = await _licenseRepository.GetAllLicensesAsync(request, today, cancellationToken);
+        var dtos = await MapToDtosBatchAsync(pagedLicenses.Items, today, checkExternalNewerIfMissing: true, cancellationToken);
 
         return Result<PagedResult<LicenseDto>>.Success(new PagedResult<LicenseDto>
         {
@@ -86,88 +86,88 @@ public sealed class LicenseQueryService(
         });
     }
 
-    public async Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync()
+    public async Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync(CancellationToken cancellationToken = default)
     {
         var today = _clock.Today;
-        var summary = await _licenseRepository.GetRenewalSummaryAsync(today);
+        var summary = await _licenseRepository.GetRenewalSummaryAsync(today, cancellationToken);
         return Result<RenewalSummaryDto>.Success(summary);
     }
 
-    public async Task<Result<List<LicenseDto>>> GetByDriverIdAsync(int driverId)
+    public async Task<Result<List<LicenseDto>>> GetByDriverIdAsync(int driverId, CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateDriverId(driverId);
         if (validation.IsFailure)
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        var licenses = await _licenseRepository.GetLicensesByDriverIdAsync(driverId);
-        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false);
+        var licenses = await _licenseRepository.GetLicensesByDriverIdAsync(driverId, cancellationToken);
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false, cancellationToken);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
-    public async Task<Result<List<LicenseDto>>> GetByApplicationIdAsync(int applicationId)
+    public async Task<Result<List<LicenseDto>>> GetByApplicationIdAsync(int applicationId, CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateApplicationId(applicationId);
         if (validation.IsFailure)
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId);
-        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: true);
+        var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId, cancellationToken);
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: true, cancellationToken);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
-    public async Task<Result<List<LicenseDto>>> GetByLicenseClassIdAsync(int licenseClassId)
+    public async Task<Result<List<LicenseDto>>> GetByLicenseClassIdAsync(int licenseClassId, CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateLicenseClassId(licenseClassId);
         if (validation.IsFailure)
             return Result<List<LicenseDto>>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        var licenses = await _licenseRepository.GetLicensesByLicenseClassIdAsync(licenseClassId);
-        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false);
+        var licenses = await _licenseRepository.GetLicensesByLicenseClassIdAsync(licenseClassId, cancellationToken);
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false, cancellationToken);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
-    public async Task<Result<List<LicenseDto>>> GetLicensesByPersonIdAsync(int personId)
+    public async Task<Result<List<LicenseDto>>> GetLicensesByPersonIdAsync(int personId, CancellationToken cancellationToken = default)
     {
         if (personId <= 0)
             return Result<List<LicenseDto>>.FromValidationFailure("Invalid person ID.");
 
         var today = _clock.Today;
-        var licenses = await _licenseRepository.GetLicensesByPersonIdAsync(personId);
-        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false);
+        var licenses = await _licenseRepository.GetLicensesByPersonIdAsync(personId, cancellationToken);
+        var dtos = await MapToDtosBatchAsync(licenses, today, checkExternalNewerIfMissing: false, cancellationToken);
         return Result<List<LicenseDto>>.Success(dtos);
     }
 
-    public async Task<Result<bool>> IsLicenseExistsAsync(int licenseId) =>
+    public async Task<Result<bool>> IsLicenseExistsAsync(int licenseId, CancellationToken cancellationToken = default) =>
         licenseId <= 0
             ? Result<bool>.FromValidationFailure("Invalid license ID.")
-            : Result<bool>.Success(await _licenseRepository.IsLicenseExistsAsync(licenseId));
+            : Result<bool>.Success(await _licenseRepository.IsLicenseExistsAsync(licenseId, cancellationToken));
 
-    public async Task<Result<bool>> IsDriverHasLicenseAsync(int driverId) =>
+    public async Task<Result<bool>> IsDriverHasLicenseAsync(int driverId, CancellationToken cancellationToken = default) =>
         driverId <= 0
             ? Result<bool>.FromValidationFailure("Invalid driver ID.")
-            : Result<bool>.Success(await _licenseRepository.IsDriverHasLicenseAsync(driverId));
+            : Result<bool>.Success(await _licenseRepository.IsDriverHasLicenseAsync(driverId, cancellationToken));
 
-    public async Task<Result<bool>> IsApplicationHasLicenseAsync(int applicationId) =>
+    public async Task<Result<bool>> IsApplicationHasLicenseAsync(int applicationId, CancellationToken cancellationToken = default) =>
         applicationId <= 0
             ? Result<bool>.FromValidationFailure("Invalid application ID.")
-            : Result<bool>.Success(await _licenseRepository.IsApplicationHasLicenseAsync(applicationId));
+            : Result<bool>.Success(await _licenseRepository.IsApplicationHasLicenseAsync(applicationId, cancellationToken));
 
-    public async Task<Result<DriverLicenseInfoDto>> GetDetailsAsync(int localAppId)
+    public async Task<Result<DriverLicenseInfoDto>> GetDetailsAsync(int localAppId, CancellationToken cancellationToken = default)
     {
         if (localAppId <= 0)
             return Result<DriverLicenseInfoDto>.FromValidationFailure("Invalid local application ID.");
 
-        var localResult = await _localApplicationService.GetLocalDrivingLicenseApplicationByIdAsync(localAppId);
+        var localResult = await _localApplicationService.GetLocalDrivingLicenseApplicationByIdAsync(localAppId, cancellationToken);
         if (localResult.IsFailure)
             return Result<DriverLicenseInfoDto>.FromResult(localResult);
         if (localResult.Value is null)
             return Result<DriverLicenseInfoDto>.FromNotFound("Local driving license application not found.");
 
         var localApplication = localResult.Value;
-        var applicationIdResult = await _localApplicationService.GetApplicationIdByLocalIdAsync(localAppId);
+        var applicationIdResult = await _localApplicationService.GetApplicationIdByLocalIdAsync(localAppId, cancellationToken);
         if (applicationIdResult.IsFailure)
             return Result<DriverLicenseInfoDto>.FromResult(applicationIdResult);
 
@@ -176,32 +176,33 @@ public sealed class LicenseQueryService(
             return Result<DriverLicenseInfoDto>.FromValidationFailure("Invalid application ID.");
 
         var today = _clock.Today;
-        var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId);
+        var licenses = await _licenseRepository.GetLicensesByApplicationIdAsync(applicationId, cancellationToken);
         var license = licenses.FirstOrDefault(x => x.LicenseClass == localApplication.LicenseClassID);
         if (license is null)
             return Result<DriverLicenseInfoDto>.FromNotFound("License for the selected license class was not found.");
 
-        return await GetLicenseDetailsResultAsync(license, today);
+        return await GetLicenseDetailsResultAsync(license, today, cancellationToken);
     }
 
-    public async Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(int licenseId)
+    public async Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(int licenseId, CancellationToken cancellationToken = default)
     {
         var validation = LicenseValidator.ValidateId(licenseId);
         if (validation.IsFailure)
             return Result<DriverLicenseInfoDto>.FromValidationFailure(validation.Error);
 
         var today = _clock.Today;
-        var license = await _licenseRepository.GetLicenseByIdAsync(licenseId);
+        var license = await _licenseRepository.GetLicenseByIdAsync(licenseId, cancellationToken);
         if (license is null)
             return Result<DriverLicenseInfoDto>.FromNotFound("License not found.");
 
-        return await GetLicenseDetailsResultAsync(license, today);
+        return await GetLicenseDetailsResultAsync(license, today, cancellationToken);
     }
 
     private async Task<List<LicenseDto>> MapToDtosBatchAsync(
         IReadOnlyList<License>? licenses,
         DateOnly today,
-        bool checkExternalNewerIfMissing = false)
+        bool checkExternalNewerIfMissing = false,
+        CancellationToken cancellationToken = default)
     {
         if (licenses == null || licenses.Count == 0)
             return [];
@@ -212,7 +213,7 @@ public sealed class LicenseQueryService(
             .Distinct();
 
         var activeDetainedIds = await _detainedLicenseRepository
-            .GetActiveDetainedLicenseIdsAsync(licenseIds);
+            .GetActiveDetainedLicenseIdsAsync(licenseIds, cancellationToken);
 
         Dictionary<int, License>? externalNewerMap = null;
 
@@ -231,7 +232,7 @@ public sealed class LicenseQueryService(
             if (candidateLicenses.Count > 0)
             {
                 externalNewerMap = await _licenseRepository
-                    .GetNewerLicensesBatchAsync(candidateLicenses);
+                    .GetNewerLicensesBatchAsync(candidateLicenses, cancellationToken);
             }
         }
 
@@ -290,7 +291,8 @@ public sealed class LicenseQueryService(
     private async Task<(bool isExpired, bool isEligible, string? reason)> EvaluateRenewalEligibilityAsync(
         License license,
         DateOnly today,
-        bool? precomputedIsDetained = null)
+        bool? precomputedIsDetained = null,
+        CancellationToken cancellationToken = default)
     {
         var isExpired = LicenseExpirationPolicy.IsExpired(license.ExpirationDate, today);
 
@@ -299,7 +301,7 @@ public sealed class LicenseQueryService(
             return (false, false, "License is not expired yet. Renewal is only permitted starting the calendar day after expiration.");
         }
 
-        var isDetained = precomputedIsDetained ?? await _detainedLicenseRepository.IsLicenseDetainedAsync(license.LicenseID);
+        var isDetained = precomputedIsDetained ?? await _detainedLicenseRepository.IsLicenseDetainedAsync(license.LicenseID, cancellationToken);
         if (isDetained)
         {
             return (true, false, "Cannot renew a currently detained license. The license must be released first.");
@@ -308,7 +310,8 @@ public sealed class LicenseQueryService(
         var newer = await _licenseRepository.GetNewerLicenseForDriverAndClassAsync(
             license.DriverID,
             license.LicenseClass,
-            license.LicenseID);
+            license.LicenseID,
+            cancellationToken);
 
         if (newer != null)
         {
@@ -321,7 +324,8 @@ public sealed class LicenseQueryService(
 
     private async Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsResultAsync(
         Domain.Entities.License license,
-        DateOnly today)
+        DateOnly today,
+        CancellationToken cancellationToken = default)
     {
         if (license.DriverID <= 0)
             return Result<DriverLicenseInfoDto>.FromFailure("License has an invalid driver.");
@@ -333,8 +337,8 @@ public sealed class LicenseQueryService(
             return Result<DriverLicenseInfoDto>.FromFailure("License person information was not loaded.");
 
         var person = PersonMapper.ToDto(license.Driver.Person);
-        var isDetained = await _detainedLicenseRepository.IsLicenseDetainedAsync(license.LicenseID);
-        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license, today, isDetained);
+        var isDetained = await _detainedLicenseRepository.IsLicenseDetainedAsync(license.LicenseID, cancellationToken);
+        var (isExpired, isEligible, reason) = await EvaluateRenewalEligibilityAsync(license, today, isDetained, cancellationToken);
 
         return Result<DriverLicenseInfoDto>.Success(MapLicenseDetails(license, person, license.DriverID, isDetained, isExpired, isEligible, reason));
     }

@@ -1,4 +1,4 @@
-﻿using Application.Common.Results;
+using Application.Common.Results;
 using Application.DTOs.ApplicationDTO;
 using Application.DTOs.LocalDrivingLicenseApplicationDTO;
 using Application.DTOs.TestAppointmentDTO;
@@ -59,19 +59,19 @@ public sealed class AppointmentAvailabilityUnitTests
         var thursday = sunday.AddDays(4);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), new HashSet<DateTime>(), (DateTime?)null));
 
         // Act
@@ -106,7 +106,7 @@ public sealed class AppointmentAvailabilityUnitTests
 
         // Sub-scenario B: local application does not exist
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(999, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(999, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.NotFound("Local driving license application not found."));
 
         var notFoundResult = await service.GetAvailabilityAsync(999, 1, sunday, sunday.AddDays(1));
@@ -142,7 +142,7 @@ public sealed class AppointmentAvailabilityUnitTests
         var sunday = GetNextWeekday(DayOfWeek.Sunday);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Written))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Written, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Conflict("The Written test cannot be scheduled yet. The next required test is Theory."));
 
         // Act
@@ -163,19 +163,19 @@ public sealed class AppointmentAvailabilityUnitTests
         var saturday = friday.AddDays(1);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), new HashSet<DateTime>(), (DateTime?)null));
 
         // Act
@@ -195,19 +195,19 @@ public sealed class AppointmentAvailabilityUnitTests
         var sunday = GetNextWeekday(DayOfWeek.Sunday);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), new HashSet<DateTime>(), (DateTime?)null));
 
         var expectedStartTimes = new[]
@@ -245,19 +245,19 @@ public sealed class AppointmentAvailabilityUnitTests
         var occupiedSlot = sunday.Add(new TimeSpan(8, 0, 0));
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime> { occupiedSlot }, new HashSet<DateTime>(), (DateTime?)null));
 
         // Act
@@ -280,20 +280,20 @@ public sealed class AppointmentAvailabilityUnitTests
         var sunday = GetNextWeekday(DayOfWeek.Sunday);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         // Practical (Type 3) is booked at 08:00, but occupiedSlots queried for Theory (Type 1) is empty!
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), new HashSet<DateTime>(), (DateTime?)null));
 
         // Act
@@ -316,22 +316,22 @@ public sealed class AppointmentAvailabilityUnitTests
         var monday = sunday.AddDays(1);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         // Applicant already has an appointment on Sunday (e.g. from another app)
         var applicantDates = new HashSet<DateTime> { sunday.Date };
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), applicantDates, (DateTime?)null));
 
         // Act
@@ -353,22 +353,22 @@ public sealed class AppointmentAvailabilityUnitTests
         var sunday = thursday.AddDays(3);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         // Previous failed test occurred on Thursday
         var lastTestDate = thursday.Add(new TimeSpan(10, 0, 0));
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), new HashSet<DateTime>(), (DateTime?)lastTestDate));
 
         // Act: range from Thursday to following Sunday
@@ -391,22 +391,22 @@ public sealed class AppointmentAvailabilityUnitTests
 
         // Passed Theory on Thursday, now scheduling Written
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Written))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Written, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 2))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         // Theory passed on Thursday
         var lastTestDate = thursday.Add(new TimeSpan(9, 20, 0));
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(2, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(2, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), new HashSet<DateTime>(), (DateTime?)lastTestDate));
 
         // Act: range from Thursday to Sunday
@@ -426,15 +426,15 @@ public sealed class AppointmentAvailabilityUnitTests
         var sunday = GetNextWeekday(DayOfWeek.Sunday);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         // All 12 slots on Sunday are occupied
@@ -443,7 +443,7 @@ public sealed class AppointmentAvailabilityUnitTests
             .ToHashSet();
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((allSlots, new HashSet<DateTime>(), (DateTime?)null));
 
         // Act
@@ -465,15 +465,15 @@ public sealed class AppointmentAvailabilityUnitTests
         var tomorrow = today.AddDays(1);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         // Act - request window covering only today and tomorrow (< 2 days advance)
@@ -497,19 +497,19 @@ public sealed class AppointmentAvailabilityUnitTests
         var eightDaysAhead = today.AddDays(8);
 
         _workflowService
-            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory))
+            .Setup(w => w.CanScheduleTestAsync(1, TestTypeEnum.Theory, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success());
 
         _repository
-            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1))
+            .Setup(r => r.IsAppointmentAlreadyScheduledAsync(1, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         _repository
-            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1))
+            .Setup(r => r.GetApplicantPersonIdByLocalAppIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(10);
 
         _repository
-            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .Setup(r => r.GetAvailabilityDataAsync(1, 10, 1, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new HashSet<DateTime>(), new HashSet<DateTime>(), (DateTime?)null));
 
         // Act - request starting from today

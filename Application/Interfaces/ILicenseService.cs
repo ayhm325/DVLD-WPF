@@ -6,37 +6,45 @@ namespace Application.Interfaces;
 
 public interface ILicenseService
 {
-    Task<Result<LicenseDto>> GetByIdAsync(int licenseId);
+    Task<Result<LicenseDto>> GetByIdAsync(int licenseId, CancellationToken cancellationToken = default);
 
-    Task<Result<List<LicenseDto>>> GetAllAsync();
-    Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired);
-    Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request);
-    Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request);
-    Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync();
+    Task<Result<List<LicenseDto>>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<Result<List<LicenseDto>>> GetAllAsync(bool? isExpired, CancellationToken cancellationToken = default);
+    Task<Result<PagedResult<LicenseDto>>> GetAllAsync(PaginationRequest request, CancellationToken cancellationToken = default);
+    Task<Result<PagedResult<LicenseDto>>> GetAllAsync(LicenseQueryRequest request, CancellationToken cancellationToken = default);
+    Task<Result<RenewalSummaryDto>> GetRenewalSummaryAsync(CancellationToken cancellationToken = default);
 
     Task<Result<List<LicenseDto>>> GetByDriverIdAsync(
-        int driverId);
+        int driverId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<List<LicenseDto>>> GetByApplicationIdAsync(
-        int applicationId);
+        int applicationId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<List<LicenseDto>>> GetByLicenseClassIdAsync(
-        int licenseClassId);
+        int licenseClassId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<List<LicenseDto>>> GetLicensesByPersonIdAsync(
-        int personId);
+        int personId,
+        CancellationToken cancellationToken = default);
 
-    Task<Result<bool>> IsLicenseExistsAsync(int licenseId);
+    Task<Result<bool>> IsLicenseExistsAsync(int licenseId, CancellationToken cancellationToken = default);
 
     Task<Result<bool>> IsDriverHasLicenseAsync(
-        int driverId);
+        int driverId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<bool>> IsApplicationHasLicenseAsync(
-        int applicationId);
+        int applicationId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<DriverLicenseInfoDto>> GetDetailsAsync(
-        int localAppId);
+        int localAppId,
+        CancellationToken cancellationToken = default);
 
     Task<Result<DriverLicenseInfoDto>> GetLicenseDetailsByIdAsync(
-        int licenseId);
+        int licenseId,
+        CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,6 @@
-﻿using Infrastructure;
+using Dvld.TestSupport;
+using System.Runtime.ExceptionServices;
+using Infrastructure;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,77 +8,80 @@ namespace Infrastructure.IntegrationTests.Fixtures;
 
 public sealed class SqlServerTestDatabase : IAsyncLifetime
 {
-    private const string ConnectionEnvironmentVariable =
-        "DVLD_TEST_CONNECTION";
-
-    private string? _databaseName;
+    private SqlServerTestTarget? _target;
+    private SqlServerTestDatabaseLease? _databaseLease;
 
     public string ConnectionString { get; private set; } = string.Empty;
 
     public async Task InitializeAsync()
     {
-        var baseConnectionString =
-            Environment.GetEnvironmentVariable(
-                ConnectionEnvironmentVariable);
+        _target = SqlServerTestEnvironment.ReadConfigurationFromEnvironment();
 
-        if (string.IsNullOrWhiteSpace(baseConnectionString))
+        await using (var adminConnection = new SqlConnection(
+                         _target.AdminConnectionString))
         {
-            throw new InvalidOperationException(
-                $"Environment variable '{ConnectionEnvironmentVariable}' " +
-                "is required to run infrastructure integration tests.");
+            await adminConnection.OpenAsync();
+            var databaseName = SqlServerTestEnvironment.BuildDatabaseName(
+                "DVLD_IntegrationTests_");
+            _databaseLease = await SqlServerTestEnvironment.CreateDatabaseAsync(
+                adminConnection,
+                _target,
+                databaseName);
         }
 
-        var builder =
-            new SqlConnectionStringBuilder(baseConnectionString);
+        ConnectionString = SqlServerTestEnvironment.BuildDatabaseConnectionString(
+            _target,
+            _databaseLease.DatabaseName);
 
-        _databaseName =
-            $"DVLD_IntegrationTests_{Guid.NewGuid():N}";
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(ConnectionString)
+            .Options;
 
-        builder.InitialCatalog = _databaseName;
+        try
+        {
+            await using var context = new DVLDDbContext(options);
+            await context.Database.MigrateAsync();
+        }
+        catch (Exception migrationException)
+        {
+            try
+            {
+                await DisposeAsync();
+            }
+            catch (Exception cleanupException)
+            {
+                SqlServerTestEnvironment.ReportCleanupFailureSafely(
+                    "Test database cleanup failed after migration failed. Primary exception type={0}; cleanup exception type={1}.",
+                    migrationException,
+                    cleanupException);
+            }
 
-        ConnectionString = builder.ConnectionString;
-
-        var options =
-            new DbContextOptionsBuilder<DVLDDbContext>()
-                .UseSqlServer(ConnectionString)
-                .Options;
-
-        await using var context =
-            new DVLDDbContext(options);
-
-        await context.Database.MigrateAsync();
+            ExceptionDispatchInfo.Capture(migrationException).Throw();
+            throw;
+        }
     }
 
     public async Task DisposeAsync()
     {
-        if (string.IsNullOrWhiteSpace(ConnectionString))
+        var lease = Interlocked.Exchange(ref _databaseLease, null);
+        var target = _target;
+        if (lease is null || target is null)
+        {
             return;
+        }
 
-        var builder =
-            new SqlConnectionStringBuilder(ConnectionString);
-
-        builder.InitialCatalog = "master";
-
-        await using var connection =
-            new SqlConnection(builder.ConnectionString);
-
+        await using var connection = new SqlConnection(
+            target.AdminConnectionString);
         await connection.OpenAsync();
-
-        await using var command =
-            connection.CreateCommand();
-
-        command.CommandText =
-            $"""
-            IF DB_ID(N'{_databaseName}') IS NOT NULL
-            BEGIN
-                ALTER DATABASE [{_databaseName}]
-                SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-
-                DROP DATABASE [{_databaseName}];
-            END
-            """;
-
-        await command.ExecuteNonQueryAsync();
+        var dropped = await SqlServerTestEnvironment.DropOwnedDatabaseAsync(
+            connection,
+            target,
+            lease);
+        if (!dropped)
+        {
+            throw new InvalidOperationException(
+                "The test database was not dropped because ownership could not be confirmed.");
+        }
     }
 
     public DVLDDbContext CreateContext()
@@ -87,10 +92,9 @@ public sealed class SqlServerTestDatabase : IAsyncLifetime
                 "The test database has not been initialized.");
         }
 
-        var options =
-            new DbContextOptionsBuilder<DVLDDbContext>()
-                .UseSqlServer(ConnectionString)
-                .Options;
+        var options = new DbContextOptionsBuilder<DVLDDbContext>()
+            .UseSqlServer(ConnectionString)
+            .Options;
 
         return new DVLDDbContext(options);
     }

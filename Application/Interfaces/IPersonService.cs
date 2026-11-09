@@ -7,36 +7,47 @@ namespace Application.Interfaces;
 public interface IPersonService
 {
     Task<Result<PagedResult<PersonDto>>> GetAllPeopleAsync(
-        PersonQueryRequest request);
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default);
 
     Task<Result<PagedResult<PersonDto>>> GetPeopleAvailableForUserAsync(
-        PersonQueryRequest request);
+        PersonQueryRequest request,
+        CancellationToken cancellationToken = default);
 
     Task<Result<PagedResult<PersonDto>>> GetAllPeopleAsync(
-        PaginationRequest request);
+        PaginationRequest request,
+        CancellationToken cancellationToken = default);
 
-    Task<Result<List<PersonDto>>> GetAllPeopleAsync();
+    Task<Result<List<PersonDto>>> GetAllPeopleAsync(
+        CancellationToken cancellationToken = default);
 
-    Task<Result<PersonStatisticsDto>> GetStatisticsAsync();
+    Task<Result<PersonStatisticsDto>> GetStatisticsAsync(
+        CancellationToken cancellationToken = default);
 
     Task<Result<PersonDto>> GetPersonByIdAsync(
-        int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<Result<PersonDto>> GetPersonByNationalNoAsync(
-        string nationalNo);
+        string nationalNo,
+        CancellationToken cancellationToken = default);
 
     Task<Result<int>> AddPersonAsync(
-        PersonCreateDto personDto);
+        PersonCreateDto personDto,
+        CancellationToken cancellationToken = default);
 
     Task<Result> UpdatePersonAsync(
         int id,
-        PersonUpdateDto personDto);
+        PersonUpdateDto personDto,
+        CancellationToken cancellationToken = default);
 
     Task<Result> DeletePersonAsync(
-        int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<bool> IsPersonExistsAsync(
-        int id);
+        int id,
+        CancellationToken cancellationToken = default);
 
     Task<Result<string>> UploadPersonPhotoAsync(
         int personId,

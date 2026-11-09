@@ -18,42 +18,48 @@ public sealed class InternationalRepository(
             .Include(i => i.IssuedUsingLocalLicense)
             .Include(i => i.CreatedByUser);
 
-    public Task<List<InternationalLicense>> GetAllAsync() =>
+    public Task<List<InternationalLicense>> GetAllAsync(CancellationToken cancellationToken = default) =>
         Query()
             .AsNoTracking()
             .OrderByDescending(i => i.InternationalLicenseID)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
     public Task<InternationalLicense?> GetByIdAsync(
-        int internationalLicenseId) =>
+        int internationalLicenseId,
+        CancellationToken cancellationToken = default) =>
         internationalLicenseId <= 0
             ? Task.FromResult<InternationalLicense?>(null)
             : Query()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    i => i.InternationalLicenseID == internationalLicenseId);
+                    i => i.InternationalLicenseID == internationalLicenseId,
+                    cancellationToken);
 
     public Task<List<InternationalLicense>> GetByDriverIdAsync(
-        int driverId) =>
+        int driverId,
+        CancellationToken cancellationToken = default) =>
         driverId <= 0
             ? Task.FromResult<List<InternationalLicense>>([])
             : Query()
                 .AsNoTracking()
                 .Where(i => i.DriverID == driverId)
                 .OrderByDescending(i => i.InternationalLicenseID)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
     public Task<InternationalLicense?> GetByApplicationIdAsync(
-        int applicationId) =>
+        int applicationId,
+        CancellationToken cancellationToken = default) =>
         applicationId <= 0
             ? Task.FromResult<InternationalLicense?>(null)
             : Query()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
-                    i => i.ApplicationID == applicationId);
+                    i => i.ApplicationID == applicationId,
+                    cancellationToken);
 
     public Task<List<InternationalLicense>> GetByLocalLicenseIdAsync(
-        int localLicenseId) =>
+        int localLicenseId,
+        CancellationToken cancellationToken = default) =>
         localLicenseId <= 0
             ? Task.FromResult<List<InternationalLicense>>([])
             : Query()
@@ -61,20 +67,23 @@ public sealed class InternationalRepository(
                 .Where(
                     i => i.IssuedUsingLocalLicenseID == localLicenseId)
                 .OrderByDescending(i => i.InternationalLicenseID)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
     public Task<bool> ExistsByLocalLicenseAsync(
-        int localLicenseId) =>
+        int localLicenseId,
+        CancellationToken cancellationToken = default) =>
         localLicenseId > 0
             ? _context.InternationalLicenses
                 .AsNoTracking()
                 .AnyAsync(
-                    i => i.IssuedUsingLocalLicenseID == localLicenseId)
+                    i => i.IssuedUsingLocalLicenseID == localLicenseId,
+                    cancellationToken)
             : Task.FromResult(false);
 
     public Task<bool> HasActiveInternationalLicenseAsync(
         int driverId,
-        DateOnly jordanToday)
+        DateOnly jordanToday,
+        CancellationToken cancellationToken = default)
     {
         if (driverId <= 0)
             return Task.FromResult(false);
@@ -87,14 +96,16 @@ public sealed class InternationalRepository(
                 i =>
                     i.DriverID == driverId &&
                     i.IsActive &&
-                    i.ExpirationDate >= jordanTodayStart);
+                    i.ExpirationDate >= jordanTodayStart,
+                cancellationToken);
     }
 
     public async Task AddAsync(
-        InternationalLicense entity)
+        InternationalLicense entity,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
 
-        await _context.InternationalLicenses.AddAsync(entity);
+        await _context.InternationalLicenses.AddAsync(entity, cancellationToken);
     }
 }
