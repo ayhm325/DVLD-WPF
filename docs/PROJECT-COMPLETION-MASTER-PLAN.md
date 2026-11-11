@@ -400,6 +400,12 @@ All integration tests must strictly follow the safety rules defined in [`TESTING
   - Test Execution: All unit and integration test suites pass with code 0.
   - Vulnerability Audit: Automated check for package vulnerabilities (`dotnet list package --vulnerable`, `npm audit`).
 
+### 12.2 SQL Test Environment Milestones
+| Milestone | Status | Evidence & Scope |
+|---|---|---|
+| **`CI-SQL-01`** — Azure Pipelines SQL Server Test Reliability | **Implemented — Static Review Complete; Azure Runtime Pending** | Run-specific LocalDB provisioning, post-start identity query, dynamic `SqlExpectedInstance` publication, and `DVLD_TEST_EXPECTED_INSTANCE` wiring to both API and Infrastructure SQL test tasks inspected; ownership-verified cleanup preserved. Azure-hosted pipeline execution has **not** been performed. |
+| **`LOCAL-SQL-01`** — Stable Local SQL Test Environment | **Completed and Runtime Verified** | `eng/scripts/Start-LocalTestEnvironment.ps1` dynamically discovers the LocalDB identity, sets process-scoped test variables, rejects pre-existing Visual Studio processes, launches the solution, and pins the identity until Visual Studio exits. Executed locally; all Test Explorer tests confirmed passing by the user (baseline 945 / 670 / 614 = 2229). See `docs/IMPLEMENTATION-EXECUTION-LOG.md` Session 19. |
+
 ---
 
 ## 13. Backup, Disaster Recovery, and Hosting Dependencies (`OPS-DR`)

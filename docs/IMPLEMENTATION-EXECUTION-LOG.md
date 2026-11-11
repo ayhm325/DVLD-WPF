@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01`, `CI-SQL-01` implemented; `AUTH-01-CROSS-PROCESS` verified; `CONCURRENCY-01` P0 fixed
+> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01`, `CI-SQL-01` implemented (Azure runtime pending); `AUTH-01-CROSS-PROCESS` verified; `CONCURRENCY-01` P0 fixed; `LOCAL-SQL-01` completed and runtime verified
 
 ---
 
@@ -871,6 +871,30 @@ flowchart TD
   - `Application.UnitTests`: **945 passed**; database-free `API.IntegrationTests`: **514 passed**.
 - **Not executed:** additional SQL race tests for licensing/appointment workflows; deadlock/retry stress. Existing protections unchanged.
 - **Documentation:** `docs/audits/concurrency-01-business-workflow-concurrency.md`, ADR-007, standards, roadmap, this log.
+
+### Session 19: Milestone LOCAL-SQL-01 — Stable Local SQL Test Environment
+- **Date & Timestamp:** 2026-11-11 14:25:00 +03:00
+- **Objective:** Make local SQL integration testing repeatable across Windows, LocalDB, and Visual Studio restarts without manually rediscovering `DVLD_TEST_CONNECTION` and `DVLD_TEST_EXPECTED_INSTANCE`.
+- **Original Problem:** The LocalDB runtime identity (`<machine>\LOCALDB#<hash>|LOCALDB#<hash>`) changes whenever the instance restarts (also observed in Session 17). The fixtures correctly reject any instance not matching `DVLD_TEST_EXPECTED_INSTANCE`, so a stale, manually set value made every SQL-backed test fail after a restart.
+- **Implementation:** Added `eng/scripts/Start-LocalTestEnvironment.ps1` (local developer bootstrap; no production, test, or CI file changed):
+  1. **Prerequisites:** verifies `sqllocaldb`, `sqlcmd`, Visual Studio 18 `devenv.exe`, and `Presentation (WPF)/DVLD_WPF.sln` exist; fails with a clear error otherwise.
+  2. **Visual Studio process isolation:** refuses to run if any `devenv` process already exists (an existing instance cannot inherit the new variables). Existing processes are never modified or terminated.
+  3. **Dynamic identity discovery:** starts the existing `MSSQLLocalDB` instance only if stopped (never creates, deletes, or recreates instances), then queries the running engine through its active named pipe with the same expression used by `VerifyExpectedInstanceAsync` and CI: `SERVERPROPERTY('ServerName') + '|' + @@SERVICENAME`. Exactly one non-empty `<ServerName>|<ServiceName>` value is required; there is no hardcoded or fallback identity.
+  4. **Process-scoped environment:** sets `DVLD_TEST_CONNECTION` (`Server=(localdb)\MSSQLLocalDB;Initial Catalog=master;Integrated Security=true;...`) and `DVLD_TEST_EXPECTED_INSTANCE` for the script process only; persistent User/Machine variables are never written. The launched Visual Studio and its test hosts inherit them.
+  5. **Identity pinning & connection lifecycle:** holds one non-pooled, read-only connection to `master` on the same pipe, re-queries the identity on it (must match discovery exactly, otherwise fail closed), and keeps it open until the launched Visual Studio exits. This prevents LocalDB auto-shutdown from changing the identity mid-session. The connection is disposed in a `finally` block on normal exit, failure, or Ctrl+C.
+- **Daily Usage:**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\eng\scripts\Start-LocalTestEnvironment.ps1
+  ```
+  > **The PowerShell window must remain open while Visual Studio is running.** Closing it releases the identity pin; if LocalDB then restarts, tests fail closed at identity validation and the script must be re-run (with Visual Studio closed).
+- **Verification Evidence:**
+  - PowerShell parser validation: **0 syntax errors**.
+  - Script executed successfully on the local machine; Visual Studio opened the correct solution.
+  - All tests were then run from Visual Studio Test Explorer and the user confirmed all passed. Previously recorded per-project baseline: `Application.UnitTests` **945**, `Infrastructure.IntegrationTests` **670**, `API.IntegrationTests` **614** — total **2229** passed.
+- **Verification Limitations:** The 2229 per-project counts come from the earlier verified run; exact per-project counts for the subsequent Visual Studio run were not supplied. Behaviour across a full Windows reboot cycle and the Ctrl+C release path were not separately evidenced. Azure-hosted pipeline execution was not performed.
+- **CI-SQL-01 Compatibility (static review only):** CI still provisions a run-specific LocalDB instance, queries the identity after start, publishes `SqlExpectedInstance`, passes `DVLD_TEST_EXPECTED_INSTANCE` to both API and Infrastructure SQL test tasks, and retains ownership-verified cleanup. No CI file was changed. **Azure runtime verification remains pending.**
+- **Safety:** `VerifyExpectedInstanceAsync` and all SQL identity validation unchanged; `DVLDf`, WPF, production code, migrations, and CI untouched; no dependencies added.
+- **Status:** LOCAL-SQL-01 — **Completed and Runtime Verified** (local environment).
 
 ---
 
