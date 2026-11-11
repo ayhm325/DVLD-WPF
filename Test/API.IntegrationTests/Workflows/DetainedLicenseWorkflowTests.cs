@@ -154,9 +154,10 @@ public sealed class DetainedLicenseWorkflowTests
         var license = await context2.Licenses.AsNoTracking()
             .SingleAsync(x => x.LicenseID == seed.LicenseId);
 
-        // Startup expiration synchronization deactivates expired licenses on host startup,
-        // while detention still rejects the license specifically because it is expired.
-        Assert.False(license.IsActive);
+        // The API integration factory disables background expiration processing.
+        // Detention must reject the license based on its expiration date independently
+        // of the persisted IsActive flag.
+        Assert.True(license.IsActive);
         Assert.True(LicenseExpirationPolicy.IsExpired(
             license.ExpirationDate,
             DateOnly.FromDateTime(JordanTimeZoneProvider.ConvertUtcToJordan(DateTime.UtcNow))));

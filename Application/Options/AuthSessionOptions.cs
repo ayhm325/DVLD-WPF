@@ -21,5 +21,5 @@ public sealed class AuthSessionOptions
 
     public string RefreshCookieName { get; set; } = "dvld_rt";
 
-    public string RefreshCookiePath { get; set; } = "/api/auth";
+    public string RefreshCookiePath { get; set; } = "/api/Auth";
 }

@@ -43,7 +43,7 @@ public sealed class AuthSessionContractTests
         Assert.Contains($"{RefreshCookie}=raw-refresh", setCookie);
         Assert.Contains("httponly", setCookie, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("samesite=lax", setCookie, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("path=/api/auth", setCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/api/Auth", setCookie, StringComparison.Ordinal);
 
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
@@ -100,6 +100,111 @@ public sealed class AuthSessionContractTests
 
         factory.AuthServiceMock.Verify(
             x => x.RefreshAsync("old-refresh", It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Refresh_WithRealCookieContainerAndHttpClientHandler_TransmitsRotatedCookieAndSucceeds()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.AuthServiceMock
+            .Setup(x => x.LoginAsync(
+                It.IsAny<Application.DTOs.UserDTO.LoginRequestDto>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<LoginResponseDto>.Success(Session("initial-refresh-token")));
+
+        factory.AuthServiceMock
+            .Setup(x => x.RefreshAsync("initial-refresh-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<LoginResponseDto>.Success(Session("rotated-refresh-token")));
+
+        var baseAddress = new Uri("http://localhost");
+        var cookieContainer = new CookieContainer();
+        using var handler = new HttpClientHandler { CookieContainer = cookieContainer };
+
+        // 1. Login successfully
+        using var client = factory.CreateClient();
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/Auth/login",
+            new { UserName = "admin", Password = "Password123!" });
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // 2. Capture the Set-Cookie response and load it into the CookieContainer
+        var setCookieHeaders = loginResponse.Headers.GetValues("Set-Cookie");
+        foreach (var header in setCookieHeaders)
+        {
+            cookieContainer.SetCookies(baseAddress, header);
+        }
+
+        // 3. Verify the browser-equivalent CookieContainer matches path /api/Auth/refresh
+        var requestUri = new Uri("http://localhost/api/Auth/refresh");
+        var cookieHeaderForRefresh = cookieContainer.GetCookieHeader(requestUri);
+        Assert.Contains($"{RefreshCookie}=initial-refresh-token", cookieHeaderForRefresh);
+
+        // 4. Send POST /api/Auth/refresh using the cookie container
+        using var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Auth/refresh");
+        refreshRequest.Headers.Add("Cookie", cookieHeaderForRefresh);
+        refreshRequest.Headers.Add(CsrfHeader, "1");
+
+        var refreshResponse = await client.SendAsync(refreshRequest);
+
+        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
+
+        // 5. Verify refresh succeeds and token rotation works
+        var rotatedSetCookie = GetSetCookie(refreshResponse);
+        Assert.Contains($"{RefreshCookie}=rotated-refresh-token", rotatedSetCookie);
+        Assert.Contains("path=/api/Auth", rotatedSetCookie, StringComparison.Ordinal);
+
+        var body = await refreshResponse.Content
+            .ReadFromJsonAsync<DVLD.Contracts.Auth.LoginResponse>();
+
+        Assert.NotNull(body);
+        Assert.Equal("access-token", body.AccessToken);
+
+        factory.AuthServiceMock.Verify(
+            x => x.RefreshAsync("initial-refresh-token", It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Refresh_ViaBrowserEquivalentClient_AutomaticallyTransmitsCookieWithoutManualHeader()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+
+        factory.AuthServiceMock
+            .Setup(x => x.LoginAsync(
+                It.IsAny<Application.DTOs.UserDTO.LoginRequestDto>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<LoginResponseDto>.Success(Session("cookie-refresh-1")));
+
+        factory.AuthServiceMock
+            .Setup(x => x.RefreshAsync("cookie-refresh-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<LoginResponseDto>.Success(Session("cookie-refresh-2")));
+
+        // Single client instance with internal CookieContainer (HandleCookies = true)
+        using var client = factory.CreateClient();
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/Auth/login",
+            new { UserName = "admin", Password = "Password123!" });
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // POST /api/Auth/refresh WITHOUT manually setting the Cookie header
+        using var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Auth/refresh");
+        refreshRequest.Headers.Add(CsrfHeader, "1");
+
+        var refreshResponse = await client.SendAsync(refreshRequest);
+
+        Assert.Equal(HttpStatusCode.OK, refreshResponse.StatusCode);
+
+        var setCookie = GetSetCookie(refreshResponse);
+        Assert.Contains($"{RefreshCookie}=cookie-refresh-2", setCookie);
+        Assert.Contains("path=/api/Auth", setCookie, StringComparison.Ordinal);
+
+        factory.AuthServiceMock.Verify(
+            x => x.RefreshAsync("cookie-refresh-1", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

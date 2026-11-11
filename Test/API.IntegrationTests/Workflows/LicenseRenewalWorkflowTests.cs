@@ -186,13 +186,13 @@ public sealed class LicenseRenewalWorkflowTests
     }
 
     [Fact]
-    public async Task RenewLicense_WhenNewLicenseInsertFailsAfterStartupExpirationSync_RollsBackApplicationAndKeepsLicenseInactive()
+    public async Task RenewLicense_WhenNewLicenseInsertFailsAndOldLicenseIsInactive_PreservesInactiveState()
     {
         await using var factory = new SqlServerApiWebApplicationFactory();
         var seed = await SeedExpiredLicenseScenarioAsync(factory);
 
         const string constraintName =
-            "CK_Licenses_IntegrationTest_ForceFailure_Synced";
+            "CK_Licenses_IntegrationTest_ForceFailure_Inactive";
 
         await using (var setupContext = factory.CreateDbContext())
         {
@@ -202,6 +202,10 @@ public sealed class LicenseRenewalWorkflowTests
                 ADD CONSTRAINT {constraintName}
                 CHECK (Notes <> 'FORCE_FAILURE')
                 """);
+
+            Assert.Equal(1, await setupContext.Licenses
+                .Where(x => x.LicenseID == seed.OldLicenseId)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.IsActive, false)));
         }
 
         try
@@ -221,6 +225,8 @@ public sealed class LicenseRenewalWorkflowTests
                 .AsNoTracking()
                 .SingleAsync(x => x.LicenseID == seed.OldLicenseId);
 
+            // The license was inactive before the transaction and must remain inactive
+            // after the failed renewal transaction is rolled back.
             Assert.False(oldLicense.IsActive);
 
             Assert.Single(await context.Licenses
