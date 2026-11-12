@@ -7,7 +7,7 @@
 > **Canonical Decisions Reference:** [`ENGINEERING-DECISIONS.md`](../ENGINEERING-DECISIONS.md)  
 > **Master Plan Reference:** [`docs/PROJECT-COMPLETION-MASTER-PLAN.md`](./PROJECT-COMPLETION-MASTER-PLAN.md)  
 > **Repository Root:** `D:\DVLD-WPF`  
-> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01`, `CI-SQL-01` implemented (Azure runtime pending); `AUTH-01-CROSS-PROCESS` verified; `CONCURRENCY-01` P0 fixed; `LOCAL-SQL-01` completed and runtime verified
+> **Current Tracking Status:** ACTIVE — `API-01`, `REST-01`, `AUTH-01` implemented; `CI-SQL-01` completed and Azure runtime verified (run `#20261111.2`); `AUTH-01-CROSS-PROCESS` verified; `CONCURRENCY-01` P0 fixed; `LOCAL-SQL-01` completed and runtime verified
 
 ---
 
@@ -895,6 +895,40 @@ flowchart TD
 - **CI-SQL-01 Compatibility (static review only):** CI still provisions a run-specific LocalDB instance, queries the identity after start, publishes `SqlExpectedInstance`, passes `DVLD_TEST_EXPECTED_INSTANCE` to both API and Infrastructure SQL test tasks, and retains ownership-verified cleanup. No CI file was changed. **Azure runtime verification remains pending.**
 - **Safety:** `VerifyExpectedInstanceAsync` and all SQL identity validation unchanged; `DVLDf`, WPF, production code, migrations, and CI untouched; no dependencies added.
 - **Status:** LOCAL-SQL-01 — **Completed and Runtime Verified** (local environment).
+
+### Session 20: Milestone CI-SQL-01 — Azure Hosted Agent Runtime Verification & Closure
+- **Date & Timestamp:** 2026-11-12 12:38:00 +03:00
+- **Goal:** Close the outstanding CI-SQL-01 item recorded in Session 16 ("Azure runtime verification remains pending") using a real Azure DevOps run.
+- **Evidence Source:** Azure DevOps pipeline run **`#20261111.2`**, repository `ayhm325/DVLD-WPF`, branch `main`, source commit **`319ce500`** (`fix(test): stabilize local SQL integration test environment`). Result: **Succeeded**. Job details were inspected manually by the user in Azure DevOps and supplied as evidence; this session did not trigger or re-run the pipeline.
+- **Durations:** Backend & Solution CI **10m 36s**; Frontend CI approximately **2m 32s**; overall pipeline approximately **13m 40s**.
+- **Frontend CI — ClientApp:** Succeeded (ESLint, TypeScript validation, production build, production bundle publication).
+- **Backend & Solution CI — .NET 8:** Succeeded. Task-level results:
+
+  | Azure pipeline step | Result |
+  |---|---|
+  | Restore Solution Dependencies | Passed |
+  | Build Solution (Release) | Passed |
+  | Run Application Unit Tests | Passed |
+  | Initialize and Verify SQL Server | Passed |
+  | Validate SQL Test Environment | Passed |
+  | Validate API Integration Test Settings | Passed |
+  | Run API Integration Tests | Passed |
+  | Publish API Integration Test Results | Passed |
+  | Run Infrastructure Integration Tests | Passed |
+  | Publish Infrastructure Integration Test Results | Passed |
+  | Clean Up Run-Owned SQL Test Resources | Passed |
+  | Publish Backend Code Coverage | Passed |
+  | Package DVLD.Api Release Output | Passed |
+  | Publish DVLD.Api Release Artifact | Passed |
+
+- **What This Establishes:** On the Azure hosted agent, the run-specific LocalDB instance was provisioned and verified, the dynamically published SQL instance identity contract passed validation, both the API and Infrastructure integration suites executed successfully against the isolated SQL environment, run-owned SQL resources were cleaned up, and test results, coverage, and the API release artifact were published.
+- **Evidence Scope & Limitations:** The supplied evidence establishes successful execution of the listed Azure pipeline tasks only. It does **not** provide exact per-suite test counts or coverage percentages; none are claimed here.
+- **Non-Blocking Code-Quality Follow-Ups (not fixed in this task):** The pipeline summary reported three xUnit analyzer warnings, to be addressed in a separate focused task:
+  1. `AuthSessionSqlVerificationTests.cs:455` — xUnit2000.
+  2. `CrossProcessRefreshTests.cs:74` — xUnit2031.
+  3. `CrossProcessRefreshTests.cs:96` — xUnit2031.
+- **Changes:** Documentation only (this log and `PROJECT-COMPLETION-MASTER-PLAN.md` §12.2). No application code, tests, pipeline configuration, scripts, WPF files, or databases were modified; `DVLDf` was not accessed.
+- **Status:** CI-SQL-01 — **Completed and Azure Runtime Verified**.
 
 ---
 
