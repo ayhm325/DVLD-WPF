@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from "react";
 import {
   Lock,
   Unlock,
@@ -6,56 +6,63 @@ import {
   CheckCircle2,
   Plus,
   Coins,
-} from 'lucide-react'
-import type { DetainedLicense } from '../../types/DetainedLicense'
-import { getDetainedLicenses } from '../../services/detainedLicenseService'
-import { formatDate, formatCurrency, formatNumber } from '../../utils/formatters'
-import { useAsyncData, useTableFilters } from '../../hooks'
-import PageHero from '../common/PageHero'
-import StatsGrid from '../common/StatsGrid'
-import StatCard from '../common/StatCard'
-import TableToolbar, { type SearchFieldOption } from '../common/TableToolbar'
-import StatusBadge from '../common/StatusBadge'
-import ErrorAlert from '../common/ErrorAlert'
-import EmptyState from '../common/EmptyState'
-import DataTable, { type DataTableColumn } from '../common/DataTable'
-import ReleaseDetainedLicenseModal from './ReleaseDetainedLicenseModal'
+} from "lucide-react";
+import type { DetainedLicense } from "../../types/DetainedLicense";
+import { getDetainedLicenses } from "../../services/detainedLicenseService";
+import {
+  formatDate,
+  formatCurrency,
+  formatNumber,
+} from "../../utils/formatters";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import PageHero from "../common/PageHero";
+import StatsGrid from "../common/StatsGrid";
+import StatCard from "../common/StatCard";
+import TableToolbar, { type SearchFieldOption } from "../common/TableToolbar";
+import StatusBadge from "../common/StatusBadge";
+import ErrorAlert from "../common/ErrorAlert";
+import EmptyState from "../common/EmptyState";
+import DataTable, { type DataTableColumn } from "../common/DataTable";
+import ReleaseDetainedLicenseModal from "./ReleaseDetainedLicenseModal";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select'
-import { Button } from '../ui'
+} from "../ui/select";
+import { Button } from "../ui";
 
 type Props = {
-  accessToken: string
-  onNavigateToDetain: () => void
-}
+  accessToken: string;
+  onNavigateToDetain: () => void;
+};
 
-type SearchBy = 'all' | 'detainId' | 'licenseId' | 'nationalNo' | 'fullName'
+type SearchBy = "all" | "detainId" | "licenseId" | "nationalNo" | "fullName";
 
 interface DetainedFilters extends Record<string, unknown> {
-  statusFilter: 'all' | 'active' | 'released'
+  statusFilter: "all" | "active" | "released";
 }
 
 const SEARCH_OPTIONS: SearchFieldOption<SearchBy>[] = [
-  { value: 'all', label: 'All Fields' },
-  { value: 'detainId', label: 'Detain ID' },
-  { value: 'licenseId', label: 'License ID' },
-  { value: 'nationalNo', label: 'National No' },
-  { value: 'fullName', label: 'Driver Name' },
-]
+  { value: "all", label: "All Fields" },
+  { value: "detainId", label: "Detain ID" },
+  { value: "licenseId", label: "License ID" },
+  { value: "nationalNo", label: "National No" },
+  { value: "fullName", label: "Driver Name" },
+];
 
 export default function DetainedLicensesPage({
   accessToken,
   onNavigateToDetain,
 }: Props) {
   const [selectedDetentionForRelease, setSelectedDetentionForRelease] =
-    useState<DetainedLicense | null>(null)
+    useState<DetainedLicense | null>(null);
 
-  const fetcher = useCallback(() => getDetainedLicenses(accessToken), [accessToken])
+  const fetcher = useCallback(
+    () => getDetainedLicenses(accessToken),
+    [accessToken],
+  );
 
   const {
     data: detentions,
@@ -65,8 +72,8 @@ export default function DetainedLicensesPage({
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
     initialData: [],
-    defaultErrorMessage: 'Failed to load detained licenses.',
-  })
+    defaultErrorMessage: "Failed to load detained licenses.",
+  });
 
   const {
     search,
@@ -80,81 +87,96 @@ export default function DetainedLicensesPage({
     resetFilters: handleResetFilters,
   } = useTableFilters<DetainedLicense, SearchBy, DetainedFilters>({
     data: detentions,
-    initialSearchField: 'all',
-    initialFilters: { statusFilter: 'all' },
+    initialSearchField: "all",
+    initialFilters: { statusFilter: "all" },
     filterItem: (item, query, field, currentFilters) => {
       // 1. Status Filter
-      const status = currentFilters.statusFilter
-      if (status === 'active' && item.isReleased) return false
-      if (status === 'released' && !item.isReleased) return false
+      const status = currentFilters.statusFilter;
+      if (status === "active" && item.isReleased) return false;
+      if (status === "released" && !item.isReleased) return false;
 
       // 2. Search Query
-      if (!query) return true
+      if (!query) return true;
 
-      const q = query.toLowerCase()
-      if (field === 'detainId') return String(item.detainId).includes(q)
-      if (field === 'licenseId') return String(item.licenseId).includes(q)
-      if (field === 'nationalNo') return Boolean(item.nationalNo?.toLowerCase().includes(q))
-      if (field === 'fullName') return Boolean(item.fullName?.toLowerCase().includes(q))
+      const q = query.toLowerCase();
+      if (field === "detainId") return String(item.detainId).includes(q);
+      if (field === "licenseId") return String(item.licenseId).includes(q);
+      if (field === "nationalNo")
+        return Boolean(item.nationalNo?.toLowerCase().includes(q));
+      if (field === "fullName")
+        return Boolean(item.fullName?.toLowerCase().includes(q));
 
       return (
         String(item.detainId).includes(q) ||
         String(item.licenseId).includes(q) ||
         Boolean(item.nationalNo?.toLowerCase().includes(q)) ||
         Boolean(item.fullName?.toLowerCase().includes(q))
-      )
+      );
     },
-  })
+  });
 
   // Statistics
   const stats = useMemo(() => {
-    const total = detentions.length
-    const active = detentions.filter((d) => !d.isReleased).length
-    const released = detentions.filter((d) => d.isReleased).length
-    const totalFines = detentions.reduce((sum, d) => sum + (d.fineFees || 0), 0)
-    return { total, active, released, totalFines }
-  }, [detentions])
+    const total = detentions.length;
+    const active = detentions.filter((d) => !d.isReleased).length;
+    const released = detentions.filter((d) => d.isReleased).length;
+    const totalFines = detentions.reduce(
+      (sum, d) => sum + (d.fineFees || 0),
+      0,
+    );
+    return { total, active, released, totalFines };
+  }, [detentions]);
 
   const columns: DataTableColumn<DetainedLicense>[] = useMemo(
     () => [
       {
-        key: 'detainId',
-        header: 'Detain ID',
+        key: "detainId",
+        header: "Detain ID",
         render: (item: DetainedLicense) => (
-          <span className="font-mono text-slate-400 font-bold">#{item.detainId}</span>
+          <span className="font-mono text-slate-400 font-bold">
+            #{item.detainId}
+          </span>
         ),
       },
       {
-        key: 'licenseId',
-        header: 'License ID',
+        key: "licenseId",
+        header: "License ID",
         render: (item: DetainedLicense) => (
-          <span className="font-mono text-cyan-400 font-bold">#{item.licenseId}</span>
+          <span className="font-mono text-cyan-400 font-bold">
+            #{item.licenseId}
+          </span>
         ),
       },
       {
-        key: 'fullName',
-        header: 'Driver Name',
+        key: "fullName",
+        header: "Driver Name",
         render: (item: DetainedLicense) => (
-          <span className="font-semibold text-white">{item.fullName || '—'}</span>
+          <span className="font-semibold text-white">
+            {item.fullName || "—"}
+          </span>
         ),
       },
       {
-        key: 'nationalNo',
-        header: 'National No',
+        key: "nationalNo",
+        header: "National No",
         render: (item: DetainedLicense) => (
-          <span className="font-mono text-slate-300 text-xs">{item.nationalNo || '—'}</span>
+          <span className="font-mono text-slate-300 text-xs">
+            {item.nationalNo || "—"}
+          </span>
         ),
       },
       {
-        key: 'detainDate',
-        header: 'Detain Date',
+        key: "detainDate",
+        header: "Detain Date",
         render: (item: DetainedLicense) => (
-          <span className="text-slate-300 text-xs">{formatDate(item.detainDate)}</span>
+          <span className="text-slate-300 text-xs">
+            {formatDate(item.detainDate)}
+          </span>
         ),
       },
       {
-        key: 'fineFees',
-        header: 'Fine Fees',
+        key: "fineFees",
+        header: "Fine Fees",
         render: (item: DetainedLicense) => (
           <span className="font-bold text-amber-300 text-xs">
             {formatCurrency(item.fineFees)}
@@ -162,27 +184,27 @@ export default function DetainedLicensesPage({
         ),
       },
       {
-        key: 'isReleased',
-        header: 'Status',
+        key: "isReleased",
+        header: "Status",
         render: (item: DetainedLicense) => (
           <StatusBadge
-            label={item.isReleased ? 'Released' : 'Detained'}
-            variant={item.isReleased ? 'success' : 'danger'}
+            label={item.isReleased ? "Released" : "Detained"}
+            variant={item.isReleased ? "success" : "danger"}
           />
         ),
       },
       {
-        key: 'releaseDate',
-        header: 'Release Date',
+        key: "releaseDate",
+        header: "Release Date",
         render: (item: DetainedLicense) => (
           <span className="text-slate-300 text-xs">
-            {item.releaseDate ? formatDate(item.releaseDate) : '—'}
+            {item.releaseDate ? formatDate(item.releaseDate) : "—"}
           </span>
         ),
       },
       {
-        key: 'actions',
-        header: 'Actions',
+        key: "actions",
+        header: "Actions",
         render: (item: DetainedLicense) =>
           !item.isReleased ? (
             <Button
@@ -190,8 +212,8 @@ export default function DetainedLicensesPage({
               variant="outline"
               size="sm"
               onClick={(e) => {
-                e.stopPropagation()
-                setSelectedDetentionForRelease(item)
+                e.stopPropagation();
+                setSelectedDetentionForRelease(item);
               }}
               className="h-7 px-3 text-xs font-semibold text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/30 rounded-lg gap-1.5 transition-all cursor-pointer"
             >
@@ -204,7 +226,7 @@ export default function DetainedLicensesPage({
       },
     ],
     [],
-  )
+  );
 
   return (
     <section className="page-content space-y-6">
@@ -247,7 +269,9 @@ export default function DetainedLicensesPage({
         />
       </StatsGrid>
 
-      {error && <ErrorAlert title="Registry Error" message={error} onRetry={refresh} />}
+      {error && (
+        <ErrorAlert title="Registry Error" message={error} onRetry={refresh} />
+      )}
 
       {/* Content Panel with TableToolbar & DataTable */}
       <div className="rounded-2xl border border-[#1b2f52] bg-[#0c192e] p-6 shadow-xl space-y-4">
@@ -266,10 +290,10 @@ export default function DetainedLicensesPage({
             <Select
               value={filters.statusFilter}
               onValueChange={(val) =>
-                setFilter('statusFilter', val as 'all' | 'active' | 'released')
+                setFilter("statusFilter", val as "all" | "active" | "released")
               }
             >
-              <SelectTrigger className="w-[140px] h-9 text-xs bg-[#081326] border-[#1b2f52] text-white">
+              <SelectTrigger className="w-35 h-9 text-xs bg-[#081326] border-[#1b2f52] text-white">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent className="bg-[#0c192e] border-[#1b2f52] text-white">
@@ -314,11 +338,11 @@ export default function DetainedLicensesPage({
           accessToken={accessToken}
           onClose={() => setSelectedDetentionForRelease(null)}
           onReleased={() => {
-            refresh()
-            setSelectedDetentionForRelease(null)
+            refresh();
+            setSelectedDetentionForRelease(null);
           }}
         />
       )}
     </section>
-  )
+  );
 }

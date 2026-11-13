@@ -1,66 +1,66 @@
-import type { ReactNode } from 'react'
-import SearchInput from './SearchInput'
-import { Filter as FilterIcon, RefreshCw as RefreshIcon } from 'lucide-react'
+import type { ReactNode } from "react";
+import SearchInput from "./SearchInput";
+import { Filter as FilterIcon, RefreshCw as RefreshIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select'
+} from "../ui/select";
 
-const EMPTY_SENTINEL = '__EMPTY_SENTINEL__'
+const EMPTY_SENTINEL = "__EMPTY_SENTINEL__";
 
 export interface SearchFieldOption<TField extends string = string> {
-  value: TField
-  label: string
+  value: TField;
+  label: string;
 }
 
 export interface TableToolbarProps<TField extends string = string> {
   /** Current search input value */
-  searchValue?: string
+  searchValue?: string;
   /** Search value change callback */
-  onSearchChange?: (value: string) => void
+  onSearchChange?: (value: string) => void;
   /** Search input placeholder text */
-  searchPlaceholder?: string
+  searchPlaceholder?: string;
   /** Accessible label for the search input */
-  searchAriaLabel?: string
+  searchAriaLabel?: string;
 
   /** Active search field identifier (e.g. 'all', 'name', 'id') */
-  searchField?: TField
+  searchField?: TField;
   /** Dropdown options for search field selector */
-  searchFieldOptions?: SearchFieldOption<TField>[]
+  searchFieldOptions?: SearchFieldOption<TField>[];
   /** Search field change callback */
-  onSearchFieldChange?: (value: TField) => void
+  onSearchFieldChange?: (value: TField) => void;
   /** Accessible label for search field select */
-  searchFieldAriaLabel?: string
+  searchFieldAriaLabel?: string;
   /** Custom min-width for the search field selector */
-  searchFieldMinWidth?: number | string
+  searchFieldMinWidth?: number | string;
 
   /** Callback to reset all search/filter criteria */
-  onReset?: () => void
+  onReset?: () => void;
   /** Whether any filters or search inputs are currently active */
-  isFiltered?: boolean
+  isFiltered?: boolean;
   /** Custom label for the reset button. Defaults to 'Reset'. */
-  resetLabel?: string
+  resetLabel?: string;
 
   /** Callback to refresh table data */
-  onRefresh?: () => void
+  onRefresh?: () => void;
   /** Whether a data refresh is in progress */
-  refreshing?: boolean
+  refreshing?: boolean;
   /** Label for refresh button while idle. Defaults to 'Refresh'. */
-  refreshLabel?: string
+  refreshLabel?: string;
   /** Label for refresh button while loading. Defaults to 'Loading...'. */
-  refreshingLabel?: string
+  refreshingLabel?: string;
 
   /** Custom filter controls rendered after search input (e.g. status/age/gender dropdowns) */
-  filters?: ReactNode
+  filters?: ReactNode;
   /** Additional action buttons rendered in the toolbar */
-  actions?: ReactNode
+  actions?: ReactNode;
   /** Extra child elements */
-  children?: ReactNode
+  children?: ReactNode;
   /** Additional class names for toolbar container */
-  className?: string
+  className?: string;
 }
 
 /**
@@ -77,37 +77,39 @@ export default function TableToolbar<TField extends string = string>({
   searchField,
   searchFieldOptions,
   onSearchFieldChange,
-  searchFieldAriaLabel = 'Filter criterion',
+  searchFieldAriaLabel = "Filter criterion",
   searchFieldMinWidth = 140,
 
   onReset,
   isFiltered = false,
-  resetLabel = 'Reset',
+  resetLabel = "Reset",
 
   onRefresh,
   refreshing = false,
-  refreshLabel = 'Refresh',
-  refreshingLabel = 'Loading...',
+  refreshLabel = "Refresh",
+  refreshingLabel = "Loading...",
 
   filters,
   actions,
   children,
-  className = '',
+  className = "",
 }: TableToolbarProps<TField>) {
-  const containerClasses = ['table-toolbar', className].filter(Boolean).join(' ')
+  const containerClasses = ["table-toolbar", className]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={containerClasses}>
       {searchFieldOptions && onSearchFieldChange && (
         <div style={{ minWidth: searchFieldMinWidth }} className="shrink-0">
           <Select
-            value={searchField === '' ? EMPTY_SENTINEL : searchField}
+            value={searchField === "" ? EMPTY_SENTINEL : searchField}
             onValueChange={(val) =>
-              onSearchFieldChange((val === EMPTY_SENTINEL ? '' : val) as TField)
+              onSearchFieldChange((val === EMPTY_SENTINEL ? "" : val) as TField)
             }
           >
             <SelectTrigger
-              className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+              className="h-10 mi.n-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
               aria-label={searchFieldAriaLabel}
             >
               <SelectValue />
@@ -116,7 +118,7 @@ export default function TableToolbar<TField extends string = string>({
               {searchFieldOptions.map((opt) => (
                 <SelectItem
                   key={opt.value || EMPTY_SENTINEL}
-                  value={opt.value === '' ? EMPTY_SENTINEL : opt.value}
+                  value={opt.value === "" ? EMPTY_SENTINEL : opt.value}
                 >
                   {opt.label}
                 </SelectItem>
@@ -128,10 +130,10 @@ export default function TableToolbar<TField extends string = string>({
 
       {onSearchChange && (
         <SearchInput
-          value={searchValue ?? ''}
+          value={searchValue ?? ""}
           onChange={onSearchChange}
           placeholder={searchPlaceholder}
-          ariaLabel={searchAriaLabel ?? 'Search records'}
+          ariaLabel={searchAriaLabel ?? "Search records"}
         />
       )}
 
@@ -159,7 +161,7 @@ export default function TableToolbar<TField extends string = string>({
         >
           <RefreshIcon
             size={14}
-            className={refreshing ? 'animate-spin' : undefined}
+            className={refreshing ? "animate-spin" : undefined}
           />
           <span>{refreshing ? refreshingLabel : refreshLabel}</span>
         </button>
@@ -168,5 +170,5 @@ export default function TableToolbar<TField extends string = string>({
       {actions}
       {children}
     </div>
-  )
+  );
 }

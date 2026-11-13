@@ -1,53 +1,53 @@
-import { useCallback, useMemo, useState } from 'react'
-import type { InternationalLicense } from '../../types/InternationalLicense'
-import { getInternationalLicenses } from '../../services/internationalLicenseService'
-import { formatNumber } from '../../utils/formatters'
-import { useAsyncData, useTableFilters } from '../../hooks'
-import InternationalLicenseTable from './InternationalLicenseTable'
-import PageHero from '../common/PageHero'
-import StatsGrid from '../common/StatsGrid'
-import StatCard from '../common/StatCard'
-import TableToolbar from '../common/TableToolbar'
-import ErrorAlert from '../common/ErrorAlert'
-import LicenseDetailsModal from '../licenses/LicenseDetailsModal'
+import { useCallback, useMemo, useState } from "react";
+import type { InternationalLicense } from "../../types/InternationalLicense";
+import { getInternationalLicenses } from "../../services/internationalLicenseService";
+import { formatNumber } from "../../utils/formatters";
+import { useAsyncData, useTableFilters } from "../../hooks";
+import InternationalLicenseTable from "./InternationalLicenseTable";
+import PageHero from "../common/PageHero";
+import StatsGrid from "../common/StatsGrid";
+import StatCard from "../common/StatCard";
+import TableToolbar from "../common/TableToolbar";
+import ErrorAlert from "../common/ErrorAlert";
+import LicenseDetailsModal from "../licenses/LicenseDetailsModal";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select'
+} from "../ui/select";
 import {
   Plus as PlusIcon,
   Globe as GlobeIcon,
   Check as CheckIcon,
   Clock as ClockIcon,
-} from 'lucide-react'
-import './international-licenses.css'
+} from "lucide-react";
+import "./international-licenses.css";
 
 type Props = {
-  accessToken: string
-  onIssueNew?: () => void
-  onOpenDetails?: (id: number) => void
-}
+  accessToken: string;
+  onIssueNew?: () => void;
+  onOpenDetails?: (id: number) => void;
+};
 
 type FilterKey =
-  | 'all'
-  | 'internationalLicenseId'
-  | 'applicationId'
-  | 'driverId'
-  | 'issuedUsingLocalLicenseId'
+  | "all"
+  | "internationalLicenseId"
+  | "applicationId"
+  | "driverId"
+  | "issuedUsingLocalLicenseId";
 
 const SEARCH_OPTIONS: { value: FilterKey; label: string }[] = [
-  { value: 'all', label: 'All Fields' },
-  { value: 'internationalLicenseId', label: "Int'l License ID" },
-  { value: 'applicationId', label: 'Application ID' },
-  { value: 'driverId', label: 'Driver ID' },
-  { value: 'issuedUsingLocalLicenseId', label: 'Local License ID' },
-]
+  { value: "all", label: "All Fields" },
+  { value: "internationalLicenseId", label: "Int'l License ID" },
+  { value: "applicationId", label: "Application ID" },
+  { value: "driverId", label: "Driver ID" },
+  { value: "issuedUsingLocalLicenseId", label: "Local License ID" },
+];
 
 interface InternationalLicenseFilters extends Record<string, unknown> {
-  status: 'All' | 'Active' | 'Inactive'
+  status: "All" | "Active" | "Inactive";
 }
 
 export default function InternationalLicensesPage({
@@ -55,8 +55,12 @@ export default function InternationalLicensesPage({
   onIssueNew,
   onOpenDetails,
 }: Props) {
-  const [selectedIntlLicense, setSelectedIntlLicense] = useState<InternationalLicense | null>(null)
-  const fetcher = useCallback(() => getInternationalLicenses(accessToken), [accessToken])
+  const [selectedIntlLicense, setSelectedIntlLicense] =
+    useState<InternationalLicense | null>(null);
+  const fetcher = useCallback(
+    () => getInternationalLicenses(accessToken),
+    [accessToken],
+  );
 
   const {
     data: items,
@@ -66,8 +70,8 @@ export default function InternationalLicensesPage({
   } = useAsyncData(fetcher, {
     enabled: Boolean(accessToken),
     initialData: [],
-    defaultErrorMessage: 'Could not load international licenses.',
-  })
+    defaultErrorMessage: "Could not load international licenses.",
+  });
 
   const {
     search,
@@ -79,51 +83,55 @@ export default function InternationalLicensesPage({
     filteredData: filteredItems,
     isFiltered,
     resetFilters: handleResetFilters,
-  } = useTableFilters<InternationalLicense, FilterKey, InternationalLicenseFilters>({
+  } = useTableFilters<
+    InternationalLicense,
+    FilterKey,
+    InternationalLicenseFilters
+  >({
     data: items,
-    initialSearchField: 'all',
-    initialFilters: { status: 'All' },
+    initialSearchField: "all",
+    initialFilters: { status: "All" },
     filterItem: (item, query, field, currentFilters) => {
       // 1. Status check
-      const currentStatus = currentFilters.status
+      const currentStatus = currentFilters.status;
       const matchesStatus =
-        currentStatus === 'All' ||
-        (currentStatus === 'Active' ? item.isActive : !item.isActive)
+        currentStatus === "All" ||
+        (currentStatus === "Active" ? item.isActive : !item.isActive);
 
-      if (!matchesStatus) return false
+      if (!matchesStatus) return false;
 
       // 2. Query check
-      if (!query) return true
+      if (!query) return true;
 
-      if (field === 'all') {
+      if (field === "all") {
         return (
           String(item.internationalLicenseId).includes(query) ||
           String(item.applicationId).includes(query) ||
           String(item.driverId).includes(query) ||
           String(item.issuedUsingLocalLicenseId).includes(query)
-        )
+        );
       }
 
-      return String(item[field]).toLowerCase().includes(query)
+      return String(item[field]).toLowerCase().includes(query);
     },
-  })
+  });
 
-  const status = filters.status
+  const status = filters.status;
 
   const placeholderText = useMemo(() => {
     switch (filter) {
-      case 'internationalLicenseId':
-        return 'Search by international license ID...'
-      case 'applicationId':
-        return 'Search by application ID...'
-      case 'driverId':
-        return 'Search by driver ID...'
-      case 'issuedUsingLocalLicenseId':
-        return 'Search by local license ID...'
+      case "internationalLicenseId":
+        return "Search by international license ID...";
+      case "applicationId":
+        return "Search by application ID...";
+      case "driverId":
+        return "Search by driver ID...";
+      case "issuedUsingLocalLicenseId":
+        return "Search by local license ID...";
       default:
-        return 'Search by any ID (intl, app, driver, local)...'
+        return "Search by any ID (intl, app, driver, local)...";
     }
-  }, [filter])
+  }, [filter]);
 
   return (
     <section className="page-content intl-page">
@@ -134,7 +142,7 @@ export default function InternationalLicensesPage({
           label="Total Licenses"
           variant="violet"
           icon={<GlobeIcon size={20} />}
-          value={loading || error ? '—' : formatNumber(items.length)}
+          value={loading || error ? "—" : formatNumber(items.length)}
           description="International licenses recorded"
         />
 
@@ -142,7 +150,11 @@ export default function InternationalLicensesPage({
           label="Active Licenses"
           variant="emerald"
           icon={<CheckIcon size={20} />}
-          value={loading || error ? '—' : formatNumber(items.filter((item) => item.isActive).length)}
+          value={
+            loading || error
+              ? "—"
+              : formatNumber(items.filter((item) => item.isActive).length)
+          }
           description="Currently active licenses"
         />
 
@@ -150,7 +162,11 @@ export default function InternationalLicensesPage({
           label="Inactive Licenses"
           variant="slate"
           icon={<ClockIcon size={20} />}
-          value={loading || error ? '—' : formatNumber(items.filter((item) => !item.isActive).length)}
+          value={
+            loading || error
+              ? "—"
+              : formatNumber(items.filter((item) => !item.isActive).length)
+          }
           description="Not currently active"
         />
       </StatsGrid>
@@ -162,10 +178,10 @@ export default function InternationalLicensesPage({
             <p>Review issued international licenses and verify validity.</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span className="record-count">
               {loading
-                ? 'Loading...'
+                ? "Loading..."
                 : filteredItems.length === items.length
                   ? `${items.length} Licenses`
                   : `${filteredItems.length} of ${items.length} Licenses`}
@@ -196,11 +212,11 @@ export default function InternationalLicensesPage({
               <Select
                 value={status}
                 onValueChange={(val) =>
-                  setCustomFilter('status', val as typeof status)
+                  setCustomFilter("status", val as typeof status)
                 }
               >
                 <SelectTrigger
-                  className="h-10 min-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+                  className="h-10 min-h-10 w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
                   aria-label="Filter by status"
                 >
                   <SelectValue />
@@ -219,10 +235,12 @@ export default function InternationalLicensesPage({
           refreshing={loading}
         />
 
-        {loading && <p className="empty-state">Loading international licenses...</p>}
+        {loading && (
+          <p className="empty-state">Loading international licenses...</p>
+        )}
 
         {!loading && error && (
-          <div style={{ margin: '0 25px 20px' }}>
+          <div style={{ margin: "0 25px 20px" }}>
             <ErrorAlert
               message={error}
               onRetry={refresh}
@@ -240,12 +258,21 @@ export default function InternationalLicensesPage({
         )}
 
         {!loading && !error && (
-          <footer className="panel-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <footer
+            className="panel-footer"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <span>
-              Showing <strong>{filteredItems.length}</strong> of{' '}
+              Showing <strong>{filteredItems.length}</strong> of{" "}
               <strong>{items.length}</strong> licenses
             </span>
-            <span>Right-click any license row or click View to inspect details.</span>
+            <span>
+              Right-click any license row or click View to inspect details.
+            </span>
           </footer>
         )}
       </section>
@@ -257,10 +284,10 @@ export default function InternationalLicensesPage({
         accessToken={accessToken}
         target={
           selectedIntlLicense
-            ? { type: 'international', item: selectedIntlLicense }
+            ? { type: "international", item: selectedIntlLicense }
             : null
         }
       />
     </section>
-  )
+  );
 }

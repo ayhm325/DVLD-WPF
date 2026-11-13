@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   Search,
@@ -13,17 +13,17 @@ import {
   Coins,
   DollarSign,
   Hash,
-} from 'lucide-react'
-import type { LocalLicenseInfo } from '../../types/License'
-import { getLicenseDetailsById } from '../../services/licenseService'
-import { detainLicense } from '../../services/detainedLicenseService'
-import { formatDate, formatCurrency } from '../../utils/formatters'
-import { isLicenseExpiredInJordan } from '../../utils/jordanTime'
-import { cn } from '@/lib/utils'
-import PageHero from '../common/PageHero'
-import PersonPhoto from '../common/PersonPhoto'
-import StatusBadge from '../common/StatusBadge'
-import ErrorAlert from '../common/ErrorAlert'
+} from "lucide-react";
+import type { LocalLicenseInfo } from "../../types/License";
+import { getLicenseDetailsById } from "../../services/licenseService";
+import { detainLicense } from "../../services/detainedLicenseService";
+import { formatDate, formatCurrency } from "../../utils/formatters";
+import { isLicenseExpiredInJordan } from "../../utils/jordanTime";
+import { cn } from "@/lib/utils";
+import PageHero from "../common/PageHero";
+import PersonPhoto from "../common/PersonPhoto";
+import StatusBadge from "../common/StatusBadge";
+import ErrorAlert from "../common/ErrorAlert";
 import {
   Button,
   Card,
@@ -32,142 +32,157 @@ import {
   CardDescription,
   Input,
   Label,
-} from '../ui'
+} from "../ui";
 
 type Props = {
-  accessToken: string
-  onBack: () => void
-  onDetained?: (detainId: number) => void
-}
+  accessToken: string;
+  onBack: () => void;
+  onDetained?: (detainId: number) => void;
+};
 
-export default function DetainLicensePage({ accessToken, onBack, onDetained }: Props) {
-  const [licenseIdInput, setLicenseIdInput] = useState('')
-  const [license, setLicense] = useState<LocalLicenseInfo | null>(null)
-  const [fineFeesInput, setFineFeesInput] = useState('0')
-  const [fineError, setFineError] = useState('')
-  const [detainId, setDetainId] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
-  const [successNotice, setSuccessNotice] = useState('')
+export default function DetainLicensePage({
+  accessToken,
+  onBack,
+  onDetained,
+}: Props) {
+  const [licenseIdInput, setLicenseIdInput] = useState("");
+  const [license, setLicense] = useState<LocalLicenseInfo | null>(null);
+  const [fineFeesInput, setFineFeesInput] = useState("0");
+  const [fineError, setFineError] = useState("");
+  const [detainId, setDetainId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [successNotice, setSuccessNotice] = useState("");
 
   function handleLicenseIdChange(val: string) {
-    setLicenseIdInput(val)
-    setError('')
-    setFineError('')
-    setSuccessNotice('')
-    setLicense(null)
-    setDetainId(null)
-    setFineFeesInput('0')
+    setLicenseIdInput(val);
+    setError("");
+    setFineError("");
+    setSuccessNotice("");
+    setLicense(null);
+    setDetainId(null);
+    setFineFeesInput("0");
   }
 
   function handleFineFeesChange(val: string) {
-    setFineError('')
-    if (val === '') {
-      setFineFeesInput('')
-      return
+    setFineError("");
+    if (val === "") {
+      setFineFeesInput("");
+      return;
     }
-    if (val.includes('-')) {
-      setFineError('Fine fee cannot be negative.')
-      return
+    if (val.includes("-")) {
+      setFineError("Fine fee cannot be negative.");
+      return;
     }
     if (/^\d*\.?\d{0,2}$/.test(val)) {
-      setFineFeesInput(val)
+      setFineFeesInput(val);
     }
   }
 
   async function handleSearch(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    if (loading) return
+    e.preventDefault();
+    if (loading) return;
 
-    setError('')
-    setFineError('')
-    setSuccessNotice('')
-    setLicense(null)
-    setDetainId(null)
+    setError("");
+    setFineError("");
+    setSuccessNotice("");
+    setLicense(null);
+    setDetainId(null);
 
-    const id = Number(licenseIdInput.trim())
+    const id = Number(licenseIdInput.trim());
     if (!Number.isInteger(id) || id <= 0) {
-      setError('Please enter a valid positive license ID.')
-      return
+      setError("Please enter a valid positive license ID.");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const details = await getLicenseDetailsById(accessToken, id)
-      setLicense(details)
-      setFineFeesInput('0')
+      const details = await getLicenseDetailsById(accessToken, id);
+      setLicense(details);
+      setFineFeesInput("0");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not find driving license details.')
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not find driving license details.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleDetain() {
-    if (!license || submitting || detainId) return
+    if (!license || submitting || detainId) return;
 
-    const trimmed = fineFeesInput.trim()
+    const trimmed = fineFeesInput.trim();
     if (!trimmed) {
-      setFineError('Detention fine fee is required. Please enter an amount.')
-      setError('Detention fine fee is required. Please enter an amount.')
-      return
+      setFineError("Detention fine fee is required. Please enter an amount.");
+      setError("Detention fine fee is required. Please enter an amount.");
+      return;
     }
 
-    const fine = parseFloat(trimmed)
+    const fine = parseFloat(trimmed);
     if (isNaN(fine) || fine < 0) {
-      setFineError('Please enter a valid non-negative fine fee amount.')
-      setError('Please enter a valid non-negative fine fee amount.')
-      return
+      setFineError("Please enter a valid non-negative fine fee amount.");
+      setError("Please enter a valid non-negative fine fee amount.");
+      return;
     }
 
-    setSubmitting(true)
-    setError('')
-    setFineError('')
-    setSuccessNotice('')
+    setSubmitting(true);
+    setError("");
+    setFineError("");
+    setSuccessNotice("");
 
     try {
       const response = await detainLicense(accessToken, {
         licenseId: license.licenseId,
         fineFees: fine,
-      })
+      });
 
-      setDetainId(response.detainId)
+      setDetainId(response.detainId);
       setSuccessNotice(
         `License #${license.licenseId} detained successfully! Detention Record ID: #${response.detainId}`,
-      )
-      onDetained?.(response.detainId)
+      );
+      onDetained?.(response.detainId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to detain the driving license.')
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to detain the driving license.",
+      );
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
   // Authoritative Jordan-time expiration check
-  const isExpired = license ? isLicenseExpiredInJordan(license.expirationDate) : false
-  const isInactive = license ? !license.isActive : false
-  const isDetained = license ? license.isDetained : false
+  const isExpired = license
+    ? isLicenseExpiredInJordan(license.expirationDate)
+    : false;
+  const isInactive = license ? !license.isActive : false;
+  const isDetained = license ? license.isDetained : false;
 
   // Ineligibility reason if any
-  let ineligibilityReason: string | null = null
+  let ineligibilityReason: string | null = null;
   if (license) {
     if (isDetained) {
-      ineligibilityReason = 'This license is already detained.'
+      ineligibilityReason = "This license is already detained.";
     } else if (isInactive) {
-      ineligibilityReason = 'Only an active license can be detained.'
+      ineligibilityReason = "Only an active license can be detained.";
     } else if (isExpired) {
       ineligibilityReason =
-        'An expired license cannot be detained. A license remains eligible regarding expiration throughout its expiration date in Jordan local time.'
+        "An expired license cannot be detained. A license remains eligible regarding expiration throughout its expiration date in Jordan local time.";
     }
   }
 
-  const fineTrimmed = fineFeesInput.trim()
-  const fineAmount = parseFloat(fineTrimmed)
-  const isFineValid = fineTrimmed !== '' && !isNaN(fineAmount) && fineAmount >= 0
+  const fineTrimmed = fineFeesInput.trim();
+  const fineAmount = parseFloat(fineTrimmed);
+  const isFineValid =
+    fineTrimmed !== "" && !isNaN(fineAmount) && fineAmount >= 0;
   const canSubmit = Boolean(
     license && !ineligibilityReason && isFineValid && !detainId && !submitting,
-  )
+  );
 
   return (
     <section className="page-content space-y-6">
@@ -197,7 +212,9 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
         <div className="flex items-start gap-3 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200">
           <CheckCircle2 className="size-5 text-emerald-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-white">Detention Registered</h4>
+            <h4 className="text-sm font-bold text-white">
+              Detention Registered
+            </h4>
             <p className="text-xs text-emerald-300/90">{successNotice}</p>
           </div>
         </div>
@@ -220,7 +237,10 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
             className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 max-w-lg"
           >
             <div className="flex-1 space-y-1.5">
-              <Label htmlFor="licenseIdInput" className="text-xs font-semibold text-slate-300">
+              <Label
+                htmlFor="licenseIdInput"
+                className="text-xs font-semibold text-slate-300"
+              >
                 License ID
               </Label>
               <div className="relative">
@@ -278,18 +298,17 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
               {/* Status Badges - Using shared StatusBadge component */}
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <StatusBadge
-                  variant={license.isActive ? 'success' : 'danger'}
-                  label={license.isActive ? 'Active' : 'Inactive'}
+                  variant={license.isActive ? "success" : "danger"}
+                  label={license.isActive ? "Active" : "Inactive"}
                 />
                 <StatusBadge
-                  variant={isExpired ? 'danger' : 'info'}
-                  label={isExpired ? 'Expired (Ineligible)' : 'Valid (Eligible)'}
+                  variant={isExpired ? "danger" : "info"}
+                  label={
+                    isExpired ? "Expired (Ineligible)" : "Valid (Eligible)"
+                  }
                 />
                 {isDetained && (
-                  <StatusBadge
-                    variant="danger"
-                    label="Already Detained"
-                  />
+                  <StatusBadge variant="danger" label="Already Detained" />
                 )}
               </div>
             </div>
@@ -301,14 +320,18 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
               <div className="flex items-start gap-3 p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-200">
                 <AlertTriangle className="size-5 text-rose-400 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold text-white">Detention Ineligible</h4>
-                  <p className="text-xs text-rose-300/90 leading-relaxed">{ineligibilityReason}</p>
+                  <h4 className="text-sm font-bold text-white">
+                    Detention Ineligible
+                  </h4>
+                  <p className="text-xs text-rose-300/90 leading-relaxed">
+                    {ineligibilityReason}
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Owner Identity Section */}
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-[#081326] via-[#0b1b36] to-[#081326] border border-[#1b2f52] flex flex-col sm:flex-row items-start sm:items-center gap-4.5 shadow-sm">
+            <div className="p-5 rounded-2xl bg-linear-to-r from-[#081326] via-[#0b1b36] to-[#081326] border border-[#1b2f52] flex flex-col sm:flex-row items-start sm:items-center gap-4.5 shadow-sm">
               <PersonPhoto
                 personId={license.personId}
                 photoKey={license.imagePath}
@@ -331,19 +354,27 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5 text-xs text-slate-300">
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="text-slate-400">National No:</span>
-                    <strong className="text-white font-mono font-semibold">{license.nationalNo}</strong>
+                    <strong className="text-white font-mono font-semibold">
+                      {license.nationalNo}
+                    </strong>
                   </div>
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="text-slate-400">Gender:</span>
-                    <strong className="text-slate-200">{license.gender || '—'}</strong>
+                    <strong className="text-slate-200">
+                      {license.gender || "—"}
+                    </strong>
                   </div>
                   <div className="flex items-center gap-1.5 truncate">
                     <span className="text-slate-400">DOB:</span>
-                    <strong className="text-slate-200">{formatDate(license.dateOfBirth)}</strong>
+                    <strong className="text-slate-200">
+                      {formatDate(license.dateOfBirth)}
+                    </strong>
                   </div>
                   <div className="sm:col-span-2 lg:col-span-3 flex items-center gap-1.5 text-xs truncate pt-0.5">
                     <span className="text-slate-400">Class:</span>
-                    <strong className="text-cyan-300 font-medium">{license.licenseClass}</strong>
+                    <strong className="text-cyan-300 font-medium">
+                      {license.licenseClass}
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -381,13 +412,16 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
                     Expiration Date
                   </span>
                   <CalendarCheck
-                    className={cn('size-3.5', isExpired ? 'text-rose-400' : 'text-emerald-400')}
+                    className={cn(
+                      "size-3.5",
+                      isExpired ? "text-rose-400" : "text-emerald-400",
+                    )}
                   />
                 </div>
                 <strong
                   className={cn(
-                    'text-sm font-semibold block',
-                    isExpired ? 'text-rose-300' : 'text-slate-200',
+                    "text-sm font-semibold block",
+                    isExpired ? "text-rose-300" : "text-slate-200",
                   )}
                 >
                   {formatDate(license.expirationDate)}
@@ -414,9 +448,12 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
                   <DollarSign className="size-4.5 text-rose-400" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-white">Detention Fine Assessment</h4>
+                  <h4 className="text-sm font-bold text-white">
+                    Detention Fine Assessment
+                  </h4>
                   <p className="text-xs text-slate-400">
-                    Specify the penalty fine fee applicable to this license detention record.
+                    Specify the penalty fine fee applicable to this license
+                    detention record.
                   </p>
                 </div>
               </div>
@@ -442,12 +479,16 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
                     placeholder="0.00"
                     value={fineFeesInput}
                     onChange={(e) => handleFineFeesChange(e.target.value)}
-                    disabled={submitting || Boolean(detainId) || Boolean(ineligibilityReason)}
+                    disabled={
+                      submitting ||
+                      Boolean(detainId) ||
+                      Boolean(ineligibilityReason)
+                    }
                     className={cn(
-                      'h-10.5 pl-13 pr-4 bg-[#0c192e] text-white font-mono text-sm font-bold rounded-xl transition-all',
+                      "h-10.5 pl-13 pr-4 bg-[#0c192e] text-white font-mono text-sm font-bold rounded-xl transition-all",
                       fineError
-                        ? 'border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40'
-                        : 'border-[#1b2f52] focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30',
+                        ? "border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40"
+                        : "border-[#1b2f52] focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30",
                     )}
                   />
                 </div>
@@ -458,24 +499,25 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
                   </p>
                 ) : (
                   <span className="text-[11px] text-slate-400 block leading-relaxed">
-                    This fine fee must be settled by the applicant before the license can be
-                    released.
+                    This fine fee must be settled by the applicant before the
+                    license can be released.
                   </span>
                 )}
               </div>
             </div>
 
             {/* Detention Operational Notice */}
-            <div className="flex items-start gap-3.5 p-4 rounded-xl bg-gradient-to-r from-[#241118] to-[#1a0f16] border border-rose-500/30 text-xs text-rose-200">
+            <div className="flex items-start gap-3.5 p-4 rounded-xl bg-linear-to-r from-[#241118] to-[#1a0f16] border border-rose-500/30 text-xs text-rose-200">
               <ShieldAlert className="size-5 text-rose-400 shrink-0 mt-0.5" />
               <div className="space-y-0.5 leading-relaxed">
                 <strong className="text-white font-semibold block text-xs">
                   Operational Impact & Legal Status:
                 </strong>
                 <span className="text-rose-200/90 text-xs">
-                  Detaining this license will immediately deactivate it in the database and register
-                  an official detention record. The driver will not be permitted to drive until fine
-                  fees and release fees are paid.
+                  Detaining this license will immediately deactivate it in the
+                  database and register an official detention record. The driver
+                  will not be permitted to drive until fine fees and release
+                  fees are paid.
                 </span>
               </div>
             </div>
@@ -515,5 +557,5 @@ export default function DetainLicensePage({ accessToken, onBack, onDetained }: P
         </Card>
       )}
     </section>
-  )
+  );
 }

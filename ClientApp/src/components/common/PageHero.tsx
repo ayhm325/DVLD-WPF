@@ -1,72 +1,84 @@
-import { useId } from 'react'
-import type { ReactNode } from 'react'
-import { Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import './PageHero.css'
+import { useId } from "react";
+import type { ReactNode } from "react";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import "./PageHero.css";
 import {
   PAGE_HERO_CONFIG,
   type PageHeroConfigItem,
   type FloatingIconItem,
   type FloatingIconColor,
   type FloatingIconPosition,
-} from './pageHeroConfig'
+} from "./pageHeroConfig";
 
 export interface PageHeroProps {
   /** Known page identifier to retrieve preset neon configuration */
-  pageId?: string
+  pageId?: string;
   /** Uppercase eyebrow label */
-  eyebrow?: string
+  eyebrow?: string;
   /** Main title (or prefix when highlight is used) */
-  title?: string
+  title?: string;
   /** Highlighted title segment rendered with glowing cyan/blue gradient */
-  highlight?: string
+  highlight?: string;
   /** Descriptive explanation text */
-  description?: string
+  description?: string;
   /** Custom Lucide icon (backward compatible) */
-  icon?: ReactNode
+  icon?: ReactNode;
   /** Custom badge text (backward compatible) */
-  badgeText?: string
+  badgeText?: string;
   /** Additional container classes */
-  className?: string
+  className?: string;
   /** Custom central illustration node (overrides the default futuristic holographic card) */
-  illustration?: ReactNode
+  illustration?: ReactNode;
   /** Custom illustration code tag (e.g. 'CITIZEN-ID') */
-  illustrationTag?: string
+  illustrationTag?: string;
   /** Custom central illustration icon */
-  illustrationIcon?: ReactNode
+  illustrationIcon?: ReactNode;
   /** Custom set of floating icon containers */
-  floatingIcons?: FloatingIconItem[]
+  floatingIcons?: FloatingIconItem[];
   /** Custom visual accent variant (default 'blue') */
-  variant?: 'blue' | 'emerald' | 'purple' | 'amber' | 'cyan' | 'rose'
+  variant?: "blue" | "emerald" | "purple" | "amber" | "cyan" | "rose";
 }
 
 function getFloatingIconClasses(
-  color: FloatingIconColor = 'blue',
-  position: FloatingIconPosition = 'left',
+  color: FloatingIconColor = "blue",
+  position: FloatingIconPosition = "left",
 ) {
   const colorStyles: Record<FloatingIconColor, string> = {
-    blue: 'border-blue-400/50 bg-[#091834]/90 text-blue-400 shadow-[0_0_22px_rgba(59,130,246,0.45)]',
-    emerald: 'border-emerald-400/50 bg-[#061d19]/90 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.45)]',
-    purple: 'border-purple-400/50 bg-[#170e2c]/90 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.45)]',
-    amber: 'border-amber-400/50 bg-[#241505]/90 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.45)]',
-    cyan: 'border-cyan-400/50 bg-[#051d24]/90 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.45)]',
-    rose: 'border-rose-400/50 bg-[#240815]/90 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.45)]',
-  }
+    blue: "border-blue-400/50 bg-[#091834]/90 text-blue-400 shadow-[0_0_22px_rgba(59,130,246,0.45)]",
+    emerald:
+      "border-emerald-400/50 bg-[#061d19]/90 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.45)]",
+    purple:
+      "border-purple-400/50 bg-[#170e2c]/90 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.45)]",
+    amber:
+      "border-amber-400/50 bg-[#241505]/90 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.45)]",
+    cyan: "border-cyan-400/50 bg-[#051d24]/90 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.45)]",
+    rose: "border-rose-400/50 bg-[#240815]/90 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.45)]",
+  };
 
-  const positionStyles: Record<FloatingIconPosition, { wrapper: string; container: string }> = {
+  const positionStyles: Record<
+    FloatingIconPosition,
+    { wrapper: string; container: string }
+  > = {
     left: {
-      wrapper: 'absolute left-2 top-4 animate-[float-slow_5s_ease-in-out_infinite] z-20',
-      container: 'flex size-14 items-center justify-center rounded-2xl border backdrop-blur-md',
+      wrapper:
+        "absolute left-2 top-4 animate-[float-slow_5s_ease-in-out_infinite] z-20",
+      container:
+        "flex size-14 items-center justify-center rounded-2xl border backdrop-blur-md",
     },
-    'top-right': {
-      wrapper: 'absolute right-4 -top-2 animate-[float-reverse_5.5s_ease-in-out_infinite] z-20',
-      container: 'flex size-12 items-center justify-center rounded-2xl border backdrop-blur-md',
+    "top-right": {
+      wrapper:
+        "absolute right-4 -top-2 animate-[float-reverse_5.5s_ease-in-out_infinite] z-20",
+      container:
+        "flex size-12 items-center justify-center rounded-2xl border backdrop-blur-md",
     },
-    'bottom-right': {
-      wrapper: 'absolute right-1 -bottom-2 animate-[float-slow_6.2s_ease-in-out_infinite_0.8s] z-20',
-      container: 'flex size-12 items-center justify-center rounded-2xl border backdrop-blur-md',
+    "bottom-right": {
+      wrapper:
+        "absolute right-1 -bottom-2 animate-[float-slow_6.2s_ease-in-out_infinite_0.8s] z-20",
+      container:
+        "flex size-12 items-center justify-center rounded-2xl border backdrop-blur-md",
     },
-  }
+  };
 
   return {
     wrapper: positionStyles[position]?.wrapper ?? positionStyles.left.wrapper,
@@ -74,7 +86,7 @@ function getFloatingIconClasses(
       positionStyles[position]?.container ?? positionStyles.left.container,
       colorStyles[color] ?? colorStyles.blue,
     ),
-  }
+  };
 }
 
 /**
@@ -95,28 +107,32 @@ export default function PageHero({
   description,
   icon,
   badgeText,
-  className = '',
+  className = "",
   illustration,
   illustrationTag,
   illustrationIcon,
   floatingIcons,
 }: PageHeroProps) {
-  const config: PageHeroConfigItem | undefined = pageId ? PAGE_HERO_CONFIG[pageId] : undefined
-  const filterUniqueId = useId().replace(/:/g, '')
+  const config: PageHeroConfigItem | undefined = pageId
+    ? PAGE_HERO_CONFIG[pageId]
+    : undefined;
+  const filterUniqueId = useId().replace(/:/g, "");
 
-  const finalEyebrow = eyebrow ?? config?.eyebrow ?? 'SYSTEM SECTION'
-  const finalTitle = title ?? config?.title ?? ''
-  const finalHighlight = highlight ?? config?.highlight
-  const finalDescription = description ?? config?.description ?? ''
+  const finalEyebrow = eyebrow ?? config?.eyebrow ?? "SYSTEM SECTION";
+  const finalTitle = title ?? config?.title ?? "";
+  const finalHighlight = highlight ?? config?.highlight;
+  const finalDescription = description ?? config?.description ?? "";
 
-  const finalIllustrationTag = illustrationTag ?? badgeText ?? config?.illustrationTag ?? 'DVLD-SYS'
-  const finalIllustrationIcon = illustrationIcon ?? config?.illustrationIcon ?? icon
-  const finalFloatingIcons = floatingIcons ?? config?.floatingIcons ?? []
+  const finalIllustrationTag =
+    illustrationTag ?? badgeText ?? config?.illustrationTag ?? "DVLD-SYS";
+  const finalIllustrationIcon =
+    illustrationIcon ?? config?.illustrationIcon ?? icon;
+  const finalFloatingIcons = floatingIcons ?? config?.floatingIcons ?? [];
 
   return (
     <header
       className={cn(
-        'page-hero relative overflow-hidden rounded-2xl border border-blue-500/50 bg-gradient-to-r from-[#070f20] via-[#0c1c38] to-[#122b5c] p-6 sm:p-8 lg:p-9 shadow-[0_0_30px_rgba(37,99,235,0.22),inset_0_0_25px_rgba(59,130,246,0.08)] mb-6',
+        "page-hero relative overflow-hidden rounded-2xl border border-blue-500/50 bg-linear-to-r from-[#070f20] via-[#0c1c38] to-[#122b5c] p-6 sm:p-8 lg:p-9 shadow-[0_0_30px_rgba(37,99,235,0.22),inset_0_0_25px_rgba(59,130,246,0.08)] mb-6",
         className,
       )}
     >
@@ -143,13 +159,25 @@ export default function PageHero({
         viewBox="0 0 1000 200"
       >
         <defs>
-          <linearGradient id={`hero-stream-grad-${filterUniqueId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient
+            id={`hero-stream-grad-${filterUniqueId}`}
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="0%"
+          >
             <stop offset="0%" stopColor="#3b82f6" stopOpacity="0" />
             <stop offset="35%" stopColor="#38bdf8" stopOpacity="0.4" />
             <stop offset="70%" stopColor="#60a5fa" stopOpacity="0.6" />
             <stop offset="100%" stopColor="#a855f7" stopOpacity="0.1" />
           </linearGradient>
-          <filter id={`hero-stream-glow-${filterUniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
+          <filter
+            id={`hero-stream-glow-${filterUniqueId}`}
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
             <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -187,9 +215,9 @@ export default function PageHero({
           </div>
 
           <h1 className="mt-3 text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight text-white leading-tight">
-            {finalTitle}{' '}
+            {finalTitle}{" "}
             {finalHighlight && (
-              <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(56,189,248,0.5)]">
+              <span className="bg-linear-to-r from-blue-400 via-sky-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(56,189,248,0.5)]">
                 {finalHighlight}
               </span>
             )}
@@ -204,7 +232,7 @@ export default function PageHero({
 
         {/* Right Side: Futuristic Holographic Card Illustration & Floating Neon Icons */}
         <div
-          className="relative hidden md:flex items-center justify-center shrink-0 w-full lg:w-[420px] h-[160px] pointer-events-none select-none"
+          className="relative hidden md:flex items-center justify-center shrink-0 w-full lg:w-105 h-40 pointer-events-none select-none"
           aria-hidden="true"
         >
           {illustration ? (
@@ -213,19 +241,23 @@ export default function PageHero({
             <>
               {/* Floating Lucide Icon Panels */}
               {finalFloatingIcons.map((item, index) => {
-                const defaultPositions: FloatingIconPosition[] = ['left', 'top-right', 'bottom-right']
-                const pos = item.position ?? defaultPositions[index % 3]
-                const classes = getFloatingIconClasses(item.color, pos)
+                const defaultPositions: FloatingIconPosition[] = [
+                  "left",
+                  "top-right",
+                  "bottom-right",
+                ];
+                const pos = item.position ?? defaultPositions[index % 3];
+                const classes = getFloatingIconClasses(item.color, pos);
 
                 return (
                   <div key={index} className={classes.wrapper}>
                     <div className={classes.container}>{item.icon}</div>
                   </div>
-                )
+                );
               })}
 
               {/* Centerpiece: Futuristic Holographic Identification Card */}
-              <div className="relative z-10 w-[210px] h-[135px] rounded-2xl border border-blue-400/50 bg-gradient-to-br from-[#0b1730]/95 via-[#0d2044]/95 to-[#09152b]/95 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.6),0_0_30px_rgba(59,130,246,0.35)] backdrop-blur-lg animate-[float-main_6s_ease-in-out_infinite]">
+              <div className="relative z-10 w-52.5 h-33.75 rounded-2xl border border-blue-400/50 bg-linear-to-br from-[#0b1730]/95 via-[#0d2044]/95 to-[#09152b]/95 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.6),0_0_30px_rgba(59,130,246,0.35)] backdrop-blur-lg animate-[float-main_6s_ease-in-out_infinite]">
                 {/* Holographic Card Header with 3 glowing status dots */}
                 <div className="flex items-center justify-between pb-2 border-b border-blue-500/20">
                   <div className="flex items-center gap-1.5">
@@ -247,7 +279,7 @@ export default function PageHero({
 
                   {/* Data Placeholder Bars */}
                   <div className="flex-1 space-y-1.5">
-                    <div className="h-2 w-20 rounded-full bg-gradient-to-r from-blue-400/60 to-cyan-400/40 shadow-[0_0_8px_rgba(56,189,248,0.3)]" />
+                    <div className="h-2 w-20 rounded-full bg-linear-to-r from-blue-400/60 to-cyan-400/40 shadow-[0_0_8px_rgba(56,189,248,0.3)]" />
                     <div className="h-1.5 w-14 rounded-full bg-slate-600/60" />
                     <div className="h-1.5 w-16 rounded-full bg-slate-600/40" />
                   </div>
@@ -263,5 +295,5 @@ export default function PageHero({
         </div>
       </div>
     </header>
-  )
+  );
 }

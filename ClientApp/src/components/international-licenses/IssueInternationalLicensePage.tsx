@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useState } from "react";
+import type { FormEvent } from "react";
 import {
   ArrowLeft,
   Search,
@@ -7,19 +7,17 @@ import {
   CheckCircle2,
   Info,
   Loader2,
-} from 'lucide-react'
-import type {
-  InternationalLicenseDetails,
-} from '../../types/InternationalLicense'
-import type { LocalLicenseInfo } from '../../types/License'
+} from "lucide-react";
+import type { InternationalLicenseDetails } from "../../types/InternationalLicense";
+import type { LocalLicenseInfo } from "../../types/License";
 import {
   getLocalLicenseInfo,
   issueInternationalLicense,
-} from '../../services/internationalLicenseService'
-import { formatDate, formatCurrency } from '../../utils/formatters'
-import { cn } from '@/lib/utils'
-import PageHero from '../common/PageHero'
-import ErrorAlert from '../common/ErrorAlert'
+} from "../../services/internationalLicenseService";
+import { formatDate, formatCurrency } from "../../utils/formatters";
+import { cn } from "@/lib/utils";
+import PageHero from "../common/PageHero";
+import ErrorAlert from "../common/ErrorAlert";
 import {
   Button,
   Card,
@@ -28,96 +26,98 @@ import {
   CardDescription,
   Input,
   Label,
-} from '../ui'
+} from "../ui";
 
 type Props = {
-  accessToken: string
-  onBack: () => void
-  onIssued: () => void
-}
+  accessToken: string;
+  onBack: () => void;
+  onIssued: () => void;
+};
 
 export default function IssueInternationalLicensePage({
   accessToken,
   onBack,
   onIssued,
 }: Props) {
-  const [licenseId, setLicenseId] = useState('')
-  const [license, setLicense] = useState<LocalLicenseInfo | null>(null)
-  const [issued, setIssued] = useState<InternationalLicenseDetails | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  const [licenseId, setLicenseId] = useState("");
+  const [license, setLicense] = useState<LocalLicenseInfo | null>(null);
+  const [issued, setIssued] = useState<InternationalLicenseDetails | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   function handleLicenseIdChange(value: string) {
-    setLicenseId(value)
-    setError('')
-    setNotice('')
-    setLicense(null)
-    setIssued(null)
+    setLicenseId(value);
+    setError("");
+    setNotice("");
+    setLicense(null);
+    setIssued(null);
   }
 
   async function searchLicense(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (loading) return
+    event.preventDefault();
+    if (loading) return;
 
-    setError('')
-    setNotice('')
-    setLicense(null)
-    setIssued(null)
+    setError("");
+    setNotice("");
+    setLicense(null);
+    setIssued(null);
 
-    const id = Number(licenseId)
+    const id = Number(licenseId);
 
     if (!Number.isInteger(id) || id <= 0) {
-      setError('Enter a valid positive local license ID.')
-      return
+      setError("Enter a valid positive local license ID.");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
-      const result = await getLocalLicenseInfo(accessToken, id)
+      const result = await getLocalLicenseInfo(accessToken, id);
 
-      setLicense(result)
+      setLicense(result);
       setNotice(
-        'Local license information loaded. Review eligibility before issuing.',
-      )
+        "Local license information loaded. Review eligibility before issuing.",
+      );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Could not find local license information.',
-      )
+          : "Could not find local license information.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function issue() {
-    if (!license || saving || issued) return
+    if (!license || saving || issued) return;
 
-    setSaving(true)
-    setError('')
-    setNotice('')
+    setSaving(true);
+    setError("");
+    setNotice("");
 
     try {
       const result = await issueInternationalLicense(
         accessToken,
         license.licenseId,
-      )
+      );
 
-      setIssued(result)
+      setIssued(result);
       setNotice(
         `International license #${result.internationalLicenseId} issued successfully.`,
-      )
+      );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Could not issue the international license.',
-      )
+          : "Could not issue the international license.",
+      );
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
@@ -149,7 +149,7 @@ export default function IssueInternationalLicensePage({
         <ErrorAlert
           title="Issuance Notice"
           message={error}
-          onDismiss={() => setError('')}
+          onDismiss={() => setError("")}
         />
       )}
 
@@ -158,7 +158,7 @@ export default function IssueInternationalLicensePage({
           variant="success"
           title="Status Update"
           message={notice}
-          onDismiss={() => setNotice('')}
+          onDismiss={() => setNotice("")}
         />
       )}
 
@@ -171,7 +171,8 @@ export default function IssueInternationalLicensePage({
           <div>
             <CardTitle>Eligible Local License Lookup</CardTitle>
             <CardDescription className="mt-0.5">
-              Enter the local driving license ID to verify license status, class eligibility, and driver profile.
+              Enter the local driving license ID to verify license status, class
+              eligibility, and driver profile.
             </CardDescription>
           </div>
         </CardHeader>
@@ -190,9 +191,7 @@ export default function IssueInternationalLicensePage({
                 type="number"
                 min="1"
                 value={licenseId}
-                onChange={(event) =>
-                  handleLicenseIdChange(event.target.value)
-                }
+                onChange={(event) => handleLicenseIdChange(event.target.value)}
                 placeholder="Enter license ID (e.g. 1042)"
                 required
                 disabled={loading || saving}
@@ -202,7 +201,7 @@ export default function IssueInternationalLicensePage({
             <Button
               type="submit"
               disabled={loading || saving}
-              className="h-11 px-6 gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(0,140,255,0.35)] shrink-0 cursor-pointer"
+              className="h-11 px-6 gap-2 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-[0_0_15px_rgba(0,140,255,0.35)] shrink-0 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -218,7 +217,8 @@ export default function IssueInternationalLicensePage({
             </Button>
           </div>
           <span className="text-[11px] text-slate-500 block">
-            Enter the ID of the local license to retrieve its current eligibility and profile.
+            Enter the ID of the local license to retrieve its current
+            eligibility and profile.
           </span>
         </form>
 
@@ -228,8 +228,8 @@ export default function IssueInternationalLicensePage({
             {/* License Holder Profile Banner */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-[#09152b] border border-[#1b2f52]">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="size-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm">
-                  {license.fullName?.trim().charAt(0) || 'P'}
+                <div className="size-12 rounded-xl bg-linear-to-br from-blue-500 to-cyan-500 text-white font-bold text-base flex items-center justify-center shrink-0 shadow-sm">
+                  {license.fullName?.trim().charAt(0) || "P"}
                 </div>
                 <div className="min-w-0 space-y-1">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
@@ -240,14 +240,14 @@ export default function IssueInternationalLicensePage({
                   </h4>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300">
                     <span>
-                      National No.{' '}
+                      National No.{" "}
                       <strong className="text-white">
                         {license.nationalNo}
                       </strong>
                     </span>
                     <span>·</span>
                     <span>
-                      Driver ID{' '}
+                      Driver ID{" "}
                       <strong className="text-white font-mono">
                         #{license.driverId}
                       </strong>
@@ -258,26 +258,26 @@ export default function IssueInternationalLicensePage({
 
               <span
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shrink-0',
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shrink-0",
                   license.isActive && !license.isDetained
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-                    : 'bg-rose-500/15 border-rose-500/30 text-rose-300',
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                    : "bg-rose-500/15 border-rose-500/30 text-rose-300",
                 )}
               >
                 <span
                   className={cn(
-                    'size-1.5 rounded-full',
+                    "size-1.5 rounded-full",
                     license.isActive && !license.isDetained
-                      ? 'bg-emerald-400'
-                      : 'bg-rose-400',
+                      ? "bg-emerald-400"
+                      : "bg-rose-400",
                   )}
                 />
                 <span>
                   {license.isDetained
-                    ? 'Detained'
+                    ? "Detained"
                     : license.isActive
-                      ? 'Active License'
-                      : 'Inactive License'}
+                      ? "Active License"
+                      : "Inactive License"}
                 </span>
               </span>
             </div>
@@ -334,7 +334,7 @@ export default function IssueInternationalLicensePage({
                   Gender
                 </span>
                 <strong className="text-sm font-bold text-slate-200 block">
-                  {license.gender || '—'}
+                  {license.gender || "—"}
                 </strong>
               </div>
             </div>
@@ -343,7 +343,8 @@ export default function IssueInternationalLicensePage({
             <div className="rounded-xl border border-blue-500/25 bg-[#0a1835]/60 p-4 flex items-start gap-3 text-xs text-slate-400">
               <Info className="size-4.5 text-cyan-400 shrink-0 mt-0.5" />
               <p className="leading-relaxed">
-                The central licensing API validates eligibility against active status, suspension, and vehicle class rules before issuance.
+                The central licensing API validates eligibility against active
+                status, suspension, and vehicle class rules before issuance.
               </p>
             </div>
 
@@ -369,7 +370,7 @@ export default function IssueInternationalLicensePage({
                   !license.isActive ||
                   license.isDetained
                 }
-                className="w-full sm:w-auto h-11 px-6 gap-2 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(0,140,255,0.4)] disabled:opacity-50 cursor-pointer"
+                className="w-full sm:w-auto h-11 px-6 gap-2 bg-linear-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(0,140,255,0.4)] disabled:opacity-50 cursor-pointer"
               >
                 {saving ? (
                   <>
@@ -406,7 +407,8 @@ export default function IssueInternationalLicensePage({
                   International License Issued
                 </CardTitle>
                 <CardDescription className="text-emerald-300/80 mt-0.5">
-                  The international driving permit has been registered and verified by the DVLD authority.
+                  The international driving permit has been registered and
+                  verified by the DVLD authority.
                 </CardDescription>
               </div>
             </div>
@@ -459,7 +461,7 @@ export default function IssueInternationalLicensePage({
                 Permit Fees
               </span>
               <strong className="text-sm font-bold text-emerald-400 block">
-                {formatCurrency(issued.fees, 'JOD')}
+                {formatCurrency(issued.fees, "JOD")}
               </strong>
             </div>
 
@@ -477,7 +479,7 @@ export default function IssueInternationalLicensePage({
             <Button
               type="button"
               onClick={onIssued}
-              className="w-full sm:w-auto h-11 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer"
+              className="w-full sm:w-auto h-11 px-6 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer"
             >
               Return to Licenses
             </Button>
@@ -497,5 +499,5 @@ export default function IssueInternationalLicensePage({
         </Button>
       </div>
     </section>
-  )
+  );
 }
