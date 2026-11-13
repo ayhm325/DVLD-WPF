@@ -41,12 +41,18 @@ export default function Sidebar({
   const sections = buildVisibleSections(user?.role);
   const activeGroupId = findActiveGroupId(sections, activePage);
   const [collapsed, setCollapsed] = useState(false);
-  const isDesktopCollapsed = collapsed && !isMobileViewport;
   const [openGroupId, setOpenGroupId] = useState<string | null>(activeGroupId);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const isDesktopCollapsed = collapsed && !isMobileViewport;
+  const [previousActiveGroupId, setPreviousActiveGroupId] = useState(activeGroupId);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousOpenRef = useRef(false);
   const initial = (user?.fullName || user?.userName || "U").charAt(0).toUpperCase();
+
+  if (activeGroupId !== previousActiveGroupId) {
+    setPreviousActiveGroupId(activeGroupId);
+    setOpenGroupId(activeGroupId);
+  }
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 1023px)");
@@ -55,10 +61,6 @@ export default function Sidebar({
     mediaQuery.addEventListener("change", updateViewport);
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
-
-  useEffect(() => {
-    setOpenGroupId(activeGroupId);
-  }, [activeGroupId]);
 
   useEffect(() => {
     if (isMobileViewport && isOpen) closeButtonRef.current?.focus();
@@ -178,7 +180,7 @@ export default function Sidebar({
         </div>
 
         <div className="dvld-sidebar-footer">
-          <button type="button" className="dvld-profile-link" onClick={() => handleNavClick("My Profile")} title={collapsed ? "My Profile" : undefined}>
+          <button type="button" className="dvld-profile-link" onClick={() => handleNavClick("My Profile")} aria-label={collapsed ? "My Profile" : undefined} title={collapsed ? "My Profile" : undefined}>
             <span className="dvld-user-avatar" aria-hidden="true">{initial}</span>
             <span className="dvld-user-copy"><strong>{user?.fullName || user?.userName || "User"}</strong><small>{user?.role || "Staff"}</small></span>
           </button>
