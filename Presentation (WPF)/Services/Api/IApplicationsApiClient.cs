@@ -29,10 +29,6 @@ public interface IApplicationsApiClient
         int applicationId,
         CancellationToken cancellationToken = default);
 
-    Task<ApiResult> CompleteAsync(
-        int applicationId,
-        CancellationToken cancellationToken = default);
-
     Task<ApiResult> CancelAsync(
         int applicationId,
         CancellationToken cancellationToken = default);

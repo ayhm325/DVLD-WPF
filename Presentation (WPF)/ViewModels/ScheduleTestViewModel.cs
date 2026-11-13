@@ -4,6 +4,8 @@ using DVLD.Contracts.TestAppointment;
 using Presentation.Services.Api;
 using Presentation.Services.UI;
 using Presentation.Views.Windows;
+using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -14,9 +16,19 @@ public partial class ScheduleTestViewModel : ObservableObject
     private readonly IApiNotificationService _notifications;
     private readonly IUserNotificationService _userNotifications;
     private int _localApplicationId;
+    private static readonly TimeZoneInfo FacilityTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
 
     [ObservableProperty] private ScheduleTestResponse _schedule = new();
     [ObservableProperty] private bool _isRetake;
+    [ObservableProperty] private AppointmentDayAvailabilityResponse? _selectedAvailableDay;
+    [ObservableProperty] private AppointmentSlotResponse? _selectedSlot;
+    [ObservableProperty] private bool _isLoadingAvailability;
+    [ObservableProperty] private bool _isSaving;
+    [ObservableProperty] private string _availabilityMessage = string.Empty;
+
+    public ObservableCollection<AppointmentDayAvailabilityResponse> AvailableDays { get; } = [];
+    public ObservableCollection<AppointmentSlotResponse> AvailableSlots { get; } = [];
 
     public decimal TotalFees => (Schedule?.Fees ?? 0) + (Schedule?.RetakerFees ?? 0);
     public string TestTypeTitle => (TestType)(Schedule?.TestTypeId ?? 1) switch
@@ -26,7 +38,8 @@ public partial class ScheduleTestViewModel : ObservableObject
         TestType.Practical => "Practical Street Test",
         _ => "Test"
     };
-    public DateTime MinDate => DateTime.Now.Date.AddDays(1);
+    public bool CanSave => !IsSaving && !IsLoadingAvailability &&
+                           SelectedAvailableDay is not null && SelectedSlot is not null;
 
     public ScheduleTestViewModel(
         ITestAppointmentsApiClient testAppointmentsApiClient,
@@ -81,6 +94,7 @@ public partial class ScheduleTestViewModel : ObservableObject
 
             Schedule = result.Value;
             IsRetake = Schedule.Trial > 1;
+            await LoadAvailabilityAsync(localAppId, (int)type);
         }
         catch (Exception ex)
         {
@@ -122,6 +136,7 @@ public partial class ScheduleTestViewModel : ObservableObject
             Schedule = result.Value;
             _localApplicationId = Schedule.LocalDrivingLicenseApplicationId;
             IsRetake = Schedule.RetakeTestApplicationId > 0;
+            AvailabilityMessage = "Changing an existing appointment requires replacement-slot availability, which the current API does not provide for an already scheduled application.";
         }
         catch (Exception ex)
         {
@@ -131,18 +146,90 @@ public partial class ScheduleTestViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private async Task SaveAsync()
+    partial void OnSelectedAvailableDayChanged(AppointmentDayAvailabilityResponse? value)
     {
+        AvailableSlots.Clear();
+        if (value is not null)
+        {
+            foreach (var slot in value.Slots)
+                AvailableSlots.Add(slot);
+            SelectedSlot = AvailableSlots.FirstOrDefault();
+        }
+        else
+        {
+            SelectedSlot = null;
+        }
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnSelectedSlotChanged(AppointmentSlotResponse? value)
+    {
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.NotifyCanExecuteChanged();
+    }
+
+    private async Task LoadAvailabilityAsync(int localAppId, int testTypeId)
+    {
+        IsLoadingAvailability = true;
+        AvailabilityMessage = string.Empty;
+        AvailableDays.Clear();
+        AvailableSlots.Clear();
+        SelectedAvailableDay = null;
+        SelectedSlot = null;
         try
         {
+            var today = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, FacilityTimeZone).Date;
+            var result = await _testAppointmentsApiClient.GetAvailabilityAsync(
+                localAppId,
+                testTypeId,
+                DateTime.SpecifyKind(today.AddDays(2), DateTimeKind.Unspecified),
+                DateTime.SpecifyKind(today.AddDays(90), DateTimeKind.Unspecified));
+
+            if (result.IsFailure)
+            {
+                AvailabilityMessage = result.Error;
+                _notifications.ShowFailure(result, "Appointment Availability");
+                return;
+            }
+
+            foreach (var day in result.Value?.AvailableDays ?? [])
+                AvailableDays.Add(day);
+
+            SelectedAvailableDay = AvailableDays.FirstOrDefault();
+            if (AvailableDays.Count == 0)
+                AvailabilityMessage = "No eligible appointment slots are available in the next 90 days.";
+        }
+        catch (Exception ex)
+        {
+            AvailabilityMessage = GetExceptionMessage(ex);
+            _userNotifications.ShowError(AvailabilityMessage, "Appointment Availability");
+        }
+        finally
+        {
+            IsLoadingAvailability = false;
+            SaveCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSave))]
+    private async Task SaveAsync()
+    {
+        if (IsSaving || SelectedAvailableDay is null || SelectedSlot is null)
+            return;
+
+        IsSaving = true;
+        try
+        {
+            var appointmentDate = CreateFacilityDateTime(SelectedAvailableDay.Date, SelectedSlot.StartTime);
+            var appointmentOffset = ToFacilityDateTimeOffset(appointmentDate);
             if (Schedule.AppointmentId > 0)
             {
                 var result = await _testAppointmentsApiClient.UpdateAsync(
                     new UpdateTestAppointmentRequest
                     {
                         TestAppointmentId = Schedule.AppointmentId,
-                        AppointmentDate = Schedule.Date
+                        AppointmentDate = appointmentOffset
                     });
 
                 if (result.IsFailure)
@@ -158,7 +245,7 @@ public partial class ScheduleTestViewModel : ObservableObject
                     {
                         TestTypeId = Schedule.TestTypeId,
                         LocalDrivingLicenseApplicationId = _localApplicationId,
-                        AppointmentDate = Schedule.Date
+                        AppointmentDate = appointmentOffset
                     });
 
                 if (result.IsFailure)
@@ -180,6 +267,36 @@ public partial class ScheduleTestViewModel : ObservableObject
                 GetExceptionMessage(ex),
                 "Save Failed");
         }
+        finally
+        {
+            IsSaving = false;
+            SaveCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    partial void OnIsSavingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsLoadingAvailabilityChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.NotifyCanExecuteChanged();
+    }
+
+    private static DateTime CreateFacilityDateTime(string date, string time)
+    {
+        var day = DateOnly.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var slot = TimeOnly.ParseExact(time, "HH:mm", CultureInfo.InvariantCulture);
+        return DateTime.SpecifyKind(day.ToDateTime(slot), DateTimeKind.Unspecified);
+    }
+
+    private static DateTimeOffset ToFacilityDateTimeOffset(DateTime facilityDateTime)
+    {
+        var utcDateTime = TimeZoneInfo.ConvertTimeToUtc(facilityDateTime, FacilityTimeZone);
+        return new DateTimeOffset(utcDateTime, TimeSpan.Zero);
     }
 
     [RelayCommand]

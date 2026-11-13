@@ -11,4 +11,9 @@ public interface ILicenseClassesApiClient
     Task<ApiResult<LicenseClassResponse>> GetByIdAsync(
         int licenseClassId,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResult> UpdateAsync(
+        int licenseClassId,
+        UpdateLicenseClassRequest request,
+        CancellationToken cancellationToken = default);
 }

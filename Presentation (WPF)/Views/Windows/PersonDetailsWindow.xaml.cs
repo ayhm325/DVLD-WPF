@@ -1,7 +1,10 @@
 ﻿using DVLD.Contracts.Person;
 using Presentation.Services.Api;
+using Presentation.Services;
 using Presentation.Services.Results;
 using Presentation.Services.UI;
+using DVLD_WPF;
+using Microsoft.Extensions.DependencyInjection;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -49,10 +52,10 @@ public partial class PersonDetailsWindow : Window
             return;
         }
 
-        LoadPersonData(result.Value);
+        await LoadPersonDataAsync(result.Value);
     }
 
-    private void LoadPersonData(PersonResponse person)
+    private async Task LoadPersonDataAsync(PersonResponse person)
     {
         LblPersonId.Text = person.PersonId.ToString();
         LblNationalNo.Text = person.NationalNo;
@@ -63,30 +66,31 @@ public partial class PersonDetailsWindow : Window
         LblEmail.Text = string.IsNullOrEmpty(person.Email) ? "N/A" : person.Email;
         LblAddress.Text = person.Address;
         LblCountry.Text = string.IsNullOrEmpty(person.CountryName) ? "N/A" : person.CountryName;
-        LoadImage(person);
+        await LoadImageAsync(person);
     }
 
-    private void LoadImage(PersonResponse person)
+    private async Task LoadImageAsync(PersonResponse person)
     {
         try
         {
             var path = person.ImagePath?.Trim();
-
-            if (!string.IsNullOrEmpty(path) && File.Exists(path))
+            if (!string.IsNullOrEmpty(path))
             {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(path, UriKind.Absolute);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-
-                ImgPerson.Source = bitmap;
+                var photoCache = App.ServiceProvider.GetRequiredService<PersonPhotoCache>();
+                ImgPerson.Source = await photoCache.GetAsync(person.PersonId, _peopleApiClient)
+                    ?? new BitmapImage(new Uri(
+                        person.Gender == Gender.Male
+                            ? "pack://application:,,,/Resources/Default_Male.png"
+                            : "pack://application:,,,/Resources/Default_Female.png",
+                        UriKind.Absolute));
                 return;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _notifications.ShowFailure(
+                ApiResult.Failure($"The saved person photo could not be displayed: {ex.Message}"),
+                "Photo Loading Error");
         }
 
         LoadDefaultImage(person.Gender);

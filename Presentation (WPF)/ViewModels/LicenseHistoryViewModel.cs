@@ -31,11 +31,16 @@ public partial class LicenseHistoryViewModel(
     [ObservableProperty] private InternationalLicenseListResponse? _selectedInternationalLicense;
     [ObservableProperty] private ObservableCollection<LicenseResponse> _localLicenses = [];
     [ObservableProperty] private ObservableCollection<InternationalLicenseListResponse> _internationalLicenses = [];
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _hasLoaded;
 
     public async Task LoadAsync(int personId)
     {
         ResetState();
+        IsLoading = true;
 
+        try
+        {
         if (personId <= 0)
         {
             _userNotifications.ShowWarning(
@@ -107,6 +112,16 @@ public partial class LicenseHistoryViewModel(
         {
             InternationalLicenses = new(internationalResult.Value);
         }
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowError(ex.Message, "License History");
+        }
+        finally
+        {
+            IsLoading = false;
+            HasLoaded = true;
+        }
     }
 
     [RelayCommand]
@@ -142,9 +157,15 @@ public partial class LicenseHistoryViewModel(
             return;
         }
 
-        _userNotifications.ShowInfo(
-            "International license details are not available yet.",
-            "License History");
+        var window = new DriverInterNationalLicenseInfoWin(
+            SelectedInternationalLicense.InternationalLicenseId,
+            _internationalLicensesApiClient,
+            _notifications)
+        {
+            Owner = System.Windows.Application.Current.MainWindow
+        };
+
+        window.ShowDialog();
     }
 
     private void ResetState()
@@ -154,5 +175,6 @@ public partial class LicenseHistoryViewModel(
         SelectedInternationalLicense = null;
         LocalLicenses.Clear();
         InternationalLicenses.Clear();
+        HasLoaded = false;
     }
 }

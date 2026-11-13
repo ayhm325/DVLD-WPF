@@ -1,4 +1,4 @@
-﻿<Window x:Class="Presentation.Views.Windows.UserDetailsWindow"
+<Window x:Class="Presentation.Views.Windows.UserDetailsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -82,7 +82,7 @@
                             Click="CloseButton_Click"
                             ToolTip="Close"
                             VerticalAlignment="Center">
-                        <TextBlock Text="âœ•" FontSize="18"/>
+                        <TextBlock Text="×" FontSize="18"/>
                     </Button>
                 </Grid>
             </Border>

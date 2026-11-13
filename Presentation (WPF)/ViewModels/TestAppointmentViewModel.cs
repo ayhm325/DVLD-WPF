@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.Application;
 using DVLD.Contracts.LocalDrivingLicenseApplication;
@@ -10,6 +10,7 @@ using Presentation.Services.Results;
 using Presentation.Services.UI;
 using Presentation.Views.Windows;
 using System.Collections.ObjectModel;
+using System.Net;
 using System.Windows;
 
 namespace Presentation.ViewModels;
@@ -24,6 +25,9 @@ public partial class TestAppointmentViewModel : ObservableObject
     private readonly IUserNotificationService _userNotifications;
 
     private int _localApplicationId;
+    private int _selectedWorkflowRequest;
+    private static readonly TimeZoneInfo FacilityTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
 
     [ObservableProperty] private TestType _testType;
     [ObservableProperty] private LocalDrivingLicenseApplicationResponse? _ldlAppInfo;
@@ -32,10 +36,15 @@ public partial class TestAppointmentViewModel : ObservableObject
     [ObservableProperty] private bool _canAddAppointment;
     [ObservableProperty] private bool _canTakeTest;
     [ObservableProperty] private bool _canEditAppointment;
+    [ObservableProperty] private bool _canCancelAppointment;
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _hasLoaded;
     [ObservableProperty] private bool _isWorkflowAllowed;
     [ObservableProperty] private string _workflowMessage = string.Empty;
+    [ObservableProperty] private string _editRestrictionMessage = string.Empty;
 
     public ObservableCollection<TestAppointmentResponse> AppointmentsList { get; } = [];
+    public bool HasNoAppointments => HasLoaded && AppointmentsList.Count == 0;
 
     public string PageTitle => TestType switch
     {
@@ -71,6 +80,9 @@ public partial class TestAppointmentViewModel : ObservableObject
 
     public async Task LoadAsync(int localApplicationId, TestType type)
     {
+        IsLoading = true;
+        HasLoaded = false;
+        OnPropertyChanged(nameof(HasNoAppointments));
         try
         {
             _localApplicationId = localApplicationId;
@@ -158,6 +170,10 @@ public partial class TestAppointmentViewModel : ObservableObject
             ResetState();
             _userNotifications.ShowError(ex.Message, "Loading Error");
         }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task LoadAppointmentsAsync()
@@ -180,6 +196,9 @@ public partial class TestAppointmentViewModel : ObservableObject
 
         foreach (var appointment in appointments)
             AppointmentsList.Add(appointment);
+
+        HasLoaded = true;
+        OnPropertyChanged(nameof(HasNoAppointments));
     }
 
     private async Task RefreshAppointmentStateAsync()
@@ -204,9 +223,13 @@ public partial class TestAppointmentViewModel : ObservableObject
         ApplicationInfo = null;
         SelectedAppointment = null;
         AppointmentsList.Clear();
+        HasLoaded = false;
+        OnPropertyChanged(nameof(HasNoAppointments));
         CanAddAppointment = false;
         CanTakeTest = false;
+        WorkflowMessage = string.Empty;
         CanEditAppointment = false;
+        CanCancelAppointment = false;
         IsWorkflowAllowed = false;
         WorkflowMessage = string.Empty;
         RefreshCommands();
@@ -254,6 +277,32 @@ public partial class TestAppointmentViewModel : ObservableObject
         await LoadAsync(localApplicationId, TestType);
     }
 
+    [RelayCommand(CanExecute = nameof(CanCancelSelected))]
+    private async Task CancelAppointmentAsync()
+    {
+        if (SelectedAppointment is null || LdlAppInfo is null)
+            return;
+
+        if (_userNotifications.ShowConfirmation(
+                $"Cancel appointment #{SelectedAppointment.TestAppointmentId}?",
+                "Cancel Test Appointment") != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var localApplicationId = LdlAppInfo.LocalDrivingLicenseApplicationId;
+        var result = await _testAppointmentsApiClient.CancelAsync(SelectedAppointment.TestAppointmentId);
+        if (result.IsFailure)
+        {
+            _notifications.ShowFailure(result, "Cancel Appointment Failed");
+            return;
+        }
+
+        _userNotifications.ShowInfo("The test appointment was cancelled.", "Appointment Cancelled");
+        await LoadAsync(localApplicationId, TestType);
+    }
+    private bool CanCancelSelected() => CanCancelAppointment;
+
     [RelayCommand(CanExecute = nameof(CanTakeTest))]
     private async Task TakeTestAsync()
     {
@@ -285,9 +334,65 @@ public partial class TestAppointmentViewModel : ObservableObject
 
     partial void OnSelectedAppointmentChanged(TestAppointmentResponse? value)
     {
-        CanEditAppointment = value is not null && !value.IsLocked;
-        CanTakeTest = value is not null && !value.IsLocked;
+        var requestVersion = ++_selectedWorkflowRequest;
+        CanEditAppointment = false;
+        CanCancelAppointment = value is not null &&
+                               !value.IsLocked &&
+                               IsScheduled(value) &&
+                               IsOutsideChangeCutoff(value.AppointmentDate);
+        CanTakeTest = false;
+        EditRestrictionMessage = value is not null && !value.IsLocked && IsScheduled(value)
+            ? "Rescheduling is unavailable because the API does not return replacement slots for an already scheduled appointment."
+            : string.Empty;
         RefreshCommands();
+        if (value is not null && !value.IsLocked && IsScheduled(value))
+            _ = CheckSelectedAppointmentEligibilityAsync(value, requestVersion);
+    }
+
+    private async Task CheckSelectedAppointmentEligibilityAsync(
+        TestAppointmentResponse appointment,
+        int requestVersion)
+    {
+        try
+        {
+            var result = await _testWorkflowApiClient.CanTakeAsync(appointment.TestAppointmentId);
+            if (requestVersion != _selectedWorkflowRequest ||
+                SelectedAppointment?.TestAppointmentId != appointment.TestAppointmentId)
+                return;
+
+            if (result.IsFailure)
+            {
+                CanTakeTest = false;
+                WorkflowMessage = result.Error;
+                if (result.StatusCode is not HttpStatusCode.Conflict and not HttpStatusCode.BadRequest)
+                    _notifications.ShowFailure(result, "Test Eligibility");
+                RefreshCommands();
+                return;
+            }
+
+            CanTakeTest = result.Value?.Allowed == true;
+            WorkflowMessage = CanTakeTest ? string.Empty : result.Value?.Error ?? string.Empty;
+            RefreshCommands();
+        }
+        catch (Exception ex)
+        {
+            if (requestVersion != _selectedWorkflowRequest)
+                return;
+            CanTakeTest = false;
+            WorkflowMessage = ex.Message;
+            RefreshCommands();
+            _userNotifications.ShowError(ex.Message, "Test Eligibility");
+        }
+    }
+
+    private static bool IsScheduled(TestAppointmentResponse appointment) =>
+        string.Equals(appointment.Status, "Scheduled", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsOutsideChangeCutoff(DateTime appointmentDate)
+    {
+        var currentFacilityDate = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, FacilityTimeZone).Date;
+        var scheduledFacilityDate = DateTime.SpecifyKind(appointmentDate, DateTimeKind.Unspecified).Date;
+        return (scheduledFacilityDate - currentFacilityDate).Days >= 2;
     }
 
     private bool IsWorkflowAllowedResult(
@@ -315,6 +420,7 @@ public partial class TestAppointmentViewModel : ObservableObject
     {
         AddAppointmentCommand.NotifyCanExecuteChanged();
         EditAppointmentCommand.NotifyCanExecuteChanged();
+        CancelAppointmentCommand.NotifyCanExecuteChanged();
         TakeTestCommand.NotifyCanExecuteChanged();
     }
 
@@ -324,3 +430,5 @@ public partial class TestAppointmentViewModel : ObservableObject
         window.ShowDialog();
     }
 }
+
+

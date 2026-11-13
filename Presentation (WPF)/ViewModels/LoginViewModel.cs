@@ -22,6 +22,15 @@ public partial class LoginViewModel : ObservableObject
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _password = string.Empty;
     [ObservableProperty] private bool _isPasswordVisible;
+    [ObservableProperty] private bool _isSigningIn;
+
+    public bool CanLogin => !IsSigningIn &&
+                            !string.IsNullOrWhiteSpace(Username) &&
+                            !string.IsNullOrWhiteSpace(Password);
+
+    partial void OnUsernameChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
+    partial void OnPasswordChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
+    partial void OnIsSigningInChanged(bool value) => LoginCommand.NotifyCanExecuteChanged();
 
     [RelayCommand]
     private void TogglePasswordVisibility() =>
@@ -46,57 +55,64 @@ public partial class LoginViewModel : ObservableObject
             Username = Properties.Settings.Default.Username;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginAsync()
     {
-        if (string.IsNullOrWhiteSpace(Username) ||
-            string.IsNullOrWhiteSpace(Password))
-        {
-            _userNotifications.ShowWarning(
-                "Username and password are required.",
-                "Login Failed");
+        if (!CanLogin)
             return;
-        }
 
-        var result = await _authApiClient.LoginAsync(new LoginRequest
+        try
         {
-            UserName = Username.Trim(),
-            Password = Password
-        });
+            IsSigningIn = true;
+            var result = await _authApiClient.LoginAsync(new LoginRequest
+            {
+                UserName = Username.Trim(),
+                Password = Password
+            });
 
-        if (result.IsFailure)
-        {
-            _notifications.ShowFailure(result, "Login Failed");
-            return;
+            if (result.IsFailure)
+            {
+                _notifications.ShowFailure(result, "Login Failed");
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _userNotifications.ShowError(
+                    "The API did not return user authentication data.",
+                    "Login Failed");
+                return;
+            }
+
+            var user = result.Value;
+
+            _currentUser.SetSession(
+                user.UserId,
+                user.PersonId,
+                user.UserName,
+                user.FullName,
+                user.Role,
+                user.AccessToken);
+
+            SaveRememberMeSettings();
+
+            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            System.Windows.Application.Current.MainWindow = mainWindow;
+            mainWindow.Show();
+
+            System.Windows.Application.Current.Windows
+                .OfType<LoginWindow>()
+                .FirstOrDefault()
+                ?.Close();
         }
-
-        if (result.Value is null)
+        catch (Exception ex)
         {
-            _userNotifications.ShowError(
-                "The API did not return user authentication data.",
-                "Login Failed");
-            return;
+            _userNotifications.ShowError(ex.Message, "Login Failed");
         }
-
-        var user = result.Value;
-
-        _currentUser.SetSession(
-            user.UserId,
-            user.UserName,
-            user.FullName,
-            user.Role,
-            user.AccessToken);
-
-        SaveRememberMeSettings();
-
-        var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-        System.Windows.Application.Current.MainWindow = mainWindow;
-        mainWindow.Show();
-
-        System.Windows.Application.Current.Windows
-            .OfType<LoginWindow>()
-            .FirstOrDefault()
-            ?.Close();
+        finally
+        {
+            IsSigningIn = false;
+        }
     }
 
     private void SaveRememberMeSettings()

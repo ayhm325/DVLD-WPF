@@ -25,6 +25,20 @@ public partial class UsersViewModel : ObservableObject
     [ObservableProperty] private string _selectedStatus = "All";
     [ObservableProperty] private bool _isSearchVisible;
     [ObservableProperty] private bool _isStatusVisible;
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _hasLoaded;
+    [ObservableProperty] private string _loadErrorMessage = string.Empty;
+
+    public bool HasNoUsers => HasLoaded && !IsLoading && Users.Count == 0 && !HasLoadError;
+    public bool HasLoadError => !string.IsNullOrWhiteSpace(LoadErrorMessage);
+
+    partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(HasNoUsers));
+    partial void OnHasLoadedChanged(bool value) => OnPropertyChanged(nameof(HasNoUsers));
+    partial void OnLoadErrorMessageChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasLoadError));
+        OnPropertyChanged(nameof(HasNoUsers));
+    }
 
     public List<string> FilterOptions { get; } = new() { "None", "UserID", "UserName", "Status" };
     public List<string> StatusOptions { get; } = new() { "All", "Active", "Inactive" };
@@ -76,24 +90,47 @@ public partial class UsersViewModel : ObservableObject
 
         Users = new(filtered);
         UsersCount = Users.Count;
+        OnPropertyChanged(nameof(HasNoUsers));
     }
 
     [RelayCommand]
     public async Task LoadUsersAsync()
     {
-        var result = await _usersApiClient.GetAllAsync();
-
-        if (result.IsFailure)
-        {
-            _allUsers.Clear();
-            Users.Clear();
-            UsersCount = 0;
-            _notifications.ShowFailure(result, "Load Users Failed");
+        if (IsLoading)
             return;
-        }
 
-        _allUsers = result.Value?.ToList() ?? new();
-        ApplyFilter();
+        IsLoading = true;
+        HasLoaded = false;
+        LoadErrorMessage = string.Empty;
+        try
+        {
+            var result = await _usersApiClient.GetAllAsync();
+
+            if (result.IsFailure)
+            {
+                LoadErrorMessage = result.Error;
+                _allUsers.Clear();
+                ApplyFilter();
+                _notifications.ShowFailure(result, "Load Users Failed");
+                return;
+            }
+
+            _allUsers = result.Value?.ToList() ?? new();
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            LoadErrorMessage = ex.Message;
+            _allUsers.Clear();
+            ApplyFilter();
+            _userNotifications.ShowError(ex.Message, "Load Users Failed");
+        }
+        finally
+        {
+            IsLoading = false;
+            HasLoaded = true;
+            OnPropertyChanged(nameof(HasNoUsers));
+        }
     }
 
     [RelayCommand]

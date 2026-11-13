@@ -33,6 +33,13 @@ public interface ITestAppointmentsApiClient
         int testTypeId,
         CancellationToken cancellationToken = default);
 
+    Task<ApiResult<AppointmentAvailabilityResponse>> GetAvailabilityAsync(
+        int localApplicationId,
+        int testTypeId,
+        DateTime startDate,
+        DateTime endDate,
+        CancellationToken cancellationToken = default);
+
     Task<ApiResult<decimal>> GetTestTypeFeesAsync(
         int testTypeId,
         CancellationToken cancellationToken = default);
@@ -58,6 +65,8 @@ public interface ITestAppointmentsApiClient
     Task<ApiResult> UpdateAsync(
         UpdateTestAppointmentRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResult> CancelAsync(int appointmentId, CancellationToken cancellationToken = default);
 
     Task<ApiResult> DeleteAsync(
         int appointmentId,

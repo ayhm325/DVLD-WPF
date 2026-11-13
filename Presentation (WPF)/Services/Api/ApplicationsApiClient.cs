@@ -69,21 +69,6 @@ public sealed class ApplicationsApiClient(
             cancellationToken);
     }
 
-    public async Task<ApiResult> CompleteAsync(
-    int applicationId,
-    CancellationToken cancellationToken = default)
-    {
-        var result =
-            await apiClient.PostAsync<object, object>(
-                $"api/applications/{applicationId}/complete",
-                new { },
-                cancellationToken);
-
-        return result.IsSuccess
-            ? ApiResult.Success()
-            : ApiResult.Failure(result.Error);
-    }
-
     public async Task<ApiResult> CancelAsync(
         int applicationId,
         CancellationToken cancellationToken = default)

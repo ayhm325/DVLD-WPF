@@ -80,6 +80,11 @@
                     CornerRadius="0,0,16,16" Padding="26,12">
                 <Grid>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <TextBlock Text="Processing replacement…"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource PrimaryColor}"
+                                   Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   Margin="0,0,12,0"/>
                         <Button Content="License History" Style="{StaticResource GhostButtonStyle}"
                                 Command="{Binding ShowLicensesHistoryCommand}"
                                 IsEnabled="{Binding IsLicenseIssued}"/>

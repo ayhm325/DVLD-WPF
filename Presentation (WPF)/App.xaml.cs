@@ -8,9 +8,11 @@ using Presentation.Views;
 using Presentation.Views.Pages;
 using Presentation.Views.Pages.Applications;
 using Presentation.Views.Pages.Tests;
+using Presentation.Views.Pages.ReferenceData;
 using Presentation.Views.Windows;
 using Presentation.Views.Windows.Applications;
 using Presentation.Views.Windows.Tests;
+using Presentation.Views.Windows.ReferenceData;
 using System;
 using System.Windows;
 
@@ -84,6 +86,7 @@ public partial class App : System.Windows.Application
         // =====================================================
 
         services.AddSingleton<ICurrentUserSession, CurrentUserService>();
+        services.AddSingleton<PersonPhotoCache>();
         services.AddSingleton<IApiHostService, ApiHostService>();
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IUserNotificationService, UserNotificationService>();
@@ -142,12 +145,14 @@ public partial class App : System.Windows.Application
         services.AddTransient<AddEditUserViewModel>();
         services.AddTransient<ApplicationTypeViewModel>();
         services.AddTransient<ChangePasswordViewModel>();
+        services.AddTransient<CountriesViewModel>();
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<DetainLicenseViewModel>();
         services.AddTransient<DriversViewModel>();
         services.AddTransient<InternationalViewModel>();
         services.AddTransient<LDLAppViewModel>();
         services.AddTransient<LicenseHistoryViewModel>();
+        services.AddTransient<LicenseClassesViewModel>();
         services.AddTransient<ListDetainedLicensesViewModel>();
         services.AddTransient<LocalApplicationDetailsViewModel>();
         services.AddTransient<LoginViewModel>();
@@ -156,12 +161,14 @@ public partial class App : System.Windows.Application
         services.AddTransient<ReleaseDetainedViewModel>();
         services.AddTransient<ReplacementDamagedLicenseViewModel>();
         services.AddTransient<RenewLicenseViewModel>();
+        services.AddTransient<RegisterDriverViewModel>();
         services.AddTransient<ScheduleTestViewModel>();
         services.AddTransient<TakeTestViewModel>();
         services.AddTransient<TestAppointmentViewModel>();
         services.AddTransient<TestTypeViewModel>();
         services.AddTransient<UpdateApplicationTypeViewModel>();
         services.AddTransient<UpdateTestTypeViewModel>();
+        services.AddTransient<UpdateLicenseClassViewModel>();
         services.AddTransient<UsersViewModel>();
 
         // =====================================================
@@ -174,6 +181,7 @@ public partial class App : System.Windows.Application
         services.AddTransient<DetainLicenseWin>();
         services.AddTransient<EditApplicationTypeWindow>();
         services.AddTransient<EditTestTypeWindow>();
+        services.AddTransient<EditLicenseClassWindow>();
         services.AddTransient<LocalApplicationDetailsWin>();
         services.AddTransient<LoginWindow>();
         services.AddTransient<MainWindow>();
@@ -196,6 +204,8 @@ public partial class App : System.Windows.Application
         services.AddTransient<LDLAppPage>();
         services.AddTransient<ManageApplicationTypePage>();
         services.AddTransient<ManageTestTypePage>();
+        services.AddTransient<CountriesPage>();
+        services.AddTransient<LicenseClassesPage>();
         services.AddTransient<PeoplePage>();
         services.AddTransient<UserPage>();
         services.AddTransient<ListDetainedLicenses>();

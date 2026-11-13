@@ -350,6 +350,13 @@
                                 Margin="0,24,0,0"
                                 IsDefault="True"/>
 
+                        <TextBlock Text="Signing in…"
+                                   Foreground="{StaticResource TextMutedColor}"
+                                   FontSize="11"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,0"
+                                   Visibility="{Binding IsSigningIn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
                         <Grid Margin="0,28,0,0">
                             <Border Height="1"
                                     Background="{StaticResource BorderColor}"

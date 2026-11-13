@@ -1,0 +1,75 @@
+<Page xmlns:controls="clr-namespace:Presentation.Views.Controls" x:Class="Presentation.Views.Pages.ReferenceData.LicenseClassesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="License Classes"
+      Background="{StaticResource BackgroundColor}">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+<controls:PageHeader Grid.Row="0" Eyebrow="REFERENCE DATA" Heading="License Classes" Description="Review class eligibility, validity, and fees. Only administrators can update these settings." Metric="{Binding LicenseClasses.Count}">
+            <controls:PageHeader.ActionContent>
+                <Button Content="Edit selected class" Command="{Binding EditSelectedCommand}" Style="{StaticResource PrimaryButtonStyle}" Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </controls:PageHeader.ActionContent>
+        </controls:PageHeader>
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="14" VerticalAlignment="Top">
+        <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="{StaticResource SurfaceSecondaryColor}"
+                BorderBrush="{StaticResource BorderColor}" BorderThickness="1"
+                CornerRadius="{StaticResource RadiusMedium}" Padding="12"
+                Margin="0,0,0,12">
+            <DockPanel LastChildFill="False">
+                <TextBlock Text="SEARCH" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <TextBox Width="320" Height="40" VerticalContentAlignment="Center"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search by class name or description"/>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Background="{StaticResource SurfaceColor}"
+                BorderBrush="{StaticResource BorderColor}" BorderThickness="1"
+                CornerRadius="{StaticResource RadiusMedium}" Padding="0" VerticalAlignment="Top">
+            <Grid>
+                <DataGrid ItemsSource="{Binding FilteredLicenseClasses}"
+                          VerticalAlignment="Top"
+                          MaxHeight="440"
+                          SelectedItem="{Binding SelectedLicenseClass, Mode=TwoWay}"
+                          IsReadOnly="True"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          HeadersVisibility="Column"
+                          SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding LicenseClassId}" Width="70"/>
+                        <DataGridTextColumn Header="License Class" Binding="{Binding LicenseClassName}" Width="190"/>
+                        <DataGridTextColumn Header="Description" Binding="{Binding LicenseClassDescription}" Width="*" MinWidth="220"/>
+                        <DataGridTextColumn Header="Min. Age" Binding="{Binding MinAllowedAge}" Width="90"/>
+                        <DataGridTextColumn Header="Validity (years)" Binding="{Binding DefaultValidityLength}" Width="125"/>
+                        <DataGridTextColumn Header="Fee" Binding="{Binding LicenseClassFees, StringFormat={}{0:N2} JOD}" Width="120"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Border Background="{StaticResource SurfaceColor}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Padding="20" CornerRadius="{StaticResource RadiusMedium}"
+                        Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <ProgressBar Width="90" Height="6" IsIndeterminate="True" VerticalAlignment="Center"/>
+                        <TextBlock Text="Loading license classes…" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="No license classes match your search." HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{StaticResource TextMutedColor}" IsHitTestVisible="False"
+                           Visibility="{Binding HasNoResults, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </Grid>
+        </Border>
+        </Grid>
+        </Border>
+    </Grid>
+</Page>
+
+

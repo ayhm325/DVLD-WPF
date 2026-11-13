@@ -45,6 +45,8 @@ public partial class PeoplePage : Page
         };
 
         window.ShowDialog();
+        if (ViewModel is not null)
+            await ViewModel.LoadPeopleAsync();
     }
 
     private void PeoplePage_Unloaded(object sender, RoutedEventArgs e)

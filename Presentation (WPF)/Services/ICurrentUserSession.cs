@@ -4,6 +4,8 @@ public interface ICurrentUserSession
 {
     int UserId { get; }
 
+    int PersonId { get; }
+
     string Username { get; }
 
     string FullName { get; }
@@ -16,6 +18,7 @@ public interface ICurrentUserSession
 
     void SetSession(
         int userId,
+        int personId,
         string username,
         string fullName,
         string role,

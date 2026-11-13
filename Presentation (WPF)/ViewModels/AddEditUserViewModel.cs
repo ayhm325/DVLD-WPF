@@ -44,11 +44,15 @@ public partial class AddEditUserViewModel : ObservableObject
     [ObservableProperty] private bool _isConfirmPasswordVisible;
     [ObservableProperty] private int _selectedTabIndex;
     [ObservableProperty] private bool _canGoToNextTab;
+    [ObservableProperty] private bool _isSaving;
     [ObservableProperty] private Visibility _passwordVisibility = Visibility.Visible;
     [ObservableProperty] private Visibility _confirmPasswordVisibility = Visibility.Visible;
 
     public event Action<bool>? SaveCompleted;
     public event Action? RequestClose;
+    public bool CanSaveUser => CanGoToNextTab && !IsSaving;
+
+    partial void OnIsSavingChanged(bool value) => SaveUserCommand.NotifyCanExecuteChanged();
 
     public AddEditUserViewModel(
         IUsersApiClient usersApiClient,
@@ -313,14 +317,15 @@ public partial class AddEditUserViewModel : ObservableObject
         window.ShowDialog();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSaveUser))]
     private async Task SaveUserAsync()
     {
+        if (!CanSaveUser || !ValidateSave())
+            return;
+
+        IsSaving = true;
         try
         {
-            if (!ValidateSave())
-                return;
-
             if (Mode == OperationMode.Add)
                 await CreateUserAsync();
             else
@@ -330,6 +335,10 @@ public partial class AddEditUserViewModel : ObservableObject
         {
             _userNotifications.ShowError(GetExceptionMessage(ex), "Save Error");
             SaveCompleted?.Invoke(false);
+        }
+        finally
+        {
+            IsSaving = false;
         }
     }
 
@@ -487,6 +496,8 @@ public partial class AddEditUserViewModel : ObservableObject
     private void SetCanGoToNextTab(bool value)
     {
         CanGoToNextTab = value;
+        OnPropertyChanged(nameof(CanSaveUser));
+        SaveUserCommand.NotifyCanExecuteChanged();
         GoToNextTabCommand.NotifyCanExecuteChanged();
     }
 

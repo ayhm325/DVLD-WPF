@@ -25,4 +25,13 @@ public interface IApiClient
     Task<ApiResult> DeleteAsync(
         string requestUri,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResult> PostFileAsync(
+        string requestUri,
+        string filePath,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResult<byte[]>> GetBytesAsync(
+        string requestUri,
+        CancellationToken cancellationToken = default);
 }

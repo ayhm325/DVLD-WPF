@@ -22,4 +22,15 @@ public sealed class LicenseClassesApiClient(
             $"api/licenseclasses/{licenseClassId}",
             cancellationToken);
     }
+
+    public Task<ApiResult> UpdateAsync(
+        int licenseClassId,
+        UpdateLicenseClassRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return apiClient.PutAsync(
+            $"api/licenseclasses/{licenseClassId}",
+            request,
+            cancellationToken);
+    }
 }

@@ -28,4 +28,17 @@ public interface IPeopleApiClient
     Task<ApiResult> DeleteAsync(
         int id,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResult> UploadPhotoAsync(
+        int id,
+        string filePath,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResult<byte[]>> GetPhotoAsync(
+        int id,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResult> DeletePhotoAsync(
+        int id,
+        CancellationToken cancellationToken = default);
 }

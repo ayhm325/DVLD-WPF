@@ -211,7 +211,7 @@
                             BorderBrush="{StaticResource PrimaryColor}"
                             BorderThickness="2"
                             ClipToBounds="True">
-                        <Image Source="{Binding Person.ImagePath, ElementName=Root, TargetNullValue='pack://application:,,,/Resources/DefaultAvatar.png'}"
+                        <Image Source="{Binding PersonImage, ElementName=Root}"
                                Stretch="UniformToFill"/>
                     </Border>
                     <TextBlock Text="{Binding Person.FullName, ElementName=Root}"

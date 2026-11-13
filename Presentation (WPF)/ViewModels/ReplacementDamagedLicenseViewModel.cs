@@ -24,6 +24,37 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
     [ObservableProperty] private ReplacementApplicationInfo? _replacementInfo;
     [ObservableProperty] private bool _isLicenseIssued;
     [ObservableProperty] private string _replacementReason = "Damaged License";
+    [ObservableProperty] private bool _isBusy;
+
+    public bool CanSearch => !IsBusy &&
+        int.TryParse(LicenseIdText?.Trim(), out var id) && id > 0;
+    public bool CanIssue => !IsBusy && !IsLicenseIssued && LicenseInfo is not null;
+
+    partial void OnLicenseIdTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(CanSearch));
+        SearchCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanSearch));
+        OnPropertyChanged(nameof(CanIssue));
+        SearchCommand.NotifyCanExecuteChanged();
+        IssueCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnLicenseInfoChanged(DriverLicenseInfoResponse? value)
+    {
+        OnPropertyChanged(nameof(CanIssue));
+        IssueCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsLicenseIssuedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanIssue));
+        IssueCommand.NotifyCanExecuteChanged();
+    }
 
     public ReplacementDamagedLicenseViewModel(
         ILicensesApiClient licensesApiClient,
@@ -53,16 +84,26 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
             ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSearch))]
     private async Task Search()
     {
-        if (!int.TryParse(LicenseIdText.Trim(), out var licenseId) || licenseId <= 0)
-        {
-            _userNotifications.ShowWarning(
-                "Please enter a valid License ID.",
-                "Replacement License");
+        if (!CanSearch)
             return;
+
+        IsBusy = true;
+        try
+        {
+            await SearchCoreAsync();
         }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task SearchCoreAsync()
+    {
+        var licenseId = int.Parse(LicenseIdText.Trim());
 
         ClearReplacementData();
 
@@ -100,16 +141,12 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
             "Replacement License");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanIssue))]
     private async Task Issue()
     {
-        if (LicenseInfo is null)
-        {
-            _userNotifications.ShowWarning(
-                "Please search for a license first.",
-                "Replacement License");
+        var currentLicense = LicenseInfo;
+        if (!CanIssue || currentLicense is null)
             return;
-        }
 
         if (string.IsNullOrWhiteSpace(ReplacementReason))
         {
@@ -121,8 +158,9 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
 
         try
         {
+            IsBusy = true;
             var request = new ReplaceLicenseRequest(
-                LicenseInfo.LicenseId,
+                currentLicense.LicenseId,
                 ReplacementReason);
 
             var replaceResult =
@@ -146,23 +184,30 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
             }
 
             var newLicenseId = replaceResult.Value.LicenseId;
+            ReplacementInfo = new ReplacementApplicationInfo
+            {
+                OldLicenseId = currentLicense.LicenseId,
+                ReplacementLicenseId = newLicenseId,
+                ReplacementReason = ReplacementReason
+            };
+            IsLicenseIssued = true;
 
             var newLicenseResult =
                 await _licensesApiClient.GetByIdAsync(newLicenseId);
 
             if (newLicenseResult.IsFailure)
             {
-                _notifications.ShowFailure(
-                    newLicenseResult,
-                    "Replacement License");
+                _userNotifications.ShowWarning(
+                    $"The replacement succeeded and created license #{newLicenseId}, but its details could not be refreshed: {newLicenseResult.Error}",
+                    "Replacement Completed");
                 return;
             }
 
             if (newLicenseResult.Value is null)
             {
-                _userNotifications.ShowError(
-                    "The new license could not be found.",
-                    "Replacement License");
+                _userNotifications.ShowWarning(
+                    $"The replacement succeeded and created license #{newLicenseId}, but the license details were not returned.",
+                    "Replacement Completed");
                 return;
             }
 
@@ -174,17 +219,17 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
 
             if (applicationResult.IsFailure)
             {
-                _notifications.ShowFailure(
-                    applicationResult,
-                    "Replacement License");
+                _userNotifications.ShowWarning(
+                    $"The replacement succeeded and created license #{newLicenseId}, but application details could not be refreshed: {applicationResult.Error}",
+                    "Replacement Completed");
                 return;
             }
 
             if (applicationResult.Value is null)
             {
-                _userNotifications.ShowError(
-                    "The replacement application could not be found.",
-                    "Replacement License");
+                _userNotifications.ShowWarning(
+                    $"The replacement succeeded and created license #{newLicenseId}, but application details were not returned.",
+                    "Replacement Completed");
                 return;
             }
 
@@ -194,7 +239,7 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
             {
                 ReplacementApplicationId = application.ApplicationId,
                 ReplacementLicenseId = newLicense.LicenseId,
-                OldLicenseId = LicenseInfo.LicenseId,
+                OldLicenseId = currentLicense.LicenseId,
                 ApplicationDate = application.ApplicationDate,
                 ApplicationFees = application.PaidFees,
                 LicenseFees = newLicense.PaidFees,
@@ -203,8 +248,6 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
                     newLicense.CreatedByUserName ??
                     application.CreatedByUserName
             };
-
-            IsLicenseIssued = true;
 
             _userNotifications.ShowInfo(
                 $"License replaced successfully.\nNew License ID: {newLicenseId}",
@@ -215,6 +258,10 @@ public partial class ReplacementDamagedLicenseViewModel : ObservableObject
             _userNotifications.ShowError(
                 GetExceptionMessage(ex),
                 "Replacement License");
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

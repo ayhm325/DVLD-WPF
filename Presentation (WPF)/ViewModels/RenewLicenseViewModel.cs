@@ -23,11 +23,14 @@ public partial class RenewLicenseViewModel : ObservableObject
     [ObservableProperty] private DriverLicenseInfoResponse? _licenseInfo;
     [ObservableProperty] private ApplicationNewLicenseInfo? _newLicenseInfo;
     [ObservableProperty] private bool _isLicenseIssued;
+    [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private string? _notes;
     [ObservableProperty] private int? _renewedLicenseId;
 
     public bool CanSearch =>
-        int.TryParse(LicenseIdText?.Trim(), out var id) && id > 0;
+        !IsBusy && int.TryParse(LicenseIdText?.Trim(), out var id) && id > 0;
+
+    public bool CanIssue => !IsBusy && !IsLicenseIssued && LicenseInfo is not null;
 
     public RenewLicenseViewModel(
         IApplicationsApiClient applicationsApiClient,
@@ -57,20 +60,51 @@ public partial class RenewLicenseViewModel : ObservableObject
             ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
-    partial void OnLicenseIdTextChanged(string value) =>
+    partial void OnLicenseIdTextChanged(string value)
+    {
         OnPropertyChanged(nameof(CanSearch));
+        SearchCommand.NotifyCanExecuteChanged();
+    }
 
-    [RelayCommand]
+    partial void OnIsBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanSearch));
+        OnPropertyChanged(nameof(CanIssue));
+        SearchCommand.NotifyCanExecuteChanged();
+        IssueCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnLicenseInfoChanged(DriverLicenseInfoResponse? value)
+    {
+        OnPropertyChanged(nameof(CanIssue));
+        IssueCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsLicenseIssuedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanIssue));
+        IssueCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSearch))]
     private async Task Search()
     {
         if (!CanSearch)
-        {
-            _userNotifications.ShowWarning(
-                "Please enter a valid License ID.",
-                "Renew License");
             return;
-        }
 
+        IsBusy = true;
+        try
+        {
+            await SearchCoreAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task SearchCoreAsync()
+    {
         ClearRenewalData();
 
         var licenseId = int.Parse(LicenseIdText.Trim());
@@ -92,19 +126,10 @@ public partial class RenewLicenseViewModel : ObservableObject
 
         LicenseInfo = result.Value;
 
-        if (LicenseInfo.ExpirationDate > DateTime.Now)
+        if (!LicenseInfo.IsEligibleForRenewal)
         {
             _userNotifications.ShowWarning(
-                "This license has not expired yet. Renewal is not allowed.",
-                "Renew License");
-            ClearLicenseData();
-            return;
-        }
-
-        if (!LicenseInfo.IsActive)
-        {
-            _userNotifications.ShowWarning(
-                "This license is not active and cannot be renewed.",
+                LicenseInfo.IneligibilityReason ?? "This license is not eligible for renewal.",
                 "Renew License");
             ClearLicenseData();
             return;
@@ -115,21 +140,18 @@ public partial class RenewLicenseViewModel : ObservableObject
             "Renew License");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanIssue))]
     private async Task Issue()
     {
-        if (LicenseInfo is null)
-        {
-            _userNotifications.ShowWarning(
-                "Please search for a license first.",
-                "Renew License");
+        var currentLicense = LicenseInfo;
+        if (!CanIssue || currentLicense is null)
             return;
-        }
 
         try
         {
+            IsBusy = true;
             var request = new RenewLicenseRequest(
-                LicenseInfo.LicenseId,
+                currentLicense.LicenseId,
                 Notes);
 
             var renewResult =
@@ -154,23 +176,24 @@ public partial class RenewLicenseViewModel : ObservableObject
 
             var newLicenseId = renewResult.Value.LicenseId;
             RenewedLicenseId = newLicenseId;
+            IsLicenseIssued = true;
 
             var newLicenseResult =
                 await _licensesApiClient.GetByIdAsync(newLicenseId);
 
             if (newLicenseResult.IsFailure)
             {
-                _notifications.ShowFailure(
-                    newLicenseResult,
-                    "Renew License");
+                _userNotifications.ShowWarning(
+                    $"The renewal succeeded and created license #{newLicenseId}, but its details could not be refreshed: {newLicenseResult.Error}",
+                    "Renewal Completed");
                 return;
             }
 
             if (newLicenseResult.Value is null)
             {
-                _userNotifications.ShowError(
-                    "The renewed license could not be found.",
-                    "Renew License");
+                _userNotifications.ShowWarning(
+                    $"The renewal succeeded and created license #{newLicenseId}, but the license details were not returned.",
+                    "Renewal Completed");
                 return;
             }
 
@@ -182,17 +205,17 @@ public partial class RenewLicenseViewModel : ObservableObject
 
             if (applicationResult.IsFailure)
             {
-                _notifications.ShowFailure(
-                    applicationResult,
-                    "Renew License");
+                _userNotifications.ShowWarning(
+                    $"The renewal succeeded and created license #{newLicenseId}, but application details could not be refreshed: {applicationResult.Error}",
+                    "Renewal Completed");
                 return;
             }
 
             if (applicationResult.Value is null)
             {
-                _userNotifications.ShowError(
-                    "The renewal application could not be found.",
-                    "Renew License");
+                _userNotifications.ShowWarning(
+                    $"The renewal succeeded and created license #{newLicenseId}, but application details were not returned.",
+                    "Renewal Completed");
                 return;
             }
 
@@ -202,7 +225,7 @@ public partial class RenewLicenseViewModel : ObservableObject
             {
                 RenewedLicenseApplicationId = application.ApplicationId,
                 RenewedLicenseId = newLicense.LicenseId,
-                OldLicenseId = LicenseInfo.LicenseId,
+                OldLicenseId = currentLicense.LicenseId,
                 ApplicationDate = application.ApplicationDate,
                 IssueDate = newLicense.IssueDate,
                 ExpirationDate = newLicense.ExpirationDate,
@@ -214,8 +237,6 @@ public partial class RenewLicenseViewModel : ObservableObject
                 Notes = newLicense.Notes
             };
 
-            IsLicenseIssued = true;
-
             _userNotifications.ShowInfo(
                 $"License renewed successfully.\nNew License ID: {newLicenseId}",
                 "Success");
@@ -225,6 +246,10 @@ public partial class RenewLicenseViewModel : ObservableObject
             _userNotifications.ShowError(
                 GetExceptionMessage(ex),
                 "Renew License");
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

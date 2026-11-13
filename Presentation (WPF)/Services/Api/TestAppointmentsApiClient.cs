@@ -55,6 +55,20 @@ public sealed class TestAppointmentsApiClient(
             $"api/testappointments/schedule-preparation/{localApplicationId}/{testTypeId}",
             cancellationToken);
 
+    public Task<ApiResult<AppointmentAvailabilityResponse>> GetAvailabilityAsync(
+        int localApplicationId,
+        int testTypeId,
+        DateTime startDate,
+        DateTime endDate,
+        CancellationToken cancellationToken = default)
+    {
+        var start = Uri.EscapeDataString(startDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+        var end = Uri.EscapeDataString(endDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+        return apiClient.GetAsync<AppointmentAvailabilityResponse>(
+            $"api/testappointments/availability?localAppId={localApplicationId}&testTypeId={testTypeId}&startDate={start}&endDate={end}",
+            cancellationToken);
+    }
+
     public async Task<ApiResult<decimal>> GetTestTypeFeesAsync(
         int testTypeId,
         CancellationToken cancellationToken = default)
@@ -136,6 +150,9 @@ public sealed class TestAppointmentsApiClient(
             $"api/testappointments/{request.TestAppointmentId}",
             request,
             cancellationToken);
+
+    public Task<ApiResult> CancelAsync(int appointmentId, CancellationToken cancellationToken = default) =>
+        apiClient.PostAsync($"api/testappointments/{appointmentId}/cancel", cancellationToken);
 
     public Task<ApiResult> DeleteAsync(
         int appointmentId,

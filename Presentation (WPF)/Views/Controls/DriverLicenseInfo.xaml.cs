@@ -1,16 +1,20 @@
-﻿using DVLD.Contracts.License;
+using DVLD.Contracts.License;
+using DVLD_WPF;
+using Microsoft.Extensions.DependencyInjection;
+using Presentation.Services;
+using Presentation.Services.Api;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Presentation.Views.Controls;
 
 public partial class DriverLicenseInfo : UserControl
 {
-    public DriverLicenseInfo()
-    {
-        InitializeComponent();
-    }
+    private int _photoLoadVersion;
+
+    public DriverLicenseInfo() => InitializeComponent();
 
     public DriverLicenseInfoResponse? License
     {
@@ -23,7 +27,45 @@ public partial class DriverLicenseInfo : UserControl
             nameof(License),
             typeof(DriverLicenseInfoResponse),
             typeof(DriverLicenseInfo),
+            new PropertyMetadata(null, OnLicenseChanged));
+
+    public ImageSource? PersonPhoto
+    {
+        get => (ImageSource?)GetValue(PersonPhotoProperty);
+        private set => SetValue(PersonPhotoProperty, value);
+    }
+
+    public static readonly DependencyProperty PersonPhotoProperty =
+        DependencyProperty.Register(
+            nameof(PersonPhoto),
+            typeof(ImageSource),
+            typeof(DriverLicenseInfo),
             new PropertyMetadata(null));
+
+    private static async void OnLicenseChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (DriverLicenseInfo)sender;
+        var version = ++control._photoLoadVersion;
+        var license = e.NewValue as DriverLicenseInfoResponse;
+        control.PersonPhoto = null;
+
+        if (license is null || string.IsNullOrWhiteSpace(license.ImagePath) || App.ServiceProvider is null)
+            return;
+
+        try
+        {
+            var photos = App.ServiceProvider.GetRequiredService<PersonPhotoCache>();
+            var peopleApi = App.ServiceProvider.GetRequiredService<IPeopleApiClient>();
+            var image = await photos.GetAsync(license.PersonId, peopleApi);
+            if (version == control._photoLoadVersion && control.License?.PersonId == license.PersonId)
+                control.PersonPhoto = image;
+        }
+        catch
+        {
+            if (version == control._photoLoadVersion)
+                control.PersonPhoto = null;
+        }
+    }
 
     public string LicenseIdText
     {

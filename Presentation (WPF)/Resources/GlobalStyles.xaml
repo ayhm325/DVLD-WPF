@@ -3,9 +3,8 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <!--
-        DVLD PROFESSIONAL MODERN LIGHT DESIGN SYSTEM
-        Graphite + Burgundy + Warm Gold + Emerald
-        No blue / cyan / teal / indigo tones.
+        DVLD PROFESSIONAL WARM LIGHT DESIGN SYSTEM
+        Brown + Cream + Milky White + Muted Beige
         Global resource dictionary: resource names are kept stable for existing Views.
     -->
 
@@ -25,18 +24,20 @@
     <sys:Double x:Key="Spacing32">32</sys:Double>
     <sys:Double x:Key="Spacing40">40</sys:Double>
 
-    <Thickness x:Key="CardPadding">16</Thickness>
+    <Thickness x:Key="CardPadding">20</Thickness>
     <Thickness x:Key="GroupBoxPadding">16</Thickness>
     <Thickness x:Key="InputPadding">12,0</Thickness>
     <Thickness x:Key="ButtonPadding">20,0</Thickness>
     <Thickness x:Key="ButtonPaddingCompact">16,0</Thickness>
-    <Thickness x:Key="DataGridCellPadding">12,8</Thickness>
-    <Thickness x:Key="DataGridHeaderPadding">12,10</Thickness>
+    <Thickness x:Key="DataGridCellPadding">14,10</Thickness>
+    <Thickness x:Key="DataGridHeaderPadding">14,12</Thickness>
 
     <CornerRadius x:Key="RadiusSmall">8</CornerRadius>
     <CornerRadius x:Key="RadiusMedium">10</CornerRadius>
     <CornerRadius x:Key="RadiusLarge">16</CornerRadius>
     <CornerRadius x:Key="RadiusXLarge">20</CornerRadius>
+    <CornerRadius x:Key="RadiusLeftLarge">20,0,0,20</CornerRadius>
+    <CornerRadius x:Key="RadiusRightLarge">0,20,20,0</CornerRadius>
     <CornerRadius x:Key="RadiusPill">999</CornerRadius>
     <CornerRadius x:Key="RadiusFocusRing">10</CornerRadius>
 
@@ -45,7 +46,7 @@
     <sys:Double x:Key="FontSizeBody">14</sys:Double>
     <sys:Double x:Key="FontSizeHeader">18</sys:Double>
     <sys:Double x:Key="FontSizeSection">20</sys:Double>
-    <sys:Double x:Key="FontSizePageTitle">24</sys:Double>
+    <sys:Double x:Key="FontSizePageTitle">27</sys:Double>
     <sys:Double x:Key="FontSizeHero">30</sys:Double>
 
     <FontWeight x:Key="FontWeightRegular">Regular</FontWeight>
@@ -66,35 +67,45 @@
          1. COLOR SYSTEM
          ============================================================ -->
 
-    <!-- Primary: sophisticated wine/burgundy, deliberately distinct from Danger. -->
-    <SolidColorBrush x:Key="PrimaryColor" Color="#7F1D3A"/>
-    <SolidColorBrush x:Key="PrimaryHoverColor" Color="#6B1731"/>
-    <SolidColorBrush x:Key="PrimaryPressedColor" Color="#561226"/>
-    <SolidColorBrush x:Key="PrimaryLightColor" Color="#F9E8EE"/>
-    <SolidColorBrush x:Key="PrimarySoftColor" Color="#FDF3F6"/>
+    <!-- Warm brown primary identity. -->
+    <SolidColorBrush x:Key="PrimaryColor" Color="#76513C"/>
+    <SolidColorBrush x:Key="DarkBrownColor" Color="#4B3429"/>
+    <SolidColorBrush x:Key="SecondaryBrownColor" Color="#A77B5B"/>
+    <SolidColorBrush x:Key="PrimaryHoverColor" Color="#63402F"/>
+    <SolidColorBrush x:Key="PrimaryPressedColor" Color="#4B3429"/>
+    <SolidColorBrush x:Key="PrimaryLightColor" Color="#F2E8D8"/>
+    <SolidColorBrush x:Key="PrimarySoftColor" Color="#FAF7F1"/>
+    <SolidColorBrush x:Key="SidebarBackgroundColor" Color="#4B3429"/>
+    <SolidColorBrush x:Key="SidebarSurfaceColor" Color="#634A3B"/>
+    <SolidColorBrush x:Key="SidebarTextColor" Color="#FAF7F1"/>
+    <SolidColorBrush x:Key="SidebarMutedColor" Color="#D8C6B6"/>
+    <SolidColorBrush x:Key="SidebarAccentColor" Color="#E8DCCB"/>
+    <SolidColorBrush x:Key="SidebarBorderColor" Color="#806956"/>
+    <SolidColorBrush x:Key="SidebarHoverColor" Color="#634A3B"/>
+    <SolidColorBrush x:Key="SidebarActiveColor" Color="#76513C"/>
 
     <!-- Warm application canvas. -->
-    <SolidColorBrush x:Key="BackgroundColor" Color="#F7F5F2"/>
-    <SolidColorBrush x:Key="SurfaceColor" Color="#FFFEFC"/>
-    <SolidColorBrush x:Key="SurfaceSecondaryColor" Color="#FBF9F6"/>
-    <SolidColorBrush x:Key="SurfaceHoverColor" Color="#F1EEE9"/>
-    <SolidColorBrush x:Key="SurfacePressedColor" Color="#EAE5DE"/>
-    <SolidColorBrush x:Key="InputBackgroundColor" Color="#FFFEFC"/>
+    <SolidColorBrush x:Key="BackgroundColor" Color="#FAF7F1"/>
+    <SolidColorBrush x:Key="SurfaceColor" Color="#FFFDF9"/>
+    <SolidColorBrush x:Key="SurfaceSecondaryColor" Color="#F5EFE6"/>
+    <SolidColorBrush x:Key="SurfaceHoverColor" Color="#E8DCCB"/>
+    <SolidColorBrush x:Key="SurfacePressedColor" Color="#DDCCB8"/>
+    <SolidColorBrush x:Key="InputBackgroundColor" Color="#FFFDF9"/>
 
     <!-- Typography. -->
-    <SolidColorBrush x:Key="TextPrimaryColor" Color="#211F1D"/>
-    <SolidColorBrush x:Key="TextSecondaryColor" Color="#514B46"/>
-    <SolidColorBrush x:Key="TextMutedColor" Color="#756D66"/>
-    <SolidColorBrush x:Key="TextDisabledColor" Color="#AAA39C"/>
+    <SolidColorBrush x:Key="TextPrimaryColor" Color="#342820"/>
+    <SolidColorBrush x:Key="TextSecondaryColor" Color="#5D4D41"/>
+    <SolidColorBrush x:Key="TextMutedColor" Color="#796B60"/>
+    <SolidColorBrush x:Key="TextDisabledColor" Color="#A99B8E"/>
     <SolidColorBrush x:Key="TextOnPrimaryColor" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="OnPrimaryBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="OnPrimaryColor" Color="#FFFFFF"/>
 
     <!-- Borders. -->
-    <SolidColorBrush x:Key="BorderColor" Color="#E2DDD6"/>
-    <SolidColorBrush x:Key="BorderStrongColor" Color="#CEC7BE"/>
-    <SolidColorBrush x:Key="InputBorderColor" Color="#CFC8BF"/>
-    <SolidColorBrush x:Key="FocusBorderColor" Color="#9F274B"/>
+    <SolidColorBrush x:Key="BorderColor" Color="#E5D9C9"/>
+    <SolidColorBrush x:Key="BorderStrongColor" Color="#CDBBA7"/>
+    <SolidColorBrush x:Key="InputBorderColor" Color="#CDBBA7"/>
+    <SolidColorBrush x:Key="FocusBorderColor" Color="#76513C"/>
 
     <!-- Success. -->
     <SolidColorBrush x:Key="SuccessColor" Color="#16845A"/>
@@ -123,18 +134,18 @@
     <SolidColorBrush x:Key="InfoLightColor" Color="#FFF4DE"/>
 
     <!-- Selection. -->
-    <SolidColorBrush x:Key="SelectionBackgroundColor" Color="#F2D7E0"/>
-    <SolidColorBrush x:Key="SelectionForegroundColor" Color="#67172F"/>
-    <SolidColorBrush x:Key="SelectionHoverBackgroundColor" Color="#E9C4D1"/>
+    <SolidColorBrush x:Key="SelectionBackgroundColor" Color="#E8DCCB"/>
+    <SolidColorBrush x:Key="SelectionForegroundColor" Color="#4B3429"/>
+    <SolidColorBrush x:Key="SelectionHoverBackgroundColor" Color="#DDCCB8"/>
 
-    <SolidColorBrush x:Key="ButtonPressedColor" Color="#EEE6E7"/>
+    <SolidColorBrush x:Key="ButtonPressedColor" Color="#E8DCCB"/>
 
     <!-- Compatibility aliases used by existing Views. -->
-    <SolidColorBrush x:Key="TextColor" Color="#211F1D"/>
-    <SolidColorBrush x:Key="CardBackground" Color="#FFFEFC"/>
-    <SolidColorBrush x:Key="SecondaryTextColor" Color="#514B46"/>
-    <SolidColorBrush x:Key="SecondaryColor" Color="#514B46"/>
-    <SolidColorBrush x:Key="InputBackground" Color="#FFFEFC"/>
+    <SolidColorBrush x:Key="TextColor" Color="#342820"/>
+    <SolidColorBrush x:Key="CardBackground" Color="#FFFDF9"/>
+    <SolidColorBrush x:Key="SecondaryTextColor" Color="#5D4D41"/>
+    <SolidColorBrush x:Key="SecondaryColor" Color="#5D4D41"/>
+    <SolidColorBrush x:Key="InputBackground" Color="#FFFDF9"/>
 
     <!-- ============================================================
          2. MOTION / EFFECTS
@@ -324,14 +335,7 @@
         <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
-        <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
-        <Setter Property="SnapsToDevicePixels" Value="True"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource BorderStrongColor}"/>
-                <Setter Property="Effect" Value="{StaticResource ElevationShadow2}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Effect" Value="{StaticResource ElevationShadow1}"/>
     </Style>
 
     <Style TargetType="{x:Type GroupBox}">
@@ -439,7 +443,7 @@
         <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
         <Setter Property="FontSize" Value="{StaticResource ButtonFontSize}"/>
         <Setter Property="FontWeight" Value="{StaticResource FontWeightMedium}"/>
-        <Setter Property="Height" Value="{StaticResource ButtonHeight}"/>
+        <Setter Property="Height" Value="42"/>
         <Setter Property="MinWidth" Value="88"/>
         <Setter Property="Padding" Value="{StaticResource ButtonPaddingCompact}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -646,7 +650,7 @@
          ============================================================ -->
 
     <Style TargetType="{x:Type TextBox}">
-        <Setter Property="Height" Value="{StaticResource InputHeight}"/>
+        <Setter Property="Height" Value="42"/>
         <Setter Property="MinWidth" Value="120"/>
         <Setter Property="Padding" Value="{StaticResource InputPadding}"/>
         <Setter Property="FontSize" Value="{StaticResource InputFontSize}"/>
@@ -698,7 +702,7 @@
     </Style>
 
     <Style TargetType="{x:Type PasswordBox}">
-        <Setter Property="Height" Value="{StaticResource InputHeight}"/>
+        <Setter Property="Height" Value="42"/>
         <Setter Property="MinWidth" Value="120"/>
         <Setter Property="Padding" Value="{StaticResource InputPadding}"/>
         <Setter Property="FontSize" Value="{StaticResource InputFontSize}"/>
@@ -749,7 +753,7 @@
     </Style>
 
     <Style TargetType="{x:Type ComboBox}">
-        <Setter Property="Height" Value="{StaticResource InputHeight}"/>
+        <Setter Property="Height" Value="42"/>
         <Setter Property="MinWidth" Value="120"/>
         <Setter Property="FontSize" Value="{StaticResource InputFontSize}"/>
         <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
@@ -976,14 +980,15 @@
          ============================================================ -->
 
     <Style x:Key="DataGridHeaderStyle" TargetType="{x:Type DataGridColumnHeader}">
-        <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
+        <Setter Property="Background" Value="{StaticResource DarkBrownColor}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextOnPrimaryColor}"/>
         <Setter Property="FontSize" Value="{StaticResource FontSizeLabel}"/>
         <Setter Property="FontWeight" Value="{StaticResource FontWeightSemiBold}"/>
         <Setter Property="Padding" Value="{StaticResource DataGridHeaderPadding}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBrownColor}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
     <Style x:Key="DataGridCellStyle" TargetType="{x:Type DataGridCell}">
@@ -1008,7 +1013,8 @@
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
-        <Setter Property="Margin" Value="0,1"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Height" Value="48"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}"/>
@@ -1024,12 +1030,14 @@
     </Style>
 
     <Style TargetType="{x:Type DataGrid}">
+        <!-- Record tables are display and selection surfaces; edits use dedicated forms. -->
+        <Setter Property="IsReadOnly" Value="True"/>
         <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="RowBackground" Value="{StaticResource SurfaceColor}"/>
-        <Setter Property="AlternatingRowBackground" Value="{StaticResource SurfaceSecondaryColor}"/>
+        <Setter Property="AlternatingRowBackground" Value="{StaticResource PrimarySoftColor}"/>
         <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BorderColor}"/>
         <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
         <Setter Property="HeadersVisibility" Value="Column"/>
@@ -1037,6 +1045,9 @@
         <Setter Property="CanUserAddRows" Value="False"/>
         <Setter Property="CanUserDeleteRows" Value="False"/>
         <Setter Property="CanUserResizeRows" Value="False"/>
+        <Setter Property="CanUserResizeColumns" Value="True"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="GridLinesVisibility" Value="Horizontal"/>
         <Setter Property="RowHeaderWidth" Value="0"/>
         <Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridHeaderStyle}"/>
@@ -1247,3 +1258,6 @@
     </Style>
 
 </ResourceDictionary>
+
+
+

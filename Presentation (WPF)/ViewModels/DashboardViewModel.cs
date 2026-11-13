@@ -31,6 +31,13 @@ public partial class DashboardViewModel(
     [ObservableProperty] private int _upcomingTests;
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string _errorMessage = string.Empty;
+    [ObservableProperty] private string _dashboardStatus = "Dashboard statistics have not loaded.";
+    [ObservableProperty] private bool _isDashboardAvailable;
+
+    public bool HasDashboardError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+    partial void OnErrorMessageChanged(string value) =>
+        OnPropertyChanged(nameof(HasDashboardError));
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -47,6 +54,8 @@ public partial class DashboardViewModel(
             if (result.IsFailure)
             {
                 ErrorMessage = result.Error;
+                DashboardStatus = "Dashboard statistics are unavailable.";
+                IsDashboardAvailable = false;
                 _notifications.ShowFailure(result, "Dashboard");
                 return;
             }
@@ -54,6 +63,8 @@ public partial class DashboardViewModel(
             if (result.Value is null)
             {
                 ErrorMessage = "The API returned an empty response.";
+                DashboardStatus = "Dashboard statistics are unavailable.";
+                IsDashboardAvailable = false;
                 _userNotifications.ShowWarning(
                     ErrorMessage,
                     "Dashboard");
@@ -70,6 +81,8 @@ public partial class DashboardViewModel(
             InternationalLicenses = statistics.InternationalLicenses;
             DetainedLicenses = statistics.DetainedLicenses;
             UpcomingTests = statistics.UpcomingTests;
+            DashboardStatus = "Statistics refreshed from the API.";
+            IsDashboardAvailable = true;
         }
         catch (Exception ex)
         {
@@ -81,6 +94,8 @@ public partial class DashboardViewModel(
             _userNotifications.ShowError(
                 ErrorMessage,
                 "Dashboard");
+            DashboardStatus = "Dashboard statistics are unavailable.";
+            IsDashboardAvailable = false;
         }
         finally
         {

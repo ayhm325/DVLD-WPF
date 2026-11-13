@@ -1,117 +1,173 @@
-<Page xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="Presentation.Views.Pages.DriversPage" mc:Ignorable="d" d:DesignHeight="750" d:DesignWidth="1100" Title="DriversPage" Background="{StaticResource BackgroundColor}">
-
+<Page xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:controls="clr-namespace:Presentation.Views.Controls"
+      x:Class="Presentation.Views.Pages.DriversPage"
+      mc:Ignorable="d" d:DesignHeight="750" d:DesignWidth="1100"
+      Title="DriversPage" Background="{StaticResource BackgroundColor}">
     <Page.Resources>
-        <Style x:Key="FilterTextBoxStyle" TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Width" Value="220" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="Margin" Value="10,0,0,0" />
+        <Style x:Key="FilterTextBoxStyle" TargetType="{x:Type TextBox}"
+               BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="220"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
         </Style>
+    </Page.Resources>
 
-        <Style TargetType="{x:Type DataGridRow}">
-            <Setter Property="Height" Value="46" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Tag" Value="{Binding DataContext,RelativeSource={RelativeSource AncestorType={x:Type Page}}}" />
-            <Style.Triggers>
-                <MultiTrigger>
-                    <MultiTrigger.Conditions>
-                        <Condition Property="IsMouseOver" Value="True" />
-                        <Condition Property="IsSelected" Value="False" />
-                    </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="{StaticResource SurfaceHoverColor}" />
-                </MultiTrigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource SelectionBackgroundColor}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        </Page.Resources>
-
-    <Grid Margin="28">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource CardStyle}" Padding="22" Margin="0,0,0,18">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <StackPanel>
-                    <TextBlock Text="DRIVERS" FontSize="{StaticResource FontSizeCaption}" FontWeight="{StaticResource FontWeightSemiBold}" Foreground="{StaticResource PrimaryColor}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                        <TextBlock Text="Drivers Management" Style="{StaticResource HeaderStyle}" />
-                        <TextBlock Text="  •  " Style="{StaticResource HeaderStyle}" Foreground="{StaticResource TextMutedColor}" />
-                        <TextBlock Text="{Binding DriversCount}" Style="{StaticResource HeaderStyle}" Foreground="{StaticResource PrimaryColor}" />
-                    </StackPanel>
-                    <TextBlock Text="Review drivers and their active licenses" Foreground="{StaticResource TextMutedColor}" FontSize="{StaticResource FontSizeCaption}" Margin="0,4,0,0" />
+        <controls:PageHeader Grid.Row="0" Eyebrow="LICENSING"
+                             Heading="Drivers Management"
+                             Description="Review registered drivers and their active licenses."
+                             Metric="{Binding DriversCount}">
+            <controls:PageHeader.ActionContent>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Register driver" Command="{Binding RegisterDriverCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0"/>
+                    <Button Content="Delete selected" Command="{Binding DeleteSelectedCommand}"
+                            Style="{StaticResource DangerButtonStyle}"/>
                 </StackPanel>
+            </controls:PageHeader.ActionContent>
+        </controls:PageHeader>
 
-                <Border Grid.Column="1" Background="{StaticResource PrimarySoftColor}" BorderBrush="{StaticResource PrimaryLightColor}" BorderThickness="1" CornerRadius="{StaticResource RadiusPill}" Padding="12,7" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="7" Height="7" Fill="{StaticResource SuccessColor}" Margin="0,0,7,0" VerticalAlignment="Center" />
-                        <TextBlock Text="Driver records" Foreground="{StaticResource TextSecondaryColor}" FontSize="{StaticResource FontSizeCaption}" FontWeight="{StaticResource FontWeightSemiBold}" />
-                    </StackPanel>
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="14"
+                VerticalAlignment="Top" ClipToBounds="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="{StaticResource SurfaceSecondaryColor}"
+                        BorderBrush="{StaticResource BorderColor}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusMedium}" Padding="12"
+                        Margin="0,0,0,12">
+                    <DockPanel LastChildFill="False">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="FILTER DRIVERS" Style="{StaticResource LabelStyle}"
+                                       VerticalAlignment="Center" Margin="0,0,14,0"/>
+                            <ComboBox x:Name="cmbFilterBy" SelectedIndex="0" Width="160" Height="36">
+                                <ComboBoxItem Content="None" IsSelected="True"/>
+                                <ComboBoxItem Content="Full Name"/>
+                                <ComboBoxItem Content="Driver ID"/>
+                                <ComboBoxItem Content="Person ID"/>
+                            </ComboBox>
+                            <TextBox x:Name="txtFilterValue">
+                                <TextBox.Style>
+                                    <Style TargetType="{x:Type TextBox}"
+                                           BasedOn="{StaticResource FilterTextBoxStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=cmbFilterBy,Path=Text}"
+                                                         Value="None">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                        </StackPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="Drivers"
+                                   Style="{StaticResource CaptionStyle}"
+                                   VerticalAlignment="Center" Margin="18,0,2,0"/>
+                    </DockPanel>
                 </Border>
+
+                <Grid Grid.Row="1">
+                    <DataGrid x:Name="dgDrivers" ItemsSource="{Binding Drivers}"
+                              SelectedItem="{Binding SelectedDriver}" Margin="0"
+                              VerticalAlignment="Top" MaxHeight="540">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="{x:Type DataGridRow}"
+                                   BasedOn="{StaticResource DataGridRowStyle}">
+                                <Setter Property="Tag" Value="{Binding DataContext,
+                                    RelativeSource={RelativeSource AncestorType={x:Type Page}}}"/>
+                                <Setter Property="ContextMenu">
+                                    <Setter.Value>
+                                        <ContextMenu>
+                                            <MenuItem Header="Show Person Info"
+                                                Command="{Binding PlacementTarget.Tag.ShowPersonInfoCommand,
+                                                    RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                                CommandParameter="{Binding PlacementTarget.DataContext,
+                                                    RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                                                <MenuItem.Icon><materialDesign:PackIcon Kind="AccountCircle"
+                                                    Width="18" Height="18" Foreground="{StaticResource PrimaryColor}"/></MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Show Person License History"
+                                                Command="{Binding PlacementTarget.Tag.ShowLicenseHistoryCommand,
+                                                    RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"
+                                                CommandParameter="{Binding PlacementTarget.DataContext,
+                                                    RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}">
+                                                <MenuItem.Icon><materialDesign:PackIcon Kind="History"
+                                                    Width="18" Height="18" Foreground="{StaticResource SuccessColor}"/></MenuItem.Icon>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Setter.Value>
+                                </Setter>
+                                <EventSetter Event="MouseRightButtonDown"
+                                             Handler="DataGridRow_MouseRightButtonDown"/>
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Photo" Width="70" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <controls:PersonPhotoAvatar PersonId="{Binding PersonId}"
+                                                                    HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Driver ID" Binding="{Binding DriverId}" Width="90"/>
+                            <DataGridTextColumn Header="Person ID" Binding="{Binding PersonId}" Width="90"/>
+                            <DataGridTextColumn Header="National No" Binding="{Binding NationalNo}" Width="130"/>
+                            <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*"/>
+                            <DataGridTextColumn Header="Date" Binding="{Binding CreatedDate,StringFormat='yyyy/MM/dd'}" Width="115"/>
+                            <DataGridTextColumn Header="Active Licenses" Binding="{Binding ActiveLicenses}" Width="125"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border MinHeight="150" Background="{StaticResource SurfaceColor}"
+                            CornerRadius="{StaticResource RadiusMedium}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasNoDrivers}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="No drivers to show" Style="{StaticResource SectionTitleStyle}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Choose a filter or register a driver to get started."
+                                       Style="{StaticResource CaptionStyle}" Margin="0,5,0,0"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource DangerLightColor}"
+                            BorderBrush="{StaticResource DangerColor}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusMedium}" Padding="16"
+                            Visibility="{Binding HasLoadError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding LoadErrorMessage}" Foreground="{StaticResource DangerColor}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                    <Border Background="{StaticResource SurfaceColor}"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ProgressBar Width="140" Height="5" IsIndeterminate="True"/>
+                            <TextBlock Text="Loading drivers…" Style="{StaticResource CaptionStyle}"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Grid>
-        </Border>
-
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="12" Margin="0,0,0,16">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="FILTER" FontSize="{StaticResource FontSizeCaption}" FontWeight="{StaticResource FontWeightSemiBold}" Foreground="{StaticResource TextMutedColor}" VerticalAlignment="Center" Margin="0,0,14,0" />
-
-                <ComboBox x:Name="cmbFilterBy" SelectedIndex="0" Width="160" Height="36">
-                    <ComboBoxItem Content="None" IsSelected="True" />
-                    <ComboBoxItem Content="Full Name" />
-                    <ComboBoxItem Content="Driver ID" />
-                    <ComboBoxItem Content="Person ID" />
-                </ComboBox>
-
-                <TextBox x:Name="txtFilterValue">
-                    <TextBox.Style>
-                        <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource FilterTextBoxStyle}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=cmbFilterBy,Path=Text}" Value="None">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBox.Style>
-                </TextBox>
-            </StackPanel>
-        </Border>
-
-        <Border Grid.Row="2" Style="{StaticResource CardStyle}" Padding="0" ClipToBounds="True">
-            <DataGrid x:Name="dgDrivers" ItemsSource="{Binding Drivers}" SelectedItem="{Binding SelectedDriver}" Margin="0">
-                <DataGrid.RowStyle>
-                    <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DataGridRowStyle}">
-                            <Setter Property="Tag" Value="{Binding DataContext,RelativeSource={RelativeSource AncestorType={x:Type Page}}}" />
-                            <Setter Property="ContextMenu">
-                            <Setter.Value>
-                                <ContextMenu>
-                                    <MenuItem Header="Show Person Info" Command="{Binding PlacementTarget.Tag.ShowPersonInfoCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"><MenuItem.Icon><materialDesign:PackIcon Kind="AccountCircle" Width="18" Height="18" Foreground="{StaticResource PrimaryColor}" /></MenuItem.Icon></MenuItem>
-                                    <MenuItem Header="Show Person License History" Command="{Binding PlacementTarget.Tag.ShowLicenseHistoryCommand,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding PlacementTarget.DataContext,RelativeSource={RelativeSource AncestorType={x:Type ContextMenu}}}"><MenuItem.Icon><materialDesign:PackIcon Kind="History" Width="18" Height="18" Foreground="{StaticResource SuccessColor}" /></MenuItem.Icon></MenuItem>
-                                </ContextMenu>
-                            </Setter.Value>
-                        </Setter>
-                        <EventSetter Event="MouseRightButtonDown" Handler="DataGridRow_MouseRightButtonDown" />
-                    </Style>
-                </DataGrid.RowStyle>
-
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Driver ID" Binding="{Binding DriverId}" Width="90" />
-                    <DataGridTextColumn Header="Person ID" Binding="{Binding PersonId}" Width="90" />
-                    <DataGridTextColumn Header="National No" Binding="{Binding NationalNo}" Width="130" />
-                    <DataGridTextColumn Header="Full Name" Binding="{Binding FullName}" Width="*" />
-                    <DataGridTextColumn Header="Date" Binding="{Binding CreatedDate,StringFormat='yyyy/MM/dd'}" Width="115" />
-                    <DataGridTextColumn Header="Active Licenses" Binding="{Binding ActiveLicenses}" Width="125" />
-                </DataGrid.Columns>
-            </DataGrid>
         </Border>
     </Grid>
 </Page>

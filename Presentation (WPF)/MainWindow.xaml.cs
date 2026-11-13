@@ -8,6 +8,7 @@ using Presentation.Views;
 using Presentation.Views.Pages;
 using Presentation.Views.Pages.Applications;
 using Presentation.Views.Pages.Tests;
+using Presentation.Views.Pages.ReferenceData;
 using Presentation.Views.Windows;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,9 +26,10 @@ public partial class MainWindow : Window
     private readonly IServiceProvider _serviceProvider;
     private readonly DashboardViewModel _dashboardViewModel;
     private readonly IUserNotificationService _userNotifications;
-    private readonly List<Border> _allNavItems;
+    private readonly ShellPageNavigationService _pageNavigation;
+    private readonly List<Button> _allNavItems;
 
-    private Border? _activeNavItem;
+    private Button? _activeNavItem;
     private DispatcherTimer? _typewriterTimer;
     private Storyboard? _cursorBlinkStoryboard;
     private DispatcherTimer? _clockTimer;
@@ -38,6 +40,7 @@ public partial class MainWindow : Window
 
     public string CurrentUserFullName => _currentUserSession.FullName;
     public string CurrentUserRole => _currentUserSession.Role;
+    public int CurrentUserPersonId => _currentUserSession.PersonId;
 
     public MainWindow(
         ICurrentUserSession currentUserSession,
@@ -55,13 +58,15 @@ public partial class MainWindow : Window
         DataContext = _dashboardViewModel;
         WindowState = WindowState.Maximized;
         Navigation = new NavigationService(MainFrame);
+        _pageNavigation = new ShellPageNavigationService(_serviceProvider);
 
         _allNavItems =
         [
             NavDashboard, NavPeople, NavDrivers, NavNewLocal, NavNewInternational,
             NavRenew, NavReplace, NavReleaseDetained, NavLocalApps, NavIntlApps,
-            NavDetained, NavDetainLicense, NavRetakeTest, NavUsers, NavAppTypes,
-            NavTestTypes, NavMyProfile, NavChangePassword, NavSignOut
+            NavDetained, NavDetainLicense, NavUsers, NavAppTypes,
+            NavTestTypes, NavLicenseClasses, NavCountries, NavMyProfile,
+            NavChangePassword, NavSignOut
         ];
 
         _activeNavItem = NavDashboard;
@@ -97,7 +102,8 @@ public partial class MainWindow : Window
             NavReleaseDetained,
             NavLocalApps,
             NavIntlApps,
-            NavRetakeTest,
+            NavLicenseClasses,
+            NavCountries,
             NavDrivers,
             NavDetained,
             NavPeopleHeader,
@@ -112,6 +118,12 @@ public partial class MainWindow : Window
             NavAppTypes,
             NavTestTypes,
             NavManagementHeader);
+
+        SetVisibility(
+            isAdmin || isStaff ? Visibility.Visible : Visibility.Collapsed,
+            NavReferenceHeader,
+            NavLicenseClasses,
+            NavCountries);
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -134,6 +146,16 @@ public partial class MainWindow : Window
         base.OnClosed(e);
     }
 
+    private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var preferredWidth = ActualWidth < 1120 ? 216 : 248;
+        if (SidebarColumn.Width.Value != preferredWidth)
+            SidebarColumn.Width = new GridLength(preferredWidth);
+
+        var statisticColumns = ActualWidth < 1180 ? 2 : 4;
+        StatsPrimaryGrid.Columns = statisticColumns;
+        StatsSecondaryGrid.Columns = statisticColumns;
+    }
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2)
@@ -164,7 +186,7 @@ public partial class MainWindow : Window
         PeriodText.Text = now.ToString("tt");
     }
 
-    private void SetActiveNav(Border item)
+    private void SetActiveNav(Button item)
     {
         var defaultStyle = (Style)FindResource("NavItemStyle");
         var activeStyle = (Style)FindResource("NavItemActiveStyle");
@@ -179,7 +201,7 @@ public partial class MainWindow : Window
         _activeNavItem = item;
     }
 
-    private void NavigateToPage(string title, string subtitle, Border navItem, Page page)
+    private void NavigateToPage(string title, string subtitle, Button navItem, Page page)
     {
         DashboardPanel.Visibility = Visibility.Collapsed;
         StopTypewriterEffect();
@@ -215,78 +237,48 @@ public partial class MainWindow : Window
         await _dashboardViewModel.LoadAsync();
     }
 
-    private void NavDashboard_Click(object sender, MouseButtonEventArgs e) => ShowDashboard();
+    private void NavDashboard_Click(object sender, RoutedEventArgs e) => ShowDashboard();
 
-    private void NavPeople_Click(object sender, MouseButtonEventArgs e) =>
-        NavigateToPage("Manage People", "View and manage all registered people", NavPeople,
-            _serviceProvider.GetRequiredService<PeoplePage>());
-
-    private void NavDrivers_Click(object sender, MouseButtonEventArgs e) =>
-        NavigateToPage("Manage Drivers", "View and manage all licensed drivers", NavDrivers,
-            _serviceProvider.GetRequiredService<DriversPage>());
-
-    private void NavLocalApps_Click(object sender, MouseButtonEventArgs e) =>
-        NavigateToPage("Local Applications", "Manage local driving license applications", NavLocalApps,
-            _serviceProvider.GetRequiredService<LDLAppPage>());
-
-    private void NavIntlApps_Click(object sender, MouseButtonEventArgs e) =>
-        NavigateToPage("International Applications", "Manage international license applications", NavIntlApps,
-            _serviceProvider.GetRequiredService<InterLAppPage>());
-
-    private void NavDetained_Click(object sender, MouseButtonEventArgs e) =>
-        NavigateToPage("Detained Licenses", "View and manage all detained licenses", NavDetained,
-            _serviceProvider.GetRequiredService<ListDetainedLicenses>());
-
-    private void NavRetakeTest_Click(object sender, MouseButtonEventArgs e) =>
-        NavigateToPage("Retake Test", "Schedule a test retake for an applicant", NavRetakeTest,
-            _serviceProvider.GetRequiredService<LDLAppPage>());
-
-    private void NavUsers_Click(object sender, MouseButtonEventArgs e)
+    private void NavPage_Click(object sender, RoutedEventArgs e)
     {
-        if (!IsAdmin())
+        if (sender is not Button { Tag: string navigationKey } button)
             return;
 
-        NavigateToPage("Users", "Manage system users and permissions", NavUsers,
-            _serviceProvider.GetRequiredService<UserPage>());
-    }
-
-    private void NavAppTypes_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (!IsAdmin())
+        if (!_pageNavigation.TryResolve(navigationKey, _currentUserSession.Role, out var destination) || destination is null)
+        {
+            _userNotifications.ShowWarning(
+                "This destination is unavailable for the current account.",
+                "Navigation Unavailable");
             return;
+        }
 
-        NavigateToPage("Application Types", "Configure application type settings", NavAppTypes,
-            _serviceProvider.GetRequiredService<ManageApplicationTypePage>());
+        NavigateToPage(destination.Title, destination.Subtitle, button, destination.Page);
     }
+    private void QuickNewLocal_Click(object sender, RoutedEventArgs e) => NavNewLocal_Click(sender, e);
 
-    private void NavTestTypes_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (!IsAdmin())
-            return;
+    private void QuickRenew_Click(object sender, RoutedEventArgs e) => NavRenew_Click(sender, e);
 
-        NavigateToPage("Test Types", "Configure test type settings", NavTestTypes,
-            _serviceProvider.GetRequiredService<ManageTestTypePage>());
-    }
+    private void QuickNewInternational_Click(object sender, RoutedEventArgs e) => NavNewInternational_Click(sender, e);
 
-    private void NavNewLocal_Click(object sender, MouseButtonEventArgs e) =>
+    private void NavNewLocal_Click(object sender, RoutedEventArgs e) =>
         OpenWindow(_serviceProvider.GetRequiredService<NewLocalLicnnse>());
 
-    private void NavNewInternational_Click(object sender, MouseButtonEventArgs e) =>
+    private void NavNewInternational_Click(object sender, RoutedEventArgs e) =>
         OpenWindow(_serviceProvider.GetRequiredService<NewInternationalLicenseApplicationWin>());
 
-    private void NavRenew_Click(object sender, MouseButtonEventArgs e) =>
+    private void NavRenew_Click(object sender, RoutedEventArgs e) =>
         OpenWindow(_serviceProvider.GetRequiredService<RenewLicenseApplicationWin>());
 
-    private void NavReplace_Click(object sender, MouseButtonEventArgs e) =>
+    private void NavReplace_Click(object sender, RoutedEventArgs e) =>
         OpenWindow(_serviceProvider.GetRequiredService<ReplacementDamagedLicense>());
 
-    private void NavReleaseDetained_Click(object sender, MouseButtonEventArgs e) =>
+    private void NavReleaseDetained_Click(object sender, RoutedEventArgs e) =>
         OpenWindow(_serviceProvider.GetRequiredService<ReleaseDetainedLicenseWin>());
 
-    private void NavDetainLicense_Click(object sender, MouseButtonEventArgs e) =>
+    private void NavDetainLicense_Click(object sender, RoutedEventArgs e) =>
         OpenWindow(_serviceProvider.GetRequiredService<DetainLicenseWin>());
 
-    private async void NavMyProfile_Click(object sender, MouseButtonEventArgs e)
+    private async void NavMyProfile_Click(object sender, RoutedEventArgs e)
     {
         var vm = _serviceProvider.GetRequiredService<AddEditUserViewModel>();
         await vm.InitializeCurrentProfileAsync();
@@ -296,7 +288,7 @@ public partial class MainWindow : Window
         OpenWindow(window);
     }
 
-    private void NavChangePassword_Click(object sender, MouseButtonEventArgs e)
+    private void NavChangePassword_Click(object sender, RoutedEventArgs e)
     {
         var vm = _serviceProvider.GetRequiredService<ChangePasswordViewModel>();
         vm.UserId = _currentUserSession.UserId;
@@ -304,7 +296,7 @@ public partial class MainWindow : Window
         OpenWindow(new ChangePasswordWindow(vm));
     }
 
-    private void NavSignOut_Click(object sender, MouseButtonEventArgs e)
+    private void NavSignOut_Click(object sender, RoutedEventArgs e)
     {
         var result = _userNotifications.ShowConfirmation("Are you sure you want to sign out?", "Sign Out");
 
@@ -373,3 +365,9 @@ public partial class MainWindow : Window
             StopTypewriterEffect();
     }
 }
+
+
+
+
+
+

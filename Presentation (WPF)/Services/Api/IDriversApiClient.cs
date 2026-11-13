@@ -13,4 +13,12 @@ public interface IDriversApiClient
         GetByPersonIdAsync(
             int personId,
             CancellationToken cancellationToken = default);
+
+    Task<ApiResult<int>> CreateAsync(
+        CreateDriverRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<ApiResult> DeleteAsync(
+        int driverId,
+        CancellationToken cancellationToken = default);
 }

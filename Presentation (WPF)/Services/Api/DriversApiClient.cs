@@ -20,4 +20,24 @@ public sealed class DriversApiClient(
         => apiClient.GetAsync<DriverResponse>(
             $"api/drivers/person/{personId}",
             cancellationToken);
+
+    public async Task<ApiResult<int>> CreateAsync(
+        CreateDriverRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await apiClient.PostAsync<CreateDriverRequest, DriverResponse>(
+            "api/drivers",
+            request,
+            cancellationToken);
+
+        if (result.IsFailure)
+            return ApiResult<int>.Failure(result.Error);
+
+        return ApiResult<int>.Success(result.Value!.DriverId);
+    }
+
+    public Task<ApiResult> DeleteAsync(
+        int driverId,
+        CancellationToken cancellationToken = default) =>
+        apiClient.DeleteAsync($"api/drivers/{driverId}", cancellationToken);
 }

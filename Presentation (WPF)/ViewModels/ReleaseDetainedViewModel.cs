@@ -5,6 +5,7 @@ using DVLD.Contracts.License;
 using Presentation.Services.Api;
 using Presentation.Services.UI;
 using Presentation.Views.Windows;
+using System.Net;
 
 namespace Presentation.ViewModels;
 
@@ -25,8 +26,10 @@ public partial class ReleaseDetainedViewModel : ObservableObject
     [ObservableProperty] private DetainedLicenseResponse? _release;
     [ObservableProperty] private decimal _applicationFees;
     [ObservableProperty] private bool _isLicenseIssued;
+    [ObservableProperty] private bool _isBusy;
 
     public decimal TotalFees => ApplicationFees + (Release?.FineFees ?? 0);
+    public bool CanRelease => !IsBusy && Release is { IsReleased: false };
 
     public ReleaseDetainedViewModel(
         ILicensesApiClient licensesApiClient,
@@ -60,7 +63,11 @@ public partial class ReleaseDetainedViewModel : ObservableObject
     {
         IsLicenseIssued = value is not null;
         OnPropertyChanged(nameof(TotalFees));
+        OnPropertyChanged(nameof(CanRelease));
+        ReleaseLicenseCommand.NotifyCanExecuteChanged();
     }
+
+    partial void OnIsBusyChanged(bool value) => ReleaseLicenseCommand.NotifyCanExecuteChanged();
 
     partial void OnApplicationFeesChanged(decimal value) =>
         OnPropertyChanged(nameof(TotalFees));
@@ -109,11 +116,20 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             await _detainedLicensesApiClient
                 .GetActiveByLicenseIdAsync(licenseId);
 
-        if (releaseResult.IsFailure)
+        if (releaseResult.IsFailure && releaseResult.StatusCode != HttpStatusCode.NotFound)
         {
             LicenseInfo = null;
             _notifications.ShowFailure(
                 releaseResult,
+                "Release License");
+            return;
+        }
+
+        if (releaseResult.StatusCode == HttpStatusCode.NotFound)
+        {
+            LicenseInfo = null;
+            _userNotifications.ShowWarning(
+                "This license is not detained.",
                 "Release License");
             return;
         }
@@ -152,24 +168,21 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             applicationTypeResult.Value.ApplicationTypeFees;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRelease))]
     private async Task ReleaseLicenseAsync()
     {
-        if (Release is null || LicenseInfo is null)
-        {
-            _userNotifications.ShowWarning(
-                "Please search for a detained license first.",
-                "Release License");
+        var activeDetention = Release;
+        if (!CanRelease || activeDetention is null)
             return;
-        }
 
+        IsBusy = true;
         try
         {
             var result =
                 await _detainedLicensesApiClient.ReleaseAsync(
                     new ReleaseDetainedLicenseRequest
                     {
-                        DetainId = Release.DetainId
+                        DetainId = activeDetention.DetainId
                     });
 
             if (result.IsFailure)
@@ -182,7 +195,7 @@ public partial class ReleaseDetainedViewModel : ObservableObject
 
             var refreshedResult =
                 await _detainedLicensesApiClient
-                    .GetByIdAsync(Release.DetainId);
+                    .GetByIdAsync(activeDetention.DetainId);
 
             if (refreshedResult.IsSuccess &&
                 refreshedResult.Value is not null)
@@ -204,6 +217,10 @@ public partial class ReleaseDetainedViewModel : ObservableObject
             _userNotifications.ShowError(
                 GetExceptionMessage(ex),
                 "Release License");
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

@@ -37,6 +37,7 @@ public partial class AddEditLDLAppViewModel : ObservableObject
     [ObservableProperty] private int _selectedFilterIndex;
     [ObservableProperty] private decimal _applicationFees;
     [ObservableProperty] private bool _isEditMode;
+    [ObservableProperty] private bool _isSaving;
     [ObservableProperty] private string _windowTitle = "New Local Driving License Application";
 
     public bool IsInitialized { get; private set; }
@@ -47,6 +48,8 @@ public partial class AddEditLDLAppViewModel : ObservableObject
 
     public int SelectedLicenseClassId =>
         SelectedLicenseClass?.LicenseClassId ?? 0;
+
+    partial void OnIsSavingChanged(bool value) => SaveCommand.NotifyCanExecuteChanged();
 
     public AddEditLDLAppViewModel(
         ILicenseClassesApiClient licenseClassesApiClient,
@@ -80,7 +83,7 @@ public partial class AddEditLDLAppViewModel : ObservableObject
     }
 
     private bool CanSave() =>
-        Person is not null && SelectedLicenseClass is not null;
+        !IsSaving && Person is not null && SelectedLicenseClass is not null;
 
     public async Task InitializeAsync()
     {
@@ -200,6 +203,10 @@ public partial class AddEditLDLAppViewModel : ObservableObject
             return;
         }
 
+        if (IsSaving)
+            return;
+
+        IsSaving = true;
         try
         {
             if (IsEditMode)
@@ -268,6 +275,11 @@ public partial class AddEditLDLAppViewModel : ObservableObject
             _userNotifications.ShowError(
                 GetExceptionMessage(ex),
                 "Save Application");
+            SaveCompleted?.Invoke(false);
+        }
+        finally
+        {
+            IsSaving = false;
         }
     }
 

@@ -161,6 +161,11 @@
                     <StackPanel Grid.Column="0"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
+                        <TextBlock Text="Detaining license…"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource PrimaryColor}"
+                                   Margin="0,0,10,0"
+                                   Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         <Button Content="Show Licenses History"
                                 Style="{StaticResource GhostButtonStyle}"
                                 Command="{Binding ShowLicensesHistoryCommand}"

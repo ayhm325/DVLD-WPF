@@ -25,6 +25,20 @@ public partial class PeopleViewModel : ObservableObject
     [ObservableProperty] private PersonListResponse? _selectedPerson;
     [ObservableProperty] private bool _isSearchTextVisible;
     [ObservableProperty] private bool _isGenderComboVisible;
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _hasLoaded;
+    [ObservableProperty] private string _loadErrorMessage = string.Empty;
+
+    public bool HasNoPeople => HasLoaded && !IsLoading && FilteredPeople.Count == 0 && !HasLoadError;
+    public bool HasLoadError => !string.IsNullOrWhiteSpace(LoadErrorMessage);
+
+    partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(HasNoPeople));
+    partial void OnHasLoadedChanged(bool value) => OnPropertyChanged(nameof(HasNoPeople));
+    partial void OnLoadErrorMessageChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasLoadError));
+        OnPropertyChanged(nameof(HasNoPeople));
+    }
 
     public List<string> FilterTypes { get; } = ["None", "National No", "Name", "Gender"];
     public List<string> GenderOptions { get; } = ["All", "Male", "Female"];
@@ -64,16 +78,41 @@ public partial class PeopleViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadPeopleAsync()
     {
-        var result = await _peopleApiClient.GetAllAsync();
-
-        if (result.IsFailure)
-        {
-            _notifications.ShowFailure(result, "Load People Failed");
+        if (IsLoading)
             return;
-        }
 
-        _allPeople = result.Value ?? [];
-        ApplyFilter();
+        IsLoading = true;
+        HasLoaded = false;
+        LoadErrorMessage = string.Empty;
+        try
+        {
+            var result = await _peopleApiClient.GetAllAsync();
+
+            if (result.IsFailure)
+            {
+                LoadErrorMessage = result.Error;
+                _allPeople = [];
+                ApplyFilter();
+                _notifications.ShowFailure(result, "Load People Failed");
+                return;
+            }
+
+            _allPeople = result.Value ?? [];
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            LoadErrorMessage = ex.Message;
+            _allPeople = [];
+            ApplyFilter();
+            _userNotifications.ShowError(ex.Message, "Load People Failed");
+        }
+        finally
+        {
+            IsLoading = false;
+            HasLoaded = true;
+            OnPropertyChanged(nameof(HasNoPeople));
+        }
     }
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -127,6 +166,7 @@ public partial class PeopleViewModel : ObservableObject
 
         FilteredPeople = new(filtered);
         PeopleCount = filtered.Count;
+        OnPropertyChanged(nameof(HasNoPeople));
     }
 
     [RelayCommand]

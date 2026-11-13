@@ -304,7 +304,7 @@
                                     BorderBrush="{StaticResource BorderColor}"
                                     BorderThickness="1"
                                     ClipToBounds="True">
-                                <Image Source="{Binding ImageDisplayPath}"
+                                <Image Source="{Binding ImagePreviewSource}"
                                        Stretch="UniformToFill"
                                        Margin="2"
                                        ToolTip="Profile Image"/>

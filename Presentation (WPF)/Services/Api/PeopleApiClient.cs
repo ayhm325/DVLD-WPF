@@ -113,4 +113,26 @@ public sealed class PeopleApiClient(
             $"api/people/{id}",
             cancellationToken);
     }
+
+    public Task<ApiResult> UploadPhotoAsync(
+        int id,
+        string filePath,
+        CancellationToken cancellationToken = default) =>
+        id <= 0
+            ? Task.FromResult(ApiResult.Failure("Person ID must be greater than zero."))
+            : _apiClient.PostFileAsync($"api/people/{id}/photo", filePath, cancellationToken);
+
+    public Task<ApiResult<byte[]>> GetPhotoAsync(
+        int id,
+        CancellationToken cancellationToken = default) =>
+        id <= 0
+            ? Task.FromResult(ApiResult<byte[]>.Failure("Person ID must be greater than zero."))
+            : _apiClient.GetBytesAsync($"api/people/{id}/photo", cancellationToken);
+
+    public Task<ApiResult> DeletePhotoAsync(
+        int id,
+        CancellationToken cancellationToken = default) =>
+        id <= 0
+            ? Task.FromResult(ApiResult.Failure("Person ID must be greater than zero."))
+            : _apiClient.DeleteAsync($"api/people/{id}/photo", cancellationToken);
 }

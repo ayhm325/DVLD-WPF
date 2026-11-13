@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Presentation.Services.Api;
 using Presentation.Services.UI;
 using Presentation.Views.Windows;
+using System.Net;
 
 namespace Presentation.ViewModels;
 
@@ -22,6 +23,16 @@ public partial class DetainLicenseViewModel : ObservableObject
     [ObservableProperty] private DetainedLicenseResponse? _detainInfo;
     [ObservableProperty] private decimal _fineFees;
     [ObservableProperty] private bool _isLicenseIssued;
+    [ObservableProperty] private bool _isBusy;
+
+    public bool CanDetain => !IsBusy && FineFees >= 0 &&
+        LicenseInfo is { IsActive: true, IsExpired: false, IsDetained: false } &&
+        DetainInfo is null;
+
+    partial void OnIsBusyChanged(bool value) => IssueCommand.NotifyCanExecuteChanged();
+    partial void OnFineFeesChanged(decimal value) => IssueCommand.NotifyCanExecuteChanged();
+    partial void OnLicenseInfoChanged(DriverLicenseInfoResponse? value) => IssueCommand.NotifyCanExecuteChanged();
+    partial void OnDetainInfoChanged(DetainedLicenseResponse? value) => IssueCommand.NotifyCanExecuteChanged();
 
     public DetainLicenseViewModel(
         ILicensesApiClient licensesApiClient,
@@ -69,27 +80,41 @@ public partial class DetainLicenseViewModel : ObservableObject
         var detentionResult = await _detainedLicensesApiClient
             .GetActiveByLicenseIdAsync(LicenseInfo.LicenseId);
 
-        if (detentionResult.IsFailure)
+        if (detentionResult.IsFailure && detentionResult.StatusCode != HttpStatusCode.NotFound)
         {
             _notifications.ShowFailure(detentionResult, "Detention Status");
             return;
         }
 
-        DetainInfo = detentionResult.Value;
+        DetainInfo = detentionResult.IsSuccess ? detentionResult.Value : null;
         FineFees = DetainInfo?.FineFees ?? 0;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanDetain))]
     private async Task IssueAsync()
     {
-        if (LicenseInfo is null)
-        {
-            _userNotifications.ShowWarning("Please search for a license first.", "Detain License");
+        if (!CanDetain || LicenseInfo is null)
             return;
-        }
 
+        IsBusy = true;
+        try
+        {
+            await IssueCoreAsync(LicenseInfo);
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowError(ex.Message, "Detain License");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task IssueCoreAsync(DriverLicenseInfoResponse license)
+    {
         var alreadyDetained = await _detainedLicensesApiClient
-            .IsLicenseDetainedAsync(LicenseInfo.LicenseId);
+            .IsLicenseDetainedAsync(license.LicenseId);
 
         if (alreadyDetained.IsFailure)
         {
@@ -112,7 +137,7 @@ public partial class DetainLicenseViewModel : ObservableObject
         var result = await _detainedLicensesApiClient.DetainAsync(
             new CreateDetainedLicenseRequest
             {
-                LicenseId = LicenseInfo.LicenseId,
+                LicenseId = license.LicenseId,
                 FineFees = FineFees
             });
 

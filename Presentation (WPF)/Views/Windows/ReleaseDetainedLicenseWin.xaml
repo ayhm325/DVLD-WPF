@@ -311,6 +311,11 @@
 
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right">
+                    <TextBlock Text="Releasing license…"
+                               VerticalAlignment="Center"
+                               Foreground="{StaticResource PrimaryColor}"
+                               Margin="0,0,12,0"
+                               Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                     <Button Content="Close"
                             Style="{StaticResource SecondaryButtonStyle}"

@@ -1,67 +1,38 @@
 <Page xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      x:Class="Presentation.Views.Pages.LDLAppPage"
+      xmlns:controls="clr-namespace:Presentation.Views.Controls" x:Class="Presentation.Views.Pages.LDLAppPage"
       Title="Driving License Applications"
       Background="{StaticResource BackgroundColor}">
 
-    <Grid Margin="28">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
+<controls:PageHeader Grid.Row="0" Eyebrow="APPLICATIONS" Heading="Driving License Applications" Description="Manage local driving-license applications and test progression." Metric="{Binding Applications.Count}">
+            <controls:PageHeader.ActionContent>
+                <Button Content="+  Add application" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding AddNewCommand}" Width="160"/>
+            </controls:PageHeader.ActionContent>
+        </controls:PageHeader>
+
+        <!-- Filter and results workspace -->
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Padding="14" VerticalAlignment="Top">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
         <Border Grid.Row="0"
-                Style="{StaticResource CardStyle}"
-                Padding="22"
-                Margin="0,0,0,18">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="LOCAL LICENSE APPLICATIONS"
-                               FontSize="{StaticResource FontSizeCaption}"
-                               FontWeight="{StaticResource FontWeightSemiBold}"
-                               Foreground="{StaticResource PrimaryColor}"/>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                        <TextBlock Text="Driving License Applications"
-                                   Style="{StaticResource HeaderStyle}"/>
-                        <TextBlock Text="  •  "
-                                   Style="{StaticResource HeaderStyle}"
-                                   Foreground="{StaticResource TextMutedColor}"/>
-                        <TextBlock Text="{Binding Applications.Count}"
-                                   Style="{StaticResource HeaderStyle}"
-                                   Foreground="{StaticResource PrimaryColor}"/>
-                    </StackPanel>
-
-                    <TextBlock Text="Manage local driving-license application workflows"
-                               Foreground="{StaticResource TextMutedColor}"
-                               FontSize="{StaticResource FontSizeCaption}"
-                               Margin="0,4,0,0"/>
-                </StackPanel>
-
-                <Button Grid.Column="1"
-                        Content="+  Add New"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Command="{Binding AddNewCommand}"
-                        Width="140"
-                        Height="40"
-                        VerticalAlignment="Center"/>
-            </Grid>
-        </Border>
-
-        <!-- Filter -->
-        <Border Grid.Row="1"
-                Style="{StaticResource CardStyle}"
+                Background="{StaticResource SurfaceSecondaryColor}"
+                BorderBrush="{StaticResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusMedium}"
                 Padding="12"
-                Margin="0,0,0,16">
+                Margin="0,0,0,12">
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center">
 
@@ -98,13 +69,21 @@
         </Border>
 
         <!-- Applications -->
-        <Border Grid.Row="2"
-                Style="{StaticResource CardStyle}"
+        <Border Grid.Row="1"
+                Background="{StaticResource SurfaceColor}"
+                BorderBrush="{StaticResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource RadiusMedium}"
                 Padding="0"
-                ClipToBounds="True">
+                ClipToBounds="True"
+                VerticalAlignment="Top">
 
-            <DataGrid ItemsSource="{Binding Applications}"
-                      SelectedItem="{Binding SelectedApplication}">
+            <Grid>
+            <DataGrid x:Name="dgLocalApplications"
+                      ItemsSource="{Binding Applications}"
+                      SelectedItem="{Binding SelectedApplication}"
+                      VerticalAlignment="Top"
+                      MaxHeight="440">
 
                 <DataGrid.RowStyle>
                     <Style TargetType="{x:Type DataGridRow}"
@@ -253,6 +232,15 @@
                 </DataGrid.RowStyle>
 
                 <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Photo" Width="70" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <controls:PersonPhotoAvatar PersonId="{Binding ApplicantPersonId}"
+                                                            HorizontalAlignment="Center"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
                     <DataGridTextColumn Header="ID"
                                         Binding="{Binding LocalDrivingLicenseApplicationId}"
                                         Width="75"/>
@@ -282,10 +270,28 @@
                                         Width="135"/>
                 </DataGrid.Columns>
             </DataGrid>
+                <Border MinHeight="150" Background="{StaticResource SurfaceColor}" CornerRadius="{StaticResource RadiusMedium}"
+                        Padding="20">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasItems, ElementName=dgLocalApplications}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="No local license applications found." Style="{StaticResource CaptionStyle}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+        </Border>
+        </Grid>
         </Border>
 
         <!-- Pagination -->
-        <Border Grid.Row="3"
+        <Border Grid.Row="2"
                 Style="{StaticResource CardStyle}"
                 Padding="12"
                 Margin="0,12,0,0">
@@ -342,3 +348,4 @@
 
     </Grid>
 </Page>
+

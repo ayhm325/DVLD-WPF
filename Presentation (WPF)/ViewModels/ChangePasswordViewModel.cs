@@ -21,6 +21,17 @@ public partial class ChangePasswordViewModel : ObservableObject
     [ObservableProperty] private bool _isCurrentPasswordVisible;
     [ObservableProperty] private bool _isNewPasswordVisible;
     [ObservableProperty] private bool _isConfirmNewPasswordVisible;
+    [ObservableProperty] private bool _isSaving;
+
+    public bool CanChangePassword => !IsSaving &&
+        !string.IsNullOrWhiteSpace(CurrentPassword) &&
+        !string.IsNullOrWhiteSpace(NewPassword) &&
+        !string.IsNullOrWhiteSpace(ConfirmNewPassword);
+
+    partial void OnCurrentPasswordChanged(string value) => ChangePasswordCommand.NotifyCanExecuteChanged();
+    partial void OnNewPasswordChanged(string value) => ChangePasswordCommand.NotifyCanExecuteChanged();
+    partial void OnConfirmNewPasswordChanged(string value) => ChangePasswordCommand.NotifyCanExecuteChanged();
+    partial void OnIsSavingChanged(bool value) => ChangePasswordCommand.NotifyCanExecuteChanged();
 
     public ChangePasswordViewModel(
         IAuthApiClient authApiClient,
@@ -44,9 +55,12 @@ public partial class ChangePasswordViewModel : ObservableObject
     private void ToggleConfirmPassword() =>
         IsConfirmNewPasswordVisible = !IsConfirmNewPasswordVisible;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanChangePassword))]
     private async Task ChangePassword()
     {
+        if (!CanChangePassword)
+            return;
+
         if (string.IsNullOrWhiteSpace(CurrentPassword) ||
             string.IsNullOrWhiteSpace(NewPassword) ||
             string.IsNullOrWhiteSpace(ConfirmNewPassword))
@@ -75,6 +89,7 @@ public partial class ChangePasswordViewModel : ObservableObject
 
         try
         {
+            IsSaving = true;
             var result = await _authApiClient.ChangePasswordAsync(
                 new ChangePasswordRequest
                 {
@@ -101,6 +116,10 @@ public partial class ChangePasswordViewModel : ObservableObject
             _userNotifications.ShowError(
                 GetExceptionMessage(ex),
                 "Change Password");
+        }
+        finally
+        {
+            IsSaving = false;
         }
     }
 

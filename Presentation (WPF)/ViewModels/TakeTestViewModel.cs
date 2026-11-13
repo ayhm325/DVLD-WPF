@@ -15,12 +15,25 @@ public partial class TakeTestViewModel : ObservableObject
     private readonly IApiNotificationService _notifications;
     private readonly IUserNotificationService _userNotifications;
 
-    [ObservableProperty] private TestResult _testResult = TestResult.Fail;
+    [ObservableProperty] private TestResult _testResult = TestResult.NotTaken;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private ScheduleTestResponse? _schedule;
     [ObservableProperty] private string _fullName = string.Empty;
     [ObservableProperty] private string _licenseClassName = string.Empty;
     [ObservableProperty] private decimal _fees;
+    [ObservableProperty] private bool _isSaving;
+
+    public bool CanSave => Schedule is not null &&
+                           TestResult != TestResult.NotTaken &&
+                           !IsSaving;
+
+    public string TestTypeTitle => (TestType)(Schedule?.TestTypeId ?? 1) switch
+    {
+        TestType.Theory => "Vision Test",
+        TestType.Written => "Written Test",
+        TestType.Practical => "Practical Street Test",
+        _ => "Test"
+    };
 
     public TakeTestViewModel(
         ITestAppointmentsApiClient testAppointmentsApiClient,
@@ -39,6 +52,9 @@ public partial class TakeTestViewModel : ObservableObject
         FullName = value?.FullName ?? string.Empty;
         LicenseClassName = value?.LicenseClassName ?? string.Empty;
         Fees = value?.Fees ?? 0;
+        OnPropertyChanged(nameof(TestTypeTitle));
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnTestResultChanged(TestResult value)
@@ -46,6 +62,8 @@ public partial class TakeTestViewModel : ObservableObject
         OnPropertyChanged(nameof(IsPassed));
         OnPropertyChanged(nameof(IsFailed));
         OnPropertyChanged(nameof(IsNotTaken));
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.NotifyCanExecuteChanged();
     }
 
     public bool IsPassed
@@ -74,10 +92,10 @@ public partial class TakeTestViewModel : ObservableObject
             .FirstOrDefault()?.Close();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync()
     {
-        if (Schedule is null)
+        if (!CanSave || Schedule is null)
         {
             _userNotifications.ShowWarning(
                 "Test appointment data is not available.",
@@ -93,6 +111,7 @@ public partial class TakeTestViewModel : ObservableObject
             return;
         }
 
+        IsSaving = true;
         var request = new SaveTestResultRequest(
             Schedule.AppointmentId,
             TestResult == TestResult.Pass,
@@ -121,6 +140,10 @@ public partial class TakeTestViewModel : ObservableObject
             _userNotifications.ShowError(
                 GetExceptionMessage(ex),
                 "Take Test");
+        }
+        finally
+        {
+            IsSaving = false;
         }
     }
 
@@ -155,17 +178,6 @@ public partial class TakeTestViewModel : ObservableObject
 
             var data = result.Value;
 
-            var trialCount = await _testAppointmentsApiClient
-                .GetTrialCountAsync(
-                    data.LocalDrivingLicenseApplicationId,
-                    data.TestTypeId);
-
-            if (trialCount.IsFailure)
-            {
-                _notifications.ShowFailure(trialCount, "Take Test");
-                return;
-            }
-
             Schedule = new ScheduleTestResponse
             {
                 AppointmentId = data.AppointmentId,
@@ -173,7 +185,7 @@ public partial class TakeTestViewModel : ObservableObject
                 LocalDrivingLicenseApplicationId = data.LocalDrivingLicenseApplicationId,
                 LicenseClassName = data.LicenseClassName,
                 FullName = data.FullName,
-                Trial = trialCount.Value,
+                Trial = data.Trial,
                 Date = data.Date,
                 Fees = data.Fees,
                 TestTypeId = data.TestTypeId,
@@ -189,6 +201,12 @@ public partial class TakeTestViewModel : ObservableObject
                 GetExceptionMessage(ex),
                 "Loading Error");
         }
+    }
+
+    partial void OnIsSavingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanSave));
+        SaveCommand.NotifyCanExecuteChanged();
     }
 
     private static string GetExceptionMessage(Exception ex) =>

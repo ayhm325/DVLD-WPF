@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.IO;
 using System.Text.Json;
 
 namespace Presentation.Services.Api;
@@ -43,6 +44,82 @@ public sealed class ApiClient(HttpClient httpClient, ICurrentUserSession current
         return result.IsSuccess
             ? ApiResult.Success(result.StatusCode ?? HttpStatusCode.OK)
             : ApiResult.Failure(result.Error, result.StatusCode);
+    }
+
+    public async Task<ApiResult> PostFileAsync(
+        string requestUri,
+        string filePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            return ApiResult.Failure("The selected image file could not be found.");
+
+        try
+        {
+            using var request = CreateRequest(HttpMethod.Post, requestUri);
+            using var form = new MultipartFormDataContent();
+            await using var stream = File.OpenRead(filePath);
+            using var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(
+                Path.GetExtension(filePath).ToLowerInvariant() switch
+                {
+                    ".png" => "image/png",
+                    ".webp" => "image/webp",
+                    _ => "image/jpeg"
+                });
+            form.Add(fileContent, "file", Path.GetFileName(filePath));
+            request.Content = form;
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+                return ApiResult.Success(response.StatusCode);
+
+            return ApiResult.Failure(
+                await ExtractErrorAsync(response, cancellationToken),
+                response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failure("Unable to connect to the DVLD API.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return ApiResult.Failure($"The selected image could not be read: {ex.Message}");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiResult.Failure("The request to the DVLD API timed out.");
+        }
+    }
+
+    public async Task<ApiResult<byte[]>> GetBytesAsync(
+        string requestUri,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var request = CreateRequest(HttpMethod.Get, requestUri);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ApiResult<byte[]>.Failure(
+                    await ExtractErrorAsync(response, cancellationToken),
+                    response.StatusCode);
+            }
+
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return bytes.Length == 0
+                ? ApiResult<byte[]>.Failure("The API returned an empty image.", response.StatusCode)
+                : ApiResult<byte[]>.Success(bytes, response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult<byte[]>.Failure("Unable to connect to the DVLD API.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return ApiResult<byte[]>.Failure("The request to the DVLD API timed out.");
+        }
     }
 
     private async Task<ApiResult<T>> SendAsync<T>(

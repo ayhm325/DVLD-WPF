@@ -22,6 +22,37 @@ public partial class NewInternationalLicenseApplicationViewModel : ObservableObj
     [ObservableProperty] private string _licenseIdText = string.Empty;
     [ObservableProperty] private InternationalLicenseResponse? _applicationInfo;
     [ObservableProperty] private bool _isLicenseIssued;
+    [ObservableProperty] private bool _isBusy;
+
+    public bool CanSearch => !IsBusy &&
+        int.TryParse(LicenseIdText?.Trim(), out var id) && id > 0;
+    public bool CanIssue => !IsBusy && !IsLicenseIssued && LicenseInfo is not null;
+
+    partial void OnLicenseIdTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(CanSearch));
+        SearchCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanSearch));
+        OnPropertyChanged(nameof(CanIssue));
+        SearchCommand.NotifyCanExecuteChanged();
+        IssueCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnLicenseInfoChanged(DriverLicenseInfoResponse? value)
+    {
+        OnPropertyChanged(nameof(CanIssue));
+        IssueCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsLicenseIssuedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanIssue));
+        IssueCommand.NotifyCanExecuteChanged();
+    }
 
     public NewInternationalLicenseApplicationViewModel(
         IPeopleApiClient peopleApiClient,
@@ -45,17 +76,26 @@ public partial class NewInternationalLicenseApplicationViewModel : ObservableObj
             ?? throw new ArgumentNullException(nameof(userNotifications));
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSearch))]
     private async Task Search()
     {
-        if (!int.TryParse(LicenseIdText.Trim(), out var licenseId) ||
-            licenseId <= 0)
-        {
-            _userNotifications.ShowWarning(
-                "Please enter a valid License ID.",
-                "International License");
+        if (!CanSearch)
             return;
+
+        IsBusy = true;
+        try
+        {
+            await SearchCoreAsync();
         }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task SearchCoreAsync()
+    {
+        var licenseId = int.Parse(LicenseIdText.Trim());
 
         LocalLicenseId = 0;
         LicenseInfo = null;
@@ -89,43 +129,50 @@ public partial class NewInternationalLicenseApplicationViewModel : ObservableObj
             "International License");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanIssue))]
     private async Task Issue()
     {
-        if (LicenseInfo is null || LocalLicenseId <= 0)
-        {
-            _userNotifications.ShowWarning(
-                "Please search for a local license first.",
-                "International License");
+        if (!CanIssue || LocalLicenseId <= 0)
             return;
-        }
 
-        var result = await _internationalLicensesApiClient.IssueAsync(
-            new IssueInternationalLicenseRequest(LocalLicenseId));
-
-        if (result.IsFailure)
+        try
         {
-            _notifications.ShowFailure(
-                result,
-                "International License");
-            return;
-        }
+            IsBusy = true;
+            var result = await _internationalLicensesApiClient.IssueAsync(
+                new IssueInternationalLicenseRequest(LocalLicenseId));
 
-        if (result.Value is null ||
-            result.Value.InternationalLicenseId <= 0)
+            if (result.IsFailure)
+            {
+                _notifications.ShowFailure(
+                    result,
+                    "International License");
+                return;
+            }
+
+            if (result.Value is null ||
+                result.Value.InternationalLicenseId <= 0)
+            {
+                _userNotifications.ShowError(
+                    "International license was not returned by the API.",
+                    "International License");
+                return;
+            }
+
+            ApplicationInfo = result.Value;
+            IsLicenseIssued = true;
+
+            _userNotifications.ShowInfo(
+                "International License issued successfully.",
+                "Success");
+        }
+        catch (Exception ex)
         {
-            _userNotifications.ShowError(
-                "International license was not returned by the API.",
-                "International License");
-            return;
+            _userNotifications.ShowError(ex.Message, "International License");
         }
-
-        ApplicationInfo = result.Value;
-        IsLicenseIssued = true;
-
-        _userNotifications.ShowInfo(
-            "International License issued successfully.",
-            "Success");
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]

@@ -3,13 +3,16 @@ using CommunityToolkit.Mvvm.Input;
 using DVLD.Contracts.Country;
 using DVLD.Contracts.Person;
 using DVLD_WPF;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Presentation.Enums;
 using Presentation.Services.Api;
+using Presentation.Services;
 using Presentation.Services.UI;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 namespace Presentation.ViewModels;
 
@@ -19,7 +22,9 @@ public partial class AddEditPersonViewModel : ObservableObject
     private readonly ICountriesApiClient _countriesApiClient;
     private readonly IApiNotificationService _notifications;
     private readonly IUserNotificationService _userNotifications;
-    private readonly string _destinationFolder = @"C:\ImageDVLD\";
+    private string? _selectedPhotoFilePath;
+    private bool _removePhotoRequested;
+    private bool _hasServerPhoto;
 
     public event Action<bool>? SaveCompleted;
 
@@ -28,6 +33,7 @@ public partial class AddEditPersonViewModel : ObservableObject
     [ObservableProperty] private string _pageTitle = "Add Person";
     [ObservableProperty] private CountryResponse? _selectedCountry;
     [ObservableProperty] private string _imagePath = string.Empty;
+    [ObservableProperty] private bool _isSaving;
     [ObservableProperty] private string _firstName = string.Empty;
     [ObservableProperty] private string _secondName = string.Empty;
     [ObservableProperty] private string _thirdName = string.Empty;
@@ -49,12 +55,7 @@ public partial class AddEditPersonViewModel : ObservableObject
 
     public string CountryName => SelectedCountry?.CountryName ?? "Unknown";
 
-    public string ImageDisplayPath =>
-        !string.IsNullOrWhiteSpace(ImagePath)
-            ? ImagePath
-            : IsMale
-                ? "pack://application:,,,/Resources/Default_Male.png"
-                : "pack://application:,,,/Resources/Default_Female.png";
+    [ObservableProperty] private System.Windows.Media.ImageSource? _imagePreviewSource;
 
     public AddEditPersonViewModel(
         IPeopleApiClient peopleApiClient,
@@ -77,7 +78,8 @@ public partial class AddEditPersonViewModel : ObservableObject
         if (value)
             IsFemale = false;
 
-        OnPropertyChanged(nameof(ImageDisplayPath));
+        if (value && !_hasServerPhoto && string.IsNullOrWhiteSpace(_selectedPhotoFilePath))
+            LoadDefaultImage();
     }
 
     partial void OnIsFemaleChanged(bool value)
@@ -85,7 +87,8 @@ public partial class AddEditPersonViewModel : ObservableObject
         if (value)
             IsMale = false;
 
-        OnPropertyChanged(nameof(ImageDisplayPath));
+        if (value && !_hasServerPhoto && string.IsNullOrWhiteSpace(_selectedPhotoFilePath))
+            LoadDefaultImage();
     }
 
     partial void OnFirstNameChanged(string value) =>
@@ -147,6 +150,7 @@ public partial class AddEditPersonViewModel : ObservableObject
                 PersonId = personId.Value;
                 PageTitle = "Edit Person";
                 LoadData(personResult.Value);
+                await LoadPersonPhotoAsync(personResult.Value.PersonId);
                 return;
             }
 
@@ -181,6 +185,10 @@ public partial class AddEditPersonViewModel : ObservableObject
         IsMale = true;
         IsFemale = false;
         ImagePath = string.Empty;
+        _selectedPhotoFilePath = null;
+        _removePhotoRequested = false;
+        _hasServerPhoto = false;
+        LoadDefaultImage();
     }
 
     private void LoadData(PersonResponse person)
@@ -201,17 +209,40 @@ public partial class AddEditPersonViewModel : ObservableObject
                 c => c.CountryId == person.NationalityCountryID)
             ?? Countries.FirstOrDefault();
         ImagePath = person.ImagePath ?? string.Empty;
+        _selectedPhotoFilePath = null;
+        _removePhotoRequested = false;
+        _hasServerPhoto = !string.IsNullOrWhiteSpace(person.ImagePath);
 
         OnPropertyChanged(nameof(FullName));
         OnPropertyChanged(nameof(CountryName));
-        OnPropertyChanged(nameof(ImageDisplayPath));
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSavePerson))]
     private async Task SavePersonAsync()
     {
+        if (IsSaving)
+            return;
+
         if (!ValidateInput())
             return;
+
+        IsSaving = true;
+        try
+        {
+            await SavePersonCoreAsync();
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private bool CanSavePerson() => !IsSaving;
+
+    partial void OnIsSavingChanged(bool value) => SavePersonCommand.NotifyCanExecuteChanged();
+
+    private async Task SavePersonCoreAsync()
+    {
 
         var gender = IsMale ? Gender.Male : Gender.Female;
 
@@ -234,9 +265,8 @@ public partial class AddEditPersonViewModel : ObservableObject
                 DateOfBirth = DateOfBirth,
                 Gender = gender,
                 NationalityCountryID = SelectedCountry!.CountryId,
-                ImagePath = string.IsNullOrWhiteSpace(ImagePath)
-                    ? null
-                    : ImagePath.Trim()
+                // Photo paths are server-owned; photo changes use the dedicated photo endpoint.
+                ImagePath = null
             };
 
             var result = await _peopleApiClient.UpdateAsync(
@@ -247,6 +277,14 @@ public partial class AddEditPersonViewModel : ObservableObject
             {
                 _notifications.ShowFailure(result, "Update Person Failed");
                 SaveCompleted?.Invoke(false);
+                return;
+            }
+
+            var photoResult = await PersistPhotoChangeAsync(PersonId);
+            if (photoResult is not null && photoResult.IsFailure)
+            {
+                _notifications.ShowFailure(photoResult, "Person Updated, Photo Not Saved");
+                SaveCompleted?.Invoke(true);
                 return;
             }
 
@@ -275,9 +313,7 @@ public partial class AddEditPersonViewModel : ObservableObject
             DateOfBirth = DateOfBirth,
             Gender = gender,
             NationalityCountryID = SelectedCountry!.CountryId,
-            ImagePath = string.IsNullOrWhiteSpace(ImagePath)
-                ? null
-                : ImagePath.Trim()
+            ImagePath = null
         };
 
         var addResult = await _peopleApiClient.CreateAsync(createRequest);
@@ -286,6 +322,14 @@ public partial class AddEditPersonViewModel : ObservableObject
         {
             _notifications.ShowFailure(addResult, "Add Person Failed");
             SaveCompleted?.Invoke(false);
+            return;
+        }
+
+        var createPhotoResult = await PersistPhotoChangeAsync(addResult.Value);
+        if (createPhotoResult is not null && createPhotoResult.IsFailure)
+        {
+            _notifications.ShowFailure(createPhotoResult, "Person Added, Photo Not Saved");
+            SaveCompleted?.Invoke(true);
             return;
         }
 
@@ -324,8 +368,7 @@ public partial class AddEditPersonViewModel : ObservableObject
     {
         var dialog = new OpenFileDialog
         {
-            Filter =
-                "Image Files (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp"
+            Filter = "Image Files (*.jpg;*.jpeg;*.png;*.webp)|*.jpg;*.jpeg;*.png;*.webp"
         };
 
         if (dialog.ShowDialog() != true)
@@ -333,16 +376,18 @@ public partial class AddEditPersonViewModel : ObservableObject
 
         try
         {
-            Directory.CreateDirectory(_destinationFolder);
+            var file = new FileInfo(dialog.FileName);
+            if (file.Length == 0 || file.Length > 5 * 1024 * 1024)
+            {
+                _userNotifications.ShowWarning(
+                    "Choose a non-empty image no larger than 5 MB.",
+                    "Image Validation");
+                return;
+            }
 
-            var extension = Path.GetExtension(dialog.FileName);
-            var targetPath = Path.Combine(
-                _destinationFolder,
-                $"{Guid.NewGuid()}{extension}");
-
-            File.Copy(dialog.FileName, targetPath, true);
-            ImagePath = targetPath;
-            OnPropertyChanged(nameof(ImageDisplayPath));
+            _selectedPhotoFilePath = dialog.FileName;
+            _removePhotoRequested = false;
+            ImagePreviewSource = LoadBitmapFromFile(dialog.FileName);
         }
         catch (Exception ex)
         {
@@ -355,8 +400,81 @@ public partial class AddEditPersonViewModel : ObservableObject
     [RelayCommand]
     private void RemoveImage()
     {
-        ImagePath = string.Empty;
-        OnPropertyChanged(nameof(ImageDisplayPath));
+        _selectedPhotoFilePath = null;
+        _removePhotoRequested = _hasServerPhoto;
+        ImagePreviewSource = CreateDefaultImage();
+    }
+
+    private async Task<Presentation.Services.Results.ApiResult?> PersistPhotoChangeAsync(int personId)
+    {
+        if (!string.IsNullOrWhiteSpace(_selectedPhotoFilePath))
+        {
+            var uploadResult = await _peopleApiClient.UploadPhotoAsync(personId, _selectedPhotoFilePath);
+            if (uploadResult.IsSuccess)
+                App.ServiceProvider.GetService<PersonPhotoCache>()?.Invalidate(personId);
+            return uploadResult;
+        }
+
+        if (_removePhotoRequested && _hasServerPhoto)
+        {
+            var deleteResult = await _peopleApiClient.DeletePhotoAsync(personId);
+            if (deleteResult.IsSuccess)
+                App.ServiceProvider.GetService<PersonPhotoCache>()?.Invalidate(personId);
+            return deleteResult;
+        }
+
+        return null;
+    }
+
+    private async Task LoadPersonPhotoAsync(int personId)
+    {
+        if (!_hasServerPhoto)
+        {
+            LoadDefaultImage();
+            return;
+        }
+
+        try
+        {
+            var photoCache = App.ServiceProvider.GetService<PersonPhotoCache>();
+            var image = photoCache is null
+                ? null
+                : await photoCache.GetAsync(personId, _peopleApiClient);
+            if (image is not null)
+            {
+                ImagePreviewSource = image;
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowWarning(
+                $"The saved photo could not be displayed. {GetExceptionMessage(ex)}",
+                "Photo Preview");
+        }
+
+        LoadDefaultImage();
+    }
+
+    private void LoadDefaultImage() => ImagePreviewSource = CreateDefaultImage();
+
+    private BitmapImage CreateDefaultImage()
+    {
+        var resource = IsMale
+            ? "pack://application:,,,/Resources/Default_Male.png"
+            : "pack://application:,,,/Resources/Default_Female.png";
+        return new BitmapImage(new Uri(resource, UriKind.Absolute));
+    }
+
+    private static BitmapImage LoadBitmapFromFile(string path)
+    {
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.UriSource = new Uri(path, UriKind.Absolute);
+        bitmap.EndInit();
+        bitmap.Freeze();
+        return bitmap;
     }
 
     [RelayCommand]
