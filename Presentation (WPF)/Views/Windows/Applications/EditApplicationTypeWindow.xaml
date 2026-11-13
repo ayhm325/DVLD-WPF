@@ -128,9 +128,9 @@
                     CornerRadius="0,0,16,16" Padding="28,12">
                 <Grid>
                     <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessColor}"
+                        <Ellipse Width="8" Height="8" Fill="{StaticResource PrimaryColor}"
                                  VerticalAlignment="Center"/>
-                        <TextBlock Text="Ready to save changes" FontSize="10"
+                        <TextBlock Text="Changes are saved after confirmation from the service." FontSize="10"
                                    Foreground="{StaticResource TextMutedColor}" Margin="8,0,0,0"
                                    VerticalAlignment="Center"/>
                     </StackPanel>

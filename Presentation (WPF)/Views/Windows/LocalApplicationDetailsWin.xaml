@@ -108,6 +108,24 @@
                           HorizontalScrollBarVisibility="Disabled"
                           Margin="20,15,20,20">
                 <StackPanel>
+                    <Border Background="{StaticResource SurfaceColor}"
+                            Padding="18" CornerRadius="{StaticResource RadiusMedium}"
+                            Margin="0,0,0,15"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <ProgressBar Width="160" Height="5" IsIndeterminate="True"/>
+                            <TextBlock Text="Loading application details…" Style="{StaticResource CaptionStyle}"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="{StaticResource DangerLightColor}"
+                            BorderBrush="{StaticResource DangerColor}" BorderThickness="1"
+                            Padding="14" CornerRadius="{StaticResource RadiusMedium}"
+                            Margin="0,0,0,15"
+                            Visibility="{Binding HasLoadError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding LoadErrorMessage}" Foreground="{StaticResource DangerColor}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
                     <controls:DrivingLicenseApplicationInfo
                         x:Name="DrivingLicenseApplicationInfoControl"
                         DrivingLicenseApplicationId="{Binding LdlAppInfo.LocalDrivingLicenseApplicationId}"

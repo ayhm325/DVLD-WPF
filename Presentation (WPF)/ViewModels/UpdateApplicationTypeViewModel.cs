@@ -14,6 +14,11 @@ public partial class UpdateApplicationTypeViewModel : ObservableObject
     private readonly IUserNotificationService _userNotifications;
 
     [ObservableProperty] private UpdateApplicationTypeRequest? _currentApplicationType = new();
+    [ObservableProperty] private bool _isSaving;
+
+    private bool CanSave() => CurrentApplicationType is not null && !IsSaving;
+    partial void OnIsSavingChanged(bool value) => SaveCommand.NotifyCanExecuteChanged();
+    partial void OnCurrentApplicationTypeChanged(UpdateApplicationTypeRequest? value) => SaveCommand.NotifyCanExecuteChanged();
 
     public UpdateApplicationTypeViewModel(
         IApplicationTypesApiClient applicationTypesApiClient,
@@ -53,23 +58,35 @@ public partial class UpdateApplicationTypeViewModel : ObservableObject
         };
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync(Window window)
     {
-        if (CurrentApplicationType is null)
+        if (!CanSave() || CurrentApplicationType is null)
             return;
 
-        var result = await _applicationTypesApiClient.UpdateAsync(
-            CurrentApplicationType.ApplicationTypeId, CurrentApplicationType);
-
-        if (result.IsFailure)
+        IsSaving = true;
+        try
         {
-            _notifications.ShowFailure(result, "Update Failed");
-            return;
-        }
+            var result = await _applicationTypesApiClient.UpdateAsync(
+                CurrentApplicationType.ApplicationTypeId, CurrentApplicationType);
 
-        _userNotifications.ShowInfo("Application Type updated successfully!", "Success");
-        window?.Close();
+            if (result.IsFailure)
+            {
+                _notifications.ShowFailure(result, "Update Failed");
+                return;
+            }
+
+            _userNotifications.ShowInfo("Application Type updated successfully!", "Success");
+            window?.Close();
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowError(ex.Message, "Update Application Type");
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     [RelayCommand]

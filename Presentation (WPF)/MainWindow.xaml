@@ -15,14 +15,22 @@
         ResizeMode="CanResize">
 
     <Window.Resources>
+        <!-- The shell keeps the warm application palette; navy is deliberately scoped to navigation. -->
+        <SolidColorBrush x:Key="SidebarNavyBackground" Color="#0F172A"/>
+        <SolidColorBrush x:Key="SidebarNavySurface" Color="#172554"/>
+        <SolidColorBrush x:Key="SidebarNavyText" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="SidebarNavyMuted" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="SidebarNavyAccent" Color="#C4A484"/>
+        <SolidColorBrush x:Key="SidebarNavyActive" Color="#1E3A8A"/>
+        <SolidColorBrush x:Key="SidebarNavyBorder" Color="#334155"/>
         <!-- Main navigation -->
         <Style x:Key="NavItemStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{StaticResource SidebarTextColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource SidebarNavyText}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,10"/>
-            <Setter Property="Margin" Value="8,2"/>
+            <Setter Property="Padding" Value="12,9"/>
+            <Setter Property="Margin" Value="8,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Focusable" Value="True"/>
             <Setter Property="AutomationProperties.Name" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
@@ -30,11 +38,12 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="NavButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusMedium}" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center" RecognizesAccessKey="True"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="NavButtonBorder" Property="Background" Value="{StaticResource SidebarHoverColor}"/><Setter TargetName="NavButtonBorder" Property="BorderBrush" Value="{StaticResource SidebarBorderColor}"/></Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="NavButtonBorder" Property="BorderBrush" Value="{StaticResource SidebarAccentColor}"/><Setter TargetName="NavButtonBorder" Property="BorderThickness" Value="2"/></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="NavButtonBorder" Property="Background" Value="{StaticResource SidebarNavySurface}"/><Setter TargetName="NavButtonBorder" Property="BorderBrush" Value="{StaticResource SidebarNavyBorder}"/></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="NavButtonBorder" Property="BorderBrush" Value="{StaticResource SidebarNavyAccent}"/><Setter TargetName="NavButtonBorder" Property="BorderThickness" Value="2"/></Trigger>
                             <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.55"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -42,8 +51,8 @@
             </Setter>
         </Style>
         <Style x:Key="NavItemActiveStyle" TargetType="Button" BasedOn="{StaticResource NavItemStyle}">
-            <Setter Property="Background" Value="{StaticResource SidebarActiveColor}"/>
-            <Setter Property="BorderBrush" Value="{StaticResource SecondaryBrownColor}"/>
+            <Setter Property="Background" Value="{StaticResource SidebarNavyActive}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SidebarNavyAccent}"/>
         </Style>
         <Style x:Key="StatCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource SurfaceColor}"/>
@@ -244,262 +253,95 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Sidebar -->
-                <Border Grid.Column="0"
-                        Background="{StaticResource SidebarBackgroundColor}"
-                        BorderBrush="{StaticResource SidebarBorderColor}"
-                        BorderThickness="0,0,1,0">
+                <!-- Sidebar: the navy treatment is intentionally isolated from the warm content canvas. -->
+                <Border Grid.Column="0" Background="{StaticResource SidebarNavyBackground}"
+                        BorderBrush="{StaticResource SidebarNavyBorder}" BorderThickness="0,0,1,0">
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="124"/>
+                            <RowDefinition Height="82"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="74"/>
+                            <RowDefinition Height="184"/>
                         </Grid.RowDefinitions>
 
-                        <Border Grid.Row="0" Margin="14,14,14,8" Padding="14"
-                                Background="{StaticResource SidebarSurfaceColor}"
-                                BorderBrush="{StaticResource SidebarBorderColor}" BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusLarge}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="46"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <controls:PersonPhotoAvatar Width="42" Height="42"
-                                    PersonId="{Binding CurrentUserPersonId, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                                <StackPanel Grid.Column="1" Margin="10,0,0,0"
-                                            VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding CurrentUserFullName,RelativeSource={RelativeSource AncestorType=Window}}"
-                                               Foreground="{StaticResource SidebarTextColor}" FontSize="12"
-                                               FontWeight="SemiBold"
-                                               TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="Signed in"
-                                               Foreground="{StaticResource SidebarMutedColor}" FontSize="10"
-                                               Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <Border Grid.Column="1" VerticalAlignment="Bottom"
-                                        Height="3" Width="44"
-                                        HorizontalAlignment="Left"
-                                        Background="{StaticResource SecondaryBrownColor}"
-                                        CornerRadius="2" Margin="10,0,0,0"/>
-                            </Grid>
-                        </Border>
+                        <Grid Grid.Row="0" Margin="14,12,12,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="*"/><ColumnDefinition Width="34"/></Grid.ColumnDefinitions>
+                            <Border Width="38" Height="38" CornerRadius="12" Background="{StaticResource SidebarNavyActive}" VerticalAlignment="Center">
+                                <TextBlock Text="D" Foreground="{StaticResource SidebarNavyAccent}" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="9,0,4,0" VerticalAlignment="Center">
+                                <TextBlock Tag="SidebarLabel" Text="DVLD" Foreground="{StaticResource SidebarNavyText}" FontWeight="Bold" FontSize="14"/>
+                                <TextBlock Tag="SidebarLabel" Text="Enterprise Portal" Foreground="{StaticResource SidebarNavyMuted}" FontSize="9" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button x:Name="SidebarCollapseButton" Grid.Column="2" ToolTip="Collapse sidebar" Click="SidebarCollapseButton_Click"
+                                    Background="Transparent" BorderBrush="Transparent" Foreground="{StaticResource SidebarNavyMuted}" Padding="4">
+                                <TextBlock x:Name="SidebarCollapseGlyph" Text="‹" FontSize="20" HorizontalAlignment="Center"/>
+                            </Button>
+                        </Grid>
 
-                        <ScrollViewer Grid.Row="1"
-                                      VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer Grid.Row="1" x:Name="SidebarNavigationScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel Margin="8,2,8,10">
-                                <TextBlock Text="WORKSPACE" FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,8,0,6"/>
-
-                                <Button x:Name="NavDashboard" Tag="Dashboard" ToolTip="Dashboard" Style="{StaticResource NavItemActiveStyle}"
-                                        Click="NavDashboard_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⌂" Width="28" FontSize="17"
-                                                   Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Dashboard" FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button x:Name="NavDashboard" Tag="Dashboard" ToolTip="Dashboard" Style="{StaticResource NavItemActiveStyle}" Click="NavDashboard_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="⌂" Width="28" FontSize="17" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Dashboard" Foreground="{StaticResource SidebarNavyText}" FontWeight="SemiBold"/></StackPanel>
                                 </Button>
 
-                                <TextBlock x:Name="NavPeopleHeader" Text="DIRECTORY"
-                                           FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,15,0,6"/>
-                                <Button x:Name="NavPeople" Tag="Manage People" ToolTip="Manage People" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="●" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Manage People" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <TextBlock x:Name="NavPeopleHeader" Tag="SidebarSection" Text="DIRECTORY" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SidebarNavyMuted}" Margin="12,15,0,6"/>
+                                <Button x:Name="NavPeople" Tag="Manage People" ToolTip="People" Style="{StaticResource NavItemStyle}" Click="NavPage_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="●" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="People" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
-                                <Button x:Name="NavDrivers" Tag="Manage Drivers" ToolTip="Manage Drivers" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="◆" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Manage Drivers" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button x:Name="NavDrivers" Tag="Manage Drivers" ToolTip="Drivers" Style="{StaticResource NavItemStyle}" Click="NavPage_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◆" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Drivers" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
 
-                                <TextBlock x:Name="NavLicenseServicesHeader" Text="LICENSE SERVICES"
-                                           FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,15,0,6"/>
-                                <Button x:Name="NavNewLocal" Tag="New Local License" ToolTip="New Local License" Style="{StaticResource NavItemStyle}"
-                                        Click="NavNewLocal_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="+" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center" FontSize="16"/>
-                                        <TextBlock Text="New Local License" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <TextBlock x:Name="NavApplicationsHeader" Tag="SidebarSection" Text="APPLICATIONS &amp; TESTS" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SidebarNavyMuted}" Margin="12,15,0,6"/>
+                                <Button x:Name="NavLocalApps" Tag="Local Applications" ToolTip="Local Applications" Style="{StaticResource NavItemStyle}" Click="NavPage_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="▦" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Local Applications" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
-                                <Button x:Name="NavNewInternational" Tag="New International" ToolTip="New International" Style="{StaticResource NavItemStyle}"
-                                        Click="NavNewInternational_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="◎" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="New International" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button Tag="Test Appointments" ToolTip="Test appointments are opened from a local application" Style="{StaticResource NavItemStyle}" IsEnabled="False">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◷" Width="28" Foreground="{StaticResource SidebarNavyMuted}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Test Appointments" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
-                                <Button x:Name="NavRenew" Tag="Renew License" ToolTip="Renew License" Style="{StaticResource NavItemStyle}"
-                                        Click="NavRenew_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="↻" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Renew License" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="NavReplace" Tag="Replace License" ToolTip="Replace License" Style="{StaticResource NavItemStyle}"
-                                        Click="NavReplace_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="◇" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Replace License" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button x:Name="NavIntlApps" Tag="International Apps" ToolTip="International Licenses" Style="{StaticResource NavItemStyle}" Click="NavPage_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◎" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="International Licenses" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
 
-                                <TextBlock x:Name="NavApplicationsHeader" Text="APPLICATIONS"
-                                           FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,15,0,6"/>
-                                <Button x:Name="NavLocalApps" Tag="Local Applications" ToolTip="Local Applications" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="▦" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Local Applications" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <TextBlock x:Name="NavLicenseServicesHeader" Tag="SidebarSection" Text="LICENSE SERVICES" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SidebarNavyMuted}" Margin="12,15,0,6"/>
+                                <Button Tag="Licenses" ToolTip="License details are opened from a person or driver record" Style="{StaticResource NavItemStyle}" IsEnabled="False">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="▤" Width="28" Foreground="{StaticResource SidebarNavyMuted}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Licenses" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
-                                <Button x:Name="NavIntlApps" Tag="International Apps" ToolTip="International Apps" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="▤" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="International Apps" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button x:Name="NavRenew" Tag="Renew License" ToolTip="Renew License" Style="{StaticResource NavItemStyle}" Click="NavRenew_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="↻" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Renew License" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
-                                <TextBlock x:Name="NavLicenseManagementHeader" Text="LICENSE MANAGEMENT"
-                                           FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,15,0,6"/>
-                                <Button x:Name="NavDetained" Tag="Detained Licenses" ToolTip="Detained Licenses" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="!" Width="28" Foreground="{StaticResource DangerColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Detained Licenses" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button x:Name="NavReplace" Tag="Replace License" ToolTip="Replace License" Style="{StaticResource NavItemStyle}" Click="NavReplace_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◇" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Replace License" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
-                                <Button x:Name="NavDetainLicense" Tag="Detain License" ToolTip="Detain License" Style="{StaticResource NavItemStyle}"
-                                        Click="NavDetainLicense_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⊗" Width="28" Foreground="{StaticResource DangerColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Detain License" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button x:Name="NavDetainLicense" Tag="Detain License" ToolTip="Detain License" Style="{StaticResource NavItemStyle}" Click="NavDetainLicense_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="⊗" Width="28" Foreground="{StaticResource DangerColor}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Detain License" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
-                                <Button x:Name="NavReleaseDetained" Tag="Release Detained" ToolTip="Release Detained" Style="{StaticResource NavItemStyle}"
-                                        Click="NavReleaseDetained_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="✓" Width="28" Foreground="{StaticResource SuccessColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Release Detained" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <Button x:Name="NavDetained" Tag="Detained Licenses" ToolTip="Detained Licenses" Style="{StaticResource NavItemStyle}" Click="NavPage_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="!" Width="28" Foreground="{StaticResource DangerColor}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Detained Licenses" Foreground="{StaticResource SidebarNavyText}"/></StackPanel>
                                 </Button>
 
-                                <TextBlock x:Name="NavManagementHeader" Text="ADMINISTRATION"
-                                           FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,15,0,6"/>
-                                <Button x:Name="NavUsers" Tag="Users" ToolTip="Users" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="♟" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Users" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
+                                <TextBlock x:Name="NavSettingsHeader" Tag="SidebarSection" Text="SETTINGS" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SidebarNavyMuted}" Margin="12,15,0,6"/>
+                                <Button x:Name="NavSettings" Tag="Settings" ToolTip="Settings" Style="{StaticResource NavItemStyle}" Click="NavSettings_Click">
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/><ColumnDefinition Width="22"/></Grid.ColumnDefinitions><TextBlock Text="⚙" FontSize="15" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Grid.Column="1" Tag="SidebarLabel" Text="Settings" Foreground="{StaticResource SidebarNavyText}"/><TextBlock x:Name="SettingsChevron" Grid.Column="2" Tag="SidebarLabel" Text="›" Foreground="{StaticResource SidebarNavyMuted}" TextAlignment="Center"/></Grid>
                                 </Button>
-                                <Button x:Name="NavAppTypes" Tag="Application Types" ToolTip="Application Types" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="▣" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Application Types" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="NavTestTypes" Tag="Test Types" ToolTip="Test Types" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="☑" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Test Types" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
-                                </Button>
-
-                                <TextBlock x:Name="NavReferenceHeader" Text="REFERENCE DATA"
-                                           FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,15,0,6"/>
-                                <Button x:Name="NavLicenseClasses" Tag="License Classes" ToolTip="License Classes" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="▤" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="License Classes" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="NavCountries" Tag="Countries" ToolTip="Countries" Style="{StaticResource NavItemStyle}"
-                                        Click="NavPage_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="◎" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Countries" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
-                                </Button>
-
-                                <TextBlock Text="ACCOUNT" FontSize="9" FontWeight="Bold"
-                                           Foreground="{StaticResource SidebarMutedColor}"
-                                           Margin="12,15,0,6"/>
-                                <Button x:Name="NavMyProfile" Tag="My Profile" ToolTip="My Profile" Style="{StaticResource NavItemStyle}"
-                                        Click="NavMyProfile_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="○" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="My Profile" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="NavChangePassword" Tag="Change Password" ToolTip="Change Password" Style="{StaticResource NavItemStyle}"
-                                        Click="NavChangePassword_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="⌘" Width="28" Foreground="{StaticResource SidebarAccentColor}"
-                                                   TextAlignment="Center"/>
-                                        <TextBlock Text="Change Password" Foreground="{StaticResource SidebarTextColor}"/>
-                                    </StackPanel>
-                                </Button>
+                                <StackPanel x:Name="SettingsSubmenu" Margin="18,0,0,0" Visibility="Collapsed">
+                                    <Button x:Name="NavUsers" Tag="Users" ToolTip="Users" Style="{StaticResource NavItemStyle}" Click="NavPage_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="•" Width="20" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Users" Foreground="{StaticResource SidebarNavyText}"/></StackPanel></Button>
+                                    <Button x:Name="NavAppTypes" Tag="Application Types" ToolTip="Application Types" Style="{StaticResource NavItemStyle}" Click="NavPage_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="•" Width="20" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Application Types" Foreground="{StaticResource SidebarNavyText}"/></StackPanel></Button>
+                                    <Button x:Name="NavLicenseClasses" Tag="License Classes" ToolTip="License Classes" Style="{StaticResource NavItemStyle}" Click="NavPage_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="•" Width="20" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="License Classes" Foreground="{StaticResource SidebarNavyText}"/></StackPanel></Button>
+                                    <Button x:Name="NavTestTypes" Tag="Test Types" ToolTip="Test Types" Style="{StaticResource NavItemStyle}" Click="NavPage_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="•" Width="20" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Test Types" Foreground="{StaticResource SidebarNavyText}"/></StackPanel></Button>
+                                    <Button x:Name="NavCountries" Tag="Countries" ToolTip="Countries" Style="{StaticResource NavItemStyle}" Click="NavPage_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="•" Width="20" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Countries" Foreground="{StaticResource SidebarNavyText}"/></StackPanel></Button>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
 
-                        <Border Grid.Row="2" Margin="12,6,12,12"
-                                Background="{StaticResource SidebarSurfaceColor}"
-                                BorderBrush="{StaticResource SidebarBorderColor}"
-                                BorderThickness="1"
-                                CornerRadius="12"
-                                Padding="4">
-                            <Button x:Name="NavSignOut" Tag="Sign Out" ToolTip="Sign Out" Style="{StaticResource NavItemStyle}" Cursor="Hand"
-                                    Click="NavSignOut_Click"
-                                    Padding="10,9">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="↪" Width="28" Foreground="{StaticResource DangerColor}"
-                                               TextAlignment="Center" FontSize="15"/>
-                                    <TextBlock Text="Sign Out" Foreground="{StaticResource SidebarMutedColor}"
-                                               FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Button>
+                        <Border Grid.Row="2" Margin="10,5,10,10" Background="{StaticResource SidebarNavySurface}" BorderBrush="{StaticResource SidebarNavyBorder}" BorderThickness="1" CornerRadius="12" Padding="5">
+                            <StackPanel>
+                                <TextBlock Tag="SidebarSection" Text="ACCOUNT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SidebarNavyMuted}" Margin="8,3,0,3"/>
+                                <Button x:Name="NavMyProfile" Tag="My Profile" ToolTip="My Profile" Style="{StaticResource NavItemStyle}" Click="NavMyProfile_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="○" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="My Profile" Foreground="{StaticResource SidebarNavyText}"/></StackPanel></Button>
+                                <Button x:Name="NavChangePassword" Tag="Change Password" ToolTip="Change Password" Style="{StaticResource NavItemStyle}" Click="NavChangePassword_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="⌘" Width="28" Foreground="{StaticResource SidebarNavyAccent}" TextAlignment="Center"/><TextBlock Tag="SidebarLabel" Text="Change Password" Foreground="{StaticResource SidebarNavyText}"/></StackPanel></Button>
+                                <Border Height="1" Background="{StaticResource SidebarNavyBorder}" Margin="8,5"/>
+                                <Button x:Name="NavSignOut" Tag="Sign Out" ToolTip="Sign Out" Style="{StaticResource NavItemStyle}" Click="NavSignOut_Click"><StackPanel Orientation="Horizontal"><TextBlock Text="↪" Width="28" Foreground="#FDA4AF" TextAlignment="Center" FontSize="15"/><TextBlock Tag="SidebarLabel" Text="Sign Out" Foreground="{StaticResource SidebarNavyText}" FontWeight="SemiBold"/></StackPanel></Button>
+                            </StackPanel>
                         </Border>
                     </Grid>
                 </Border>

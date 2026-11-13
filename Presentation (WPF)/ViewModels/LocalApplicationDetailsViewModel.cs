@@ -17,6 +17,11 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
     [ObservableProperty] private ApplicationBasicInfoResponse? _applicationInfo;
     [ObservableProperty] private LocalDrivingLicenseApplicationResponse? _ldlAppInfo;
     [ObservableProperty] private LicenseResponse? _licenseInfo;
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private string _loadErrorMessage = string.Empty;
+
+    public bool HasLoadError => !string.IsNullOrWhiteSpace(LoadErrorMessage);
+    partial void OnLoadErrorMessageChanged(string value) => OnPropertyChanged(nameof(HasLoadError));
 
     public LocalApplicationDetailsViewModel(
         ILocalDrivingLicenseApplicationsApiClient localApplicationsApiClient,
@@ -33,6 +38,7 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
     public async Task LoadAsync(int localId)
     {
         ResetState();
+        LoadErrorMessage = string.Empty;
 
         if (localId <= 0)
         {
@@ -42,12 +48,14 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
             return;
         }
 
+        IsLoading = true;
         try
         {
             var localAppResult = await _localApplicationsApiClient.GetByIdAsync(localId);
 
             if (localAppResult.IsFailure)
             {
+                LoadErrorMessage = localAppResult.Error;
                 _notifications.ShowFailure(localAppResult, "Application Details");
                 return;
             }
@@ -67,6 +75,7 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
 
             if (applicationResult.IsFailure)
             {
+                LoadErrorMessage = applicationResult.Error;
                 _notifications.ShowFailure(applicationResult, "Application Details");
                 return;
             }
@@ -87,6 +96,7 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
 
             if (licensesResult.IsFailure)
             {
+                LoadErrorMessage = licensesResult.Error;
                 _notifications.ShowFailure(licensesResult, "Application Details");
                 return;
             }
@@ -97,9 +107,14 @@ public partial class LocalApplicationDetailsViewModel : ObservableObject
         catch (Exception ex)
         {
             ResetState();
+            LoadErrorMessage = GetExceptionMessage(ex);
             _userNotifications.ShowError(
                 GetExceptionMessage(ex),
                 "Application Details");
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 

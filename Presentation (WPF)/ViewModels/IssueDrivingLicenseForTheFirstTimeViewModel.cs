@@ -25,6 +25,12 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
     [ObservableProperty] private ApplicationBasicInfoResponse? _basicApplicationInfo;
     [ObservableProperty] private string? _notes;
     [ObservableProperty] private bool _isBusy;
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _hasLoaded;
+
+    partial void OnIsBusyChanged(bool value) => IssueCommand.NotifyCanExecuteChanged();
+    partial void OnIsLoadingChanged(bool value) => IssueCommand.NotifyCanExecuteChanged();
+    partial void OnHasLoadedChanged(bool value) => IssueCommand.NotifyCanExecuteChanged();
 
     public IssueDrivingLicenseForTheFirstTimeViewModel(
         int localAppId,
@@ -50,6 +56,8 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
 
     private async Task LoadAsync()
     {
+        IsLoading = true;
+        HasLoaded = false;
         try
         {
             var localAppResult = await _localApplicationsApiClient.GetByIdAsync(_localAppId);
@@ -92,6 +100,7 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
             }
 
             BasicApplicationInfo = applicationResult.Value;
+            HasLoaded = true;
         }
         catch (Exception ex)
         {
@@ -99,12 +108,18 @@ public partial class IssueDrivingLicenseForTheFirstTimeViewModel : ObservableObj
                 GetExceptionMessage(ex),
                 "Loading Error");
         }
+        finally
+        {
+            IsLoading = false;
+            IssueCommand.NotifyCanExecuteChanged();
+        }
     }
 
     [RelayCommand]
     private void Close() => _window.Close();
 
-    private bool CanIssue() => !IsBusy;
+    private bool CanIssue() => HasLoaded && !IsLoading && !IsBusy &&
+        BasicApplicationInfo is not null;
 
     [RelayCommand(CanExecute = nameof(CanIssue))]
     private async Task Issue()

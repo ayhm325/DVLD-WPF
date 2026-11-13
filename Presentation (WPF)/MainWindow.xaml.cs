@@ -13,6 +13,7 @@ using Presentation.Views.Windows;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
@@ -34,6 +35,8 @@ public partial class MainWindow : Window
     private Storyboard? _cursorBlinkStoryboard;
     private DispatcherTimer? _clockTimer;
     private int _typewriterIndex;
+    private bool _isSidebarCollapsed;
+    private bool _isSettingsExpanded;
 
     private const string TypewriterFullText =
         "Welcome back. Use the sidebar to navigate, or choose a quick action below to get started.";
@@ -62,9 +65,8 @@ public partial class MainWindow : Window
 
         _allNavItems =
         [
-            NavDashboard, NavPeople, NavDrivers, NavNewLocal, NavNewInternational,
-            NavRenew, NavReplace, NavReleaseDetained, NavLocalApps, NavIntlApps,
-            NavDetained, NavDetainLicense, NavUsers, NavAppTypes,
+            NavDashboard, NavPeople, NavDrivers, NavRenew, NavReplace,
+            NavLocalApps, NavIntlApps, NavDetained, NavDetainLicense, NavUsers, NavAppTypes,
             NavTestTypes, NavLicenseClasses, NavCountries, NavMyProfile,
             NavChangePassword, NavSignOut
         ];
@@ -94,34 +96,28 @@ public partial class MainWindow : Window
         SetVisibility(
             isStaff ? Visibility.Visible : Visibility.Collapsed,
             NavPeople,
-            NavNewLocal,
-            NavNewInternational,
             NavRenew,
             NavReplace,
             NavDetainLicense,
-            NavReleaseDetained,
             NavLocalApps,
             NavIntlApps,
-            NavLicenseClasses,
-            NavCountries,
             NavDrivers,
             NavDetained,
             NavPeopleHeader,
             NavLicenseServicesHeader,
             NavApplicationsHeader,
-            NavLicenseManagementHeader,
             QuickActionsSection);
 
         SetVisibility(
             isAdmin ? Visibility.Visible : Visibility.Collapsed,
             NavUsers,
             NavAppTypes,
-            NavTestTypes,
-            NavManagementHeader);
+            NavTestTypes);
 
         SetVisibility(
             isAdmin || isStaff ? Visibility.Visible : Visibility.Collapsed,
-            NavReferenceHeader,
+            NavSettingsHeader,
+            NavSettings,
             NavLicenseClasses,
             NavCountries);
     }
@@ -148,9 +144,12 @@ public partial class MainWindow : Window
 
     private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var preferredWidth = ActualWidth < 1120 ? 216 : 248;
-        if (SidebarColumn.Width.Value != preferredWidth)
-            SidebarColumn.Width = new GridLength(preferredWidth);
+        if (!_isSidebarCollapsed)
+        {
+            var preferredWidth = ActualWidth < 1120 ? 216 : 264;
+            if (SidebarColumn.Width.Value != preferredWidth)
+                SidebarColumn.Width = new GridLength(preferredWidth);
+        }
 
         var statisticColumns = ActualWidth < 1180 ? 2 : 4;
         StatsPrimaryGrid.Columns = statisticColumns;
@@ -198,7 +197,67 @@ public partial class MainWindow : Window
         if (item != NavSignOut)
             item.Style = activeStyle;
 
+        if (IsSettingsItem(item))
+        {
+            NavSettings.Style = activeStyle;
+            _isSettingsExpanded = true;
+            UpdateSettingsSubmenu();
+        }
+
         _activeNavItem = item;
+    }
+
+    private bool IsSettingsItem(Button item) =>
+        item == NavAppTypes || item == NavLicenseClasses || item == NavTestTypes || item == NavCountries;
+
+    private void SidebarCollapseButton_Click(object sender, RoutedEventArgs e)
+    {
+        _isSidebarCollapsed = !_isSidebarCollapsed;
+        SidebarColumn.Width = new GridLength(_isSidebarCollapsed ? 72 : ActualWidth < 1120 ? 216 : 264);
+        SidebarCollapseGlyph.Text = _isSidebarCollapsed ? "›" : "‹";
+        SidebarCollapseButton.ToolTip = _isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar";
+
+        foreach (var textBlock in FindVisualChildren<TextBlock>(this))
+        {
+            if (Equals(textBlock.Tag, "SidebarLabel") || Equals(textBlock.Tag, "SidebarSection"))
+                textBlock.Visibility = _isSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        foreach (var button in _allNavItems)
+            button.HorizontalContentAlignment = _isSidebarCollapsed ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+
+        NavSettings.HorizontalContentAlignment = _isSidebarCollapsed ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+        UpdateSettingsSubmenu();
+    }
+
+    private void NavSettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isSidebarCollapsed)
+            SidebarCollapseButton_Click(SidebarCollapseButton, e);
+
+        _isSettingsExpanded = !_isSettingsExpanded;
+        UpdateSettingsSubmenu();
+    }
+
+    private void UpdateSettingsSubmenu()
+    {
+        SettingsSubmenu.Visibility = !_isSidebarCollapsed && _isSettingsExpanded
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        SettingsChevron.Text = _isSettingsExpanded ? "⌄" : "›";
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T result)
+                yield return result;
+
+            foreach (var descendant in FindVisualChildren<T>(child))
+                yield return descendant;
+        }
     }
 
     private void NavigateToPage(string title, string subtitle, Button navItem, Page page)

@@ -14,6 +14,11 @@ public partial class UpdateTestTypeViewModel : ObservableObject
     private readonly IUserNotificationService _userNotifications;
 
     [ObservableProperty] private UpdateTestTypeRequest? _currentTestType = new();
+    [ObservableProperty] private bool _isSaving;
+
+    private bool CanSave() => CurrentTestType is not null && !IsSaving;
+    partial void OnIsSavingChanged(bool value) => SaveCommand.NotifyCanExecuteChanged();
+    partial void OnCurrentTestTypeChanged(UpdateTestTypeRequest? value) => SaveCommand.NotifyCanExecuteChanged();
 
     public UpdateTestTypeViewModel(
         ITestTypesApiClient testTypesApiClient,
@@ -53,23 +58,35 @@ public partial class UpdateTestTypeViewModel : ObservableObject
         };
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync(Window window)
     {
-        if (CurrentTestType is null)
+        if (!CanSave() || CurrentTestType is null)
             return;
 
-        var result = await _testTypesApiClient.UpdateAsync(
-            CurrentTestType.TestTypeId, CurrentTestType);
-
-        if (result.IsFailure)
+        IsSaving = true;
+        try
         {
-            _notifications.ShowFailure(result, "Update Failed");
-            return;
-        }
+            var result = await _testTypesApiClient.UpdateAsync(
+                CurrentTestType.TestTypeId, CurrentTestType);
 
-        _userNotifications.ShowInfo("Test Type updated successfully!", "Success");
-        window?.Close();
+            if (result.IsFailure)
+            {
+                _notifications.ShowFailure(result, "Update Failed");
+                return;
+            }
+
+            _userNotifications.ShowInfo("Test Type updated successfully!", "Success");
+            window?.Close();
+        }
+        catch (Exception ex)
+        {
+            _userNotifications.ShowError(ex.Message, "Update Test Type");
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 
     [RelayCommand]
