@@ -36,8 +36,6 @@ export interface PageHeroProps {
   illustrationIcon?: ReactNode;
   /** Custom set of floating icon containers */
   floatingIcons?: FloatingIconItem[];
-  /** Custom visual accent variant (default 'blue') */
-  variant?: "blue" | "emerald" | "purple" | "amber" | "cyan" | "rose";
 }
 
 function getFloatingIconClasses(
@@ -132,7 +130,7 @@ export default function PageHero({
   return (
     <header
       className={cn(
-        "page-hero relative overflow-hidden rounded-2xl border border-blue-500/50 bg-linear-to-r from-[#070f20] via-[#0c1c38] to-[#122b5c] p-6 sm:p-8 lg:p-9 shadow-[0_0_30px_rgba(37,99,235,0.22),inset_0_0_25px_rgba(59,130,246,0.08)] mb-6",
+        "page-hero relative overflow-hidden rounded-2xl border border-blue-500/50 bg-linear-to-r from-[#070f20] via-[#0c1c38] to-[#122b5c] shadow-[0_0_30px_rgba(37,99,235,0.22),inset_0_0_25px_rgba(59,130,246,0.08)] mb-6",
         className,
       )}
     >
@@ -201,9 +199,9 @@ export default function PageHero({
         />
       </svg>
 
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+      <div className="page-hero-content relative z-10">
         {/* Left Side: High-Contrast Typography & Actions */}
-        <div className="max-w-xl">
+        <div className="page-hero-copy">
           <div className="flex items-center gap-2">
             <span
               className="inline-block size-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"
@@ -214,7 +212,7 @@ export default function PageHero({
             </span>
           </div>
 
-          <h1 className="mt-3 text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight text-white leading-tight">
+          <h1 className="page-hero-title font-black tracking-tight text-white leading-tight">
             {finalTitle}{" "}
             {finalHighlight && (
               <span className="bg-linear-to-r from-blue-400 via-sky-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(56,189,248,0.5)]">
@@ -224,7 +222,7 @@ export default function PageHero({
           </h1>
 
           {finalDescription && (
-            <p className="mt-2.5 text-sm sm:text-base font-normal text-slate-300/90 leading-relaxed max-w-lg">
+            <p className="page-hero-description font-normal text-slate-300/90 leading-relaxed max-w-lg">
               {finalDescription}
             </p>
           )}
@@ -232,7 +230,7 @@ export default function PageHero({
 
         {/* Right Side: Futuristic Holographic Card Illustration & Floating Neon Icons */}
         <div
-          className="relative hidden md:flex items-center justify-center shrink-0 w-full lg:w-105 h-40 pointer-events-none select-none"
+          className="page-hero-illustration relative items-center justify-center pointer-events-none select-none"
           aria-hidden="true"
         >
           {illustration ? (
@@ -257,7 +255,7 @@ export default function PageHero({
               })}
 
               {/* Centerpiece: Futuristic Holographic Identification Card */}
-              <div className="relative z-10 w-52.5 h-33.75 rounded-2xl border border-blue-400/50 bg-linear-to-br from-[#0b1730]/95 via-[#0d2044]/95 to-[#09152b]/95 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.6),0_0_30px_rgba(59,130,246,0.35)] backdrop-blur-lg animate-[float-main_6s_ease-in-out_infinite]">
+              <div className="page-hero-illustration-card relative z-10 w-52.5 h-33.75 rounded-2xl border border-blue-400/50 bg-linear-to-br from-[#0b1730]/95 via-[#0d2044]/95 to-[#09152b]/95 p-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.6),0_0_30px_rgba(59,130,246,0.35)] backdrop-blur-lg animate-[float-main_6s_ease-in-out_infinite]">
                 {/* Holographic Card Header with 3 glowing status dots */}
                 <div className="flex items-center justify-between pb-2 border-b border-blue-500/20">
                   <div className="flex items-center gap-1.5">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import type { KeyboardEvent } from 'react'
 import { User } from 'lucide-react'
 import { getPersonPhotoBlob } from '../../services/peopleService'
 import { getAccessToken } from '../../utils/authTokenStore'
@@ -30,6 +31,14 @@ const sizeClasses: Record<PersonPhotoSize, { container: string; icon: string; te
     icon: 'size-20',
     text: 'text-5xl',
   },
+}
+
+function PhotoLoadingIndicator() {
+  return (
+    <span className="flex size-4 items-center justify-center" aria-hidden="true">
+      <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent motion-reduce:animate-none" />
+    </span>
+  )
 }
 
 export default function PersonPhoto({
@@ -106,27 +115,38 @@ export default function PersonPhoto({
   const effectiveUrl = localPreviewUrl || blobUrl
   const initial = fullName?.trim() ? fullName.trim().charAt(0).toUpperCase() : null
   const { container, icon, text } = sizeClasses[size]
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick || (event.key !== 'Enter' && event.key !== ' ')) return
+    event.preventDefault()
+    onClick()
+  }
 
   if (effectiveUrl && !error) {
     return (
       <div
         onClick={onClick}
+        onKeyDown={handleKeyDown}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        aria-label={onClick ? alt : undefined}
+        aria-busy={loading || undefined}
         className={cn(
-          'relative shrink-0 overflow-hidden border border-cyan-500/20 bg-slate-900/60 shadow-md',
+          'relative shrink-0 overflow-hidden border border-primary/20 bg-surface shadow-md',
           container,
           onClick && 'cursor-pointer hover:opacity-95 transition-opacity',
+          onClick && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           className,
         )}
       >
         <img
           src={effectiveUrl}
-          alt={alt}
+          alt={onClick ? '' : alt}
           className="size-full object-cover object-top"
           onError={() => setPhotoState((prev) => ({ ...prev, error: true }))}
         />
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/40 backdrop-blur-xs">
-            <div className="size-4 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+          <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-xs">
+            <PhotoLoadingIndicator />
           </div>
         )}
       </div>
@@ -137,19 +157,25 @@ export default function PersonPhoto({
   return (
     <div
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={onClick ? 'button' : 'img'}
+      aria-label={alt}
+      aria-busy={loading || undefined}
+      tabIndex={onClick ? 0 : undefined}
       className={cn(
-        'relative flex shrink-0 items-center justify-center border border-cyan-500/20 bg-slate-900/60 font-semibold text-cyan-400 shadow-md',
+        'relative flex shrink-0 items-center justify-center border border-primary/20 bg-surface font-semibold text-primary shadow-md',
         container,
         onClick && 'cursor-pointer hover:opacity-95 transition-opacity',
+        onClick && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
     >
       {loading ? (
-        <div className="size-4 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
+        <PhotoLoadingIndicator />
       ) : initial ? (
-        <span className={`${text} select-none`}>{initial}</span>
+        <span className={`${text} select-none`} aria-hidden="true">{initial}</span>
       ) : (
-        <User className={`${icon} text-slate-500`} />
+        <User className={`${icon} text-muted-foreground`} aria-hidden="true" />
       )}
     </div>
   )

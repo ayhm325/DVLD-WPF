@@ -9,6 +9,7 @@ import {
 import { useAuth } from "../../context/useAuth";
 import { useNavigation } from "../../context/useNavigation";
 import { getPathForPage } from "../../context/navigationContextInstance";
+import "./Sidebar.css";
 import {
   buildVisibleSections,
   findActiveGroupId,
@@ -19,7 +20,6 @@ import {
 } from "./sidebar/sidebarNavigation";
 
 type SidebarProps = {
-  activePage?: string;
   onNavigate?: (page: string) => void;
   isOpen?: boolean;
   onCloseMobile?: () => void;
@@ -28,7 +28,6 @@ type SidebarProps = {
 };
 
 export default function Sidebar({
-  activePage: propActivePage,
   onNavigate: propOnNavigate,
   isOpen = false,
   onCloseMobile,
@@ -37,7 +36,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const { user } = useAuth();
   const nav = useNavigation();
-  const activePage = propActivePage ?? nav.activePage;
+  const activePage = nav.activePage;
   const sections = buildVisibleSections(user?.role);
   const activeGroupId = findActiveGroupId(sections, activePage);
   const [collapsed, setCollapsed] = useState(false);
@@ -61,6 +60,22 @@ export default function Sidebar({
     mediaQuery.addEventListener("change", updateViewport);
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport || !isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCloseMobile?.();
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileViewport, isOpen, onCloseMobile]);
 
   useEffect(() => {
     if (isMobileViewport && isOpen) closeButtonRef.current?.focus();

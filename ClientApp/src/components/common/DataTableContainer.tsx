@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import './DataTableContainer.css'
 
 export interface DataTableContainerProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode

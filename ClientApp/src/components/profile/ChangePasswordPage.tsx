@@ -149,7 +149,6 @@ export default function ChangePasswordPage({
         title="Change"
         highlight="Password"
         description="Update your DVLD enterprise credentials in accordance with national transport registry security policies."
-        variant="blue"
       />
 
       {/* 2. Page Actions — Dedicated Action Area Below PageHero */}

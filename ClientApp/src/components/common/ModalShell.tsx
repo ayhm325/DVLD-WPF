@@ -93,7 +93,7 @@ export default function ModalShell({
           sizeClasses[size],
           !showCloseButton && '[&>button:last-child]:hidden',
           preventClose && '[&>button:last-child]:pointer-events-none [&>button:last-child]:opacity-40',
-          'border border-[#263750] bg-[#111C30] text-[#F1F5F9] shadow-2xl',
+          'w-[calc(100vw-1rem)] min-w-0 border border-border bg-surface text-foreground shadow-2xl',
           className,
         )}
         onPointerDownOutside={(e) => {
@@ -108,14 +108,14 @@ export default function ModalShell({
         }}
       >
         {(title || description) ? (
-          <DialogHeader>
+          <DialogHeader className="min-w-0 pr-8 text-left">
             {title ? (
               typeof title === 'string' ? (
-                <DialogTitle className="text-lg font-bold text-white tracking-tight">
+                <DialogTitle className="break-words text-lg font-bold tracking-tight">
                   {title}
                 </DialogTitle>
               ) : (
-                <DialogTitle asChild className="text-lg font-bold text-white tracking-tight">
+                <DialogTitle asChild className="break-words text-lg font-bold tracking-tight">
                   <div>{title}</div>
                 </DialogTitle>
               )
@@ -125,11 +125,11 @@ export default function ModalShell({
 
             {description && (
               typeof description === 'string' ? (
-                <DialogDescription className="text-xs text-slate-400 leading-relaxed pt-1">
+                <DialogDescription className="break-words pt-1 text-xs leading-relaxed">
                   {description}
                 </DialogDescription>
               ) : (
-                <DialogDescription asChild className="text-xs text-slate-400 leading-relaxed pt-1">
+                <DialogDescription asChild className="break-words pt-1 text-xs leading-relaxed">
                   <div>{description}</div>
                 </DialogDescription>
               )
@@ -139,12 +139,12 @@ export default function ModalShell({
           <DialogTitle className="sr-only">Dialog</DialogTitle>
         )}
 
-        <div className={cn('min-h-0 overflow-y-auto overscroll-contain py-1 text-sm text-slate-200', contentClassName)}>
+        <div className={cn('min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain break-words py-1 text-sm', contentClassName)}>
           {children}
         </div>
 
         {footer && (
-          <DialogFooter className="gap-2 sm:gap-2 pt-3 border-t border-[#263750]">
+          <DialogFooter className="min-w-0 gap-2 border-t border-border pt-3 sm:gap-2">
             {footer}
           </DialogFooter>
         )}

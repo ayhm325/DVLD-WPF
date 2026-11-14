@@ -81,7 +81,7 @@ export default function LocalLicenseCard({
       </div>
 
       {/* Main card body */}
-      <div className="p-5 flex-1 space-y-4">
+      <div className="min-w-0 p-4 sm:p-5 flex-1 space-y-4">
         {/* License Number & Class Heading */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1a2d4c] pb-3">
           <div>
@@ -93,18 +93,18 @@ export default function LocalLicenseCard({
             </h4>
           </div>
 
-          <div className="text-right">
+          <div className="min-w-0 text-right">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
               License ID
             </span>
-            <span className="font-mono text-base font-extrabold text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
+            <span className="font-mono text-base font-extrabold text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.3)] break-all">
               #{license.licenseId}
             </span>
           </div>
         </div>
 
         {/* Card profile section */}
-        <div className="flex items-start gap-4">
+        <div className="flex min-w-0 items-start gap-4">
           <div className="relative shrink-0">
             <PersonPhoto
               personId={person.personId}
@@ -120,7 +120,7 @@ export default function LocalLicenseCard({
             </span>
           </div>
 
-          <div className="flex-1 min-w-0 space-y-2 text-xs">
+          <div className="flex-1 min-w-0 space-y-2 text-xs [overflow-wrap:anywhere]">
             <div>
               <span className="text-[10px] text-slate-400 block">Driver Name</span>
               <strong className="text-white text-sm font-bold truncate block">
@@ -128,7 +128,7 @@ export default function LocalLicenseCard({
               </strong>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#1a2d4c]">
+            <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-[#1a2d4c] [overflow-wrap:anywhere]">
               <div>
                 <span className="text-[10px] text-slate-400 block">National No.</span>
                 <span className="font-mono font-semibold text-slate-200">
@@ -143,7 +143,7 @@ export default function LocalLicenseCard({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-2 [overflow-wrap:anywhere]">
               <div>
                 <span className="text-[10px] text-slate-400 flex items-center gap-1">
                   <Calendar className="size-3 text-cyan-400" />
@@ -188,13 +188,13 @@ export default function LocalLicenseCard({
 
       {/* Expandable full details drawer */}
       {isExpanded && (
-        <div className="border-t border-[#1b3154] bg-[#071120]/95 p-5 space-y-3.5 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="border-t border-[#1b3154] bg-[#071120]/95 p-4 sm:p-5 space-y-3.5 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2 pb-2 border-b border-[#182944] text-cyan-400 font-semibold uppercase tracking-wider text-[11px]">
             <FileText className="size-3.5" />
             <span>Complete License Metadata</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 [overflow-wrap:anywhere]">
             <div>
               <span className="text-[10px] text-slate-400 flex items-center gap-1">
                 <Hash className="size-3 text-cyan-400" />

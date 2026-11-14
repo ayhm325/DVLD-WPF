@@ -284,7 +284,7 @@ export default function PersonDetailsPage({
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-3.5 [overflow-wrap:anywhere]">
                   <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3">
                     <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block mb-0.5">
                       First Name
@@ -316,7 +316,7 @@ export default function PersonDetailsPage({
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-[#1e3458] grid grid-cols-2 gap-3.5">
+          <div className="pt-3 border-t border-[#1e3458] grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-3.5 [overflow-wrap:anywhere]">
                   <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3">
                     <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-0.5">
                       <Calendar className="size-3.5 text-cyan-400" />
@@ -428,7 +428,7 @@ export default function PersonDetailsPage({
                     fullName={fullName}
                     size="2xl"
                     accessToken={accessToken}
-                    className="w-[280px] h-[330px] sm:w-[480px] sm:h-[560px] rounded-xl shadow-inner"
+                    className="w-[min(80vw,480px)] max-w-full max-h-[70dvh] h-auto object-contain rounded-xl shadow-inner"
                   />
                 </div>
               ) : (

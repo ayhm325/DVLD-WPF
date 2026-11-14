@@ -16,8 +16,8 @@ export default function LoadingSpinner({
 }: LoadingSpinnerProps) {
   const sizeMap = {
     sm: 'size-4',
-    md: 'size-6',
-    lg: 'size-8',
+    md: 'size-5 sm:size-6',
+    lg: 'size-7 sm:size-8',
   }
 
   const textSizeMap = {
@@ -29,25 +29,29 @@ export default function LoadingSpinner({
   return (
     <div
       className={cn(
-        'loading-container flex items-center justify-center p-6 text-slate-300 transition-opacity',
+        'loading-container flex min-w-0 items-center justify-center p-6 text-muted-foreground transition-opacity',
         layout === 'col' ? 'flex-col gap-3 text-center' : 'flex-row gap-2.5',
         className,
       )}
       role="status"
       aria-live="polite"
+      aria-atomic="true"
+      aria-busy="true"
+      aria-label={message || 'Loading'}
     >
       <Loader2
         className={cn(
-          'animate-spin text-cyan-400 drop-shadow-[0_0_10px_rgba(0,229,255,0.7)] shrink-0',
+          'shrink-0 animate-spin text-primary motion-reduce:animate-none',
           sizeMap[size],
         )}
         aria-hidden="true"
       />
       {message && (
-        <span className={cn('text-slate-300 tracking-wide', textSizeMap[size])}>
+        <span className={cn('min-w-0 break-words tracking-wide text-foreground', textSizeMap[size])}>
           {message}
         </span>
       )}
+      {!message && <span className="sr-only">Loading</span>}
     </div>
   )
 }

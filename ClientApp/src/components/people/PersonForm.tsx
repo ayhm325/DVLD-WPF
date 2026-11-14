@@ -619,9 +619,7 @@ export default function PersonForm({
               <SelectTrigger
                 id="person-gender"
                 aria-label="Select gender"
-                className={`w-full h-11 px-3.5 rounded-xl bg-[#0e1a33] border-[#263e68] text-white text-sm hover:border-cyan-400/50 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/25 transition-all ${
-                  errorField === 'gender' ? 'border-rose-500 ring-1 ring-rose-500' : ''
-                }`}
+                aria-invalid={errorField === 'gender' || undefined}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -665,9 +663,7 @@ export default function PersonForm({
               <SelectTrigger
                 id="person-nationality"
                 aria-label="Select nationality"
-                className={`w-full h-11 px-3.5 rounded-xl bg-[#0e1a33] border-[#263e68] text-white text-sm hover:border-cyan-400/50 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/25 transition-all ${
-                  errorField === 'nationalityCountryID' ? 'border-rose-500 ring-1 ring-rose-500' : ''
-                }`}
+                aria-invalid={errorField === 'nationalityCountryID' || undefined}
               >
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { Search, X } from 'lucide-react'
+import './SearchInput.css'
 
 interface SearchInputProps {
   value: string

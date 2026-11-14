@@ -60,8 +60,8 @@ export default function AppointmentSlotPicker({
 
   return (
     <Card className="border-[#1e3458] bg-[#0c1830] rounded-2xl shadow-md overflow-hidden">
-      <CardHeader className="border-b border-[#1e3458] px-6 py-5">
-        <div className="flex items-center justify-between gap-3">
+      <CardHeader className="border-b border-[#1e3458] px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <CardTitle className="text-base font-bold text-white flex items-center gap-2.5">
             <Calendar className="size-4.5 text-cyan-400" />
             <span>Facility Available Dates & Slots</span>
@@ -77,7 +77,7 @@ export default function AppointmentSlotPicker({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="p-6 space-y-5">
+      <CardContent className="p-4 sm:p-6 space-y-5">
         {!application ? (
           <EmptyState
             message="No Application Selected"
@@ -147,7 +147,7 @@ export default function AppointmentSlotPicker({
               </div>
 
               {/* Interactive Grid of Date Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1">
+              <div className="grid min-w-0 grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1">
                 {availability?.availableDays.map((d) => {
                   const isSelected = selectedDate === d.date
                   const [yyyy, mm, dd] = d.date.split('-')
@@ -173,7 +173,7 @@ export default function AppointmentSlotPicker({
                         )
                         onSelectSlot(day?.slots[0]?.startTime ?? '')
                       }}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`min-w-0 p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between [overflow-wrap:anywhere] ${
                         isSelected
                           ? 'bg-cyan-600 text-white border-cyan-400 shadow-md ring-2 ring-cyan-400/50'
                           : 'bg-slate-900/90 text-slate-200 border-slate-700 hover:border-cyan-500/60 hover:bg-slate-850'
@@ -219,7 +219,7 @@ export default function AppointmentSlotPicker({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              <div className="grid min-w-0 grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                 {APPROVED_APPOINTMENT_SLOTS.map((slotTime) => {
                   const isAvailable = currentDaySlots.some(
                     (s) => s.startTime === slotTime,
@@ -235,7 +235,7 @@ export default function AppointmentSlotPicker({
                       type="button"
                       disabled={!isAvailable || !isEligibleToSchedule}
                       onClick={() => onSelectSlot(slotTime)}
-                      className={`px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold border transition-all text-center ${
+                      className={`min-w-0 px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold border transition-all text-center break-words ${
                         isSelected
                           ? 'bg-cyan-600 text-white border-cyan-400 shadow-md ring-2 ring-cyan-400/50'
                           : isAvailable && isEligibleToSchedule
@@ -258,7 +258,7 @@ export default function AppointmentSlotPicker({
               </div>
 
               {selectedSlot && (
-                <div className="mt-3 p-4 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between text-xs text-cyan-300">
+                <div className="mt-3 p-4 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex flex-wrap items-center justify-between gap-3 text-xs text-cyan-300">
                   <div className="flex items-center gap-2.5">
                     <Clock className="size-4.5 text-cyan-400 shrink-0" />
                     <span>

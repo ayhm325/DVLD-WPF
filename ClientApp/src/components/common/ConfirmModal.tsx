@@ -94,9 +94,9 @@ export default function ConfirmModal({
       size="sm"
       preventClose={isBusy}
       title={
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {getVariantIcon()}
-          <span>{title}</span>
+          <span className="min-w-0 break-words">{title}</span>
         </div>
       }
       description={message}
@@ -108,7 +108,7 @@ export default function ConfirmModal({
             size="sm"
             onClick={onCancel}
             disabled={isBusy}
-            className="border-[#263750] bg-transparent text-slate-300 hover:bg-[#162238] hover:text-white"
+            className="min-h-10 w-full border-border bg-transparent text-foreground hover:bg-surface-soft hover:text-foreground sm:w-auto"
           >
             {cancelText}
           </Button>
@@ -120,6 +120,7 @@ export default function ConfirmModal({
             onClick={onConfirm}
             disabled={isBusy}
             autoFocus
+            className="min-h-10 w-full sm:w-auto"
           >
             {loading && <Loader2 className="size-3.5 animate-spin mr-1.5" aria-hidden="true" />}
             <span>{loading ? 'Processing...' : confirmText}</span>

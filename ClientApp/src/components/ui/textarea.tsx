@@ -7,13 +7,14 @@ export interface TextareaProps
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, error, ...props }, ref) => {
+  ({ className, error, 'aria-invalid': ariaInvalid, ...props }, ref) => {
     return (
       <textarea
         ref={ref}
+        aria-invalid={ariaInvalid ?? (error || undefined)}
         className={cn(
-          'w-full min-h-[80px] px-3.5 py-2.5 rounded-xl bg-[#0e1a33] border border-[#263e68] text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed resize-y',
-          error && 'border-rose-500/70 focus:border-rose-400 focus:ring-rose-500/25',
+          'min-h-20 min-w-0 w-full resize-y rounded-xl border border-input bg-surface px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
+          '[&[aria-invalid=true]]:border-destructive [&[aria-invalid=true]]:focus-visible:border-destructive [&[aria-invalid=true]]:focus-visible:ring-destructive/25',
           className,
         )}
         {...props}

@@ -59,8 +59,8 @@ export default function AppointmentStageStepper({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="p-6 space-y-4">
-        <div className="grid grid-cols-3 gap-3">
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        <div className="grid min-w-0 grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 gap-3">
           {([1, 2, 3] as const).map((stageId) => {
             const cfg = STAGE_CONFIG[stageId]
             const StageIcon = cfg.icon
@@ -73,7 +73,7 @@ export default function AppointmentStageStepper({
                 key={stageId}
                 type="button"
                 onClick={() => onSelectStage(stageId)}
-                className={`flex flex-col items-center justify-center p-3.5 rounded-xl border text-center transition-all cursor-pointer ${
+                className={`flex min-w-0 flex-col items-center justify-center p-3 sm:p-3.5 rounded-xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-cyan-600 text-white border-cyan-400 shadow-md ring-2 ring-cyan-400/40'
                     : isPassed

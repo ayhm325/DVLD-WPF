@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import SearchInput from "./SearchInput";
+import { cn } from "@/lib/utils";
+import "./TableToolbar.css";
 import { Filter as FilterIcon, RefreshCw as RefreshIcon } from "lucide-react";
 import {
   Select,
@@ -94,12 +96,8 @@ export default function TableToolbar<TField extends string = string>({
   children,
   className = "",
 }: TableToolbarProps<TField>) {
-  const containerClasses = ["table-toolbar", className]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <div className={containerClasses}>
+    <div className={cn("table-toolbar", className)}>
       {searchFieldOptions && onSearchFieldChange && (
         <div style={{ minWidth: searchFieldMinWidth }} className="shrink-0">
           <Select
@@ -109,7 +107,7 @@ export default function TableToolbar<TField extends string = string>({
             }
           >
             <SelectTrigger
-              className="h-10 mi.n-h-[40px] w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg"
+              className="h-10 rounded-lg text-xs"
               aria-label={searchFieldAriaLabel}
             >
               <SelectValue />

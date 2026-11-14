@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PAGE_SIZE_OPTIONS, type PageSizeOption } from "@/hooks/usePagination";
+import "./PaginationControls.css";
 
 export interface PaginationControlsProps {
   pageNumber: number;
@@ -43,15 +44,7 @@ export default function PaginationControls({
 
   return (
     <div
-      className={`panel-footer flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-[#1e304d] ${className}`}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 16,
-        padding: "16px 24px",
-        borderTop: "1px solid #1e304d",
-      }}
+      className={`panel-footer pagination-controls ${className}`}
     >
       <span className="text-xs text-slate-400">
         Showing <strong className="text-white">{start}</strong>–
@@ -59,25 +52,13 @@ export default function PaginationControls({
         <strong className="text-white">{totalCount}</strong> {itemName}
       </span>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
+      <div className="pagination-controls__settings">
         {/* Page Size Selection Dropdown */}
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 11,
-            color: "var(--dvld-muted)",
-          }}
+          className="pagination-controls__page-size"
         >
           <span>Page size</span>
-          <div style={{ width: 80 }}>
+          <div className="pagination-controls__page-size-select">
             <Select
               value={String(pageSize)}
               onValueChange={(val) => {
@@ -90,13 +71,7 @@ export default function PaginationControls({
             >
               <SelectTrigger
                 aria-label="Select page size"
-                className="h-8 min-h-8 w-full bg-[#111e33] border-[#223656] text-xs text-white hover:border-blue-500/50 hover:bg-[#14233c] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 rounded-lg px-2.5 py-1"
-                style={{
-                  minHeight: 32,
-                  height: 32,
-                  padding: "4px 8px",
-                  fontSize: 11,
-                }}
+                className="h-8 min-h-8 rounded-lg px-2.5 py-1 text-xs"
               >
                 <SelectValue placeholder={String(pageSize)} />
               </SelectTrigger>
@@ -116,11 +91,10 @@ export default function PaginationControls({
         </div>
 
         {/* Navigation Buttons and Page Indicator */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="pagination-controls__navigation">
           <button
             type="button"
-            className="secondary-button"
-            style={{ minHeight: 32, padding: "5px 12px", fontSize: 11 }}
+            className="secondary-button pagination-controls__button"
             disabled={!hasPreviousPage || loading}
             onClick={onPreviousPage}
             aria-label="Previous page"
@@ -129,21 +103,20 @@ export default function PaginationControls({
             <span>Previous</span>
           </button>
 
-          <span style={{ fontSize: 11, color: "var(--dvld-muted)" }}>
+          <span className="pagination-controls__page-indicator">
             Page{" "}
-            <strong style={{ color: "var(--dvld-heading)" }}>
+            <strong>
               {pageNumber}
             </strong>{" "}
             of{" "}
-            <strong style={{ color: "var(--dvld-heading)" }}>
+            <strong>
               {safeTotalPages}
             </strong>
           </span>
 
           <button
             type="button"
-            className="secondary-button"
-            style={{ minHeight: 32, padding: "5px 12px", fontSize: 11 }}
+            className="secondary-button pagination-controls__button"
             disabled={!hasNextPage || loading}
             onClick={onNextPage}
             aria-label="Next page"

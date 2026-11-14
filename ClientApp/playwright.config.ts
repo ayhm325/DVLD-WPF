@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const port = process.env.PLAYWRIGHT_PORT ?? '5173'
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -8,7 +10,7 @@ export default defineConfig({
   reporter: 'list',
   snapshotPathTemplate: '{testDir}/../screenshots/{projectName}/{arg}-{ext}',
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: `http://127.0.0.1:${port}`,
     browserName: 'chromium',
     channel: process.env.CI ? undefined : 'chrome',
     trace: 'retain-on-failure',
@@ -21,8 +23,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm.cmd run dev -- --host 127.0.0.1 --port 5173 --strictPort',
-    url: 'http://127.0.0.1:5173',
+    command: `npm.cmd run dev -- --host 127.0.0.1 --port ${port} --strictPort`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },

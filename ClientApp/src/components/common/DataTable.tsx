@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react'
 import DataTableContainer from './DataTableContainer'
 import LoadingSpinner from './LoadingSpinner'
 import EmptyState from './EmptyState'
+import ErrorAlert from './ErrorAlert'
 import DataTableRowContextMenu, {
   type DataTableRowAction,
 } from './DataTableRowContextMenu'
@@ -10,6 +11,17 @@ import { cn } from '@/lib/utils'
 
 export type { DataTableRowAction }
 export type SortDirection = 'asc' | 'desc'
+
+const ROW_INTERACTIVE_TARGET_SELECTOR =
+  'a, button, input, select, textarea, summary, [role="button"], [role="link"], [role="menuitem"], [role="checkbox"], [role="radio"], [role="switch"], [role="option"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])'
+
+function isNestedInteractiveTarget(
+  target: HTMLElement,
+  row: HTMLTableRowElement,
+) {
+  const interactiveTarget = target.closest(ROW_INTERACTIVE_TARGET_SELECTOR)
+  return interactiveTarget !== null && interactiveTarget !== row
+}
 
 export interface DataTableColumn<T> {
   /** Unique key identifying the column */
@@ -145,42 +157,39 @@ export default function DataTable<T>({
     event: React.KeyboardEvent<HTMLTableRowElement>,
     row: T,
   ) {
-    if (!rowContextMenu) return
+    const target = event.target as HTMLElement | null
+    if (!target || isNestedInteractiveTarget(target, event.currentTarget)) return
 
     // Explicitly detect ContextMenu key or Shift+F10
     const isContextMenuKey =
       event.key === 'ContextMenu' ||
       (event.shiftKey && (event.key === 'F10' || event.code === 'F10'))
 
-    if (!isContextMenuKey) return
+    if (rowContextMenu && isContextMenuKey) {
+      const actions = rowContextMenu(row)
+      if (!actions || actions.length === 0) return
 
-    const target = event.target as HTMLElement | null
-    if (!target) return
+      // Prevent the browser's native context-menu event from opening the menu a second time.
+      event.preventDefault()
+      event.stopPropagation()
 
-    // Protect editable controls so native text editing context menu remains accessible
-    if (target.closest('input, textarea, select, [contenteditable="true"]')) {
+      const rect = event.currentTarget.getBoundingClientRect()
+      setContextMenuState({
+        open: true,
+        x: Math.max(0, rect.left + 16),
+        y: Math.max(0, rect.bottom + 4),
+        row,
+        actions,
+        restoreElement: event.currentTarget,
+      })
       return
     }
 
-    const actions = rowContextMenu(row)
-    if (!actions || actions.length === 0) return
+    const activatesRow = event.key === 'Enter' || event.key === ' '
+    if (!onRowClick || !activatesRow || event.repeat) return
 
-    // Calling preventDefault() cancels the browser's default action (dispatching synthetic contextmenu)
     event.preventDefault()
-    event.stopPropagation()
-
-    const rect = target.getBoundingClientRect()
-    const x = Math.max(0, rect.left + 16)
-    const y = Math.max(0, rect.bottom + 4)
-
-    setContextMenuState({
-      open: true,
-      x,
-      y,
-      row,
-      actions,
-      restoreElement: (document.activeElement as HTMLElement) || target,
-    })
+    onRowClick(row)
   }
 
   function handleRowContextMenu(
@@ -198,20 +207,8 @@ export default function DataTable<T>({
     const target = event.target as HTMLElement | null
     if (!target) return
 
-    // 1. Protect editable controls so native text editing context menus (cut/copy/paste/spellcheck) are preserved
-    if (target.closest('input, textarea, select, [contenteditable="true"]')) {
-      return
-    }
-
-    // 2. For pointer, touch, and pen contextmenu events:
-    // Preserve native context menus for interactive elements (links, buttons, action items)
-    if (
-      target.closest(
-        'button, a, [role="button"], [role="menuitem"], [role="link"]',
-      )
-    ) {
-      return
-    }
+    // Preserve native context menus for controls and other focusable content in a row.
+    if (isNestedInteractiveTarget(target, event.currentTarget)) return
 
     // Preserve native browser context menu when user has selected text in a cell
     const selection = window.getSelection()
@@ -322,7 +319,7 @@ export default function DataTable<T>({
             <tr>
               <td colSpan={columns.length} className="p-6">
                 {typeof error === 'string' ? (
-                  <p className="text-rose-400 text-center font-medium">{error}</p>
+                  <ErrorAlert message={error} />
                 ) : (
                   error
                 )}
@@ -357,14 +354,16 @@ export default function DataTable<T>({
                   className={cn(
                     resolvedRowClass,
                     isClickable && 'cursor-pointer hover:bg-[#1d3150] transition-colors',
+                    (isClickable || rowContextMenu) &&
+                      'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-300',
                   )}
+                  tabIndex={isClickable || rowContextMenu ? 0 : undefined}
+                  aria-keyshortcuts={rowContextMenu ? 'Shift+F10 ContextMenu' : undefined}
                   onClick={
                     isClickable
                       ? (e) => {
                           const target = e.target as HTMLElement | null
-                          if (target?.closest('button, a, input, select, textarea, [role="button"], [role="menuitem"]')) {
-                            return
-                          }
+                          if (target && isNestedInteractiveTarget(target, e.currentTarget)) return
                           onRowClick?.(row)
                         }
                       : undefined
@@ -375,7 +374,7 @@ export default function DataTable<T>({
                       : undefined
                   }
                   onKeyDown={
-                    rowContextMenu
+                    isClickable || rowContextMenu
                       ? (e) => handleRowKeyDown(e, row)
                       : undefined
                   }

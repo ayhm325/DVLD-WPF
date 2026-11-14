@@ -29,7 +29,7 @@
 
 .intl-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .intl-summary-card {
-  position: relative; display: flex; flex-direction: column; gap: 8px; padding: 22px;
+  position: relative; display: flex; min-width: 0; flex-direction: column; gap: 8px; padding: 22px;
   background: var(--dvld-surface); border: 1px solid var(--dvld-border);
   border-radius: var(--dvld-radius-md); box-shadow: var(--dvld-shadow-xs);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
@@ -43,7 +43,7 @@
 .intl-summary-icon.active { color: #34d399; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); }
 .intl-summary-icon.muted { color: var(--dvld-muted); background: var(--dvld-surface-soft); border: 1px solid var(--dvld-border); }
 .intl-summary-label { color: var(--dvld-muted); font-size: 12px; font-weight: 650; }
-.intl-summary-card strong { color: var(--dvld-heading); font-size: 32px; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.intl-summary-card strong { min-width: 0; color: var(--dvld-heading); font-size: clamp(24px, 3vw, 32px); font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .intl-summary-card small { color: var(--dvld-muted); font-size: 11px; }
 
 .intl-panel {
@@ -97,6 +97,7 @@
 .intl-table-footer strong { color: var(--dvld-heading); }
 
 @media (max-width: 1023px) {
+  .intl-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .intl-toolbar { flex-wrap: wrap; }
   .intl-search { flex-basis: 100%; }
   .intl-control { flex: 1; }
@@ -104,8 +105,12 @@
 
 @media (max-width: 639px) {
   .intl-page-heading { flex-direction: column; }
-  .intl-summary-grid { grid-template-columns: 1fr; }
   .intl-toolbar { padding-inline: 16px; }
   .intl-panel-heading { padding-inline: 16px; }
   .intl-table-footer { flex-direction: column; padding-inline: 16px; }
+}
+
+@media (max-width: 479px) {
+  .intl-summary-grid { grid-template-columns: minmax(0, 1fr); }
+  .intl-summary-card { padding: 16px; }
 }

@@ -236,7 +236,7 @@ export default function TakeExaminationPage({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Section B: Examination Information Card */}
           <Card className="border-[#1b2f52] bg-[#0c192e] text-white shadow-xl rounded-2xl overflow-hidden">
-            <CardHeader className="border-b border-[#1b2f52]/60 p-5 pb-4">
+            <CardHeader className="border-b border-[#1b2f52]/60 p-4 pb-4 sm:p-5 sm:pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="size-11 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
@@ -274,12 +274,12 @@ export default function TakeExaminationPage({
               </div>
             </CardHeader>
 
-            <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="min-w-0 p-4 sm:p-5 grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3 text-xs [overflow-wrap:anywhere]">
               <div className="p-3.5 rounded-xl bg-[#081326] border border-[#1b2f52] space-y-1">
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
                   Candidate Name
                 </span>
-                <strong className="text-sm font-semibold text-white truncate block">
+                <strong className="text-sm font-semibold text-white break-words block">
                   {application?.fullName || '—'}
                 </strong>
               </div>

@@ -78,7 +78,6 @@ function normalizeVariant(
 }
 
 interface VariantDefinition {
-  variantClass: string;
   background: string;
   borderColor: string;
   borderHoverColor: string;
@@ -97,7 +96,6 @@ interface VariantDefinition {
 
 const variantConfig: Record<NormalizedVariant, VariantDefinition> = {
   blue: {
-    variantClass: "variant-blue",
     background:
       "radial-gradient(circle at 85% 45%, rgba(59, 130, 246, 0.35) 0%, transparent 60%), radial-gradient(circle at 15% 25%, rgba(37, 99, 235, 0.4) 0%, transparent 55%), linear-gradient(135deg, #071530 0%, #0d224d 50%, #071328 100%)",
     borderColor: "rgba(59, 130, 246, 0.65)",
@@ -120,7 +118,6 @@ const variantConfig: Record<NormalizedVariant, VariantDefinition> = {
       "bg-blue-950/90 text-blue-200 border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.25)]",
   },
   emerald: {
-    variantClass: "variant-emerald",
     background:
       "radial-gradient(circle at 85% 45%, rgba(16, 185, 129, 0.35) 0%, transparent 60%), radial-gradient(circle at 15% 25%, rgba(5, 150, 105, 0.4) 0%, transparent 55%), linear-gradient(135deg, #041c16 0%, #08382b 50%, #031812 100%)",
     borderColor: "rgba(16, 185, 129, 0.65)",
@@ -143,7 +140,6 @@ const variantConfig: Record<NormalizedVariant, VariantDefinition> = {
       "bg-emerald-950/90 text-emerald-200 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.25)]",
   },
   violet: {
-    variantClass: "variant-violet",
     background:
       "radial-gradient(circle at 85% 45%, rgba(168, 85, 247, 0.35) 0%, transparent 60%), radial-gradient(circle at 15% 25%, rgba(124, 58, 237, 0.4) 0%, transparent 55%), linear-gradient(135deg, #170b2e 0%, #2b1458 50%, #120724 100%)",
     borderColor: "rgba(168, 85, 247, 0.65)",
@@ -166,7 +162,6 @@ const variantConfig: Record<NormalizedVariant, VariantDefinition> = {
       "bg-purple-950/90 text-purple-200 border-purple-500/40 shadow-[0_0_10px_rgba(168,85,247,0.25)]",
   },
   amber: {
-    variantClass: "variant-amber",
     background:
       "radial-gradient(circle at 85% 45%, rgba(245, 158, 11, 0.35) 0%, transparent 60%), radial-gradient(circle at 15% 25%, rgba(217, 119, 6, 0.4) 0%, transparent 55%), linear-gradient(135deg, #241403 0%, #3f2307 50%, #1c0e02 100%)",
     borderColor: "rgba(245, 158, 11, 0.65)",
@@ -189,7 +184,6 @@ const variantConfig: Record<NormalizedVariant, VariantDefinition> = {
       "bg-amber-950/90 text-amber-200 border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.25)]",
   },
   rose: {
-    variantClass: "variant-rose",
     background:
       "radial-gradient(circle at 85% 45%, rgba(244, 63, 94, 0.35) 0%, transparent 60%), radial-gradient(circle at 15% 25%, rgba(225, 29, 72, 0.4) 0%, transparent 55%), linear-gradient(135deg, #290818 0%, #460d29 50%, #1f0512 100%)",
     borderColor: "rgba(244, 63, 94, 0.65)",
@@ -212,7 +206,6 @@ const variantConfig: Record<NormalizedVariant, VariantDefinition> = {
       "bg-rose-950/90 text-rose-200 border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.25)]",
   },
   slate: {
-    variantClass: "variant-slate",
     background:
       "radial-gradient(circle at 85% 45%, rgba(148, 163, 184, 0.28) 0%, transparent 60%), radial-gradient(circle at 15% 25%, rgba(100, 116, 139, 0.32) 0%, transparent 55%), linear-gradient(135deg, #0c1424 0%, #18253d 50%, #0a101d 100%)",
     borderColor: "rgba(148, 163, 184, 0.55)",
@@ -322,16 +315,23 @@ export default function StatCard({
   return (
     <article
       className={cn(
-        "stat-card group relative flex min-h-34 flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300",
-        config.variantClass,
+        "stat-card group relative flex min-h-34 min-w-0 flex-col justify-between overflow-hidden rounded-2xl border-[1.5px] transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300",
         onClick ? "cursor-pointer" : "cursor-default",
         className,
       )}
       style={cardStyle}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
+      onKeyDown={onClick ? (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      } : undefined}
     >
       {/* Distinct Glowing Top Border Highlight */}
       <div
@@ -345,7 +345,7 @@ export default function StatCard({
       {/* Prominent Multi-Peak Neon Waveform Activity SVG on the right */}
       {showWaveform && (
         <svg
-          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-16 w-36 sm:w-44 opacity-80 group-hover:opacity-100 transition-opacity duration-300 select-none overflow-visible"
+          className="stat-card-wave pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-16 w-36 sm:w-44 opacity-80 group-hover:opacity-100 transition-opacity duration-300 select-none overflow-visible"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 200 60"
           preserveAspectRatio="none"
@@ -391,10 +391,10 @@ export default function StatCard({
       )}
 
       {/* Main Content Layout: Illuminated Icon Box on Left, Metrics in Middle */}
-      <div className="relative z-10 flex items-start gap-4">
+      <div className="stat-card-content relative z-10 flex min-w-0 items-start gap-4">
         {icon && (
           <div
-            className="stat-icon flex size-13 min-w-13 shrink-0 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-105 [&>svg]:size-6 [&>svg]:stroke-[2.2] [&>svg]:text-white"
+            className="stat-icon flex shrink-0 items-center justify-center rounded-2xl text-white transition-transform duration-300 group-hover:scale-105 [&>svg]:size-6 [&>svg]:stroke-[2.2] [&>svg]:text-white"
             style={iconBoxStyle}
             aria-hidden="true"
           >
@@ -402,8 +402,8 @@ export default function StatCard({
           </div>
         )}
 
-        <div className="min-w-0 flex-1">
-          <span className="block text-[12px] font-bold uppercase tracking-wider text-slate-300 group-hover:text-white transition-colors">
+        <div className="stat-card-copy min-w-0 flex-1">
+          <span className="stat-card-title block text-[12px] font-bold uppercase tracking-wider text-slate-300 group-hover:text-white transition-colors">
             {titleText}
           </span>
 
@@ -411,14 +411,14 @@ export default function StatCard({
             {loading ? (
               <div className="h-9 w-24 rounded-lg bg-slate-800/80 animate-pulse border border-slate-700/60" />
             ) : (
-              <strong className="block text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+              <strong className="stat-card-value block font-black text-white tracking-tight leading-tight">
                 {value}
               </strong>
             )}
           </div>
 
           {description && (
-            <p className="mt-1 text-xs font-medium text-slate-300/90 truncate group-hover:text-slate-200 transition-colors">
+            <p className="stat-card-description mt-1 text-xs font-medium text-slate-300/90 group-hover:text-slate-200 transition-colors">
               {description}
             </p>
           )}

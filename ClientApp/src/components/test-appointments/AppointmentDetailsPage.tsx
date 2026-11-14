@@ -319,7 +319,7 @@ export default function AppointmentDetailsPage({
           </Card>
 
           {/* 2-Column Details Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid min-w-0 grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Card 1: Candidate & Application Details */}
             <Card className="border-[#1e3458] bg-[#0c1930] p-6">
               <CardHeader className="flex-row items-center gap-3 pb-4 border-b border-[#1e3458] mb-5 space-y-0">
@@ -489,7 +489,7 @@ export default function AppointmentDetailsPage({
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 [overflow-wrap:anywhere]">
               <div className="rounded-xl bg-[#081222] border border-[#223553] p-4 space-y-1.5">
                 <span className="text-[11px] text-slate-400 block font-semibold uppercase tracking-wider">
                   Evaluation Outcome

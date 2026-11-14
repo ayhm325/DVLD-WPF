@@ -21,14 +21,17 @@ export default function EmptyState({
   return (
     <div
       className={cn(
-        'empty-state flex flex-col items-center justify-center p-8 sm:p-12 text-center text-slate-500',
+        'empty-state flex min-w-0 flex-col items-center justify-center p-6 text-center text-muted-foreground sm:p-8',
         className,
       )}
       style={style}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
     >
-      {icon && <div className="mb-3 text-slate-400 [&_svg]:size-10" aria-hidden="true">{icon}</div>}
-      {message && <strong className="text-sm font-semibold text-slate-700">{message}</strong>}
-      {description && <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">{description}</p>}
+      {icon && <div className="mb-3 text-muted-foreground [&_svg]:size-10" aria-hidden="true">{icon}</div>}
+      {message && <strong className="max-w-full break-words text-sm font-semibold text-foreground">{message}</strong>}
+      {description && <p className="mt-1 w-full max-w-sm break-words text-xs leading-relaxed text-muted-foreground">{description}</p>}
       {children}
     </div>
   )

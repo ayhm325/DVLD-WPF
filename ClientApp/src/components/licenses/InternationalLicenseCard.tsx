@@ -67,31 +67,31 @@ export default function InternationalLicenseCard({
       </div>
 
       {/* Main card body */}
-      <div className="p-5 flex-1 space-y-4">
+      <div className="min-w-0 p-4 sm:p-5 flex-1 space-y-4">
         {/* Header number & basis */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1a2d4c] pb-3">
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
               Issued On Basis Of Local License
             </span>
             <div className="flex items-center gap-1.5 text-sm font-bold text-white tracking-tight">
               <IdCard className="size-3.5 text-blue-400" />
-              <span>Local License #{license.issuedUsingLocalLicenseId}</span>
+              <span className="break-all">Local License #{license.issuedUsingLocalLicenseId}</span>
             </div>
           </div>
 
-          <div className="text-right">
+          <div className="min-w-0 text-right">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
               Permit ID
             </span>
-            <span className="font-mono text-base font-extrabold text-blue-300 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">
+            <span className="font-mono text-base font-extrabold text-blue-300 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)] break-all">
               #{license.internationalLicenseId}
             </span>
           </div>
         </div>
 
         {/* Card profile section */}
-        <div className="flex items-start gap-4">
+        <div className="flex min-w-0 items-start gap-4">
           <div className="relative shrink-0">
             <PersonPhoto
               personId={person.personId}
@@ -107,7 +107,7 @@ export default function InternationalLicenseCard({
             </span>
           </div>
 
-          <div className="flex-1 min-w-0 space-y-2 text-xs">
+          <div className="flex-1 min-w-0 space-y-2 text-xs [overflow-wrap:anywhere]">
             <div>
               <span className="text-[10px] text-slate-400 block">Permit Holder</span>
               <strong className="text-white text-sm font-bold truncate block">
@@ -115,7 +115,7 @@ export default function InternationalLicenseCard({
               </strong>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#1a2d4c]">
+            <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-[#1a2d4c] [overflow-wrap:anywhere]">
               <div>
                 <span className="text-[10px] text-slate-400 block">National No.</span>
                 <span className="font-mono font-semibold text-slate-200">
@@ -130,7 +130,7 @@ export default function InternationalLicenseCard({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-2 [overflow-wrap:anywhere]">
               <div>
                 <span className="text-[10px] text-slate-400 flex items-center gap-1">
                   <Calendar className="size-3 text-blue-400" />
@@ -166,13 +166,13 @@ export default function InternationalLicenseCard({
 
       {/* Expandable details drawer */}
       {isExpanded && (
-        <div className="border-t border-[#1b3154] bg-[#071120]/95 p-5 space-y-3.5 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="border-t border-[#1b3154] bg-[#071120]/95 p-4 sm:p-5 space-y-3.5 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2 pb-2 border-b border-[#182944] text-blue-400 font-semibold uppercase tracking-wider text-[11px]">
             <FileText className="size-3.5" />
             <span>Complete Permit Record</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 [overflow-wrap:anywhere]">
             <div>
               <span className="text-[10px] text-slate-400 flex items-center gap-1">
                 <Hash className="size-3 text-blue-400" />

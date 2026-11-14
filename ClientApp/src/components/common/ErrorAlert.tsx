@@ -29,48 +29,36 @@ const variantStyles: Record<
   }
 > = {
   error: {
-    container:
-      "border-rose-500/40 bg-rose-950/70 text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.15)]",
-    iconColor: "text-rose-400",
-    titleColor: "text-rose-100",
-    textColor: "text-rose-300/90",
-    retryButton:
-      "bg-rose-900/50 hover:bg-rose-900/80 border-rose-500/50 text-rose-100 focus-visible:ring-rose-400",
-    dismissButton:
-      "text-rose-300 hover:text-white hover:bg-rose-900/40 focus-visible:ring-rose-400",
+    container: "border-destructive/40 bg-destructive/10 text-destructive",
+    iconColor: "text-destructive",
+    titleColor: "text-destructive",
+    textColor: "text-destructive/90",
+    retryButton: "bg-destructive/15 hover:bg-destructive/25 border-destructive/40 text-foreground focus-visible:ring-destructive",
+    dismissButton: "text-destructive hover:text-foreground hover:bg-destructive/15 focus-visible:ring-destructive",
   },
   warning: {
-    container:
-      "border-amber-500/40 bg-amber-950/70 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.15)]",
-    iconColor: "text-amber-400",
-    titleColor: "text-amber-100",
-    textColor: "text-amber-300/90",
-    retryButton:
-      "bg-amber-900/50 hover:bg-amber-900/80 border-amber-500/50 text-amber-100 focus-visible:ring-amber-400",
-    dismissButton:
-      "text-amber-300 hover:text-white hover:bg-amber-900/40 focus-visible:ring-amber-400",
+    container: "border-warning/40 bg-warning-bg text-warning",
+    iconColor: "text-warning",
+    titleColor: "text-warning",
+    textColor: "text-warning/90",
+    retryButton: "bg-warning/15 hover:bg-warning/25 border-warning/40 text-foreground focus-visible:ring-warning",
+    dismissButton: "text-warning hover:text-foreground hover:bg-warning/15 focus-visible:ring-warning",
   },
   info: {
-    container:
-      "border-sky-500/40 bg-sky-950/70 text-sky-200 shadow-[0_0_15px_rgba(14,165,233,0.15)]",
-    iconColor: "text-sky-400",
-    titleColor: "text-sky-100",
-    textColor: "text-sky-300/90",
-    retryButton:
-      "bg-sky-900/50 hover:bg-sky-900/80 border-sky-500/50 text-sky-100 focus-visible:ring-sky-400",
-    dismissButton:
-      "text-sky-300 hover:text-white hover:bg-sky-900/40 focus-visible:ring-sky-400",
+    container: "border-info/40 bg-info-bg text-info",
+    iconColor: "text-info",
+    titleColor: "text-info",
+    textColor: "text-info/90",
+    retryButton: "bg-info/15 hover:bg-info/25 border-info/40 text-foreground focus-visible:ring-info",
+    dismissButton: "text-info hover:text-foreground hover:bg-info/15 focus-visible:ring-info",
   },
   success: {
-    container:
-      "border-emerald-500/40 bg-emerald-950/70 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.15)]",
-    iconColor: "text-emerald-400",
-    titleColor: "text-emerald-100",
-    textColor: "text-emerald-300/90",
-    retryButton:
-      "bg-emerald-900/50 hover:bg-emerald-900/80 border-emerald-500/50 text-emerald-100 focus-visible:ring-emerald-400",
-    dismissButton:
-      "text-emerald-300 hover:text-white hover:bg-emerald-900/40 focus-visible:ring-emerald-400",
+    container: "border-success/40 bg-success-bg text-success",
+    iconColor: "text-success",
+    titleColor: "text-success",
+    textColor: "text-success/90",
+    retryButton: "bg-success/15 hover:bg-success/25 border-success/40 text-foreground focus-visible:ring-success",
+    dismissButton: "text-success hover:text-foreground hover:bg-success/15 focus-visible:ring-success",
   },
 };
 
@@ -79,21 +67,21 @@ function getVariantIcon(variant: AlertVariant) {
     case "warning":
       return (
         <AlertTriangle
-          className="size-5 shrink-0 text-amber-400 mt-0.5 sm:mt-0"
+          className={cn("mt-0.5 size-5 shrink-0 sm:mt-0", variantStyles.warning.iconColor)}
           aria-hidden="true"
         />
       );
     case "info":
       return (
         <Info
-          className="size-5 shrink-0 text-sky-400 mt-0.5 sm:mt-0"
+          className={cn("mt-0.5 size-5 shrink-0 sm:mt-0", variantStyles.info.iconColor)}
           aria-hidden="true"
         />
       );
     case "success":
       return (
         <CheckCircle2
-          className="size-5 shrink-0 text-emerald-400 mt-0.5 sm:mt-0"
+          className={cn("mt-0.5 size-5 shrink-0 sm:mt-0", variantStyles.success.iconColor)}
           aria-hidden="true"
         />
       );
@@ -101,7 +89,7 @@ function getVariantIcon(variant: AlertVariant) {
     default:
       return (
         <AlertCircle
-          className="size-5 shrink-0 text-rose-400 mt-0.5 sm:mt-0"
+          className={cn("mt-0.5 size-5 shrink-0 sm:mt-0", variantStyles.error.iconColor)}
           aria-hidden="true"
         />
       );
@@ -127,16 +115,17 @@ export default function ErrorAlert({
   return (
     <div
       role="alert"
+      aria-atomic="true"
       className={cn(
-        "rounded-xl border p-4 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors",
+        "flex min-w-0 flex-col gap-3 rounded-xl border p-4 text-sm transition-colors sm:flex-row sm:items-center sm:justify-between",
         styles.container,
         className,
       )}
       style={style}
     >
-      <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
         {getVariantIcon(variant)}
-        <div className="min-w-0 flex-1 wrap-break-word">
+        <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
           {title && (
             <p className={cn("font-semibold text-sm", styles.titleColor)}>
               {title}
@@ -156,12 +145,12 @@ export default function ErrorAlert({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 self-start sm:shrink-0 sm:self-auto">
         {onRetry && (
           <button
             type="button"
             className={cn(
-              "inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-[#080f1e]",
+              "inline-flex min-h-10 items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold shadow-xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
               styles.retryButton,
             )}
             onClick={onRetry}
@@ -173,7 +162,7 @@ export default function ErrorAlert({
           <button
             type="button"
             className={cn(
-              "inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-[#080f1e]",
+              "inline-flex min-h-10 items-center justify-center rounded-lg px-2.5 py-2 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
               styles.dismissButton,
             )}
             onClick={onDismiss}

@@ -186,8 +186,8 @@ export default function ApplicationDetailsModal({
             <span>Application Metadata & Fees</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3">
+          <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="min-w-0 rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 [overflow-wrap:anywhere]">
               <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block mb-0.5">
                 Local App ID
               </span>
@@ -196,7 +196,7 @@ export default function ApplicationDetailsModal({
               </span>
             </div>
 
-            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3">
+            <div className="min-w-0 rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 [overflow-wrap:anywhere]">
               <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block mb-0.5">
                 Base Application ID
               </span>
@@ -205,7 +205,7 @@ export default function ApplicationDetailsModal({
               </span>
             </div>
 
-            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3">
+            <div className="min-w-0 rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 [overflow-wrap:anywhere]">
               <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block mb-0.5">
                 Application Fees
               </span>
@@ -214,7 +214,7 @@ export default function ApplicationDetailsModal({
               </span>
             </div>
 
-            <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3">
+            <div className="min-w-0 rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 [overflow-wrap:anywhere]">
               <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 block mb-0.5">
                 License Class Fees
               </span>
@@ -224,7 +224,7 @@ export default function ApplicationDetailsModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 [overflow-wrap:anywhere]">
             <div className="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3">
               <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5 mb-1">
                 <Calendar className="size-3.5 text-cyan-400" />

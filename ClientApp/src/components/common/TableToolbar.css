@@ -1,0 +1,19 @@
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: 0 25px 20px;
+}
+
+@media (max-width: 1023px) {
+  .table-toolbar { padding-inline: 20px; }
+}
+
+@media (max-width: 639px) {
+  .table-toolbar {
+    align-items: stretch;
+    gap: 7px;
+    padding: 0 15px 15px;
+  }
+}

@@ -202,7 +202,6 @@ export default function MyProfilePage({ accessToken, onNavigate }: MyProfilePage
         title="My"
         highlight="Profile"
         description="View your verified employee credentials, identity records, and update permitted personal contact details."
-        variant="blue"
       />
 
       {/* 2. Page Actions — Dedicated Action Area Below PageHero */}

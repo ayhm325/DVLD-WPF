@@ -9,9 +9,10 @@
 
 /* css-lint disable unknownAtRules -- @theme is a Tailwind CSS v4 directive */
 @theme {
-  --radius-sm: 6px; /* مصدر واحد — كان مكررًا في :root */
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-full: 999px;
 }
@@ -89,17 +90,18 @@
   --accent-border: rgba(96, 165, 250, 0.35);
   --accent-soft: rgba(59, 130, 246, 0.2);
 
-  /* DVLD Canonical */
-  --dvld-primary: #3b82f6;
-  --dvld-primary-hover: #2563eb;
-  --dvld-primary-light: rgba(59, 130, 246, 0.15);
-  --dvld-primary-border: rgba(96, 165, 250, 0.35);
-  --dvld-primary-soft: rgba(59, 130, 246, 0.2);
+  /* Compatibility names used by existing DVLD styles. */
+  --dvld-primary: var(--accent);
+  --dvld-primary-hover: var(--accent-hover);
+  --dvld-primary-light: var(--accent-light);
+  --dvld-primary-border: var(--accent-border);
+  --dvld-primary-soft: var(--accent-soft);
   --dvld-primary-ring: rgba(59, 130, 246, 0.35);
 
   /* Status */
   --dvld-success: #10b981;
   --dvld-success-bg: rgba(16, 185, 129, 0.15);
+  --dvld-success-dot: var(--badge-emerald-text);
   --dvld-warning: #f59e0b;
   --dvld-warning-bg: rgba(245, 158, 11, 0.15);
   --dvld-danger: #ef4444;
@@ -108,17 +110,27 @@
   --dvld-info-bg: rgba(56, 189, 248, 0.15);
 
   /* Sidebar */
-  --dvld-sidebar: #0b1120;
-  --dvld-sidebar-hover: #162238;
+  --dvld-sidebar: var(--bg);
+  --dvld-sidebar-hover: var(--surface-soft);
   --dvld-sidebar-text: #b8c5d8;
-  --dvld-sidebar-muted: #8293aa;
-  --dvld-sidebar-line: #263750;
+  --dvld-sidebar-muted: var(--text-muted);
+  --dvld-sidebar-line: var(--border);
 
-  /* Text */
+  /* Compatibility names used by the legacy app and feature styles. */
+  --dvld-page: var(--bg);
+  --dvld-surface: var(--surface);
+  --dvld-surface-subtle: var(--surface-soft);
+  --dvld-surface-soft: var(--surface-soft);
+  --dvld-surface-hover: var(--surface-hover);
+  --dvld-overlay: rgba(5, 11, 24, 0.8);
   --text: #f1f5f9;
   --text-h: #ffffff;
   --text-muted: #8293aa;
   --text-inverse: #0b1120;
+  --dvld-text: var(--text);
+  --dvld-heading: var(--text-h);
+  --dvld-muted: var(--text-muted);
+  --dvld-faint: #64748b;
 
   /* Surfaces */
   --bg: #0b1120;
@@ -129,12 +141,12 @@
 
   /* Tables */
   --dvld-table-bg: #111c30;
-  --dvld-table-alt: #162238;
+  --dvld-table-alt: var(--surface-soft);
   --dvld-table-header: #0d1729;
   --dvld-table-hover: #1d3150;
-  --dvld-table-border: #263750;
+  --dvld-table-border: var(--border);
   --dvld-table-row-border: #1e2d44;
-  --dvld-table-text: #f1f5f9;
+  --dvld-table-text: var(--text);
   --dvld-table-text-secondary: #c0cddf;
   --dvld-table-text-muted: #94a3b8;
   --dvld-table-text-heading: #cbd5e1;
@@ -159,13 +171,36 @@
   /* Borders & effects */
   --border: #263750;
   --border-strong: #354a68;
+  --dvld-border: var(--border);
+  --dvld-border-strong: var(--border-strong);
   --social-bg: rgba(59, 130, 246, 0.12);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md:
-    0 4px 8px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    0 4px 8px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg:
-    0 12px 24px -4px rgba(0, 0, 0, 0.6), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
-  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
+    0 12px 24px -4px rgba(0, 0, 0, 0.6), 0 4px 8px -4px rgba(0, 0, 0, 0.3);
+  --shadow-xl:
+    0 24px 36px -6px rgba(0, 0, 0, 0.7), 0 8px 12px -6px rgba(0, 0, 0, 0.4);
+  --dvld-shadow-xs: var(--shadow-xs);
+  --dvld-shadow-sm: var(--shadow-sm);
+  --dvld-shadow-md: var(--shadow-md);
+  --dvld-shadow-lg: var(--shadow-lg);
+  --dvld-shadow-xl: var(--shadow-xl);
+  --focus-ring: 0 0 0 3px var(--dvld-primary-ring);
+
+  /* Radius compatibility names kept for existing App and feature CSS. */
+  --dvld-radius-xs: var(--radius-xs);
+  --dvld-radius-sm: var(--radius-sm);
+  --dvld-radius-md: var(--radius-md);
+  --dvld-radius-lg: var(--radius-lg);
+  --dvld-radius-xl: var(--radius-xl);
+
+  /* Shared shell sizing and overlay stacking. */
+  --dvld-sidebar-width: 260px;
+  --dvld-sidebar-expanded: 260px;
+  --dvld-sidebar-collapsed: 72px;
+  --dvld-z-modal: 1000;
 
   /* Typography */
   --sans:
@@ -216,6 +251,12 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --dvld-sidebar-width: 240px;
+  }
 }
 
 /* ==================================================
