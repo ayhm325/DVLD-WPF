@@ -538,8 +538,6 @@ public sealed class UserService : IUserService
                                 "No user changes were saved.");
                         }
 
-                        await transaction.CommitAsync(cancellationToken);
-
                         return Result.Success();
                     },
                     IsolationLevel.ReadCommitted,
@@ -548,11 +546,27 @@ public sealed class UserService : IUserService
 
             if (securityStateChanged)
             {
-                // Fail closed: revoke sessions before the change is persisted.
-                await _sessionRepository.RevokeAllForUserAsync(
-                    id,
-                    _clock.UtcNow,
-                    SessionRevocationReasons.SecurityStateChanged,
+                return await _unitOfWork.ExecuteInTransactionAsync(
+                    async transaction =>
+                    {
+                        await _sessionRepository.RevokeAllForUserAsync(
+                            id,
+                            _clock.UtcNow,
+                            SessionRevocationReasons.SecurityStateChanged,
+                            cancellationToken);
+
+                        var savedInside =
+                            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                        if (savedInside <= 0)
+                        {
+                            return Result.Failure(
+                                "No user changes were saved.");
+                        }
+
+                        return Result.Success();
+                    },
+                    IsolationLevel.ReadCommitted,
                     cancellationToken);
             }
 
@@ -656,6 +670,14 @@ public sealed class UserService : IUserService
         IUnitOfWorkTransaction? transaction,
         CancellationToken cancellationToken)
     {
+        if (transaction is null)
+        {
+            return await _unitOfWork.ExecuteInTransactionAsync(
+                tx => DeleteAndRevokeAsync(user, tx, cancellationToken),
+                IsolationLevel.ReadCommitted,
+                cancellationToken);
+        }
+
         _userRepository.DeleteUser(user);
 
         // The FK cascades, but revoke explicitly first so an in-flight refresh can
@@ -671,11 +693,6 @@ public sealed class UserService : IUserService
         if (saved <= 0)
         {
             return Result.Failure("Failed to save user deletion.");
-        }
-
-        if (transaction is not null)
-        {
-            await transaction.CommitAsync(cancellationToken);
         }
 
         return Result.Success();

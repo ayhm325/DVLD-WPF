@@ -1883,6 +1883,7 @@ public class UserServiceTests
         // Arrange
         const int userId = 40;
         var user = CreateUser(userId, personId: 40, userName: "staff_one", role: UserRole.Staff);
+        var originalStamp = user.SecurityStamp;
 
         _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("staff_one", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
@@ -1896,6 +1897,24 @@ public class UserServiceTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(UserRole.Admin, user.Role);
+        Assert.NotEqual(originalStamp, user.SecurityStamp);
+        Assert.False(string.IsNullOrWhiteSpace(user.SecurityStamp));
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                userId,
+                It.IsAny<DateTime>(),
+                SessionRevocationReasons.SecurityStateChanged,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -1904,6 +1923,7 @@ public class UserServiceTests
         // Arrange
         const int userId = 41;
         var user = CreateUser(userId, personId: 41, userName: "second_admin", role: UserRole.Admin);
+        var originalStamp = user.SecurityStamp;
 
         _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _userRepositoryMock.Setup(r => r.GetActiveAdminCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
@@ -1918,6 +1938,301 @@ public class UserServiceTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(UserRole.Staff, user.Role);
+        Assert.NotEqual(originalStamp, user.SecurityStamp);
+
+        _userRepositoryMock.Verify(
+            r => r.AcquireAdminMutationLockAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                userId,
+                It.IsAny<DateTime>(),
+                SessionRevocationReasons.SecurityStateChanged,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_StaffDeactivation_RotatesSecurityStampRevokesSessionsAndCommitsTransaction()
+    {
+        // Arrange
+        const int userId = 45;
+        var user = CreateUser(userId, personId: 45, userName: "staff_deactivate", role: UserRole.Staff, isActive: true);
+        var originalStamp = user.SecurityStamp;
+
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("staff_deactivate", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var dto = new UpdateUserDto { PersonId = 45, UserName = "staff_deactivate", IsActive = false, Role = UserRole.Staff };
+
+        // Act
+        Result result = await _sut.UpdateUserAsync(userId, dto);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.False(user.IsActive);
+        Assert.NotEqual(originalStamp, user.SecurityStamp);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                userId,
+                It.IsAny<DateTime>(),
+                SessionRevocationReasons.SecurityStateChanged,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_WhenSecurityUpdateSaveFails_RollsBackTransaction()
+    {
+        // Arrange
+        const int userId = 46;
+        var user = CreateUser(userId, personId: 46, userName: "staff_fail_save", role: UserRole.Staff, isActive: true);
+
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("staff_fail_save", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        var dto = new UpdateUserDto { PersonId = 46, UserName = "staff_fail_save", IsActive = false, Role = UserRole.Staff };
+
+        // Act
+        Result result = await _sut.UpdateUserAsync(userId, dto);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Failure, result.ErrorType);
+        Assert.Equal("No user changes were saved.", result.Error);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                userId,
+                It.IsAny<DateTime>(),
+                SessionRevocationReasons.SecurityStateChanged,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_WhenSecurityUpdateThrows_RollsBackTransactionAndPropagates()
+    {
+        // Arrange
+        const int userId = 47;
+        var user = CreateUser(userId, personId: 47, userName: "staff_throw", role: UserRole.Staff, isActive: true);
+
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("staff_throw", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Simulated database failure."));
+
+        var dto = new UpdateUserDto { PersonId = 47, UserName = "staff_throw", IsActive = false, Role = UserRole.Staff };
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.UpdateUserAsync(userId, dto));
+
+        Assert.Equal("Simulated database failure.", ex.Message);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                userId,
+                It.IsAny<DateTime>(),
+                SessionRevocationReasons.SecurityStateChanged,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_NormalProfileUpdate_DoesNotRevokeSessionsOrUseTransaction()
+    {
+        // Arrange
+        const int userId = 48;
+        var user = CreateUser(userId, personId: 20, userName: "staff_old_name", role: UserRole.Staff, isActive: true);
+        var originalStamp = user.SecurityStamp;
+
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("staff_new_name", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var dto = new UpdateUserDto { PersonId = 20, UserName = "staff_new_name", IsActive = true, Role = UserRole.Staff };
+
+        // Act
+        Result result = await _sut.UpdateUserAsync(userId, dto);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal("staff_new_name", user.UserName);
+        Assert.Equal(originalStamp, user.SecurityStamp);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                It.IsAny<int>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _unitOfWorkMock.Verify(
+            u => u.ExecuteInTransactionAsync<Result>(
+                It.IsAny<Func<IUnitOfWorkTransaction, Task<Result>>>(),
+                It.IsAny<IsolationLevel>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_StaffUser_RevokesSessionsAndDeletesUnderTransaction()
+    {
+        // Arrange
+        const int userId = 49;
+        var user = CreateUser(userId, role: UserRole.Staff);
+
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Act
+        Result result = await _sut.DeleteUserAsync(userId);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+
+        _userRepositoryMock.Verify(
+            r => r.DeleteUser(user),
+            Times.Once);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                userId,
+                It.IsAny<DateTime>(),
+                SessionRevocationReasons.SecurityStateChanged,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_StaffUser_WhenSaveFails_RollsBackTransaction()
+    {
+        // Arrange
+        const int userId = 50;
+        var user = CreateUser(userId, role: UserRole.Staff);
+
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(0);
+
+        // Act
+        Result result = await _sut.DeleteUserAsync(userId);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Failed to save user deletion.", result.Error);
+
+        _userRepositoryMock.Verify(
+            r => r.DeleteUser(user),
+            Times.Once);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                userId,
+                It.IsAny<DateTime>(),
+                SessionRevocationReasons.SecurityStateChanged,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_AdminDemotingAdmin_WhenMutationLockFails_RollsBackTransaction()
+    {
+        // Arrange
+        const int userId = 51;
+        var user = CreateUser(userId, personId: 51, userName: "admin_locked", role: UserRole.Admin, isActive: true);
+
+        _userRepositoryMock.Setup(r => r.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetActiveAdminCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(2);
+        _userRepositoryMock.Setup(r => r.IsUsernameTakenForAnotherUserAsync("admin_locked", userId, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _userRepositoryMock.Setup(r => r.AcquireAdminMutationLockAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var dto = new UpdateUserDto { PersonId = 51, UserName = "admin_locked", IsActive = true, Role = UserRole.Staff };
+
+        // Act
+        Result result = await _sut.UpdateUserAsync(userId, dto);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorType.Conflict, result.ErrorType);
+        Assert.Equal("Another administrator change is in progress. Please retry.", result.Error);
+
+        _userRepositoryMock.Verify(
+            r => r.AcquireAdminMutationLockAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _sessionRepositoryMock.Verify(
+            s => s.RevokeAllForUserAsync(
+                It.IsAny<int>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _transactionMock.Verify(
+            t => t.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            t => t.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -2537,7 +2852,8 @@ public class UserServiceTests
         int personId = 20,
         string userName = "ayhm",
         string password = "Password123",
-        UserRole role = UserRole.Staff)
+        UserRole role = UserRole.Staff,
+        bool isActive = true)
     {
         return new User
         {
@@ -2545,7 +2861,7 @@ public class UserServiceTests
             PersonId = personId,
             UserName = userName,
             Password = BCrypt.Net.BCrypt.HashPassword(password),
-            IsActive = true,
+            IsActive = isActive,
             Role = role,
 
             Person = new Person
