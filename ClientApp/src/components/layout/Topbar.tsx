@@ -236,34 +236,34 @@ export default function Topbar({
       </div>
 
       {/* Left Identity & Dynamic Page Title with Breadcrumbs */}
-      <div className="topbar-identity relative z-10 flex items-center gap-3.5">
+      <div className="topbar-identity">
         {onToggleSidebar && (
           <button
             ref={sidebarToggleRef}
             type="button"
-            className="mobile-sidebar-toggle lg:hidden"
+            className="mobile-sidebar-toggle"
             onClick={onToggleSidebar}
-            aria-label={isSidebarOpen ? "Navigation menu open" : "Open navigation menu"}
+            aria-label={isSidebarOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-controls="dvld-primary-sidebar"
             aria-expanded={isSidebarOpen}
-            title="Open navigation menu"
+            title={isSidebarOpen ? "Close navigation menu" : "Open navigation menu"}
           >
             <Menu className="size-5" aria-hidden="true" />
           </button>
         )}
         <span
-          className="topbar-beacon w-1.5 h-7 rounded-full bg-cyan-400 shadow-[0_0_12px_#00e5ff] shrink-0"
+          className="topbar-beacon"
           aria-hidden="true"
         />
 
-        <div className="flex flex-col min-w-0">
-          <h1 className="topbar-title text-xl sm:text-2xl font-black text-white tracking-tight leading-none">
+        <div className="topbar-page-heading">
+          <h1 className="topbar-title">
             {activePage}
           </h1>
 
           <nav
             aria-label="Breadcrumb"
-            className="topbar-breadcrumb hidden sm:flex items-center gap-1.5 mt-1 text-[11px] font-medium text-slate-400"
+            className="topbar-breadcrumb"
           >
             <Home
               className="size-3 text-slate-400 shrink-0"
@@ -291,7 +291,7 @@ export default function Topbar({
       </div>
 
       {/* Right Controls: Search, System Status, User Profile */}
-      <div className="topbar-actions relative z-10 flex items-center gap-3 sm:gap-4">
+      <div className="topbar-actions">
         {onOpenCommandPalette && (
           <button
             type="button"
@@ -301,8 +301,8 @@ export default function Topbar({
             aria-label="Global search shortcut Ctrl K"
           >
             <Search className="size-4 text-cyan-400 drop-shadow-[0_0_8px_rgba(0,229,255,0.8)] shrink-0" />
-          <span className="hidden md:inline">Search anything...</span>
-          <kbd className="topbar-search-kbd hidden xl:inline-flex">Ctrl + K</kbd>
+          <span className="topbar-search-label">Search anything...</span>
+          <kbd className="topbar-search-kbd">Ctrl + K</kbd>
           </button>
         )}
 
@@ -316,11 +316,11 @@ export default function Topbar({
             <span className="status-pulse-ring absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
             <span className="status-pulse-dot relative inline-flex size-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
           </span>
-          <span className="system-status-label font-semibold text-xs text-white">
+          <span className="system-status-label">
             System Online
           </span>
           <svg
-            className="topbar-status-waveform hidden sm:inline-flex size-5 sm:w-7 sm:h-3.5 text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.7)] ml-0.5"
+            className="topbar-status-waveform"
             viewBox="0 0 28 14"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -335,7 +335,7 @@ export default function Topbar({
             />
           </svg>
           <ChevronDown
-            className="system-status-chevron hidden sm:inline-flex size-3 text-emerald-400/80 ml-0.5"
+            className="system-status-chevron"
             aria-hidden="true"
           />
         </div>
@@ -350,7 +350,7 @@ export default function Topbar({
               aria-label="User profile and session options"
             >
               <div className="topbar-avatar">{initial}</div>
-              <div className="topbar-user-meta hidden sm:flex flex-col text-left">
+              <div className="topbar-user-meta">
                 <span className="topbar-user-name">
                   {user?.fullName || user?.userName || "User"}
                 </span>

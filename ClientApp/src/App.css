@@ -1120,61 +1120,9 @@ select:focus-visible {
 ===================================================== */
 
 @media (max-width: 1023px) {
-  .topbar {
-    gap: 10px;
-    padding-inline: 14px;
-  }
-
-  .topbar-identity {
-    flex: 1 1 auto;
-    min-width: 0;
-    gap: 10px;
-  }
-
-  .topbar-actions {
-    flex: 0 1 auto;
-    min-width: 0;
-    gap: 6px;
-  }
-
-  .topbar-search-btn {
-    gap: 8px !important;
-    padding-inline: 12px !important;
-  }
-
-  .topbar-search-btn > span {
-    display: none !important;
-  }
-
-  .system-status {
-    gap: 6px !important;
-    padding-inline: 8px !important;
-  }
-
-  .topbar-user-btn {
-    gap: 8px !important;
-    padding-right: 10px !important;
-  }
-
-  .topbar-user-meta {
-    min-width: 0;
-    max-width: 72px;
-  }
-
-  .topbar-user-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .page-content {
     gap: 21px;
     padding: 25px 22px 32px;
-  }
-
-  .topbar {
-    padding-inline: 18px;
-    margin-inline: 16px;
   }
 
   .stat-card {
@@ -1197,43 +1145,6 @@ select:focus-visible {
 @media (max-width: 639px) {
   .main-content {
     min-height: auto;
-  }
-
-  .topbar {
-    min-height: 64px;
-    margin: 10px 12px 0;
-    padding: 10px 12px;
-    gap: 8px;
-    border-radius: 16px;
-  }
-
-  .topbar-identity {
-    flex: 1 1 auto;
-    gap: 8px;
-  }
-
-  .topbar-actions {
-    flex: 0 0 auto;
-    gap: 6px;
-  }
-
-  .topbar-title {
-    max-width: clamp(7.5rem, 33vw, 11rem);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .system-status {
-    width: 38px;
-    height: 38px;
-    justify-content: center;
-    padding: 0 !important;
-  }
-
-  .topbar-user-btn {
-    gap: 5px !important;
-    padding: 4px 6px 4px 4px !important;
   }
 
   .page-content {
@@ -1354,11 +1265,6 @@ select:focus-visible {
     flex-wrap: wrap;
     justify-content: center;
     font-size: 9px;
-  }
-
-  .system-status-label,
-  .system-status-chevron {
-    display: none !important;
   }
 
   .welcome-banner {
@@ -1747,10 +1653,6 @@ select:focus-visible {
 
 /* Mobile and tablet navigation drawer (Tailwind lg: 1024px) */
 @media (max-width: 1023px) {
-  .mobile-sidebar-toggle {
-    display: inline-flex;
-  }
-
   .sidebar {
     position: fixed;
     top: 0;
@@ -1818,37 +1720,6 @@ select:focus-visible {
 }
 
 @media (max-width: 639px) {
-  .topbar {
-    align-items: center;
-  }
-
-  .topbar-actions {
-    gap: 5px;
-  }
-
-  .topbar-search-btn {
-    width: 40px;
-    height: 40px;
-    justify-content: center;
-    padding: 0 !important;
-  }
-
-  .topbar-search-btn > svg {
-    margin: 0;
-  }
-
-  .topbar-search-btn .topbar-search-kbd {
-    display: none !important;
-  }
-
-  .topbar-search-btn > span {
-    display: none !important;
-  }
-
-  .topbar-status-waveform {
-    display: none !important;
-  }
-
   .panel-header {
     flex-direction: column;
   }
@@ -1885,10 +1756,6 @@ select:focus-visible {
   width: calc(100% - var(--dvld-sidebar-current));
   margin-left: var(--dvld-sidebar-current);
   transition: margin-left 240ms ease;
-}/* Section 20 removed - consolidated into Section 05 Topbar */
-
-.mobile-sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 /* ==================================================

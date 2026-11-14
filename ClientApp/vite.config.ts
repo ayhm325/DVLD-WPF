@@ -16,5 +16,13 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
+    // Development-server proxy: the browser stays same-origin with Vite while
+    // the API remains bound to localhost on the development machine.
+    proxy: {
+      "/api": {
+        target: "http://localhost:5260",
+        changeOrigin: true,
+      },
+    },
   },
 });
