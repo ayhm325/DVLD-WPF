@@ -43,7 +43,7 @@ export default function ChangePasswordPage({
   accessToken,
   onNavigate,
 }: ChangePasswordPageProps) {
-  const { login } = useAuth()
+  const { login, logout } = useAuth()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -130,8 +130,24 @@ export default function ChangePasswordPage({
       setSuccess(true)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to update account password.'
-      // Handle the specific backend failure message
-      if (msg.toLowerCase().includes('current password is incorrect') || msg.toLowerCase().includes('could not complete')) {
+      const isSessionEstablishmentFailure =
+        msg.toLowerCase().includes('establishing a new session failed') ||
+        msg.toLowerCase().includes('session establishment failed') ||
+        (msg.toLowerCase().includes('password was changed successfully') &&
+          msg.toLowerCase().includes('log in'))
+
+      if (isSessionEstablishmentFailure) {
+        // Clear sensitive input fields so old credentials cannot be re-submitted
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setValidationErrors({})
+        // Log out locally to clear stale tokens and navigate to login screen with clear notification
+        logout(msg)
+        return
+      }
+
+      if (msg.toLowerCase().includes('current password is incorrect')) {
         setError('Current password is incorrect. Please verify your existing password and try again.')
       } else {
         setError(msg)

@@ -709,53 +709,50 @@ public sealed class UserService : IUserService
                 validation.Error);
         }
 
-        var user =
-            await _userRepository
-                .GetUserForUpdateAsync(userId, cancellationToken);
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async transaction =>
+            {
+                var user =
+                    await _userRepository
+                        .GetUserForUpdateAsync(userId, cancellationToken);
 
-        if (user is null)
-        {
-            return Result.NotFound(
-                "User not found.");
-        }
+                if (user is null)
+                {
+                    return Result.NotFound(
+                        "User not found.");
+                }
 
-        var currentPasswordValid =
-            BCrypt.Net.BCrypt
-                .Verify(
-                    dto.CurrentPassword,
-                    user.Password);
+                var currentPasswordValid =
+                    BCrypt.Net.BCrypt
+                        .Verify(
+                            dto.CurrentPassword,
+                            user.Password);
 
-        if (!currentPasswordValid)
-        {
-            return Result.ValidationFailure("Current password is incorrect.");
-        }
+                if (!currentPasswordValid)
+                {
+                    return Result.ValidationFailure(
+                        "Current password is incorrect.");
+                }
 
-        user.Password =
-            BCrypt.Net.BCrypt
-                .HashPassword(
-                    dto.NewPassword);
+                user.Password =
+                    BCrypt.Net.BCrypt
+                        .HashPassword(
+                            dto.NewPassword);
 
-        user.SecurityStamp = Guid.NewGuid().ToString("N");
+                user.SecurityStamp = Guid.NewGuid().ToString("N");
 
-        // Every existing refresh token becomes unusable; the controller issues a
-        // fresh session for this device after the password change succeeds.
-        await _sessionRepository.RevokeAllForUserAsync(
-            userId,
-            _clock.UtcNow,
-            SessionRevocationReasons.PasswordChanged,
+                // Every existing refresh token becomes unusable; the controller issues a
+                // fresh session for this device after the password change succeeds.
+                await _sessionRepository.RevokeAllForUserAsync(
+                    userId,
+                    _clock.UtcNow,
+                    SessionRevocationReasons.PasswordChanged,
+                    cancellationToken);
+
+                return Result.Success();
+            },
+            IsolationLevel.ReadCommitted,
             cancellationToken);
-
-        var saved =
-            await _unitOfWork
-                .SaveChangesAsync(cancellationToken);
-
-        if (saved <= 0)
-        {
-            return Result.Failure(
-                "Failed to save password change.");
-        }
-
-        return Result.Success();
     }
 
     private bool IsNonAdminAuthenticatedCaller() =>

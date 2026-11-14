@@ -25,7 +25,8 @@ public sealed class AuthController(
     IAuthService authService,
     IUserService userService,
     ICurrentUserService currentUserService,
-    IOptions<AuthSessionOptions> sessionOptions) : ControllerBase
+    IOptions<AuthSessionOptions> sessionOptions,
+    ILogger<AuthController> logger) : ControllerBase
 {
     private const string CsrfHeaderName = "X-CSRF-Protection";
     private const string CsrfHeaderValue = "1";
@@ -204,14 +205,55 @@ public sealed class AuthController(
             return result.ToActionResult(this);
         }
 
-        // The password change revoked every session, including this one. Issue a
-        // fresh session for the current device so the user is not silently logged out.
-        var session = await authService.StartSessionAsync(
-            currentUserService.UserId, cancellationToken);
+        // The password change was committed and revoked every session, including this one.
+        // Attempt to issue a fresh session for the current device so the user is not logged out.
+        // Session establishment failure is handled separately from the already-committed password change.
+        Result<LoginResponseDto> session;
+        try
+        {
+            session = await authService.StartSessionAsync(
+                currentUserService.UserId, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Password changed successfully for user {UserId}, but fresh session issuance threw an exception.",
+                currentUserService.UserId);
+
+            ClearRefreshCookie();
+
+            return ApiProblemDetails.ToActionResult(
+                HttpContext,
+                ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status500InternalServerError,
+                    "Session establishment failed",
+                    "Your password was changed successfully and all existing sessions were revoked, but establishing a new session failed. Please log in with your new password.",
+                    ProblemTypes.Internal));
+        }
 
         if (session.IsFailure)
         {
-            return session.ToActionResult(this);
+            logger.LogError(
+                "Password changed successfully for user {UserId}, but fresh session issuance failed: {Error}",
+                currentUserService.UserId,
+                session.Error);
+
+            ClearRefreshCookie();
+
+            return ApiProblemDetails.ToActionResult(
+                HttpContext,
+                ApiProblemDetails.Create(
+                    HttpContext,
+                    StatusCodes.Status500InternalServerError,
+                    "Session establishment failed",
+                    "Your password was changed successfully and all existing sessions were revoked, but establishing a new session failed. Please log in with your new password.",
+                    ProblemTypes.Internal));
         }
 
         var response = session.Value!;
@@ -292,12 +334,9 @@ public sealed class AuthController(
 
     private IActionResult UnexpectedResult(string diagnosticMessage)
     {
-        HttpContext.RequestServices
-            .GetRequiredService<ILoggerFactory>()
-            .CreateLogger<AuthController>()
-            .LogError(
-                "Authentication endpoint failed unexpectedly: {DiagnosticMessage}",
-                diagnosticMessage);
+        logger.LogError(
+            "Authentication endpoint failed unexpectedly: {DiagnosticMessage}",
+            diagnosticMessage);
 
         return ApiProblemDetails.ToActionResult(
             HttpContext,

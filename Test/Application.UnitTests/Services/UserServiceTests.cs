@@ -47,10 +47,28 @@ public class UserServiceTests
                 It.IsAny<IsolationLevel>(),
                 It.IsAny<CancellationToken>()))
             .Returns(
-                (Func<IUnitOfWorkTransaction, Task<Result>> operation,
+                async (Func<IUnitOfWorkTransaction, Task<Result>> operation,
                     IsolationLevel _,
-                    CancellationToken _) =>
-                    operation(_transactionMock.Object));
+                    CancellationToken ct) =>
+                {
+                    try
+                    {
+                        var result = await operation(_transactionMock.Object);
+                        if (result is { IsFailure: true })
+                        {
+                            await _transactionMock.Object.RollbackAsync(ct);
+                            return result;
+                        }
+
+                        await _transactionMock.Object.CommitAsync(ct);
+                        return result;
+                    }
+                    catch
+                    {
+                        await _transactionMock.Object.RollbackAsync(CancellationToken.None);
+                        throw;
+                    }
+                });
 
         _sut = new UserService(
             _userRepositoryMock.Object,
@@ -2167,6 +2185,21 @@ public class UserServiceTests
             repository =>
                 repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
+
+        _sessionRepositoryMock.Verify(
+            sessionRepo =>
+                sessionRepo.RevokeAllForUserAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<DateTime>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _unitOfWorkMock.Verify(
+            unitOfWork =>
+                unitOfWork.SaveChangesAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -2188,6 +2221,7 @@ public class UserServiceTests
             userId,
             password: currentPassword);
         var originalPasswordHash = user.Password;
+        var originalSecurityStamp = user.SecurityStamp;
 
         _userRepositoryMock
             .Setup(repository =>
@@ -2207,64 +2241,22 @@ public class UserServiceTests
             "Current password is incorrect.",
             result.Error);
         Assert.Equal(originalPasswordHash, user.Password);
+        Assert.Equal(originalSecurityStamp, user.SecurityStamp);
+
+        _sessionRepositoryMock.Verify(
+            sessionRepo =>
+                sessionRepo.RevokeAllForUserAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<DateTime>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
 
         _unitOfWorkMock.Verify(
             unitOfWork =>
                 unitOfWork.SaveChangesAsync(
                     It.IsAny<CancellationToken>()),
             Times.Never);
-    }
-
-    [Fact]
-    public async Task ChangePasswordAsync_SaveFails_ReturnsFailure()
-    {
-        // Arrange
-        const int userId = 10;
-
-        var dto = CreateValidChangePasswordDto();
-
-        var user = CreateUser(
-            userId,
-            password: dto.CurrentPassword);
-
-        _userRepositoryMock
-            .Setup(repository =>
-                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(user);
-
-        _unitOfWorkMock
-            .Setup(unitOfWork =>
-                unitOfWork.SaveChangesAsync(
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
-
-        // Act
-        Result result =
-            await _sut.ChangePasswordAsync(
-                userId,
-                dto);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorType.Failure, result.ErrorType);
-        Assert.Equal(
-            "Failed to save password change.",
-            result.Error);
-
-        Assert.NotEqual(
-            dto.CurrentPassword,
-            user.Password);
-
-        Assert.True(
-            BCrypt.Net.BCrypt.Verify(
-                dto.NewPassword,
-                user.Password));
-
-        _unitOfWorkMock.Verify(
-            unitOfWork =>
-                unitOfWork.SaveChangesAsync(
-                    It.IsAny<CancellationToken>()),
-            Times.Once);
     }
 
     [Fact]
@@ -2280,17 +2272,12 @@ public class UserServiceTests
             password: dto.CurrentPassword);
 
         var oldHash = user.Password;
+        var oldSecurityStamp = user.SecurityStamp;
 
         _userRepositoryMock
             .Setup(repository =>
                 repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
-
-        _unitOfWorkMock
-            .Setup(unitOfWork =>
-                unitOfWork.SaveChangesAsync(
-                    It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
 
         // Act
         Result result =
@@ -2303,6 +2290,8 @@ public class UserServiceTests
         Assert.Equal(ErrorType.None, result.ErrorType);
 
         Assert.NotEqual(oldHash, user.Password);
+        Assert.NotEqual(oldSecurityStamp, user.SecurityStamp);
+        Assert.False(string.IsNullOrWhiteSpace(user.SecurityStamp));
 
         Assert.True(
             BCrypt.Net.BCrypt.Verify(
@@ -2319,11 +2308,174 @@ public class UserServiceTests
                 repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once);
 
-        _unitOfWorkMock.Verify(
-            unitOfWork =>
-                unitOfWork.SaveChangesAsync(
+        _sessionRepositoryMock.Verify(
+            sessionRepo =>
+                sessionRepo.RevokeAllForUserAsync(
+                    userId,
+                    It.IsAny<DateTime>(),
+                    SessionRevocationReasons.PasswordChanged,
                     It.IsAny<CancellationToken>()),
             Times.Once);
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.CommitAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.RollbackAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WhenSessionRevocationThrows_RollsBackTransactionAndPropagates()
+    {
+        // Arrange
+        const int userId = 10;
+        var dto = CreateValidChangePasswordDto();
+        var user = CreateUser(userId, password: dto.CurrentPassword);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _sessionRepositoryMock
+            .Setup(sessionRepo =>
+                sessionRepo.RevokeAllForUserAsync(
+                    userId,
+                    It.IsAny<DateTime>(),
+                    SessionRevocationReasons.PasswordChanged,
+                    It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Session revocation failed."));
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.ChangePasswordAsync(userId, dto));
+
+        Assert.Equal("Session revocation failed.", ex.Message);
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.RollbackAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.CommitAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WhenCommitThrows_RollsBackTransactionAndPropagates()
+    {
+        // Arrange
+        const int userId = 10;
+        var dto = CreateValidChangePasswordDto();
+        var user = CreateUser(userId, password: dto.CurrentPassword);
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.GetUserForUpdateAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _transactionMock
+            .Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Database write failure."));
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.ChangePasswordAsync(userId, dto));
+
+        Assert.Equal("Database write failure.", ex.Message);
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.RollbackAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.CommitAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WhenCancelledDuringCommit_RollsBackTransactionAndPropagates()
+    {
+        // Arrange
+        const int userId = 10;
+        var dto = CreateValidChangePasswordDto();
+        var user = CreateUser(userId, password: dto.CurrentPassword);
+
+        using var cts = new CancellationTokenSource();
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.GetUserForUpdateAsync(userId, cts.Token))
+            .ReturnsAsync(user);
+
+        _sessionRepositoryMock
+            .Setup(sessionRepo =>
+                sessionRepo.RevokeAllForUserAsync(
+                    userId,
+                    It.IsAny<DateTime>(),
+                    SessionRevocationReasons.PasswordChanged,
+                    cts.Token))
+            .ReturnsAsync(1);
+
+        _transactionMock
+            .Setup(t => t.CommitAsync(cts.Token))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _sut.ChangePasswordAsync(userId, dto, cts.Token));
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.RollbackAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.CommitAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ChangePasswordAsync_WhenCancelled_PropagatesCancellationWithoutCommit()
+    {
+        // Arrange
+        const int userId = 10;
+        var dto = CreateValidChangePasswordDto();
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        _userRepositoryMock
+            .Setup(repository =>
+                repository.GetUserForUpdateAsync(userId, cts.Token))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        // Act & Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => _sut.ChangePasswordAsync(userId, dto, cts.Token));
+
+        _transactionMock.Verify(
+            transaction =>
+                transaction.CommitAsync(
+                    It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     // =========================================================

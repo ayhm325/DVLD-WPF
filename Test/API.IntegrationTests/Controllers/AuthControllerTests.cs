@@ -451,6 +451,82 @@ public sealed class AuthControllerTests
     }
 
     [Fact]
+    public async Task ChangePassword_WhenStartSessionFails_ReturnsSessionEstablishmentFailureAndClearsCookie()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        SetupCurrentUser(factory, 10);
+
+        factory.UserServiceMock
+            .Setup(x => x.ChangePasswordAsync(
+                10,
+                It.IsAny<ChangePasswordDto>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
+        factory.AuthServiceMock
+            .Setup(x => x.StartSessionAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<LoginResponseDto>.FromFailure("Internal session database error."));
+
+        var response = await Authenticated(factory, 10).PostAsJsonAsync(
+            "/api/Auth/change-password",
+            new
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            });
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "Session establishment failed",
+            "Your password was changed successfully and all existing sessions were revoked, but establishing a new session failed. Please log in with your new password.");
+
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("Internal session database error", content);
+        Assert.DoesNotContain("AccessToken", content);
+        Assert.DoesNotContain("RefreshToken", content);
+
+        AssertRefreshCookieDeleted(response);
+    }
+
+    [Fact]
+    public async Task ChangePassword_WhenStartSessionThrows_ReturnsSessionEstablishmentFailureAndClearsCookie()
+    {
+        await using var factory = new ApiWebApplicationFactory();
+        SetupCurrentUser(factory, 10);
+
+        factory.UserServiceMock
+            .Setup(x => x.ChangePasswordAsync(
+                10,
+                It.IsAny<ChangePasswordDto>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
+        factory.AuthServiceMock
+            .Setup(x => x.StartSessionAsync(10, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Fatal database down exception."));
+
+        var response = await Authenticated(factory, 10).PostAsJsonAsync(
+            "/api/Auth/change-password",
+            new
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            });
+
+        await AssertProblemDetailsAsync(
+            response,
+            HttpStatusCode.InternalServerError,
+            "Session establishment failed",
+            "Your password was changed successfully and all existing sessions were revoked, but establishing a new session failed. Please log in with your new password.");
+
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("Fatal database down exception", content);
+
+        AssertRefreshCookieDeleted(response);
+    }
+
+    [Fact]
     public async Task JwtBearer_WhenTokenIsValidAndUserIsActive_AllowsAccessViaUserService()
     {
         await using var factory = new ApiWebApplicationFactory();
@@ -662,5 +738,19 @@ public sealed class AuthControllerTests
         var response = await client.PostAsync("/api/Auth/login", content);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private static void AssertRefreshCookieDeleted(HttpResponseMessage response)
+    {
+        Assert.True(
+            response.Headers.TryGetValues("Set-Cookie", out var setCookies),
+            "Expected Set-Cookie header to be present on the response.");
+
+        var cookie = Assert.Single(setCookies, c => c.StartsWith("dvld_rt="));
+        Assert.Contains("dvld_rt=;", cookie);
+        Assert.Contains("expires=Thu, 01 Jan 1970 00:00:00 GMT", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/api/Auth", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", cookie, StringComparison.OrdinalIgnoreCase);
     }
 }
