@@ -452,7 +452,7 @@ public sealed class AuthSessionSqlVerificationTests
         }
 
         Assert.Equal("rotated-stamp", await ReadSecurityStampAsync(userId));
-        Assert.NotEqual(originalStamp, "rotated-stamp");
+        Assert.NotEqual("rotated-stamp", originalStamp);
     }
 
     private async Task<int> SeedUserAsync(string userName)

@@ -71,7 +71,7 @@ public sealed class CrossProcessRefreshTests
             .ToArray();
 
         Assert.Equal(new[] { 200, 409 }, statuses);
-        Assert.Single(responses.Where(response => response.StatusCode == HttpStatusCode.OK));
+        Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
 
         var winner = responses.Single(response => response.StatusCode == HttpStatusCode.OK);
 
@@ -93,7 +93,7 @@ public sealed class CrossProcessRefreshTests
             .ToListAsync();
 
         Assert.Equal(2, family.Count);
-        Assert.Single(family.Where(session => session.RevokedAtUtc is null));
+        Assert.Single(family, session => session.RevokedAtUtc is null);
 
         var consumed = family.Single(session => session.RevokedAtUtc is not null);
         var replacement = family.Single(session => session.RevokedAtUtc is null);
